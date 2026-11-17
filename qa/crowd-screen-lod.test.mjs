@@ -44,7 +44,8 @@ assert.match(atlas,/ATTACK_FRAMES=2,ROWS=1\+RUN_FRAMES\+ATTACK_FRAMES/,
  'distant motion atlas now has seven independent action rows');
 assert.match(atlas,/applyCapturedRunArmSwing\(THREE,actor\.character\.model/,
  'four real run poses contain corrected shoulder and carried-weapon motion');
-assert.match(army,/await captureCrowdImpostorAtlas\(renderer,representative\)/);
+assert.match(army,/await captureCrowdImpostorAtlas\(renderer,representative,\s*\{footOriginY:footAnchor\?\.floor\?\?0\}\)/,
+  '写真LODは近景GPUモデルと同じ実足裏位置に合わせて撮影する');
 assert.match(army,/visualMaterialKey\(original\)/,'同じ写真素材とPBR設定はUUIDが違っても一括描画する');
 assert.match(army,/isInactiveHairLevel\(object,person\)/,'未選択の髪LODを重ねて焼き込まない');
 assert.match(army,/if\(!bodyLayers\.length\)throw Error/,'遠景に切り替えても実人体の近景レイヤーは必須');
