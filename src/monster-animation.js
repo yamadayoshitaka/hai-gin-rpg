@@ -1,4 +1,4 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=beast-clone-fixed-bones-v5-20261117';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m005-m001-copy-gait-v6-20261118';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
@@ -92,7 +92,7 @@ export function animateMonsterModel(model,time=0){
  const leaping=action==='leap'?pulse:0;
  const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
- const springBeast=['m001','m002','m003','m004'].includes(model.userData.speciesId);
+ const springBeast=['m001','m002','m003','m004','m005'].includes(model.userData.speciesId);
  const sourceFeline=['m007','m008','m009','m010'].includes(model.userData.speciesId);
  const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
