@@ -13,7 +13,8 @@ const map=new Uint8Array(232*232).fill(1);
 const mass=new MassBattleGridSimulation(100,20261104,{width:232,height:232,
  walkable:map,bridges:[],riverXAt:()=>116});
 const normal=new CombatActionRuntime({width:232,height:232,walkable:map});
-assert.ok(mass.actions instanceof CombatActionRuntime);
+assert.equal(mass.actions.constructor.name,'CombatActionRuntime',
+ 'mass Worker and skirmish use the same combat action class');
 assert.ok(normal instanceof CombatActionRuntime);
 assert.equal(typeof mass.setSquadCommand,'function');
 for(const ceremony of ['idle','order','result','intro','outro']){
