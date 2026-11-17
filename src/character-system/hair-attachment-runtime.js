@@ -345,8 +345,14 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   const next=value==='hood'?'hood':value==='helmet'?'helmet':null;
   if(selectedCoverage===next)return;
   selectedCoverage=next;
+  // Masking creates owned BufferGeometry. Release the previous mask before
+  // swapping equipment; never dispose the shared GLB/source geometry.
+  const releaseMask=(mesh,source)=>{
+   if(mesh.geometry&&mesh.geometry!==source)mesh.geometry.dispose();
+  };
   let sourceTriangles=0,keptTriangles=0;
   for(const item of hairMeshes){
+    releaseMask(item.mesh,item.original);
     if(!next){item.mesh.geometry=item.original;continue}
     const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next,foreheadZ);
     item.mesh.geometry=clipped.geometry;
@@ -355,6 +361,8 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   // Mask only the portions hidden BY the headpiece, instead of turning off
   // all anatomical root fibers. This keeps a natural hairline under the
   // cloth hood and leaves the upper scalp occluded by metal helmets.
+  releaseMask(crown,crownGeometry);
+  if(scalpFibers)releaseMask(scalpFibers,scalpFibersGeometry);
   if(next){
     const cut=maskHairGeometry(crownGeometry,crownMatrix,{
       position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
@@ -378,7 +386,11 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
   setHeadwear,
-  dispose(){bone.remove(hairRoot);crownGeometry.dispose();crown.material.dispose();
+  dispose(){bone.remove(hairRoot);
+   for(const item of hairMeshes)releaseMask(item.mesh,item.original);
+   releaseMask(crown,crownGeometry);
+   if(scalpFibers)releaseMask(scalpFibers,scalpFibersGeometry);
+   crownGeometry.dispose();crown.material.dispose();
    scalpFibersGeometry?.dispose();scalpFibers?.material.dispose();
    hoodWisps.geometry.dispose();hoodWisps.material.dispose()}};
 }
