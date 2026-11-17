@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'src/story-compact-comic.js'
+      - 'src/story-panel-registered-art.js'
+      - 'src/story-archive-restored-art.js'
+      - 'qa/story-archive-restoration.test.mjs'
+      - 'assets/story/chapter1-provisional-live/**'
       - 'src/story-dialogue-art-binding.js'
       - 'assets/story/recap/owner-approved-kingdom-overview.webp'
       - 'qa/story-recap-art-and-cast.test.mjs'
@@ -69,6 +73,8 @@ jobs:
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs
           node qa/story-chapter1-stage-priority.test.mjs
+      - name: Confirm five recovered historical original WebPs are real and exactly matched to stage
+        run: node qa/story-archive-restoration.test.mjs
       - name: Verify compact CG reuse of 40 existing first-four-stage gender/outcome original assets
         run: node qa/story-compact-art-reuse.test.mjs
       - name: Build and verify 880-scene minimum-first CG queue (no paid or free API calls)
