@@ -2156,6 +2156,19 @@ function mountedCreatureOf(unit){
    o.mountedBy===(massSim&&unit.massUnitId!=null?unit.massUnitId:unit.id)):null;
 }
 function riderElevation(unit,time=creatureVisualTime){return riderSeatHeight(mountedCreatureOf(unit),time);}
+/** One-time exact pelvis anchor from the existing skinned 65-bone person.
+ * The world root tracks the saddle; only the displayed body shifts so the
+ * HIPS rather than the boots meet that saddle. Never resample per frame. */
+function measureRiderPelvisDrop(character){
+ const pelvis=character?.model?.getObjectByName('pelvis')||
+  character?.model?.getObjectByName('Hips');
+ if(!pelvis||!character?.object3D)return .90;
+ const point=new THREE.Vector3();
+ character.object3D.updateWorldMatrix(true,true);
+ pelvis.getWorldPosition(point);
+ character.object3D.worldToLocal(point);
+ return THREE.MathUtils.clamp(point.y,.45,1.22);
+}
 function applyCreatureRidingPose(actor){
  if(!actor?.character?.model)return;
  if(!actor._ridingPose)actor._ridingPose=createRidingPoseController(actor.character.model);
@@ -2746,6 +2759,7 @@ async function installBattleModels(){
       // Whole-rig width/depth proportions keep skin, knees, neck, boots,
       // armor and weapons bone-aligned without changing world collision.
       character.object3D.scale.set(recipe.visualScaleX,1,recipe.visualScaleZ);
+      a.riderPelvisDropY=measureRiderPelvisDrop(character);
       character.object3D.userData.heroProductionRecipe=recipe;
       a.root.userData.heroProductionVersion=recipe.recipeVersion;
       // The original full-quality armor/cloth stays untouched. Only rigid
@@ -9870,7 +9884,7 @@ function animate(){
       const t=Math.max(0,Math.min(1,(elapsed-a._summonFall.time)/.85));
       a.character.object3D.position.y=(1-t)*(1-t)*a._summonFall.height;
       if(t>=1)a._summonFall=null;
-    }else a.character.object3D.position.y=0;
+    }else a.character.object3D.position.y=ridden?-(a.riderPelvisDropY??.90):0;
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
