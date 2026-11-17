@@ -32,6 +32,8 @@ assert.match(atlas,/preview\.add\(person\)/,
 assert.match(atlas,/actor\.character\.play\(state,\{transition:false\}\)/,'補間を除いた元のリターゲット済みモーションを撮影する');
 assert.match(atlas,/actor\.outfit\.sync\(\)/,'衣装を人体に合わせた後でGPU撮影する');
 assert.match(atlas,/readRenderTargetPixels/,'生成した画像が空でないことをGPUから検査する');
+assert.match(atlas,/verifiedRows:3/,'idle・run・attackの実画像をそれぞれ欠損検査する');
+assert.match(atlas,/maxY-minY<tileSize\*\.36/,'下半身の欠落した写真は本編採用しない');
 assert.match(atlas,/const TILE=224/,'遠景を224pxの実装備モデルで撮影して輪郭を保つ');
 assert.match(atlas,/float runRow=1\.0\+min\(3\.0,floor\(phase\*0\.63661977\)\)/,
   '遠景のランニングは4つの実画像から選び、二重シルエットを描画しない');
@@ -57,7 +59,8 @@ assert.match(army,/visualTime\*\(u\.action==='blocked'\?1\.4:\.8\)/,'渋滞で�
 assert.match(army,/visibleSoldiers\+=visible\+farVisible/,'近景＋遠景の全員を表示する');
 assert.match(army,/layer\.count=visible;layer\.visible=visible>0/,'0体のGPUドローバッチは描画へ送らない');
 assert.match(army,/impostor\.mesh\.visible=farVisible>0/,'不可視の撮影LODも無駄なドローを避ける');
-assert.match(army,/rotation\.copy\(camera\.quaternion\)/,'遠景写真が上空視点で紙の端にならない');
+assert.match(army,/rotation\.setFromAxisAngle\(up,Math\.atan2\(cameraDx,cameraDz\)\)/,
+ '遠景写真は縦向きに固定し、俯角で脚が地面に埋没しない');
 assert.match(army,/!crowdRequires3DFromOverhead\(pixels,verticalViewRatio,overhead3dPixels\)/,
   '見下ろしの近くの兵士は本物の3Dモデルへ切り替える');
 assert.match(army,/bodyVisibleSoldiers\+=visible\+farVisible/,'衣装だけの表示は許さない');
