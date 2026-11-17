@@ -17,6 +17,8 @@ on:
       - 'qa/monster-summon-bestiary-regression.test.mjs'
       - 'src/monster-joint-motion.js'
       - 'src/monster-animation.js'
+      - 'src/m001-action-effects.js'
+      - 'qa/m001-crown-action-vfx.test.mjs'
       - 'src/monster-geometry.js'
       - 'src/creature-real-source-audit.js'
       - 'qa/creature-real-source-audit.test.mjs'
