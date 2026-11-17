@@ -197,6 +197,8 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const legSideCounts=Object.fromEntries(['thigh','knee','shin','boot-foot'].map(slot=>
     [slot,Object.fromEntries(['l','r'].map(side=>
       [side,descriptors.filter(d=>d.slot===slot&&d.side===side).length]))]));
+  const shoulderSideCounts=Object.fromEntries(['l','r'].map(side=>
+    [side,descriptors.filter(d=>d.slot==='shoulder'&&d.side===side).length]));
   for(const [slot,counts] of Object.entries(legSideCounts)){
     if(!counts.l||!counts.r)throw Error('鎧の左右割当が不正: '+slot+' 左'+counts.l+' 右'+counts.r);
   }
@@ -351,10 +353,11 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts,shoulderSideCounts,shoulderPlacement:'clavicle-outer-upperarm-forward-v76'};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
     diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
-      partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
+      partAxes,shoulderSideCounts,shoulderPlacement:'clavicle-outer-upperarm-forward-v76',
+      alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
       helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
       clearanceProfile:'independent-forward-axis-v2'}};
