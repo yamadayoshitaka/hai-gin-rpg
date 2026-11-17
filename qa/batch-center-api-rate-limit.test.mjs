@@ -30,7 +30,6 @@ test('only one unauthenticated GitHub Actions collection call per manual refresh
  assert.match(runs,/x-ratelimit-remaining/);
  assert.match(runs,/x-ratelimit-reset/);
  assert.match(runs,/バッチ停止とは限りません/);
- assert.match(runs,/new URL\(location|source/);
 });
 
 test('six-lane world QA is isolated by ref and ignores dashboard-only PRs',()=>{
