@@ -781,7 +781,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // No generic variant-2 horns or rigid ear spheres on the lion.
      // Rounded short feline ear cartilage is part of the head rig.
      const suffix=side<0?'L':'R';
-     const ear=g.group('ear'+suffix,[side*.215,.204,-.076],head);
+     const ear=g.group('ear'+suffix,
+       [side*(felineMaster.headWidth*.226),.204,-.076],head);
      g.foxPinna(ear,{
        side,height:felineMaster.earHeight,
        width:felineMaster.earWidth,spread:.038,
