@@ -5,10 +5,11 @@ import {
  CREATURE_PERFORMANCE
 } from '../src/combat-creature-performance.js';
 import {battleClosedBackCoverage} from '../src/character-system/battle-visual-pipeline.js';
+import {outfitSurfaceRole} from '../src/character-system/outfit-surface-policy.js';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 // Ground truth from the actual horse sculpt: saddle felt at
-// h=.1.22 + .40 and leather seat at h+.51, centered at z=-.18.
+// h=1.22 + .40 and leather seat at h+.51, centered at z=-.18.
 // Check the pelvis, not the boot/root, actually clears the saddle.
 for(const commanderMount of [false,true]){
  const horse={id:'h-1',type:'horse',category:'mount',alive:true,mountedBy:5,commanderMount};
@@ -37,10 +38,12 @@ const exposed=battleClosedBackCoverage({quality:'battle',
  panel:originalPanel,opaqueLining:0});
 assert.equal(exposed.closed,false,'never mask genuinely uncovered back skin');
 
+assert.equal(outfitSurfaceRole('male_ranger_body','MI_Ranger'),'body');
+assert.equal(outfitSurfaceRole('male_peasant_body','MI_Peasant'),'body');
 const outfit=read('src/character-system/rigged-outfit-runtime.js');
-assert.match(outfit,/if\\(lowDetail&&\\(opaqueTorsoLiningMaterials\\+sourceOpaqueTorsoMaterials\\)>0\\)/,
+assert.match(outfit,/if\(lowDetail&&\(opaqueTorsoLiningMaterials\+sourceOpaqueTorsoMaterials\)>0\)/,
  'only validated source-fabric costumes suppress redundant back plates');
-assert.match(outfit,/panel\\.visible=false;panel\\.userData\\.replacedByOpaqueSourceBack=true/,
+assert.match(outfit,/panel\.visible=false;panel\.userData\.replacedByOpaqueSourceBack=true/,
  'hide flat duplicate sheets, including in the captured GPU army');
 for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
  'l-cuirass-closed-flank','r-cuirass-closed-flank'])
