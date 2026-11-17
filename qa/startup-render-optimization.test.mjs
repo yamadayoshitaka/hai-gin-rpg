@@ -7,10 +7,12 @@ const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.ur
 assert.match(battleHtml,/id="battleLoading"/,'loading overlay is present before the game module');
 assert.match(battleHtml,/BATTLE_RESOLUTION_SCALE=\.92/,
  'closer to native resolution (92%) for readable mobile costumes');
-assert.match(battleHtml,/const nativeBattlePixelRatio=Math\.min\(devicePixelRatio,MASS_SIZE\?1\.1:TOWN_MODE\?1\.5:1\.0\)\*BATTLE_RESOLUTION_SCALE;/,
- 'The mobile pixel-ratio baseline keeps 92-percent quality while 50v50 holds a stable framebuffer');
-assert.match(battleHtml,/renderer\.setPixelRatio\(nativeBattlePixelRatio\)/,
- 'Initial renderer must use the computed mobile pixel-ratio budget');
+assert.match(battleHtml,/const nativeBattlePixelRatio=Math\.min\(devicePixelRatio,MASS_SIZE>=1000\?1\.24:MASS_SIZE\?1\.1:TOWN_MODE\?1\.5:1\.0\)\*BATTLE_RESOLUTION_SCALE;/,
+ '50v50 retains the baseline, dense crowd can upscale after FPS recovers');
+assert.match(battleHtml,/const initialBattlePixelRatio=MASS_SIZE>=1000\?Math\.min\(\.92,nativeBattlePixelRatio\):nativeBattlePixelRatio;/,
+ '1000v1000 starts at a safe resolution under GPU pressure');
+assert.match(battleHtml,/renderer\.setPixelRatio\(initialBattlePixelRatio\)/,
+ 'Initial renderer uses the computed safe battle pixel ratio');
 assert.match(battleHtml,/new ShaderPass\(FXAAShader\)/,'large battles use GPU FXAA instead of 4x MSAA');
 assert.match(battleHtml,/fxaaComposer\.render\(\)/,'the GPU anti-aliasing pass renders the final frame');
 const armySource=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
