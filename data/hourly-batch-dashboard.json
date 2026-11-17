@@ -1,8 +1,8 @@
 {
   "schemaVersion": 3,
-  "asOf": "2026-11-17T11:53:56.627Z",
+  "asOf": "2026-11-17T12:01:20.271Z",
   "tz": "Asia/Tokyo",
-  "description": "顔・髪／衣装／オブジェクト／モンスター／召喚獣／漫画の6系統。オブジェクト旧6担当並列QAを再利用。旧人物一括・旧モンスター一括は停止継続。ChatGPT各系統1回/時、GitHub QAは人物/獣6回/時・オブジェクト6担当並列/時。実3Dの改善とQA合格、main/Pages採用を分けて管理。",
+  "description": "顔・髪／衣装／オブジェクト／モンスター／召喚獣／漫画の6系統。オブジェクト旧6担当並列QAを再利用。旧人物一括・旧モンスター一括は停止継続。ChatGPT各系統1回/時、GitHub QAは人物/獣6回/時・オブジェクト6担当並列/時。実3Dの改善とQA合格、main/Pages採用を分けて管理。 2026-11-17: ChatGPT予定枠5件のため敵50体・召喚58体の改修タスクを統合（GitHub種族別QA・本編採用判定は分離）。旧召喚専用ChatGPTタスクは停止、実オブジェクト60体の定期タスク再開。",
   "groups": [
     {
       "id": "faceHair",
@@ -65,13 +65,15 @@
       "schedulerEnabled": true,
       "automationId": "6af9b03d15148191bc1a225739739ee5",
       "details": "60種の実モデルを台帳・造形・材質・配置/衝突・LOD・WebGLの6担当で監査。木・石・屋根・窓・家具・橋・城などをモデル正本createCatalogObject()から改修。画像だけで実造形改善とはしない。",
-      "goal": "同一3D工場をゲーム/プレビューで使用。実ソース改修・WebGL前後左右・Android FPSを確認して安全にmain→Pages採用。"
+      "goal": "同一3D工場をゲーム/プレビューで使用。実ソース改修・WebGL前後左右・Android FPSを確認して安全にmain→Pages採用。",
+      "schedulerLastVerified": "2026-11-17",
+      "automationSchedule": "毎時50分 ChatGPT実造形回帰。GitHub6担当QAは毎時12分に並列実行"
     },
     {
       "id": "creatureMonster",
       "name": "モンスター 6系統回帰",
       "subtitle": "敵50体・種族別の写実解剖/動作",
-      "source": "ChatGPT毎時実ソース回帰／GitHub Actions毎時6回QA",
+      "source": "ChatGPT敵・召喚共通毎時実ソース回帰／GitHub敵50体6担当QA",
       "autoEnabled": true,
       "time": "毎時05/15/25/35/45/55分",
       "last": null,
@@ -86,14 +88,14 @@
       "goal": "対象ID別の実メッシュ改善+WebGLとAndroid性能+ゲーム採用経路+権利QA必須。見本画像/QAのみでは実モデル採用しない。",
       "automationId": "6afc3d131abc81918e4895e04f1c82dd",
       "automationStart": "21:31 JST",
-      "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
+      "automationSchedule": "毎時1回（敵50体と召喚58体を同一ChatGPTタスクで改修し進捗別管理）",
       "schedulerLastVerified": "2026-11-17"
     },
     {
       "id": "creatureSummon",
       "name": "召喚獣 6系統回帰",
       "subtitle": "派生召喚50体＋専用8体・演出/リグ",
-      "source": "ChatGPT毎時実ソース回帰／GitHub Actions毎時6回QA",
+      "source": "ChatGPT敵・召喚共通毎時実ソース回帰／GitHub召喚獣6担当QA",
       "autoEnabled": true,
       "time": "毎時05/15/25/35/45/55分",
       "last": null,
@@ -106,10 +108,11 @@
       "schedulerEnabled": true,
       "details": "モンスター派生50体＋専用8体の解剖・衣装・召喚演出/飛行/騎乗・攻撃・LODを系統別に巡回。人型は人物母体から派生、獣型は動物本来の骨格。",
       "goal": "敵版と召喚版の色・サイズ・動作/FX差分を検査し、採用モデルの同一性と50vs50/1000vs1000負荷を検証。",
-      "automationId": "6afc3d15e0088191a58eed222e3434d6",
-      "automationStart": "21:46 JST",
-      "automationSchedule": "毎時1回、担当6工程を巡回（ChatGPT側の実改修はGitHub QAとは別）",
-      "schedulerLastVerified": "2026-11-17"
+      "automationId": "6afc3d131abc81918e4895e04f1c82dd",
+      "automationStart": "21:31 JST（敵50体と共通）",
+      "automationSchedule": "敵50体と統合して毎時31分にChatGPT実改修。召喚獣の6担当QAは独立して毎時6回",
+      "schedulerLastVerified": "2026-11-17",
+      "sharedAutomation": true
     },
     {
       "id": "anime",
@@ -130,7 +133,8 @@
       "goal": "追加有料API予算0円。無料枠で実生成できたものだけ検査・仮登録・Pages公開。ChatGPT Plus内の画像作成は画面から開始。",
       "schedulerEnabled": true,
       "lastResult": "2026-11-15T14:23:18Z ChatGPT回帰実ソース修正PR #415、画像0枚。2026-11-15T14:44:01Z GitHub Free画像生成ジョブ起動。新画像の成功・仮登録は未確認。",
-      "blockedReason": "2026-11-14のCloudflare実画像生成は無料枠上限(HTTP 429/4006)で新規0枚。翌日の無料枠の利用可否は次の生成ジョブ結果で判定。ChatGPT回帰定期タスクは現在ON。"
+      "blockedReason": "2026-11-14のCloudflare実画像生成は無料枠上限(HTTP 429/4006)で新規0枚。翌日の無料枠の利用可否は次の生成ジョブ結果で判定。ChatGPT回帰定期タスクは現在ON。",
+      "automationId": "6af8e09654d881918c86196af8efb312"
     }
   ]
 }
