@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-face-flame-wing-v21-20261118',
+     '&v=phoenix-hand-face-stable-v22-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -40,6 +40,7 @@ const ids=['m011','m012','m013','m014'];
       throw Error(id+' rebuilt plumage missing: '+JSON.stringify(state));
     if(id==='m013'){
      const shape=state.phoenix;
+     if(!state.revision?.includes('stable-v8'))throw Error('Old Phoenix revision still loaded: '+state.revision);
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
        shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
        shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||
@@ -60,7 +61,8 @@ const ids=['m011','m012','m013','m014'];
        !shape.facialFlameMesh||!shape.eyesUncovered||
         shape.facialFlameVanes<10||!shape.guardianFeatherHands||
         !Array.isArray(shape.handFeathersPerSide)||
-        !shape.handFeathersPerSide.every(n=>n>=18)||
+        !shape.handFeathersPerSide.every(n=>n>=82)||
+        !shape.highQualityHandFeathers||
         shape.tailLength<4.55||shape.waveMeshes!==7||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
