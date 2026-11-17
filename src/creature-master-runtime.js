@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 import {MONSTER_BY_ID} from './monster-catalog.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=m001-face-rooted-mane-v17-20261117';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=m001-slim-nose-eye-contour-v18-20261117';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js?v=m001-ready-crouch-v7-20261117';
 import {createCosplayedHumanoidMonster} from './monster-character-cosplay.js';
 import {femaleSummonCosplayFor} from './female-summon-forms.js';

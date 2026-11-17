@@ -336,14 +336,16 @@ for(const id of remeshed){
     const eyes=meshes.filter(m=>m.name==='eye');
     assert.equal(eyes.length,2);
     const irisSpacing=Math.abs(eyes[0].position.x-eyes[1].position.x);
-    assert.ok(irisSpacing>.265&&irisSpacing<.285,
-      'm001 paired iris centres must be closer than previous 0.332 spacing');
+    assert.ok(irisSpacing>.235&&irisSpacing<.245,
+      'm001 paired irises must move from 0.276 to 0.240 and remain symmetric');
     assert.ok(eyes.every(m=>Math.abs(m.position.x)<.15&&
       m.position.z>.170&&m.position.z<.200),
       'm001 flat iris must sit inside orbital bone, not float in front');
     const skull=meshes.find(m=>m.name==='organic-cranium-m001');
     assert.ok(skull?.userData.canineEyeSocketsRecessed,
       'wolf-king source skull must be physically recessed, not padded with spheres');
+    assert.equal(skull.userData.canineEyeSocketCenterX,.128,
+      'skin recess must follow the new narrow eye positions');
     assert.ok(skull.userData.anatomicalStations>=9,
       'photo-wolf wedge skull needs additional orbital/zygoma cross sections');
     assert.ok(skull.userData.invertedTriangleWolfMask,
@@ -427,7 +429,7 @@ for(const id of remeshed){
       'm001 needs two anatomical brow ridges');
     const tinyFace=model.userData.pivots['m001-face-core'];
     assert.ok(tinyFace?.isGroup,'m001 must use an independent small-face group');
-    assert.ok(Math.abs(tinyFace.scale.x-.67)<1e-7&&
+    assert.ok(Math.abs(tinyFace.scale.x-.64)<1e-7&&
       Math.abs(tinyFace.scale.y-.79)<1e-7&&
       Math.abs(tinyFace.scale.z-.82)<1e-7,
       'm001 must narrow the face laterally but retain orbital depth/height');
@@ -450,6 +452,18 @@ for(const id of remeshed){
       'm001 scaled cranium tip must not form a grey button above the nose');
     assert.ok(skull.userData.continuousWolfSkull&&skull.userData.axialAnatomy,
       'm001 face must be one continuous ring loft, NOT a spherical cranium');
+    assert.ok(skull.userData.anatomicalStations>=11,
+      'nasal bridge and cheeks need enough anatomical stations to taper cleanly');
+    const nasalBridge=meshes.find(m=>
+      m.name==='beast-continuous-nasal-bridge-m001');
+    const bridgeX=nasalBridge.geometry.getAttribute('position');
+    let maxBridgeWidth=0;
+    for(let i=0;i<bridgeX.count;i++)
+      maxBridgeWidth=Math.max(maxBridgeWidth,Math.abs(bridgeX.getX(i)));
+    assert.ok(maxBridgeWidth>.10&&maxBridgeWidth<.153,
+      'm001 nasal dorsum must be narrower but not pencil-thin or detached');
+    assert.ok(irisSpacing*tinyFace.scale.x<.160,
+      'eyes must also be physically closer in the rendered head space');
     assert.equal(meshes.filter(m=>m.name==='m001-ruff-root-tissue').length,1,
       'concealed throat tissue must support mane roots without a face ball');
     assert.ok(eyes.every(m=>m.parent===tinyFace),
@@ -493,7 +507,8 @@ for(const id of remeshed){
       m.isMesh&&m.userData.furStrands);
     let blockedRoots=0,allRoots=0,anteriorCheekRoots=0,
       inwardCheekTips=0,foreheadRoots=0,scalpRoots=0,
-      scalpInwardTips=0,scalpLeft=0,scalpRight=0;
+      scalpInwardTips=0,scalpLeft=0,scalpRight=0,
+      fittedCrown=0,fittedNarrowCheek=0;
     for(const coat of headCoats){
       const p=coat.geometry.getAttribute('position');
       for(let j=0;j+4<p.count;j+=5){
@@ -525,15 +540,23 @@ for(const id of remeshed){
              Math.abs(tipX)>.113&&tipZ>z+.018)
             scalpInwardTips++;
         }
-        if(y>.209&&z>.132&&Math.abs(x)>.071&&
-          Math.abs(x)<.219)foreheadRoots++;
+        if(y>.156&&y<.245&&z>.090&&z<.182&&
+          Math.abs(x)<.175){
+          foreheadRoots++;
+          if(Math.abs(x)<.132)fittedCrown++;
+        }
+        if(Math.abs(x)>.105&&Math.abs(x)<.174&&
+          z>.117&&z<.249&&y>-.102&&y<.170)
+          fittedNarrowCheek++;
       }
     }
     assert.ok(allRoots>1500,'perimeter should have body-like follicle coverage');
     assert.ok(anteriorCheekRoots>40&&inwardCheekTips>30,
       'front cheek curtains must grow forward and frame the centered face');
-    assert.ok(foreheadRoots>20,
-      'forelock follicles must grow from the brow perimeter, not the nape');
+    assert.ok(foreheadRoots>25&&fittedCrown>20,
+      'fitted crown must grow from close to the forehead, not a floating cap');
+    assert.ok(fittedNarrowCheek>35,
+      'mane follicles must follow the new narrow facial outline');
     assert.ok(scalpRoots>55&&scalpInwardTips>20,
       'm001 needs dense FACE-rooted underfur with inward guard hair');
     assert.ok(scalpLeft>20&&scalpRight>20,
@@ -584,7 +607,7 @@ try{
  });
  assert.equal(hair,0,'low LOD must not allocate any long fur ribbons');
  assert.equal(lowMane,1,'low LOD needs one inexpensive volumetric mane');
- assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.67,
+ assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.64,
    'low LOD must retain compact connected face proportions');
 }finally{disposeMonsterSculpture(lowKing);}
 // PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.
