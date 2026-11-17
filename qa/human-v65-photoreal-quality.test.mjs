@@ -27,7 +27,8 @@ test('v70: real iris pigment, anatomical shadows and studio fivefold hair fideli
  assert.ok(v70FaceReliefShadow({nx:.94,ny:.22,front:1})<.001);
  const faceStudio=readFileSync('face-mesh-studio.html','utf8');
  const bodyStudio=readFileSync('face-body-studio.html','utf8');
- assert.match(faceStudio,/visualFiberMultiplier:5,staticGroom:true/);
+ assert.match(faceStudio,/visualFiberMultiplier:10,staticGroom:true/,'approved tenfold rooted hair should be checked instead of the retired fivefold value');
+ assert.match(bodyStudio,/<option value="10" selected>10倍/,'body studio must boot into the same tenfold hair setting');
  assert.match(bodyStudio,/applyHeroineSkinMaterial\(model\.face\)/);
  assert.match(bodyStudio,/applyHeroineSkinMaterial\(next\.face\)/);
 });
