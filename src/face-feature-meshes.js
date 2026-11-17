@@ -61,7 +61,7 @@ function pigmentFactor(base,tint,opacity){
 export function v67NaturalEyeMakeup({nx,ny,front,lidY,gender='female'}){
  if(gender!=='female')return {shadow:0,lowerLift:0};
  const visibility=clamp(front,0,1);
- const shadow=cosmeticOpacity(.13)*bell(nx,.346,.125)*bell(ny,lidY+.030,.038)*visibility;
+ const shadow=cosmeticOpacity(.13)*bell(nx,.346,.125)*bell(ny,lidY+.030,.031)*visibility;
  const lowerLift=.019*bell(nx,.346,.118)*bell(ny,lidY-.055,.022)*visibility;
  return {shadow,lowerLift};
 }
