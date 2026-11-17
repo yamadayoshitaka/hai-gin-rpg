@@ -92,7 +92,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,0);
  assert.ok(female.report.detailedParts.irisPolarAngleRadians>.55);
  assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
- assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.051,
+ assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.057,
   'Female upper and lower lips must use the selected half-width option');
  assert.equal(male.report.detailedParts.mouthHalfWidthFraction,.044,
   'Male inherits the same smaller structural mouth, without lipstick');

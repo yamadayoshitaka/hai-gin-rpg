@@ -19,7 +19,9 @@ test('female cosmetics receive fivefold pigment without applying makeup to men',
  assert.equal(male.shadow,0);
  assert.equal(rear.shadow,0);
  const sculpt=readFileSync(new URL('../src/face-feature-meshes.js',import.meta.url),'utf8');
- assert.match(sculpt,/const halfWidth=d\.x\*\(female\?\.051:\.044\)/,'female lip surface must grow without changing male mouth');
+ assert.match(sculpt,/const halfWidth=d\.x\*\(female\?\.057:\.044\)/,'female lip surface must grow without changing male mouth');
+ assert.match(sculpt,/const mouthX=.*d\.x\*\.066\*settings\.lipstickWidth/,'lip pigment follows the widened mouth');
+ assert.match(sculpt,/const anatomicalLipX=.*d\.x\*\.073\*/s,'wider lip tint stays inside the anatomical mouth');
  assert.match(sculpt,/cosmeticOpacity\(\.32\)\*fadeU\*fadeV/,'full vermilion tint');
  assert.match(sculpt,/cosmeticOpacity\(\.64\)\*bell\(nx/,'cheek makeup must receive the same multiplier');
  assert.match(sculpt,/noseBridgeContour/,'nose contours are restricted to the real face skin');
@@ -64,4 +66,26 @@ test('pointed groom guides ease toward the tip instead of forming bulbous spikes
  assert.ok(mid.y>0&&end.y>0);
  assert.ok(end.y<mid.y*1.1,'blunt protruding terminal spike');
  assert.deepEqual(groomGuideOffset(profile,{t:0,zone:'crown',partSide:1}),{x:0,y:0,z:0});
+});
+
+test('face/body studios and battle use the same pigment module identity',()=>{
+ const targets=[
+  '../src/independent-face-masters.js',
+  '../src/character-system/battle-artist-head-graft.js',
+  '../face-mesh-studio.html',
+  '../face-body-studio.html',
+  '../male-body-studio.html',
+  '../tactics-wireframe.html'
+ ];
+ const refs=targets.map(path=>{
+  const source=readFileSync(new URL(path,import.meta.url),'utf8');
+  const versions=[...source.matchAll(/(?:face-feature-meshes|independent-face-masters|battle-artist-head-graft)\.js\?v=([\w-]+)/g)]
+   .map(m=>m[1]);
+  assert.ok(versions.length>0,path+' must pin the three-dimensional face module');
+  return {path,versions};
+ });
+ const canonical=refs[0].versions[0];
+ for(const {path,versions} of refs)
+  assert.ok(versions.every(v=>v===canonical),
+   path+' imported incompatible face modules; cosmetics/vertex tint may desynchronize');
 });
