@@ -14,7 +14,7 @@ on:
       - 'creature-model-adoption.html'
       - 'qa/creature-game-model-routing.test.mjs'
       - 'qa/monster-canine-quality-rollout.test.mjs'
-      - 'src/feline-master-variants.js src/beast-reference-quality.js'
+      - 'src/feline-master-variants.js'
       - 'src/beast-reference-quality.js'
       - 'qa/feline-master-m007-m010.test.mjs'
       - 'src/combat-action-spec.js'
@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/monster-beastfolk-manifest.js src/monster-beastfolk-geometry.js src/monster-summon-registry.js src/monster-summon-renderer.js src/creature-wolf-hybrid.js src/creature-dragon-hybrids.js src/combat-creature-geometry.js src/creature-summon-humanoid-anatomy.js src/combat-creature-performance.js src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/feline-master-variants.js src/creature-game-model-routing.js src/battle-registered-monster-model.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-cosplay-pigmentation.js src/monster-humanoid-combat-poses.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
+          for file in src/monster-beastfolk-manifest.js src/monster-beastfolk-geometry.js src/monster-summon-registry.js src/monster-summon-renderer.js src/creature-wolf-hybrid.js src/creature-dragon-hybrids.js src/combat-creature-geometry.js src/creature-summon-humanoid-anatomy.js src/combat-creature-performance.js src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/monster-geometry.js src/feline-master-variants.js src/beast-reference-quality.js src/creature-game-model-routing.js src/battle-registered-monster-model.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-cosplay-pigmentation.js src/monster-humanoid-combat-poses.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
             node --check "$file"
           done
       - name: Install pinned Three.js geometry runtime
