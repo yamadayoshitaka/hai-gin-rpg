@@ -7,7 +7,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261118-shoulder-cape-v78';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261118-exterior-shoulder-caps-v79';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=20261118-outer-acromion-v80';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
 import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-full-root-fibers2';
