@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-makeup5-nose-braid-v1';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
-import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=66';
-import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=50';
+import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
+import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-soft-tips-v1';
 
 /**
  * Mobile-preview wig made of real scalp-rooted 3D lock ribbons.
