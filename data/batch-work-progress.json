@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T04:52:48+09:00",
+      "lastRunAt": "2026-11-18T07:50:16+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "5種の実メッシュ接合・荷重支持改善をDraft PR #624へ保存（描画QA保留）",
-      "summary": "world.enabled=true、正本60種分類。src/object-catalog.jsでベンチ、掲示板、木柵、荷車、石柵の5種に木組み/荷重支持/車軸/石積みディテールを実装。ソースSHA d60c67acc06626e7a7aba3c87e0d4dad78fa4c8a。Draft PR #624。Node/WebGL新旧比較/Android/6レーンCI未検証、GLB0、ゲーム採用0、Pages0。既存PR #614/#620の旧QA失敗と#619修正の検証は継続。",
-      "nextAction": "PR #624でnode --check src/object-catalog.js、qa/world-quality-contract.test.mjs、qa/object-list-catalog.test.mjs、qa/stage-static-instancing.test.mjsと6レーンを実行し、5種のWebGL前後比較・Android/FPSを確認。既存PR #614/#620/#619のCI滞留も解消してから安全にマージ/Pages公開。",
+      "subject": "PR #624 旧サークルUI QA修正＋鍵Lv1〜5扉の実3D木組み補強",
+      "summary": "world.enabled=true。PR #624のarchitecture/mobile失敗はqa/battle-unified-voice-and-intent.test.mjs:62の廃止済み命令ポップアップ期待値。現行の単押し部隊選択・視点切替、ダブルタップ拡大、対象選択を検証するQAに更新（95f909af）。さらに既存PR #624のsrc/object-catalog.jsで鍵Lv1〜5の5種類に板目地・裏側の貫と斜材・鍛鉄蝶番と鋲・敷居・水切りの実メッシュを追加（b7e7d922）。今回のNode/WebGL/Android QA実行結果は未取得、GLB0、main採用0、Pages公開0。6レーンの過去成功は今回の品質合格ではない。",
+      "nextAction": "PR #624 head b7e7d922のCIを確認し、node --checkとworld-quality-contract/object-list-catalog/stage-static-instancing、architecture/mobileテストを再検証。扉Lv1〜5の表裏・斜材・蝶番の新旧WebGL画像と接地・1000vs1000 FPSを検査。全合格までDraft・未マージ。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -131,20 +131,20 @@
       },
       "evidence": [
         {
-          "label": "5 object structural geometry source commit",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d60c67acc06626e7a7aba3c87e0d4dad78fa4c8a"
+          "label": "5扉の実メッシュ構造改修",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b7e7d9222bd2db5dbd248fb063341fd55cd6861b"
         },
         {
-          "label": "Draft PR #624",
+          "label": "旧サークルQA契約修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/95f909af46a37a86d82232a4c1ef35fc36d0caac"
+        },
+        {
+          "label": "継続Draft PR #624",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
         },
         {
-          "label": "PR #614 failed interaction QA",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44141156069"
-        },
-        {
-          "label": "PR #620 failed architecture QA",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44151633344"
+          "label": "失敗した旧architecture CI",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930260"
         }
       ],
       "lastRunOutcome": {
@@ -157,11 +157,12 @@
       },
       "operational": {
         "blockers": [
-          "Draft PR #624 static/Node and six-lane QA not yet executed",
-          "Five per-ID before/after WebGL screenshots and Android/1000v1000 FPS unverified",
-          "Prior PR #614 interaction and #620 architecture CI failures need validation against #619"
+          "PR #624 head b7e7d922のNode構文・3件QAとarchitecture/mobile CI結果未確認",
+          "鍵Lv1〜5の実WebGL前後・裏側接合と衝突/配置の個別QA未実施",
+          "Androidおよび1000vs1000 FPS未計測",
+          "GLB/高密度原型再生成なし・main未採用・Pages未公開"
         ],
-        "speedPlan": "PR #624 QA: Node check and three world tests; WebGL five ID screenshot diff; check PR #614/#620 legacy test fixes before merging.",
+        "speedPlan": "既存PR #624のCI失敗ジョブから再開し、旧テスト修正後の実行結果を検査。5扉のWebGL前後比較を最優先、失敗なら同一PR内で修正。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
@@ -169,15 +170,15 @@
           "newSourceCommits": 1,
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
-          "sourceChangedIds": [
-            "town_bench_001",
-            "town_notice_001",
-            "town_fence_001",
-            "town_handcart_001",
-            "stone_fence_001"
-          ],
           "webglPassedIds": [],
           "gameAppliedIds": [],
+          "sourceChangedIds": [
+            "entry_door_lv1_001",
+            "entry_door_lv2_001",
+            "entry_door_lv3_001",
+            "entry_door_lv4_001",
+            "entry_door_lv5_001"
+          ],
           "publicVerified": 0
         }
       },

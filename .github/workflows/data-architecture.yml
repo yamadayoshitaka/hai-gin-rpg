@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install deterministic Three.js geometry dependency
+        run: npm install --no-save --package-lock=false three@0.160.1
       - name: Full replacement contract
         run: npm run test:full-replacement
       - name: Syntax and imports

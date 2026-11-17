@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-liner-eye-v74';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=49';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
@@ -61,6 +61,9 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const rimMask=bell(ax,.18,.068)*bell(yn,.530,.026)*front;
  // Narrow central bridge elevation with a feathered root into the brow.
  const bridgeRidge=bell(ax,0,.073)*bell(yn,.646,.108)*front*smooth(.27,.38,yn);
+ // v75: a continuous cartilage-backed nasal dorsum and sidewall planes.
+ const dorsalPlane=bell(ax,0,.082)*bell(yn,.644,.103)*front*smooth(.39,.49,yn);
+ const nasalSidePlane=bell(ax,.108,.032)*bell(yn,.625,.074)*front;
  const cartilage=v65NasalCartilageDelta({xn,yn,zn,depth,height,controls});
  return {
   dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
@@ -69,7 +72,8 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
     -.009*controls.nostrilCover*rimMask)+cartilage.dy,
   dz:depth*(.025*bridgeSupport+.015*tipSupport-.016*mouthSupport
    +.031*controls.noseBridgeSharpness*bridgeRidge
-   +.004*controls.nostrilCover*rimMask+.004*tipLift)+cartilage.dz,
+   +.004*controls.nostrilCover*rimMask+.004*tipLift
+   +.0070*dorsalPlane-.0028*nasalSidePlane)+cartilage.dz,
   noseSupport,mouthSupport
  };
 }
@@ -87,7 +91,7 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  * Do not change the nose, upper cheeks, eye sockets, back of head, neck
  * attachment, or either side's ear.
  */
-export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
+export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height,ageStrength=0}){
  const ax=Math.abs(xn),front=smooth(.25,.56,zn);
  // Cheek correction occupies the anterior middle/lower cheek surface.
  // Zero at centre mouth, temples, ears and on the rear skull.
@@ -101,9 +105,18 @@ export function femaleCheekJawDelta({xn,yn,zn,offsetX,depth,height}){
  // Refill gaunt mid/lower cheeks in depth rather than ballooning the
  // cheekbone or moving the eye sockets. The masks vanish near ears,
  // lips, jaw apex and the rear of the head.
+ // Anatomically curved, shallow nasolabial groove with adjacent soft
+ // cheek mound. Stronger relief is reserved for older characters.
+ const foldCentre=.192+.077*smooth(.48,.58,yn);
+ const foldEnvelope=bell(yn,.529,.083)*front*
+  smooth(.14,.18,ax)*(1-smooth(.46,.54,ax));
+ const foldGroove=bell(ax,foldCentre,.027)*foldEnvelope;
+ const foldMound=bell(ax,foldCentre+.043,.046)*foldEnvelope;
  const nasolabialFold=bell(ax,.32,.095)*bell(yn,.546,.065)*front;
-  const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport-
-   .0032*nasolabialFold);
+ const ageWeight=THREE.MathUtils.clamp(Number(ageStrength)||0,0,1);
+ const dz=depth*(.022*cheekSupport+.006*mouthCornerSupport-
+  .0022*nasolabialFold-(.0044+.0032*ageWeight)*foldGroove+
+  .0028*foldMound);
  // Full support on the actual chin outline, not only at the centreline.
  // Taper smoothly to zero before reaching the cheeks (yn >= .485).
  const jawBand=bell(yn,.30,.105)*(1-smooth(.39,.45,yn))*front;
@@ -206,7 +219,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y,controls
   });
   const surfaceFairing=femaleCheekJawDelta({
-   xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y
+   xn,yn,zn,offsetX:x-cx,depth:d.z,height:d.y,
+   ageStrength:demo.age.wrinkles
   });
   // Shared v8 facial topology and nose/mouth proportions. Masculine
   // profile retains a broader lower jaw and slightly smaller, flatter eyes.

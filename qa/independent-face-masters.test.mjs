@@ -2522,3 +2522,30 @@ test('v74: genuinely different 10x scalp-rooted salon and curtain styles',()=>{
   wig.dispose();
  }
 });
+
+test('v75: true bilateral canthus contours, nasal bridge and age-sensitive nasolabial relief',()=>{
+ const donor=fixture().source;
+ const head=makeIndependentFaceMaster(donor,'female');
+ for(const side of ['LEFT','RIGHT']){
+  for(const lid of ['UPPER','LOWER']){
+   assert.equal(head.parts.getObjectByName(side+'_'+lid+'_ANATOMICAL_EYELID')
+    .userData.v75MirroredAnatomicalCanthi,true);
+  }
+ }
+ const left=head.parts.getObjectByName('LEFT_UPPER_ANATOMICAL_EYELID');
+ const right=head.parts.getObjectByName('RIGHT_UPPER_ANATOMICAL_EYELID');
+ const a=left.geometry.getAttribute('position'),b=right.geometry.getAttribute('position');
+ assert.ok(Math.abs(a.getY(0)-b.getY(28))<1e-6,
+  'outer canthus height must mirror between the two eyes');
+ const nose=femaleInnerFeatureDelta({
+  xn:0,yn:.65,zn:.98,offsetX:0,depth:.3,height:.4,controls:FEMALE_V7_DEFAULTS
+ });
+ assert.ok(nose.dz>.001,'nasal bridge must be sculpted in the actual donor skin');
+ const point={xn:.23,yn:.53,zn:.98,offsetX:.0368,depth:.3,height:.4};
+ const young=femaleCheekJawDelta({...point,ageStrength:0});
+ const older=femaleCheekJawDelta({...point,ageStrength:.9});
+ assert.ok(older.dz<young.dz-.0004,
+  'the curved nasolabial valley must gain relief gradually with age');
+ assert.ok(Math.abs(femaleCheekJawDelta({...point,xn:.9,ageStrength:.9}).dz)<1e-7,
+  'nasolabial relief must not modify the silhouette or ears');
+});
