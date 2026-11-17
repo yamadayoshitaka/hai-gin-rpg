@@ -299,19 +299,27 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // deliberately removed: these four overlapping curved lames follow the
     // actually sampled 65-bone garment surface. The upper back is steel rather
     // than a bare blue tunic, without restoring a giant flat billboard.
-    const rearTop=cy+H*.091,rearBottom=hips+H*.105;
+    // Shoulders are BELOW the hairline. The old +.091H top projected a
+    // giant bright plate behind the head, and .88*sx crossed both arm joints.
+    // Use the centered garment's back samples as a stable curvature guide;
+    // querying sparse outer-X bands per vertex made the surface spike outward.
+    const rearTop=cy+H*.012,rearBottom=hips+H*.124;
     const rearSpan=Math.max(H*.16,rearTop-rearBottom);
-    const rearHalfWidth=sx*(heavy?.88:.82);
+    const rearHalfWidth=sx*(heavy?.72:.65);
+    const upperBack=surfaceAt(rearTop-H*.055,true,mx);
+    const lowerBack=surfaceAt(rearBottom+H*.025,true,mx);
     function rearContour(u,y){
       const t=THREE.MathUtils.clamp((rearTop-y)/rearSpan,0,1);
-      const shoulder=.72+.28*Math.sin(Math.PI*(.14+.76*t));
-      const neckCut=1-.12*Math.exp(-Math.pow(t/.12,2));
+      const shoulder=.65+.35*Math.sin(Math.PI*(.10+.75*t));
       const waistTaper=1-.14*t;
-      const x=mx+u*rearHalfWidth*shoulder*neckCut*waistTaper;
-      // Negative Z is the back of the actor. Small center relief follows the
-      // spine and scapulae; front-facing rectangular planes are never used.
-      const z=surfaceAt(y,true,x)-H*(.011+.008*(1-u*u))
-        -H*.003*Math.sin(Math.PI*t)*Math.cos(u*Math.PI*2);
+      const x=mx+u*rearHalfWidth*shoulder*waistTaper;
+      // Smooth and symmetric over both scapulae, no individual X sample
+      // jumps or excessive shoulder width. A mild lateral rounding follows
+      // the actual body instead of creating a rear billboard.
+      const center=THREE.MathUtils.lerp(upperBack,lowerBack,t);
+      const sampled=surfaceAt(y,true,mx);
+      const correction=THREE.MathUtils.clamp(sampled-center,-H*.025,H*.025);
+      const z=center+correction*.24-H*.012+H*.015*u*u;
       return v(x,y,z);
     }
     const rearPositions=[],rearUv=[],rearFaces=[];
@@ -603,46 +611,70 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   if(style.hem==='short'&&!style.armor)ring('double-stitched-short-hem',sx*.56,H*.003,mx,hips-H*.023,mz,trim);
 
+  // A cape is a cloth PANEL running shoulder-to-hem, NOT a half-cylinder.
+  // CylinderGeometry bent the edges around the arms and placed the entire
+  // fabric in front of the breastplate in side views. All vertices below are
+  // authored in the same skinned 65-bone garment world frame as the shoulders.
+  function addBackShoulderCape(name,mat){
+    const top=cy+H*.016,bottom=Math.max(ankle+H*.14,hips-H*.40);
+    const topHalf=Math.max(left.distanceTo(right)*.53,sx*.60);
+    const hemHalf=topHalf*1.75;
+    // Anchor behind BOTH scapulae. A single Z plane at the neckline avoids
+    // body-surface sampling jumps and stays outside the metal cuirass.
+    const upperBack=surfaceAt(cy-H*.055,true,mx);
+    const waistBack=surfaceAt(hips+H*.124,true,mx);
+    const backAnchor=Math.min(upperBack,waistBack)-H*.065;
+    const cols=battle?16:32,rows=battle?8:20;
+    const positions=[],uv=[],indices=[];
+    for(let row=0;row<=rows;row++){
+      const t=row/rows;
+      const halfWidth=THREE.MathUtils.lerp(topHalf,hemHalf,t);
+      for(let col=0;col<=cols;col++){
+        const u=col/cols*2-1,edge=Math.abs(u);
+        const ripple=t*t*H*.009*Math.sin(7*u*Math.PI);
+        // Rounded lower corners hang freely; neither side can reach the
+        // character's positive-Z chest or intersect the forearms.
+        const x=mx+u*halfWidth*(1+.028*t*Math.sin(5*u*Math.PI));
+        const y=top+(bottom-top)*t+H*.014*edge*edge*t*t;
+        const z=backAnchor-H*(.018*t+.100*t*t)+H*.019*u*u+ripple;
+        positions.push(x,y,z);uv.push(col/cols,t);
+        if(row<rows&&col<cols){
+          const i=row*(cols+1)+col;
+          indices.push(i,i+cols+1,i+1,i+1,i+cols+1,i+cols+2);
+        }
+      }
+    }
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    geometry.setIndex(indices);geometry.computeVertexNormals();
+    const panel=add(name,geometry,mat);
+    panel.userData.shoulderCape={anchor:'both-clavicles',backZ:backAnchor,
+      topY:top,bottomY:bottom,topWidth:topHalf*2,hemWidth:hemHalf*2,
+      shoulderClearance:H*.065,clothPanel:true};
+    return {top,topHalf,backAnchor};
+  }
   if(style.cape){
-    const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);
-    // Three.js cylinder vertices use x=-r*cos(theta), z=r*sin(theta).
-    // PI..2PI is the REAL rear hemisphere (negative Z). The old
-    // PI/2..3PI/2 swept over the wearer's left/right side instead.
-    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,Math.PI,Math.PI);
-    geom.scale(1,1,sz/sx*.82);
-    add('three-dimensional-back-and-side-cape',geom,style.crown?material('damask',0xc7aacd):cloth,v(mx,(top+bottom)*.5,mz+sz*.02));
-    for(const s of [-1,1])orb('mantle-clasp',H*.027,mx+s*sx*.64,cy+H*.045,front,trim,32);
+    const cape=addBackShoulderCape('three-dimensional-back-and-side-cape',
+      style.crown?material('damask',0xc7aacd):cloth);
+    for(const side of [-1,1])
+      orb('mantle-clasp',H*.012,mx+side*cape.topHalf*.82,
+        cape.top-H*.009,cape.backAnchor+H*.007,trim,12);
   }
 
-
-  // Only the playable protagonist receives this distinctive mantle.
-  // The existing royal/strategist capes remain job-authored; do not double
-  // layer them. All ordinary soldiers and NPC job costumes stay unchanged.
+  // Every playable protagonist has a mantle, and every ordinary soldier does
+  // not. Royal/strategist/summoner job capes remain single, never doubled.
   if(isProtagonist&&!style.cape){
-    const top=cy+H*.075;
-    const bottom=Math.max(ankle+H*.12,hips-H*.43);
-    const cape=new THREE.CylinderGeometry(sx*.81,sx*1.60,top-bottom,
-      battle?20:48,battle?10:24,true,Math.PI,Math.PI);
-    const positions=cape.getAttribute('position'),uv=cape.getAttribute('uv');
-    for(let i=0;i<positions.count;i++){
-      const t=THREE.MathUtils.clamp(uv.getY(i),0,1);
-      const angle=Math.atan2(positions.getX(i),positions.getZ(i));
-      const fold=1+(.015+.055*t)*Math.sin(9*angle+2*t);
-      positions.setX(i,positions.getX(i)*fold);
-      positions.setZ(i,positions.getZ(i)*(sz/sx*1.27)*
-        (1+.04*t*Math.cos(7*angle+1.5*t)));
-    }
-    cape.computeVertexNormals();
     const mantleFabric=new THREE.MeshStandardMaterial({
-      map:textures.damask||textures.velvet||textures.linen,
-      color:0x496282,metalness:0,roughness:.88,side:THREE.DoubleSide
+      map:textures.linen||textures.damask,
+      color:0x8594af,metalness:0,roughness:.86,side:THREE.DoubleSide
     });
     mats.push(mantleFabric);
-    add('hero-protagonist-draped-mantle',cape,mantleFabric,
-      v(mx,(top+bottom)*.5,mz-H*.024));
+    const cape=addBackShoulderCape('hero-protagonist-draped-mantle',mantleFabric);
     for(const side of [-1,1])
-      orb(`hero-mantle-shoulder-clasp-${side<0?'l':'r'}`,
-        H*.015,mx+side*sx*.66,cy+H*.052,front+H*.007,gold,12);
+      orb(`hero-mantle-back-shoulder-button-${side<0?'l':'r'}`,
+        H*.012,mx+side*cape.topHalf*.82,
+        cape.top-H*.009,cape.backAnchor+H*.007,gold,12);
   }
 
   // Distinct field-commander silhouette, kept at both inspection and crowd
