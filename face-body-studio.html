@@ -156,11 +156,12 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster} from './src/independent-face-masters.js?v=20261118-realism-lash-lip-v2';
+import {makeIndependentFaceMaster} from './src/independent-face-masters.js?v=20261118-face-hair-fidelity-v70';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
-import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-realism-lash-lip-v2';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261118-hairline-quality-v2';
+import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-face-hair-fidelity-v70';
+import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=70';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261118-fine-fibre-v70';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
@@ -200,7 +201,7 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.03;
 renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
 const scene=new THREE.Scene();scene.background=new THREE.Color('#1c3449');
-scene.add(new THREE.HemisphereLight(0xfff5ec,0x657486,1.30));
+scene.add(new THREE.HemisphereLight(0xfff5ec,0x657486,1.12));
 const key=new THREE.DirectionalLight(0xfff7ed,2.35);
 key.position.set(2.5,4,4);scene.add(key);
 const rim=new THREE.DirectionalLight(0xd4e3ff,1.0);
@@ -516,6 +517,7 @@ function rebuildFaceOnBody(){
   uncutScalpSource.geometry.dispose();uncutScalpSource.geometry=next.face.geometry.clone();
  }
  applyFaceColorMode(next.face,'color',{contactColor,makeupType:v32PartMode?v32BodyPart.makeup:0});
+  applyHeroineSkinMaterial(next.face);
  next.root.add(bodyAttachment.root); // Reparent existing fitted body; no new GLB.
  if(wig){
   wig.root.removeFromParent();next.face.add(wig.root);
@@ -643,7 +645,7 @@ function syncLensPreset(){
  eyeColorInput.value=contactColor;
 }
 function paintLens(){
- if(model)applyFaceColorMode(model.face,'color',{contactColor,makeupType:v32PartMode?v32BodyPart.makeup:0});
+ if(model)applyFaceColorMode(model.face,'color',{contactColor,makeupType:v32PartMode?v32BodyPart.makeup:0});if(model)applyHeroineSkinMaterial(model.face);
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 eyePresetSelect.addEventListener('change',()=>{
@@ -966,7 +968,7 @@ frame();
   sourceHead=head.scene;
   model=makeIndependentFaceMaster(sourceHead,'female',{femaleControls:faceControls,
   partSelection:v32PartMode?resolvePartSelection('female',v32BodyPart).ids:null});
-  applyFaceColorMode(model.face,'color',{contactColor,makeupType:v32PartMode?v32BodyPart.makeup:0});
+  applyFaceColorMode(model.face,'color',{contactColor,makeupType:v32PartMode?v32BodyPart.makeup:0});if(model)applyHeroineSkinMaterial(model.face);
   bodyAttachment=attachIndependentHeadToBody(model,body.scene,{
    outfitSource:null,characterId:art.characterId,
    armor:palette.armor,cloth:palette.cloth
