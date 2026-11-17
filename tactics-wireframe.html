@@ -9612,6 +9612,8 @@ function applyOverviewCamera(mode){
  manualCameraSquad={key:overviewSelectedKey,id:String(node.id),team:node.team,mode};
  lastTeamCameraSquad.set(node.team,String(node.id));
  manualCameraFocusUntil=Infinity;
+ // A manual ally/enemy selection must override the previous automatic 50v50 contact.
+ automaticContactActorId=null;contactSquadId=null;
  if(mode==='person'){
   followSelectedCommander(node.id,node.team);
  }else if(mode==='squad'){
