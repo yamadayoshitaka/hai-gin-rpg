@@ -62,12 +62,12 @@
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
-      "lastRunAt": "2026-11-17T08:10:00+09:00",
-      "subject": "PR #426 m020 dorsal fin UV実修正・描画QA保留",
-      "summary": "monster.enabled=true。m020背びれ膜のprocedural fin生成器にUVを追加し、bake/PBRに必要なUV欠落を修正。実ソースSHA a67a424、チェックポイントSHA 6d7505c。Node/WebGL/Android未検証。m048も未検証。GLB0、ゲーム採用0、mainマージ/Pages公開なし。",
+      "lastRunAt": "2026-11-17T10:10:22+09:00",
+      "subject": "PR #426 m020尾びれ膜UV実ソース修正・描画QA未検証",
+      "summary": "monster.enabled=true。m020上下尾びれ膜に独立UVチャートを実装（source 12052055）。チェックポイント7fd167e。原型GLB0、対象別QA0、ゲーム採用0。m048未検証。main未マージ・未公開。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "m020 fin UVのNode構文・WebGL前後左右/UV/PBRとm048の動的境界を確認。E2E 3失敗ジョブ修正、Android FPS測定、108ID全数分類。",
+      "nextAction": "m020尾びれUVのNode構文/WebGL四方向/PBR、m048動的境界、Android FPSと既存E2E失敗を対象別に検証。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -79,30 +79,26 @@
       },
       "evidence": [
         {
-          "label": "m020 dorsal fin UV source",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a67a42415ea34a55500b82d0ddd43f76d59a854c"
+          "label": "m020 caudal UV source",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/12052055e37f1a78fee69ac6bccbe72b24c1e52b"
         },
         {
           "label": "checkpoint",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/6d7505c6ac2b99d011ce30e077f6ea2737e9d163"
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/7fd167e145c837be9513fc5280a5de3fbacbe5d4"
         },
         {
-          "label": "PR #426",
+          "label": "Draft PR #426",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/426"
-        },
-        {
-          "label": "split E2E failures",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43946658821"
         }
       ],
       "operational": {
         "blockers": [
-          "m020/m048 Node構文・四方向WebGL描画QA未完了",
+          "m020/m048 Node構文・WebGL四方向QA未完了",
           "Android FPS未計測",
-          "monster-manager/skirmish-two-legs/summon-gallery-mobile E2E失敗",
-          "正本108ID全数分類未完了"
+          "既存E2E 3ジョブ失敗",
+          "108ID全数分類未完了"
         ],
-        "speedPlan": "m020 fin UVとm048の静的・WebGL検証を優先し、失敗ジョブを個別修正。合格前はマージしない。",
+        "speedPlan": "PR #426のm020尾びれUV静的/描画QAを優先、失敗時に実ソース修正。",
         "lastRunOutcome": {
           "newSourceChangedIds": 1,
           "newQAPassed": 0,
