@@ -211,6 +211,10 @@ function layeredFeathers(parent,spec,detail,name,entries){
    for(let i=0;i<=steps;i++){
      const t=i/steps,sweep=Math.pow(Math.sin(Math.PI*t),.75);
      const center=a.clone().addScaledVector(dir,t);
+     // Optional curling geometry for living flame plumes; other vane
+     // shapes and source wing geometry are unchanged.
+     if(e.curl)center.addScaledVector(lateral,e.curl*Math.sin(Math.PI*t)*t);
+     if(e.rise)center.addScaledVector(normal,e.rise*Math.sin(Math.PI*t));
      const tone=mix(root,C[e.endTint??3],Math.pow(t,2.35)*(e.glow??.28));
      for(let j=0;j<=across;j++){
        const u=j/across*2-1;
@@ -791,6 +795,58 @@ function phoenixSculptedEyes(head,detail){
  head.userData.phoenixSculptedEyeLiner=true;
 }
 
+/** One merged flame-plumage mesh, rooted into brow, temple and cheek.
+ * Real curled vanes trail backwards, not forward across the eye sockets.
+ * No transparent billboards or per-feather draw calls.
+ */
+function phoenixCranialFireFeathers(head,s,detail){
+ const strands=[],n=detail==='low'?4:detail==='medium'?6:
+   detail==='source'?12:9;
+ for(const side of [-1,1]){
+  for(let i=0;i<n;i++){
+   const t=i/Math.max(1,n-1);
+   // Eyebrow roots stay above the eye socket (eye centre y=.050).
+   strands.push({
+    from:[side*(.045+.056*t),.145+.014*(i%2),.28-.20*t],
+    to:[side*(.135+.100*t),.24+.082*t,-.18-.54*t],
+    width:.023+.016*(1-t),normal:[side*.37,.88,.39],
+    ridge:.018,curl:side*(.035+.025*t),rise:.031,
+    tint:i%4===0?3:i%3===0?2:1,endTint:3,glow:.90
+   });
+   // Cheek flame roots stay BELOW and behind the eyeliner, so the
+   // new amber eyes and their pupil remain in clear view.
+   strands.push({
+    from:[side*(.135+.016*(i%2)),-.077-.019*t,.18-.22*t],
+    to:[side*(.195+.085*t),-.018+.055*t,-.31-.41*t],
+    width:.026+.016*(1-t),normal:[side*.75,.30,.57],
+    ridge:.015,curl:side*(.024+.020*t),rise:.024,
+    tint:i%3===0?1:i%3===1?2:0,endTint:3,glow:.88
+   });
+  }
+ }
+ const central=detail==='low'?3:7;
+ for(let i=0;i<central;i++){
+  const t=i/Math.max(1,central-1),side=i%2?-1:1;
+  strands.push({
+   from:[side*(.012+.030*t),.162,.23-.13*t],
+   to:[side*(.025+.073*t),.29+.074*t,-.22-.35*t],
+   width:.025+.007*t,normal:[side*.10,.94,.35],
+   ridge:.022,curl:side*.020,rise:.043,
+   tint:i%3===0?2:1,endTint:3,glow:.95
+  });
+ }
+ const flame=layeredFeathers(head,s,detail,
+  'phoenix-cranial-fire-plumage',strands);
+ flame.material.emissive.setHex(0xe9470c);
+ flame.material.emissiveIntensity=.39;
+ flame.material.roughness=.60;
+ flame.userData.phoenixCranialFireSculpt=true;
+ flame.userData.phoenixCranialFlameVanes=strands.length;
+ flame.userData.phoenixEyesUncovered=true;
+ addPhoenixWave(flame,'crest');
+ return flame;
+}
+
 function headAndCrest(g,s,p,torso,detail){
  const head=g.group('head',[0,s.id==='m014'?1.99:2.065,.365*p.neck],torso);
  // Phoenix crown is a compact, LONG skull: narrow brow, pronounced
@@ -849,7 +905,10 @@ function headAndCrest(g,s,p,torso,detail){
  }else{
    // A tiny phoenix skull cannot use the adult eagle's wide eye socket.
    // Recess both eyes into the narrow original head, not outside the mesh.
-   if(s.id==='m013')phoenixSculptedEyes(head,detail);
+   if(s.id==='m013'){
+     phoenixSculptedEyes(head,detail);
+     phoenixCranialFireFeathers(head,s,detail);
+   }
    else g.eyes(head,.235,.063,.172*p.head,.054);
  }
  const crest=[];
@@ -954,6 +1013,8 @@ export function buildGuardianDerivedBird(g,s){
   g.root.userData.phoenixTorsoRadiusY=.468;
   g.root.userData.phoenixNoExternalEars=true;
    g.root.userData.phoenixVisibleEyeliner=true;
+    g.root.userData.phoenixFaceFlames=true;
+    g.root.userData.phoenixMiniGuardianHandWings=true;
    g.root.userData.phoenixHandSkinHiddenUnderFeathers=true;
   g.root.userData.phoenixWingSpanFactor=p.wing[0];
  }
