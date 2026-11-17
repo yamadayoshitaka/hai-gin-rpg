@@ -53,7 +53,7 @@ const ids=['m011','m012','m013','m014'];
        !shape.realKnees||!shape.thighMuscles||
        !shape.floatingWingBandsRemoved||
        !shape.thighScales||!shape.shankScales||!shape.toeScales||
-       !shape.wingHandScales||!shape.chickenFeet||
+       !shape.wingHandScales||!shape.chickenFeet||!shape.flexedToes||
        !shape.neckScaleFade||!shape.headMicroScales||
        !shape.noEars||!shape.smallHead||!shape.longBeak||
        !shape.allBackCrest||shape.denseScales!==15*14||
