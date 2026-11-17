@@ -8,6 +8,7 @@ import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
 import {resolveJobMotion} from './job-motion-source.js?v=20261116-hero-skills';
 import {clipTimeForStepPhase,groundedModelY,footfallAtPhase,footPlantWeight} from './locomotion-sync.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.56';
+import {rigMotionBlendDuration,rigMotionBlendProgress} from './rig-motion-transition.js';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {attachHumanFaceControls} from '../facial-feature-runtime.js?v=1';
 const loader=new GLTFLoader(),assets=new Map();
@@ -67,6 +68,8 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  let locomotionPhase=null,plantStep=-1,plantedFoot=null;
  let stateName='idle',jumpTime=0,jumpDuration=.9;
  const bindings=new Map();let current=null,active=null,request=0;
+ let poseTransition=null;
+ const transitionTarget=new THREE.Quaternion();
  // Keep a stable bind pose for the entire character lifetime, across assets.
  model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
  model.updateMatrixWorld(true);
@@ -77,15 +80,15 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   await load(row.asset);
   return true;
  }
- async function play(state){
-  return playRow(resolveJobMotion(jobs,job,state),state);
+ async function play(state,options){
+  return playRow(resolveJobMotion(jobs,job,state),state,options);
  }
- async function playCommand(command){
+ async function playCommand(command,options){
   const row=(jobs?.[job]||[]).find(r=>r.command===command&&r.available===true);
-  return playRow(row,command);
+  return playRow(row,command,options);
  }
  function syncLocomotionPhase(phase){locomotionPhase=Number.isFinite(phase)?phase:null;}
- async function playRow(row,state){
+ async function playRow(row,state,{transition=true}={}){
   const id=++request;
   if(!row)return false;
   let b=bindings.get(row.asset);
@@ -105,6 +108,13 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   }
   if(id!==request)return false;
   const clip=b.clips.find(c=>c.name===row.clip);if(!clip)throw Error('Missing clip '+row.clip);
+  // Snapshot only the current mapped joints when switching clips.
+  // The fast GPU/atlas capture path opts out, preserving exact baked poses.
+  const priorState=stateName,duration=transition&&active?
+   rigMotionBlendDuration(priorState,state):0;
+  poseTransition=duration>0?{age:0,duration,poses:new Map()}:null;
+  if(poseTransition)for(const pair of b.pairs)
+   poseTransition.poses.set(pair.to,pair.to.quaternion.clone());
   for(const prev of bindings.values())prev.mixer.stopAllAction();
   active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','skill','cast','jump','dead','death','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;
   // Keep one-shot impact clips responsive without changing their skeletal
@@ -128,6 +138,15 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   // Avoid resetting the target skeleton each frame; mapped joints receive
   // absolute rotations from their immutable bind pose.
   applyRigPairs(THREE,active.pairs);
+  if(poseTransition){
+   poseTransition.age+=Math.max(0,Number(dt)||0);
+   const t=rigMotionBlendProgress(poseTransition.age,poseTransition.duration);
+   if(t>=1)poseTransition=null;
+   else for(const [bone,from] of poseTransition.poses){
+    transitionTarget.copy(bone.quaternion);
+    bone.quaternion.copy(from).slerp(transitionTarget,t);
+   }
+  }
   model.updateMatrixWorld(true);
   if(feet.length&&Number.isFinite(restFootY)&&stateName!=='jump'){
    const desiredY=groundedModelY(model.position.y,baselineY,restFootY,lowestFoot(),height);
@@ -171,8 +190,8 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
    model.position.z=THREE.MathUtils.lerp(model.position.z,0,Math.min(1,dt*15));
   }
  }
- function dispose(){request++;facialControls.dispose();face.dispose();for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
+ function dispose(){request++;poseTransition=null;facialControls.dispose();face.dispose();for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
  return {object3D,model,play,prefetch,playCommand,syncLocomotionPhase,update,dispose,face,facialControls,
   speak:text=>facialControls.speak(text),setFaceProfile:changes=>facialControls.setProfile(changes),
-  blink:()=>face.forceBlink(),diagnostics:()=>({face:face.diagnostics(),facialControls:facialControls.diagnostics(),state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
+  blink:()=>face.forceBlink(),diagnostics:()=>({face:face.diagnostics(),facialControls:facialControls.diagnostics(),state:stateName,active:!!active,motionBlendRemaining:poseTransition?Math.max(0,poseTransition.duration-poseTransition.age):0,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
 }
