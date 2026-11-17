@@ -22,7 +22,7 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
  const names=['frontL','frontR','rearL','rearR'];
  // Only the four unprotected sculpted wolves. The legacy generic gait
  // over-swung all four straight-looking limbs and left feet airborne.
- const springBeast=['m001','m002','m003','m004'].includes(speciesId);
+ const springBeast=['m001','m002','m003','m004','m005'].includes(speciesId);
  const referenceFeline=['m007','m008','m009','m010'].includes(speciesId);
  const phases=run&&spine==='feline'
    ?[0,.38*PI,1.02*PI,1.4*PI]
