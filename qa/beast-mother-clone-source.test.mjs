@@ -96,11 +96,14 @@ test('m007 is the feline physical mother; m008-m010 inherit nose and attached fe
    assert.ok(nose&&muzzle,'missing source-derived nose and mouth '+id);
    assert.ok(bounds(nose).max>bounds(muzzle).max+.04,
     id+' nasal cartilage must show ahead of light-colored upper lip');
-   const fascia=meshes(model).filter(x=>x.userData.donorSurfaceOverlap);
-   assert.equal(fascia.length,4,'all four feline ankles need connected surface '+id);
-   for(const name of limbs)
-    assert.equal(find(model,'feline-ankle-to-toe-fascia-'+name).parent,
-      model.userData.pivots['toe'+name]);
+   const skins=meshes(model).filter(x=>x.userData.felineContinuousSurface);
+   assert.equal(skins.length,4,'four cats paws must connect through weighted limbs '+id);
+   assert.equal(meshes(model).filter(x=>x.userData.donorSurfaceOverlap).length,0);
+   for(const name of limbs){
+    const skin=find(model,'feline-continuous-skin-'+name);
+    assert.equal(skin.parent,model.userData.pivots['leg'+name]);
+    assert.ok(skin.isSkinnedMesh&&skin.skeleton.bones.length===3);
+   }
    assert.equal(model.userData.pivots.tail.parent,model.userData.pivots.torso,
      'animated tail should follow the moving cat torso');
    for(const action of ['idle','walk','run','attack']){
