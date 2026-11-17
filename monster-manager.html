@@ -882,6 +882,8 @@ window.__avianWingQA=()=>{
    toeScales:['L','R'].every(side=>!!model.getObjectByName('phoenix-foot-toe-scutes-'+side)),
    wingHandScales:['L','R'].every(side=>!!model.getObjectByName('phoenix-wing-hand-scutes-'+side)),
    chickenFeet:!!model.userData.phoenixChickenLegRig,
+   flexedToes:['L','R'].every(side=>
+    !!model.userData.pivots['avianFoot'+side]?.userData.phoenixArticulatedPhalanges),
    neckScaleFade:!!model.getObjectByName('phoenix-neck-fine-grading-scutes')?.userData.phoenixScalesShrinkTowardsFace,
    headMicroScales:!!model.getObjectByName('phoenix-fine-head-scales')?.userData.phoenixFaceMicroScales,
    noEars:!!model.userData.phoenixNoExternalEars,
