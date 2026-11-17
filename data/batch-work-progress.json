@@ -114,72 +114,62 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T05:51:45+09:00",
+      "lastRunAt": "2026-11-18T06:50:23+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #624に木製家具5種の荷重支持・接合実メッシュを追加（QA未検証）",
-      "summary": "world.enabled=true。正本catalog-targets.jsonは60種。既存PR #624（Draft）のsrc/object-catalog.jsへ木製食卓・椅子・寝台・本棚・木樽の5種に実メッシュ支持構造（貫/隅木/すのこ/棚受け/樽鏡板）を追加しコミット e170951597c277dacc6c477a49a407fd78cf7ca6。PR #619はmerged、#614/#615/#616/#620/#624はDraft open。手動world Issueは検索結果に無し。Node/WebGL/Androidの実測は未実施で合格0。GLB0、本編採用0、Pages公開0。",
-      "nextAction": "PR #624の最新head e1709515でnode --check、world-quality-contract/object-list-catalog/stage-static-instancing各QAと5種WebGL旧新比較を実行。失敗時は同PRで修正。PR #614 interaction run 44141156069とPR #620 architecture run 44151633344の旧CIが#619 merged後の現行コードで通るか確認。Android/FPS未確認ならマージ禁止。",
+      "subject": "PR #624 六担当QA全成功を確認・別CI 2件の旧戦闘UIテスト失敗を特定",
+      "summary": "world.enabled=true。正本60種確認。PR #624 head e1709515のWorld six-lane run 44173930236は6/6担当とintegrate成功（対象別WebGL比較・Android合格ではない）。同headのarchitecture run 44173930260 とBattle visual run 44173930228は両方qa/battle-unified-voice-and-intent.test.mjs:62の旧『味方サークルタップで命令選択』期待値で失敗。現行仕様は部隊選択/カメラ・推奨作戦UIのため、現行挙動との整合を別途検証しQA契約修正が必要。今回は新規3D実ソース変更0、対象別WebGL合格0、GLB0、本編採用0、Pages公開0。手動world Issue検索該当0。",
+      "nextAction": "PR #624のqa/battle-unified-voice-and-intent.test.mjs:62旧仕様期待値を現行戦闘操作と照合して同PR内で修正。architecture job 134360097021/mobile-battle job 134360096795を新headで再実行。続いて5家具の新旧WebGL・node --check・world-quality-contract/object-list-catalog/stage-static-instancing・Android FPS検証。全合格前にマージしない。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "pending",
         "qa": "pending",
-        "commit": "done",
+        "commit": "skipped",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "今回の家具5種の実ソースコミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/e170951597c277dacc6c477a49a407fd78cf7ca6"
+          "label": "PR #624 six lane 6/6 plus integrate success",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930236"
         },
         {
-          "label": "既存Draft PR #624",
+          "label": "PR #624 architecture old circle UI assertion failure",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930260/job/134360097021"
+        },
+        {
+          "label": "PR #624 mobile battle same assertion failure",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930228/job/134360096795"
+        },
+        {
+          "label": "Existing Draft PR #624",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
-        },
-        {
-          "label": "QA修正済みPR #619 merged",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/619"
-        },
-        {
-          "label": "PR #614 failed interaction",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44141156069"
-        },
-        {
-          "label": "PR #620 failed architecture",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44151633344"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1,
+        "newSourceCommits": 0,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 latest source commit lacks node --check and 3 required test evidence",
-          "Five furniture IDs have no before/after WebGL screenshots or Android FPS measurement",
-          "Prior #614/#620 failed CI runs remain historical; #619 merged but revalidation is outstanding"
+          "PR #624 architecture and mobile-battle both fail qa/battle-unified-voice-and-intent.test.mjs:62 old ally circle command chooser expectation",
+          "No per-ID before/after WebGL screenshot or Android FPS acceptance for five existing furniture changes",
+          "No verified Node --check + 3 required world test results for current PR head"
         ],
-        "speedPlan": "PR #624 latest head e1709515: run syntax and 3 world QA, capture five furniture WebGL pairs; only after QA consider merge/deploy.",
+        "speedPlan": "Update old circle UI QA contract on existing PR #624 after inspecting live handler; rerun both failed jobs on new head, then compare five furniture WebGL pairs and Android FPS.",
         "lastRunOutcome": {
-          "newSourceChangedIds": 5,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
-          "sourceChangedIds": [
-            "cottage_table_001",
-            "cottage_chair_001",
-            "cottage_bed_001",
-            "cottage_shelf_001",
-            "cottage_barrel_001"
-          ],
+          "sourceChangedIds": [],
           "webglPassedIds": [],
           "gameAppliedIds": [],
           "publicVerified": 0
