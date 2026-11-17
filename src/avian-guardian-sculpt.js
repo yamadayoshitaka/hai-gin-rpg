@@ -300,23 +300,24 @@ function phoenixSurfaceScutes(parent,s,detail,name,{
   shade.lerp(light,.22+(col%4)*.045);
   const shades=[shade,shade.clone().lerp(hot,.14),
     shade.clone().lerp(hot,.27),shade.clone().lerp(hot,.43)];
-  const longitudinal=[0,.35,.78,1.16],
-    breadth=[.79,1,.82,.055],lifts=[.006,.035,.024,.003];
-  for(let v=0;v<4;v++){
-   for(let side=-1;side<=1;side++){
-    const sample=surface(Math.min(.9999,u+longitudinal[v]/rows),
-     angle+angleHalf*side*breadth[v]);
-    const rise=lifts[v]+(side===0?.009:0);
-    const pos=sample.point.addScaledVector(sample.normal,rise);
-    vertices.push(pos.x,pos.y,pos.z);
-    uv.push((side+1)/2,v/3);
-    const tone=shades[v].clone().multiplyScalar(
-     (side===0?1.13:.92)*(1-.10*Math.abs(side)));
-    colors.push(tone.r,tone.g,tone.b);
-   }
+  const longitudinal=[0,.30,.72,1.09],
+    breadth=[.77,1,.84,.045],lifts=[.004,.022,.023,.002];
+  // Curved raised keratin plates: bevelled edges and one merged draw call.
+  for(let v=0;v<4;v++)for(let j=0;j<5;j++){
+   const side=(j-2)/2;
+   const sample=surface(Math.min(.9999,u+longitudinal[v]/rows),
+    angle+angleHalf*side*breadth[v]);
+   const ridge=Math.pow(Math.max(0,1-side*side),1.5);
+   const pos=sample.point.addScaledVector(sample.normal,
+    lifts[v]+ridge*(v===1?.012:.007));
+   vertices.push(pos.x,pos.y,pos.z);
+   uv.push((side+1)/2,v/3);
+   const tone=shades[v].clone().multiplyScalar(
+    (.86+ridge*.24)*(1-.055*Math.abs(side)));
+   colors.push(tone.r,tone.g,tone.b);
   }
-  for(let v=0;v<3;v++)for(let j=0;j<2;j++){
-   const a=origin+v*3+j,b=a+3;
+  for(let v=0;v<3;v++)for(let j=0;j<4;j++){
+   const a=origin+v*5+j,b=a+5;
    indices.push(a,b,a+1,a+1,b,b+1);
   }
   scales++;
@@ -328,6 +329,7 @@ function phoenixSurfaceScutes(parent,s,detail,name,{
  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
  const coat=mesh(parent,geo,name,{emissive:s.id==='m013'});
  coat.userData.imbricatedKeratinScales=true;
+ coat.userData.phoenixRaisedBevelScutes=true;
  coat.userData.curvedAvianFeathers=scales;
  coat.userData.mergedFeatherBatches=1;
  coat.userData.scaleCount=scales;
@@ -680,11 +682,11 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
  shank.userData.phoenixScaleMultiplier=.048/.023;
  shank.userData.phoenixScaleBone=ankle.name;
  const footScutes=[];
- for(let digit=-1;digit<=1;digit++)for(let i=0;i<(detail==='low'?3:6);i++){
-  const q=i/(detail==='low'?2:5),x=digit*.147*q*.9;
+ for(let digit=-1;digit<=1;digit++)for(let i=0;i<(detail==='low'?4:9);i++){
+  const q=i/(detail==='low'?3:8),x=digit*.147*q*.9;
   footScutes.push({from:[x,-.012-q*.044,.12+.20*q],
    to:[x+digit*.015,-.014-q*.052,.18+.20*q],
-   width:.064,normal:[0,.93,.2],ridge:.013,
+   width:.064,normal:[0,.93,.2],ridge:.019,
    tint:i%3===0?2:1,endTint:3,glow:.20});
  }
  const toes=layeredFeathers(foot,s,detail,
