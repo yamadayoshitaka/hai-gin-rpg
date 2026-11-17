@@ -16,7 +16,7 @@ monitor.acknowledge('group2');
 assert.equal(monitor.peek().id,'group1');
 monitor.acknowledge('group1');
 assert.equal(monitor.peek(),null);
-monitor.observe([{id:'group1',row:sum(80,100,30,100)}]);
+monitor.observe([{id:'group1',row:sum(80,100,20,100)}]);
 assert.equal(monitor.peek().level,3,'escalating HP triggers new event');
 monitor.observe([{id:'group1',row:sum(80,100,100,100)}]);
 assert.equal(monitor.peek(),null,'recovered pending alert must not interrupt');
