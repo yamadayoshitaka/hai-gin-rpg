@@ -29,6 +29,19 @@ export function triangleTerrainHeight(gx,gz,sampleVertexHeight){
 }
 
 /**
+ * Shared 50/1000 walkable surface selector. Only an ACTUAL intact bridge
+ * footprint or built stair tile wins over the ground triangle. Do not use
+ * bridge deck height for nearby river-bank tiles or the water underneath it.
+ */
+export function battleWalkSurfaceY(gx,gz,bridgeHeights,stairCells,sampleVertexHeight){
+  const key=Math.round(gx)+','+Math.round(gz);
+  const bridge=bridgeHeights?.get(key);
+  if(bridge!=null)return bridge;
+  const stair=stairCells?.get(key)?.height;
+  return stair??triangleTerrainHeight(gx,gz,sampleVertexHeight);
+}
+
+/**
  * A ground-level actor has one authoritative floor surface. Mounts add
  * the saddle height, not an extra second ground interpolation. Upper floors
  * are resolved by authored building routes and must not be clamped here.
