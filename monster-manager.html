@@ -77,7 +77,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.23</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.24</small></h1>
  <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a><a href="./monster-quality-review.html?monster=m001">品質KPI管理</a><a href="./creature-reconstruction-plan.html">108体再構成</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -91,7 +91,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
  </aside>
  <section class="workspace">
   <div id="view">
-   <div id="info"><h2 id="name">モデルを読み込み中...</h2><p id="description"></p><div id="hud"></div></div>
+   <div id="info"><h2 id="name">モデルを読み込み中...</h2><p id="description"></p><div id="hud"></div><div id="modelRevision" role="status" style="font-size:11px;color:#ffe1a2;margin-top:5px">3Dモデル版を確認中…</div></div>
    <div id="viewToolbar" role="toolbar" aria-label="3Dモデル鑑賞操作">
     <button id="toggleCatalog" type="button" aria-expanded="false" aria-controls="catalogPanel">☰ 一覧</button>
     <button id="zoomIn" type="button" aria-label="モデルを拡大">＋ 拡大</button>
@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-face-flame-wing-v21-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-face-flame-wing-v12-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hand-face-stable-v22-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hand-face-stable-v13-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -362,12 +362,18 @@ function disposeCurrent(){
 }
 function refreshGeometry(){
  meshStats=meshQualityStats(model);
+ const revision=model?.userData?.avianRebuildRevision||'';
+ byId('modelRevision').textContent=selected==='m013'?
+  (revision?'フェニックス実モデル '+revision+
+     (revision.includes('stable-v8')?' / 新造形':' / 旧造形の可能性'):
+   'フェニックス改修版モデルが読み込まれていません'):
+  (revision?'モデル正本 '+revision:'標準モデル / 外部モデル');
  byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+
   ' / 頂点 '+meshStats.vertices.toLocaleString()+
   ' / メッシュ '+meshStats.meshes+
   ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
 }
-function focusCamera(){
+function focusCamera(full=false){
  controls.minPolarAngle=HUMAN_MONSTER_IDS.includes(selected)?
    HUMAN_INSPECT_MIN_POLAR:0;
  // Keep the existing 16-human protection contract unchanged, while
@@ -387,6 +393,13 @@ function focusCamera(){
  // Favor the real +Z-facing actor's face and torso.
  if(HUMAN_MONSTER_IDS.includes(selected)||model?.userData?.beastfolkSource)
   camera.position.set(center.x+dist*.17,center.y+dist*.14,center.z+dist*.85);
+ else if(selected==='m013'&&!full&&model?.userData?.avianRebuildRevision){
+  // The giant wing bounds must not force the face to appear tiny.
+  const d=Math.min(dist,7.1);
+  controls.target.y=Math.max(.7,center.y+.25);
+  camera.position.set(center.x+d*.18,
+    controls.target.y+d*.12,center.z+d*.90);
+ }
  else camera.position.set(center.x+dist*.30,center.y+dist*.22,center.z+dist*.78);
  controls.update();
 }
@@ -400,9 +413,19 @@ function zoomModel(factor){
 }
 byId('zoomIn').onclick=()=>zoomModel(.76);
 byId('zoomOut').onclick=()=>zoomModel(1.30);
-byId('resetCamera').onclick=()=>{if(model)focusCamera();};
+byId('resetCamera').onclick=()=>{if(model)focusCamera(true);};
 byId('portraitCamera').onclick=()=>{
  if(!model)return;
+ if(selected==='m013'&&model.userData.avianRebuildRevision){
+  const head=model.userData.pivots?.head||model.getObjectByName('head');
+  if(head){
+   model.updateMatrixWorld(true);
+   const target=head.getWorldPosition(new THREE.Vector3());
+   controls.target.set(target.x,target.y+.03,target.z);
+   camera.position.set(target.x+.35,target.y+.13,target.z+3.1);
+   controls.update();return;
+  }
+ }
  const box=new THREE.Box3().setFromObject(model);
  const center=box.getCenter(new THREE.Vector3());
  const height=Math.max(1.3,box.getSize(new THREE.Vector3()).y);
@@ -725,7 +748,7 @@ function frame(){
  // The editing gallery has one character and no game-time simulation.
  // A 30 Hz render cap avoids expensive redundant shadow passes, keeping
  // touch input responsive while dense source meshes are being inspected.
- if(time-lastDrawAt<1/30)return;
+ if(selected!=='m013'&&time-lastDrawAt<1/30)return;
  const delta=Number.isFinite(lastDrawAt)?time-lastDrawAt:1/30;
  lastDrawAt=time;
  if(delta>0)fps=fps*.90+(1/delta)*.10;
@@ -795,6 +818,7 @@ window.__monsterViewerLayoutQA=()=>({
  toolsOpen:!byId('modelTools').hidden,
  canvasWidth:view.clientWidth,canvasHeight:view.clientHeight,
  selected,zoomDistance:camera.position.distanceTo(controls.target),
+  modelRevision:model?.userData?.avianRebuildRevision||null,
  motionStripVisible:byId('actions').getBoundingClientRect().height>0,
  motionButtons:byId('actions').querySelectorAll('button').length,
  selectedMotion:currentAction,
@@ -909,6 +933,8 @@ window.__avianWingQA=()=>{
    guardianFeatherHands:['L','R'].every(side=>
     !!model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixSameWingVaneSource),
    handFeathersPerSide:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.angelFeathersPerSide||0),
+   highQualityHandFeathers:['L','R'].every(side=>
+    model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixMiniatureDonorDetail==='high'),
    waveMeshes:model.userData.phoenixWaveMeshCount||0
   }:null,
   wings,action:currentAction};
