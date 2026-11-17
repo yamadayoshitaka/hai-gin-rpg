@@ -106,12 +106,15 @@ function m001FittedFacialMane(faceCore,source){
    }
   }
  }
- // Two offset layers of compact underfur and longer guard hairs cover
- // the complete crown, not just the frontal 12 cm. Every root samples the
- // SAME skull loft as the face, eliminating the bald cap and scalp gap.
- const crownRows=source?64:43,crownCols=source?18:14;
- for(let layer=0;layer<2;layer++)for(let i=0;i<crownRows;i++){
-  const z=-.365+.545*(i+.40+layer*.43)/crownRows;
+ // Slicked-back (オールバック) natural coat: densely fill the ENTIRE
+ // cranial crown with short undercoat and long, rearward-combed guard
+ // hairs. Source sculpt gets a third intermediate row-offset layer;
+ // playable high still uses only two layers in the SAME three batches.
+ // Roots share the real skull loft (no unsupported floating wig cap).
+ const crownRows=source?72:53,crownCols=source?20:17;
+ const crownLayers=source?3:2;
+ for(let layer=0;layer<crownLayers;layer++)for(let i=0;i<crownRows;i++){
+  const z=-.405+.590*(i+.40+layer*.27)/crownRows;
   const ring=m001RingAtZ(z);
   const front=clamp01((z+.045)/.23);
   for(let j=0;j<crownCols;j++){
@@ -129,16 +132,21 @@ function m001FittedFacialMane(faceCore,source){
    // roots directly on the cornea or muzzle.
    if(root[2]>.182&&Math.abs(root[0])<.139&&root[1]<.182)
      continue;
-   const len=(layer===0?.105:.171)+
-     (1-front)*(layer===0?.025:.055)+
-     .012*Math.sin(i*.91+j*1.3);
-   const sweptZ=len*(front*.45-(1-front)*.55);
+   const undercoat=layer===0;
+   const len=(undercoat?.148:layer===2?.207:.242)+
+     (1-front)*(undercoat?.015:.026)+
+     .009*Math.sin(i*.91+j*1.3);
+   // Negative Z is toward the occiput: even forehead fibres sweep BACK,
+   // not across the eyes. Short fibres seal the scalp, long ones provide
+   // a layered flowing silhouette. Crown midpoints lift off the skin
+   // before tips settle toward the rear, not straight vertical spikes.
+   const sweptZ=-len*(undercoat?.52:.79);
    const tip=[
-     root[0]+Math.sign(u)*(.010+.012*(1-front)),
-     root[1]+(1-front)*len*.11-front*len*.30,
+     root[0]+Math.sign(u)*(.003+.014*(1-front)),
+     root[1]+(undercoat?.035:.066)*len-(1-front)*len*.12,
      root[2]+sweptZ
    ];
-   add(root,tip,[u,.90,.26],layer===0?.007:.010,
+   add(root,tip,[u,.90,-.24],undercoat?.0075:.0105,
      (i+j+layer)%11===0?'light':
        (i+j+layer)%7===0?'shadow':'skin',true);
   }
@@ -344,6 +352,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    faceCore.userData.m001CenteredFaceWidthScale=.64;
    g.root.userData.wolfKingExposedFaceScale=.64;
    g.root.userData.wolfKingManeLengthMultiplier=1.2;
+   g.root.userData.m001CrownSweepDirection='backward';
+   g.root.userData.m001CrownLongHairBase=.242;
+   g.root.userData.m001NoseWidthScale=.80;
    g.root.userData.wolfKingReferenceRemesh=true;
  }
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
@@ -434,11 +445,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // All rhinarium rings share the short muzzle's vertical midline.
      // Overlap the grey bridge tip so a detached lower black button
      // cannot render beneath an exposed circular grey end-cap.
-     {z:.366,y:-.131,rx:.012,ry:.014},
-     {z:.358,y:-.130,rx:.042,ry:.034},
-     {z:.346,y:-.130,rx:.056,ry:.042},
-     {z:.321,y:-.131,rx:.055,ry:.040},
-     {z:.288,y:-.131,rx:.038,ry:.028}
+     // Compact wet nose on the existing narrow nasal bridge:
+     // 18–20% less lateral volume, ~10% less vertical bulge and a
+     // shorter rear projection, without exposing the grey bridge tip.
+     {z:.366,y:-.131,rx:.011,ry:.013},
+     {z:.358,y:-.130,rx:.034,ry:.031},
+     {z:.347,y:-.130,rx:.045,ry:.038},
+     {z:.324,y:-.131,rx:.044,ry:.036},
+     {z:.298,y:-.131,rx:.030,ry:.025}
    ]:[
      {z:.706,y:-.161,rx:.027,ry:.029},
      {z:.685,y:-.158,rx:.104,ry:.060},
@@ -453,12 +467,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(const side of [-1,1]){
      const tight=s.id==='m001';
      g.bridge(head,'shadow',
-       [side*(tight?.037:.094),tight?-.130:-.143,tight?.293:.605],
-       [side*(tight?.043:.110),tight?-.139:-.166,tight?.350:.662],
-       tight?.010:.028,tight?.008:.015);
+       [side*(tight?.030:.094),tight?-.130:-.143,tight?.301:.605],
+       [side*(tight?.035:.110),tight?-.139:-.166,tight?.351:.662],
+       tight?.009:.028,tight?.007:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.043:.108),tight?-.139:-.182,tight?.358:.681],
-       tight?[.007,.005,.004]:[.014,.010,.008],
+       [side*(tight?.035:.108),tight?-.137:-.182,tight?.358:.681],
+       tight?[.0058,.0045,.0035]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
