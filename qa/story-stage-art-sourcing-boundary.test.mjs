@@ -89,6 +89,8 @@ assert(viewer.includes("const sheet=oldStoryArtReuseAllowed(shot.stageId)?"),
  'Legacy sheet fallback is still available after stage4');
 assert(viewer.includes("const draftArt=oldStoryArtReuseAllowed(shot.stageId)?"),
  'Legacy provisional status is still available after stage4');
+assert(workflow.includes('git show origin/main:src/story-art-sourcing-policy.js > src/story-art-sourcing-policy.js'),
+ 'Cloudflare review branch must be given latest post-stage4 new-original policy before rendering');
 assert(generator.includes("cloudflare-chapter1-new-originals"),
  'New stage5+ output must use an empty, separated production path');
 assert(workflow.includes('--mode generate --max-pages 12 --start-stage "$START_STAGE" --through-stage "$THROUGH_STAGE"') && workflow.includes("START_STAGE: \${{ inputs.start_stage || 'c01-s05' }}") && workflow.includes("THROUGH_STAGE: \${{ inputs.through_stage || 'c01-s10' }}"), 'Free generator defaults to stage5 and validates optional sequential stage1-10 input');

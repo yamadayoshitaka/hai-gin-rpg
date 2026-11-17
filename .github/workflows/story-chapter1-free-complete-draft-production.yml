@@ -105,6 +105,8 @@ jobs:
           # The review branch predates the compact format: always restore its
           # canonical scene selection manifest from main before any provider call.
           git show origin/main:data/story-compact-20chapters.json > data/story-compact-20chapters.json
+          # Review branch may predate new-only art sourcing; pin its CURRENT main rule.
+          git show origin/main:src/story-art-sourcing-policy.js > src/story-art-sourcing-policy.js
           git show origin/main:src/story-c01-stage45-art-guard.js > src/story-c01-stage45-art-guard.js
           git show origin/main:qa/story-chapter1-draft-regression.mjs > qa/story-chapter1-draft-regression.mjs
           git show origin/main:assets/story/stage-manifests/c01-s04.manifest.json > assets/story/stage-manifests/c01-s04.manifest.json
