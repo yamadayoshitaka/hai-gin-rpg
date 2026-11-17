@@ -5,6 +5,8 @@
  */
 const A=Object.freeze;
 export const CATALOG_GROOM_V50=A({
+  'center-part-gravity-long':A({mode:'curtain-layered-long-v74',fringeLift:.004,templeFloor:.13,backFloor:.07,sweep:.022,crown:.012,round:.016,wave:.012}),
+  'salon-layered-long':A({mode:'salon-layered-long-v74',fringeLift:.012,templeFloor:.17,backFloor:.08,sweep:.075,crown:.012,round:.022,wave:.018}),
  'male-natural-mash':A({mode:'round-mash',fringeLift:.045,templeFloor:.63,backFloor:.59,sweep:.038,crown:.019,round:.020}),
  'male-two-block':A({mode:'undercut-long-top',fringeLift:.025,templeFloor:.70,backFloor:.71,sweep:.087,crown:.025,round:.01}),
  'male-short-wolf':A({mode:'short-wolf-nape',fringeLift:.025,templeFloor:.57,backFloor:.43,sweep:.078,crown:.028,spike:.021}),
