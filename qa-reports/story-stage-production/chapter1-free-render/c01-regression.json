@@ -7,9 +7,9 @@
     "existingRegistrationNotP0Approved": 56,
     "liveOriginalRegistrations": 178,
     "legacyNativeRegenerationRequired": 0,
-    "validRealReviewDraft": 116,
-    "missing": 283,
-    "providerBlocked": 7,
+    "validRealReviewDraft": 121,
+    "missing": 276,
+    "providerBlocked": 9,
     "incorrectNativePixels": 0,
     "invalidProof": 0,
     "duplicate": 0,
@@ -2087,7 +2087,11 @@
           "gender": "male",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m01-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
         },
         {
           "key": "c01-s05|pre|male|c01-s05-m2",
@@ -2143,7 +2147,11 @@
           "gender": "male",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m15-pre-male.webp",
-          "status": "MISSING_REAL_ART"
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m1",
@@ -2212,7 +2220,7 @@
           "gender": "female",
           "edition": "pre",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p02/c01-s05-m15-pre-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "PROVIDER_SAFETY_BLOCKED"
         },
         {
           "key": "c01-s05|post-victory|male|c01-s05-m6",
@@ -2220,7 +2228,11 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m06-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
         },
         {
           "key": "c01-s05|post-victory|male|c01-s05-m7",
@@ -2268,7 +2280,11 @@
           "gender": "male",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p02/c01-s05-m10-post-victory-male.webp",
-          "status": "MISSING_REAL_ART"
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
         },
         {
           "key": "c01-s05|post-victory|female|c01-s05-m6",
@@ -2276,7 +2292,11 @@
           "gender": "female",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m06-post-victory-female.webp",
-          "status": "MISSING_REAL_ART"
+          "dimensions": [
+            1024,
+            576
+          ],
+          "status": "VALID_REAL_DRAFT_VISUAL_QA_PENDING"
         },
         {
           "key": "c01-s05|post-victory|female|c01-s05-m7",
@@ -2324,7 +2344,7 @@
           "gender": "female",
           "edition": "post-victory",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p02/c01-s05-m10-post-victory-female.webp",
-          "status": "MISSING_REAL_ART"
+          "status": "PROVIDER_SAFETY_BLOCKED"
         },
         {
           "key": "c01-s05|post-defeat|male|c01-s05-m6",
