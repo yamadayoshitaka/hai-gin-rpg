@@ -8018,7 +8018,7 @@ const targetedStrategyUi=createTargetedStrategyUi({
  getMapCellEligible:(x,z)=>traversableCell(x,z),
  getTemplates:groupId=>{
   const configured=storyRequest?.battlePlanRecommendations?.[String(groupId)];
-  const validConfigured=(configured||[]).filter(plan=>STRATEGY_METHODS[plan.methodId]);
+  const validConfigured=(Array.isArray(configured)?configured:[]).filter(plan=>plan&&STRATEGY_METHODS[plan.methodId]);
   // Keep curated templates but supplement them with actionable live alternatives.
   // Free battles also get REAL suitability scores from this group's
   // living jobs, map terrain and current casualties, not seven fake 50s.
