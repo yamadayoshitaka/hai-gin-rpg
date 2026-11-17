@@ -28,9 +28,12 @@ for(const stage of CAMPAIGN_STAGES){
  for(const gender of ['male','female']){
   const ctx={protagonistGender:gender};
   const pre=compactComicForStage(stage.id,'pre',ctx);
-  assert.equal(pre.panels[0].dialogueTurns[0].speaker,'語り手');
+  assert.equal(pre.recap.speaker,'語り手');
+  assert.equal(pre.recap.characterId,null);
+  assert(pre.panels.every(panel=>panel.dialogueTurns.every(turn=>turn.characterId)),
+   'Narrated setup must not be assigned to character pictures');
   if(stage.slot===1){
-   assert.equal(pre.panels[0].dialogueTurns[0].text,readerIntroForChapter(stage.chapter));
+   assert(pre.recap.text.includes(readerIntroForChapter(stage.chapter)),'Chapter intro must play on recap image');
    assert.equal(pre.panels.length,6);
   }else assert.equal(pre.panels.length,2);
   for(const phase of ['pre','post']){
