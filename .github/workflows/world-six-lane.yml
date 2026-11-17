@@ -21,7 +21,7 @@ jobs:
       - id: check
         run: |
           value=$(node -e "const s=require('./data/batch-center-switches.json');process.stdout.write(String(s.groups.world.enabled===true))")
-          if [ "$value" = true ] || [ "${{ github.event_name }}" != schedule ]; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
+          if [ "$value" = true ]; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
   six-batches:
     needs: enabled
     if: needs.enabled.outputs.run == 'true'

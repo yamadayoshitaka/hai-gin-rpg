@@ -9,7 +9,8 @@ test('batch work progress uses evidence-backed stage status without treating sch
  const state=JSON.parse(fs.readFileSync('data/batch-work-progress.json','utf8'));
  assert.equal(state.schemaVersion,1);
  assert.deepEqual(state.stageOrder,stages);
- assert.deepEqual(Object.keys(state.groups),kinds);
+ for(const kind of kinds)assert(Object.hasOwn(state.groups,kind),kind+' legacy record preserved');
+ for(const kind of ['faceHair','outfit','creatureMonster','creatureSummon'])assert(Object.hasOwn(state.groups,kind),kind+' missing progress');
  for(const [kind,entry] of Object.entries(state.groups)){
   assert.equal(typeof entry.summary,'string');
   assert.equal(typeof entry.nextAction,'string');

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "title": "灰銀のレゾナンス｜FF15級モンスター・召喚獣 写実品質指標",
+  "references": {
+    "wildlife": {
+      "status": "species-scoped reference required",
+      "source": "実在生物の解剖資料と独自デザイン、FF15級の見た目を目標"
+    },
+    "humanoid": {
+      "status": "concept registered but images not stored in repository",
+      "manifest": "docs/monster-research/approved-humanoid-visual-targets-v1.json"
+    },
+    "newIllustration": {
+      "status": "illustrated_in_chat_not_committed",
+      "description": "2026-11-17生成の黒龍系召喚獣の指標見本。リポジトリ内のPNG/WebP登録や本編採用は未実施"
+    }
+  },
+  "slots": [
+    {
+      "id": "canid_feline",
+      "name": "犬科・猫科",
+      "families": [
+        "beast",
+        "feline"
+      ],
+      "criteria": [
+        "実在動物に基づく頭骨・吻/鼻・歯・顎・目",
+        "四肢と背骨が接続し走行/ジャンプで裂けない",
+        "毛根・毛流れ・耳・尻尾を自然なメッシュとPBRで再構成",
+        "m001の品質をベースに種固有差を保ちm005/m006を保護",
+        "近中遠で体型/毛が崩れずAndroid FPSを守る"
+      ]
+    },
+    {
+      "id": "birds",
+      "name": "鳥・飛行系",
+      "families": [
+        "avian"
+      ],
+      "criteria": [
+        "鳥種別の翼骨・羽根・嘴・足指・尾羽の形態",
+        "鴉天狗人型は鳥モデルへ無理に変形しない",
+        "羽ばたき・滑空・旋回・飛行着地時の接合保護",
+        "羽根厚み/半透明回避/金属反射でPBR品質維持",
+        "遠距離LODでも羽の輪郭を維持"
+      ]
+    },
+    {
+      "id": "reptile_aquatic",
+      "name": "竜・爬虫類・水棲",
+      "families": [
+        "reptile",
+        "aquatic"
+      ],
+      "criteria": [
+        "爬虫/蛇/多頭竜/水棲ごとの別骨格",
+        "鱗・鼻孔・牙・舌・胸郭のリアルな連続",
+        "翼・鰭・触手・尾の根元とアクションを破綻させない",
+        "水面/水中の演出と本体FXを分離",
+        "m020/m048のUVと動的境界QAを優先"
+      ]
+    },
+    {
+      "id": "insects_arachnids",
+      "name": "昆虫・蜘蛛",
+      "families": [
+        "insect",
+        "arachnid"
+      ],
+      "criteria": [
+        "昆虫6脚と蜘蛛8脚を厳密区別",
+        "外骨格の節と関節・触角・甲殻の連続",
+        "飛行/歩行/糸/攻撃時に腹部と脚が分断しない",
+        "複眼・鋏角・節足表面のPBR",
+        "遠景で脚本数・種別特徴を保持"
+      ]
+    },
+    {
+      "id": "undead_fiend",
+      "name": "不死・魔族・人型",
+      "families": [
+        "undead",
+        "fiend"
+      ],
+      "criteria": [
+        "人型16種は共通人物母体の顔髪を使う",
+        "頭頂露出・眉・目・顔・衣装・背面板を修復",
+        "翼・角・武器・布・装飾は接合元の骨へ追従",
+        "魔法/飛行/噛みつきアクションを区別",
+        "男女召喚士/天使/竜王の専用属性を守る"
+      ]
+    },
+    {
+      "id": "constructs",
+      "name": "岩・金属・結晶・ゴーレム",
+      "families": [
+        "golem"
+      ],
+      "criteria": [
+        "石材の継ぎ目/鎧パーツ/胸部コアに構造上の理由を持たせる",
+        "金属・岩石・水晶・熔岩のPBRを区別",
+        "重みのある歩行・攻撃と接地を表現",
+        "パーツの浮遊が演出以外で発生しない",
+        "LOD・影・バッチングを実機FPSで評価"
+      ]
+    }
+  ],
+  "audience": {
+    "monster": "50体、m005/m006は不変",
+    "summon": "同一50種の召喚ミラー＋専用8体。敵版とは独立の色・VFX・スケール・QA"
+  },
+  "requiredViews": [
+    "正面",
+    "左側面",
+    "背面",
+    "斜め45°",
+    "俯瞰",
+    "待機/歩行/走行/攻撃/被弾/死亡",
+    "近距離/中距離/遠距離"
+  ],
+  "acceptance": {
+    "scoreTarget": 90,
+    "require": [
+      "real-mesh-change",
+      "species-anatomy-verified",
+      "materials-and-shading",
+      "rig-skin-actions",
+      "webgl-capture",
+      "Android-FPS-and-LOD",
+      "licensing-and-attribution",
+      "game-and-summon-parity",
+      "PR-review",
+      "main-merge",
+      "Pages-release-sha"
+    ],
+    "protectedIds": [
+      "m005",
+      "m006",
+      "summon_m005",
+      "summon_m006"
+    ],
+    "noAutoPublishWithoutVisualQA": true
+  }
+}
