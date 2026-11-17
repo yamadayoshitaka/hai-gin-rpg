@@ -3,6 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
+import * as THREE from 'three';
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
@@ -2078,6 +2079,10 @@ export function createMonsterModel(spec,{detail='high'}={}){
    default:throw Error('Unknown anatomy: '+spec.family);
  }
  addNonhumanMonsterWardrobe(g,spec);
+ // The optional effects are created lazily only when a rendered near-LOD
+ // m001 performs an action. Pure timing tests can import monster-animation
+ // without importing Three.js or allocating a GPU mesh.
+ if(spec.id==='m001')g.root.m001FxThree=THREE;
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
