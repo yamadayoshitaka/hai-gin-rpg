@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T23:51:38+09:00",
+      "lastRunAt": "2026-11-18T00:52:25+09:00",
       "status": "blocked",
       "carryover": true,
-      "subject": "石工系5種の実メッシュ改修をmain起点のDraft PR #577に保存（QA未実施）",
-      "summary": "world.enabled=true確認。未完了[hai-gin-batch] Issueを検索したがworld該当0件。main起点の新規ブランチでstone_fence_001/stone_archway_001/stone_steps_001/stone_column_001/town_planter_001に石積み接合・迫石・踏面鼻先・柱輪・花壇組積の実造形を追加。コミットa14a26d6、Draft PR #577。Node/指定3QA/WebGL新旧比較/Android未検証、GLB0、ゲーム採用0、Pages公開0。既存Draft #441とは別管理。",
-      "nextAction": "PR #577のNode構文検査と指定3QA、同一createCatalogObjectによる5対象の近中遠WebGL新旧比較、衝突・FPS実測を実施。PR #441の滞留変更と競合を照合。合格時のみマージ・Pages公開。",
+      "subject": "扉5種の木工接合・鍛鉄蝶番の実造形改修、Draft PR #594",
+      "summary": "world.enabled=true確認。未完了のユーザー作成[hai-gin-batch] Issue検索でworld該当0件。入口扉Lv1〜5の共通生成器に7/9枚の独立木板、縁框、鍛鉄ストラップ蝶番、軸ピン・鋲を実装。SHA 36993dfb、Draft PR #594。Node構文・指定3QA・実WebGL・Android未実施。GLB0、採用0、公開0。",
+      "nextAction": "PR #594でnode --checkと指定3QA、createCatalogObjectによる5扉の近中遠新旧WebGL、実戦闘配置/衝突、1000vs1000 FPSを確認。既存Draft #441/#577との競合を解消し、合格したものだけmainマージ。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -131,12 +131,12 @@
       },
       "evidence": [
         {
-          "label": "石工5種実ソース",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/a14a26d678dd7d0624f3fe42a3e3bd1cf6d549b8"
+          "label": "扉5種実造形ソース",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/36993dfb40f463952423b07d13b299e69bbc2c1c"
         },
         {
-          "label": "Draft PR #577",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/577"
+          "label": "Draft PR #594",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/594"
         }
       ],
       "lastRunOutcome": {
@@ -148,10 +148,11 @@
       },
       "operational": {
         "blockers": [
-          "Node/3QA/新旧WebGL/Androidの実行証跡なし",
-          "既存Draft PR #441の28件が未検証"
+          "Node/3QA/WebGL/Android実行証跡なし",
+          "Draft PR #441/#577のQA未完了",
+          "PR #594 mergeable=false (GitHub初期判定、再確認必要)"
         ],
-        "speedPlan": "GitHub Actions上でPR #441 headをチェックアウトしNode/3QAを実行、同じcreateCatalogObjectで石工5種の近中遠WebGL画像比較を採取する",
+        "speedPlan": "PR #594でnode --checkと指定3QA、createCatalogObjectによる5扉の近中遠新旧WebGL、実戦闘配置/衝突、1000vs1000 FPSを確認。既存Draft #441/#577との競合を解消し、合格したものだけmainマージ。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
