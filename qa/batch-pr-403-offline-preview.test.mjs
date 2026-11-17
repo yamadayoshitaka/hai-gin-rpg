@@ -29,7 +29,7 @@ test('on-demand one request, rate limit protection and direct PR fallback',()=>{
  assert.match(script,/sessionStorage/);
  assert.match(page,/href="https:\/\/github\.com\/yamadayoshitaka\/hai-gin-rpg\/commits\/main"/);
  assert.match(refresh,/PR情報|PRのコミットとcheckpoint/);
- assert.match(refresh,/setLink\('prLink',GH\+'\/pull\/\+'?row\.pr/);
+ assert(refresh.includes("setLink('prLink',GH+'/pull/'+row.pr)"));
 });
 test('no unsafe claim that merged PR is necessarily on Pages',()=>{
  const compare=script.slice(script.indexOf('function verifyRelease('),script.indexOf('async function readCheckpoint('));
