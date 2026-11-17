@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "status": "six_static_gates_passed_visual_approval_pending",
+  "sourceFingerprint": "1ba5e359a5371b163a2046ed26983ffca19503f3aeff3c7095c5b350871ae885",
+  "objectCount": 60,
+  "stageCount": 200,
+  "objectIds": [
+    "cottage_table_001",
+    "cottage_chair_001",
+    "cottage_bed_001",
+    "cottage_shelf_001",
+    "cottage_fireplace_001",
+    "cottage_barrel_001",
+    "treasure_chest_001",
+    "cottage_stairs_001",
+    "spiral_stairs_2f_001",
+    "spiral_stairs_castle_3f_001",
+    "entry_door_lv1_001",
+    "entry_door_lv2_001",
+    "entry_door_lv3_001",
+    "entry_door_lv4_001",
+    "entry_door_lv5_001",
+    "fountain_001",
+    "market_stall_001",
+    "street_lamp_001",
+    "town_bench_001",
+    "town_well_001",
+    "town_planter_001",
+    "town_crate_001",
+    "town_notice_001",
+    "town_fence_001",
+    "stone_fence_001",
+    "town_trash_bin_001",
+    "town_handcart_001",
+    "stone_archway_001",
+    "stone_steps_001",
+    "wooden_watchtower_001",
+    "stone_column_001",
+    "wall_torch_001",
+    "haystack_001",
+    "inn_sign_001",
+    "rice_paddy_001",
+    "vegetable_field_001",
+    "town_firewood_001",
+    "town_water_trough_001",
+    "town_signpost_001",
+    "town_sacks_001",
+    "town_stone_pile_001",
+    "town_brazier_001",
+    "town_herb_garden_001",
+    "castle_001",
+    "church_001",
+    "weapon_shop_001",
+    "inn_001",
+    "item_shop_001",
+    "town_house_001",
+    "manor_noble_001",
+    "manor_merchant_001",
+    "manor_garden_001",
+    "small_hill_001",
+    "stone_hut_001",
+    "swamp_001",
+    "rocky_mountain_001",
+    "timber_bridge_001",
+    "stone_bridge_001",
+    "timber_bridge_broken_001",
+    "stone_bridge_broken_001"
+  ],
+  "newObjectIds": [
+    "town_firewood_001",
+    "town_water_trough_001",
+    "town_signpost_001",
+    "town_sacks_001",
+    "town_stone_pile_001",
+    "town_brazier_001",
+    "town_herb_garden_001"
+  ],
+  "lanes": {
+    "catalog": {
+      "status": "gate_passed",
+      "details": [
+        "60 catalog objects / 200 story stages"
+      ]
+    },
+    "geometry": {
+      "status": "gate_passed",
+      "details": [
+        "Seven new IDs have production factory paths, shared with preview"
+      ]
+    },
+    "materials": {
+      "status": "gate_passed",
+      "details": [
+        "PBR overrides are bounded and shared with production mesh factory"
+      ]
+    },
+    "interaction": {
+      "status": "gate_passed",
+      "details": [
+        "93 stage landmark placements resolve to catalog IDs"
+      ]
+    },
+    "lod": {
+      "status": "gate_passed",
+      "details": [
+        "Seven props eligible for static instancing and material-group mesh baking"
+      ]
+    },
+    "visual": {
+      "status": "gate_passed",
+      "details": [
+        "Real WebGL screenshots available for castle_001 (visual review still required)"
+      ]
+    }
+  },
+  "runtimeSource": "src/object-catalog.js",
+  "gameIntegration": "tactics-wireframe.html + src/stage-library.js + src/stage-static-instancing.js",
+  "automaticMergeScope": "deterministic index and QA report only",
+  "visualQualityApproved": false,
+  "androidFpsVerified": false,
+  "note": "A 2D reference, WebGL screenshot or passing source audit does not prove game fidelity, visual quality or Android 1000v1000 FPS."
+}
