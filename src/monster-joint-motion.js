@@ -23,6 +23,7 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
  // Only the four unprotected sculpted wolves. The legacy generic gait
  // over-swung all four straight-looking limbs and left feet airborne.
  const springBeast=['m001','m002','m003','m004'].includes(speciesId);
+ const referenceFeline=['m007','m008','m009','m010'].includes(speciesId);
  const phases=run&&spine==='feline'
    ?[0,.38*PI,1.02*PI,1.4*PI]
    :run?[0,PI,PI,0]:[0,PI,PI*.52,PI*1.52];
@@ -83,9 +84,11 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
     // Compression raises the sole relative to the lowered trunk, leaving
     // supporting toes close to the floor instead of a pogo-stick bounce.
     const upperJoint=p['leg'+name];
+    // Scale motion on m002 broke the newly seamless reference donor.
+    // Keep its bone lengths physically constant at every support phase.
     if(upperJoint)upperJoint.scale.y=
       (upperJoint.userData.restLengthScale??1)*
-      (1-(run?.048:.026)*support);
+      (speciesId==='m002'?1:1-(run?.048:.026)*support);
     if(p['beastHock'+name]){
       apply(p,'beastHock'+name,'x',(front?-.095:-.285)+
         power*(.260*swing-.205*support));
@@ -98,6 +101,21 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
           power*((front?.13:.19)*swing-(front?.07:.10)*support));
       }
     }
+  }else if(referenceFeline){
+    // Four-beat stalk/walk and gathered-release gallop on real hip,
+    // elbow/stifle and toe pivots; no mechanical pogo-straight legs.
+    const power=locomotion?(run?1:.64):0;
+    const swing=Math.max(0,-sine),stance=Math.max(0,sine);
+    apply(p,'leg'+name,'x',(front?.09:-.19)+
+      (front?.44:.37)*power*sine+(front?-.15:.10)*actionPulse);
+    apply(p,'leg'+name,'z',(i%2?1:-1)*power*.022*lift);
+    apply(p,'lower'+name,'x',(front?-.31:.38)+
+      power*((front?.46:.52)*swing-(front?.10:.16)*stance));
+    apply(p,'lower'+name,'z',(i%2?1:-1)*power*.014*lift);
+    apply(p,'toe'+name,'x',.038+power*(.16*swing-.095*stance));
+    const upperJoint=p['leg'+name];
+    if(upperJoint)upperJoint.scale.y=
+      upperJoint.userData.restLengthScale??1;
   }else{
     apply(p,'leg'+name,'x',strength*sine+(front?-.12:.10)*actionPulse);
     apply(p,'leg'+name,'z',(i%2?1:-1)*strength*.13*lift);
@@ -112,7 +130,8 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
  }
  const travel=locomotion?1:0;
  const flex=run&&spine==='feline'?.13*Math.sin(phase*2+.25):.023*Math.sin(phase);
- apply(p,'torso','x',springBeast?-.042+travel*.018*Math.sin(phase*2):travel*flex);
+ apply(p,'torso','x',springBeast?-.042+travel*.018*Math.sin(phase*2):
+   referenceFeline?-.018+travel*.035*Math.sin(phase*2+.25):travel*flex);
  apply(p,'torso','y',spine==='reptile'?travel*.07*Math.sin(phase):0);
  apply(p,'tail','y',Math.sin(phase*.55)*.18+actionPulse*.20);
  apply(p,'tailMid','y',Math.sin(phase*.55-.55)*.22+actionPulse*.09);

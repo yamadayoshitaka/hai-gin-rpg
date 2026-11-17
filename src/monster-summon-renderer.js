@@ -9,13 +9,13 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m001-feline-ref-v3-20261117';
+ from './monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m001-crown-action-vfx-v9-20261117';
+ from './monster-animation.js?v=m002-feline-action-v4-20261117';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js';

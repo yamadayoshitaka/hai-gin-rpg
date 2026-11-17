@@ -8,8 +8,9 @@ test('first quality wave physically changes m002/m003/m004, not only metadata',(
  for(const id of ['m002','m003','m004']){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'high'});
   try{
-   assert.equal(model.userData.referenceGroomWave,'canine-m002-m004',
-    'species '+id+' must run skull-rooted dual-coat grooming');
+   assert.equal(model.userData.referenceGroomWave,
+    id==='m002'?'m001-source-m002':'canine-m002-m004',
+    'm002 must now inherit actual m001 facial coat; later wolves retain their family crown');
    const head=model.userData.pivots.head;
    const coats=head.children.filter(x=>x.isMesh&&x.userData.furStrands>0);
    assert.equal(coats.length,3,
