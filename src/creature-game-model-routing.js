@@ -22,8 +22,9 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
   speciesId:spec.id,name:spec.name,family:spec.family,
   model:'procedural:'+spec.id,
   version:spec.id==='m001'?MODEL_REFERENCE_REVISION:
+   spec.id==='m002'?'m001-full-mane-v8-20261117':
    firstWave.has(spec.id)?'m001-small-head-joints-v7-20261117':
-   felineWave.has(spec.id)?'m007-limb-contacts-v7-20261117':
+   felineWave.has(spec.id)?'m007-continuous-skin-v8-20261117':
    'catalog-baseline',
   stage:locked.has(spec.id)?'protected':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
