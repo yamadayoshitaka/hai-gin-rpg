@@ -114,64 +114,71 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T06:50:23+09:00",
+      "lastRunAt": "2026-11-18T07:50:16+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #624 六担当QA全成功を確認・別CI 2件の旧戦闘UIテスト失敗を特定",
-      "summary": "world.enabled=true。正本60種確認。PR #624 head e1709515のWorld six-lane run 44173930236は6/6担当とintegrate成功（対象別WebGL比較・Android合格ではない）。同headのarchitecture run 44173930260 とBattle visual run 44173930228は両方qa/battle-unified-voice-and-intent.test.mjs:62の旧『味方サークルタップで命令選択』期待値で失敗。現行仕様は部隊選択/カメラ・推奨作戦UIのため、現行挙動との整合を別途検証しQA契約修正が必要。今回は新規3D実ソース変更0、対象別WebGL合格0、GLB0、本編採用0、Pages公開0。手動world Issue検索該当0。",
-      "nextAction": "PR #624のqa/battle-unified-voice-and-intent.test.mjs:62旧仕様期待値を現行戦闘操作と照合して同PR内で修正。architecture job 134360097021/mobile-battle job 134360096795を新headで再実行。続いて5家具の新旧WebGL・node --check・world-quality-contract/object-list-catalog/stage-static-instancing・Android FPS検証。全合格前にマージしない。",
+      "subject": "PR #624 旧サークルUI QA修正＋鍵Lv1〜5扉の実3D木組み補強",
+      "summary": "world.enabled=true。PR #624のarchitecture/mobile失敗はqa/battle-unified-voice-and-intent.test.mjs:62の廃止済み命令ポップアップ期待値。現行の単押し部隊選択・視点切替、ダブルタップ拡大、対象選択を検証するQAに更新（95f909af）。さらに既存PR #624のsrc/object-catalog.jsで鍵Lv1〜5の5種類に板目地・裏側の貫と斜材・鍛鉄蝶番と鋲・敷居・水切りの実メッシュを追加（b7e7d922）。今回のNode/WebGL/Android QA実行結果は未取得、GLB0、main採用0、Pages公開0。6レーンの過去成功は今回の品質合格ではない。",
+      "nextAction": "PR #624 head b7e7d922のCIを確認し、node --checkとworld-quality-contract/object-list-catalog/stage-static-instancing、architecture/mobileテストを再検証。扉Lv1〜5の表裏・斜材・蝶番の新旧WebGL画像と接地・1000vs1000 FPSを検査。全合格までDraft・未マージ。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "skipped",
+        "commit": "done",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "PR #624 six lane 6/6 plus integrate success",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930236"
+          "label": "5扉の実メッシュ構造改修",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b7e7d9222bd2db5dbd248fb063341fd55cd6861b"
         },
         {
-          "label": "PR #624 architecture old circle UI assertion failure",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930260/job/134360097021"
+          "label": "旧サークルQA契約修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/95f909af46a37a86d82232a4c1ef35fc36d0caac"
         },
         {
-          "label": "PR #624 mobile battle same assertion failure",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930228/job/134360096795"
-        },
-        {
-          "label": "Existing Draft PR #624",
+          "label": "継続Draft PR #624",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
+        },
+        {
+          "label": "失敗した旧architecture CI",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930260"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 5,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
+        "newSourceCommits": 1,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 architecture and mobile-battle both fail qa/battle-unified-voice-and-intent.test.mjs:62 old ally circle command chooser expectation",
-          "No per-ID before/after WebGL screenshot or Android FPS acceptance for five existing furniture changes",
-          "No verified Node --check + 3 required world test results for current PR head"
+          "PR #624 head b7e7d922のNode構文・3件QAとarchitecture/mobile CI結果未確認",
+          "鍵Lv1〜5の実WebGL前後・裏側接合と衝突/配置の個別QA未実施",
+          "Androidおよび1000vs1000 FPS未計測",
+          "GLB/高密度原型再生成なし・main未採用・Pages未公開"
         ],
-        "speedPlan": "Update old circle UI QA contract on existing PR #624 after inspecting live handler; rerun both failed jobs on new head, then compare five furniture WebGL pairs and Android FPS.",
+        "speedPlan": "既存PR #624のCI失敗ジョブから再開し、旧テスト修正後の実行結果を検査。5扉のWebGL前後比較を最優先、失敗なら同一PR内で修正。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
-          "sourceChangedIds": [],
           "webglPassedIds": [],
           "gameAppliedIds": [],
+          "sourceChangedIds": [
+            "entry_door_lv1_001",
+            "entry_door_lv2_001",
+            "entry_door_lv3_001",
+            "entry_door_lv4_001",
+            "entry_door_lv5_001"
+          ],
           "publicVerified": 0
         }
       },
