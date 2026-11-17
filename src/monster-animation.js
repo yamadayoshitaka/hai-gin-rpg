@@ -1,4 +1,6 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m005-m001-copy-gait-v6-20261118';
+import {updatePhoenixFeatherWaves}
+ from './avian-guardian-sculpt.js?v=phoenix-scaled-wave-v2-20261118';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
@@ -175,6 +177,11 @@ export function animateMonsterModel(model,time=0){
    time:motionTime,phase:gait,action,pulse:Math.max(strike,special,leaping),
    locomotion,run:action==='run'
  });
+ // Travelling feather wave is evaluated by the existing wing material's GPU
+ // vertex shader. Only four uniforms/mesh references are touched; no geometry
+ // is rebuilt per frame (important for battles with many actors).
+ if(model.userData.speciesId==='m013')
+   updatePhoenixFeatherWaves(model,motionTime,action);
  if(['m001','m002'].includes(model.userData.speciesId)&&
     action!=='defeat'){
    // m002 inherits the physically authored m001 anticipation, bite,
