@@ -115,6 +115,6 @@ assert.match(shoulderRuntime,/slot==='shoulder'\)\s*\{[\s\S]*?delta\.addScaledVe
 assert.match(shoulderRuntime,/shoulderSideCounts,shoulderPlacement:/,
  'both sides and attachment revision must be inspectable in runtime diagnostics');
 const maleViewer=readFileSync(new URL('../male-body-studio.html',import.meta.url),'utf8');
-assert.match(maleViewer,/v76-pauldron-shoulder/,
+assert.match(maleViewer,/v=76-pauldron-shoulder/,
  'male full-body viewer must bypass v75 cached equipment modules');
 console.log('PASS: hero shoulder plates fit the actual arms instead of the back');
