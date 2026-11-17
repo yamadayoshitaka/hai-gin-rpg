@@ -247,7 +247,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
         return;
       }
       if(slot==='shoulder'){
-        // Reject ALL eight original unrigged sleeve/pauldron/fixing pieces.
+        // Reject ALL ten original unrigged sleeve/pauldron/fixing pieces.
         // They were the large metal blocks poking through the protagonist cape.
         suppressedRigidShoulderMeshes++;
         return;
