@@ -99,19 +99,29 @@ export function sculptAxialFacePoint(x,y,z,t,a,volume){
    gaussian(lateral,.68,.23);
  const tearTrough=gaussian(u,.54,.12)*gaussian(up,-.13,.18)*
    Math.pow(lateral,1.5);
+ // Sculpt paired nostril depressions and the central nasal septum directly
+ // into the animated muzzle surface. This does not introduce floating parts
+ // and fades entirely for protected legacy m005/m006 meshes.
+ const nostril=gaussian(u,.87,.07)*gaussian(up,-.16,.22)*
+   gaussian(lateral,.64,.19)*rimFactor;
+ const septum=gaussian(u,.88,.07)*gaussian(up,-.30,.20)*
+   midline*rimFactor;
  const temporal=gaussian(u,.37,.16)*gaussian(up,.36,.27)*lateral;
  const xx=x+sign*(volume.craniumDepth*.70*brain*lateral+
    volume.cheekDepth*cheeks-volume.orbitalDepth*.68*sockets+
-   volume.snoutDepth*.27*alar*rimFactor+
+   volume.snoutDepth*.27*alar*rimFactor-
+   volume.snoutDepth*.16*nostril+
    volume.craniumDepth*.16*temporal*rimFactor);
  const yy=y+volume.craniumDepth*.25*brain*up+
    volume.browDepth*brows-volume.jawDepth*jaw-
-   volume.orbitalDepth*.19*tearTrough*rimFactor;
+   volume.orbitalDepth*.19*tearTrough*rimFactor-
+   volume.snoutDepth*.10*septum;
  const zz=z+volume.snoutDepth*muzzle*(1-.32*lateral)+
    volume.snoutDepth*.36*bridge*rimFactor-
    volume.occipitalDepth*occiput+
    volume.cheekDepth*.23*cheeks-
-   volume.orbitalDepth*.12*tearTrough*rimFactor;
+   volume.orbitalDepth*.12*tearTrough*rimFactor-
+   volume.snoutDepth*.20*nostril;
  return [xx,yy,zz];
 }
 /**
