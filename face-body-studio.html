@@ -100,7 +100,7 @@ body.costume-only .faceStudioOnly{display:none!important}
 <label for="heroAction" hidden>アクション<select id="heroAction" aria-label="アクションを選択"></select></label>
 <label for="heroHairStyle">髪型パターン<select id="heroHairStyle" aria-label="髪型パターンを選択"></select></label>
 <label for="heroHairVolume">髪ボリューム<select id="heroHairVolume" aria-label="髪ボリュームを選択"></select></label>
-<label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3">軽量3倍</option><option value="5" selected>高画質5倍</option><option value="10">最高画質10倍</option></select></label>
+<label for="heroHairDensity">髪の密度<select id="heroHairDensity" aria-label="髪の描画密度を選択"><option value="1">軽量1倍</option><option value="3">軽量3倍</option><option value="5">高画質5倍</option><option value="10" selected>最高画質10倍</option></select></label>
 </div><label for="v46Cast" class="hero-face-preset-title">主要人物・モブを3Dで表示
 <select id="v46Cast" aria-label="主要人物・モブから選択"></select></label>
 <div class="heroSelectGrid" aria-label="年代と体型を指定する">
@@ -110,14 +110,14 @@ body.costume-only .faceStudioOnly{display:none!important}
 <div id="v45FacePresetGrid"></div><p class="note">全10職業で衣装の下の実人体（太腿・すね・足）を保持します。ボタンは登録済みの実モーションのみ表示し、未登録の勝利ポーズ等は作りません。戦闘本体は変更しません。</p>
 </section>
 <section id="v32BodyPartStudio"><h2>美少女3Dパーツを選択（各10種以上）</h2><div id="v32BodyChoices"></div>
-<label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3">標準 3倍</option><option value="5" selected>高画質 5倍</option><option value="10">高密度 10倍</option></select></label></section>
+<label for="v32HairDensity">髪の描画密度<select id="v32HairDensity"><option value="1">軽量 1倍</option><option value="3">標準 3倍</option><option value="5">高画質 5倍</option><option value="10" selected>高密度 10倍</option></select></label></section>
 <details id="allFaceControls" open>
 <summary>顔のスライダー：鼻・目元・口・顎</summary>
 <div class="controls wig-density-control" aria-label="独立ウィッグの毛量">
 <label for="wigDensity">独立ウィッグの表示毛量
-<select id="wigDensity" disabled>
+<select id="wigDensity">
 <option value="1">1倍（軽量）</option><option value="3">3倍（軽量）</option>
-<option value="5" selected>5倍（高品質・起動時）</option><option value="10">10倍（高密度・目視確認用）</option>
+<option value="5">5倍（高品質・軽量）</option><option value="10" selected>10倍（高精細・起動時）</option>
 </select></label></div>
 <p class="note">「髪だけ表示（本体透明）」で顔・目元・首・胴体を隠して、着脱ウィッグの毛根と密度だけを確認できます。戻すと顔と全身を表示します。</p>
 <p class="note">v28では髪の毎フレームの物理演算を停止。頭皮に固定した静的ヘアカードで根元を細く、毛先へ自然にテーパーします。</p>
@@ -156,12 +156,12 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster} from './src/independent-face-masters.js?v=20261118-face-hair-fidelity-v70';
+import {makeIndependentFaceMaster} from './src/independent-face-masters.js?v=20261118-eyeliner-meshed-v71';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
-import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-face-hair-fidelity-v70';
+import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-eyeliner-meshed-v71';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=70';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261118-fine-fibre-v70';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261118-hair-fibre-v72';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
