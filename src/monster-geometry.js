@@ -309,6 +309,46 @@ function fittedFelineMasterHair(profile,source){
  }
  return out;
 }
+/**
+ * Real feline cheek follicles follow the same cranial rings as the skull.
+ * No floating fur wig: all root points sit on its anatomical surface.
+ * All strands join the original three shade batches, not new draw calls.
+ */
+function fittedFelineCheekFur(profile,source){
+ const out=[],rows=source?16:11,across=source?12:8;
+ for(const side of [-1,1])for(let layer=0;layer<2;layer++)
+  for(let i=0;i<rows;i++){
+   const y=-.178+.156*(i+.35+layer*.17)/rows;
+   const rings=QUADRUPED_CRANIUM_RINGS;
+   let a=rings[0],b=rings[rings.length-1];
+   for(let k=1;k<rings.length;k++)if(rings[k].y>=y){
+    a=rings[k-1];b=rings[k];break;
+   }
+   const t=clamp01((y-a.y)/Math.max(1e-5,b.y-a.y));
+   const rx=(a.rx+(b.rx-a.rx)*t)*profile.headWidth*
+     (y<-.085?profile.cheekTaper:1);
+   const rz=(a.rz+(b.rz-a.rz)*t)*profile.headDepth;
+   const centerZ=a.cz+(b.cz-a.cz)*t;
+   for(let j=0;j<across;j++){
+    const theta=.16+.80*(j+.30+(i%2)*.25)/across;
+    const x=side*rx*Math.cos(theta),z=centerZ+rz*Math.sin(theta);
+    // Fur stays below eye level and clear of nose/teeth/oral opening.
+    if(y>-.042&&z>.245)continue;
+    const root=[x,y,z],lion=profile.maneLength>0;
+    const len=(lion?.109:.068)*(layer===0?.61:1)*
+      (.95+.08*Math.sin(i*.83+j*.49));
+    const tip=[x+side*len*.26,y-len*.62,z-len*.34];
+    const mid=[x+side*len*.13,y-len*.23,z-len*.10];
+    out.push({root,mid,tip,
+     normal:[side*Math.cos(theta),-.16,Math.sin(theta)],
+     width:layer===0?.006:.0084,
+     shade:(i+j+layer)%13===0?'light':
+       (i+j+layer)%9===0?'shadow':'skin',
+     physicalFelineCheekRoot:true,catMaster:FELINE_SOURCE_MODEL});
+   }
+  }
+ return out;
+}
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -827,13 +867,14 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // A rotated black almond opening, with narrow vertical exposed
      // sclera and tapered brow corners, not a round animal eye button.
      const aperture=g.sphere(head,'shadow',[x,.105,z],
-       [.062,.023,.014],{name:'feline-master-orbit-'+suffix});
+       [.066,.028,.014],{name:'feline-master-orbit-'+suffix});
      aperture.rotation.z=side*.27;
-     const iris=g.sphere(head,'eye',[x,.103,z+.014],
-       [.021,.025,.011],{rough:.21,name:'feline-iris-'+suffix});
+     const iris=g.sphere(head,'eye',[x,.103,z+.019],
+       [.026,.031,.012],{rough:.21,name:'feline-iris-'+suffix});
+     iris.userData.visibleAnteriorIris=true;
      iris.rotation.z=side*.21;
-     const pupil=g.sphere(head,'shadow',[x,.103,z+.025],
-       [.0058,.022,.006],{name:'feline-slit-pupil-'+suffix});
+     const pupil=g.sphere(head,'shadow',[x,.103,z+.033],
+       [.0063,.026,.006],{name:'feline-slit-pupil-'+suffix});
      pupil.rotation.z=side*.13;
      const brow=g.tube(head,'shadow',[
        [inner,.091,innerEdge.z],[x,.130,z+.018],
@@ -1873,10 +1914,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }):[];
    const waveOneCrown=s.id==='m002'?[]:fittedWolfFamilyCrown(s,source);
    const m002Coat=s.id==='m002'?m002ReferenceMane(source):[];
+   // Keep real cheek/temple hair but clear the eye aperture, including
+   // the strand mid/tip (filtering only the root previously hid the iris).
+   const eyeClearM002=m002Coat.filter(h=>
+     ![h.root,h.mid,h.tip].some(pt=>
+       Math.abs(pt[0])>.080&&Math.abs(pt[0])<.215&&
+       pt[1]>.053&&pt[1]<.191&&pt[2]>.147));
    const fullHeadCoat=s.id==='m001'?
      [...headGuides,...referenceLayeredMane(mantle)]:
-     s.id==='m002'?referenceLayeredMane(m002Coat):
+     s.id==='m002'?referenceLayeredMane(eyeClearM002):
      [...headGuides,...waveOneCrown];
+   if(s.id==='m002'){
+     g.root.userData.m002OpticalHairClearance=true;
+     g.root.userData.m002HairGuidesKept=eyeClearM002.length;
+   }
    if(m002Coat.length){
      g.root.userData.m002SourceM001Mane=true;
      g.root.userData.referenceGroomWave='m001-source-m002';
@@ -1928,9 +1979,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      width:.0085,seed:110+v*17,minVertical:-.96,maxVertical:.96,
      gravity:.19
    });
-   const skullCat=fittedFelineMasterHair(felineMaster,source);
+   const cheekCat=fittedFelineCheekFur(felineMaster,source);
+   const skullCat=[...fittedFelineMasterHair(felineMaster,source),...cheekCat];
    addFur(torso,m001Flow(torsoCat));
    addFur(head,m001Flow(skullCat));
+   g.root.userData.felineCheekFurRoots=cheekCat.length;
+   g.root.userData.felineCheekFurSource='real-cranium-ring-interpolation';
    g.root.userData.felineMasterSource=FELINE_SOURCE_MODEL;
    g.root.userData.felineReferenceCrownRows=
      REFERENCE_CROWN_QUALITY[source?'source':'high'].rows;
