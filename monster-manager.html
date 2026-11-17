@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-featherhands-bigscutes-v19-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-feather-hand-motion-v10-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-eyeliner-keratin-v20-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-eyeliner-feather-motion-v11-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -891,6 +891,12 @@ window.__avianWingQA=()=>{
    beakLength:model.getObjectByName('avian-hooked-beak-m013')?.userData.phoenixBeakLength||0,
    thighRadius:model.userData.pivots.legL?.userData.phoenixThighRadius||0,
    featherHands:!!model.userData.phoenixFeatherHands,
+   raisedScutes:!!model.getObjectByName('avian-layered-body-plumage-m013')?.userData.phoenixRaisedBevelScutes,
+   eyeliner:['L','R'].every(side=>['upper','lower'].every(lid=>
+    !!model.getObjectByName('phoenix-'+lid+'-eyeliner-'+side)?.userData.phoenixPhysicalEyeliner)),
+   visiblePupils:['L','R'].every(side=>!!model.getObjectByName('phoenix-pupil-'+side)),
+   bareHandsHidden:['L','R'].every(side=>
+    !!model.userData.pivots['phoenixFeatherHand'+side]?.userData.phoenixHiddenHandBones),
    independentArms:['L','R'].every(side=>!!model.userData.pivots['phoenixArm'+side]?.userData.phoenixIndependentFeatherArm),
    featherHandDigits:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixFeatherHandDigits||0),
    allBackCrest:!!model.getObjectByName('avian-articulated-crest-m013')?.userData.phoenixAllBackCrest,
