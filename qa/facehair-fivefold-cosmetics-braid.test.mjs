@@ -67,3 +67,25 @@ test('pointed groom guides ease toward the tip instead of forming bulbous spikes
  assert.ok(end.y<mid.y*1.1,'blunt protruding terminal spike');
  assert.deepEqual(groomGuideOffset(profile,{t:0,zone:'crown',partSide:1}),{x:0,y:0,z:0});
 });
+
+test('face/body studios and battle use the same pigment module identity',()=>{
+ const targets=[
+  '../src/independent-face-masters.js',
+  '../src/character-system/battle-artist-head-graft.js',
+  '../face-mesh-studio.html',
+  '../face-body-studio.html',
+  '../male-body-studio.html',
+  '../tactics-wireframe.html'
+ ];
+ const refs=targets.map(path=>{
+  const source=readFileSync(new URL(path,import.meta.url),'utf8');
+  const versions=[...source.matchAll(/(?:face-feature-meshes|independent-face-masters|battle-artist-head-graft)\.js\?v=([\w-]+)/g)]
+   .map(m=>m[1]);
+  assert.ok(versions.length>0,path+' must pin the three-dimensional face module');
+  return {path,versions};
+ });
+ const canonical=refs[0].versions[0];
+ for(const {path,versions} of refs)
+  assert.ok(versions.every(v=>v===canonical),
+   path+' imported incompatible face modules; cosmetics/vertex tint may desynchronize');
+});
