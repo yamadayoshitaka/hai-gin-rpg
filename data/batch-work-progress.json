@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-17T04:01:10.939Z",
+  "asOf": "2026-11-17T11:20:00Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
@@ -20,7 +20,7 @@
       "status": "work_incomplete",
       "carryover": true,
       "issueNumber": 438,
-      "nextAction": "PR #456でNode構文と男女の後頭/頭頂WebGL UV比較、Issue #438背面・踵、Android計測、正本全ID分類を実施し不合格を修正。",
+      "nextAction": "旧品質バッチは停止済み（履歴保持）。後継: faceHair/outfit。未マージ差分は既存PRで別途審査する。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -58,7 +58,9 @@
           "newSourceCommits": 1,
           "newGeneratedGLBs": 0
         }
-      }
+      },
+      "retiredFromCenter": true,
+      "legacyRecord": true
     },
     "monster": {
       "source": "ChatGPT 定期タスクの実行結果",
@@ -67,7 +69,7 @@
       "summary": "monster.enabled=true。m020上下尾びれ膜に独立UVチャートを実装（source 12052055）。チェックポイント7fd167e。原型GLB0、対象別QA0、ゲーム採用0。m048未検証。main未マージ・未公開。",
       "status": "work_incomplete",
       "carryover": true,
-      "nextAction": "m020尾びれUVのNode構文/WebGL四方向/PBR、m048動的境界、Android FPSと既存E2E失敗を対象別に検証。",
+      "nextAction": "旧品質バッチは停止済み（履歴保持）。後継: creatureMonster/creatureSummon。未マージ差分は既存PRで別途審査する。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -106,7 +108,9 @@
           "newSourceCommits": 1,
           "newGeneratedGLBs": 0
         }
-      }
+      },
+      "retiredFromCenter": true,
+      "legacyRecord": true
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
@@ -115,7 +119,7 @@
       "carryover": true,
       "subject": "PR #441 未検証28件の滞留・実行QA取得経路BLOCKED",
       "summary": "main world.enabled=true確認、正本catalog-targets 60件確認。PR #441 open/draft/mergeable=false、head 9439cf62、実ソース最終SHA 189571a3。GitHub connectorでmainとPRソースを読取れたがコンテナgit ls-remoteはgithub.com DNS解決失敗。Node構文・指定3QA・新旧WebGL・Android未実施。新規実改修0、GLB0、QA0、ゲーム採用0、実ソースコミット0。",
-      "nextAction": "GitHub ActionsのPR #441 checkoutでNode構文と指定3QAを実行し、createCatalogObjectのWebGL比較を取得。28件の未検証差分を検証してから5〜10種の実造形改修を行う。",
+      "nextAction": "旧品質バッチは停止済み（履歴保持）。後継: 通常センターから除外。未マージ差分は既存PRで別途審査する。",
       "steps": {
         "launch": "done",
         "code": "pending",
@@ -156,7 +160,9 @@
           "newGeneratedGLBs": 0
         },
         "qaBlocker": "3D家具のNode/WebGL/Android描画検証が未完了（従来の非規定blocked表記を規定のpendingへ正規化）"
-      }
+      },
+      "retiredFromCenter": true,
+      "legacyRecord": true
     },
     "anime": {
       "source": "Cloudflare Free日次ワークフロー再実行＋880場面キュー実CI検証",
@@ -216,6 +222,146 @@
         ],
         "speedPlan": "880場面を親キュー化し同一場面の無条件男女二重生成を計画から除外。既存41件は正規ID・性別・結果で維持。中立・人物不在が視覚合格した場合だけ共有し、主人公が映る場面は男女差分を制作。追加料金0円、1日1回の日次制限を保持。"
       }
+    },
+    "faceHair": {
+      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
+      "lastRunAt": null,
+      "status": "work_incomplete",
+      "carryover": true,
+      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
+      "summary": "目/鼻/口/表情/髪型6群/髪の動作とLODをFF15級目標に順番QA。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
+      "steps": {
+        "launch": "pending",
+        "code": "pending",
+        "qa": "pending",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [],
+      "operational": {
+        "blockers": [
+          "実3D形状変更・GLB生成は未実施",
+          "実画面WebGL・Android実機FPS未検証",
+          "Pagesへの公開未確認"
+        ],
+        "speedPlan": "最新の6担当結果から失敗する共通造形を選び、ソース実改修/QA証跡を作成して採用判定。",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 0,
+          "newGeneratedGLBs": 0
+        }
+      },
+      "workflow": "character-six-lane.yml"
+    },
+    "outfit": {
+      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
+      "lastRunAt": null,
+      "status": "work_incomplete",
+      "carryover": true,
+      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
+      "summary": "衣装造形/PBR/結合/小物/アクション/LODの6テーマ巡回QA。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
+      "steps": {
+        "launch": "pending",
+        "code": "pending",
+        "qa": "pending",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [],
+      "operational": {
+        "blockers": [
+          "実3D形状変更・GLB生成は未実施",
+          "実画面WebGL・Android実機FPS未検証",
+          "Pagesへの公開未確認"
+        ],
+        "speedPlan": "最新の6担当結果から失敗する共通造形を選び、ソース実改修/QA証跡を作成して採用判定。",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 0,
+          "newGeneratedGLBs": 0
+        }
+      },
+      "workflow": "character-six-lane.yml"
+    },
+    "creatureMonster": {
+      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
+      "lastRunAt": null,
+      "status": "work_incomplete",
+      "carryover": true,
+      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
+      "summary": "モンスター50体を6種族グループに分割し解剖/質感/動作/LODを点検。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
+      "steps": {
+        "launch": "pending",
+        "code": "pending",
+        "qa": "pending",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [],
+      "operational": {
+        "blockers": [
+          "実3D形状変更・GLB生成は未実施",
+          "実画面WebGL・Android実機FPS未検証",
+          "Pagesへの公開未確認"
+        ],
+        "speedPlan": "最新の6担当結果から失敗する共通造形を選び、ソース実改修/QA証跡を作成して採用判定。",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 0,
+          "newGeneratedGLBs": 0
+        }
+      },
+      "workflow": "creature-six-lane.yml"
+    },
+    "creatureSummon": {
+      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
+      "lastRunAt": null,
+      "status": "work_incomplete",
+      "carryover": true,
+      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
+      "summary": "召喚獣50派生+8専用を種族6グループに分けて品質/導入を点検。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
+      "steps": {
+        "launch": "pending",
+        "code": "pending",
+        "qa": "pending",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [],
+      "operational": {
+        "blockers": [
+          "実3D形状変更・GLB生成は未実施",
+          "実画面WebGL・Android実機FPS未検証",
+          "Pagesへの公開未確認"
+        ],
+        "speedPlan": "最新の6担当結果から失敗する共通造形を選び、ソース実改修/QA証跡を作成して採用判定。",
+        "lastRunOutcome": {
+          "newSourceChangedIds": 0,
+          "newQAPassed": 0,
+          "newGameAppliedIds": 0,
+          "newSourceCommits": 0,
+          "newGeneratedGLBs": 0
+        }
+      },
+      "workflow": "creature-six-lane.yml"
     }
   }
 }
