@@ -260,30 +260,35 @@
       "workflow": "character-six-lane.yml"
     },
     "outfit": {
-      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
+      "source": "既存GitHub Draft PR #599 の実ソース証跡（定期実行時刻ではない）",
       "lastRunAt": null,
-      "status": "work_incomplete",
+      "status": "in_review",
       "carryover": true,
-      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
-      "summary": "衣装造形/PBR/結合/小物/アクション/LODの6テーマ巡回QA。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
-      "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
+      "subject": "衣装の背中・膝・ブーツ縫い目を守る共通メッシュ処理がDraft PR #599に保存済み",
+      "summary": "PR #599でgarment-coverage-runtime.jsの衣装被覆判定を変更し、部分露出三角形を削除しない実ランタイム修正が記録されている。#586/#574/#554と重複確認が必要。Node QA・WebGL正面側面背面/動作・騎乗貫通・Android FPS未確認。GLB0、本編採用0、Pages公開0。",
+      "nextAction": "PR #599と#586/#574/#554の差分重複整理→対象別Node QA→男女WebGL四方向/動作→Android 1000vs1000 FPS→安全にmain/Pages。工程台帳の自動同期は未実装。",
       "steps": {
-        "launch": "pending",
-        "code": "pending",
+        "launch": "done",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
-        "pr": "pending",
+        "commit": "done",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
-      "evidence": [],
+      "evidence": [
+        {
+          "label": "衣装メッシュ実修正 Draft PR #599（SHAは未照合）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/599"
+        }
+      ],
       "operational": {
         "blockers": [
-          "実3D形状変更・GLB生成は未実施",
-          "実画面WebGL・Android実機FPS未検証",
-          "Pagesへの公開未確認"
+          "進捗表示は静的JSONで、ActionsやPRと自動同期されない",
+          "#599/#586/#574/#554の衣装被覆ロジック重複の確認待ち",
+          "実WebGL/Android FPS/1000vs1000性能未確認"
         ],
-        "speedPlan": "最新の6担当結果から失敗する共通造形を選び、ソース実改修/QA証跡を作成して採用判定。",
+        "speedPlan": "既存Draft PRを統合検証し、QA・視覚・性能ゲートを通った実差分だけ本編採用。GitHub成果から進捗JSONを自動更新する処理は別途必要。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
