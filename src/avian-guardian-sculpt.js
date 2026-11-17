@@ -489,6 +489,77 @@ function phoenixWingHandScutes(wing,s,side,detail,name,segment,donor){
  out.userData.phoenixWingScuteSource='guardian-actual-feather-vertices';
  return out;
 }
+/**
+ * Phoenix feather hands are an EXTRA pair of feather-wrapped forelimbs,
+ * emerging from the sternum below the main celestial wings. They are not
+ * human fingers and they do not replace or detach the 82-feather wings.
+ * Shoulder, forearm and 3 feather-digit tips each share real skin joints.
+ */
+function phoenixFeatheredArm(g,s,torso,side,detail){
+ const suffix=side<0?'L':'R';
+ const root=g.group('phoenixArm'+suffix,[side*.315,1.58,.285],torso);
+ const upper=[side*.254,-.207,.136];
+ const humerus=g.bone(root,'skin',[0,0,0],upper,.063,{tipRadius:.047});
+ humerus.name='phoenix-feather-arm-humerus-'+suffix;
+ const forearm=g.group('phoenixForearm'+suffix,upper,root);
+ const radius=[side*.159,-.116,.080];
+ const ulna=g.bone(forearm,'skin',[0,0,0],radius,.051,{tipRadius:.035});
+ ulna.name='phoenix-feather-arm-ulna-'+suffix;
+ const palm=g.group('phoenixFeatherHand'+suffix,radius,forearm);
+ const handSkin=g.sphere(palm,'skin',[side*.030,-.020,.034],
+  [.068,.060,.086],{name:'phoenix-feather-hand-palm-'+suffix});
+ handSkin.userData.phoenixAvianHandPalm=true;
+ const outer=[],inner=[],fingers=[];
+ const layers=detail==='low'?5:detail==='source'?13:9;
+ for(let i=0;i<layers;i++){
+  const t=i/Math.max(1,layers-1),q=(i%3)-1;
+  outer.push({from:[side*(.012+.018*(i%3)),
+      .015-.020*(i%4),-.005],
+    to:[side*(.24+.045*t),-.185-.035*t,.105+.045*q],
+    width:.062+.022*(1-t),normal:[.03,.50,.90],
+    ridge:.018,tint:i%4===0?3:i%3===0?2:1,endTint:3,glow:.35});
+  inner.push({from:[side*(.020+.016*(i%3)),
+    .006-.016*(i%4),-.004],
+    to:[side*(.175+.065*t),-.115-.036*t,.125+.060*q],
+    width:.050+.015*(1-t),normal:[.04,.65,.76],
+    tint:i%3===0?2:1,endTint:3,glow:.32});
+ }
+ const sleeve=layeredFeathers(root,s,detail,
+  'phoenix-feather-arm-sleeve-'+suffix,outer);
+ const under=layeredFeathers(forearm,s,detail,
+  'phoenix-feather-forearm-sleeve-'+suffix,inner);
+ for(let digit=0;digit<3;digit++){
+  const spread=digit-1;
+  const tip=[side*(.24+.065*digit),
+    -.13-.066*digit,.130+.047*spread];
+  const knuckle=[side*(.025+digit*.015),-.025,.022];
+  const digitBone=g.bone(palm,'skin',knuckle,tip,.017,
+    {tipRadius:.008});
+  digitBone.name='phoenix-feather-hand-digit-'+suffix+'-'+digit;
+  for(let layer=0;layer<3;layer++){
+   const t=1-layer*.12;
+   fingers.push({from:[knuckle[0],knuckle[1]+.004*layer,knuckle[2]],
+    to:[tip[0]*t,tip[1]*t,tip[2]+.028*layer],
+    width:.073-.010*layer,
+    normal:[side*.12,.38,.91],ridge:.020,
+    tint:(digit+layer)%3===0?3:digit%2===0?2:1,
+    endTint:3,glow:.45});
+  }
+ }
+ const featherHand=layeredFeathers(palm,s,detail,
+  'phoenix-feather-hand-vanes-'+suffix,fingers);
+ for(const part of [sleeve,under,featherHand]){
+  part.userData.phoenixTrueFeatherForelimb=true;
+  part.userData.phoenixFeatherHandSide=suffix;
+ }
+ featherHand.userData.phoenixFeatherHandDigits=3;
+ featherHand.userData.phoenixNoHumanFingers=true;
+ root.userData.phoenixIndependentFeatherArm=true;
+ forearm.userData.phoenixFeatherWrappedUlna=true;
+ palm.userData.phoenixAvianFeatherHand=true;
+ g.root.userData.phoenixFeatherHands=true;
+ return {root,forearm,palm,featherHand};
+}
 /** Continuous muscle mass: bulky upper femur narrows into a real knee.
  * The shank below the knee remains bony, dark, narrow and skinless-looking.
  * No shared cylindrical coat bridges the two articulated body parts.
@@ -833,6 +904,10 @@ export function buildGuardianDerivedBird(g,s){
  // Feathered sternum and a continuous forward cervix, not a neck sphere.
  g.bridge(torso,'skin',[0,1.55,.22*p.body],
    [0,1.96,.30*p.neck],.217*p.body,.149*p.neck);
+ // Distinct visible feather hands nest beside the chest, beneath the
+ // unchanged guardian wings. No naked human arms or detached floating strips.
+ if(s.id==='m013')for(const side of [-1,1])
+  phoenixFeatheredArm(g,s,torso,side,detail);
  const head=headAndCrest(g,s,p,torso,detail);
  if(s.id==='m013')phoenixNeckCrownScutes(g,s,p,torso,head,detail);
  for(const side of [-1,1]){
