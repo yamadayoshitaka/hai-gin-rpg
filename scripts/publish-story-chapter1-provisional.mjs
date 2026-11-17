@@ -22,6 +22,7 @@ import {chapterReviewedPanelAsset} from '../src/story-chapter-reviewed-art.js';
 import {stage2ReviewedPanelAsset} from '../src/story-stage2-reviewed-art.js';
 import {NEW_STORY_ORIGINAL_ART} from '../src/story-new-original-art.js';
 import {sourceDraftDialogueMatches} from '../src/story-draft-dialogue-identity.js';
+import {eligibleFreshReviewSource} from '../src/story-new-original-timestamp-guard.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const args=process.argv.slice(2);
@@ -68,6 +69,22 @@ function sourceBytes(file){return git('show',sourceBranch+':'+file);}
 function sourceManifest(){
  return new Set(git('ls-tree','-r','--name-only',sourceBranch).toString('utf8').trim().split('\n'));
 }
+// Review branch may have produced a genuinely NEW image in its old directory.
+// Allow it only when the source file was FIRST ADDED after the new-art policy
+// cutover, by an actual stage/gender/edition-specific review image commit.
+// This never treats the old directory alone as proof of fresh generation.
+function sourceCandidate(s,available){
+ const expected=s.draftPath;
+ if(available.has(expected)&&available.has(expected+'.generation.json'))return expected;
+ if(s.stageId<'c01-s05'||!expected.includes('/cloudflare-chapter1-new-originals/'))
+  return expected;
+ const previous=expected.replace('/cloudflare-chapter1-new-originals/','/cloudflare-chapter1-free/');
+ if(!available.has(previous)||!available.has(previous+'.generation.json'))return expected;
+ const firstCommit=git('log',sourceBranch,'--diff-filter=A','-1',
+  '--format=%H%x09%cI%x09%s','--',previous).toString('utf8').trim();
+ return eligibleFreshReviewSource({stageId:s.stageId,edition:s.edition,gender:s.gender,
+  expected,source:previous,gitIntroduction:firstCommit})?previous:expected;
+}
 function expectedPixels(b){
  if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')
   throw Error('not WebP');
@@ -81,11 +98,11 @@ function expectedPixels(b){
  if(type==='VP8X')return [b.readUIntLE(24,3)+1,b.readUIntLE(27,3)+1];
  throw Error('unknown WebP encoding '+type);
 }
-function sourceReviewable(s,available){
- const proof=s.draftPath+'.generation.json';
- if(!available.has(s.draftPath)||!available.has(proof))return null;
+function sourceReviewable(s,available,draftSource=s.draftPath){
+ const proof=draftSource+'.generation.json';
+ if(!available.has(draftSource)||!available.has(proof))return null;
  const meta=JSON.parse(sourceBytes(proof).toString('utf8'));
- const original=sourceBytes(s.draftPath);
+ const original=sourceBytes(draftSource);
  const sum=sha(original),[w,h]=expectedPixels(original);
  const min=s.stageId==='c01-s02'?[768,320]:(s.stageId>='c01-s04'?[800,450]:[1536,864]);
  if(w<min[0]||h<min[1]||w*9!==h*16)throw Error('Low native geometry '+s.key);
@@ -115,7 +132,7 @@ function sourceReviewable(s,available){
    sha(fs.readFileSync(toAbs(ref.source)))!==ref.originalSha256)
    throw Error('Source actor reference modified '+s.key);
  }
- return {bytes:original,sha256:sum,meta,pixels:[w,h],proof,original:s.draftPath};
+ return {bytes:original,sha256:sum,meta,pixels:[w,h],proof,original:draftSource};
 }
 const slug=key=>key.replaceAll('|','__');
 const canActOn=(s)=>s.stageId>='c01-s05'||!chapterReviewedPanelAsset({
@@ -172,20 +189,25 @@ for(const s of shots){
  // Follow the current compact CG scene list, not the superseded 462-cut archive.
  if(s.stageId<'c01-s01'||s.stageId>'c01-s10'||!compactOnly(s))continue;
  if(!canActOn(s))continue;
- // Output rejected by provider safety filters must NEVER be published.
- if(available.has(s.draftPath+'.provider-blocked.json')){providerBlocked++;continue;}
- if(!available.has(s.draftPath)||!available.has(s.draftPath+'.generation.json')){
+ // Provider safety blocks apply to the actual selected image source, not only
+ // the new destination directory. Never bypass a historical 3030 blocker.
+ const draftSource=sourceCandidate(s,available);
+ if(available.has(draftSource+'.provider-blocked.json')){providerBlocked++;continue;}
+ if(!available.has(draftSource)||!available.has(draftSource+'.generation.json')){
   missing++;continue;
  }
  try{
-  const verified=sourceReviewable(s,available);
+  const verified=sourceReviewable(s,available,draftSource);
   if(!verified){missing++;continue;}
   if(already.has(verified.sha256))throw Error('Identical image bytes in multiple distinct canonical scenes');
   already.add(verified.sha256);
   if(ledger.returned[s.key]===verified.sha256){unchanged++;continue;}
   const newOriginal=s.stageId>='c01-s05';
-  if(newOriginal&& !s.draftPath.includes('/cloudflare-chapter1-new-originals/'))
-   throw Error('Historical image cannot become new original: '+s.key);
+  if(newOriginal&&(!s.draftPath.includes('/cloudflare-chapter1-new-originals/')||
+     (verified.original!==s.draftPath&&
+      verified.original!==s.draftPath.replace('/cloudflare-chapter1-new-originals/',
+       '/cloudflare-chapter1-free/'))))
+   throw Error('Unverified archive cannot become new original: '+s.key);
   if(newOriginal?fresh[s.key]?.sha256===verified.sha256:
      active[s.key]?.sha256===verified.sha256){unchanged++;continue;}
   const rel=(newOriginal?'assets/story/new-originals/':
@@ -193,7 +215,7 @@ for(const s of shots){
   if(fs.existsSync(toAbs(rel))&&sha(fs.readFileSync(toAbs(rel)))!==verified.sha256)
    throw Error('Existing destination has different image bytes: '+s.key);
   const binding={asset:'./'+rel,sha256:verified.sha256,provenance:verified.proof,
-   sourceDraft:s.draftPath,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
+   sourceDraft:verified.original,status:'PROVISIONAL_OWNER_AUTHORIZED_PENDING_P0',
    originalLivePath:s.legacyPath||null,stageId:s.stageId,edition:s.edition,gender:s.gender};
   if(mode==='--apply'){
    fs.mkdirSync(path.dirname(toAbs(rel)),{recursive:true});
@@ -203,7 +225,7 @@ for(const s of shots){
     origin:'NEW_SCENE_GENERATED_AFTER_2026_11_17',
     stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,
     sceneId:s.shotId,asset:'./'+rel,sha256:verified.sha256,
-    provenance:verified.proof,sourceDraft:s.draftPath,
+    provenance:verified.proof,sourceDraft:verified.original,
     provenanceVerified:true,nativeQAComplete:true,
     visualP0Approved:false,status:'PROVISIONAL_NATIVE_AND_SOURCE_QA_PENDING_VISUAL_P0'
    };
