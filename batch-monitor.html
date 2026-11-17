@@ -41,34 +41,30 @@ small{font-size:11px}strong{font-weight:700}
 .batch-health .health-next{color:#d9ebfb;font-size:12px}
 .batch-health strong{color:#f0d7a5}
 </style></head><body>
-<header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜毎時バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
-<main><h1>品質改善バッチ：4系統＋ワールド6担当</h1>
-<p>各バッチの<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を区別して確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
-<div class="summary" aria-live="polite"><span id="groupCount">4系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
+<header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜FF15品質バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
+<main><h1>FF15級品質バッチ：顔・髪／衣装／モンスター／召喚獣 各6担当</h1>
+<p>顔・髪、衣装、モンスター、召喚獣は6つの検証テーマを10分ごとに巡回。実際のモデル改修数と<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を分けて確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
+<div class="summary" aria-live="polite"><span id="groupCount">5系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <p id="fresh" class="muted">GitHub Actionsは画面表示時・更新時に確認します。ChatGPTの実行中判定はこのページから取得できません。</p>
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
 <p class="panel"><strong>予算ルール：</strong><span id="storySpendPolicy">追加の有料APIは使用しません</span></p>
 <p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料、毎日09:20に最大1回の制作バッチ）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
-<section class="panel" aria-label="ワールド6担当バッチ">
- <h2>🏰 ワールド・オブジェクト6担当（毎時）</h2>
- <p>ゲームと同じ <code>createCatalogObject()</code> を基準に、台帳・造形・PBR材質・衝突/配置・LOD・WebGL実撮影を6本並列で確認します。6本合格後に結果を統合します。自動マージは安全な台帳・QA結果に限定し、3D品質やAndroid FPSの合格は別判定です。</p>
- <p id="worldSixStatus" class="muted">6担当の統合証跡を確認中…</p>
- <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/world-six-lane.yml" target="_blank" rel="noopener noreferrer">6担当の実行ログ</a><a href="./game.html">本編の実画面</a></div>
- <label for="worldObjectPicker">対象オブジェクト（同一3D生成関数で確認）</label>
- <select id="worldObjectPicker" style="max-width:100%;width:100%;margin:8px 0;padding:10px;color:#fff;background:#1e354b;border:1px solid #476379;border-radius:8px"><option value="">60種類の台帳を読み込み中…</option></select>
- <div class="links"><a href="./world-quality-preview.html?object=castle_001" id="worldObjectPreview">選択モデルを3D確認</a><a href="./object-editor.html">試作用オブジェクト作成（本編とは別）</a></div>
- <p id="worldObjectNote" class="muted">試作用エディタの出力は本編へ自動登録されません。正本カタログへの登録とQA・マージが必要です。</p>
+<section class="panel" aria-label="FF15級人物・モンスター・召喚獣品質基準">
+ <h2>人物・モンスター・召喚獣の品質基準（各6工程）</h2>
+ <p>先ほど承認された顔・髪／衣装の設定画を品質ターゲットとします。種族別の基準は、解剖/造形、質感、接合、動作、エフェクト、LODとゲーム採用判定です。<strong>定期QA成功は3Dモデル改修や本編反映の証拠ではありません。</strong></p>
+ <div class="links"><a href="./face-mesh-studio.html">顔・髪の3D画面</a><a href="./outfit-maintenance.html">衣装3D画面</a><a href="./monster-manager.html">モンスター3D画面</a><a href="./creature-reconstruction-plan.html">108体の進捗</a><a href="./tactics-wireframe.html">ゲーム本編</a></div>
+ <p class="muted">旧人物モデル・旧ワールドオブジェクト・旧モンスター定期バッチは通常一覧から除外／停止。旧PRと履歴は削除せずGitHubに保持します。GitHub Actions定期実行は遅延/スキップが起こり得るため実行履歴を照合します。</p>
  </section>
 <div class="grid" id="cards"><p>バッチ情報を読み込み中…</p></div>
 <footer>
  <h2>表示と手動指示について</h2>
  <p>「毎時有効」はスケジュールが有効という意味で、いま処理しているという意味ではありません。ChatGPT側は取得時点の記録を表示し、GitHub側は最新のActions履歴を取得します。</p>
- <p><strong>有効／無効：</strong>バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。人・モンスターの既存定期タスクは実行前に切替設定を確認するよう変更が必要です。</p>
+ <p><strong>有効／無効：</strong>新しい4系統はGithub Actionsのスイッチ連動。バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。人・モンスターの既存定期タスクは実行前に切替設定を確認するよう変更が必要です。</p>
  <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
  <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。工程台帳は最終保存時点、PRの最新コミットとマージ状態はGitHubから照会します。改修中の画面はPR版比較で開き、本編の公開SHAも別途照合します。</p>
  <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
- <p class="note">人モデル・モンスター・漫画のChatGPT定期タスクはGitHubの切替設定を毎回確認します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
+ <p class="note">旧人モデル・旧モンスター・旧オブジェクトは停止。新しい4つの品質バッチは10分間隔のGitHub ActionsでQAを実行します。漫画は既存のChatGPT定期タスクを維持します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
 </footer>
 </main>
@@ -98,7 +94,7 @@ function statusLabel(result){
 }
 function createCard(data){
  const c=tag('section','card');const t=tag('div','top');
- const title=tag('span','name',({"human":"👤 ","monster":"🐉 ","world":"🏰 ","anime":"🎬 "}[data.id]||'')+data.name);
+ const title=tag('span','name',({"faceHair":"👤 ","outfit":"🛡️ ","creatureMonster":"🐉 ","creatureSummon":"✨ ","anime":"🎬 "}[data.id]||'')+data.name);
  const badge=tag('span','badge '+(data.autoEnabled?'on':'off'),data.autoEnabled?'毎時設定：有効':'毎時設定：停止');
  t.append(title,badge);c.appendChild(t);c.appendChild(paragraph(data.subtitle,'muted'));
  const schedule=tag('div','panel');
@@ -113,7 +109,7 @@ function createCard(data){
  const previewPanel=tag('section','panel');
  const previewHead=tag('strong','','改修中の実画面・本編公開を確認');
  const previewStatus=paragraph('関連するGitHub PRを照合中…','status');
- const previewLink=makeLink('PR版と本編を視覚比較','./batch-pr-preview.html?group='+encodeURIComponent(data.id),false);
+ const previewLink=makeLink('PR版と本編を視覚比較','./batch-pr-preview.html?group='+encodeURIComponent(data.previewGroup||data.id),false);
  previewLink.className='link';previewPanel.append(previewHead,previewStatus,previewLink);
  c.appendChild(previewPanel);
  const progressBox=tag('section','panel work-progress');
@@ -161,14 +157,15 @@ function createCard(data){
  const box=tag('div','field');
  const title2=tag('label','','次の手動指示（1回だけ）');
  const instruction=document.createElement('textarea');instruction.maxLength=500;instruction.placeholder={
- human:'例：頭頂部の継ぎ目と地肌露出、横顔の首の長さを修正して',
- monster:'例：龍王の顔を実写寄りにし、天使の羽と飛行姿勢を優先して',
- world:'例：城壁の石材・木目・陰影を見本に近づけて',
+ faceHair:'例：頭頂部UVと黒目の陰影をFF15目標へ改善して',
+ outfit:'例：剣士とシーフ背面の板状パーツと騎乗時貫通を直して',
+ creatureMonster:'例：m002の鼻と毛並みをm001を基準に実メッシュ再造形して',
+ creatureSummon:'例：seraph_guardianの羽と人型顔、飛行姿勢を改善して',
  anime:'例：第1章の未完成コマを、登場人物とシナリオに忠実に描いて'
  }[data.id];
  title2.appendChild(instruction);box.appendChild(title2);c.appendChild(box);
  const target=field('対象ID（省略すると次の未処理）',
- data.id==='world'?'例：object:castle_001 / stage:c01-s04':data.id==='monster'?'例：m031':data.id==='human'?'例：female':'例：c01-s04',false);
+ data.id==='world'?'例：object:castle_001 / stage:c01-s04':data.id==='monster'?'例：m031':data.id==='faceHair'?'例：female':data.id==='outfit'?'例：job01':'例：c01-s04',false);
  c.appendChild(target.wrapper);
 
  const drop=tag('div','image-drop');drop.tabIndex=0;
@@ -318,9 +315,9 @@ async function updatePreviewStatus(){
   const catalog=await fetchJSON('./data/batch-pr-previews.json?ts='+Date.now());
   if(catalog.schemaVersion!==1||!catalog.groups)throw Error('PR紐付け不正');
   await Promise.all(groups.map(async group=>{
-   const view=elements.get(group.id),item=catalog.groups[group.id]?.[0];
+   const view=elements.get(group.id),item=catalog.groups[group.previewGroup||group.id]?.[0];
    if(!view||!item)return;
-   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(group.id)+'&pr='+item.pr;
+   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(group.previewGroup||group.id)+'&pr='+item.pr;
    try{
     const pr=await fetchJSON(API+'/pulls/'+item.pr);
     const sha=String(pr.head?.sha||'');
@@ -394,7 +391,7 @@ async function updateRuns(){
     const result=await fetchJSON(API+'/actions/workflows/'+wf.id+'/runs?per_page=5');
     const run=result.workflow_runs?.[0];view.activity.textContent='GitHub QA：'+statusLabel(run)+(run?' ／ '+TIME(run.created_at):'');
     if(run)view.log.href=run.html_url;
-    if(g.id==='world')view.detail.textContent=run?'最新の実行：'+TIME(run.created_at)+' ／ '+statusLabel(run):'実行履歴なし';
+    if(g.id==='__retired_world')view.detail.textContent=run?'最新の実行：'+TIME(run.created_at)+' ／ '+statusLabel(run):'実行履歴なし';
   }));
   $('activeCount').textContent='GitHub実行状況：更新済み';
   $('fresh').textContent='GitHubの直近実行を更新：'+TIME(new Date().toISOString())+' ／ ChatGPTの状態は記録時点の情報です';
@@ -442,15 +439,15 @@ async function updateWorldSix(){
 async function start(){
  try{
   const j=await fetchJSON('./data/hourly-batch-dashboard.json');
-  if(!Array.isArray(j.groups)||j.groups.length!==4)throw Error('4系統の設定が不正');
-  $('cards').replaceChildren();groups.push(...j.groups);
+  if(!Array.isArray(j.groups)||j.groups.length!==5)throw Error('5系統の設定が不正');
+  $('cards').replaceChildren();groups.push(...j.groups);$('groupCount').textContent=groups.length+'系統';
   for(const g of groups)createCard(g);
   $('enabledCount').textContent='GitHub作業許可：'+groups.filter(g=>g.autoEnabled).length+'有効・'+groups.filter(g=>!g.autoEnabled).length+'停止';
   $('schedulerCount').textContent='ChatGPT定期タスク：'+groups.filter(g=>g.schedulerEnabled===true&&g.source.includes('ChatGPT')).length+'有効・'+groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length+'停止（記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
+  await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
+$('refresh').addEventListener('click',async()=>{await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
 start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
 </script></body></html>
