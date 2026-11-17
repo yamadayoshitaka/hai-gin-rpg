@@ -38,11 +38,19 @@ assert.doesNotMatch(segmented,/stage\.rotation\.y\s*=\s*Math\.PI\b/,'do not reve
 const detail=read('src/outfit-maintenance-model.js');
 assert.match(detail,/const front=surfaceAt\(cy-H\*\.09\)\+H\*\.008/,'chest decoration follows fitted +Z fabric');
 assert.match(detail,/const waistFront=surfaceAt\(beltY\)\+H\*\.007/,'belt hardware follows waist surface');
-assert.match(detail,/true,Math\.PI\/2,Math\.PI\)/,'cape half-shell must occupy -Z');
-assert.match(detail,/three-dimensional-back-and-side-cape[^\n]+mz\+sz\*\.02/,'cape centered on the back shell');
+// The cape is now a skinned, symmetric rear PANEL, not the old cylinder.
+assert.match(detail,/const upperBack=surfaceAt\(cy-H\*\.055,true,mx\)/,
+ 'cape anchor must sample the actual negative-Z upper back');
+assert.match(detail,/const x=mx\+u\*halfWidth/,
+ 'cape panel must span the left and right sides of the back');
+assert.match(detail,/const z=torsoBack-H\*\(/,
+ 'cape cloth must be offset behind the fitted back surface');
+assert.match(detail,/addBackShoulderCape\('three-dimensional-back-and-side-cape'/,
+ 'existing occupation capes must use the same rear panel');
 for(let i=0;i<=16;i++){
-  const angle=Math.PI/2+Math.PI*i/16;
-  assert.ok(Math.cos(angle)<1e-10,'cape cylinder vertex must be on the back hemisphere');
+ const t=i/16;
+ assert.ok(.038+.026*t+.065*t*t>.03,
+  'rear cape depth must remain outside the shoulder and back armor');
 }
 const heraldry=read('src/character-system/armor-heraldry-runtime.js');
 assert.match(heraldry,/frontZ=bounds\.max\.z\+\.008/,'cuirass embossing at front +Z');
