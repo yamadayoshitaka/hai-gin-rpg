@@ -5,6 +5,8 @@ const enemy={team:1,job:{name:'召喚士'},jobId:'summoner',monsterSpec:{id:'m00
 assert.equal(battleUnitDisplayName(enemy),'灰狼');
 assert.equal(battleUnitDisplayClass(enemy),'monster');
 assert.equal(battleUnitDisplayName({...enemy,job:{name:'魔法使い'}}),'灰狼');
+assert.equal(battleUnitDisplayName({isMonster:true,job:{name:'召喚士'}}),'モンスター');
+assert.equal(battleUnitDisplayName({monsterSpec:{id:'m041'},job:{name:'召喚士'}}),'m041');
 assert.equal(battleUnitDisplayName({job:{name:'騎士'}}),'騎士');
 assert.equal(battleUnitDisplayName({job:{name:'剣士'},displayName:'軍師アレク'}),'軍師アレク');
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
