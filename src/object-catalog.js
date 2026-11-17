@@ -242,6 +242,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.46,.46])b(1.68*c,.16*c,.095*c,0,.72*c,z*c,dark);
    for(const x of [-.82,.82])b(.095*c,.16*c,.83*c,x*c,.72*c,0,dark);
    for(let i=0;i<6;i++)b(.012*c,.009*c,1.23*c,(i-2.5)*.3*c,.922*c,0,dark);
+   // Paired low stretchers and corner blocks transfer racking loads into legs.
+   for(const z of [-.46,.46])b(1.55*c,.075*c,.085*c,0,.23*c,z*c,dark);
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    b(.23*c,.20*c,.18*c,x*c,.65*c,z*c,dark);
+   }
   }
   if(id==='cottage_chair_001'){
    b(.7*c,.11*c,.65*c,0,.48*c,0);
@@ -253,6 +258,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.23,.23])b(.54*c,.09*c,.09*c,0,.23*c,z*c,dark);
    for(const y of [.91,1.37])b(.66*c,.1*c,.09*c,0,y*c,-.29*c);
    for(const x of [-.14,0,.14])b(.065*c,.41*c,.08*c,x*c,1.14*c,-.29*c,dark);
+   // Seat-to-rear-leg gussets and a transverse stretcher resist chair sway.
+   b(.48*c,.085*c,.09*c,0,.20*c,.20*c,dark);
+   for(const x of [-.27,.27])b(.10*c,.25*c,.17*c,x*c,.43*c,-.25*c,dark);
   }
   if(id==='cottage_bed_001'){
    b(1.6*c,.22*c,2.5*c,0,.36*c,0,dark);
@@ -264,12 +272,20 @@ export function createObjectById(id,{cellSize=2.2}={}){
    b(1.51*c,.18*c,.14*c,0,1.0*c,-1.18*c);
    for(const x of [-.45,-.15,.15,.45])b(.075*c,.53*c,.12*c,x*c,.71*c,-1.18*c);
    b(1.1*c,.14*c,.5*c,0,.77*c,-.78*c,linen);
+   // Bed slats rest on inner ledgers, rather than an unsupported solid mattress.
+   for(const x of [-.60,.60])b(.075*c,.095*c,2.28*c,x*c,.45*c,0,dark);
+   for(let z=-.95;z<=.96;z+=.32)b(1.27*c,.065*c,.13*c,0,.49*c,z*c,timber);
   }
   if(id==='cottage_shelf_001'){
    for(const x of [-.8,.8])b(.14*c,2.8*c,.73*c,x*c,1.4*c,0,dark);
    for(const y of [.56,1.48,2.4])for(const x of [-.72,.72])
     b(.07*c,.15*c,.70*c,x*c,y*c,0,dark);
    b(1.79*c,.1*c,.1*c,0,2.69*c,-.33*c,dark);
+   // Back rails and shelf support cleats prevent unsupported long spans.
+   for(const y of [.30,.92,1.54,2.16,2.70]){
+    b(1.57*c,.075*c,.075*c,0,y*c,.32*c,dark);
+    for(const x of [-.73,.73])b(.12*c,.075*c,.60*c,x*c,y*c,0,dark);
+   }
    for(let y=.3;y<2.8;y+=.62){
     b(1.8*c,.12*c,.8*c,0,y*c,0);
     for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen);
@@ -287,6 +303,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
     const hoop=new THREE.Mesh(new THREE.TorusGeometry(r*c,.027*c,7,32),ironHoop);
     hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;root.add(hoop);
    }
+   // A recessed circular head and inner support ring close the coopered shell.
+   const head=new THREE.Mesh(new THREE.CylinderGeometry(.405*c,.405*c,.055*c,32),dark);
+   head.position.y=1.105*c;head.castShadow=true;root.add(head);
+   const headRim=new THREE.Mesh(new THREE.TorusGeometry(.415*c,.018*c,6,32),ironHoop);
+   headRim.rotation.x=Math.PI/2;headRim.position.y=1.12*c;root.add(headRim);
    for(let k=0;k<12;k++){
     const theta=k*Math.PI/6;
     const seam=new THREE.Mesh(new THREE.CylinderGeometry(.006*c,.006*c,.99*c,4),dark);
