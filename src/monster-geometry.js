@@ -4,6 +4,8 @@
  * Each specimen is real 3D geometry, never an image billboard.
  */
 import * as THREE from 'three';
+import {buildGuardianDerivedBird,AVIAN_REALISM_REVISION}
+ from './avian-guardian-sculpt.js?v=guardian-feathers-v1-20261118';
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-cat-torso-anchor-tail-v12-20261118';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
@@ -2328,6 +2330,10 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  g.root.scale.setScalar(k*.86);
 }
 function bird(g,s){
+ // Four natural bird species use real seraph three-layer feather geometry,
+ // a sculpted avian torso and articulated feather/foot anchors.
+ // m015 is a humanoid Tengu and retains its independently approved rig.
+ if(buildGuardianDerivedBird(g,s))return;
  const v=s.variant;
  const torso=g.group('torso');
  if(s.id==='m015')g.sphere(torso,'skin',[0,1.44,0],[.36,.55,.44]);
@@ -2894,6 +2900,8 @@ export function createMonsterModel(spec,{detail='high'}={}){
  // The optional effects are created lazily only when a rendered near-LOD
  // m001 performs an action. Pure timing tests can import monster-animation
  // without importing Three.js or allocating a GPU mesh.
+ if(['m011','m012','m013','m014'].includes(spec.id))
+   g.root.userData.avianGameSourceRevision=AVIAN_REALISM_REVISION;
  if(spec.id==='m001')g.root.m001FxThree=THREE;
  if(['m002','m007','m008','m009','m010'].includes(spec.id))
    g.root.beastFxThree=THREE;
