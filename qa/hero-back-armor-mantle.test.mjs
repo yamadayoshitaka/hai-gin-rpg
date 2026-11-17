@@ -154,6 +154,20 @@ for(const quality of ['preview','battle']){
   const position=shell.getWorldPosition(new THREE.Vector3());
   assert.ok((side==='l'?position.x<-.17:position.x>.17),
    'armor must lie on the OUTER shoulder, never the center of the back');
+  const joint=bones.get('upperarm_'+side).getWorldPosition(new THREE.Vector3());
+  const radius=shell.geometry.parameters.radius;
+  const sign=side==='l'?-1:1;
+  assert.ok(sign*(position.x-joint.x)>radius*.42,
+   'pauldron crown must sit OUTBOARD of upper-arm socket, not against the neck');
+  assert.ok(Math.abs(position.z-joint.z)<radius*.14,
+   'pauldron must not drift onto the front breastplate or rear shoulder blade');
+  assert.ok(position.y-joint.y>radius*.70,
+   'pauldron crown must clear the actual upper-arm and sleeve');
+  const crownAxis=new THREE.Vector3(0,1,0).applyQuaternion(
+   shell.getWorldQuaternion(new THREE.Quaternion()));
+  assert.ok(sign*crownAxis.x>.14,
+   'pauldron dome must slope toward the outer shoulder');
+  assert.equal(shell.userData.equipmentModel,'anatomical-pauldron-v80');
   assert.ok(position.z>-.05&&position.z<.10,
    'shoulder cap center must not protrude from the back plane');
   const shoulderJointY=bones.get('upperarm_'+side).getWorldPosition(new THREE.Vector3()).y;
