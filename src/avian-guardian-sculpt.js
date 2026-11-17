@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-sculpted-thigh-broad-scutes-v4-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-large-scutes-featherhands-shortbeak-v5-20261118';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -294,14 +294,14 @@ function phoenixSurfaceScutes(parent,s,detail,name,{
   const width=widthAt(u,angle,anchor);
   if(!(width>0))continue;
   minWidth=Math.min(width,minWidth);maxWidth=Math.max(width,maxWidth);
-  const angleHalf=Math.min(.76,width/Math.max(.045,anchor.radius));
+  const angleHalf=Math.min(1.04,width/Math.max(.045,anchor.radius));
   const origin=vertices.length/3;
   const shade=mix(dark,mid,.27+(.47*(r%5)/5));
   shade.lerp(light,.22+(col%4)*.045);
   const shades=[shade,shade.clone().lerp(hot,.14),
     shade.clone().lerp(hot,.27),shade.clone().lerp(hot,.43)];
   const longitudinal=[0,.35,.78,1.16],
-    breadth=[.72,1,.77,.05],lifts=[.008,.022,.015,.004];
+    breadth=[.79,1,.82,.055],lifts=[.006,.035,.024,.003];
   for(let v=0;v<4;v++){
    for(let side=-1;side<=1;side++){
     const sample=surface(Math.min(.9999,u+longitudinal[v]/rows),
@@ -339,24 +339,24 @@ function phoenixSurfaceScutes(parent,s,detail,name,{
 }
 function phoenixDenseScales(g,s,p,torso,detail){
  const stations=plumageStations(p);
- const density=detail==='source'?[22,22]:detail==='high'?[17,17]:
-   detail==='medium'?[12,13]:[8,9];
+ const density=detail==='source'?[20,18]:detail==='high'?[15,14]:
+   detail==='medium'?[11,11]:[7,8];
  const coat=phoenixSurfaceScutes(torso,s,detail,
   'avian-layered-body-plumage-'+s.id,{
    rows:density[0],columns:density[1],
    surface:(u,a)=>phoenixAxialSurface(stations,u,a),
    widthAt:(u,a,v)=>{
     const belly=Math.sin(a)<-.26&&v.z<.32;
-    return belly?.164:v.z>.42?.085:v.z<-.25?.132:.139;
+    return belly?.255:v.z>.42?.133:v.z<-.25?.200:.224;
    },kind:'close-fitted-thorax-diamond-scales'
   });
- coat.userData.phoenixAbdomenLargeScaleWidth=.164;
- coat.userData.phoenixBellyScaleMultiplier=7.13;
+ coat.userData.phoenixAbdomenLargeScaleWidth=.255;
+ coat.userData.phoenixBellyScaleMultiplier=11.09;
  coat.userData.phoenixScalesGradedToFace=true;
  coat.userData.originalBodyAnatomy='enlarged-closed-thorax-and-keel';
  g.root.userData.avianBodyFeatherCount=coat.userData.scaleCount;
  g.root.userData.phoenixDenseScaleCount=coat.userData.scaleCount;
- g.root.userData.phoenixLargeScaleMultiplier=7.13;
+ g.root.userData.phoenixLargeScaleMultiplier=11.09;
  return coat;
 }
 /** Real, overlapping ventral scutes, never floating ornament spheres.
@@ -405,7 +405,7 @@ function phoenixNeckCrownScutes(g,s,p,torso,head,detail){
     nx=Math.cos(a),nz=Math.sin(a);
    // Body -> throat -> cheek: gradual physical reduction, never a
    // sudden tiny dot at the crown or a protruding floating necklace.
-   const width=.098*(1-t)+.040*t;
+   const width=.143*(1-t)+.060*t;
    const x=nx*rad*1.015,z=cz+nz*rad*.989;
    guides.push({from:[x,cy,z],
     to:[x+nx*.007,cy+.039*(1-t),z+nz*.011-.030],
@@ -415,22 +415,22 @@ function phoenixNeckCrownScutes(g,s,p,torso,head,detail){
  }
  const neck=layeredFeathers(torso,s,detail,'phoenix-neck-fine-grading-scutes',guides);
  neck.userData.phoenixScalesShrinkTowardsFace=true;
- neck.userData.phoenixScaleWidthBase=.098;
- neck.userData.phoenixScaleWidthTip=.040;
+ neck.userData.phoenixScaleWidthBase=.143;
+ neck.userData.phoenixScaleWidthTip=.060;
  // Surface-fitted facial scales rather than an invisible decorative ring.
  // Leave the forward +Z eye sockets, nostrils and beak clearly exposed.
- const density=detail==='source'?[16,26]:detail==='high'?[12,20]:
-  detail==='medium'?[9,16]:[6,10];
+ const density=detail==='source'?[14,24]:detail==='high'?[10,17]:
+  detail==='medium'?[8,13]:[5,9];
  const crown=phoenixSurfaceScutes(head,s,detail,'phoenix-fine-head-scales',{
   rows:density[0],columns:density[1],
   surface:(u,a)=>phoenixAxialSurface(PHOENIX_HEAD_STATIONS,u,a),
-  widthAt:(u,a,v)=>v.z>.19?.039:v.z<-.19?.067:.056,
+  widthAt:(u,a,v)=>v.z>.19?.052:v.z<-.19?.092:.080,
   skip:(u,a,v)=>v.z>.08&&Math.abs(Math.sin(a))<.45&&
    Math.abs(v.point.x)>.072,
   kind:'contour-fitted-forehead-cheek-cranial-scales'
  });
  crown.userData.phoenixFaceMicroScales=true;
- crown.userData.phoenixScaleWidthMax=.067;
+ crown.userData.phoenixScaleWidthMax=.092;
  crown.userData.phoenixVisibleFaceScales=true;
  return {neck,crown};
 }
@@ -496,8 +496,8 @@ function phoenixWingHandScutes(wing,s,side,detail,name,segment,donor){
 function phoenixThighSurface(u,angle){
  const k=Math.max(0,Math.min(.9999,u));
  const radius=k<.40?
-  .130+.064*Math.sin(k/.40*Math.PI*.5):
-  .194-.134*Math.pow((k-.40)/.60,.86);
+  .165+.092*Math.sin(k/.40*Math.PI*.5):
+  .257-.197*Math.pow((k-.40)/.60,.86);
  const rz=radius*.84;
  const ca=Math.cos(angle),sn=Math.sin(angle);
  return {
@@ -546,7 +546,7 @@ function phoenixAnatomicalThigh(g,leg,s,side,detail){
    {emissive:true});
  thigh.userData.phoenixAnatomicalFemur=true;
  thigh.userData.phoenixFemurContinuousSkin=true;
- thigh.userData.phoenixFemurMaxRadius=.194;
+ thigh.userData.phoenixFemurMaxRadius=.257;
  return thigh;
 }
 function buildPhoenixChickenLeg(g,s,torso,side,detail){
@@ -560,11 +560,11 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
    rows:detail==='source'?12:detail==='high'?9:detail==='medium'?7:5,
    columns:detail==='source'?15:detail==='high'?12:detail==='medium'?10:8,
    surface:phoenixThighSurface,
-   widthAt:(u)=>u<.70?.133:.086,
+   widthAt:(u)=>u<.70?.205:.138,
    kind:'anatomical-upper-femur-keratin-scales'
   });
- thigh.userData.phoenixScaleWidth=.133;
- thigh.userData.phoenixScaleMultiplier=.133/.023;
+ thigh.userData.phoenixScaleWidth=.205;
+ thigh.userData.phoenixScaleMultiplier=.205/.023;
  thigh.userData.phoenixScaleBone=leg.name;
  const knee=g.group('birdKnee'+suffix,[0,-.510,.105],leg);
  knee.userData.phoenixRealKnee=true;
@@ -574,8 +574,8 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
   {name:'phoenix-separate-knee-'+suffix,rough:.9});
  const ankle=g.group('birdAnkle'+suffix,[0,0,0],knee);
  // A chicken's exposed tarsometatarsus is a slender bony shaft.
- g.bone(ankle,'shadow',[0,.015,0],[0,-.461,.029],.039,
-  {tipRadius:.027});
+ g.bone(ankle,'shadow',[0,.015,0],[0,-.461,.029],.030,
+  {tipRadius:.019});
  const foot=g.group('avianFoot'+suffix,[0,-.449,.029],ankle);
  g.bone(foot,'shadow',[0,.04,.012],[0,-.012,.107],.035,
   {tipRadius:.024});
@@ -599,14 +599,14 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
      // Leave the top and bottom joints bare to separate thigh, knee,
      // tarsus and toes visually; scutes cannot bridge the joint.
      const t=.13+.71*u,cs=Math.cos(a),sn=Math.sin(a);
-     const rad=.041-.010*t;
+     const rad=.033-.010*t;
      return {point:new THREE.Vector3(rad*cs,-.461*t,.029*t+rad*sn),
       normal:new THREE.Vector3(cs,.12,sn).normalize(),radius:rad};
     },
-    widthAt:()=>.057,kind:'narrow-bare-chicken-tarsus-scutes'
+    widthAt:()=>.048,kind:'narrow-bare-chicken-tarsus-scutes'
   });
- shank.userData.phoenixScaleWidth=.057;
- shank.userData.phoenixScaleMultiplier=.057/.023;
+ shank.userData.phoenixScaleWidth=.048;
+ shank.userData.phoenixScaleMultiplier=.048/.023;
  shank.userData.phoenixScaleBone=ankle.name;
  const footScutes=[];
  for(let digit=-1;digit<=1;digit++)for(let i=0;i<(detail==='low'?3:6);i++){
@@ -624,7 +624,7 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
  toes.userData.phoenixScaleBone=foot.name;
  leg.userData.phoenixLongSlimThigh=true;
  leg.userData.phoenixThighLength=.580;
- leg.userData.phoenixThighRadius=.194;
+ leg.userData.phoenixThighRadius=.257;
  leg.userData.phoenixSeparateThigh=true;
  ankle.userData.phoenixChickenShank=true;
  ankle.userData.phoenixTarsusLength=.461;
@@ -681,7 +681,7 @@ function headAndCrest(g,s,p,torso,detail){
  const beakSize=s.id==='m014'?.72:s.id==='m012'?1.13:1;
  const beak=s.id==='m013'?
    g.curvedHorn(head,'bone',
-     [0,-.076,.357],[0,-.084,.675],[0,-.216,.95],.061,
+     [0,-.076,.357],[0,-.092,.516],[0,-.156,.668],.061,
      {name:'avian-hooked-beak-'+s.id}):
    g.curvedHorn(head,'bone',
      [0,-.085,.235*p.head],
@@ -691,15 +691,17 @@ function headAndCrest(g,s,p,torso,detail){
  beak.userData.avianHookedKeratin=true;
  if(s.id==='m013'){
   beak.userData.phoenixLongNarrowBeak=true;
-  beak.userData.phoenixBeakLength=.95;
+  beak.userData.phoenixBeakLength=.668;
+  beak.userData.phoenixShortBeak=true;
+  beak.userData.phoenixLipReduced=true;
   for(const side of [-1,1]){
-   g.sphere(head,'shadow',[side*.038,-.093,.435],[.010,.007,.011],
+   g.sphere(head,'shadow',[side*.038,-.093,.413],[.010,.007,.011],
      {name:'phoenix-long-beak-nostril-'+(side<0?'L':'R')});
   }
  }
  g.sphere(head,'shadow',
-   s.id==='m013'?[0,-.139,.518]:[0,-.151,.31*beakSize],
-   s.id==='m013'?[.055,.011,.175]:[.095,.019,.085],
+   s.id==='m013'?[0,-.132,.460]:[0,-.151,.31*beakSize],
+   s.id==='m013'?[.050,.009,.085]:[.095,.019,.085],
    {name:'avian-beak-oral-seam-'+s.id});
  if(s.id==='m014'){
    // Owl facial disc is a fitted front-facing double ring, not an
