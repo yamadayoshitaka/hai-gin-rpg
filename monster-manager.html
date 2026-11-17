@@ -804,17 +804,31 @@ window.__monsterViewerLayoutQA=()=>({
 // Test-only inspection keeps the same real game sculpture/materials,
  // but renders the eye/cheek seams from frontal AND lateral cameras.
 window.__beastFaceCameraQA=angle=>{
- if(angle!=='front'&&angle!=='side')throw Error('Unknown quality camera');
+ if(!['front','side','back','underbody'].includes(angle))
+  throw Error('Unknown quality camera');
  if(!model)return null;
  const target=controls.target,dist=Math.max(3.2,camera.position.distanceTo(target));
  const lift=dist*.085,base=dist*.94;
  camera.position.set(target.x+(angle==='side'?base:0),
-   target.y+lift,target.z+(angle==='front'?base:0));
+   target.y+(angle==='underbody'?-base*.26:lift),
+   target.z+(angle==='front'?base:angle==='back'?-base:
+     angle==='underbody'?-base*.79:0));
  camera.lookAt(target);controls.update();
  const p=model.userData.pivots||{};
- return {id:selected,angle,head:!!p.head,cheekRoots:model.userData.felineCheekFurRoots||0,
+ const limbNames=['frontL','frontR','rearL','rearR'];
+ const closedCatLimbs=limbNames.filter(name=>{
+  const limb=model.getObjectByName('feline-continuous-skin-'+name);
+  return limb?.isSkinnedMesh&&limb.userData.felineSealedTop&&
+    limb.userData.felineSealedBottom;
+ }).length;
+ const torso=model.getObjectByName('species-shoulder-rib-pelvis-'+selected);
+ return {id:selected,angle,head:!!p.head,
+   cheekRoots:model.userData.felineCheekFurRoots||0,
    carvedEyes:!!model.userData.clonedCanineEyeSocketsCarved,
-   eyeDepthFitted:!!model.userData.cloneOpticalDepthFromSurface};
+   eyeDepthFitted:!!model.userData.cloneOpticalDepthFromSurface,
+   closedCatLimbs,closedTorso:!!torso?.userData.closedAnatomicalHull,
+   wolfFullCoat:!!model.userData.wolfKingDonorFullMane,
+   wolfDonorStrands:model.userData.wolfKingDonorStrands||0};
 };
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
