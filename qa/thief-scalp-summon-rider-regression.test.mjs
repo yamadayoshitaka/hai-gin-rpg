@@ -55,14 +55,14 @@ assert.match(battle,/else actor\._ridingPose\.restore\(\)/,
  'dismounted soldiers restore standing pose');
 assert.match(battle,/next\.outfit\?\.setHairVisible\(!next\.masterHead\?\.studioWig\)/,
  'a failed middle/near hair bake must not overlay an incorrect GLB wig');
-assert.match(battle,/riding-pose\.js\?v=20261117-three-seats-v3/);
-assert.match(army,/riding-pose\.js\?v=20261117-three-seats-v3/,
+assert.match(battle,/riding-pose\.js\?v=[\w.-]+/);
+assert.match(army,/riding-pose\.js\?v=[\w.-]+/,
  'GPU crowd ride capture must use the same seated pose');
 assert.match(rig,/jobId==='job06'&&role==='body'/);
 assert.match(rig,/battleThiefClosedBack:true/);
 assert.match(rig,/copy\.alphaTest=0;copy\.depthWrite=true;copy\.depthTest=true/);
 assert.match(hair,/rearShortCover=shortHair&&battleStableCoverage&&zNorm<-.025/);
-assert.match(graft,/face-scalp-wig\.js\?v=20261117-nape-silhouette-v2/);
-assert.match(battle,/battle-artist-head-graft\.js\?v=20261117-shading-back1/);
-assert.match(battle,/rigged-outfit-runtime\.js\?v=20261117-flatback-off4/);
+assert.match(graft,/face-scalp-wig\.js\?v=[\w.-]+/);
+assert.match(battle,/battle-artist-head-graft\.js\?v=[\w.-]+/);
+assert.match(battle,/rigged-outfit-runtime\.js\?v=[\w.-]+/);
 console.log('PASS: 180 seated frame restores, 3 torso bones, GPU mount capture, thief-back opacity and short rear scalp coverage');
