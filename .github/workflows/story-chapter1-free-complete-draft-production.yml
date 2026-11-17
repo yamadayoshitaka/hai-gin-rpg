@@ -61,6 +61,9 @@ jobs:
           node qa/story-c01-stage45-generation-guard.test.mjs
           node qa/story-generation-fallback.test.mjs
           node qa/story-free-spend-policy.test.mjs
+          # Full compact and new-original scene QA requires main's module graph.
+          # Run BEFORE switching to the historical review-only branch.
+          node qa/story-stage-art-sourcing-boundary.test.mjs
       - name: Fail before generation unless Free confirmed and both secrets available
         shell: bash
         env:
@@ -113,13 +116,44 @@ jobs:
           git show origin/main:assets/story/stage-manifests/c01-s05.manifest.json > assets/story/stage-manifests/c01-s05.manifest.json
           git show origin/main:src/story-chapter1-provisional-live.js > src/story-chapter1-provisional-live.js
           git show origin/main:src/story-panel-registered-art.js > src/story-panel-registered-art.js
+          # The review branch predates these source files; main's panel resolver
+          # imports BOTH. Without them the next Free batch dies before generation.
+          git show origin/main:src/story-new-original-art.js > src/story-new-original-art.js
+          git show origin/main:src/story-archive-restored-art.js > src/story-archive-restored-art.js
           while IFS= read -r asset; do
             mkdir -p "$(dirname "$asset")"
             git show "origin/main:$asset" > "$asset"
           done < <(git ls-tree -r --name-only origin/main -- assets/story/chapter1-provisional-live)
+          # Preserve exact native SHA-proven stage5+ originals as registered.
+          # Otherwise Free generation may re-request the same five images.
+          while IFS= read -r asset; do
+            mkdir -p "$(dirname "$asset")"
+            git show "origin/main:$asset" > "$asset"
+          done < <(git ls-tree -r --name-only origin/main -- assets/story/new-originals)
           node --check scripts/generate-story-chapter1-free-batch.mjs
-      - name: Preserve reuse-only scope for stages 1-4 and NEW-only stage5 onward
-        run: node qa/story-stage-art-sourcing-boundary.test.mjs
+      - name: Prove review branch sees the identical registered NEW source images
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import {NEW_STORY_ORIGINAL_ART} from './src/story-new-original-art.js';
+          import {registeredStoryPanelAsset} from './src/story-panel-registered-art.js';
+          import {oldStoryArtReuseAllowed} from './src/story-art-sourcing-policy.js';
+          for(const [key,row] of Object.entries(NEW_STORY_ORIGINAL_ART)){
+            const [stageId,comicEdition,protagonistGender,id]=key.split('|');
+            assert(!oldStoryArtReuseAllowed(stageId), 'New original cannot belong to reuse-only stage');
+            assert.equal(row.provenanceVerified,true,key);
+            assert.equal(row.nativeQAComplete,true,key);
+            assert.equal(row.visualP0Approved,false,key);
+            assert.equal(registeredStoryPanelAsset({stageId,comicEdition,protagonistGender,id}),row.asset,key);
+            const raw=fs.readFileSync(row.asset.slice(2));
+            assert.equal(crypto.createHash('sha256').update(raw).digest('hex'),row.sha256,key);
+          }
+          console.log('Review workspace has',Object.keys(NEW_STORY_ORIGINAL_ART).length,
+            'exact SHA-verified stage5+ real originals; duplicate Free calls forbidden');
+          NODE
       - name: Audit exact native-stage gaps for stages 1 through 4
         run: node scripts/audit-story-c01-s01-s04-compact.mjs
       - name: Count stage1 through later stage missing real artworks
