@@ -321,7 +321,7 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   expressions:!!expression,
   setNearDetail(value){setNearDetail(value);result.nearDetail=near;},
   update(dt){if(result.nearDetail)expression?.update(dt);},
-  dispose(){expression?.dispose();master.root.removeFromParent();}
+  dispose(){releaseBattleStudioHair(result);expression?.dispose();master.root.removeFromParent();}
  };
  character.object3D.userData.battleHeadMaster={
   version:result.version,source:result.sourceAsset,
