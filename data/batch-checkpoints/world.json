@@ -105,8 +105,9 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "692d250edc653b6f28b74ebd3ac8612a997102fa",
-      "qa": "unverified"
+      "commitSha": "91f2b544b5c506b27177c59e1cfe39cda1d3af04",
+      "qa": "unverified",
+      "changeNote": "2026-11-17: physical masonry geometry detail revised; Node/WebGL/Android QA pending"
     },
     {
       "id": "town_crate_001",
@@ -137,8 +138,9 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "beac4f4ef9366cb1c81c46a2ef58fe481cec89c0",
-      "qa": "unverified"
+      "commitSha": "91f2b544b5c506b27177c59e1cfe39cda1d3af04",
+      "qa": "unverified",
+      "changeNote": "2026-11-17: physical masonry geometry detail revised; Node/WebGL/Android QA pending"
     },
     {
       "id": "town_handcart_001",
@@ -169,8 +171,9 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "be2b0d89a14673eb2e48307b62918191668b668d",
-      "qa": "unverified"
+      "commitSha": "91f2b544b5c506b27177c59e1cfe39cda1d3af04",
+      "qa": "unverified",
+      "changeNote": "2026-11-17: physical masonry geometry detail revised; Node/WebGL/Android QA pending"
     },
     {
       "id": "wooden_watchtower_001",
@@ -186,9 +189,9 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "d5a3f96f72ebb6763b2ee71a2fac643447be78d0",
+      "commitSha": "91f2b544b5c506b27177c59e1cfe39cda1d3af04",
       "qa": "unverified",
-      "changeNote": "Structural geometry updated; WebGL/Android/Node QA unverified"
+      "changeNote": "2026-11-17: physical masonry geometry detail revised; Node/WebGL/Android QA pending"
     },
     {
       "id": "wall_torch_001",
@@ -222,9 +225,9 @@
       "sourceFiles": [
         "src/object-catalog.js"
       ],
-      "commitSha": "189571a34fef12603a927b428e136652ce559dd5",
+      "commitSha": "91f2b544b5c506b27177c59e1cfe39cda1d3af04",
       "qa": "unverified",
-      "changeNote": "Bonded masonry course geometry; node tests/WebGL/Android not executed"
+      "changeNote": "2026-11-17: physical masonry geometry detail revised; Node/WebGL/Android QA pending"
     },
     {
       "id": "fountain_001",
