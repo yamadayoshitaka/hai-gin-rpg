@@ -3447,7 +3447,14 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
   hp:Math.round(baseJob.hp*(1+Math.max(0,Math.min(.6,(Number(passive.defense)||0)-(Number(formationBuff.defense)||0))))),
   speed:Math.max(.5,baseJob.speed)
  }:null;
- const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
+ // Explicit editor preview: one legitimate enemy of the selected catalog
+ // species appears in a normal test battle, without changing story spawns.
+ const selectedPreview=battleParams.get('monster');
+ const previewMonsterId=selectedPreview&&MONSTER_CATALOG.some(m=>m.id===selectedPreview)?
+   selectedPreview:null;
+ const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?
+   storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:
+   !storyRequest&&team===1&&i===0?previewMonsterId:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
  // Start the strategist on the clear town road instead of the forest edge.
