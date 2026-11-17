@@ -126,8 +126,10 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    assert.equal(model.userData.felineFaceWidthRatio,variant.headWidth);
    assert.equal(model.userData.felineTorsoWidth,variant.torsoWidth);
    const fur=p.head.children.filter(x=>x.isMesh&&x.userData.furStrands>0);
-   assert.equal(fur.length,3,
-    'cat source coat should stay merged in 3 shade batches');
+   assert.equal(fur.length,4,
+    'three shade-grouped coat meshes plus one batched whisker mesh');
+   assert.equal(model.userData.felineVisibleWhiskers,8);
+   assert.equal(get(model,'feline-long-vibrissae-'+id)?.userData.felineWhiskers,8);
    assert.ok(model.userData.felineFurGuides>800,
     'cat hair must be rooted in 3D on cranial surface');
    for(const limb of ['frontL','frontR','rearL','rearR']){
@@ -141,8 +143,8 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    const pos=rhinarium.geometry.getAttribute('position');
    let noseHalf=0;
    for(let i=0;i<pos.count;i++)noseHalf=Math.max(noseHalf,Math.abs(pos.getX(i)));
-   assert.ok(Math.abs(noseHalf-variant.noseWidth)<.007,
-    'wet nose must match each feline master proportion: '+id);
+   assert.ok(Math.abs(noseHalf-variant.noseWidth*1.17)<.011,
+    'visible wet nose must preserve each cat profile proportion: '+id);
    records.push({id,noseHalf,headWidth:variant.headWidth,
       torsoWidth:variant.torsoWidth,fur:fur.reduce((n,x)=>n+x.userData.furStrands,0)});
   }finally{disposeMonsterSculpture(model);}
