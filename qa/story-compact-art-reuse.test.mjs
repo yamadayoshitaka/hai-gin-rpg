@@ -57,7 +57,7 @@ for(const p of pages){
  }
 }
 const dialogue=fs.readFileSync('src/story-manga-viewer.js','utf8');
-assert.match(dialogue,/renderPortrait\(talk\)/);
+assert.match(dialogue,/renderPortrait\(talk,shot\)/);
 assert.match(dialogue,/shot\.dialogueTurns/);
 assert.match(dialogue,/storySheetCrop\(shot,shot\.sourceSheetCount\|\|pagePanels\.length\)/);
 console.log(JSON.stringify({status:'PASS',stages:4,genderVariants:2,mainPathCompactCG:required,reusedRegisteredWebP:reused,formalP0NotAsserted:true}));
