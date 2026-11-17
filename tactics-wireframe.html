@@ -8486,6 +8486,189 @@ function makeSquadLabel(id,team){
 }
 for(const id of squadIds)squadMarkers.set(squadKey(0,id),makeSquadLabel(id,0));
 for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,1));
+/**
+ * Overview battlefield = tactical map. There is no second squad chooser:
+ * each real 3D squad centroid has a fixed, Android-readable pin.
+ * All 20 DOM nodes and SVG leader paths are allocated ONCE; updates run
+ * at 5Hz, independent of soldier animation and pixel-ratio/FPS adaptation.
+ */
+const overviewHud=$('overviewSquadHud'),overviewPins=$('overviewPins');
+const overviewPinLeaders=$('overviewPinLeaders');
+const overviewInspector=$('overviewSquadInspector');
+const overviewPinNodes=new Map();
+const overviewProjection=new THREE.Vector3();
+let overviewSelectedKey=null,overviewPinClock=0,overviewInspectorSignature='';
+const overviewSvgNS='http://www.w3.org/2000/svg';
+for(const team of [0,1]){
+ const ids=team===0?squadIds:enemySquadIds;
+ for(const [squadIndex,id] of ids.entries()){
+  const key=squadKey(team,id),pin=document.createElement('button');
+  pin.type='button';pin.className='overviewSquadPin'+(team?' enemy':'');
+  const title=document.createElement('span'),count=document.createElement('span');
+  count.className='overviewPinCount';count.textContent='--/--';
+  pin.append(title,count);
+  pin.dataset.squadKey=key;
+  pin.setAttribute('aria-label',(team?'敵':'味方')+squadName(id,team)+'の位置と作戦を表示');
+  pin.onclick=()=>selectOverviewSquad(team,id);
+  overviewPins.append(pin);
+  const line=document.createElementNS(overviewSvgNS,'path');
+  line.setAttribute('stroke',team?'#ffadbb':'#a2e4ff');
+  line.setAttribute('stroke-width','1.5');line.setAttribute('fill','none');
+  const dot=document.createElementNS(overviewSvgNS,'circle');
+  dot.setAttribute('r','3.5');dot.setAttribute('fill',team?'#ff9fac':'#a4eaff');
+  line.style.display='none';dot.style.display='none';
+  overviewPinLeaders.append(line,dot);
+  overviewPinNodes.set(key,{pin,title,count,line,dot,team,id,squadIndex});
+ }
+}
+function overviewSquadActive(){
+ const fullCamera=camera.position.distanceTo(controls.target)>
+  cameraOverviewOffset.length()*.65;
+ return battleReady&&!finished&&!TOWN_MODE&&!battleCeremony.locked&&
+  !commandOverviewLocked&&
+  (battleViewMode==='overview'||fullCamera)&&
+  !document.body.classList.contains('command-target-preview');
+}
+function selectOverviewSquad(team,id){
+ if(!overviewSquadActive())return false;
+ const key=squadKey(team,id),marker=squadMarkers.get(key);
+ if(!marker?.visible)return false;
+ overviewSelectedKey=key;overviewInspectorSignature='';
+ renderOverviewSquadInspector(true);
+ for(const [k,node] of overviewPinNodes)
+  node.pin.classList.toggle('selected',k===key);
+ return true;
+}
+function renderOverviewSquadInspector(force=false){
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||!squadMarkers.get(overviewSelectedKey)?.visible){
+  overviewInspector.hidden=true;return;
+ }
+ const {id,team}=node,marker=squadMarkers.get(overviewSelectedKey);
+ const alive=marker.userData.screenLabel.userDataStrength.textContent;
+ const defeated=alive.startsWith('0/'),intent=squadIntent(id,team,defeated);
+ const group=team===0?normalizeArmyGroup(armyGroupBySquad[String(id)]):null;
+ const leader=team===0?squadCommanderUnavailableReason(id):
+  ribbonCommanderAlive(1,id)?'敵軍師が指揮中':'軍師不在';
+ const sig=[id,team,alive,intent.order,intent.purpose,leader,group].join('|');
+ if(!force&&overviewInspectorSignature===sig)return;
+ overviewInspectorSignature=sig;
+ overviewInspector.hidden=false;
+ overviewInspector.classList.toggle('enemy',team===1);
+ $('overviewInspectorTitle').textContent=(team?'🔴 敵 ':'🔵 味方 ')+squadName(id,team);
+ $('overviewInspectorMeta').textContent=
+  '残存 '+alive+'人 ｜ '+intent.order+(leader?' ｜ '+leader:'');
+ $('overviewInspectorPurpose').textContent='目的：'+intent.purpose;
+ $('overviewInspectorActions').hidden=team!==0||defeated;
+ if(team===0){
+  const options=squadIds.filter(sid=>
+   normalizeArmyGroup(armyGroupBySquad[String(sid)])===group);
+  const select=$('overviewDivisionSelect');
+  const optionSignature=group+':'+options.join(',');
+  if(select.dataset.groupSignature!==optionSignature){
+   select.replaceChildren(...options.map(sid=>{
+    const item=document.createElement('option');
+    item.value=String(sid);item.textContent=squadName(sid);
+    return item;
+   }));
+   select.dataset.groupSignature=optionSignature;
+  }
+  select.value=String(id);
+  $('overviewRecommendPlan').disabled=!!leader||!hasSquadCommander(id);
+  $('overviewRecommendPlan').title=leader||'現在の地形・目的・職業に合う宿屋テンプレートを選択';
+ }
+}
+$('overviewInspectorClose').onclick=()=>{
+ overviewSelectedKey=null;overviewInspector.hidden=true;overviewInspectorSignature='';
+ for(const node of overviewPinNodes.values())node.pin.classList.remove('selected');
+};
+$('overviewDivisionSelect').onchange=event=>{
+ // Divisions only SELECT a position; individual commands remain unavailable.
+ selectOverviewSquad(0,event.target.value);
+};
+$('overviewRecommendPlan').onclick=()=>{
+ const node=overviewPinNodes.get(overviewSelectedKey);
+ if(!node||node.team!==0)return;
+ const group=normalizeArmyGroup(armyGroupBySquad[String(node.id)]);
+ const opened=targetedStrategyUi.open(group,{
+  startAtRecommendations:true,groupOnly:true
+ });
+ if(opened)overviewHud.hidden=true;
+};
+function updateOverviewSquadPins(dt){
+ overviewPinClock+=dt;
+ if(overviewPinClock<.16)return;
+ overviewPinClock=0;
+ const visible=overviewSquadActive();
+ if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
+ document.body.classList.toggle('overview-squad-map',visible);
+ if(!visible)return;
+ const rect=renderer.domElement.getBoundingClientRect();
+ const report=$('battleDialogue'),topDock=$('battleTopDock');
+ const bounds={left:Math.max(7,rect.left+7),
+  right:Math.min(innerWidth-7,rect.right-7),
+  top:Math.max(rect.top+7,topDock.getBoundingClientRect().bottom+8),
+  bottom:Math.min(rect.bottom-7,
+   report&&!report.hidden?report.getBoundingClientRect().top-8:innerHeight-7)};
+ if(bounds.bottom-bounds.top<70)return;
+ const points=[];
+ camera.updateMatrixWorld();
+ for(const [key,node] of overviewPinNodes){
+  const marker=squadMarkers.get(key);
+  if(!marker?.visible){node.pin.hidden=true;continue}
+  overviewProjection.copy(marker.position).project(camera);
+  const x=rect.left+(overviewProjection.x+1)*rect.width/2;
+  const y=rect.top+(1-overviewProjection.y)*rect.height/2;
+  if(overviewProjection.z<=-1||overviewProjection.z>=1||
+   x<rect.left-8||x>rect.right+8||
+   y<bounds.top-24||y>bounds.bottom+24){
+   node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue;
+  }
+  points.push({key,x,y,team:node.team,squadIndex:node.squadIndex});
+ }
+ const placements=placeOverviewSquadPins(points,bounds,{
+  width:innerWidth<=390?38:42,height:innerWidth<=390?37:40
+ });
+ overviewPinLeaders.setAttribute('viewBox','0 0 '+innerWidth+' '+innerHeight);
+ for(const [key,node] of overviewPinNodes){
+  const loc=placements.get(key);
+  if(!loc){node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue}
+  const marker=squadMarkers.get(key),id=node.id;
+  const group=node.team?0:normalizeArmyGroup(armyGroupBySquad[String(id)]);
+  const number=node.team?node.squadIndex+1:
+   squadNumberByGroup.get(group)?.get(String(id))||node.squadIndex+1;
+  const caption=overviewPinLabel({team:node.team,squadIndex:node.squadIndex,
+   group,division:number});
+  if(node.title.textContent!==caption)node.title.textContent=caption;
+  const remaining=marker.userData.screenLabel.userDataStrength.textContent;
+  if(node.count.textContent!==remaining)node.count.textContent=remaining;
+  node.pin.classList.toggle('group-2',group===2);
+  node.pin.classList.toggle('group-3',group===3);
+  node.pin.classList.toggle('defeated',remaining.startsWith('0/'));
+  node.pin.classList.toggle('critical',Number(remaining.split('/')[0])<=
+   Number(remaining.split('/')[1])*.3);
+  node.pin.classList.toggle('selected',key===overviewSelectedKey);
+  node.pin.style.left=Math.round(loc.x)+'px';
+  node.pin.style.top=Math.round(loc.y)+'px';
+  node.pin.title=(node.team?'敵':'味方')+squadName(id,node.team)+
+   '　残存'+remaining+'名（タップして作戦情報）';
+  node.pin.hidden=false;
+  if(loc.displaced){
+   node.line.setAttribute('d','M'+loc.anchorX.toFixed(1)+','+loc.anchorY.toFixed(1)+
+    ' L'+loc.x.toFixed(1)+','+loc.y.toFixed(1));
+   node.dot.setAttribute('cx',String(loc.anchorX));
+   node.dot.setAttribute('cy',String(loc.anchorY));
+  }
+  node.line.style.display=loc.displaced?'':'none';
+  node.dot.style.display=loc.displaced?'':'none';
+ }
+ renderOverviewSquadInspector();
+}
+window.getOverviewSquadQA=()=>({visible:!overviewHud.hidden,
+ markerCount:[...overviewPinNodes.values()].filter(n=>!n.pin.hidden).length,
+ totalSquads:overviewPinNodes.size,selectedKey:overviewSelectedKey,
+ groupOnlyRecommendations:true,divisionsSelectionOnly:true});
+
 // One selected source->target arrow, not ten crossing lines.
 const squadTargetSvg=$('squadCalloutLines'),squadTargetNS='http://www.w3.org/2000/svg';
 const arrowDefs=document.createElementNS(squadTargetNS,'defs');
@@ -9815,6 +9998,7 @@ function animate(){
  updateBattleFormationIntegrity();
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
+ updateOverviewSquadPins(dt);
  if(riverFlow)riverFlow.offset.y-=worldDt*.07;
  // Each pass retains its usual 100/240ms refresh, but they no longer all
  // occupy one unlucky Android frame.  This does not affect simulation ticks.
