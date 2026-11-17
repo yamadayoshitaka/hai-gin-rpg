@@ -116,7 +116,7 @@ function sourceReviewable(s,available){
  return {bytes:original,sha256:sum,meta,pixels:[w,h],proof,original:s.draftPath};
 }
 const slug=key=>key.replaceAll('|','__');
-const canActOn=(s)=>!chapterReviewedPanelAsset({
+const canActOn=(s)=>s.stageId>='c01-s05'||!chapterReviewedPanelAsset({
  stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
 })&&!stage2ReviewedPanelAsset({
  stageId:s.stageId,comicEdition:s.edition,protagonistGender:s.gender,id:s.shotId
