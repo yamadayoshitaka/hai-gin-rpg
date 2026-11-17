@@ -72,6 +72,10 @@ button{padding:9px 11px}
 <button id="female" aria-pressed="true" disabled>女性・美人ベース</button>
 <button id="male" aria-pressed="false" disabled>男性・美青年ベース</button>
 </div>
+<div class="controls" id="quickHairControl" aria-label="女性の髪型を3D実メッシュで切り替え">
+<label for="quickWigStyle">髪型を切り替え <select id="quickWigStyle" aria-label="女性の髪型を選択"></select></label>
+<output id="activeHairStyle" role="status">髪型を読み込み中…</output>
+</div>
 <div class="previewStage" id="previewStage"><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
@@ -308,6 +312,12 @@ const v32Parts={female:defaultPartSelection(),male:defaultPartSelection()};
 const v32Makeup={female:0,male:0};
 let manualFaceOverrides={female:{},male:{}};
 const savedHeroinePreset=v32PartMode?loadHeroineFacePreset():null;
+// Refresh an unsaved initial character to a recognizably layered 3D salon cut.
+// Never change an existing saved hairstyle or the explicit heroine preset.
+if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')!=='1'){
+ const fresh=synchronizeHeroHairSelection('female',v32Parts.female,'salon-layered-long');
+ Object.assign(v32Parts.female,fresh.parts);wigStyleId=fresh.styleId;
+}
 if(v32PartMode&&!savedHeroinePreset&&new URLSearchParams(location.search).get('hero')==='1')
  Object.assign(v32Parts.female,HEROINE_BEAUTY_PART_SELECTION_V43);
 const savedMalePreset=v32PartMode?loadMaleFacePreset():null;
@@ -353,8 +363,10 @@ for(const style of listWigStyles('female')){
  const option=document.createElement('option');
  option.value=style.id;option.textContent=style.label;
  $('wigStyle').appendChild(option);
+ $('quickWigStyle').appendChild(option.cloneNode(true));
 }
 $('wigStyle').value=wigStyleId;
+$('quickWigStyle').value=wigStyleId;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expressions=new Map();
 if(new URLSearchParams(location.search).get('qa')==='expression'){
@@ -512,6 +524,7 @@ function selectGender(next){
  $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=57':'./face-body-studio.html?v=57';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
+ $('quickHairControl').hidden=next!=='female';
   $('v47AgeBand').value=v32Parts[gender].ageBand;
   $('v47BodyType').value=v32Parts[gender].bodyType;
   $('v46FemaleCast').parentElement.hidden=gender!=='female';
@@ -566,6 +579,8 @@ function rebuildWig(){
   v32PartMode?null:wigStyleId);
  Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
  $('wigStyle').value=chosen.styleId;
+ $('quickWigStyle').value=chosen.styleId;
+ $('activeHairStyle').textContent='再生成：'+($('wigStyle').selectedOptions[0]?.textContent||chosen.styleId);
  performanceMetrics.wigRebuilds++;
  const previous=wigs.get('female');
  if(previous){
@@ -582,6 +597,8 @@ function rebuildWig(){
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
+   $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
+    '／'+wig.getReport().rootCount+'束・微細毛10倍';
   persistHeroineFace();
   if(v32PartMode){
    const size=models.get('female').face.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -616,6 +633,10 @@ for(const key of ['Density','Length']){
 $('wigColor').addEventListener('change',()=>{
  wigColor=$('wigColor').value;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+$('quickWigStyle').addEventListener('change',()=>{
+ $('wigStyle').value=$('quickWigStyle').value;
+ $('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
 });
 $('wigStyle').addEventListener('change',()=>{
  const chosen=synchronizeHeroHairSelection('female',v32Parts.female,$('wigStyle').value);
@@ -786,7 +807,10 @@ function syncFaceControlDisplays(){
 }
 // Reconcile values even when the browser restores a prior form snapshot.
 // This must NOT reset user edits: modelChanges/contactColor remain canonical.
-window.addEventListener('pageshow',syncFaceControlDisplays);
+window.addEventListener('pageshow',()=>{
+ syncFaceControlDisplays();
+ $('quickWigStyle').value=wigStyleId;
+});
 for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
  const el=$(key);
  el.addEventListener('input',()=>{
