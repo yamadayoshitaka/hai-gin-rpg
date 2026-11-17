@@ -98,10 +98,17 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(turn?.speaker==='軍師'&&storyContext.protagonistGender==='female')return './assets/story/characters/commander/female-master.webp';
   return null;
  }
- function renderPortrait(turn){
-  const img=$('.manga-speaker-face'),src=portraitFor(turn);
+ function renderPortrait(turn,shot=null){
+  const img=$('.manga-speaker-face');
+  // P0 screenshot regression: the original cast atlas showed a different
+  // person's face than the physically registered S03/S05 first CG.
+  const exact=shot&&['c01-s03-m1','c01-s05-m1'].includes(shot.id)
+   ?(shot.sharedArtAsset||registeredStoryPanelAsset(shot)):null;
+  const src=exact?storyArtDisplayUrl(exact):portraitFor(turn);
   img.hidden=!src;
   if(!src){img.removeAttribute('src');return}
+  img.style.objectFit='cover';
+  img.style.objectPosition=exact?'30% 22%':'center 20%';
   img.onerror=()=>{if(img.getAttribute('src')===src)img.hidden=true};
   if(img.getAttribute('src')!==src)img.src=src;
   img.alt=(turn.speaker||'話者')+'の顔';
@@ -190,7 +197,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   $('.manga-art').alt=story.stageName+'の'+(shot.phase==='pre'?'イベント前':'イベント後')+
    '（'+shot.comicEdition+'）'+(shot.protagonistGender==='female'?'女性版':'男性版');
   $('.manga-speaker').textContent=talk.speaker+(talk.characterId?'　／　'+talk.faction+'・'+talk.role:'　／　ナレーション');
-  renderPortrait(talk);
+  renderPortrait(talk,shot);
   renderStoryRubyText($('.manga-line'),talk);
   const draftArt=chapter1ProvisionalLivePanel(shot)||provisionalRegisteredStoryPanel(shot);
   $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage+
