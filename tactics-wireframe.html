@@ -9441,6 +9441,32 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  setCameraActive('camFollow');
  return true;
 }
+// Ordinary battle camera follows an ACTIVE allied engagement rather than
+// a stationary rear commander. Spatial contacts are scanned at ~1Hz.
+let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
+let contactScanAt=-Infinity,manualCameraFocusUntil=0;
+function updateActiveCombatCamera(){
+ if(TOWN_MODE||!battleReady||finished||paused||battleViewMode!=='commander'||
+  !followCamera||commandOverviewLocked||commanderCinematic||battleCeremony.locked||
+  performance.now()<manualCameraFocusUntil)return;
+ const now=performance.now();
+ if(now-contactScanAt<1100)return;
+ contactScanAt=now;
+ const contact=selectActiveBattleEngagement(massSim?.units??actors,{
+  mass:Boolean(massSim),range:massSim?8:12,preferSquadId:contactSquadId
+ });
+ if(!contact)return;
+ if(contactSquadId!==contact.squadId&&now-contactSwitchAt<3900)return;
+ if(contactSquadId!==contact.squadId)contactSwitchAt=now;
+ contactSquadId=contact.squadId;
+ trackedAllySquadId=contactSquadId;
+ if(massSim){focusedHumanUnitId=contact.unitId;automaticContactActorId=null;}
+ else automaticContactActorId=contact.unitId;
+}
+window.getActiveBattleCameraQA=()=>({
+ focusSquadId:contactSquadId,actorId:massSim?focusedHumanUnitId:automaticContactActorId,
+ mode:battleViewMode,cinematic:commanderCinematic?.kind??null
+});
 const openingOverviewCenter=(WORLD_SIZE/2-6)*CELL;
 if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
 else followSelectedCommander();
@@ -9451,7 +9477,7 @@ $('camOverview').onclick=()=>{
  setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
  setCameraActive('camOverview');
 };
-$('camFollow').onclick=()=>{if(!commandOverviewLocked)followSelectedCommander();};
+$('camFollow').onclick=()=>{if(!commandOverviewLocked){followSelectedCommander();manualCameraFocusUntil=performance.now()+8000;}};
 $('camReset').onclick=()=>{
  if(commandOverviewLocked)return;
  if(TOWN_MODE)setBattleCamera(cameraHome,cameraCloseOffset);
@@ -10245,13 +10271,16 @@ function animate(){
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
   cpuPhaseNow=performance.now();battleCpuProfiler.record('rig',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
+  updateActiveCombatCamera();
   if(followCamera){
    let tracked=focusedHumanUnitId!=null?massSim?.units?.find(u=>u.id===focusedHumanUnitId):null;
    if(massSim&&battleViewMode==='commander'&&(!tracked?.alive||tracked.hp<=0)){
     const replacement=squadCommandFocus(trackedAllySquadId);
     tracked=replacement?.unit??null;focusedHumanUnitId=tracked?.id??null;
    }
-   const followed=automaticFloorGuide||selected||actors[0];
+   const followed=automaticFloorGuide||
+    (automaticContactActorId==null?null:actors.find(a=>a.id===automaticContactActorId&&a.hp>0))||
+    selected||actors[0];
    // In 50v50 the authoritative grid advances at 20Hz, while the visible
    // outfit/rig is eased between ticks at display frequency. Following the
    // discrete root caused a 20Hz rooftop/background judder even at stable FPS.
