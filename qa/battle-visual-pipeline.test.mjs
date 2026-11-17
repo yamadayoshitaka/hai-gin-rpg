@@ -13,6 +13,8 @@ const sourceLined=battleClosedBackCoverage({panel:{...panel,visible:false},opaqu
 assert.equal(sourceLined.closed,true,'verified skinned source fabric replaces flat back sheet');
 assert.deepEqual(sourceLined.forceCoveredRegions,['torso']);
 assert.deepEqual(sourceLined.preserveRegions,[],'bare torso cannot reappear after board removal');
+assert.equal(battleClosedBackCoverage({quality:'preview',panel:null,opaqueLining:1}).closed,true,
+ 'preview also uses actual skinned cloth to occlude naked back without a board');
 assert.equal(battleClosedBackCoverage({panel:{...panel,visible:false},opaqueLining:0}).closed,false);
 let visible=false;
 const a={id:2,job:{name:'剣士'},studioPattern:{hairStyleId:'h01'},
