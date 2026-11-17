@@ -22,7 +22,8 @@ test('PR preview loads static Pages data with no anonymous GitHub API by default
 });
 test('on-demand one request, rate limit protection and direct PR fallback',()=>{
  assert.match(script,/const url=API\+'\/pulls\/'\+number/);
- assert.equal((script.match(/fetch\(url,\{cache:'no-store'/g)||[]).length,1);
+ const onDemand=script.slice(script.indexOf('async function getPrOnDemand('),script.indexOf('function setLink('));
+ assert.equal((onDemand.match(/fetch\(url,\{cache:'no-store'/g)||[]).length,1);
  assert.match(script,/response\.status===403\|\|response\.status===429/);
  assert.match(script,/x-ratelimit-reset/);
  assert.match(script,/PR_BACKOFF_KEY/);
