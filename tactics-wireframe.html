@@ -7984,10 +7984,16 @@ function issueTargetedMapCommand(point){
    const recipient=squadIds.map(s=>({id:s,center:squadCenter(s,0)}))
     .filter(x=>x.center).sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-
      Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
-   if(!recipient||!massSim)continue;
+   if(!recipient)continue;
    const buffId='tactical-'+tactic.id;
-   if(massSim.applySquadItemBuff(recipient.id,buffId,tactic.buff,24,0)){
-    massWorker?.buffSquadItem?.(recipient.id,buffId,tactic.buff,24,0);
+   if(massSim){
+    if(massSim.applySquadItemBuff(recipient.id,buffId,tactic.buff,24,0)){
+     massWorker?.buffSquadItem?.(recipient.id,buffId,tactic.buff,24,0);
+     count++;continue;
+    }
+   }else{
+    // The same plan buff is active in the detailed 50-person battle.
+    activateSkirmishSquadItemBuff(recipient.id,{id:buffId,...tactic.buff,duration:24});
     count++;continue;
    }
   }
