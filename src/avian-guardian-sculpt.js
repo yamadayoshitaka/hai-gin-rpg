@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-keratin-legs-eyeliner-v6-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-guardian-miniwing-cranial-fire-v7-20261118';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -145,20 +145,21 @@ function refineOnce(input){
  if(src!==input)src.dispose();
  return out;
 }
-function guardianDerivedWing(parent,spec,side,detail){
- const p=profiles[spec.id],donor=guardianPair(detail);
+function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}={}){
+ const p=profiles[spec.id],donor=guardianPair(miniature&&detail!=='source'?'low':detail);
  const base=side<0?donor.left:donor.right;
  let geo=base.clone();
- if(detail==='source'){
+ if(detail==='source'&&!miniature){
    const refined=refineOnce(geo);geo.dispose();geo=refined;
  }
- geo.scale(...p.wing);
+ const wingScale=miniature?[.18,.16,.17]:p.wing;
+ geo.scale(...wingScale);
  const positions=geo.getAttribute('position');
  const old=geo.getAttribute('color'),arr=new Float32Array(positions.count*3);
  const dark=color(p.dark),mid=color(p.mid),light=color(p.light),tip=color(p.tip);
  for(let i=0;i<positions.count;i++){
-   const radial=Math.min(1,Math.abs(positions.getX(i))/(2.95*p.wing[0]));
-   const height=Math.min(1,Math.max(0,positions.getY(i)/(1.9*p.wing[1])));
+   const radial=Math.min(1,Math.abs(positions.getX(i))/(2.95*wingScale[0]));
+   const height=Math.min(1,Math.max(0,positions.getY(i)/(1.9*wingScale[1])));
    const sourceShade=old?(old.getX(i)+old.getY(i)+old.getZ(i))/3:1;
    const c=mix(dark,mid,.32+.42*height);
    c.lerp(light,Math.pow(radial,1.2)*.60);
@@ -169,16 +170,23 @@ function guardianDerivedWing(parent,spec,side,detail){
  }
  geo.setAttribute('color',new THREE.Float32BufferAttribute(arr,3));
  geo.computeBoundingSphere();
- const wing=mesh(parent,geo,'avian-guardian-three-layer-wing-'+spec.id+'-'+(side<0?'L':'R'),
+ const wing=mesh(parent,geo,name||'avian-guardian-three-layer-wing-'+spec.id+'-'+(side<0?'L':'R'),
    {emissive:spec.id==='m013'});
  wing.userData.angelSource='seraph_guardian';
  wing.userData.angelFeatherLayers=3;
- wing.userData.angelFeathersPerSide=detail==='low'||detail==='medium'?18:82;
+ wing.userData.angelFeathersPerSide=miniature&&detail!=='source'?18:detail==='low'||detail==='medium'?18:82;
  wing.userData.angelDonorGeometryTriangles=
    (base.index?.count??base.getAttribute('position').count)/3;
  wing.userData.birdWingRealGeometry=true;
  wing.userData.birdWingDetail=detail;
  wing.userData.birdWingRooted=true;
+ if(miniature){
+  wing.userData.phoenixGuardianFeatherHand=true;
+  wing.userData.phoenixSameWingVaneSource=true;
+  wing.userData.phoenixMiniatureDonorDetail=detail==='source'?'high':'low';
+  wing.rotation.set(-.33,0,-side*.50);
+  wing.position.set(side*.01,.01,-.015);
+ }
  if(spec.id==='m013')addPhoenixWave(wing,'wing');
  return wing;
 }
@@ -511,58 +519,39 @@ function phoenixFeatheredArm(g,s,torso,side,detail){
  const handSkin=g.sphere(palm,'skin',[side*.030,-.020,.034],
   [.068,.060,.086],{name:'phoenix-feather-hand-palm-'+suffix});
  handSkin.userData.phoenixAvianHandPalm=true;
- const outer=[],inner=[],fingers=[];
- const layers=detail==='low'?9:detail==='medium'?16:detail==='source'?30:24;
+ const outer=[],inner=[];
+ const layers=detail==='low'?7:detail==='medium'?11:detail==='source'?22:16;
  for(let i=0;i<layers;i++){
   const t=i/Math.max(1,layers-1),q=(i%3)-1;
   outer.push({from:[side*(.012+.018*(i%3)),
       .015-.020*(i%4),-.005],
     to:[side*(.24+.045*t),-.185-.035*t,.105+.045*q],
-    width:.090+.030*(1-t),normal:[.03,.50,.90],
+    width:.055+.021*(1-t),normal:[.03,.50,.90],
     ridge:.018,tint:i%4===0?3:i%3===0?2:1,endTint:3,glow:.35});
   inner.push({from:[side*(.020+.016*(i%3)),
     .006-.016*(i%4),-.004],
     to:[side*(.175+.065*t),-.115-.036*t,.125+.060*q],
-    width:.074+.025*(1-t),normal:[.04,.65,.76],
+    width:.049+.018*(1-t),normal:[.04,.65,.76],
     tint:i%3===0?2:1,endTint:3,glow:.32});
  }
  const sleeve=layeredFeathers(root,s,detail,
   'phoenix-feather-arm-sleeve-'+suffix,outer);
  const under=layeredFeathers(forearm,s,detail,
   'phoenix-feather-forearm-sleeve-'+suffix,inner);
- for(let digit=0;digit<3;digit++){
-  const spread=digit-1;
-  const tip=[side*(.24+.065*digit),
-    -.13-.066*digit,.130+.047*spread];
-  const knuckle=[side*(.025+digit*.015),-.025,.022];
-  const digitBone=g.bone(palm,'skin',knuckle,tip,.017,
-    {tipRadius:.008});
-  digitBone.name='phoenix-feather-hand-digit-'+suffix+'-'+digit;
-  // Joints still animate, but feather tips conceal their visual geometry.
-  digitBone.visible=false;
-  for(let layer=0;layer<7;layer++){
-   const t=1-layer*.060,offset=(layer-3)*.013;
-   fingers.push({from:[knuckle[0]+side*offset*.24,
-      knuckle[1]+.005*layer,knuckle[2]+.006*(layer%2)],
-    to:[tip[0]*t+side*offset,tip[1]*t-.010*(layer%3),
-      tip[2]+.022*layer],
-    width:.085-.004*layer,normal:[side*.12,.38,.91],
-    ridge:.024,tint:(digit+layer)%3===0?3:digit%2===0?2:1,
-    endTint:3,glow:.45});
-  }
- }
- const featherHand=layeredFeathers(palm,s,detail,
-  'phoenix-feather-hand-vanes-'+suffix,fingers);
+ // Exact original Guardian 3-layer vane source, recoloured like back wings.
+ const featherHand=guardianDerivedWing(palm,s,side,detail,{
+  miniature:true,name:'phoenix-feather-hand-vanes-'+suffix
+ });
  for(const part of [sleeve,under,featherHand]){
   part.userData.phoenixTrueFeatherForelimb=true;
   part.userData.phoenixFeatherHandSide=suffix;
  }
  featherHand.userData.phoenixFeatherHandDigits=3;
  featherHand.userData.phoenixNoHumanFingers=true;
- // Keep anatomical animation pivots, never render a bare skinned hand.
+ featherHand.userData.phoenixDenseHandCover=true;
+ featherHand.userData.phoenixMiniGuardianWingVisible=true;
  humerus.visible=false;ulna.visible=false;handSkin.visible=false;
  palm.userData.phoenixHiddenHandBones=true;
- featherHand.userData.phoenixDenseHandCover=true;
  root.userData.phoenixIndependentFeatherArm=true;
  forearm.userData.phoenixFeatherWrappedUlna=true;
  palm.userData.phoenixAvianFeatherHand=true;
