@@ -83,9 +83,12 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
      REFERENCE_CROWN_QUALITY.high.rows);
    assert.equal(model.userData.felineReferenceCrownLayers,
      REFERENCE_CROWN_QUALITY.high.layers);
-   assert.equal(model.userData.felineReferenceSeamCount,4);
-   assert.equal(mesh(model).filter(x=>x.userData.m001ReferenceSeam).length,4,
-    'm001-style shoulder/hip bridge must be actual skin meshes');
+   assert.equal(model.userData.felineReferenceSeamCount,0);
+   assert.equal(model.userData.felineContinuousLimbCount,4);
+   assert.equal(model.userData.felineJointFillersRemoved,true);
+   assert.equal(mesh(model).filter(x=>x.userData.m001ReferenceSeam).length,0,
+    'no cylindrical shoulder or hip joint fillers');
+   assert.equal(body.userData.felineMusclesSculptedIntoTrunk,true);
    assert.equal(model.userData.felineMasterVariant,variant.archetype);
    assert.equal(model.userData.felineFaceWidthRatio,variant.headWidth);
    assert.equal(model.userData.felineTorsoWidth,variant.torsoWidth);
@@ -95,8 +98,10 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    assert.ok(model.userData.felineFurGuides>800,
     'cat hair must be rooted in 3D on cranial surface');
    for(const limb of ['frontL','frontR','rearL','rearR']){
-    assert.ok(get(model,'beast-upper-limb-leg'+limb)||get(model,'beast-upper-limb-'+limb),
-      'cat upper limb must be a lofted source mesh: '+id+' '+limb);
+    const skin=get(model,'feline-continuous-skin-'+limb);
+    assert.ok(skin?.isSkinnedMesh&&skin.userData.felineContinuousSurface,
+      'cat must have one articulated anatomical shell: '+id+' '+limb);
+    assert.equal(skin.skeleton.bones.length,3);
     assert.ok(p['toe'+limb]?.userData.felinePad,
       'paws must have articulated digitigrade toe pads: '+id+' '+limb);
    }
