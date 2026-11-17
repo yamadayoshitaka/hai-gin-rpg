@@ -127,6 +127,7 @@ jobs:
           node qa/battle-engagement-camera.test.mjs
           node qa/battle-situation-recommendation.test.mjs
           node qa/battle-saddle-seat-anchor.test.mjs
+          node qa/battle-objective-checkpoints.test.mjs
           node --check src/mass-battle-worker-runtime.js
           node qa/mount-interior-policy.test.mjs
           node qa/hair-camera-distance-stability.test.mjs
