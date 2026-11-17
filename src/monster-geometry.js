@@ -1834,6 +1834,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [...headGuides,...waveOneCrown];
    if(m002Coat.length){
      g.root.userData.m002SourceM001Mane=true;
+     g.root.userData.referenceGroomWave='m001-source-m002';
      g.root.userData.m002M001ContourGuides=m002Coat.length;
      g.root.userData.m002FaceCoatDensityMultiplier=2;
    }
