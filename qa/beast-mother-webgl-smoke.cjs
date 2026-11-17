@@ -67,8 +67,10 @@ const ids=['m002','m003','m004','m007','m008','m009','m010'];
     if(!check||check.id!==id||check.angle!==angle)
      throw Error(id+': missing '+angle+' WebGL inspection view');
     if(['m007','m008','m009','m010'].includes(id)&&
-       (check.closedCatLimbs!==4||!check.closedTorso))
-     throw Error(id+': open cat shell '+JSON.stringify(check));
+       (check.closedCatLimbs!==4||!check.closedTorso||
+        check.torsoAnchoredHips!==4||check.felineTailConnected!==true||
+        !Number.isFinite(check.tailReach)||check.tailReach<=.72))
+     throw Error(id+': missing rear tail silhouette or torso-locked hip '+JSON.stringify(check));
     if(['m003','m004'].includes(id)&&
        (!check.wolfFullCoat||check.wolfDonorStrands<1400))
      throw Error(id+': m001 source fur absent '+JSON.stringify(check));
@@ -81,6 +83,24 @@ const ids=['m002','m003','m004','m007','m008','m009','m010'];
      throw Error(id+': empty rear/underbody visual '+angle);
     frames.push({action:'seam-'+angle,bytes:result.byteLength,filename,
      visualApproved:false});
+   }
+   if(['m007','m008','m009','m010'].includes(id)){
+    await page.locator('#actions button[title="walk"]').click({timeout:10000});
+    await page.waitForFunction(()=>
+      window.__monsterViewerLayoutQA?.()?.selectedMotion==='walk',
+      {timeout:10000});
+    await page.waitForTimeout(210);
+    const check=await page.evaluate(()=>
+      window.__beastFaceCameraQA?.('side'));
+    if(!(check?.tailReach>.72)||check.torsoAnchoredHips!==4)
+     throw Error(id+' tail or hip failed during walking '+JSON.stringify(check));
+    const filename=path.join(root,id+'-walk-side-tail.png');
+    const result=await page.locator('#view canvas').screenshot({
+      path:filename,timeout:45000});
+    if(result.byteLength<12000)
+      throw Error(id+' missing actual walk tail/hip silhouette');
+    frames.push({action:'walk-side-tail',bytes:result.byteLength,
+      filename,tailReach:check.tailReach,visualApproved:false});
    }
    if(errors.length)throw Error(id+': runtime error after motion '+errors.join('; '));
    report.push({id,geometry:state.triangles,meshes:state.meshes,
