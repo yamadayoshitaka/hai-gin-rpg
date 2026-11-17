@@ -1155,7 +1155,8 @@ test('v22 salon body locks gain real width without making the fringe thick',()=>
  const face=makeIndependentFaceMaster(source,'female');
  const hair=createScalpAnchoredWig(face.face,{count:96,fineFringeMultiplier:3});
  const report=hair.getReport();
- assert.ok(report.hairStrandWidthFraction>=.012);
+ assert.ok(report.hairStrandWidthFraction>=.0095&&report.hairStrandWidthFraction<=.011,
+  'High density strands should be fine rather than flat plastic ribbons');
  assert.equal(report.fullerCrownBackVolume,true);
  assert.equal(report.glabellaPartClearance,true);
  assert.equal(report.fullBodyTriangleContactBeforeProxy,true);
@@ -1322,7 +1323,7 @@ test('v26 wig foundation is a transparent unchanged copy of the actual head and 
  assert.equal(wig.getReport().transparentExactHeadWigBase,true);
  assert.equal(wig.getReport().rootScalpLiftFraction,.0125);
  assert.equal(wig.getReport().trueScalpRibbonVertexCollision,true);
- assert.equal(wig.getReport().hairStrandWidthFraction,.0135);
+ assert.equal(wig.getReport().hairStrandWidthFraction,.0100);
  // All original zone roots are now displaced slightly OUTWARD from the
  // copied head, rather than being planted inside its surface.
  const pos=face.face.geometry.getAttribute('position');
