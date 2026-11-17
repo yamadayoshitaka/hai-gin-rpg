@@ -114,68 +114,70 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T03:53:54+09:00",
+      "lastRunAt": "2026-11-18T04:52:48+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "既存PR #614/#620 CI失敗の実ログ解析・新規Draft増殖停止",
-      "summary": "world.enabled=true。PR #614 のWorld six-lane run 44141156069はcatalog/lod/materials/visual/geometryの5レーン成功、interactionはqa/world-quality-contract.test.mjs:30の旧workflows API文字列固定で失敗。visualレーンは実WebGLスクリーンショット手順成功だが対象別新旧比較・品質承認とは別。PR #620 のRPG architecture run 44151633344は構文/インポート成功後、qa/squad-ribbon-order-access.test.mjs:18の旧UI固定で失敗。PR #619が旧QA契約更新を扱うため重複変更を避けた。新規実造形0、GLB0、本編採用0、公開0。",
-      "nextAction": "PR #619のQA契約更新をCIで検証し安全なら統合。その後PR #614のinteraction失敗job 134244316112 とPR #620のarchitecture失敗job 134281245935 を再検証。PR #614 visual run 44141156069のWebGL画像を旧版と対象ID別に比較し、PR #620も実WebGL/衝突/LOD/1000vs1000 FPSを検証してからマージ。",
+      "subject": "5種の実メッシュ接合・荷重支持改善をDraft PR #624へ保存（描画QA保留）",
+      "summary": "world.enabled=true、正本60種分類。src/object-catalog.jsでベンチ、掲示板、木柵、荷車、石柵の5種に木組み/荷重支持/車軸/石積みディテールを実装。ソースSHA d60c67acc06626e7a7aba3c87e0d4dad78fa4c8a。Draft PR #624。Node/WebGL新旧比較/Android/6レーンCI未検証、GLB0、ゲーム採用0、Pages0。既存PR #614/#620の旧QA失敗と#619修正の検証は継続。",
+      "nextAction": "PR #624でnode --check src/object-catalog.js、qa/world-quality-contract.test.mjs、qa/object-list-catalog.test.mjs、qa/stage-static-instancing.test.mjsと6レーンを実行し、5種のWebGL前後比較・Android/FPSを確認。既存PR #614/#620/#619のCI滞留も解消してから安全にマージ/Pages公開。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "skipped",
-        "pr": "skipped",
+        "commit": "done",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "PR #614 world six lane 5/6 success, interaction failure",
+          "label": "5 object structural geometry source commit",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/d60c67acc06626e7a7aba3c87e0d4dad78fa4c8a"
+        },
+        {
+          "label": "Draft PR #624",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
+        },
+        {
+          "label": "PR #614 failed interaction QA",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44141156069"
         },
         {
-          "label": "PR #620 architecture test failure",
+          "label": "PR #620 failed architecture QA",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44151633344"
-        },
-        {
-          "label": "Existing CI fix PR #619",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/619"
-        },
-        {
-          "label": "World PR #614",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/614"
-        },
-        {
-          "label": "World PR #620",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/620"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 5,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
+        "newSourceCommits": 1,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "PR #614 interaction: old workflows API assertion qa/world-quality-contract.test.mjs:30 (job 134244316112)",
-          "PR #620 architecture: retired squad menu assertion qa/squad-ribbon-order-access.test.mjs:18 (job 134281245935)",
-          "PR #619 fix(ci) open; must verify CI before adopting tests",
-          "WebGL before/after ID-level comparison and Android/1000vs1000 FPS missing"
+          "Draft PR #624 static/Node and six-lane QA not yet executed",
+          "Five per-ID before/after WebGL screenshots and Android/1000v1000 FPS unverified",
+          "Prior PR #614 interaction and #620 architecture CI failures need validation against #619"
         ],
-        "speedPlan": "PR #619のQA契約更新をCIで検証し安全なら統合。その後PR #614のinteraction失敗job 134244316112 とPR #620のarchitecture失敗job 134281245935 を再検証。PR #614 visual run 44141156069のWebGL画像を旧版と対象ID別に比較し、PR #620も実WebGL/衝突/LOD/1000vs1000 FPSを検証してからマージ。",
+        "speedPlan": "PR #624 QA: Node check and three world tests; WebGL five ID screenshot diff; check PR #614/#620 legacy test fixes before merging.",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0,
+          "newPublishedIds": 0,
+          "sourceChangedIds": [
+            "town_bench_001",
+            "town_notice_001",
+            "town_fence_001",
+            "town_handcart_001",
+            "stone_fence_001"
+          ],
           "webglPassedIds": [],
           "gameAppliedIds": [],
-          "sourceChangedIds": [],
           "publicVerified": 0
         }
       },
