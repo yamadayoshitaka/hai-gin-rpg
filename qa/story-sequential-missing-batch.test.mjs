@@ -44,7 +44,7 @@ const invalid=spawnSync(process.execPath,['scripts/story-sequential-missing-batc
  {encoding:'utf8'});
 assert.notEqual(invalid.status,0);
 const workflow=fs.readFileSync('.github/workflows/story-sequential-missing-batch.yml','utf8');
-assert.match(workflow,/schedule:\\s*\\n\\s*- cron: '35 0 \\* \\* \\*'/,
+assert(workflow.includes("  schedule:\n    - cron: '35 0 * * *'\n"),
  'After Cloudflare UTC quota reset, a daily on-main GitHub Actions batch must run');
 assert(workflow.includes("day=$(date -u +%Y-%m-%d)"),
  'Daily quota must use UTC, not local Japan calendar day');
