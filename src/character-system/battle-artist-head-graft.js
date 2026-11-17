@@ -54,7 +54,7 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
 export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v3';
-export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v4';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v5-anatomical-shadows';
 let battleSkinAlbedoTexture=null;
 let battleSkinNormalTexture=null;
 /** Shared tangent-space microrelief for fine pores and irregular skin.
@@ -145,16 +145,56 @@ export function installBattleFaceLightResponse(material){
   const marker='#include <opaque_fragment>';
   if(!shader.fragmentShader?.includes(marker))
    throw Error('Battle face PBR light gate: expected opaque_fragment not found');
+  const bounds=material.userData?.battleFaceSculptureBounds;
+  let anatomical='';
+  if(bounds){
+   // Real mesh geometry is the shape authority. Vertex positions are already
+   // present; one varying, two material uniforms and no new GPU attributes,
+   // textures, lights or draw calls. Stable through LOD and view rotation.
+   if(!shader.vertexShader.includes('#include <begin_vertex>'))
+    throw Error('Real face anatomy shader: missing begin_vertex');
+   shader.uniforms.battleFaceMin={value:new THREE.Vector3(...bounds.min)};
+   shader.uniforms.battleFaceInvSize={value:new THREE.Vector3(...bounds.invSize)};
+   shader.vertexShader='varying vec3 vBattleFaceLocal;\n'+shader.vertexShader;
+   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
+    '#include <begin_vertex>\nvBattleFaceLocal = position;');
+   shader.fragmentShader='varying vec3 vBattleFaceLocal;\nuniform vec3 battleFaceMin;\nuniform vec3 battleFaceInvSize;\n'+shader.fragmentShader;
+   anatomical=[
+    'vec3 anatomical = (vBattleFaceLocal - battleFaceMin) * battleFaceInvSize;',
+    'float faceVisible = smoothstep(0.48, 0.74, anatomical.z);',
+    'float eyeBand = 1.0 - smoothstep(0.055, 0.115, abs(anatomical.y-0.745));',
+    'float eyeSocket = (1.0 - smoothstep(0.065, 0.145, abs(abs(anatomical.x-0.5)-0.18))) * eyeBand;',
+    'float noseShade = (1.0 - smoothstep(0.055, 0.12, abs(anatomical.x-0.5))) * (1.0 - smoothstep(0.020, 0.062, abs(anatomical.y-0.545)));',
+    'float lipUnderside = (1.0 - smoothstep(0.03, 0.075, abs(anatomical.y-0.475))) * (1.0 - smoothstep(0.10, 0.25, abs(anatomical.x-0.5)));',
+    'outgoingLight *= 1.0 - faceVisible * (0.13 * eyeSocket + 0.060 * noseShade + 0.035 * lipUnderside);'
+   ].join('\n')+'\n';
+  }
   shader.fragmentShader=shader.fragmentShader.replace(marker,
    'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+
    'float faceDiffuseLuma = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));\n'+
-   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+marker);
+   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+anatomical+marker);
  };
- material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
+ material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION+
+  (material.userData?.battleFaceSculptureBounds?'|real-sculpt':'|diffuse-only');
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseScale=.86;
  material.needsUpdate=true;
  return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.86};
+}
+/**
+ * Three.js Material.clone() does not preserve onBeforeCompile() closures in
+ * all versions. Reinstall the same authored face photometry for the instanced
+ * 1000vs1000 finish instead of silently switching to a flat white face.
+ */
+export function restoreBattleFaceShaderAfterClone(source,cloned){
+ if(!source?.userData?.battleFaceLightResponseVersion)return false;
+ if(!cloned?.isMeshStandardMaterial)return false;
+ const bounds=source.userData.battleFaceSculptureBounds;
+ if(bounds)cloned.userData.battleFaceSculptureBounds={
+  min:[...bounds.min],invSize:[...bounds.invSize]};
+ delete cloned.userData.battleFaceLightResponseVersion;
+ installBattleFaceLightResponse(cloned);
+ return true;
 }
 export function correctBattleFaceSkinTone(face,{sex='male',skinToneHex=null}={}){
  if(!face?.isMesh||!face.material||face.userData?.faceColorMode!=='color')
@@ -191,6 +231,17 @@ export function correctBattleFaceSkinTone(face,{sex='male',skinToneHex=null}={})
  if('sheen' in material)material.sheen=.025;
  if('specularIntensity' in material)material.specularIntensity=.48;
  material.toneMapped=true;
+ if(face.geometry?.getAttribute('position')){
+  // A face-specific uniform maps each authored mesh into anatomical XYZ.
+  // This same persistent contract is reconstructed for crowd GPU clones.
+  face.geometry.computeBoundingBox();
+  const bounds=face.geometry.boundingBox;
+  const size=bounds.getSize(new THREE.Vector3());
+  material.userData.battleFaceSculptureBounds={
+   min:bounds.min.toArray(),
+   invSize:[1/Math.max(1e-6,size.x),1/Math.max(1e-6,size.y),1/Math.max(1e-6,size.z)]
+  };
+ }
  installBattleFaceLightResponse(material);
  material.needsUpdate=true;
  // Keep eyelids contiguous with the new cheek/forehead tone. Do NOT recolour
