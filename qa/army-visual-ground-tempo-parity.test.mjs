@@ -55,6 +55,6 @@ assert.match(game,/out\.y=corrected;smooth\.y=corrected;/,
  'saddle and both terrain directions are authoritative after worker smoothing');
 assert.match(game,/const cinematicPlaybackScale=realtimeBattleCinematicScale\(/);
 assert.match(game,/town:TOWN_MODE,mass:Boolean\(MASS_SIZE\),paused,/);
-assert.match(game,/massSim\.setSquadCommand\(id,mode,side\)/,
+assert.match(game,/battleCommandBridge\.issue\(\{squadId:id,team:side,mode\}\)/,
  'tactical UI commands reach authoritative mass AI as in 50v50');
 console.log('PASS 50/1000 tactical engine parity + grounded 2000-body run/ride + upright complete photo LOD');
