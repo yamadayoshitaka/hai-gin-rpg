@@ -16,10 +16,11 @@ assert.match(html,/if\(!battleReady\|\|finished\|\|battleCeremony\.locked\|\|pen
  'Enemy squad inspection is blocked during current command target selection');
 assert.match(html,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,team\);return;\}/,
  'the actual circular squad markers must support two-step target selection');
-assert.ok(html.includes('else openSquadTactics(id);'),
- 'friendly squad circle opens orders');
-assert.ok(html.includes('const row=lastRibbonSums.get(key),intent=squadIntent(id,1,row?.n===0);'),
- 'enemy squad circle only exposes scout information');
+assert.ok(html.includes('selectOverviewSquad(team,id);')&&
+ html.includes("applyOverviewCamera('squad');"),
+ 'a squad circle selects the battle camera and group-only strategy chooser');
+assert.ok(html.includes('const row=lastRibbonSums.get(squadKey(1,id)),alive=ribbonCommanderAlive(1,id);'),
+ 'enemy squad information is read-only in the current overview');
 assert.ok(html.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
  'old ribbons are intentionally hidden and cannot obscure combat');
 assert.match(html,/markRibbonOrderIssued\(id\)/);
