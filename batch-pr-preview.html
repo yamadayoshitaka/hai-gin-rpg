@@ -31,7 +31,7 @@ small{font-size:11px;color:#aec4d3}
 <div class="controls">
  <label>バッチ系統<select id="group" aria-label="バッチ系統"></select></label>
  <label>改修PR・確認対象<select id="target" aria-label="改修対象"></select></label>
- <button id="refresh" type="button">GitHub状態を更新</button>
+ <button id="refresh" type="button">PR情報を手動取得（GitHub API）</button>
 </div>
 <div class="info" aria-live="polite">
  <div><strong>改修ブランチ</strong><span id="commit">照合中</span></div>
@@ -45,8 +45,8 @@ small{font-size:11px;color:#aec4d3}
 <div class="row"><button id="published" type="button" aria-pressed="true">本編・公開版</button><button id="candidate" type="button" aria-pressed="false">PR・改修版（試験用）</button><span id="which">本編を表示中</span></div>
 <p id="warning" class="warn">PR版は第三者の静的ホスト（raw.githack.com）による試験的表示です。初回は確認ページが表示される場合があります。未公開の秘密情報や私物GLBは送らないでください。表示失敗時は「別タブで開く」をお試しください。</p>
 <iframe id="viewer" title="3Dプレビュー" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
-<p class="summary" id="worldSummary" hidden>53種の品質受入状況を照合中…</p>
-<p><small>GitHub APIは閲覧時に公開PR・Actionsの状態を読みます。サービスが取得不能な場合は「未確認」と表示します。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small></p>
+<p class="summary" id="worldSummary" hidden>60種の品質受入状況を照合中…</p>
+<p><small>GitHub APIは閲覧時に自動呼出ししません。PRの最新SHAは「情報を手動取得」を押した時だけ1回問い合わせます。403発生中も本編とPRリンクは利用できます。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small> <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/commits/main" target="_blank" rel="noopener noreferrer">GitHub mainのコミット履歴</a></p>
 </main>
 <script>
 'use strict';
@@ -60,11 +60,36 @@ const short=s=>typeof s==='string'?s.slice(0,12):'不明';
 const escapePart=s=>encodeURIComponent(s).replace(/%2F/gi,'/');
 const queryFor=t=>t.params?'?'+t.params:t.object?'?object='+encodeURIComponent(t.object):'';
 const getJSON=async url=>{const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()};
+const PR_CACHE_PREFIX='hg-pr-preview-v3-',PR_BACKOFF_KEY='hg-pr-preview-403-v3';
+function getSaved(key){try{return JSON.parse(sessionStorage.getItem(key)||'null')}catch{return null}}
+function save(key,data){try{sessionStorage.setItem(key,JSON.stringify(data))}catch{}}
+async function getPrOnDemand(number){
+ const now=Date.now(),blocked=Number(getSaved(PR_BACKOFF_KEY)?.until||0),key=PR_CACHE_PREFIX+number;
+ const stored=getSaved(key);
+ if(stored?.at&&now-Date.parse(stored.at)<5*60000)return stored.data;
+ if(now<blocked){
+  if(stored?.data)return stored.data;
+  throw Error('HTTP 403/429の再試行を制限中（GitHub PRは直接確認可能）');
+ }
+ const url=API+'/pulls/'+number;
+ const response=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
+ if(!response.ok){
+  if(response.status===403||response.status===429){
+   const reset=Number(response.headers.get('x-ratelimit-reset'));
+   save(PR_BACKOFF_KEY,{until:Math.max(now+60000,reset>0?reset*1000:now+15*60000)});
+  }
+  if(stored?.data)return stored.data;
+  throw Error('HTTP '+response.status+'（PR APIアクセス制限、直接PRリンクを使用してください）');
+ }
+ const data=await response.json();
+ save(key,{at:new Date().toISOString(),data});return data;
+}
 function setLink(id,url){const a=$(id);a.href=url||'#';a.setAttribute('aria-disabled',url?'false':'true')}
 function urls(){
  const suffix=row.page+queryFor(row);
  const live=PROD+suffix;
  const draft=pr?.head?.sha ? PREVIEW+escapePart(pr.head.sha)+'/'+suffix : null;
+ // Optional direct GitHub comparison (not fetched on page load): GH+'/compare/'+short(releaseSha)+'...main';
  return {live,draft};
 }
 function show(){
@@ -78,16 +103,21 @@ function show(){
  $('candidate').disabled=!u.draft;
  $('which').textContent=mode==='candidate'?'PR版を表示中（外部プレビュー・品質未承認）':'本編の公開版を表示中';
 }
-async function verifyRelease(p,token){
- if(!p?.merged_at){$('mainStatus').textContent='未マージ（本編未反映）';$('pageStatus').textContent='未公開（PR段階）';return}
+function verifyRelease(p){
+ if(!p?.merged_at){
+  $('mainStatus').textContent='未マージ（本編未反映）';
+  $('pageStatus').textContent='未公開（PR段階）';return;
+ }
  $('mainStatus').textContent='マージ済み '+short(p.merge_commit_sha);
- if(!releaseSha||!p.merge_commit_sha){$('pageStatus').textContent='公開SHA取得不可・未確認';return}
- try{
-  const compare=await getJSON(API+'/compare/'+escapePart(p.merge_commit_sha)+'...'+escapePart(releaseSha));
-  if(token!==seq)return;
-  const published=['ahead','identical'].includes(compare.status);
-  $('pageStatus').textContent=published?'Pagesに含まれる（公開SHA '+short(releaseSha)+'）':'Pages未反映（公開SHA '+short(releaseSha)+'）';
- }catch(e){if(token===seq)$('pageStatus').textContent='公開SHA比較不可・未確認（'+e.message+'）'}
+ if(!releaseSha||!p.merge_commit_sha){
+  $('pageStatus').textContent='Pages公開SHAを取得できません（未確認）';return;
+ }
+ if(releaseSha===p.merge_commit_sha){
+  $('pageStatus').textContent='公開SHAが一致：'+short(releaseSha);return;
+ }
+ // A different SHA does not prove whether an earlier commit is an ancestor.
+ $('pageStatus').textContent='公開SHA '+short(releaseSha)+
+  '（PRを含むかは未確認。GitHubのコミット比較で確認）';
 }
 async function readCheckpoint(p,category,token){
  const display=$('checkpoint');
@@ -105,33 +135,45 @@ async function readCheckpoint(p,category,token){
   display.textContent='途中保存：実ソース変更 '+ok+'件 / 保存記録 '+state.saved.length+'件 ／ 残件 '+(state.remainingIds?.length??'不明')+' ／ 次回：'+(state.nextAction||'未記録');
  }catch(e){if(token===seq)display.textContent='途中保存：このPRに対象別チェックポイントが未記録、または取得不可（'+e.message+'）。PRのコミットは上のリンクで確認できます。'}
 }
-async function refresh(){
+async function refresh({live=false}={}){
  const token=++seq;row=data?.groups?.[$('group').value]?.find(x=>x.pr===Number($('target').value));
  if(!row)return;
- pr=null;$('commit').textContent='PRを照合中';$('checks').textContent='照合中';
- $('mainStatus').textContent='照合中';$('pageStatus').textContent='照合中';$('qa').textContent='GitHubから最新情報を読み込み中';$('checkpoint').textContent='途中保存：GitHub PR内の記録を照合中';
- setLink('prLink',GH+'/pull/'+row.pr);show();
- const [p,c]=await Promise.allSettled([getJSON(API+'/pulls/'+row.pr),getJSON(API+'/commits/main')]);
- if(token!==seq)return;
- if(p.status!=='fulfilled'){
-  $('commit').textContent='GitHub PR取得不可（'+String(p.reason?.message||p.reason)+'）';
-  $('checks').textContent='未確認';$('mainStatus').textContent='未確認';$('pageStatus').textContent='未確認';return;
- }
- pr=p.value;mainSha=c.status==='fulfilled'?c.value.sha:null;
- $('commit').textContent=(pr.draft?'Draft PR':'PR')+' #'+row.pr+' / '+short(pr.head?.sha);
- $('qa').textContent='最新main '+short(mainSha)+' ／ '+row.title+' ／ 対象 '+(row.ids?.join(', ')||'共通描画');
+ pr=null;
+ $('commit').textContent='PR #'+row.pr+'（最新SHAは未取得）';
+ $('checks').textContent='未確認（API取得を省略）';
+ $('mainStatus').textContent='未照合';
+ $('pageStatus').textContent=releaseSha?'Pages公開SHA '+short(releaseSha)+'（PR採用は未照合）':'公開SHA未取得';
+ $('qa').textContent='APIの自動呼出しを停止中。PR詳細は直接GitHubで確認できます';
+ $('checkpoint').textContent='途中保存：PRのコミットとcheckpointをGitHubで確認してください';
+ setLink('prLink',GH+'/pull/'+row.pr);
  show();
- void readCheckpoint(pr,$('group').value,token);
- await verifyRelease(pr,token);
+ if(!live){
+  const cached=getSaved(PR_CACHE_PREFIX+row.pr);
+  if(cached?.data&&Date.now()-Date.parse(cached.at)<5*60000){
+   pr=cached.data;
+   $('commit').textContent=(pr.draft?'Draft PR':'PR')+' #'+row.pr+' / '+short(pr.head?.sha)+'（保存済み）';
+   $('mainStatus').textContent=pr.merged_at?'マージ済み':'未マージ（本編未反映）';
+   verifyRelease(pr);show();
+  }
+  return;
+ }
+ $('qa').textContent='指定したPRのみGitHub APIから確認中…';
  try{
-  const checks=await getJSON(API+'/commits/'+escapePart(pr.head.sha)+'/check-runs?per_page=100');
+  const item=await getPrOnDemand(row.pr);
   if(token!==seq)return;
-  const rs=checks.check_runs||[];
-  if(!rs.length){$('checks').textContent='チェック記録なし・未確認';return}
-  const failed=rs.filter(x=>x.conclusion&&x.conclusion!=='success'&&x.conclusion!=='skipped'&&x.conclusion!=='neutral');
-  const pending=rs.filter(x=>x.status!=='completed');
-  $('checks').textContent=failed.length?'失敗あり '+failed.length+'件／'+rs.length+'件':pending.length?'実行中 '+pending.length+'件／'+rs.length+'件':rs.every(x=>['success','skipped','neutral'].includes(x.conclusion))?'GitHubチェック '+rs.length+'件完了':'未確認';
- }catch(e){if(token===seq)$('checks').textContent='GitHubチェック取得不可・未確認'}
+  pr=item;
+  $('commit').textContent=(pr.draft?'Draft PR':'PR')+' #'+row.pr+' / '+short(pr.head?.sha);
+  $('qa').textContent='PR '+row.title+' ／ 対象 '+(row.ids?.join(', ')||'共通描画')+
+   ' ／ 詳細なQA・コミットはPRのGitHub画面を開いて確認';
+  verifyRelease(pr);show();
+  $('checks').textContent='PRのChecksタブで確認（API多重呼出しを停止）';
+  $('checkpoint').textContent='途中保存：GitHub PRのFiles changed／コミット／checkpointで確認';
+ }catch(e){
+  if(token!==seq)return;
+  $('commit').textContent='PR #'+row.pr+' ／ '+e.message;
+  $('qa').textContent='GitHub APIが取得できません。PRは上の「GitHubでPRを開く」で直接確認可能です。';
+  $('checks').textContent='未確認（APIアクセス不可）';
+ }
 }
 async function setGroup(){
  const category=$('group').value;
@@ -155,13 +197,13 @@ async function init(){
   for(const [key,name] of Object.entries(groups)){const o=document.createElement('option');o.value=key;o.textContent=name;$('group').appendChild(o)}
   const asked=new URL(location.href).searchParams.get('group');
   if(data.groups[asked])$('group').value=asked;
-  try{const r=await getJSON(PROD+'release.json?ts='+Date.now());releaseSha=/^[0-9a-f]{40}$/.test(r.sha)?r.sha:null}catch{}
+  try{const r=await getJSON('./release.json?ts='+Date.now());releaseSha=/^[0-9a-f]{40}$/.test(r.sha)?r.sha:null}catch{}
   await setGroup();
  }catch(e){$('qa').textContent='初期化に失敗：'+e.message}
 }
 $('group').addEventListener('change',setGroup);
-$('target').addEventListener('change',refresh);
-$('refresh').addEventListener('click',refresh);
+$('target').addEventListener('change',()=>refresh());
+$('refresh').addEventListener('click',()=>refresh({live:true}));
 $('published').addEventListener('click',()=>{mode='published';show()});
 $('candidate').addEventListener('click',()=>{mode='candidate';show()});
 init();

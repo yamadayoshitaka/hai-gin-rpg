@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const page=fs.readFileSync('batch-pr-preview.html','utf8');
+const script=page.match(/<script>([\s\S]*?)<\/script>/)?.[1]||'';
+const init=script.slice(script.indexOf('async function init(){'));
+const refresh=script.slice(script.indexOf('async function refresh({live=false}={})'),script.indexOf('async function setGroup(){'));
+test('PR preview loads static Pages data with no anonymous GitHub API by default',()=>{
+ assert(script.length>1000);
+ assert.doesNotThrow(()=>new vm.Script(script));
+ assert.match(init,/getJSON\('\.\/data\/batch-pr-previews\.json'\)/);
+ assert.match(init,/getJSON\('\.\/release\.json/);
+ assert.match(init,/await setGroup\(\)/);
+ assert.match(script,/await refresh\(\)/);
+ assert.match(refresh,/if\(!live\)/);
+ assert.match(refresh,/getPrOnDemand\(row\.pr\)/);
+ assert.match(script,/refresh\(\{live:true\}\)/);
+ assert.doesNotMatch(init,/getPrOnDemand\(/);
+ assert.doesNotMatch(init,/getJSON\(API\+/);
+ assert.doesNotMatch(refresh,/getJSON\(API\+'/);
+});
+test('on-demand one request, rate limit protection and direct PR fallback',()=>{
+ assert.match(script,/const url=API\+'\/pulls\/'\+number/);
+ const onDemand=script.slice(script.indexOf('async function getPrOnDemand('),script.indexOf('function setLink('));
+ assert.equal((onDemand.match(/fetch\(url,\{cache:'no-store'/g)||[]).length,1);
+ assert.match(script,/response\.status===403\|\|response\.status===429/);
+ assert.match(script,/x-ratelimit-reset/);
+ assert.match(script,/PR_BACKOFF_KEY/);
+ assert.match(script,/sessionStorage/);
+ assert.match(page,/href="https:\/\/github\.com\/yamadayoshitaka\/hai-gin-rpg\/commits\/main"/);
+ assert.match(refresh,/PR情報|PRのコミットとcheckpoint/);
+ assert(refresh.includes("setLink('prLink',GH+'/pull/'+row.pr)"));
+});
+test('no unsafe claim that merged PR is necessarily on Pages',()=>{
+ const compare=script.slice(script.indexOf('function verifyRelease('),script.indexOf('async function readCheckpoint('));
+ assert.match(compare,/releaseSha===p\.merge_commit_sha/);
+ assert.match(compare,/PRを含むかは未確認/);
+ assert.doesNotMatch(compare,/getJSON\(/);
+});
