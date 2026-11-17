@@ -53,9 +53,11 @@ const mask=readFileSync(new URL('../src/character-system/garment-coverage-runtim
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(army,/layer\.visible=visible>0/,'zero-count full-mesh batches are not submitted');
 assert.match(army,/impostor\.mesh\.visible=farVisible>0/,'zero-count image batches are not submitted');
-assert.match(army,/const fittedBefore=representative\.outfit\.getHairState/,'bake complete source wig');
-assert.match(army,/studioHairRoot\.visible=false/,'exclude sparse studio middle groom from dense army');
-assert.match(army,/studioHairRoot\.visible=studioHairBefore/,'restore original studio hair after GPU bake');
+assert.match(army,/const fittedBefore=representative\.outfit\.getHairState/,'retain reversible original hair state');
+assert.match(army,/quality:'near',hero:false/,'the crowd captures high-density strands anchored to the replacement sculpt');
+assert.match(army,/studioHairRoot\.visible=studioHairBefore/,'retain full sculpted groom after GPU bake');
+assert.doesNotMatch(army,/if\(studioHairRoot\)studioHairRoot\.visible=false/,
+ 'do not hide the head-fitted groom and bake a donor-aligned bald wig instead');
 assert.match(mask,/protectedEdge\[i\]=exposedWeight>=\.56/,
  'face/neck/hand seams are protected from opaque clothing culling');
 assert.match(game,/initialBattlePixelRatio/);
