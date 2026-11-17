@@ -24,8 +24,8 @@ const make=(data)=>{
 export const CREATURE_FACE_VOLUME_METRICS=metricNames;
 
 export const CREATURE_FACE_VOLUME_PRESETS=Object.freeze({
- wolf:make({craniumDepth:.032,browDepth:.020,orbitalDepth:.018,cheekDepth:.041,snoutDepth:.037,jawDepth:.026,occipitalDepth:.026}),
- horse:make({craniumDepth:.033,browDepth:.022,orbitalDepth:.019,cheekDepth:.036,snoutDepth:.045,jawDepth:.025,occipitalDepth:.032}),
+ wolf:make({anatomicalRims:true,craniumDepth:.032,browDepth:.020,orbitalDepth:.018,cheekDepth:.041,snoutDepth:.037,jawDepth:.026,occipitalDepth:.026}),
+ horse:make({anatomicalRims:true,craniumDepth:.033,browDepth:.022,orbitalDepth:.019,cheekDepth:.036,snoutDepth:.045,jawDepth:.025,occipitalDepth:.032}),
  wyvern:make({craniumDepth:.042,browDepth:.032,orbitalDepth:.029,cheekDepth:.055,snoutDepth:.044,jawDepth:.036,occipitalDepth:.036}),
  dragon:make({craniumDepth:.052,browDepth:.038,orbitalDepth:.031,cheekDepth:.069,snoutDepth:.045,jawDepth:.040,occipitalDepth:.045}),
  elder_dragon:make({craniumDepth:.056,browDepth:.040,orbitalDepth:.035,cheekDepth:.077,snoutDepth:.050,jawDepth:.045,occipitalDepth:.047}),
@@ -45,6 +45,25 @@ const overrides=Object.freeze({
  // than the shared beast mask. Keep the smooth skull source mesh.
  m001:Object.freeze({browDepth:.014,orbitalDepth:.031,
    cheekDepth:.049,snoutDepth:.022,occipitalDepth:.025}),
+ // Canid wave: keep the m001 skull lineage but preserve the narrower
+ // rhinarium, continuous malar muscle and deeper orbital wall for each coat.
+ // No geometry/rig edit to protected m005/m006.
+ m002:Object.freeze({anatomicalRims:true,browDepth:.016,orbitalDepth:.032,cheekDepth:.048,
+   snoutDepth:.024,jawDepth:.031,occipitalDepth:.027}),
+ m003:Object.freeze({anatomicalRims:true,browDepth:.018,orbitalDepth:.030,cheekDepth:.051,
+   snoutDepth:.026,jawDepth:.032,occipitalDepth:.029}),
+ m004:Object.freeze({anatomicalRims:true,browDepth:.016,orbitalDepth:.033,cheekDepth:.047,
+   snoutDepth:.023,jawDepth:.029,occipitalDepth:.027}),
+ // The cat wave has its own shorter muzzle, pronounced zygomatic arch and
+ // deep, non-spherical eye sockets. Lion m008 keeps a wider temporal bone.
+ m007:Object.freeze({anatomicalRims:true,browDepth:.025,orbitalDepth:.035,cheekDepth:.058,
+   snoutDepth:.019,jawDepth:.036,occipitalDepth:.032}),
+ m008:Object.freeze({anatomicalRims:true,browDepth:.027,orbitalDepth:.032,cheekDepth:.063,
+   snoutDepth:.020,jawDepth:.038,occipitalDepth:.036}),
+ m009:Object.freeze({anatomicalRims:true,browDepth:.021,orbitalDepth:.033,cheekDepth:.051,
+   snoutDepth:.018,jawDepth:.031,occipitalDepth:.029}),
+ m010:Object.freeze({anatomicalRims:true,browDepth:.025,orbitalDepth:.034,cheekDepth:.055,
+   snoutDepth:.021,jawDepth:.034,occipitalDepth:.032}),
  m032:Object.freeze({orbitalDepth:.049,cheekDepth:.060,occipitalDepth:.035}),
  m034:Object.freeze({orbitalDepth:.029,cheekDepth:.044,snoutDepth:.033}),
  m031:Object.freeze({cheekDepth:.061,jawDepth:.036}),
@@ -69,13 +88,40 @@ export function sculptAxialFacePoint(x,y,z,t,a,volume){
  const jaw=gaussian(u,.69,.19)*gaussian(up,-.67,.38);
  const occiput=gaussian(u,.12,.16);
  const sign=Math.sign(side);
+ // Anatomical nasal bridge, alar root and lower orbital rim are deformed
+ // into the SAME loft vertices. These surfaces follow the animated head
+ // part; no detached nostril spheres, unrigged teeth or extra draw calls.
+ // The midline bridge fades into the muzzle before the nose leather.
+ const rimFactor=volume.anatomicalRims===true?1:0;
+ const midline=gaussian(side,0,.28);
+ const bridge=gaussian(u,.66,.15)*gaussian(up,.33,.35)*midline;
+ const alar=gaussian(u,.83,.085)*gaussian(up,-.14,.25)*
+   gaussian(lateral,.68,.23);
+ const tearTrough=gaussian(u,.54,.12)*gaussian(up,-.13,.18)*
+   Math.pow(lateral,1.5);
+ // Sculpt paired nostril depressions and the central nasal septum directly
+ // into the animated muzzle surface. This does not introduce floating parts
+ // and fades entirely for protected legacy m005/m006 meshes.
+ const nostril=gaussian(u,.87,.07)*gaussian(up,-.16,.22)*
+   gaussian(lateral,.64,.19)*rimFactor;
+ const septum=gaussian(u,.88,.07)*gaussian(up,-.30,.20)*
+   midline*rimFactor;
+ const temporal=gaussian(u,.37,.16)*gaussian(up,.36,.27)*lateral;
  const xx=x+sign*(volume.craniumDepth*.70*brain*lateral+
-   volume.cheekDepth*cheeks-volume.orbitalDepth*.68*sockets);
+   volume.cheekDepth*cheeks-volume.orbitalDepth*.68*sockets+
+   volume.snoutDepth*.27*alar*rimFactor-
+   volume.snoutDepth*.16*nostril+
+   volume.craniumDepth*.16*temporal*rimFactor);
  const yy=y+volume.craniumDepth*.25*brain*up+
-   volume.browDepth*brows-volume.jawDepth*jaw;
- const zz=z+volume.snoutDepth*muzzle*(1-.32*lateral)-
+   volume.browDepth*brows-volume.jawDepth*jaw-
+   volume.orbitalDepth*.19*tearTrough*rimFactor-
+   volume.snoutDepth*.10*septum;
+ const zz=z+volume.snoutDepth*muzzle*(1-.32*lateral)+
+   volume.snoutDepth*.36*bridge*rimFactor-
    volume.occipitalDepth*occiput+
-   volume.cheekDepth*.23*cheeks;
+   volume.cheekDepth*.23*cheeks-
+   volume.orbitalDepth*.12*tearTrough*rimFactor-
+   volume.snoutDepth*.20*nostril;
  return [xx,yy,zz];
 }
 /**
