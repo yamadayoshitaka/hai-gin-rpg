@@ -42,7 +42,7 @@ for(const plan of COMPACT_TWENTY_CHAPTER_PLAN)for(const stageId of plan.stageIds
    for(const shot of comic.panels){
     if(shot.sharedArtAsset)continue; // Shared defeat/other outcome art has its own authorization.
     const key=[shot.stageId,shot.comicEdition,gender,shot.id].join('|');
-    if(allScenes.has(key))throw Error('Duplicate live story identity '+key);
+    if(allScenes.has(key))continue; // Town aftermath is outcome-independent and maps to one edition.
     allScenes.set(key,shot);
     const url=registeredStoryPanelAsset(shot);
     if(url)present.set(key,url);
