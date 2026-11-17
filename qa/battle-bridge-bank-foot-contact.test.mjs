@@ -51,7 +51,7 @@ const anchor=createCrowdGroundAnchor(sources.map(s=>({
  isHumanBody:s.isHumanBody,isFootSurface:s.isFootSurface,
  base:s.geometry.getAttribute('position').array
 })));
-assert.equal(anchor.floor,-.22,'actual boots outrank clipped-away bare feet');
+assert.ok(Math.abs(anchor.floor+.22)<1e-6,'actual boots outrank clipped-away bare feet');
 const correction=normalizeCrowdCaptureFootOrigin(sources,anchor);
 assert.ok(Math.abs(correction.offset-.22)<1e-6);
 assert.equal(correction.correctedAttributes,CROWD_GROUND_POSE_CHANNELS.length*2);
