@@ -98,6 +98,6 @@ assert.match(page,/const BATTLE_RESOLUTION_SCALE=\.92/,'preserve a sharper Andro
 assert.match(page,/Math\.max\(terrainY\(out\.x,out\.z\)\+\.04,upperPoint\.y\+\.04\)/,
  'upper-storey casualties must stay on their actual deck');
 assert.match(atlas,/const TILE=224/,'capture higher-resolution real-model distant photos');
-assert.match(gpu,/Math\.max\(36,Math\.min\(60,Number\(pixels\)\|\|36\)\)/,
- 'GPU LOD pressure may not replace near soldiers with blurry photographs');
+assert.match(gpu,/Math\.max\(denseCrowd\?52:36,Math\.min\(denseCrowd\?100:60/,
+ 'standard close-up keeps 36..60px while 1000v1000 may use higher-resolution photographs under GPU pressure');
 console.log('PASS: 2F melee pursuit, actual stair climb/return, same-floor combat, Worker target sync, near-3D fidelity and corpse floor');

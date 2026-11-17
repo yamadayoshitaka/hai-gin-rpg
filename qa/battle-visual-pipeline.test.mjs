@@ -30,6 +30,19 @@ assert.equal(ensureBattleScalpCoverage(a).after.source,'fitted-source','empty/hi
 lock.visible=true;
 ensureBattleScalpCoverage(a);
 assert.equal(visible,false,'two hairstyles must never overlap');
+// A filled hair node is NOT valid if its parent branch is invisible or
+// detached from the actual game actor: otherwise 1000 baked soldiers go bald.
+const person={visible:true,parent:null};
+const riggedWig={visible:true,parent:person,getObjectByName:()=>lock};
+lock.parent=riggedWig;a.character.object3D=person;a.masterHead.studioWig.root=riggedWig;
+assert.equal(battleScalpCoverageState(a).source,'studio-scalp');
+riggedWig.visible=false;
+assert.equal(ensureBattleScalpCoverage(a).after.source,'fitted-source');
+riggedWig.visible=true;person.visible=false;
+assert.equal(battleScalpCoverageState(a).source,'fitted-source',
+ 'an invisible character tree cannot validate the studio hair capture');
+person.visible=true;
+assert.equal(ensureBattleScalpCoverage(a).after.source,'studio-scalp');
 assert.deepEqual(auditBattleCharacterPipeline([a]).baldRisk,[]);
 const missing={...a,id:3,masterHead:{...a.masterHead,studioWig:null},
  outfit:{getHairState:()=>({attached:false,visible:false}),diagnostics:{}}};

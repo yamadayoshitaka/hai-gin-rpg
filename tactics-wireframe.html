@@ -867,7 +867,7 @@ import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRo
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
 import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
-import {AdaptiveBattleResolution} from './src/adaptive-battle-resolution.js?v=2.4';
+import {AdaptiveBattleResolution} from './src/adaptive-battle-resolution.js?v=20261117-initial-upscale1';
 import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './src/tactical-command-descriptions.js?v=1';
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
@@ -1025,14 +1025,14 @@ import {currentHeroineStudioPreset,resolveBattleStudioPattern}
 import {enhanceStudioCombatMaterials,refineHeroineCostumeSilhouette}
  from './src/heroine-battle-costume-bridge.js?v=20261117-back-gate1';
 import {applySkinnedBuildMorph} from './src/body-build-morph-v48.js?v=60';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=20261117-back-gate1';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=20261117-exposed-only3';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=world60-20261117';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,selectCanopiesAroundCamera,chooseClearBattleCameraOffset,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.69';
 import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=20261117-motion2';
 import {createStableBattleGroomSelector} from './src/battle-studio-groom-policy.js?v=20261117-hysteresis1';
-import {ensureBattleScalpCoverage,battleScalpCoverageState,auditBattleCharacterPipeline} from './src/character-system/battle-visual-pipeline.js?v=20261117-hair-back-qa1';
+import {ensureBattleScalpCoverage,battleScalpCoverageState,auditBattleCharacterPipeline} from './src/character-system/battle-visual-pipeline.js?v=20261117-hair-back-qa2';
 import {selectBattleFaceExpression,battleFaceExpressionHold} from './src/character-system/battle-face-action-policy.js?v=20261117-action1';
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
@@ -1067,9 +1067,9 @@ import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-hair-source-v2';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-crowd-hair-fps3';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
-import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
+import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
@@ -1227,11 +1227,16 @@ const initialView=battleViewportSize();
 // allocating 1.38x targets, repeatedly discarding them down to ~0.93x
 // during the first few seconds of fighting. Fixed during active skirmishes
 // to prevent Android black flashes from reallocating the drawing buffer.
-const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE?1.1:TOWN_MODE?1.5:1.0)*BATTLE_RESOLUTION_SCALE;
+// The 1000v1000 battle starts at a safe ~0.92 ratio. If crowd batching
+// recovers enough GPU budget, upscale the original PBR render to ~1.14x.
+// Never raise resolution on a device still suffering frame-time spikes.
+const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE>=1000?1.24:MASS_SIZE?1.1:TOWN_MODE?1.5:1.0)*BATTLE_RESOLUTION_SCALE;
+const initialBattlePixelRatio=MASS_SIZE>=1000?Math.min(.92,nativeBattlePixelRatio):nativeBattlePixelRatio;
 const adaptiveBattleResolution=new AdaptiveBattleResolution({
- maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*.65),targetFps:45
+ maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*.65),
+ initialRatio:initialBattlePixelRatio,targetFps:45
 });
-const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE&&!useGpuFxaa});renderer.setPixelRatio(nativeBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE&&!useGpuFxaa});renderer.setPixelRatio(initialBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
 // Composer has multiple render passes. Count the complete scene rather than
 // reporting only the last output pass as "描画 1" in the performance HUD.
 renderer.info.autoReset=false;
@@ -1274,7 +1279,8 @@ window.getSkirmishPerformanceStats=()=>({
  armorOriginalPieces:actors.reduce((n,a)=>n+(a.outfit?.diagnostics?.armorOriginalPieces||0),0),
  moving:actors.filter(a=>a.nextCell).length
 });
-const crowdPerformanceBudget=new CrowdPerformanceBudget({targetFps:45});
+const crowdPerformanceBudget=new CrowdPerformanceBudget({targetFps:45,
+ ...(MASS_SIZE>=1000?{minPx:52,maxPx:100}:{})});
 const resourceSamples=[];
 function battleResourceSnapshot(){
  const fx=actionVfx.stats;

@@ -264,6 +264,20 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     }
     if(scalp.after.source==='missing')
       throw Error(job.name+'の実3D毛髪が見つかりません。ハゲをGPUモデルへ焼き込まず中断します。');
+    // The 120-strand studio middle groom looks sparse once flattened into
+    // thousands of small GPU silhouettes. For the crowd prototype use the
+    // original fitted FULL hairstyle and its anatomical root fibers whenever
+    // attached; restore the inspected studio groom after atlas/snapshot bake.
+    const fittedBefore=representative.outfit.getHairState?.()??null;
+    const studioHairRoot=representative.masterHead?.studioWig?.root??null;
+    const studioHairBefore=studioHairRoot?.visible;
+    if(fittedBefore?.attached){
+      if(studioHairRoot)studioHairRoot.visible=false;
+      representative.outfit.setHairVisible(true);
+      scalp=ensureBattleScalpCoverage(representative);
+      if(scalp.after.source!=='fitted-source')
+        throw Error(job.name+'のGPU群衆用フル髪メッシュの表示に失敗しました');
+    }
     representative.crowdSampling=true;
     const person=representative.character.object3D;
     // LOD.update() may have left the nearest scalp mesh invisible before
@@ -575,6 +589,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
+    if(studioHairRoot)studioHairRoot.visible=studioHairBefore;
+    if(fittedBefore?.attached)representative.outfit.setHairVisible(fittedBefore.visible);
+    ensureBattleScalpCoverage(representative);
     for(const state of hairLodStates){
       state.node.autoUpdate=state.autoUpdate;
       state.node.levels.forEach((level,i)=>{level.object.visible=state.states[i];});
@@ -591,7 +608,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const canvasSize=new THREE.Vector2();
   let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0,blockedVisibleSoldiers=0,visibleCorpses=0;
   let visibleDashSoldiers=0,visibleStairWalkSoldiers=0;
-  let screenLodThresholdPx=36;
+  let screenLodThresholdPx=simulation.units.length>=1500?52:36;
+  const denseCrowd=simulation.units.length>=1500;
   function update(alpha=0,extraTime=0,visualTime=simulation.time){
     visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;visibleCorpses=0;
     visibleDashSoldiers=0;visibleStairWalkSoldiers=0;
@@ -621,8 +639,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // Mounted impostors only contain the standing soldier card. Use the
         // seated real mesh until a mounted atlas exists.
         const verticalViewRatio=camera&&distance>0?Math.abs(camera.position.y-bounds.center.y)/distance:0;
+        const overhead3dPixels=denseCrowd?Math.max(52,screenLodThresholdPx+10):28;
         const useFar=!!impostor&&u.alive&&!u.mountId&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx)&&
-          !crowdRequires3DFromOverhead(pixels,verticalViewRatio);
+          !crowdRequires3DFromOverhead(pixels,verticalViewRatio,overhead3dPixels);
         u._crowdImpostor=useFar;
         if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
@@ -693,8 +712,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       impostorVisibleSoldiers+=farVisible;
       // Distance atlases contain the original complete body and costume.
       if(bodyLayers.length)bodyVisibleSoldiers+=visible+farVisible;
-      for(const layer of layers)layer.count=visible;
-      if(impostor)impostor.mesh.count=farVisible;
+      // Zero-count InstancedMesh objects were still submitted by WebGLRenderer
+      // on some Android GPU paths, burning draw calls for empty job layers.
+      for(const layer of layers){layer.count=visible;layer.visible=visible>0;}
+      if(impostor){impostor.mesh.count=farVisible;impostor.mesh.visible=farVisible>0;}
       // Only the visible portion of each profession's shared GPU buffer needs
       // uploading. Geometry/material quality and per-soldier poses are intact.
       for(const attr of Object.values(shared)){
@@ -717,7 +738,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   update();
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
-    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(60,Number(pixels)||36))},
+    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(denseCrowd?52:36,Math.min(denseCrowd?100:60,Number(pixels)||(denseCrowd?52:36)))},
     get screenLodThresholdPx(){return screenLodThresholdPx},
     get visibleSoldiers(){return visibleSoldiers},
     get bodyVisibleSoldiers(){return bodyVisibleSoldiers},
