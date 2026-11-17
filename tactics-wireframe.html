@@ -971,6 +971,7 @@ import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
+import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
 import {createMonsterModel} from './src/monster-geometry.js';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=natural-size-20261116';
 const $=id=>document.getElementById(id);
@@ -2155,6 +2156,19 @@ function mountedCreatureOf(unit){
    o.mountedBy===(massSim&&unit.massUnitId!=null?unit.massUnitId:unit.id)):null;
 }
 function riderElevation(unit,time=creatureVisualTime){return riderSeatHeight(mountedCreatureOf(unit),time);}
+/** One-time exact pelvis anchor from the existing skinned 65-bone person.
+ * The world root tracks the saddle; only the displayed body shifts so the
+ * HIPS rather than the boots meet that saddle. Never resample per frame. */
+function measureRiderPelvisDrop(character){
+ const pelvis=character?.model?.getObjectByName('pelvis')||
+  character?.model?.getObjectByName('Hips');
+ if(!pelvis||!character?.object3D)return .90;
+ const point=new THREE.Vector3();
+ character.object3D.updateWorldMatrix(true,true);
+ pelvis.getWorldPosition(point);
+ character.object3D.worldToLocal(point);
+ return THREE.MathUtils.clamp(point.y,.45,1.22);
+}
 function applyCreatureRidingPose(actor){
  if(!actor?.character?.model)return;
  if(!actor._ridingPose)actor._ridingPose=createRidingPoseController(actor.character.model);
@@ -2745,6 +2759,7 @@ async function installBattleModels(){
       // Whole-rig width/depth proportions keep skin, knees, neck, boots,
       // armor and weapons bone-aligned without changing world collision.
       character.object3D.scale.set(recipe.visualScaleX,1,recipe.visualScaleZ);
+      a.riderPelvisDropY=measureRiderPelvisDrop(character);
       character.object3D.userData.heroProductionRecipe=recipe;
       a.root.userData.heroProductionVersion=recipe.recipeVersion;
       // The original full-quality armor/cloth stays untouched. Only rigid
@@ -2878,7 +2893,26 @@ for(const obj of [...stageObjects.children]){
 }
 // The vegetation and fences are immutable during combat. Draw the exact same
 // meshes/materials through spatial GPU instancing; collision tiles stay as-is.
+// Report the production scene input BEFORE instancing removes its source
+// nodes. This never adds render meshes and verifies authoring→game lineage.
+const stageCatalogModelCounts=new Map();
+for(const object of stageObjects.children){
+ const id=object.userData?.assetId;
+ if(id&&Object.hasOwn(OBJECT_CATALOG,id))
+  stageCatalogModelCounts.set(id,(stageCatalogModelCounts.get(id)||0)+1);
+}
 const stageBatchStats=batchStaticStageDecorations(stageObjects,THREE,{cellSize:CELL});
+const liveObjectTransfer=Object.freeze({
+ source:'src/object-catalog.js#createCatalogObject',
+ catalogCount:Object.keys(OBJECT_CATALOG).length,
+ instantiatedCount:[...stageCatalogModelCounts.values()].reduce((a,b)=>a+b,0),
+ instantiatedIds:[...stageCatalogModelCounts.keys()].sort(),
+ byId:Object.fromEntries(stageCatalogModelCounts),
+ instancedDrawBatches:stageBatchStats.batches,
+ instancedObjectCount:stageBatchStats.objects,
+ visualQaApproved:false,androidFpsVerified:false
+});
+window.getBattleObjectTransferStats=()=>liveObjectTransfer;
 loadingProgress('地形と街のGPU描画を最適化しました',40);
 console.info('[Stage GPU instancing]',stageBatchStats);
 // Fire commands target both bridges and buildings by their real footprint.
@@ -3296,7 +3330,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const pos=cellPosition(cell.x,cell.z);
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
- const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
+ const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,displayName:monsterSpec?.name||null,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),sourceSquadId:storyUnit?.sourceSquadId??storyUnit?.squadId,
   commanderId:storyUnit?.commanderId??'provisional',armyGroupId:storyUnit?.armyGroupId??null,
   formationBaseStats:withoutFormation,isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero),
@@ -5540,7 +5574,7 @@ let vitalsPage=0,vitalsLastRefresh=-Infinity,vitalsPreviousPause=null;
 const vitalsPageSize=5;
 let vitalsDisplay='individual';
 const vitalRoster=()=>massSim?massSim.units:actors;
-const vitalJobName=u=>massSim?(MASS_JOBS[u.jobIndex]?.name||u.jobId):(u.job?.name||u.jobId);
+const vitalJobName=u=>massSim?battleUnitDisplayName(u,{fallback:MASS_JOBS[u.jobIndex]?.name||u.jobId}):battleUnitDisplayName(u);
 function collectVitals(){
  const sides=Array.from({length:2},()=>({total:0,alive:0,hp:0,maxHp:0,mp:0,maxMp:0,jobs:new Map()}));
  for(const u of vitalRoster()){
@@ -5983,7 +6017,7 @@ function updateBattleFormationIntegrity(){
 }
 const battleJobNameById=new Map(MASS_JOBS.map(job=>[job.id,job.name]));
 function battleUnitJobName(unit){
- return unit.job?.name||battleJobNameById.get(unit.jobId)||unit.jobId||'兵士';
+ return battleUnitDisplayName(unit,{fallback:battleJobNameById.get(unit.jobId)||'兵士'});
 }
 function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
  const liveJobs=sums?.get(squadKey(team,String(id)))?.jobs;
@@ -8984,12 +9018,12 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
    order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
     '号令を選ぶと配下の兵士に一時的な効果が発動');
  }
- $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方部隊をタップして状況を確認';
+ $('selected').textContent=selected?'選択：'+battleUnitDisplayName(selected)+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方部隊をタップして状況を確認';
  const floorLabel=a=>a.floorTravel?.phase==='roof'?'屋根':(a.indoorFloor??1)+'階';
  const floorAction=a=>a.floorTravel?.phase==='roof'?'屋根から射撃×'+(2**((a.indoorFloor??1)-1)):
   a.floorTravel?.phase==='upstairs'?(a.floorTravel.windowReady?'窓から攻撃・支援×'+(2**((a.indoorFloor??1)-1)):'窓際へ移動中'):'螺旋階段・屋根へ移動中';
- $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' / '+floorLabel(selected)+' / 採取 '+(selected.inventory?.length??0)+'個 / '+floorAction(selected):
-  automaticFloorGuide?.floorTravel?'自動探索：'+automaticFloorGuide.job.name+' / '+floorLabel(automaticFloorGuide)+' / 採取 '+(automaticFloorGuide.inventory?.length??0)+'個 / '+floorAction(automaticFloorGuide):'味方部隊をタップして状況を確認';
+ $('unitInfo').textContent=selected?'選択 '+battleUnitDisplayName(selected)+' / HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' / '+floorLabel(selected)+' / 採取 '+(selected.inventory?.length??0)+'個 / '+floorAction(selected):
+  automaticFloorGuide?.floorTravel?'自動探索：'+battleUnitDisplayName(automaticFloorGuide)+' / '+floorLabel(automaticFloorGuide)+' / 採取 '+(automaticFloorGuide.inventory?.length??0)+'個 / '+floorAction(automaticFloorGuide):'味方部隊をタップして状況を確認';
  $('unitOrder').disabled=!selected||selected.team!==0;
  $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableStructure(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
@@ -9869,7 +9903,7 @@ function animate(){
       const t=Math.max(0,Math.min(1,(elapsed-a._summonFall.time)/.85));
       a.character.object3D.position.y=(1-t)*(1-t)*a._summonFall.height;
       if(t>=1)a._summonFall=null;
-    }else a.character.object3D.position.y=0;
+    }else a.character.object3D.position.y=ridden?-(a.riderPelvisDropY??.90):0;
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta*cinematicPlaybackScale);else updateBattlePose(a,visual.delta*cinematicPlaybackScale)}
   }
@@ -10110,6 +10144,7 @@ window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String
  resolutionScale:BATTLE_RESOLUTION_SCALE,adaptiveQuality:adaptiveBattleResolution.getStats(),
  pixelRatio:renderer.getPixelRatio(),antiAliasing:fxaaComposer?'GPU FXAA':'WebGL MSAA',bufferWidth:renderer.domElement.width,bufferHeight:renderer.domElement.height,
  actors:actors.length,dressed:actors.filter(a=>a.outfit||a.townRegisteredModel).length,buildingBatchStats,stageBatchStats,
+ objectTransfer:liveObjectTransfer,
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,
  prewarmedStudioGrooms,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){

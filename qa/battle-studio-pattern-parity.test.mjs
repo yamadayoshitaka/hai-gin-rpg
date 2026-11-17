@@ -87,7 +87,8 @@ assert.match(game,/resolveBattleStudioPattern\(recipe,\{/);
 assert.match(game,/a\.studioPattern=studioPattern/);
 assert.match(game,/source:artistHeadSource,pattern:studioPattern/);
 assert.match(graft,/makeIndependentFaceMaster\(source,recipe\.sex,args\)/);
-assert.match(graft,/pattern\?\.faceControls\|\|artistControls\(recipe\)/);
+assert.match(graft,/const controls=\{\.\.\.artistControls\(recipe\),\.\.\.pattern\?\.faceControls\}/,
+ 'Saved creator controls override deterministic sex-based cosmetic defaults');
 assert.match(graft,/partSelection:pattern\?\.partIds\|\|null/);
 assert.match(graft,/cranialScalpSurface\(artistHead\.face,\{/,
  'Hair cap must use real cranium triangles, never full neck/bust bounds');

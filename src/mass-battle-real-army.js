@@ -213,6 +213,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // pose attribute: Android still fits the 16-slot GPU budget.
         float legMask=1.0-smoothstep(0.5,1.18,transformed.y);
         transformed.x=mix(transformed.x,transformed.x*.66,legMask*regalSeat);
+        // The sampled humanoid is foot-anchored but the mounted world root
+        // is saddle-anchored. Align its animated pelvis with the saddle, just
+        // as the independently rigged 50v50 rider does. GPU scalar only:
+        // no extra geometry, uniform, vertex attribute or CPU bone update.
+        transformed.y -= riding * 0.90;
         // Hit recoil flows continuously into the captured real death pose.
         transformed = mix(transformed, mix(crowdHit, crowdDead, smoothstep(0.0, 1.0, min(1.0, crowdMotion.w))), dead);
         // Use the packed death-pose channel for the last eight seconds of

@@ -749,6 +749,14 @@ function goMap(event){
  finishMapTransition();
 }
 $('leaveTown').addEventListener('click',goMap);
+window.addEventListener('pageshow',event=>{
+ if(!event.persisted)return;
+ // A WebView restored from the back-forward cache is NOT navigating.
+ // Clear stale transition latches and any invisible modal hit targets.
+ mapTransitionPending=false;leaveAfterPaper=false;
+ $('opening').hidden=true;$('townGuide').hidden=true;
+ closePanel();renderState();
+});
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==townFrame.contentWindow)return;
  const data=event.data||{};

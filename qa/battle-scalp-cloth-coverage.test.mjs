@@ -51,7 +51,7 @@ assert.match(battle,/studioWigVariants/,'Both middle and near styles have stable
 assert.match(battle,/artistHead.face.add\(wig.root\)/,'Atomic upgrade adds completed hair first');
 assert.match(battle,/for\(const cached of variants.values\(\)\)cached.root.visible=/,
  'Switch near/middle by visibility, never by asynchronous detachment');
-assert.match(battle,/artistHead.studioWigQuality==='middle'/,
+assert.match(battle,/artistHead.studioWigQuality!=='middle'/,
  'Dense geometry may be recycled only when the normal haircut is active');
 assert.match(battle,/const count=quality==='middle'\?112:hero\?360:168/);
 assert.match(battle,/normalLayerCount:quality==='middle'\?1:2/);

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {battleUnitDisplayName,battleUnitDisplayClass} from '../src/battle-unit-display-identity.js';
+const enemy={team:1,job:{name:'召喚士'},jobId:'summoner',monsterSpec:{id:'m001',name:'灰狼'}};
+assert.equal(battleUnitDisplayName(enemy),'灰狼');
+assert.equal(battleUnitDisplayClass(enemy),'monster');
+assert.equal(battleUnitDisplayName({...enemy,job:{name:'魔法使い'}}),'灰狼');
+assert.equal(battleUnitDisplayName({isMonster:true,job:{name:'召喚士'}}),'モンスター');
+assert.equal(battleUnitDisplayName({monsterSpec:{id:'m041'},job:{name:'召喚士'}}),'m041');
+assert.equal(battleUnitDisplayName({job:{name:'騎士'}}),'騎士');
+assert.equal(battleUnitDisplayName({job:{name:'剣士'},displayName:'軍師アレク'}),'軍師アレク');
+const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(html,/const vitalJobName=u=>massSim\?battleUnitDisplayName\(u,\{fallback:/);
+assert.match(html,/function battleUnitJobName\(unit\)\{\n return battleUnitDisplayName\(unit/);
+assert.match(html,/monsterSpec,displayName:monsterSpec\?\.name/);
+assert.match(html,/selected\?\'選択：\'\+battleUnitDisplayName\(selected\)/);
+console.log('PASS: enemy monster species identity never leaks the human AI job');

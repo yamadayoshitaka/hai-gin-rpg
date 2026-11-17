@@ -9,6 +9,11 @@ on:
       - 'qa/long-battle-navigation-zoom-riding.test.mjs'
       - 'qa/mount-interior-policy.test.mjs'
       - 'qa/hair-camera-distance-stability.test.mjs'
+      - 'qa/battle-human-riding-navigation.test.mjs'
+      - 'qa/battle-monster-display-identity.test.mjs'
+      - 'src/battle-unit-display-identity.js'
+      - 'world-map.html'
+      - 'town-hub.html'
       - 'src/mount-interior-policy.js'
       - 'src/combat-action-runtime.js'
       - 'src/battle-render-visibility.js'
@@ -98,6 +103,7 @@ jobs:
           node --check src/mount-interior-policy.js
           node --check src/combat-action-runtime.js
           node --check src/mass-battle-grid-sim.js
+          node --check src/battle-unit-display-identity.js
           node --check src/face-scalp-wig.js
           node --check src/character-system/riding-pose.js
           node --check src/character-system/battle-torso-lining.js
@@ -108,6 +114,8 @@ jobs:
           node --check src/mass-battle-worker-runtime.js
           node qa/mount-interior-policy.test.mjs
           node qa/hair-camera-distance-stability.test.mjs
+          node qa/battle-human-riding-navigation.test.mjs
+          node qa/battle-monster-display-identity.test.mjs
           node qa/battle-riding-chest-floor-ui.test.mjs
           node qa/mass-battle-parity-diagonal.test.mjs
           node qa/mass-interior-unified-command-effects.test.mjs
