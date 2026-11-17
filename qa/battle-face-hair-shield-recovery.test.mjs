@@ -107,7 +107,7 @@ assert.match(rig,/shieldHandBone\?\.getWorldPosition\(shieldWrist\)/);
 assert.match(rig,/item\.position\.copy\(item\.parent\.worldToLocal\(fitted\.center\)\)/);
 assert.match(rig,/shieldBackClearanceM=fitted\.forwardClearance/);
 assert.match(rig,/shieldBackClearanceM:shield\?\.userData\.shieldBackClearanceM/);
-assert.match(game,/stable-hair1/);
+assert.match(game,/battle-artist-head-graft\.js\?v=20261117-hero-face-groom2/);
 assert.match(game,/STUDIO_GROOM_NEAR_CACHE_MAX=12/);
 assert.match(game,/bakeInterval=p95>33\?1400:p95>25\?850:350/);
 assert.match(game,/quality:'near'/);
