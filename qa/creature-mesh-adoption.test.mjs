@@ -28,10 +28,10 @@ test('nonhuman species and summon mirrors cover every nonhuman catalog entry',()
 });
 test('adoption is explicit, persisted, isolated per species and reversible',()=>{
  const storage=memoryStorage();
- assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
- assert.equal(adoptedCreatureMesh('summon_m001',storage),'r-wolf');
+ assert.equal(adoptedCreatureMesh('m001',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('summon_m001',storage),'legacy');
  assert.equal(adoptedCreatureMesh('wolf',storage),'r-wolf');
- assert.equal(DEFAULT_CREATURE_MESHES.m001,'r-wolf');
+ assert.equal(DEFAULT_CREATURE_MESHES.m001,undefined);
  setAdoptedCreatureMesh('m001','q022',storage);
  assert.equal(adoptedCreatureMesh('m001',storage),'q022');
  assert.equal(adoptedCreatureMesh('summon_m001',storage),'q022');
@@ -89,10 +89,10 @@ test('existing protected original animal geometry is not modified by candidate m
  assert.equal(recommendedMeshSources('m026').length,0);
 });
 
-test('shipped r-wolf defaults yield to deliberate legacy choices, including across reloads',()=>{
+test('registered procedural wolf-king default and explicit r-wolf still persist across reloads',()=>{
  const storage=memoryStorage();
- assert.equal(adoptedCreatureMesh('m001',storage),'r-wolf');
- assert.equal(adoptedCreatureMesh('summon_m001',storage),'r-wolf');
+ assert.equal(adoptedCreatureMesh('m001',storage),'legacy');
+ assert.equal(adoptedCreatureMesh('summon_m001',storage),'legacy');
  assert.equal(adoptedCreatureMesh('wolf',storage),'r-wolf');
  setAdoptedCreatureMesh('m001','legacy',storage);
  assert.equal(adoptedCreatureMesh('m001',storage),'legacy');

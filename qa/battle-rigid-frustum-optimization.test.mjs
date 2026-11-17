@@ -38,7 +38,7 @@ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 assert.match(game,/a\.rigidCullStats=enableBattleRigidFrustumCulling\(a\.character\.object3D\)/);
 assert.match(game,/if\(!TOWN_MODE&&!massSim&&RIGID_CULLING_ENABLED\)/,'1000vs1000 and town renderers remain unchanged');
 assert.match(game,/battleParams\.get\('rigCull'\)!=='0'/,'An A/B control can explicitly disable rigid culling');
-assert.match(game,/if\(visual\.update\)\{a\.character\.update/,'original rig actions preserved');
+assert.match(game,/if\(visual\.update\)\{[\s\S]*?a\.character\.update\(/,'original rig actions preserved');
 assert.match(game,/GPU '\+\(perf\.gpuFrameMs/,'GPU timing visible to diagnose WebGL bottlenecks');
 assert.match(game,/getBattleRigCullingQA/);
 console.log('PASS: exact rigid geometry visibility, unchanged PBR/shadows, original skeletal actions and QA counters');

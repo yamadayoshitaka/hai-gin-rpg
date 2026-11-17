@@ -67,7 +67,8 @@ button{cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:not-allo
 <button data-action="defeat" type="button" aria-pressed="false">死亡</button></div>
 <div id="motionStatus" class="note" role="status" style="font-size:11px;color:#bbdcf2;grid-column:1/-1">動作：待機</div>
  <a id="external" href="./monster-manager.html" target="_blank" rel="noopener">現行モデルを別画面で確認</a>
- <div id="notice">採用結果はこの端末のゲーム・召喚表示へ保存。別端末／他ユーザーへの公開は別途反映が必要です。</div>
+ <div id="notice">採用後は同じ端末の次回戦闘・召喚で反映します。低LODでは軽量モデルを維持します。別端末へ配布するには品質検証後のGitHub公開登録が必要です。</div>
+ <a id="battleLink" href="./tactics-wireframe.html" style="font-size:11px;grid-column:1/-1">戦闘画面で採用モデルを確認</a>
 </form>
 <section id="viewport"><canvas id="stage"></canvas>
  <div id="modelName">現行3D（プレビュー）</div>
@@ -78,13 +79,15 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID} from './src/monster-catalog.js';
 import {MONSTER_SUMMON_ENTRIES} from './src/monster-summon-registry.js';
-import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=m001-face-rooted-mane-v17-20261117';
-import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m001-ready-crouch-v7-20261117';
+import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
+import {startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m002-feline-action-v4-20261117';
 import {buildCombatObjectGeometry} from './src/combat-creature-geometry.js';
 import {fetchCreatureRegistry} from './src/creature-external-runtime.js';
 import {REAL_CREATURE_MESH_SOURCES,loadCreatureMeshSource} from './src/creature-real-source-catalog.js?v=real-body-only-v4';
 import {REAL_BODY_CANDIDATES} from './src/creature-real-body-candidates.js';
-import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature,referenceOnlySource} from './src/creature-mesh-adoption.js?v=real-bodies-v3';
+import {NONHUMAN_MONSTER_IDS,NONHUMAN_EXTRA_SUMMON_IDS,recommendedMeshSources,adoptedCreatureMesh,setAdoptedCreatureMesh,compatibleSourceWarning,protectedCreature,referenceOnlySource} from './src/creature-mesh-adoption.js?v=m002-feline-joints-and-fx-v4-20261117';
+import {registeredMonsterModel}
+ from './src/creature-game-model-routing.js?v=m002-feline-joints-and-fx-v4-20261117';
 const $=id=>document.getElementById(id);
 const creatureIds=new Set(NONHUMAN_MONSTER_IDS);
 const groups=[
@@ -189,7 +192,10 @@ function savedStatus(){
  const s=adoptedCreatureMesh(id);
  const inherited=id.startsWith('summon_')&&s!=='legacy'?
   (adoptedCreatureMesh(id.slice(7))===s?'（元モンスターから継承）':''):'';
- $('current').textContent='現在の採用：'+(s==='legacy'?'現行モデル':(registry.entries[s]?.name||s)+' ['+s+']')+inherited;
+ const current=registeredMonsterModel(id);
+ $('current').textContent='現在の採用：'+
+  (s==='legacy'?'ゲームの現行3D':(registry.entries[s]?.name||s)+' ['+s+']')+
+  inherited+(current?' / 登録版：'+current.version:'');
  const isSaved=$('modelChoice').value===s;
  $('adopt').textContent=protectedCreature(id)?'保護対象（変更不可）':
   isSaved?'現在採用中（再採用できます）':'④ このモデルを採用';
@@ -200,7 +206,7 @@ function chooseSpecies(){
  const id=$('species').value;
  const chosen=adoptedCreatureMesh(id);
  const options=$('modelChoice');options.replaceChildren();
- options.add(new Option('元からある現行3D（旧モデル・元に戻せる）','legacy'));
+ options.add(new Option('ゲーム登録済みの現行3D（元に戻せる）','legacy'));
  const rec=new Set(recommendedMeshSources(id));
  const realIds=Object.keys(REAL_CREATURE_MESH_SOURCES)
   .filter(k=>isReal(k));
@@ -234,6 +240,13 @@ function chooseSpecies(){
  $('external').href=creatureIds.has(id)||id.startsWith('summon_')?
   './monster-manager.html?monster='+id.replace(/^summon_/,''):
   './summon-showcase.html?summon='+id;
+ const battleSpecies=id.replace(/^summon_/,'');
+ $('battleLink').href=MONSTER_BY_ID[battleSpecies]?
+  './tactics-wireframe.html?monster='+encodeURIComponent(battleSpecies):
+  './summon-showcase.html?summon='+encodeURIComponent(id);
+ $('battleLink').textContent=MONSTER_BY_ID[battleSpecies]?
+  'このモンスターが登場する戦闘プレビュー':
+  'この召喚獣をゲームで確認';
  const share=new URLSearchParams(location.search);
  share.set('species',id);share.set('v','real-bodies-v3');
  history.replaceState(null,'','?'+share.toString());
@@ -314,7 +327,7 @@ $('adopt').onclick=()=>{
    throw Error('実物適合と品質確認が済んでいない候補は採用できません');
   setAdoptedCreatureMesh(id,source);
   $('status').textContent=(source==='legacy'?'現行モデルに戻しました。':'選択したGLBを採用しました。')+
-   ' 同じ端末のゲームに反映されます。別端末へは自動同期しません。';
+   ' 同じ端末で戦闘・召喚を開始し直すと反映されます。大規模戦闘の遠景は軽量LODです。別端末へは自動同期しません。';
   savedStatus();
  }catch(error){$('status').textContent='保存エラー：'+error.message;}
 };

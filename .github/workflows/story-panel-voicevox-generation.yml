@@ -1,18 +1,13 @@
 name: Generate story panel VOICEVOX clips
 
+# Manual only: the legacy 20-panel sound job must NOT recreate deleted
+# full-manga audio on every screenplay edit or deployment.
+# Runtime uses compact CG+dialogue and device TTS when a clip is not present.
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/story-panel-voicevox-generation.yml'
-      - 'scripts/generate-story-panel-voicevox.mjs'
-      - 'src/story-chapter-comic.js'
-      - 'src/story-chapter-scene-selection.js'
-      - 'src/story-screenplay-v2.js'
-      - 'src/story-voice-director.js'
-      - 'src/story-stage-manga.js'
-      - 'src/story-pronunciations.js'
-      - 'qa/story-panel-voice-assets.test.mjs'
   workflow_dispatch:
     inputs:
       chapter:
@@ -32,10 +27,11 @@ permissions:
 
 concurrency:
   group: story-panel-voicevox-assets
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   synthesize:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:

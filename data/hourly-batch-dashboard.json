@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "asOf": "2026-11-15T14:44:00Z",
+  "asOf": "2026-11-17T03:59:35.697Z",
   "tz": "Asia/Tokyo",
   "description": "4系統の役割とGitHub連動の実行設定。ChatGPTタスクの実行結果は静的スナップショットであり、稼働設定ONと実処理成功を区別する。最新のON/OFFはdata/batch-center-switches.jsonを正とする。",
   "groups": [
@@ -45,20 +45,20 @@
     {
       "id": "world",
       "name": "オブジェクト・ステージ",
-      "subtitle": "53種類のオブジェクト・200ステージ",
-      "source": "GitHub Actions",
+      "subtitle": "60種類の実3Dオブジェクト・200ステージ（9種類造形改善）",
+      "source": "ChatGPT定期タスク／GitHub Actions",
       "autoEnabled": true,
-      "time": "毎時41分",
-      "next": "2026-11-15T08:41:00Z",
-      "last": null,
+      "time": "実造形回帰 毎時50分／6担当QA 毎時12分／参考画像 毎時41分",
+      "next": "2026-11-17T04:50:00Z",
+      "last": "2026-11-17T03:51:57.231327Z",
       "preview": "object-list.html",
       "secondary": "stage-manager.html",
       "secondaryName": "200ステージを見る",
-      "workflow": "world-quality-photoreal.yml",
-      "workflowName": "全オブジェクト・ステージ実写品質回帰",
-      "issueRole": "manual instruction passed as image-reference guidance to Cloudflare Free",
-      "details": "53種類のオブジェクトと200ステージを実写寄りに。2D基準画、材質PBR・陰影・配置・破壊状態などの品質回帰。",
-      "goal": "GitHub Actionsで対象を処理し、根拠画像/差分と結果を保存。ワークフローの成功と画質の目視合格は別。",
+      "workflow": "world-six-lane.yml",
+      "workflowName": "毎時6担当・60種実3D品質回帰",
+      "issueRole": "手動Issueは参考画像用の従来Cloudflare生成にも対応。実3D変更の正本はsrc/object-catalog.jsとGitHub PRで管理。",
+      "details": "60種類の共通3D生成器を正本とし、実メッシュの物理構造を修正→材質別メッシュ結合→WebGL・物理配置・LOD検証。9種類の造形改善がPR #520でmain採用済み。",
+      "goal": "ChatGPT毎時50分の回帰で実3Dソースを改善し、6担当の毎時QAと本編公開を照合。参照画像だけ・QA結果だけを実造形改善と数えず、外観とAndroid FPSは別途未確認で管理。",
       "schedulerEnabled": true
     },
     {

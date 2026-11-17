@@ -4,7 +4,7 @@ on:
     - cron: '12 * * * *'
   workflow_dispatch:
   pull_request:
-    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','tactics-wireframe.html','batch-monitor.html','qa/world-quality-contract.test.mjs']
+    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','tactics-wireframe.html','batch-monitor.html','qa/world-quality-contract.test.mjs','qa/world-object-physical-quality.test.mjs','scripts/world-quality-capture.cjs','world-quality-preview.html']
 permissions:
   contents: write
   pull-requests: write
@@ -49,16 +49,23 @@ jobs:
           ID=$(node --input-type=module -e "import {qualityInventory} from './scripts/world-quality-catalog.mjs';const a=qualityInventory.filter(x=>x.type==='object');process.stdout.write(a[Math.floor(Date.now()/3600000)%a.length].id)")
           node scripts/world-quality-capture.cjs "$ID" qa-reports/world-six-lane/previews
           cp "qa-reports/world-six-lane/previews/$ID-capture.json" qa-reports/world-six-lane/visual-capture.json
+          # Every freshly upgraded real-game model is captured in WebGL and
+          # checked for nonempty geometry, JS errors, draw calls and triangles.
+          for ASSET in cottage_table_001 cottage_chair_001 cottage_bed_001 cottage_shelf_001 cottage_barrel_001 town_well_001 town_crate_001 town_water_trough_001 town_signpost_001; do
+            node scripts/world-quality-capture.cjs "$ASSET" qa-reports/world-six-lane/physical --baseline
+          done
       - name: Independent gate
         run: |
           node scripts/world-six-batch.mjs --lane "${{ matrix.lane }}"
           if [ "${{ matrix.lane }}" = interaction ]; then node qa/world-quality-contract.test.mjs; fi
           if [ "${{ matrix.lane }}" = lod ]; then node --test qa/stage-static-instancing.test.mjs; fi
-          if [ "${{ matrix.lane }}" = geometry ]; then node --test qa/object-list-catalog.test.mjs; fi
+          if [ "${{ matrix.lane }}" = geometry ]; then node --test qa/object-list-catalog.test.mjs qa/world-object-physical-quality.test.mjs; fi
       - uses: actions/upload-artifact@v4
         with:
           name: world-six-${{ matrix.lane }}
-          path: qa-reports/world-six-lane/${{ matrix.lane }}.json
+          path: |
+            qa-reports/world-six-lane/${{ matrix.lane }}.json
+            qa-reports/world-six-lane/physical/*-capture.json
           retention-days: 7
           if-no-files-found: error
   integrate:

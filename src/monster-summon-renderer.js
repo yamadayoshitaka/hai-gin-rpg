@@ -9,15 +9,16 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=4.5.21';
+ from './monster-geometry.js?v=m002-feline-joints-and-fx-v4-20261117';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=4.5.18';
+ from './monster-animation.js?v=m002-feline-action-v4-20261117';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
-import {adoptedCreatureMesh} from './creature-mesh-adoption.js?v=web-mesh-26-v1';
+import {resolveRegisteredMonsterModel}
+ from './creature-game-model-routing.js';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
 import {chooseCreatureLod} from './creature-master-library.js?v=masters-v1';
@@ -141,7 +142,13 @@ export function createMonsterSummonRenderer(scene,{
   }else startMonsterAction(actor,'idle',0);
   stats.created++;
   const node={actor,anchor,detail,type:object.type,size,costumeHandle,
-   statusMarker,externalHandle:null,sourceChoice:adoptedCreatureMesh(object.type),
+   statusMarker,externalHandle:null,
+   // Source is selected through the SAME validated species/LOD policy as
+   // regular enemies. Invalid local saved donor IDs never reach GLTFLoader.
+   sourceChoice:resolveRegisteredMonsterModel(object.type,{
+    detail,allowExternal:true
+   }).externalSource||'legacy',
+   registeredRevision:resolveRegisteredMonsterModel(object.type).record?.version,
    disposed:false,sourceError:null,
    lastX:object.x,lastZ:object.z,lastT:0,lastAttack:-Infinity,
    lastPose:null,lastAction:'idle'};
@@ -162,7 +169,9 @@ export function createMonsterSummonRenderer(scene,{
     loadCreatureMeshSource(sourceId,registry,detail,{creatureId:object.type})
    ).then(loaded=>{
     if(removed||node.disposed||!node.anchor.parent||
-       adoptedCreatureMesh(object.type)!==sourceId){
+       (resolveRegisteredMonsterModel(object.type,{
+        detail,allowExternal:true
+       }).externalSource||'legacy')!==sourceId){
       loaded.dispose();return;
     }
     const sourceBounds=new THREE.Box3().setFromObject(loaded.root);
@@ -243,7 +252,9 @@ export function createMonsterSummonRenderer(scene,{
    }
    if(detail==='source')sourceCount++;
    if(detail!=='low')detailedCount++;
-   if(node&&(node.sourceChoice!==adoptedCreatureMesh(o.type)||node.detail!==detail)){
+   if(node&&(node.sourceChoice!==(
+      resolveRegisteredMonsterModel(o.type,{detail,allowExternal:true})
+       .externalSource||'legacy')||node.detail!==detail)){
     release(id);node=null;
    }
    if(!node&&active.size>=MONSTER_SUMMON_MAX_ACTIVE){
@@ -302,7 +313,8 @@ export function createMonsterSummonRenderer(scene,{
    id,{type:m.type,source:m.detail==='source'?1:0,
     high:m.detail==='high'?1:0,medium:m.detail==='medium'?1:0,
     low:m.detail==='low'?1:0,
-    selectedMesh:m.sourceChoice,loadedMesh:m.externalHandle?.root.userData.externalSourceId||'legacy',
+    selectedMesh:m.sourceChoice,registeredRevision:m.registeredRevision,
+    loadedMesh:m.externalHandle?.root.userData.externalSourceId||'legacy',
     error:m.sourceError}
   ])),
   actualModel:id=>active.get(String(id))?.actor||null,

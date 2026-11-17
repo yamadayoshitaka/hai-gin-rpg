@@ -1,7 +1,8 @@
 import {
- squadPower,rankTacticalOrders,tacticalCooldownSeconds,COMMAND_LABELS,healthSituation
+ squadPower,rankTacticalOrders,tacticalCooldownSeconds,COMMAND_LABELS
 } from './tactical-command-evaluation.js';
 import {orderEffect} from './tactical-command-descriptions.js';
+import {createBattleSituationMonitor} from './battle-situation-monitor.js';
 
 const fragment=(tag,cls,text)=>{
  const el=document.createElement(tag);
@@ -13,7 +14,8 @@ const fragment=(tag,cls,text)=>{
 /** Compact actionable tactical panel tied to the authoritative battle order handler. */
 export function installBattleTacticalUI({
  getUnits,getSquadIds,getCommandSquadIds=id=>[id],getCommander,getSquadName,getCurrentStage,
- getCommanderReason,getCooldown,getSquadCenter,getMarkerLabel,issueOrder,openSquad,closeSquad,isReady
+ getCommanderReason,getCooldown,getSquadCenter,getMarkerLabel,issueOrder,openSquad,closeSquad,isReady,
+ onSituationChange=()=>false
 }){
  const preview=fragment('section','','');
  preview.id='tacticalCommandPreview';
@@ -27,7 +29,8 @@ export function installBattleTacticalUI({
  banner.setAttribute('role','status');
  banner.setAttribute('aria-live','polite');
  document.body.append(banner);
- const snapshots=new Map();
+ const situationMonitor=createBattleSituationMonitor();
+ const situationGroupMembers=new Map();
  let noticeTimer=null;
  const eligibleElements=new Set();
  function resetEligible(){
@@ -71,7 +74,9 @@ export function installBattleTacticalUI({
   preview.hidden=false;
  }
  function showSituation(id,event,sums){
-  if(!isReady()||document.body.classList.contains('squad-closeup'))return;
+  if(!isReady())return;
+  if(onSituationChange(id,event,sums)===true){banner.hidden=true;resetEligible();return;}
+  if(document.body.classList.contains('squad-closeup'))return;
   if(noticeTimer!==null)clearTimeout(noticeTimer);
   resetEligible();
   const candidates=getSquadIds().filter(sid=>{
@@ -98,21 +103,59 @@ export function installBattleTacticalUI({
   banner.hidden=false;
   noticeTimer=setTimeout(()=>{banner.hidden=true;resetEligible();noticeTimer=null;},5200);
  }
+ function reportStrategicEvent(squadId,event){
+  const members=[...new Set(getCommandSquadIds(squadId).map(String))].sort();
+  if(!members.length)return false;
+  situationMonitor.enqueue('group:'+members.join('|'),event);
+  return true;
+ }
  function onSquadSums(sums){
   if(!isReady())return;
-  let mostImportant=null;
+  const rows=[],visited=new Set();
+  situationGroupMembers.clear();
   for(const id of getSquadIds()){
-   const key='0:'+id,now=sums.get(key);
-   if(!now)continue;
-   const previous=snapshots.get(key);
-   snapshots.set(key,{n:now.n,total:now.total});
-   const warning=healthSituation(previous,now);
-   if(warning&&(!mostImportant||warning.ratio<mostImportant.warning.ratio))
-    mostImportant={id,warning};
+   const members=[...new Set(getCommandSquadIds(id).map(String))].sort();
+   if(!members.length)continue;
+   const key='group:'+members.join('|');
+   if(visited.has(key))continue;visited.add(key);
+   const row={n:0,total:0,hp:0,maxHp:0};
+   let selected=members[0];
+   for(const memberId of members){
+    const sum=sums.get('0:'+memberId);
+    if(!sum)continue;
+    if(sum.n>0)selected=memberId;
+    for(const k of ['n','total','hp','maxHp'])row[k]+=Number(sum[k])||0;
+   }
+   situationGroupMembers.set(key,selected);
+   rows.push({id:key,row});
   }
-  if(mostImportant)showSituation(mostImportant.id,mostImportant.warning,sums);
+  // All changed groups enter a persistent priority inbox; a popup suppressed
+  // by a cut-in/pause cannot silently discard the warning.
+  situationMonitor.observe(rows);
+  const event=situationMonitor.peek();
+  if(!event)return;
+  const representative=situationGroupMembers.get(event.id);
+  if(representative==null)return;
+  const unavailable=getCommanderReason(representative);
+  if(unavailable){
+   // Recommendation is still visible as information when the strategist is
+   // defeated; never keep an undeliverable 30-second prompt in the inbox.
+   banner.replaceChildren(fragment('strong','','⚠ 推奨作戦：指揮不可'),
+    fragment('small','',getSquadName(representative)+'：'+unavailable));
+   banner.hidden=false;
+   if(noticeTimer!==null)clearTimeout(noticeTimer);
+   noticeTimer=setTimeout(()=>{banner.hidden=true;noticeTimer=null;},5200);
+   situationMonitor.acknowledge(event.id);
+   return;
+  }
+  if(onSituationChange(representative,event,sums)===true){
+   situationMonitor.acknowledge(event.id);
+   if(noticeTimer!==null){clearTimeout(noticeTimer);noticeTimer=null;}
+   banner.hidden=true;resetEligible();
+  }
  }
- return {renderFor,onSquadSums};
+ window.getBattleSituationInboxQA=()=>situationMonitor.snapshot();
+ return {renderFor,onSquadSums,reportStrategicEvent};
 }
 
 /** Opening wizard, attached to the actual stage and current squad orders. */

@@ -1,4 +1,6 @@
-import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m001-ready-crouch-v7-20261117';
+import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=m002-feline-motion-v4-20261117';
+import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
+import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
 /** Per-species, per-part procedural animation for bestiary inspection.
  * Separate head, jaws, limbs, wings and tentacles keep animation readable.
@@ -10,6 +12,57 @@ export const MONSTER_ACTIONS=Object.freeze([
  ['special','固有技'],['roar','威嚇'],['guard','防御'],['dodge','回避'],
  ['hit','被弾'],['leap','跳躍'],['defeat','倒れる'],
 ]);
+// Smooth action envelopes replace the old one-size-fits-all sine pulse.
+const smooth=(a,b,t)=>{
+ const u=Math.max(0,Math.min(1,(t-a)/(b-a)));
+ return u*u*(3-2*u);
+};
+const accent=(t,a,b,c)=>smooth(a,b,t)*(1-smooth(b,c,t));
+function animateWolfKingPerformance(p,action,progress,time,gait){
+ const contact=action==='attack'||action==='special'?
+   accent(progress,.26,.43,.69):0;
+ const ready=action==='attack'||action==='special'?
+   accent(progress,.02,.20,.43):0;
+ const breath=action==='roar'?
+   accent(progress,.13,.44,.87):0;
+ // Crouch and gather the chest before the bite, then project the muzzle.
+ // Delayed head/ear/jaw response carries weight and keeps teeth attached.
+ if(p.torso){
+   p.torso.rotation.x+=.075*ready-.137*contact;
+   p.torso.rotation.z+=.009*Math.sin(time*1.5);
+ }
+ if(p.head){
+   p.head.rotation.x+=.12*ready-.29*contact-.18*breath;
+   p.head.rotation.y+=.028*Math.sin(time*.81);
+ }
+ if(p.jaw){
+   if(action==='attack'||action==='special'){
+     const preOpen=accent(progress,.045,.205,.45);
+     const impactOpen=accent(progress,.35,.48,.64);
+     p.jaw.rotation.x=.045+.42*preOpen+.12*impactOpen;
+   }else if(action==='roar'){
+     p.jaw.rotation.x=.06+.61*breath+
+       .023*Math.sin(time*16)*breath;
+   }
+ }
+ if(p.tail)p.tail.rotation.x-=.12*contact+.03*ready;
+ for(const side of ['L','R']){
+   const lead=side==='L'?1:.78;
+   const leg=p['legfront'+side],elbow=p['lowerfront'+side],
+     knee=p['lowerrear'+side];
+   if(leg)leg.rotation.x-=lead*(.20*ready+.24*contact);
+   if(elbow)elbow.rotation.x+=lead*(.15*ready+.20*contact);
+   if(knee)knee.rotation.x-=.11*contact;
+   const ear=p['ear'+side];
+   if(ear)ear.rotation.x+=.25*contact+.18*breath;
+ }
+ if(action==='run'){
+   const stride=Math.sin(gait*2-.35);
+   if(p.torso)p.torso.rotation.x+=.028*stride;
+   if(p.head)p.head.rotation.x-=.019*stride;
+   if(p.tail)p.tail.rotation.y+=.035*Math.sin(gait*.53);
+ }
+}
 export function startMonsterAction(model,action,time=0){
  if(!Object.prototype.hasOwnProperty.call(durations,action))throw Error('Unknown monster action: '+action);
  model.userData.action=action;model.userData.actionAt=time;
@@ -40,6 +93,7 @@ export function animateMonsterModel(model,time=0){
  const leap=action==='leap'?monsterLeapPose(progress,model.userData.surfaceFamily):null;
  const dying=action==='defeat'?progress:0;
  const springBeast=['m001','m002','m003','m004'].includes(model.userData.speciesId);
+ const sourceFeline=['m007','m008','m009','m010'].includes(model.userData.speciesId);
  const sway=Math.sin(motionTime*2.1)*.027*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
  // material allocations or extra draw calls during the animation loop.
@@ -54,6 +108,8 @@ export function animateMonsterModel(model,time=0){
  // The former abs(sin)*.055 made every RUN look like floating in midair.
  const springLift=locomotion?
    (springBeast?(action==='run'?.014:.009)*(1-Math.cos(gait*2))*.5:
+     sourceFeline?(action==='run'?.016:.008)*
+       (1-Math.cos(gait*2))*.5:
      Math.abs(Math.sin(gait))*.055):0;
  model.position.set(dodge*Math.sin(progress*Math.PI)*1.3,
    springLift-(springBeast&&action!=='leap'?.014:0)+
@@ -112,11 +168,24 @@ export function animateMonsterModel(model,time=0){
    time:motionTime,phase:gait,action,pulse:Math.max(strike,special,leaping),
    locomotion,run:action==='run'
  });
+ if(['m001','m002'].includes(model.userData.speciesId)&&
+    action!=='defeat'){
+   // m002 inherits the physically authored m001 anticipation, bite,
+   // ear response and stride timing, not a stiff legacy spherical rig.
+   animateWolfKingPerformance(p,action,progress,motionTime,gait);
+   if(model.userData.speciesId==='m002'&&
+      (action==='attack'||action==='special')&&p.jaw){
+     // The m001 anticipation envelope closes before m002's late
+     // flame-fang contact. Keep the physical jaw open THROUGH impact.
+     p.jaw.rotation.x=Math.max(p.jaw.rotation.x,.08+.37*pulse);
+   }
+ }
  // Independent upper and lower joints must not visually snap from a
  // planted stride into the ready crouch. Exponential time-step smoothing
  // preserves frame-rate independence while retaining actual knee flex.
  // The solver never scales the bones to fake a mechanical spring.
- if(model.userData.speciesId==='m001'&&(locomotion||action==='idle')){
+ if(['m001','m002'].includes(model.userData.speciesId)&&
+    (locomotion||action==='idle')){
    const prev=model.userData.m001GaitAngles||{};
    const last=model.userData.m001GaitTime;
    const dt=Number.isFinite(last)&&time>last?
@@ -172,7 +241,7 @@ export function animateMonsterModel(model,time=0){
    model.userData.m001BodySettleY=settle;
    model.position.y+=settle;
    model.userData.m001GaitTime=time;
- }else if(model.userData.speciesId==='m001'){
+ }else if(['m001','m002'].includes(model.userData.speciesId)){
    model.userData.m001GaitAngles=null;
    model.userData.m001GaitTime=null;
    model.userData.m001BodySettleY=null;
@@ -183,5 +252,10 @@ export function animateMonsterModel(model,time=0){
  if(action!=='defeat')model.userData.facialControls?.update?.(
    Math.max(0,Math.min(.1,time-(model.userData.facialLastTime??time-.075))));
  model.userData.facialLastTime=time;
+ if(model.userData.speciesId==='m001')
+   updateM001ActionEffects(model,{action,progress,time:motionTime});
+ if(['m002','m007','m008','m009','m010'].includes(
+    model.userData.speciesId))
+   updateReferenceBeastFx(model,{action,progress,time:motionTime});
  return {action,progress,...(leap?{leapPhase:leap.phase}:null)};
 }

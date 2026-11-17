@@ -3,6 +3,15 @@ on:
   pull_request:
     paths:
       - 'src/story-compact-comic.js'
+      - 'src/story-dialogue-art-binding.js'
+      - 'assets/story/recap/owner-approved-kingdom-overview.webp'
+      - 'qa/story-recap-art-and-cast.test.mjs'
+      - 'scripts/audit-story-c01-s01-s04-compact.mjs'
+      - 'src/story-reader-intros.js'
+      - 'src/story-screenplay-v2.js'
+      - 'src/story-pronunciations.js'
+      - 'audio/voicevox/manifest.json'
+      - 'qa/story-narration-audio-reachability.test.mjs'
       - 'src/story-manga-viewer.js'
       - 'src/story-narrative-flow.js'
       - 'game.html'
@@ -39,10 +48,23 @@ jobs:
       - name: Verify syntax of compact event runtime
         run: |
           node --check src/story-compact-comic.js
+          node --check src/story-reader-intros.js
+          node --check src/story-screenplay-v2.js
           node --check src/story-manga-viewer.js
           node --check src/story-narrative-flow.js
       - name: Verify all twenty chapters, 200 stages and distinct defeat/gameover
         run: node qa/story-compact-20-chapters.test.mjs
+      - name: Verify narration-first, all spoken ruby readings and safe voice cleanup
+        run: node qa/story-narration-audio-reachability.test.mjs
+      - name: Verify approved recap native art and visible-speaker dialogue
+        run: node qa/story-recap-art-and-cast.test.mjs
+      - name: Audit all stage 1-4 original CG bindings, gender/outcome and gaps
+        run: node scripts/audit-story-c01-s01-s04-compact.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage1-4-compact-backfill-audit
+          path: qa-reports/story-c01-s01-s04-compact-backfill.json
+          if-no-files-found: error
       - name: Verify Cloudflare Free queue selects compact CGs only (plan mode; zero API calls)
         run: |
           node --check scripts/generate-story-chapter1-free-batch.mjs

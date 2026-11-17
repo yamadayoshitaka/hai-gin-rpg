@@ -64,6 +64,10 @@ assert.ok(map.includes("phase:'post'"));
 assert.ok(map.includes("phase:'pre'"));
 assert.ok(map.includes("stagePostMangaSeen"));
 assert.ok(map.includes("settleCoreBattle(game,request,result)"));
-assert.ok(viewer.includes("compactComicForStage(id,which,storyContext)"),'viewer must show the selected outcome-specific compact chapter edition');
+assert.ok(viewer.includes("compactComicForStage(id,'post',storyContext)")&&
+ viewer.includes("which==='pre'?preComic.panels:postComic.panels"),
+ 'viewer must show the selected outcome-specific compact chapter edition');
+assert.ok(viewer.includes("showRecap")&&viewer.includes("recap=preComic?.recap||null"),
+ 'viewer must introduce stage events on the separately approved recap illustration');
 assert.ok(voice.includes("panel.voiceText.slice(0,380)"));
 console.log('PASS: all 200 stages, 4000 canonical panels, 10+10, verified result epilogues and proper-noun voice readings');

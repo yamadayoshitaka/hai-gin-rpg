@@ -9,7 +9,7 @@ import {registeredStoryPanelAsset,storySheetCrop,storyArtDisplayUrl} from './sto
 import {provisionalRegisteredStoryPanel} from './story-provisional-registered-art.js';
 import {chapter1ProvisionalLivePanel} from './story-chapter1-provisional-live.js';
 import {comicPageAsset} from './story-chapter-comic.js';
-import {compactComicForStage} from './story-compact-comic.js';
+import {compactComicForStage} from './story-compact-comic.js?v=story-20261117-reader1';
 import {STORY_KEY_PEOPLE} from './story-cinematic.js';
 import {renderStoryRubyText} from './story-ruby-display.js';
 import {fantasyCueForMangaPanel} from './fantasy-scene-score.js';
@@ -43,7 +43,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    font-family:Georgia,'Noto Serif JP',serif;overflow:auto;overscroll-behavior:contain;
    padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
  #stageMangaViewer[hidden]{display:none!important}
- #stageMangaViewer .manga-board{margin:0 auto;width:min(840px,100%);min-height:100%;display:flex;flex-direction:column;
+ #stageMangaViewer .manga-board{margin:0 auto;width:min(840px,100%);min-height:0;display:flex;flex-direction:column;
    gap:10px;background:linear-gradient(160deg,#111d2c,#050b15);border:1px solid #836f54;box-shadow:0 15px 40px #000c;padding:12px}
  #stageMangaViewer .manga-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
  #stageMangaViewer .manga-heading{min-width:0;display:grid;gap:5px}
@@ -57,6 +57,9 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    border:1px solid #bd9d70;background:#111825;box-shadow:0 9px 30px #000b;overflow:hidden}
  #stageMangaViewer .manga-art{display:block;position:absolute;max-width:none;object-fit:fill}
  #stageMangaViewer .manga-art[hidden],#stageMangaViewer .manga-missing[hidden]{display:none!important}
+ #stageMangaViewer .manga-board.recap-scene .manga-page-area{border-color:#d8bc87}
+ #stageMangaViewer .manga-board.recap-scene .manga-art{filter:none;transform:none}
+ #stageMangaViewer .manga-board.recap-scene .manga-speaker{color:#d7c8a9}
  #stageMangaViewer .manga-missing{display:grid;place-items:center;text-align:center;height:100%;padding:24px;
    font:13px/1.7 system-ui;color:#d9c79e;background:#13273b}
  #stageMangaViewer .manga-shot{font:10px system-ui;text-align:right;color:#bfc8c8}
@@ -72,7 +75,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
    margin:6px 0 0;white-space:pre-wrap;max-height:28dvh;overflow-y:auto}
  #stageMangaViewer .manga-line ruby{ruby-position:over;text-decoration:none}
  #stageMangaViewer .manga-line rt{font:600 0.57em/1.3 system-ui;color:#e9c997}
- #stageMangaViewer .manga-bottom{display:grid;gap:10px;margin-top:auto}
+ #stageMangaViewer .manga-bottom{display:grid;gap:10px;margin-top:0}
  #stageMangaViewer .manga-progress{text-align:center;color:#d7c8a9;font:11px system-ui;letter-spacing:.2em}
  #stageMangaViewer .manga-controls{display:grid;grid-template-columns:1fr 1.65fr 1fr;gap:6px}
  #stageMangaViewer .manga-controls button{padding:9px 4px;background:#2b4053;color:#f6ead6;border:1px solid #718296}
@@ -86,7 +89,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  `;
  container.append(root);document.head.append(style);
  const $=selector=>root.querySelector(selector);
- let story=null,visiblePanels=[],phase='pre',index=0,turnIndex=0,finish=null,voiceOn=readVoice(storage),active=false,storyContext={};
+ let story=null,visiblePanels=[],phase='pre',index=0,turnIndex=0,finish=null,voiceOn=readVoice(storage),active=false,storyContext={},recap=null,showRecap=false;
  const castIds=new Set(STORY_KEY_PEOPLE.map(p=>p.id));
  function activeTurn(){const shot=visiblePanels[index];return shot?.dialogueTurns?.[turnIndex]||shot;}
  function portraitFor(turn){
@@ -95,10 +98,17 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   if(turn?.speaker==='軍師'&&storyContext.protagonistGender==='female')return './assets/story/characters/commander/female-master.webp';
   return null;
  }
- function renderPortrait(turn){
-  const img=$('.manga-speaker-face'),src=portraitFor(turn);
+ function renderPortrait(turn,shot=null){
+  const img=$('.manga-speaker-face');
+  // P0 screenshot regression: the original cast atlas showed a different
+  // person's face than the physically registered S03/S05 first CG.
+  const exact=shot&&['c01-s03-m1','c01-s05-m1'].includes(shot.id)
+   ?(shot.sharedArtAsset||registeredStoryPanelAsset(shot)):null;
+  const src=exact?storyArtDisplayUrl(exact):portraitFor(turn);
   img.hidden=!src;
   if(!src){img.removeAttribute('src');return}
+  img.style.objectFit='cover';
+  img.style.objectPosition=exact?'30% 22%':'center 20%';
   img.onerror=()=>{if(img.getAttribute('src')===src)img.hidden=true};
   if(img.getAttribute('src')!==src)img.src=src;
   img.alt=(turn.speaker||'話者')+'の顔';
@@ -146,11 +156,37 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
 
  const voiceDirector=createStoryVoiceDirector();
  function stopVoice(){voiceDirector.stop();}
- function narrate(){if(active&&story&&voiceOn)void voiceDirector.speak({...visiblePanels[index],...activeTurn()});}
+ function narrate(){if(active&&story&&voiceOn)void voiceDirector.speak(showRecap?recap:{...visiblePanels[index],...activeTurn()});}
  function frame(){
   if(!story||!active)return;
   stopVoice();
+  if(showRecap&&recap){
+   $('.manga-board').classList.add('recap-scene');
+   $('.manga-stage').textContent='第'+story.chapter+'章 · '+story.stageName+' · ここまでのあらすじ';
+   const img=$('.manga-art'),missing=$('.manga-missing'),req=++pageRequest;
+   currentArtKey=null;img.hidden=true;missing.hidden=false;
+   missing.textContent='専用あらすじ画像を読み込み中…';
+   img.style.width='100%';img.style.height='100%';img.style.left='0%';img.style.top='0%';img.style.objectFit='contain';
+   img.alt='ここまでのあらすじ専用イラスト';
+   img.onload=()=>{if(req!==pageRequest||!showRecap)return;img.hidden=false;missing.hidden=true};
+   img.onerror=()=>{if(req!==pageRequest||!showRecap)return;img.hidden=true;missing.hidden=false;missing.textContent='あらすじ専用画像を読み込めません。'};
+   img.src=storyArtDisplayUrl('./'+recap.artAsset.replace(/^\.\//,''));
+   if(img.complete&&img.naturalWidth>0)img.onload();
+   $('.manga-preview-link').hidden=true;
+   $('.manga-shot').textContent='ここまでのあらすじ · 専用原画';
+   $('.manga-speaker').textContent='語り手　／　ナレーション';
+   renderPortrait(recap);renderStoryRubyText($('.manga-line'),recap);
+   $('.manga-progress').textContent='あらすじ　→　イベントCG '+visiblePanels.length+'枚';
+   $('.manga-previous').disabled=true;
+   $('.manga-next').textContent='人物の会話へ ▶';
+   $('.manga-voice').textContent=voiceOn?'音声 ON':'音声 OFF';
+   narrate();return;
+  }
+  $('.manga-board').classList.remove('recap-scene');
   const shot=visiblePanels[index],talk=activeTurn();
+  // Keep the introductory narration visually separate from the characters.
+  // Reveal the unblurred CG and speaker face as soon as dialogue starts.
+  // Narration is displayed only on the special recap art, not on a character CG.
   const pagePanels=visiblePanels.filter(p=>p.comicEdition===shot.comicEdition&&p.comicPage===shot.comicPage);
   const reviewLink=$('.manga-preview-link');
   reviewLink.hidden=story.chapter!==1;
@@ -161,13 +197,13 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   $('.manga-art').alt=story.stageName+'の'+(shot.phase==='pre'?'イベント前':'イベント後')+
    '（'+shot.comicEdition+'）'+(shot.protagonistGender==='female'?'女性版':'男性版');
   $('.manga-speaker').textContent=talk.speaker+(talk.characterId?'　／　'+talk.faction+'・'+talk.role:'　／　ナレーション');
-  renderPortrait(talk);
+  renderPortrait(talk,shot);
   renderStoryRubyText($('.manga-line'),talk);
   const draftArt=chapter1ProvisionalLivePanel(shot)||provisionalRegisteredStoryPanel(shot);
   $('.manga-shot').textContent=story.id.toUpperCase()+' · '+shot.comicEdition+' · ページ'+shot.comicPage+
    (draftArt?' · 仮承認・ゲーム反映中（正式品質審査前／差し戻し可能）':'');
   $('.manga-progress').textContent='イベントCG '+(index+1)+' / '+visiblePanels.length+'　・　セリフ '+(turnIndex+1)+' / '+(shot.dialogueTurns?.length||1);
-  $('.manga-previous').disabled=index===0&&turnIndex===0;
+  $('.manga-previous').disabled=index===0&&turnIndex===0&&!recap;
   $('.manga-next').textContent=index===visiblePanels.length-1&&turnIndex===(shot.dialogueTurns?.length||1)-1?
    (phase==='pre'?'ステージへ進む ▶':phase==='post'?'結果を閉じる ▶':'確認を終える ▶'):'次のセリフ ▶';
   $('.manga-voice').textContent=voiceOn?'音声 ON':'音声 OFF';
@@ -178,6 +214,7 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
  function close({completed=false}={}){
   if(!active)return;
   active=false;root.hidden=true;stopVoice();
+  $('.manga-board').classList.remove('recap-scene');
   const done=finish;finish=null;
   onClose(story,completed);
   if(completed)done?.();
@@ -188,19 +225,25 @@ export function createMangaViewer({container=document.body,storage=globalThis.lo
   story=mangaForStage(id,context||{});
   phase=which;
   storyContext=context||{};
-  visiblePanels=which==='all'
-   ?[...compactComicForStage(id,'pre',storyContext).panels,...compactComicForStage(id,'post',storyContext).panels]
-   :compactComicForStage(id,which,storyContext).panels;
+  const preComic=which==='post'?null:compactComicForStage(id,'pre',storyContext);
+  const postComic=which==='pre'?null:compactComicForStage(id,'post',storyContext);
+  visiblePanels=which==='all'?[...preComic.panels,...postComic.panels]:
+   which==='pre'?preComic.panels:postComic.panels;
   if(!visiblePanels.length)throw Error('No manga panels for '+id+' '+which);
+  recap=preComic?.recap||null;
   index=Math.max(0,Math.min(visiblePanels.length-1,at|0));turnIndex=0;
+  showRecap=Boolean(recap&&at===0);
   currentArtKey=null;finish=onFinish;voiceOn=readVoice(storage);active=true;root.hidden=false;
   frame();return story;
  }
  $('.manga-previous').onclick=()=>{
+  if(showRecap)return;
+  if(index===0&&turnIndex===0&&recap){showRecap=true;frame();return}
   if(turnIndex>0){turnIndex--;frame();return}
   if(index>0){index--;turnIndex=(visiblePanels[index].dialogueTurns?.length||1)-1;frame()}
  };
  $('.manga-next').onclick=()=>{
+  if(showRecap){showRecap=false;frame();return}
   if(turnIndex<(visiblePanels[index].dialogueTurns?.length||1)-1){turnIndex++;frame();return}
   if(index>=visiblePanels.length-1)close({completed:true});
   else{index++;turnIndex=0;frame()}

@@ -11,6 +11,10 @@ assert.equal(useCrowdImpostor(47,true),false);
 assert.equal(useCrowdImpostor(59,false,60),true,'負荷対策時も実モデル撮影の遠景アトラスを使える');
 assert.equal(useCrowdImpostor(70,true,60),false,'動的切替でも10pxヒステリシスが必要');
 assert.equal(useCrowdImpostor(160,false,92),false,'近接の実人物は画質を落とさない');
+assert.equal(useCrowdImpostor(89,false,96),true,'高密度軍の遠中距離は224px撮影LODで描画を省く');
+assert.equal(useCrowdImpostor(111,true,100),false,'至近距離では実3D人物を維持する');
+assert.equal(crowdRequires3DFromOverhead(64,.9,106),false,'重負荷時の俯瞰でも遠景はGPU撮影LODへ');
+assert.equal(crowdRequires3DFromOverhead(110,.9,106),true,'近景の俯瞰は本来の立体モデル');
 assert.equal(crowdRequires3DFromOverhead(60,.9),true,'俯瞰で見える兵士は板写真でなく立体を描く');
 assert.equal(crowdRequires3DFromOverhead(20,.9),false,'遠景の小兵士は1000人戦のGPU予算を守る');
 assert.equal(crowdRequires3DFromOverhead(60,.3),false,'通常の横視点では従来の遠景最適化を維持');
@@ -25,7 +29,7 @@ const atlas=readFileSync(new URL('../src/crowd-impostor-atlas.js',import.meta.ur
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(atlas,/preview\.add\(person\)/,
   '遠景画像は近景と同じ、着衣済みの生きた実モデルから撮影する');
-assert.match(atlas,/actor\.character\.play\(state\)/,'実際のリターゲット済みモーションを撮影する');
+assert.match(atlas,/actor\.character\.play\(state,\{transition:false\}\)/,'補間を除いた元のリターゲット済みモーションを撮影する');
 assert.match(atlas,/actor\.outfit\.sync\(\)/,'衣装を人体に合わせた後でGPU撮影する');
 assert.match(atlas,/readRenderTargetPixels/,'生成した画像が空でないことをGPUから検査する');
 assert.match(atlas,/const TILE=224/,'遠景を224pxの実装備モデルで撮影して輪郭を保つ');
@@ -51,8 +55,10 @@ assert.match(army,/function stripUnusedVertexChannels/,'GLTFの未使用UV・頂
 assert.match(army,/const channel=texture\.channel\?\?0/,'各写真テクスチャが利用するUVチャンネルは維持する');
 assert.match(army,/visualTime\*\(u\.action==='blocked'\?1\.4:\.8\)/,'渋滞で足踏みする兵士と待機中の兵士も表示フレームに合わせて重心移動する');
 assert.match(army,/visibleSoldiers\+=visible\+farVisible/,'近景＋遠景の全員を表示する');
+assert.match(army,/layer\.count=visible;layer\.visible=visible>0/,'0体のGPUドローバッチは描画へ送らない');
+assert.match(army,/impostor\.mesh\.visible=farVisible>0/,'不可視の撮影LODも無駄なドローを避ける');
 assert.match(army,/rotation\.copy\(camera\.quaternion\)/,'遠景写真が上空視点で紙の端にならない');
-assert.match(army,/!crowdRequires3DFromOverhead\(pixels,verticalViewRatio\)/,
+assert.match(army,/!crowdRequires3DFromOverhead\(pixels,verticalViewRatio,overhead3dPixels\)/,
   '見下ろしの近くの兵士は本物の3Dモデルへ切り替える');
 assert.match(army,/bodyVisibleSoldiers\+=visible\+farVisible/,'衣装だけの表示は許さない');
 assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed,creatureVisualTime\);/,

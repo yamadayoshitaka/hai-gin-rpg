@@ -8,10 +8,10 @@ import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.6.51';
 import {isMonsterSummonType} from './monster-summon-registry.js?v=natural-size-20261116';
 import {createAdoptedSpecialSummonRenderer} from './combat-creature-adopted-overlays.js?v=web-mesh-26-v1';
-import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=natural-size-20261116';
+import {createMonsterSummonRenderer} from './monster-summon-renderer.js?v=m002-feline-action-v4-20261117';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.5.20';
 import {subdivideDedicatedSource} from './creature-source-subdivision.js?v=masters-v1';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=natural-size-20261116';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.78';
@@ -430,15 +430,18 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       base.position.set(px,(attachedFlying?flightBaseY:terrainY(px,pz)+bounce)*(1-dying)+leap*.85-dying*.42,pz);
       // Seated flying creatures attack with wings/jaw/limbs, not by jerking
       // their shared saddle root away from the rider.
-      if(!attachedFlying){
+      // Mounted animal attack animations may move limbs but must never
+      // translate the body out from under the rider's seat anchor.
+      if(!attachedFlying&&o.mountedBy==null){
         base.position.x+=dodge*.55;
         base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
       }
-      if(o.type==='horse')base.position.y+=attackPulse*.14;
+      if(o.type==='horse'&&o.mountedBy==null)base.position.y+=attackPulse*.14;
       // Visual rider/horse yaw share one orientation. Do not wait for the
       // horse's independent turn-smoothing to catch up at sharp corners.
       const facing=rider&&riderFacing!=null?riderFacing:motion.facing;
       if(attachedFlying)base.rotation.set(flightSway.pitch,facing,flightSway.roll);
+      else if(o.mountedBy!=null)base.rotation.set(0,facing,0);
       else base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)-special*.19+hit*.16+dying*.16+
         (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):
           o.type==='horse'?gallop*.033*Math.sin(motion.gaitPhase+seed):0),facing,

@@ -72,6 +72,8 @@ jobs:
           node --check src/battle-victory-rewards.js
           node --experimental-vm-modules qa/battle-ui-objective-rewards.test.mjs
           node qa/tactical-command-ui.test.mjs
+          node qa/battle-situation-monitor.test.mjs
+          node qa/battle-motion-recommendations.test.mjs
           node --check src/inn-strategy-templates.js
           node --check src/inn-commander-formation.js
           node --experimental-vm-modules qa/inn-commander-autoplace-gameover.test.mjs

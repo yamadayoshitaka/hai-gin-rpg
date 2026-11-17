@@ -9,6 +9,7 @@ import {STORY_KEY_PERSON_BY_NAME} from './story-cinematic.js';
 import {storyDecisionForStage,ROUTES} from './story-narrative-flow.js';
 import {STORY_READINGS} from './story-pronunciations.js';
 import {STORY_STAGE_BEATS} from './story-stage-beats-v2.js';
+import {readerIntroForChapter} from './story-reader-intros.js';
 export const STORY_SCREENPLAY_VERSION=2;
 export const STORY_SCREENPLAY_STAGE_COUNT=200;
 const furigana=Object.freeze({
@@ -145,8 +146,8 @@ export function screenplayForStage(stageId,context={}){
  const speeches=chapter.dialogues;
  const speaker=speeches[(stage.slot-1)%speeches.length],response=speeches[stage.slot%speeches.length];
  const final=speeches[(stage.slot+1)%speeches.length];
- if(stage.slot===1)addPre('語り手','第'+chapter.id+'章「'+chapter.title+'」。'+chapter.narration,{kind:'chapter-opening'});
- addPre('語り手',beat[0],{kind:'stage-setup'});
+ if(stage.slot===1)addPre('語り手',readerIntroForChapter(chapter.id),{kind:'chapter-opening'});
+ addPre('語り手','今回の舞台は「'+stage.name+'」。'+beat[0],{kind:'stage-setup'});
  if(stage.slot===1){
   // Each chapter's three canonical speeches are spoken once, at its opening.
   for(const original of speeches){
@@ -162,8 +163,8 @@ export function screenplayForStage(stageId,context={}){
   addPre(response.speaker,talk[1](stage),{kind:'stage-character-dialogue'});
  }
  addPre('語り手',stage.kind==='town'
-  ?'「'+stage.name+'」で仲間の編成と相談を済ませ、次の出発に備える。'
-  :'「'+stage.name+'」の勝利条件は「'+stage.winCondition+'」。'+chapter.objective,
+  ?'ここでは仲間を集めて準備をする。相談が済んだら次へ進もう。'
+  :'今回の目標は「'+stage.winCondition+'」。仲間の力を合わせて達成しよう。',
   {kind:'stage-objective',winCondition:stage.winCondition});
  if(stage.slot===5&&decision)addPre('語り手',chosen
   ?'今回の方針は「'+chosen[1]+'」。成果は戦闘結果を確認して判断する。'

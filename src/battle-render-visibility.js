@@ -20,7 +20,7 @@ export function createBattleActorVisibility(THREE,camera){
   }
   function sample(actor){
     let state=states.get(actor);
-    if(!state){state={lastUpdate:frameTime,shadowEnabled:null,result:{visible:false,update:false,delta:0}};states.set(actor,state)}
+    if(!state){state={lastUpdate:frameTime,wasVisible:false,shadowEnabled:null,result:{visible:false,update:false,delta:0}};states.set(actor,state)}
     const result=state.result;
     bounds.center.set(actor.root.position.x,actor.root.position.y+1.05,actor.root.position.z);
     // Never lose an inspectable full-size human because the root-only
@@ -36,8 +36,12 @@ export function createBattleActorVisibility(THREE,camera){
     actor.root.visible=inFrame;
     if(inFrame&&actor.hp>0&&!actor.crowdSampling&&actor.character?.object3D&&
        !actor.character.object3D.visible)actor.character.object3D.visible=true;
-    if(!inFrame){culled++;result.visible=false;result.update=false;result.delta=0;return result}
+    if(!inFrame){
+      culled++;state.wasVisible=false;state.lastUpdate=frameTime;
+      result.visible=false;result.update=false;result.delta=0;return result;
+    }
     visible++;
+    const reentered=!state.wasVisible;state.wasVisible=true;
     const tier=distance<28?0:distance<75?1:2;
     // Previously every moving soldier past 75m had their feet updated only
     // ten times per second while the body root interpolated every frame.
@@ -53,9 +57,11 @@ export function createBattleActorVisibility(THREE,camera){
       state.shadowEnabled=shadowEnabled;
     }
     const delta=frameTime-state.lastUpdate;
-    if(interval>0&&delta<interval){throttled++;result.visible=true;result.update=false;result.delta=0;return result}
+    if(!reentered&&interval>0&&delta<interval){throttled++;result.visible=true;result.update=false;result.delta=0;return result}
     state.lastUpdate=frameTime;
-    result.visible=true;result.update=true;result.delta=Math.min(Math.max(0,delta),.25);return result;
+    // Re-enter immediately with a fully synchronized rig, but do not replay
+    // a huge animation time jump accumulated during hidden frames.
+    result.visible=true;result.update=true;result.delta=reentered?0:Math.min(Math.max(0,delta),.12);return result;
   }
   return {beginFrame,sample,get stats(){return {visible,culled,throttled}}};
 }

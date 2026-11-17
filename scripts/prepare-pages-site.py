@@ -220,12 +220,29 @@ def pin_public_story_images(out: Path, sha: str) -> None:
         r"(?P<lead>\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\bsrc=)"
         r"(?P<q>['\"])(?P<path>\./[^'\"\n]+?\.(?:m?js)(?:\?[^'\"\n]*)?)(?P=q)"
     )
+    # Game/review art must share a single immutable release query. An
+    # earlier ?v=story-* cache token is not the commit SHA and must NEVER
+    # precede ?release= here: the Pages parity gate deliberately asserts
+    # the directly pinned source module URL, and older mobile caches could
+    # otherwise load the correct art with the wrong viewer revision.
+    canonical_story_modules = {
+        "story-manga-viewer.js",
+        "story-chapter1-approval-ui.js",
+        "story-panel-registered-art.js",
+        "story-chapter1-provisional-live.js",
+    }
     def version_import(match):
         url = match.group("path")
-        if "release=" in url:
+        bare = url.split("?", 1)[0]
+        if bare.rsplit("/", 1)[-1] in canonical_story_modules:
+            # Always REPLACE old v/release query: never leave stale SHA.
+            next_url = bare + "?release=" + suffix
+        elif "release=" in url:
             return match.group(0)
-        sep = "&" if "?" in url else "?"
-        return match.group("lead") + match.group("q") + url + sep + "release=" + suffix + match.group("q")
+        else:
+            sep = "&" if "?" in url else "?"
+            next_url = url + sep + "release=" + suffix
+        return match.group("lead") + match.group("q") + next_url + match.group("q")
 
     updated = 0
     for file in list(out.rglob("*.js")) + list(out.rglob("*.html")):

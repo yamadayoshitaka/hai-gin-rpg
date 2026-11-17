@@ -128,12 +128,15 @@ export function createTargetedStrategyUi({
        '<small class="centerHelp">選択班の全分隊へ指示します。実行可能な職業だけが行動します。</small>')+
      controls('キャンセル','次へ','作戦を選ぶ',!selectedSquads.size);
   }else if(step==='family'){
-   const recommended=getTemplates(String(groupId)).filter(x=>STRATEGY_METHODS[x.methodId]);
+   const recommended=getTemplates(String(groupId)).filter(x=>STRATEGY_METHODS[x.methodId])
+     .sort((a,b)=>Number(eligible.has(b.methodId))-Number(eligible.has(a.methodId))||
+      (Number(b.score)||0)-(Number(a.score)||0));
    html='<div class="centerStep">② 戦場に合う宿屋テンプレート</div>'+
     '<div class="centerBattleRecommendations">'+recommended.slice(0,5).map((x,i)=>
       b('data-strategy-template="'+esc(x.id)+'"',(i===0?'★ 推奨 ':'')+x.name+
       ' · 適合'+x.score+'/100'+(x.reason?' · '+x.reason:''),false,!eligible.has(x.methodId))).join('')+
-    (recommended.length?'':'<small class="centerHelp">利用できるテンプレートなし。通常作戦を選択してください。</small>')+
+    (recommended.some(x=>eligible.has(x.methodId))?'':
+       '<small class="centerHelp">この班で今すぐ実行できる推奨はありません。別班を選ぶか、使用可能な作戦を選択してください。</small>')+
     '</div><div class="centerStep">または作戦の系統を選択</div><div class="centerGrid">'+
     Object.entries(STRATEGY_TREE).map(([id,x])=>b('data-strategy-family="'+id+'"',x.name,
      family===id,!Object.values(x.intents).some(y=>y.methods.some(m=>eligible.has(m.id))))).join('')+

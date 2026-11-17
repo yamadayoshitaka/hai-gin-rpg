@@ -6,8 +6,10 @@ import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=20261117-three-seats-v3';
 import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.38';
 import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
+import {ensureBattleScalpCoverage} from './character-system/battle-visual-pipeline.js';
+import {equipBattleStudioHair} from './character-system/battle-artist-head-graft.js?v=20261117-shading-back1';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
-import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
+import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
 import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift} from './crowd-run-grounding.js?v=4.6.32';
 
@@ -245,6 +247,39 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(!representative){
       throw Error(`${job.name}の実物衣装モデルを読み込めません。簡易モデルへの切り替えは行いません。`);
     }
+    // Critical: the donor's original fitted GLB is aligned to the OLD
+    // Quaternius skull. The replacement sculpted battle face is larger and
+    // may completely engulf this hair, even when attached=true. Source the
+    // GPU crowd from a genuine scalp-anchored dense studio groom on the NEW
+    // sculpt instead. Only ten-ish source rigs need this startup operation;
+    // 2000 instances share the captured result without runtime hair skinning.
+    const fittedBefore=representative.outfit.getHairState?.()??null;
+    let scalp=ensureBattleScalpCoverage(representative);
+    if(representative.masterHead?.attached&&representative.studioPattern){
+      try{
+        equipBattleStudioHair(representative.masterHead,representative.studioPattern,{
+          quality:'near',hero:false
+        });
+        representative.outfit.setHairVisible(false);
+        scalp=ensureBattleScalpCoverage(representative);
+      }catch(error){
+        console.warn('Dense scalp-aligned crowd groom unavailable',job.name,error);
+      }
+    }
+    // Never photograph an empty scalp. Fitted GLB is fallback only if the
+    // new-sculpt groom genuinely could not be built; it is not the default.
+    if(scalp.after.source==='missing'&&fittedBefore?.attached){
+      representative.outfit.setHairVisible(true);
+      scalp=ensureBattleScalpCoverage(representative);
+    }
+    if(scalp.after.source==='missing')
+      throw Error(job.name+'の顔に合う実3D毛髪がありません。ハゲ軍団への焼き込みを中断します。');
+    const studioHairRoot=representative.masterHead?.studioWig?.root??null;
+    const studioHairBefore=studioHairRoot?.visible;
+    // Keep one groom at a time; otherwise two hair shells z-fight and
+    // expose scalp-coloured regions in the distant atlas.
+    if(scalp.after.source==='studio-scalp')
+      representative.outfit.setHairVisible(false);
     representative.crowdSampling=true;
     const person=representative.character.object3D;
     // LOD.update() may have left the nearest scalp mesh invisible before
@@ -324,10 +359,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
     const ridingPose=createRidingPoseController(representative.character.model);
     async function capture(state,delta,attribute,fallback,{mounted=false}={}){
-      let ok=await representative.character.play(state);
+      let ok=await representative.character.play(state,{transition:false});
       // Run samples must NEVER quietly replace missing Running_A with the
       // much slower Walking_A. v4.6.33 resolves a shared real run for all jobs.
-      if(!ok&&fallback)ok=await representative.character.play(fallback);
+      if(!ok&&fallback)ok=await representative.character.play(fallback,{transition:false});
       const capturedClip=representative.character.diagnostics?.()?.clip??null;
       if((attribute==='crowdWalkA'||attribute==='crowdWalkB')&&
         (!ok||!/^Running(?:_|$)/.test(capturedClip||''))){
@@ -556,6 +591,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
+    if(studioHairRoot)studioHairRoot.visible=studioHairBefore;
+    // The new sculpt-fitted groom remains on the detailed representative.
+    // Do not reactivate the old donor-aligned wig underneath it.
+    if(fittedBefore?.attached)
+      representative.outfit.setHairVisible(
+        studioHairRoot?false:fittedBefore.visible);
+    ensureBattleScalpCoverage(representative);
     for(const state of hairLodStates){
       state.node.autoUpdate=state.autoUpdate;
       state.node.levels.forEach((level,i)=>{level.object.visible=state.states[i];});
@@ -572,7 +614,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const canvasSize=new THREE.Vector2();
   let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0,blockedVisibleSoldiers=0,visibleCorpses=0;
   let visibleDashSoldiers=0,visibleStairWalkSoldiers=0;
-  let screenLodThresholdPx=36;
+  let screenLodThresholdPx=simulation.units.length>=1500?52:36;
+  const denseCrowd=simulation.units.length>=1500;
   function update(alpha=0,extraTime=0,visualTime=simulation.time){
     visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;visibleCorpses=0;
     visibleDashSoldiers=0;visibleStairWalkSoldiers=0;
@@ -602,8 +645,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // Mounted impostors only contain the standing soldier card. Use the
         // seated real mesh until a mounted atlas exists.
         const verticalViewRatio=camera&&distance>0?Math.abs(camera.position.y-bounds.center.y)/distance:0;
+        const overhead3dPixels=denseCrowd?Math.max(52,screenLodThresholdPx+10):28;
         const useFar=!!impostor&&u.alive&&!u.mountId&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx)&&
-          !crowdRequires3DFromOverhead(pixels,verticalViewRatio);
+          !crowdRequires3DFromOverhead(pixels,verticalViewRatio,overhead3dPixels);
         u._crowdImpostor=useFar;
         if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
@@ -674,8 +718,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       impostorVisibleSoldiers+=farVisible;
       // Distance atlases contain the original complete body and costume.
       if(bodyLayers.length)bodyVisibleSoldiers+=visible+farVisible;
-      for(const layer of layers)layer.count=visible;
-      if(impostor)impostor.mesh.count=farVisible;
+      // Zero-count InstancedMesh objects were still submitted by WebGLRenderer
+      // on some Android GPU paths, burning draw calls for empty job layers.
+      for(const layer of layers){layer.count=visible;layer.visible=visible>0;}
+      if(impostor){impostor.mesh.count=farVisible;impostor.mesh.visible=farVisible>0;}
       // Only the visible portion of each profession's shared GPU buffer needs
       // uploading. Geometry/material quality and per-soldier poses are intact.
       for(const attr of Object.values(shared)){
@@ -698,7 +744,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   update();
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
-    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(60,Number(pixels)||36))},
+    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(denseCrowd?52:36,Math.min(denseCrowd?100:60,Number(pixels)||(denseCrowd?52:36)))},
     get screenLodThresholdPx(){return screenLodThresholdPx},
     get visibleSoldiers(){return visibleSoldiers},
     get bodyVisibleSoldiers(){return bodyVisibleSoldiers},

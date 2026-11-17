@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "goal": "All registered catalog objects have real 3D geometry and physically plausible structure/materials, are visually inspected, merged and deployed.",
   "sourceCatalog": "src/object-catalog.js",
-  "sourceCatalogBlobSha": "b6567ef92616b56aa6813bd1691048bc81e2fb32",
-  "versionDate": "2026-11-16",
-  "total": 53,
+  "sourceCatalogBlobSha": "8262d9c153e877148e662e9addce47c6bbe6f784",
+  "versionDate": "2026-11-17",
+  "total": 60,
   "accepted": 0,
-  "inReview": 11,
-  "unreviewed": 42,
+  "inReview": 16,
+  "unreviewed": 44,
   "acceptanceGates": [
     "credible_real_world_structure",
     "real_game_3d_geometry",
@@ -30,17 +30,25 @@
       "kind": "furniture",
       "order": 1,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "3d_code_in_review",
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
       "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
-        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434"
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434",
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
       ],
-      "lastCodeChange": "PR #434: actual timber table and chair joinery geometry authored"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 3,
+        "triangles": 182,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_chair_001",
@@ -49,17 +57,25 @@
       "kind": "furniture",
       "order": 2,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "3d_code_in_review",
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
       "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
-        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434"
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/434",
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
       ],
-      "lastCodeChange": "PR #434: actual timber table and chair joinery geometry authored"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 3,
+        "triangles": 194,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_bed_001",
@@ -68,14 +84,24 @@
       "kind": "furniture",
       "order": 3,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
+      ],
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 4,
+        "triangles": 170,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_shelf_001",
@@ -84,14 +110,24 @@
       "kind": "furniture",
       "order": 4,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
+      ],
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 4,
+        "triangles": 470,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "cottage_fireplace_001",
@@ -116,17 +152,25 @@
       "kind": "furniture",
       "order": 6,
       "physicalTarget": "木材の板厚・荷重支持・接合構造・床接地、布や金属との材質差",
-      "phase": "3d_code_in_review",
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
       "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
-        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430"
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430",
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
       ],
-      "lastCodeChange": "2026-11-16 PR #430: authored wooden load-bearing staves/iron hoops or masonry hollow well with winding assembly"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 4,
+        "triangles": 2050,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "treasure_chest_001",
@@ -358,17 +402,25 @@
       "kind": "town_prop",
       "order": 20,
       "physicalTarget": "用途に合う実物形状、各部の接合・使用痕・材質・接地",
-      "phase": "3d_code_in_review",
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
       "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
       "evidence": [
-        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430"
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/430",
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
       ],
-      "lastCodeChange": "2026-11-16 PR #430: authored wooden load-bearing staves/iron hoops or masonry hollow well with winding assembly"
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 5,
+        "triangles": 1230,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "town_planter_001",
@@ -393,14 +445,24 @@
       "kind": "town_prop",
       "order": 22,
       "physicalTarget": "用途に合う実物形状、各部の接合・使用痕・材質・接地",
-      "phase": "pending_physical_review",
-      "geometryChanged": false,
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
+      "geometryChanged": true,
       "webglQA": "unverified",
       "androidQA": "unverified",
-      "mainMerged": false,
-      "pagesDeployed": false,
+      "mainMerged": true,
+      "pagesDeployed": true,
       "accepted": false,
-      "evidence": []
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
+      ],
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 3,
+        "triangles": 134,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "town_notice_001",
@@ -647,6 +709,22 @@
       "evidence": []
     },
     {
+      "id": "town_firewood_001",
+      "name": "薪の山",
+      "category": "街の設備",
+      "kind": "town_prop",
+      "order": 37,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
+      "phase": "pending_physical_review",
+      "geometryChanged": false,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": false,
+      "pagesDeployed": false,
+      "accepted": false,
+      "evidence": []
+    },
+    {
       "id": "church_001",
       "name": "教会",
       "category": "建造物",
@@ -661,6 +739,32 @@
       "pagesDeployed": false,
       "accepted": false,
       "evidence": []
+    },
+    {
+      "id": "town_water_trough_001",
+      "name": "家畜用水槽",
+      "category": "街の設備",
+      "kind": "town_prop",
+      "order": 38,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
+      "geometryChanged": true,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": true,
+      "pagesDeployed": true,
+      "accepted": false,
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
+      ],
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 3,
+        "triangles": 146,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
     },
     {
       "id": "weapon_shop_001",
@@ -679,12 +783,54 @@
       "evidence": []
     },
     {
+      "id": "town_signpost_001",
+      "name": "街道の道標",
+      "category": "街の設備",
+      "kind": "town_prop",
+      "order": 39,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
+      "phase": "3d_source_merged_webgl_capture_passed_visual_review_pending",
+      "geometryChanged": true,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": true,
+      "pagesDeployed": true,
+      "accepted": false,
+      "evidence": [
+        "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
+      ],
+      "webglRenderEvidence": {
+        "status": "capture_and_budget_passed_not_visual_approval",
+        "drawCalls": 3,
+        "triangles": 120,
+        "ci": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+      },
+      "lastCodeChange": "PR #520: physically improved real procedural geometry and baked static meshes; WebGL render/cost QA passed",
+      "deployedEvidence": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
+    },
+    {
       "id": "inn_001",
       "name": "宿屋",
       "category": "建造物",
       "kind": "town_building",
       "order": 40,
       "physicalTarget": "柱梁・屋根・開口・基礎の荷重経路と厚み、部屋への入口と配置",
+      "phase": "pending_physical_review",
+      "geometryChanged": false,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": false,
+      "pagesDeployed": false,
+      "accepted": false,
+      "evidence": []
+    },
+    {
+      "id": "town_sacks_001",
+      "name": "麻袋の積荷",
+      "category": "街の設備",
+      "kind": "town_prop",
+      "order": 40,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
       "phase": "pending_physical_review",
       "geometryChanged": false,
       "webglQA": "unverified",
@@ -711,6 +857,22 @@
       "evidence": []
     },
     {
+      "id": "town_stone_pile_001",
+      "name": "石材の山",
+      "category": "地形",
+      "kind": "town_prop",
+      "order": 41,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
+      "phase": "pending_physical_review",
+      "geometryChanged": false,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": false,
+      "pagesDeployed": false,
+      "accepted": false,
+      "evidence": []
+    },
+    {
       "id": "town_house_001",
       "name": "民家",
       "category": "建造物",
@@ -727,12 +889,44 @@
       "evidence": []
     },
     {
+      "id": "town_brazier_001",
+      "name": "野営の火鉢",
+      "category": "街の設備",
+      "kind": "town_prop",
+      "order": 42,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
+      "phase": "pending_physical_review",
+      "geometryChanged": false,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": false,
+      "pagesDeployed": false,
+      "accepted": false,
+      "evidence": []
+    },
+    {
       "id": "manor_noble_001",
       "name": "貴族の石造屋敷",
       "category": "建造物",
       "kind": "town_building",
       "order": 43,
       "physicalTarget": "柱梁・屋根・開口・基礎の荷重経路と厚み、部屋への入口と配置",
+      "phase": "pending_physical_review",
+      "geometryChanged": false,
+      "webglQA": "unverified",
+      "androidQA": "unverified",
+      "mainMerged": false,
+      "pagesDeployed": false,
+      "accepted": false,
+      "evidence": []
+    },
+    {
+      "id": "town_herb_garden_001",
+      "name": "薬草園",
+      "category": "農地",
+      "kind": "town_prop",
+      "order": 43,
+      "physicalTarget": "実在素材の厚み・継ぎ目・接地・荷重支持とPBR材質、近中遠LOD",
       "phase": "pending_physical_review",
       "geometryChanged": false,
       "webglQA": "unverified",
@@ -902,5 +1096,25 @@
       "accepted": false,
       "evidence": []
     }
-  ]
+  ],
+  "latestWebGLRegression": {
+    "runId": 44013507318,
+    "assetsChecked": 9,
+    "renderAndBudgetPass": 9,
+    "realVisualApproval": 0,
+    "androidFpsVerified": 0,
+    "mainMergedGeometryIds": [
+      "cottage_table_001",
+      "cottage_chair_001",
+      "cottage_bed_001",
+      "cottage_shelf_001",
+      "cottage_barrel_001",
+      "town_well_001",
+      "town_crate_001",
+      "town_water_trough_001",
+      "town_signpost_001"
+    ],
+    "pagesDeployedVerified": true,
+    "pagesRun": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
+  }
 }

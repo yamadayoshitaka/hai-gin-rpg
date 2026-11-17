@@ -54,7 +54,7 @@ const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
  * Keep this independent of camera distance and rarity so LOD cannot bleach it.
  */
 export const BATTLE_FACE_SKIN_TONE_VERSION='battle-skin-photometric-v3';
-export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v4';
+export const BATTLE_FACE_LIGHT_RESPONSE_VERSION='battle-face-light-response-v5-face-contour';
 let battleSkinAlbedoTexture=null;
 let battleSkinNormalTexture=null;
 /** Shared tangent-space microrelief for fine pores and irregular skin.
@@ -148,11 +148,17 @@ export function installBattleFaceLightResponse(material){
   shader.fragmentShader=shader.fragmentShader.replace(marker,
    'outgoingLight = (outgoingLight * 0.86) / (vec3(1.0) + 0.40 * max(outgoingLight - vec3(0.68), vec3(0.0)));\n'+
    'float faceDiffuseLuma = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));\n'+
-   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+marker);
+   'outgoingLight *= mix(0.90, 1.035, smoothstep(0.14, 0.70, faceDiffuseLuma));\n'+
+   // A small view-normal-dependent face contour restores depth across the
+   // temple, orbital rim and cheek without sculpting fake lines or shadows.
+   // The 0.105 bound avoids soot-black skin under mobile daytime lights.
+   'float faceContour = smoothstep(0.22, 0.92, 1.0 - clamp(abs(normal.z), 0.0, 1.0));\n'+
+   'outgoingLight *= (1.0 - 0.105 * faceContour);\n'+marker);
  };
  material.customProgramCacheKey=()=>previousProgramKey()+'|'+BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseVersion=BATTLE_FACE_LIGHT_RESPONSE_VERSION;
  material.userData.battleFaceLightResponseScale=.86;
+  material.userData.battleFaceContourStrength=.105;
  material.needsUpdate=true;
  return {applied:true,version:BATTLE_FACE_LIGHT_RESPONSE_VERSION,scale:.86};
 }
@@ -396,6 +402,11 @@ export function attachBattleArtistHead({character,recipe,source,pattern=null,ani
   headFit:fit,cranialFit:proportionFit,nearDetail:true,cosmeticMeshes:cosmetic.length,
   reusedSculptGeometry:prototypeReused,
   expressions:!!expression,
+  // Real mesh expressions change only when the combat action changes.
+  setBattleExpression:id=>{
+   if(!expression||expression.getState().expression===id)return false;
+   expression.setExpression(id);return true;
+  },
   setNearDetail(value){setNearDetail(value);result.nearDetail=near;},
   update(dt){if(result.nearDetail)expression?.update(dt);},
   dispose(){releaseBattleStudioHair(result);expression?.dispose();master.root.removeFromParent();}
@@ -501,7 +512,9 @@ export function equipBattleStudioHair(artistHead,pattern,{hero=false,quality='ne
  // Old variant stays visible throughout construction, including a failed bake.
  const previousWig=artistHead.studioWig||null;
  if(!wig){
-  const count=quality==='middle'?112:hero?360:168;
+  // Slightly denser middle silhouette, visibly fuller near hair. This is
+  // cached static geometry with zero additional hair-physics frame cost.
+  const count=quality==='middle'?120:hero?400:208;
   const scalp=cranialScalpSurface(artistHead.face,{
    cranialFraction:artistHead.cranialFit?.cranialFraction??.65
   });

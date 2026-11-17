@@ -403,7 +403,7 @@ export function createSculpture(spec,detail='high'){
   * UNDER its surrounding skin eyelid. No orbiting colored sphere is used.
   * This mutates only the owned monster cranium, never a shared GLB mesh.
   */
- const recessCanineEyeSockets=(cranium)=>{
+ const recessCanineEyeSockets=(cranium,{centerX=.146}={})=>{
    if(!cranium?.geometry?.getAttribute?.('position')||
       !cranium.userData.ownedGeometry)throw Error('Owned cranium required');
    const p=cranium.geometry.getAttribute('position');
@@ -411,7 +411,7 @@ export function createSculpture(spec,detail='high'){
    for(let i=0;i<p.count;i++){
      const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
      if(z<.07)continue;
-     const nx=(Math.abs(x)-.146)/.110;
+     const nx=(Math.abs(x)-centerX)/.110;
      const ny=(y-.115)/.095;
      const q=nx*nx+ny*ny;
      if(q>2.65)continue;
@@ -423,6 +423,7 @@ export function createSculpture(spec,detail='high'){
    if(sculpted){p.needsUpdate=true;cranium.geometry.computeVertexNormals();
      cranium.geometry.computeBoundingSphere();}
    cranium.userData.canineEyeSocketsRecessed=true;
+   cranium.userData.canineEyeSocketCenterX=centerX;
    cranium.userData.canineEyeSocketSculptedVertices=sculpted;
    cranium.userData.canineEyeSocketMaxInset=maxInset;
    return cranium;
@@ -432,7 +433,8 @@ export function createSculpture(spec,detail='high'){
   * partially covered iris, slit pupil and wet corneal catchlight.
   * One specialized wolf-king eye uses 5 small meshes, not spherical globes.
   */
- const recessedCanineAlmondEye=(parent,{side=1,name='beast'}={})=>{
+ const recessedCanineAlmondEye=(parent,
+   {side=1,name='beast',centerX=.146}={})=>{
    if(Math.abs(side)!==1)throw Error('Invalid wolf eye side');
    // The earlier +/-0.230 placed eyes near the outer cheek silhouette.
    // Inset both paired sockets toward the frontal skull by ~14%.
@@ -443,7 +445,7 @@ export function createSculpture(spec,detail='high'){
    // Both lids and pigments are thin surface patches INSIDE a carved
    // orbital bowl, not separate protruding eye globes. The former z=.232
    // sat visibly in front of the cranium at this x/y station.
-   const center=[side*.146,.116,.182];
+   const center=[side*centerX,.116,.182];
    const slices=detail==='source'?40:detail==='high'?32:20;
    const bands=detail==='source'?5:3;
    // Shape follows the inner/outer canthus; the outside corner sits higher.
@@ -739,7 +741,8 @@ export function disposeMonsterSculpture(model){
    if(!obj.isMesh)return;
    if(obj.userData.ownedGeometry)obj.geometry.dispose();
    if(obj.isSkinnedMesh)obj.skeleton?.dispose?.();
-   releaseMaterial(obj.material);
+   if(obj.userData.ownedEffectMaterial)obj.material?.dispose();
+   else releaseMaterial(obj.material);
  });
  model.parent?.remove(model);
 }

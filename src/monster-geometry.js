@@ -3,11 +3,19 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-anatomical-reference-v15-20261117';
+import * as THREE from 'three';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
+import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
+ felineNasalRings,felineAnatomicalSections,felineEyeSurface,
+ felineDorsalSurface,FELINE_SOURCE_MODEL}
+ from './feline-master-variants.js?v=m001-feline-source-v3-20261117';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
+import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
+ referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
+ from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
@@ -23,6 +31,284 @@ const QUADRUPED_CRANIUM_RINGS=Object.freeze([
  {y:.271,rx:.142,rz:.175,cz:.028},
  {y:.310,rx:.039,rz:.068,cz:.015},
 ]);
+// m001's facial outline is the source of truth for both the physical skull
+// and its hair follicles. Do not generate a disconnected spherical hair cap.
+const M001_CRANIUM_RINGS=Object.freeze([
+ {z:.355,y:-.160,rx:.026,ry:.030},
+ {z:.335,y:-.140,rx:.057,ry:.051},
+ {z:.310,y:-.113,rx:.094,ry:.073},
+ {z:.270,y:-.040,rx:.171,ry:.121},
+ {z:.215,y:-.009,rx:.205,ry:.145},
+ {z:.155,y:.022,rx:.233,ry:.168},
+ {z:.060,y:.051,rx:.268,ry:.190},
+ {z:-.120,y:.056,rx:.289,ry:.199},
+ {z:-.335,y:.025,rx:.243,ry:.176},
+ {z:-.520,y:-.016,rx:.174,ry:.126},
+ {z:-.635,y:-.032,rx:.050,ry:.062}
+]);
+// The flame wolf is a genuine m001 anatomical source-derived actor.
+ // m001's source face rings and sculpted follicle map are transformed,
+ // not replaced by the old swollen generic canid cranium and oval muzzle.
+ const M002_REFERENCE_MORPH=Object.freeze({
+   faceX:.94,faceY:1.02,faceZ:1.20,faceAdvance:.040,
+   snoutWidth:1.20,snoutLength:1.32,noseWidth:1.30
+ });
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const m001CheekContourX=(x,y,z)=>{
+ const under=clamp01((.045-y)/.225);
+ const forward=clamp01((z+.12)/.34);
+ return x*(1-.315*under*forward);
+};
+function m001RingAtZ(z){
+ for(let i=1;i<M001_CRANIUM_RINGS.length;i++){
+  const a=M001_CRANIUM_RINGS[i-1],b=M001_CRANIUM_RINGS[i];
+  if(z>=b.z||i===M001_CRANIUM_RINGS.length-1){
+   const t=clamp01((a.z-z)/(a.z-b.z));
+   return {z,y:a.y+(b.y-a.y)*t,
+     rx:a.rx+(b.rx-a.rx)*t,ry:a.ry+(b.ry-a.ry)*t};
+  }
+ }
+ return M001_CRANIUM_RINGS[0];
+}
+// Root every hair at the SAME tapered cranium surface used by the sculpt.
+// Coordinates are converted from the small face pivot into the moving full
+// head pivot, so the fur never hovers above the scalp when the face narrows.
+function m001FittedFacialMane(faceCore,source){
+ const guides=[];
+ const add=(root,tip,normal,width,shade,crown)=>{
+  // Midline has an S-shaped lift and cross-flow rather than a rigid
+  // straight blade. Roots are always kept exactly on the skin surface.
+  const ripple=Math.sin(root[0]*41+root[2]*29)*.008;
+  const mid=root.map((v,k)=>v+(tip[k]-v)*(k===1?.44:.52)+
+    (k===0?ripple:k===1?crown?.029:.010:.011));
+  guides.push({root,mid,tip,normal,width,shade,
+    m001ContourGuide:true,m001ContourCrown:!!crown});
+ };
+ const longitudinal=source?30:21,around=source?11:8;
+ for(const side of [-1,1]){
+  for(let i=0;i<longitudinal;i++){
+   const z=.065+.168*(i+.5)/longitudinal;
+   const ring=m001RingAtZ(z);
+   for(let j=0;j<around;j++){
+    const vertical=-.67+1.21*(j+.35)/around;
+    const y=ring.y+ring.ry*vertical;
+    const radius=Math.sqrt(1-vertical*vertical);
+    const x=m001CheekContourX(side*ring.rx*radius,y,z);
+    const headX=x*faceCore.scale.x;
+    const headY=faceCore.position.y+y*faceCore.scale.y;
+    const headZ=faceCore.position.z+z*faceCore.scale.z;
+    // No roots or growing tips inside the recessed eye, nasal ridge or lips.
+    // Double-coat offsets later shift follicles by up to 0.01 m.
+    // Filter BEFORE doubling, with a padded no-follicle mask so not
+    // even the edge of a strand roots over the eyes/nose/lips.
+    if(headY>.073&&headY<.157&&headZ>.160&&
+       Math.abs(headX)<.143)continue;
+    if(headZ>.185&&headY>-.153&&headY<.175&&
+       Math.abs(headX)<.126)continue;
+    if(Math.abs(headX)<.102)continue;
+    const root=[headX+side*.006,headY,headZ+.005];
+    const longHair=vertical<-.12;
+    const length=(longHair?.192:.115)*(1+.10*((i*7+j*3)%5)/5);
+    const eyeBand=headY>.066&&headY<.158;
+    const tipX=side*Math.max(eyeBand?.139:.111,
+      Math.abs(root[0])-(eyeBand?.004:.019));
+    const tip=[tipX,root[1]-length*(longHair?.76:.47),
+      root[2]+length*.34];
+    add(root,tip,[side*.92,vertical*.20,.32],
+      longHair?.009:.007,
+      (i+j)%9===0?'light':(i+j)%7===0?'shadow':'skin',false);
+   }
+  }
+ }
+ // Slicked-back (オールバック) natural coat: densely fill the ENTIRE
+ // cranial crown with short undercoat and long, rearward-combed guard
+ // hairs. Source sculpt gets a third intermediate row-offset layer;
+ // playable high still uses only two layers in the SAME three batches.
+ // Roots share the real skull loft (no unsupported floating wig cap).
+ const crownRows=source?72:53,crownCols=source?20:17;
+ const crownLayers=source?3:2;
+ for(let layer=0;layer<crownLayers;layer++)for(let i=0;i<crownRows;i++){
+  const z=-.405+.590*(i+.40+layer*.27)/crownRows;
+  const ring=m001RingAtZ(z);
+  const front=clamp01((z+.045)/.23);
+  for(let j=0;j<crownCols;j++){
+   const u=-.94+1.88*(j+.46+(i%2)*.19+layer*.24)/crownCols;
+   if(Math.abs(u)>.96)continue;
+   const originalX=ring.rx*u;
+   const originalY=ring.y+ring.ry*Math.sqrt(1-u*u);
+   const root=[
+     originalX*faceCore.scale.x,
+     faceCore.position.y+originalY*faceCore.scale.y+.004+layer*.002,
+     faceCore.position.z+z*faceCore.scale.z+.004
+   ];
+   // Eye and nasal bridge remain bare, including the doubled-ribbon
+   // tangent offset. Adjacent crown hair flows over the brow, never
+   // roots directly on the cornea or muzzle.
+   if(root[2]>.182&&Math.abs(root[0])<.139&&root[1]<.182)
+     continue;
+   const undercoat=layer===0;
+   const len=(undercoat?.148:layer===2?.207:.242)+
+     (1-front)*(undercoat?.015:.026)+
+     .009*Math.sin(i*.91+j*1.3);
+   // Negative Z is toward the occiput: even forehead fibres sweep BACK,
+   // not across the eyes. Short fibres seal the scalp, long ones provide
+   // a layered flowing silhouette. Crown midpoints lift off the skin
+   // before tips settle toward the rear, not straight vertical spikes.
+   const sweptZ=-len*(undercoat?.52:.79);
+   const tip=[
+     root[0]+Math.sign(u)*(.003+.014*(1-front)),
+     root[1]+(undercoat?.035:.066)*len-(1-front)*len*.12,
+     root[2]+sweptZ
+   ];
+   add(root,tip,[u,.90,-.24],undercoat?.0075:.0105,
+     (i+j+layer)%11===0?'light':
+       (i+j+layer)%7===0?'shadow':'skin',true);
+  }
+ }
+ return guides;
+}
+// Flame wolf inherits the ACTUAL m001 near-LOD facial follicles from
+// the same transformed skull rings, not the prior generic elliptical cap.
+function m002ReferenceMane(source){
+ const m=M002_REFERENCE_MORPH;
+ const proxy={
+   scale:{x:m.faceX,y:m.faceY,z:m.faceZ},
+   position:{x:0,y:0,z:m.faceAdvance}
+ };
+ const strands=m001FittedFacialMane(proxy,source);
+ const rows=source?38:27,across=source?22:16;
+ for(const side of [-1,1])for(let i=0;i<rows;i++){
+   const z=.10-.45*(i+.35)/rows,ring=m001RingAtZ(z);
+   for(let j=0;j<across;j++){
+     const u=.62+.36*(j+.39+(i%2)*.16)/across;
+     const x=side*ring.rx*u*m.faceX;
+     const vertical=-.66+.37*(j+.5)/across;
+     const y=(ring.y+ring.ry*vertical)*m.faceY;
+     const root=[x,y,z*m.faceZ+m.faceAdvance];
+     const len=(.138+.112*(i/rows))*(1+.08*Math.sin(i+j));
+     const tip=[x-side*len*.17,y-len*.68,root[2]+len*.31];
+     const mid=[root[0]+(tip[0]-root[0])*.51,
+       root[1]+(tip[1]-root[1])*.46+.014,
+       root[2]+(tip[2]-root[2])*.54];
+     strands.push({root,mid,tip,normal:[side*u,vertical,.32],
+       width:.0088,shade:(i+j)%11===0?'light':
+       (i+j)%7===0?'shadow':'skin',
+       m002SourceM001:true,m001ContourGuide:true});
+   }
+ }
+ return strands;
+}
+// Quality rollout wave 1: m002 flame wolf, m003 ice Fenrir and m004
+// thunder wolf. Roots follow the SAME upper skull elliptical sections
+// as the existing non-m001 anatomical loft. Never reuse a lion mane or
+// m001's tiny face scale for these species. Low LOD stays untouched.
+const CANINE_GROOM_WAVE_ONE=Object.freeze(['m002','m003','m004']);
+function fittedWolfFamilyCrown(spec,source){
+ if(!CANINE_GROOM_WAVE_ONE.includes(spec.id))return [];
+ const guides=[],winter=spec.id==='m003';
+ const rows=source?35:24,around=source?46:32;
+ for(let layer=0;layer<2;layer++){
+  for(let i=0;i<rows;i++){
+   const y=.195+.099*(i+.30+layer*.28)/rows;
+   let a=QUADRUPED_CRANIUM_RINGS[0],b=QUADRUPED_CRANIUM_RINGS.at(-1);
+   for(let k=1;k<QUADRUPED_CRANIUM_RINGS.length;k++){
+    if(QUADRUPED_CRANIUM_RINGS[k].y>=y){
+     a=QUADRUPED_CRANIUM_RINGS[k-1];
+     b=QUADRUPED_CRANIUM_RINGS[k];break;
+    }
+   }
+   const t=clamp01((y-a.y)/Math.max(.0001,b.y-a.y));
+   const rx=a.rx+(b.rx-a.rx)*t;
+   const rz=a.rz+(b.rz-a.rz)*t;
+   const centerZ=a.cz+(b.cz-a.cz)*t;
+   for(let j=0;j<around;j++){
+    const theta=Math.PI*2*(j+.36+(i%2)*.41+layer*.24)/around;
+    const x=rx*Math.cos(theta),z=centerZ+rz*Math.sin(theta);
+    // Leave the front orbital aperture exposed; this new crown
+    // begins ABOVE the eyes and follows the occipital hair stream.
+    if(z>.19&&y<.227&&Math.abs(x)<.171)continue;
+    const length=(layer===0?.078:winter?.190:.141)*
+      (1+.10*Math.sin(i*.59+j*.47));
+    const root=[x*.997,y,z*.997+centerZ*.003];
+    const tip=[x+Math.sign(x)*.012,y+length*.11,
+      z-length*(layer===0?.55:.80)];
+    const mid=[
+      root[0]+(tip[0]-root[0])*.49+
+        .007*Math.sin(i*.7+j*.9),
+      y+length*.12,
+      z+(tip[2]-z)*.45
+    ];
+    guides.push({root,mid,tip,
+      normal:[Math.cos(theta),.62,Math.sin(theta)],
+      width:layer===0?.008:.011,
+      shade:(i+j+layer)%11===0?'light':
+        (i+j+layer)%7===0?'shadow':'skin',
+      qualityWave:'m001-cranium-anchored-groom',
+      speciesId:spec.id});
+   }
+  }
+ }
+ return guides;
+}
+// Cat undercoat and guard hair grow from the actual feline skull loft.
+// m007, m008, m009 and m010 share the same base surface and diverge
+// through proportional morphs rather than wolf-mane copy/paste.
+function fittedFelineMasterHair(profile,source){
+ // m001's 53x17x2 / 72x20x3 coat LOD is the source of truth.
+ // Only CAT morphology is subtracted: short sleek hair for leopard/tiger,
+ // thick attached ruff for lion, and jaw/eye/muzzle clearance masks.
+ const quality=REFERENCE_CROWN_QUALITY[source?'source':'high'];
+ const out=[],rows=quality.rows,around=quality.columns;
+ for(let layer=0;layer<quality.layers;layer++)
+  for(let i=0;i<rows;i++){
+   const y=-.202+.492*(i+.42+layer*.19)/rows;
+   const rings=QUADRUPED_CRANIUM_RINGS;
+   let a=rings[0],b=rings[rings.length-1];
+   for(let k=1;k<rings.length;k++)if(rings[k].y>=y){
+     a=rings[k-1];b=rings[k];break;
+   }
+   const t=clamp01((y-a.y)/Math.max(1e-4,b.y-a.y));
+   const rx=(a.rx+(b.rx-a.rx)*t)*profile.headWidth*
+     (y<-.085?profile.cheekTaper:1);
+   const rz=(a.rz+(b.rz-a.rz)*t)*profile.headDepth;
+   const cz=a.cz+(b.cz-a.cz)*t+.002;
+   for(let j=0;j<around;j++){
+     const angle=2*Math.PI*(j+.30+(i%2)*.4+layer*.27)/around;
+     const ux=Math.cos(angle),uz=Math.sin(angle);
+     const x=rx*ux,z=cz+rz*uz;
+     // Protective open space around eye and nasal bridge.
+     const eyeRegion=y>.050&&y<.165&&z>.16&&
+       Math.abs(Math.abs(x)-profile.eyeX)<.062;
+     if(eyeRegion||(z>.12&&Math.abs(x)<.205&&y<.17))
+       continue;
+     const lion=profile.maneLength>0,cheek=z>-.12&&y<.06;
+     const undercoat=layer===0;
+     const baseLength=lion?
+       (cheek?profile.maneLength:profile.guardHair):
+       (cheek?profile.guardHair*.90:
+         Math.max(profile.underHair,.032));
+     const length=(undercoat?baseLength*.67:baseLength*1.28)*
+       (.90+.12*Math.sin(i*.51+j*.83));
+     const root=[x,y,z],back=lion&&cheek?.19:.79;
+     const tip=[x+Math.sign(x)*length*.07,
+       y-length*(lion&&cheek?.68:.14),
+       z-length*back];
+     const mid=[
+       x+(tip[0]-x)*.47+.004*Math.sin(i+j+layer),
+       y+(tip[1]-y)*.40+(lion?.019:.011),
+       z+(tip[2]-z)*.46
+     ];
+     out.push({root,mid,tip,normal:[ux,.20,uz],
+       width:lion?(undercoat?.0075:.012):.0068,
+       shade:(i+j+layer)%13===0?'light':
+         (i+j+layer)%9===0?'shadow':'skin',
+       catMaster:FELINE_SOURCE_MODEL,
+       m001QualityCoat:true,
+       m001ReferenceLayer:layer});
+   }
+ }
+ return out;
+}
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -31,32 +317,28 @@ function feet(g,pivot,x,y,z,clawed=true,scale=1){
 function quadruped(g,s,{feline=false,reptile=false}={}){
  const v=s.variant,k=s.size;
  const canine=!feline&&!reptile;
+ const felineMaster=feline?felineMasterVariant(s.id):null;
  const beastRemesh=canine&&s.id!=='m005'; // PR #345 protected
 
  const coatDetail=g.root.userData.detail;
- // Exactly two offset follicles per m001 source/near guide, with NO
- // identical/copanar ribbons or extra draw calls. LOD low stays economical.
+ // This is the SAME two-layer offset/midpoint hair authoring used on m001.
+ // Cats and wolves inherit the reference fidelity, not the wolf's face
+ // proportions. Low-LOD crowds bypass the extra geometry entirely.
  const wolfKingDoubleCoat=s.id==='m001'&&coatDetail!=='low';
- const doubleFurGuides=guides=>{
-   if(!wolfKingDoubleCoat)return guides;
-   const pairs=[];
-   for(const strand of guides){
-     const normal=strand.normal||[0,1,0];
-     const tangent=[normal[2],0,-normal[0]];
-     const n=Math.hypot(...tangent)||1;
-     const d=Math.max(.002,Math.min(.010,strand.width*.43));
-     const offset=tangent.map(v=>v*d/n);
-     for(const side of [-1,1]){
-       const shift=(point,tipFactor)=>point.map((v,k)=>
-         v+side*offset[k]+(k===2&&side>0?-d*.70*tipFactor:0));
-       pairs.push({...strand,width:strand.width*.85,
-         root:shift(strand.root,0),mid:shift(strand.mid,.45),
-         tip:shift(strand.tip,1)});
-     }
-   }
-   return pairs;
- };
+ const referenceDualCoat=coatDetail!=='low'&&
+   (wolfKingDoubleCoat||!!felineMaster||
+    CANINE_GROOM_WAVE_ONE.includes(s.id));
+ const doubleFurGuides=guides=>
+   referenceDualCoat?referenceDoubleCoat(guides):guides;
  if(wolfKingDoubleCoat)g.root.userData.wolfKingFurDensityMultiplier=2;
+ if(felineMaster&&coatDetail!=='low'){
+   g.root.userData.felineReferenceFurDensityMultiplier=2;
+   g.root.userData.felineQualityInheritedFrom='m001';
+   g.root.userData.referenceQualityRevision=BEAST_REFERENCE_QUALITY_REVISION;
+ }
+ const m001Flow=guides=>
+   (s.id==='m001'||s.id==='m002'||felineMaster)?
+     referenceBeastFlow(guides):guides;
  const addFur=(parent,guides)=>{
    // Material groups are batched: three draw calls instead of hundreds of
    // individual cones. The original fur photo/normal maps remain intact.
@@ -139,22 +421,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  // Individual shoulder, ribcage and pelvis stations replace a rescaled ball.
  // The moving limb pivots and species-specific head/coat are unchanged.
- const bodyWidth=.43+(v%2)*.06,bodyLength=.72+v*.06;
+ const bodyWidth=felineMaster?felineMaster.torsoWidth:.43+(v%2)*.06;
+ const bodyLength=felineMaster?felineMaster.torsoLength:.72+v*.06;
  // Nose is +Z. Reference-matched wolf: broad dropped forequarter,
  // narrow lifted waist and tapered croup instead of a cylindrical trunk.
  // Both torso source geometry and the coat below use these SAME sections.
- const bodyStations=beastRemesh?[
-  // Shoulder carries mass; chest and abdominal undersides are NOT a
-  // circular drum. The forequarter hangs lower while the rear tapers.
-  {z:bodyLength*1.01,y:1.235,rx:.110,ry:.140},
-  {z:bodyLength*.77,y:1.190,rx:bodyWidth*1.08,ry:.348},
-  {z:bodyLength*.46,y:1.158,rx:bodyWidth*1.20,ry:.374},
-  {z:bodyLength*.13,y:1.147,rx:bodyWidth*1.02,ry:.330},
-  {z:-bodyLength*.24,y:1.142,rx:bodyWidth*.83,ry:.288},
-  {z:-bodyLength*.56,y:1.141,rx:bodyWidth*.64,ry:.249},
-  {z:-bodyLength*.84,y:1.151,rx:bodyWidth*.52,ry:.217},
-  {z:-bodyLength*1.03,y:1.161,rx:.087,ry:.100}
- ]:[
+ const bodyStations=felineMaster?felineAnatomicalSections(felineMaster):
+  beastRemesh?referenceBeastTorsoStations({
+   width:bodyWidth,length:bodyLength,centerY:1.15,shape:'wolf'
+  }):[
   {z:bodyLength*.96,y:1.34,rx:.12,ry:.17},
   {z:bodyLength*.71,y:1.32,rx:bodyWidth*.84,ry:.365},
   {z:bodyLength*.25,y:1.30,rx:bodyWidth*1.04,ry:.430},
@@ -171,7 +446,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.152,.23],[0,1.305,.69],.304,.173);
   for(const side of [-1,1])
    g.bridge(torso,'skin',[side*.24,1.158,.18],[side*.175,1.302,.56],.116,.069);
-  if(s.id==='m001'&&coatDetail!=='low'){
+  if((s.id==='m001'||s.id==='m002')&&coatDetail!=='low'){
     // Buried scapular musculature joins the wolf king's thick forelimbs
     // to its chest; no exposed shoulder button or distant-LOD draw call.
     for(const side of [-1,1]){
@@ -188,11 +463,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       hip.userData.hipSocketSeal=true;
     }
   }
+ }else if(felineMaster){
+   // m001 buries the scapula/hip fascia beneath its anatomical torso.
+   // Transfer that join construction, with the feline bone proportions:
+   // remove the previous oversized "one-ball" shoulder altogether.
+   if(coatDetail!=='low')for(const side of [-1,1]){
+    const x=side*felineMaster.torsoWidth*.86;
+    const scapula=g.bridge(torso,'skin',
+      [x,1.13,.30],[x*.84,1.36,.49],.125,.073);
+    scapula.name='feline-reference-scapula-'+(side<0?'L':'R');
+    scapula.userData.m001ReferenceSeam=true;
+    const hip=g.bridge(torso,'skin',
+      [x*.82,1.18,-.35],[x,1.02,-.56],.121,.090);
+    hip.name='feline-reference-hip-fascia-'+(side<0?'L':'R');
+    hip.userData.m001ReferenceSeam=true;
+   }
  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
- // Continuous neck transitions from the shoulder mass into the skull,
- // avoiding the visible "two spheres glued together" silhouette.
+ // Preserve the original m001 neck seam and subtract its thick wolf
+ // throat for cats, instead of welding a spherical lion muzzle on top.
  if(beastRemesh)
   g.bridge(torso,'skin',[0,1.152,.33],[0,1.307,.77+v*.055],.295,.181);
+ else if(felineMaster)
+  g.bridge(torso,'skin',[0,1.29,.32],[0,1.55,.74+v*.055],.246,.158);
  else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)]);
  // The earlier 1/3-scale inner "ball face" floated in front of the muzzle.
@@ -208,41 +500,45 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // The reference has a narrow, centered wolf mask nested *inside*
    // the dense mane: scale facial bone/eyes together but NOT the
    // separately articulated jaw, lips, and nose.
-   faceCore.scale.set(.67,.79,.82);
+   faceCore.scale.set(.64,.79,.82);
    faceCore.userData.anatomicalFaceScale=.79;
-   faceCore.userData.m001CenteredFaceWidthScale=.67;
-   g.root.userData.wolfKingExposedFaceScale=.67;
+   faceCore.userData.m001CenteredFaceWidthScale=.64;
+   g.root.userData.wolfKingExposedFaceScale=.64;
    g.root.userData.wolfKingManeLengthMultiplier=1.2;
+   g.root.userData.m001CrownSweepDirection='backward';
+   g.root.userData.m001CrownLongHairBase=.242;
+   g.root.userData.m001NoseWidthScale=.80;
    g.root.userData.wolfKingReferenceRemesh=true;
  }
  // Rigid reptilian wedge instead of the same spherical skull as a cat.
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
  const cranium=s.id==='m001'?
-   g.axialLoft(faceCore,'skin',[
-     // One uninterrupted small lupine skull: inset brow, tapered nose root,
-     // strong but compact temples, narrowing into the mane at the nape.
-     // Old scaled skull tip projected ahead of the black nose (z=.416
-     // after faceCore scaling, versus nose z=.366), making a grey round
-     // button float above the real rhinarium. Terminate bone BEHIND nose.
-     // Wedge-shaped wolf muzzle: the nose root is narrow, the orbital
-     // ridge opens into the zygoma and the rear skull closes at the nape.
-     // The terminal ring remains behind the head-parented black nose.
-     {z:.355,y:-.160,rx:.026,ry:.030},
-     {z:.320,y:-.116,rx:.099,ry:.078},
-     {z:.270,y:-.040,rx:.196,ry:.127},
-     {z:.175,y:.012,rx:.250,ry:.164},
-     {z:.060,y:.051,rx:.286,ry:.192},
-     {z:-.120,y:.056,rx:.289,ry:.199},
-     {z:-.335,y:.025,rx:.243,ry:.176},
-     {z:-.520,y:-.016,rx:.174,ry:.126},
-     {z:-.635,y:-.032,rx:.050,ry:.062}
-   ],{name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
+   g.axialLoft(faceCore,'skin',M001_CRANIUM_RINGS,
+     {name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
+   s.id==='m002'?
+   g.axialLoft(head,'skin',
+     M001_CRANIUM_RINGS.map(r=>({
+       ...r,z:r.z*M002_REFERENCE_MORPH.faceZ+
+         M002_REFERENCE_MORPH.faceAdvance,
+       y:r.y*M002_REFERENCE_MORPH.faceY,
+       rx:r.rx*M002_REFERENCE_MORPH.faceX,
+       ry:r.ry*M002_REFERENCE_MORPH.faceY
+     })),{name:'organic-cranium-m002',rough:.91,ribbing:.003,
+       faceSculpt:true}):
    g.anatomicalLoft(faceCore,'skin',
+     felineMaster?felineFaceRings(felineMaster,QUADRUPED_CRANIUM_RINGS):
      QUADRUPED_CRANIUM_RINGS.map(r=>({
        ...r,rx:r.rx*skullWidth,rz:r.rz*skullDepth,
      })),{name:'organic-cranium-'+s.id,kind:'face',
        asymmetry:reptile?.10:.04});
+ if(s.id==='m002'){
+   cranium.userData.m001SourceDonor='M001_CRANIUM_RINGS';
+   cranium.userData.m002Morph=M002_REFERENCE_MORPH;
+   g.root.userData.m002FaceQualityDonor='m001';
+   g.root.userData.m002SkullIsPhysicalM001Morph=true;
+   g.root.userData.m002ModelQualityVersion='m001-face-and-follicles-v1';
+ }
  if(s.id==='m001'){
    cranium.userData.anatomyLoft=true;
    cranium.userData.continuousWolfSkull=true;
@@ -253,15 +549,13 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    for(let i=0;i<faceVertices.count;i++){
      const x=faceVertices.getX(i),y=faceVertices.getY(i),
        z=faceVertices.getZ(i);
-     const under=Math.max(0,Math.min(1,(.045-y)/.225));
-     const forward=Math.max(0,Math.min(1,(z+.12)/.34));
-     faceVertices.setX(i,x*(1-.225*under*forward));
+     faceVertices.setX(i,m001CheekContourX(x,y,z));
    }
    faceVertices.needsUpdate=true;
    cranium.geometry.computeVertexNormals();
    cranium.geometry.computeBoundingSphere();
    cranium.userData.invertedTriangleWolfMask=true;
-   g.recessCanineEyeSockets(cranium);
+   g.recessCanineEyeSockets(cranium,{centerX:.128});
  }
  if(s.id==='m001'&&coatDetail==='low'){
    // In massive battles use one coarse sculpted ruff silhouette instead of
@@ -277,6 +571,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  if(reptile){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
+ }else if(felineMaster){
+   g.bridge(head,'skin',[0,-.035,.082],
+     [0,-.114,felineMaster.muzzleFront+.015],
+     .151*felineMaster.cheekTaper,.091);
  }else if(feline){
    g.bridge(head,'skin',[0,-.028,.10],[0,-.12,.36],.209,.131);
  }
@@ -284,24 +582,26 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Legacy protected m005: preserve its original muzzle topology.
    g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
  }
- const muzzle=s.id==='m001'?.16:beastRemesh?.34:reptile?.57:feline?.32:.43;
+ const muzzle=s.id==='m001'?.16:s.id==='m002'?.20:beastRemesh?.34:reptile?.57:
+   felineMaster?felineMaster.muzzleFront:feline?.32:.43;
  if(reptile){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
    g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
  }else if(beastRemesh){
    // Skull -> brow -> bridge -> nose is one authored continuous axial shell,
    // not two intersecting cylindrical tubes and a separate muzzle oval.
-   const muzzleRings=s.id==='m001'?[
+   const muzzleRings=s.id==='m001'||s.id==='m002'?[
      // The original protrusion (.597) is reduced to a short bridge (.382).
      // The rear section overlaps the sculpted face, without a white tube.
      // The bridge's visible end must tuck BEHIND the wet nose rather than
      // appearing as a separate grey circular button above the nostrils.
-     {z:.315,y:-.133,rx:.018,ry:.017},
-     {z:.300,y:-.130,rx:.046,ry:.035},
-     {z:.281,y:-.120,rx:.072,ry:.054},
-     {z:.255,y:-.101,rx:.097,ry:.065},
-     {z:.192,y:-.047,rx:.132,ry:.090},
-     {z:.115,y:-.019,rx:.160,ry:.118}
+     {z:.315,y:-.133,rx:.014,ry:.015},
+     {z:.300,y:-.130,rx:.039,ry:.033},
+     {z:.281,y:-.120,rx:.057,ry:.049},
+     {z:.255,y:-.101,rx:.073,ry:.060},
+     {z:.215,y:-.075,rx:.089,ry:.073},
+     {z:.165,y:-.032,rx:.107,ry:.091},
+     {z:.115,y:-.019,rx:.127,ry:.110}
    ]:[
      {z:.664,y:-.134,rx:.078,ry:.069},
      {z:.635,y:-.125,rx:.154,ry:.092},
@@ -310,22 +610,33 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.283,y:-.045,rx:.232,ry:.152},
      {z:.125,y:-.024,rx:.237,ry:.183}
    ];
-   g.axialLoft(head,'light',muzzleRings,
+   const donorMuzzleRings=s.id==='m002'?
+     muzzleRings.map(r=>({...r,
+       z:r.z*M002_REFERENCE_MORPH.snoutLength+.055,
+       y:r.y*1.05,rx:r.rx*M002_REFERENCE_MORPH.snoutWidth,
+       ry:r.ry*1.12})):muzzleRings;
+   g.axialLoft(head,'light',donorMuzzleRings,
      {name:'beast-continuous-nasal-bridge-'+s.id,rough:.72,ribbing:.002});
+ }else if(felineMaster){
+   g.axialLoft(head,'light',felineMuzzleRings(felineMaster),
+     {name:'feline-master-short-muzzle-'+s.id,rough:.77,ribbing:.002});
  }else g.sphere(head,'light',[0,-.13,muzzle],
    feline?[.204,.126,.259]:[.23,.15,.31]);
  if(beastRemesh){
    // Anatomically tapered rhinarium; alae overlap the bridge and have
    // distinct cut-in nostrils, rather than an inflated black nose sphere.
-   const noseRings=s.id==='m001'?[
+   const noseRings=s.id==='m001'||s.id==='m002'?[
      // All rhinarium rings share the short muzzle's vertical midline.
      // Overlap the grey bridge tip so a detached lower black button
      // cannot render beneath an exposed circular grey end-cap.
-     {z:.366,y:-.131,rx:.012,ry:.014},
-     {z:.358,y:-.130,rx:.048,ry:.034},
-     {z:.346,y:-.130,rx:.065,ry:.043},
-     {z:.321,y:-.131,rx:.064,ry:.041},
-     {z:.288,y:-.131,rx:.043,ry:.028}
+     // Compact wet nose on the existing narrow nasal bridge:
+     // 18–20% less lateral volume, ~10% less vertical bulge and a
+     // shorter rear projection, without exposing the grey bridge tip.
+     {z:.366,y:-.131,rx:.011,ry:.013},
+     {z:.358,y:-.130,rx:.034,ry:.031},
+     {z:.347,y:-.130,rx:.045,ry:.038},
+     {z:.324,y:-.131,rx:.044,ry:.036},
+     {z:.298,y:-.131,rx:.030,ry:.025}
    ]:[
      {z:.706,y:-.161,rx:.027,ry:.029},
      {z:.685,y:-.158,rx:.104,ry:.060},
@@ -333,37 +644,83 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.594,y:-.156,rx:.139,ry:.067},
      {z:.551,y:-.147,rx:.090,ry:.046}
    ];
-   g.axialLoft(head,'shadow',noseRings,
+   const donorNoseRings=s.id==='m002'?
+     noseRings.map(r=>({...r,
+       z:r.z*M002_REFERENCE_MORPH.snoutLength+.055,
+       y:r.y*1.05,rx:r.rx*M002_REFERENCE_MORPH.noseWidth,
+       ry:r.ry*1.15})):noseRings;
+   g.axialLoft(head,'shadow',donorNoseRings,
      {name:s.id==='m001'?'wolf-nasal-cartilage':
        s.id==='m002'?'m002-rhinarium':'beast-rhinarium-'+s.id,
       rough:.31,ribbing:0});
    for(const side of [-1,1]){
-     const tight=s.id==='m001';
+     const tight=s.id==='m001'||s.id==='m002';
+     const scale=s.id==='m002'?M002_REFERENCE_MORPH.noseWidth:1;
+     const zShift=s.id==='m002'?.055:0;
+     const zMul=s.id==='m002'?M002_REFERENCE_MORPH.snoutLength:1;
+     const yMul=s.id==='m002'?1.05:1;
+     const mx=(v)=>v*scale;
+     const mz=(v)=>v*zMul+zShift;
      g.bridge(head,'shadow',
-       [side*(tight?.042:.094),tight?-.130:-.143,tight?.293:.605],
-       [side*(tight?.048:.110),tight?-.139:-.166,tight?.350:.662],
-       tight?.011:.028,tight?.008:.015);
+       [side*mx(tight?.030:.094),yMul*(tight?-.130:-.143),
+        mz(tight?.301:.605)],
+       [side*mx(tight?.035:.110),yMul*(tight?-.139:-.166),
+        mz(tight?.351:.662)],
+       tight?.009:.028,tight?.007:.015);
      g.sphere(head,'shadow',
-       [side*(tight?.048:.108),tight?-.139:-.182,tight?.358:.681],
-       tight?[.007,.005,.004]:[.014,.010,.008],
+       [side*mx(tight?.035:.108),yMul*(tight?-.137:-.182),
+        mz(tight?.358:.681)],
+       tight?[.0058,.0045,.0035]:[.014,.010,.008],
        {name:'beast-nostril-'+(side<0?'L':'R'),rough:.21});
    }
+ }else if(felineMaster){
+   // Small triangular wet cat nose (not a canine ball): taper width
+   // into the philtrum and expose two inset dark nares on its surface.
+   const nose=g.axialLoft(head,'shadow',
+     felineNasalRings(felineMaster),
+     {name:'feline-master-rhinarium-'+s.id,rough:.26,ribbing:0});
+   nose.userData.felineTriangularRhinarium=true;
+   for(const side of [-1,1]){
+     const x=side*felineMaster.noseWidth*.44;
+     const nostril=g.sphere(head,'shadow',
+       [x,-.157,muzzle+.131],[.009,.005,.008],
+       {name:'feline-master-nostril-'+(side<0?'L':'R')});
+     nostril.userData.embeddedNasalAla=true;
+   }
+   const groove=g.tube(head,'shadow',[
+     [0,-.169,muzzle+.118],[0,-.187,muzzle+.106],
+     [0,-.198,muzzle+.091]],.0045);
+   groove.name='feline-philtrum-'+s.id;
  }else g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
    // divided nostrils. Oversized glowing button eyes looked like toys.
    for(const side of [-1,1]){
-     if(s.id==='m001'&&beastRemesh){
+     if((s.id==='m001'||s.id==='m002')&&beastRemesh){
       // Apply the generator's key idea: a sunken socket and optical almond
       // fitted BEHIND the upper eyelid. This is a mesh aperture rather than
       // spherical eyes mounted on the forehead/cheeks.
-      g.recessedCanineAlmondEye(faceCore,{side,name:'wolf-king'});
-      // Keep only a shallow, fitted skin crease. The former elevated
-      // brow tube projected past both canthi like a thick eyeliner wing.
+      const eyeSet=g.recessedCanineAlmondEye(faceCore,{
+        side,name:s.id==='m002'?'flame-wolf':'wolf-king',
+        centerX:s.id==='m002'?.138:.128
+      });
+      // The m002 cranium is the m001 longitudinal source stretched 1.2x
+      // and advanced .04; the aperture must undergo the same transform.
+      // Otherwise ALL dark/iris/lid layers sit INSIDE the new skull.
+      const advance=s.id==='m002'?.077:0;
+      if(advance){
+        for(const part of [eyeSet.orbital,eyeSet.iris,
+          eyeSet.pupil,eyeSet.glint,eyeSet.lid]){
+          part.position.z+=advance;
+          part.userData.m002OpticalSkullAdvance=advance;
+        }
+      }
+      const scale=s.id==='m002'?1.08:1;
       const brow=g.tube(faceCore,'skin',[
-        [side*.087,.137,.160],[side*.129,.145,.182],
-        [side*.176,.133,.166]],.0035);
-      brow.name='m001-eyebrow-ridge-'+(side<0?'L':'R');
+        [side*.073*scale,.137,.160+advance],
+        [side*.113*scale,.145,.182+advance],
+        [side*.157*scale,.133,.166+advance]],.0035);
+      brow.name=s.id+'-eyebrow-ridge-'+(side<0?'L':'R');
       brow.userData.orbitalBrow=true;
      }else if(beastRemesh){
       // Real amber iris and a distinct black pupil, partially under the lids.
@@ -389,15 +746,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      }
      if(!beastRemesh)g.sphere(head,'shadow',
        [side*.083,-.164,muzzle+.288],[.027,.019,.011]);
-     if(s.id!=='m001')g.tube(head,'shadow',
+     if(s.id!=='m001'&&s.id!=='m002')g.tube(head,'shadow',
        [[side*.08,-.23,.53],[side*.13,-.235,.58],
         [side*.16,-.213,.62]],.009);
    }
    // Compact philtrum following the small rhinarium instead of a black seam.
-   g.tube(head,'shadow',s.id==='m001'?
+   g.tube(head,'shadow',s.id==='m001'||s.id==='m002'?
       [[0,-.148,.325],[0,-.163,.308],[0,-.178,.284]]:
       [[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
-       [0,-.26,muzzle+.22]],s.id==='m001'?.005:.009);
+       [0,-.26,muzzle+.22]],
+       (s.id==='m001'||s.id==='m002')?.005:.009);
  }else if(reptile){
    // Narrow slit eyes, partially recessed into the cranium. The eyelids
    // are anatomical pivots for the original blink and death regressions.
@@ -417,9 +775,51 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      g.sphere(lid,'skin',[0,0,0],[.050,.024,.068],
        {name:'nictitating-membrane',rough:.87});
    }
+ }else if(felineMaster){
+   // The old m007-m010 irises were buried inside the actual elliptical
+   // skull (z≈.19 while front skull surface is ≈.26). Follow the real
+   // head loft, then angle the outer canthus up for a predatory cat gaze.
+   // All three eye layers stay together for blink/action regression.
+   for(const side of [-1,1]){
+     const suffix=side<0?'L':'R',x=side*felineMaster.eyeX;
+     const eyes=felineEyeSurface(felineMaster,QUADRUPED_CRANIUM_RINGS,
+       {x,y:.104,clearance:.023});
+     const z=eyes.z,halfWidth=.057;
+     const inner=x-side*halfWidth,outer=x+side*halfWidth;
+     const innerEdge=felineEyeSurface(felineMaster,QUADRUPED_CRANIUM_RINGS,
+       {x:inner,y:.091,clearance:.021});
+     const outerEdge=felineEyeSurface(felineMaster,QUADRUPED_CRANIUM_RINGS,
+       {x:outer,y:.125,clearance:.021});
+     // A rotated black almond opening, with narrow vertical exposed
+     // sclera and tapered brow corners, not a round animal eye button.
+     const aperture=g.sphere(head,'shadow',[x,.105,z],
+       [.062,.023,.014],{name:'feline-master-orbit-'+suffix});
+     aperture.rotation.z=side*.27;
+     const iris=g.sphere(head,'eye',[x,.103,z+.014],
+       [.021,.025,.011],{rough:.21,name:'feline-iris-'+suffix});
+     iris.rotation.z=side*.21;
+     const pupil=g.sphere(head,'shadow',[x,.103,z+.025],
+       [.0058,.022,.006],{name:'feline-slit-pupil-'+suffix});
+     pupil.rotation.z=side*.13;
+     const brow=g.tube(head,'shadow',[
+       [inner,.091,innerEdge.z],[x,.130,z+.018],
+       [outer,.125,outerEdge.z]],.0075);
+     brow.name='feline-sharp-upper-canthus-'+suffix;
+     const lower=g.tube(head,'skin',[
+       [inner,.087,innerEdge.z-.003],[x,.081,z+.017],
+       [outer,.124,outerEdge.z-.002]],.008);
+     lower.name='feline-tight-lower-lid-'+suffix;
+     const lid=g.group('eyelid'+suffix,[x,.133,z+.013],head);
+     lid.userData.restY=lid.position.y;
+     lid.userData.blinkTravel=.039;
+     const skin=g.sphere(lid,'skin',[0,0,0],
+       [.058,.011,.017],{name:'feline-upper-eyelid-'+suffix});
+     skin.rotation.z=side*.24;
+     lid.userData.felineEyeSurfaceZ=eyes.surfaceZ;
+     lid.userData.felineEyeApertureZ=z;
+   }
  }else if(feline){
-   // Cats need their own front-facing oval orbital cavities and vertical
-   // pupils. The generic round eye guide previously looked pasted on.
+   // Preserve protected m006's original eye material/position.
    for(const side of [-1,1]){
      const suffix=side<0?'L':'R';
      g.sphere(head,'shadow',[side*.279,.103,.230],
@@ -508,6 +908,21 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [side*(.295+v*.008),.52+v*.025,-.055],.059);
        g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
      }
+   }else if(felineMaster){
+     // No generic variant-2 horns or rigid ear spheres on the lion.
+     // Rounded short feline ear cartilage is part of the head rig.
+     const suffix=side<0?'L':'R';
+     const ear=g.group('ear'+suffix,
+       [side*(felineMaster.headWidth*.226),.204,-.076],head);
+     g.foxPinna(ear,{
+       side,height:felineMaster.earHeight,
+       width:felineMaster.earWidth,spread:.038,
+       name:'feline-master-pinna-'+s.id+'-'+suffix
+     });
+     g.sphere(ear,'skin',[0,.016,.008],
+       [.096,.051,.083],{name:'feline-master-ear-root-'+suffix});
+     g.sphere(ear,'shadow',[side*.007,.057,.055],
+       [.060,.079,.022],{name:'feline-master-ear-interior-'+suffix});
    }else if(reptile||v>=2){
      // Horns grow from an embedded keratin socket, travel through a
      // tapered curved base and end in a sharp cap. No floating cone root.
@@ -535,10 +950,43 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        lip.name='m001-upper-labial-fold-'+(side<0?'L':'R');
        lip.userData.fangRootCover=true;
      }
+   }else if(beastRemesh&&s.id==='m002'){
+     // The fang is embedded like m001, not a long detached spike on the
+     // far tip of the old swollen snout. Fire coloration is material only.
+     const root=[side*.112,-.174,.265];
+     const fang=g.curvedHorn(head,'bone',root,
+       [side*.122,-.227,.313],[side*.093,-.296,.304],
+       .033,{name:'beast-upper-fang'});
+     fang.userData.m001FangDonor=true;
+     if(coatDetail!=='low'){
+       const skin=g.bridge(head,'skin',
+         [side*.120,-.150,.236],[side*.112,-.191,.281],
+         .036,.024);
+       skin.name='m002-fang-labial-root-'+(side<0?'L':'R');
+       skin.userData.wolfGumEmbedded=true;
+     }
    }else if(beastRemesh)g.curvedHorn(head,'bone',
       [side*.13,-.17,muzzle+.05],[side*.146,-.265,muzzle+.14],
       [side*.115,-.335,muzzle+.23],.046,{name:'beast-upper-fang'});
-   else g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
+   else if(felineMaster){
+     // Long sabertooth or small lion/panther tooth is part of the
+     // MAXILLA. Place enamel root under a labial gum sleeve instead
+     // of dangling cone tips from the jaw-opening pivot.
+     const saber=s.id==='m007',length=felineMaster.saberToothLength;
+     const root=[side*.096,-.178,muzzle+.020];
+     const gum=g.bridge(head,'skin',
+       [side*.099,-.141,muzzle-.023],
+       [side*.094,-.190,muzzle+.035],.045,.026);
+     gum.name='feline-upper-gum-socket-'+s.id+'-'+(side<0?'L':'R');
+     gum.userData.fangRootCover=true;
+     const fang=g.curvedHorn(head,'bone',root,
+       [side*.100,-.178-length*.52,muzzle+.060],
+       [side*.073,-.178-length,muzzle+.073],
+       saber?.027:.017,
+       {name:'feline-master-upper-canine-'+s.id+'-'+(side<0?'L':'R')});
+     fang.userData.felineDentalRoot=true;
+     fang.userData.gumCovered=true;
+   }else g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
  if(s.id==='m004'){
    // Enlarged temporalis and tear-duct ridges give the fast hunter a
@@ -578,33 +1026,28 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
  }
  if(s.id==='m002'){
-   // Cranial surface references: wolf sagittal crest, zygomatic arch and
-   // molar/masseter space. Shape stays in head-local coordinates, so the
-   // whole snout remains attached during head turns and attack lunges.
-   g.bridge(head,'skin',[0,.083,-.18],[0,-.051,.446],.187,.113);
-   g.tube(head,'light',[[0,.267,-.20],[0,.292,.01],
-     [0,.212,.19]],.034);
+   // High-quality *subtractive* m001 face. No generic thick nasal
+   // bridge, oversized triangular cheek ball, or duplicate forward tube.
+   // The cranium already comes from the physical m001 ring topology.
    for(const side of [-1,1]){
-     // Masseter cheek volume and the bone arch are three-dimensional.
-     g.bridge(head,'skin',[side*.216,-.048,-.043],
-       [side*.281,-.102,.226],.132,.088);
-     g.tube(head,'light',[[side*.185,.104,-.102],
-       [side*.322,.064,.070],[side*.325,-.015,.267]],.030);
-     g.sphere(head,'skin',[side*.236,-.096,.080],
-       [.123,.135,.194],{name:'m002-masseter'});
-     g.sphere(head,'shadow',[side*.085,-.169,muzzle+.288],
-       [.027,.014,.013],{name:'m002-nostril'});
-     // Under-eye tissue overlaps the orbital socket without bulging eyes.
-     g.tube(head,'skin',[[side*.262,.104,.158],
-       [side*.306,.117,.255],[side*.273,.099,.342]],.028);
+     const contour=g.bridge(head,'skin',
+       [side*.189,-.054,-.103],[side*.180,-.122,.165],
+       .095,.049);
+     contour.name='m002-fitted-zygomatic-'+(side<0?'L':'R');
+     // Retain the anatomical masseter with an INSET socket rather than
+     // a spherical pad hovering above the side of the head.
+     g.sphere(head,'skin',[side*.181,-.111,.061],
+       [.069,.095,.117],{name:'m002-masseter'});
+     g.sphere(head,'shadow',[side*.044,-.145,.528],
+       [.009,.005,.007],{name:'m002-nostril'});
      for(let i=0;i<4;i++){
-       const z=muzzle+.09+i*.036;
-       g.sphere(head,'shadow',[side*(.137+i*.010),-.195,z],
-         [.006,.006,.007],{rough:.85,name:'m002-vibrissa-root'});
+       const z=.298+i*.032;
+       g.sphere(head,'shadow',[side*(.085+i*.009),
+         -.191+(i*.006),z],[.004,.005,.005],
+         {rough:.85,name:'m002-vibrissa-root'});
      }
    }
-   if(!beastRemesh)g.sphere(head,'shadow',[0,-.164,muzzle+.294],
-     [.145,.045,.088],{name:'m002-rhinarium'});
+   g.root.userData.m002OriginalFaceBulkRemoved=true;
  }
  if(s.id==='m001'){
    // Skull, cheeks and forehead are now ONE sculpted axial shell above.
@@ -622,25 +1065,33 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // opened an ugly physical seam even when the mouth was CLOSED. Nest the
  // animated mandible under the skull and express its original world-space
  // rest position in head-local coordinates (head 1.300 / .786).
- const jaw=s.id==='m001'?
+ const jaw=s.id==='m001'||s.id==='m002'?
    g.group('jaw',[0,-.140,.129],head):
+   felineMaster?
+   g.group('jaw',[0,-.140,.26-v*.06],head):
    g.group('jaw',[0,beastRemesh?1.160:1.42,
      beastRemesh?1.046:.96]);
- if(s.id==='m001')jaw.userData.skullMountedMandible=true;
+ if(felineMaster)jaw.userData.felineMasterConnectedJaw=true;
+ if(s.id==='m001'||s.id==='m002')jaw.userData.skullMountedMandible=true;
  if(s.id==='m002'){
-   // An independently opening lower mandible, with the canine teeth
-   // mounted on the same jaw pivot (not left floating in the skull).
-   g.bridge(jaw,'skin',[0,-.023,.008],[0,-.065,.367],.173,.100);
+   // Reference m001 jaw is a child of the skull. The mandibular bar is
+   // narrow enough to nest inside the source face and teeth share pivot.
+   const body=g.bridge(jaw,'skin',[0,-.025,-.065],
+     [0,-.059,.198],.119,.076);
+   body.name='m002-embedded-mandibular-body';
    for(const side of [-1,1]){
-     g.tube(jaw,'light',[[side*.155,-.014,.006],
-       [side*.149,-.068,.18],[side*.118,-.082,.355]],.029);
-     g.spike(jaw,'bone',[side*.133,-.035,.309],
-       [side*.127,.094,.347],.041);
+     g.tube(jaw,'light',[
+       [side*.102,-.011,-.035],[side*.090,-.055,.074],
+       [side*.071,-.074,.191]],.015);
+     const tooth=g.rootedSpike(jaw,'bone','skin',
+       [side*.083,-.046,.184],[side*.079,.035,.224],.018,
+       {name:'m002-mandibular-canine-'+(side<0?'L':'R')});
+     tooth.tooth.userData.toothOnMandible=true;
    }
  }
  if(beastRemesh){
    // Continuous lower mandible with chin narrowing, not two stacked spheres.
-   g.axialLoft(jaw,'skin',s.id==='m001'?[
+   g.axialLoft(jaw,'skin',(s.id==='m001'||s.id==='m002')?[
      // Real short muzzle: moving lower jaw matches the compact nose.
      {z:.212,y:-.061,rx:.037,ry:.026},
      {z:.173,y:-.053,rx:.082,ry:.041},
@@ -654,6 +1105,17 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:.071,y:-.030,rx:.177,ry:.072},
      {z:-.108,y:-.012,rx:.092,ry:.065}
    ],{name:'beast-integrated-mandible-'+s.id,rough:.81,ribbing:.002});
+ }else if(felineMaster){
+   // The separate jaw follows the head turn, with a tapered jaw body
+   // instead of a broad black floating elliptical mouth plate.
+   g.axialLoft(jaw,'skin',[
+     {z:.205,y:-.054,rx:.032,ry:.022},
+     {z:.156,y:-.047,rx:.082,ry:.042},
+     {z:.075,y:-.029,rx:.120,ry:.058},
+     {z:-.025,y:-.014,rx:.132,ry:.064},
+     {z:-.112,y:.003,rx:.069,ry:.052}
+   ].map(p=>({...p,rx:p.rx*felineMaster.cheekTaper})),
+   {name:'feline-master-mandible-'+s.id,rough:.82,ribbing:.003});
  }else{
    g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
    if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
@@ -663,26 +1125,34 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Keep both surfaces slightly overlapping in the idle pose.
  const jawOffsetZ=.26-v*.06;
  for(const side of [-1,1]){
-   g.tube(head,'shadow',s.id==='m001'?[
+   g.tube(head,'shadow',(s.id==='m001'||s.id==='m002')?[
      [side*.112,-.149,.11],
      [side*.106,-.176,.260],
      [side*.068,-.184,.329]
+   ]:felineMaster?[
+     [side*.117,-.163,.072],
+     [side*.108,-.182,muzzle-.022],
+     [side*.061,-.189,muzzle+.114]
    ]:[
      [side*.205,-.192,.135],
      [side*.204,-.200,muzzle+.025],
      [side*.155,-.214,muzzle+.263]
-   ],s.id==='m001'?.007:.012);
-   g.tube(jaw,'shadow',s.id==='m001'?[
+   ],(s.id==='m001'||s.id==='m002')?.007:felineMaster?.007:.012);
+   g.tube(jaw,'shadow',(s.id==='m001'||s.id==='m002')?[
      [side*.108,-.028,-.069],
      [side*.102,-.055,.057],
      [side*.062,-.061,.202]
+   ]:felineMaster?[
+     [side*.107,-.025,-.072],
+     [side*.097,-.049,.032],
+     [side*.051,-.060,.166]
    ]:[
      [side*.200,-.052,.135-jawOffsetZ],
      [side*.198,-.061,muzzle+.025-jawOffsetZ],
      [side*.153,-.065,muzzle+.263-jawOffsetZ]
-   ],s.id==='m001'?.007:.013);
+   ],(s.id==='m001'||s.id==='m002')?.007:felineMaster?.008:.013);
  }
- if(s.id==='m001'){
+ if(s.id==='m001'||s.id==='m002'){
    // Replace the exposed black mouth button with a shallow tapered oral
    // opening that is entirely inside the opening lower mandible.
    const mouthSlit=g.axialLoft(jaw,'shadow',[
@@ -692,19 +1162,29 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:-.090,y:-.026,rx:.030,ry:.006}
    ],{name:'quadruped-oral-cavity',rough:.93,ribbing:0});
    mouthSlit.userData.m001RecessedOralSlit=true;
+ }else if(felineMaster){
+   // Old generic dark oval hovered in front of the upper feline lip.
+   // A tapered negative-space oral seam belongs to the moving jaw.
+   const cavity=g.axialLoft(jaw,'shadow',[
+     {z:.202,y:-.045,rx:.019,ry:.005},
+     {z:.147,y:-.043,rx:.072,ry:.010},
+     {z:.069,y:-.032,rx:.087,ry:.012},
+     {z:-.062,y:-.024,rx:.033,ry:.006}
+   ],{name:'quadruped-oral-cavity',rough:.92,ribbing:0});
+   cavity.userData.felineMouthSocket=true;
  }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
    [.136,.018,.145],{name:'quadruped-oral-cavity'});
  g.sphere(jaw,'light',[0,-.044,muzzle-.12+v*.06],
-   s.id==='m001'?[.060,.010,.058]:[.084,.014,.098],
+   (s.id==='m001'||s.id==='m002')?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
- if(s.id==='m001'){
+ if(s.id==='m001'||s.id==='m002'){
    // Small lower incisors erupt UP from the gumline; the previous four
    // downward spikes made the jaw look like disconnected hanging pieces.
    for(let i=0;i<6;i++){
      const x=(i-2.5)*.029;
      const tooth=g.rootedSpike(jaw,'bone','skin',
        [x,-.047,.148],[x*1.04,-.012,.169],.009,
-       {name:'m001-lower-incisor-'+i});
+       {name:s.id+'-lower-incisor-'+i});
      tooth.tooth.userData.m001DentalArch='mandible';
    }
    // Opposing upper incisors stay fixed to the upper muzzle and reveal
@@ -713,8 +1193,31 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const x=(i-2.5)*.026;
      const tooth=g.rootedSpike(head,'bone','skin',
        [x,-.176,.285],[x*1.02,-.202,.297],.0085,
-       {name:'m001-upper-incisor-'+i});
+       {name:s.id+'-upper-incisor-'+i});
      tooth.tooth.userData.m001DentalArch='maxilla';
+   }
+ }else if(felineMaster){
+   // A true six-incisor dental arc: tiny upper crowns move WITH the head,
+   // the small lower crowns move WITH the opening jaw. Do not reuse four
+   // oversized downward cones that float outside the cat's mouth.
+   for(let i=0;i<6;i++){
+     const x=(i-2.5)*.022;
+     const lower=g.rootedSpike(jaw,'bone','skin',
+       [x,-.043,.153],[x*1.025,-.014,.169],.007,
+       {name:'feline-lower-incisor-'+s.id+'-'+i});
+     lower.tooth.userData.felineDentalRoot='mandible';
+     const upper=g.rootedSpike(head,'bone','skin',
+       [x,-.175,muzzle+.037],
+       [x*1.025,-.199,muzzle+.050],.007,
+       {name:'feline-upper-incisor-'+s.id+'-'+i});
+     upper.tooth.userData.felineDentalRoot='maxilla';
+   }
+   for(const side of [-1,1]){
+     const lower=g.rootedSpike(jaw,'bone','skin',
+       [side*.091,-.043,.139],
+       [side*.090,.002,.159],.011,
+       {name:'feline-lower-canine-'+s.id+'-'+(side<0?'L':'R')});
+     lower.tooth.userData.felineDentalRoot='mandible';
    }
  }else for(let i=0;i<4;i++)g.spike(jaw,'bone',
    [(i-1.5)*.12,.01,.27],
@@ -730,13 +1233,21 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // under the midline of the chest; hips follow the narrower rear flanks.
    // Both toe and hock stay on the SAME lateral axis, no toe-out rotation.
    const lateralX=s.id==='m001'?
-     (fore>0?.402:.317):.29;
+     (fore>0?.402:.317):
+     felineMaster?(fore>0?felineMaster.torsoWidth*.87:
+       felineMaster.torsoWidth*.83):.29;
    const leg=g.group('leg'+name,
      pelvisMounted?
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
        [side*lateralX,beastRemesh?.550:.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:
-       (s.id==='m001'?torso:g.root));
+       (s.id==='m001'||s.id==='m002'||felineMaster?torso:g.root));
+   if(felineMaster){
+     leg.userData.felineJointSeamRefinement=true;
+     leg.scale.x=felineMaster.legWidth;
+     leg.scale.z=felineMaster.legWidth;
+     leg.userData.felineProximalJoint=fore>0?'scapula':'femur';
+   }
    // Anatomical limb shortening keeps paw clearance at the ground by
    // lowering its hip pivot by the same amount. Distal pivots remain real
    // joints and are not replaced with stretched mesh tubes.
@@ -746,7 +1257,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
    // Distal motion is independent from shoulder/hip rotation, retaining
    // the original limb and ground-contact positions.
-   if(s.id==='m001'){
+   if(s.id==='m001'||s.id==='m002'||felineMaster){
      leg.userData.proximalSocket=fore>0?'shoulder':'hip';
      // A small overlapped moving proximal sleeve follows the limb's
      // rotation and disappears beneath its torso-mounted fascia.
@@ -756,11 +1267,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [0,.34,fore>0?-.018:-.054],
          [0,.575,fore>0?-.020:-.050],
          fore>0?.146:.138,fore>0?.168:.151);
-       sleeve.name='m001-proximal-sleeve-'+name;
+       sleeve.name=(felineMaster?'feline':'m001')+
+         '-proximal-sleeve-'+name;
        sleeve.userData.jointSeamSleeve=true;
      }
    }
-   if(beastRemesh)g.limbLoft(leg,'skin',(fore>0?[
+   if(beastRemesh||felineMaster)g.limbLoft(leg,'skin',(fore>0?[
      // Forelimb: scapula -> humerus -> elbow. Elbow lies BEHIND the wrist.
      {x:0,y:.55,z:.025,rx:.133,rz:.154},
      {x:0,y:.34,z:.042,rx:.193,rz:.213},
@@ -774,7 +1286,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {x:0,y:.14,z:.050,rx:.189,rz:.174},
      {x:0,y:-.080,z:.177,rx:.125,rz:.119},
      {x:0,y:-.25,z:.166,rx:.105,rz:.112}
-   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:p),
+   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:
+      felineMaster?{...p,rx:p.rx*.81,rz:p.rz*.79}:p),
    {name:'beast-upper-limb-'+name});
    else g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
@@ -789,7 +1302,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [0,-.065,.015],leg);
    if(s.id==='m001')distal.userData.anatomicalJoint=
      fore>0?'elbow':'stifle';
-   if(beastRemesh){
+   if(beastRemesh||felineMaster){
     g.limbLoft(distal,'skin',(s.id==='m001'?(fore>0?[
       // Forearm starts over elbow and tapers into elevated carpus.
       {x:0,y:.135,z:-.075,rx:.130,rz:.128},
@@ -818,8 +1331,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
     ])).map(p=>s.id==='m001'?{
       ...p,rx:p.rx*.83,rz:p.rz*.84
+    }:felineMaster?{
+      ...p,rx:p.rx*.81,rz:p.rz*.80
     }:p),{name:'beast-shin-'+name});
-    if(s.id==='m001'&&coatDetail!=='low'){
+    if((s.id==='m001'||s.id==='m002'||felineMaster)&&
+       coatDetail!=='low'){
       // A small overlapping fascia above/below the actual hinge keeps
       // the silhouette continuous while two joint rotations stay free.
       const rear=fore<0;
@@ -827,13 +1343,15 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         rear?[0,-.090,.106]:[0,-.070,-.090],
         rear?[0,-.235,.140]:[0,-.225,-.102],
         rear?.136:.130,rear?.122:.113);
-      upperFold.name='m001-upper-knee-fascia-'+name;
+      upperFold.name=(felineMaster?'feline':'m001')+
+        '-upper-knee-fascia-'+name;
       upperFold.userData.kneeUpperCover=true;
       const lowerFold=g.bridge(distal,'skin',
         rear?[0,.090,.100]:[0,.110,-.091],
         rear?[0,-.125,.124]:[0,-.130,-.047],
         rear?.120:.115,rear?.111:.107);
-      lowerFold.name='m001-lower-knee-fascia-'+name;
+      lowerFold.name=(felineMaster?'feline':'m001')+
+        '-lower-knee-fascia-'+name;
       lowerFold.userData.kneeLowerCover=true;
     }
    }else{
@@ -885,6 +1403,26 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         [x,-.016,.146],[x*1.11,-.058,.251],.019,
         {name:'rooted-claw-beast-'+digit});
      }
+   }else if(felineMaster&&coatDetail==='low'){
+     // 1000v1000 crowd uses a single silhouette paw, not four separately
+     // allocated toe groups and claw roots per leg.
+     feet(g,distal,0,0,0,true,.81*felineMaster.pawWidth);
+   }else if(felineMaster){
+     // Four articulated pads on a true cat toe pivot; none of the
+     // cylindrical canine feet or claws are reused on m007-m010.
+     const toe=g.group('toe'+name,[0,-.436,.144],distal);
+     toe.userData.felinePad=true;
+     g.sphere(toe,'skin',[0,-.033,.018],
+       [.133*felineMaster.pawWidth,.055,.145],
+       {name:'feline-master-metacarpal-pad'});
+     for(let digit=0;digit<4;digit++){
+       const x=(digit-1.5)*.056*felineMaster.pawWidth;
+       g.sphere(toe,'skin',[x,-.051,.112],[.033,.043,.079],
+         {name:'feline-master-digit-'+digit});
+       g.rootedSpike(toe,'bone','skin',[x,-.032,.158],
+         [x*1.08,-.077,.213],.016,
+         {name:'feline-master-retractile-claw-'+digit});
+     }
    }else if(s.id!=='m003'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
      // the legacy fixed paw as well made duplicate feet and floating claws.
@@ -904,7 +1442,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
          [x,-.073,.262],.024,{name:'rooted-claw-m003-'+digit});
      }
    }
-   if(!beastRemesh)g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
+   // Old fallback ball was incorrectly added on top of EVERY feline
+   // anatomy-loft limb, producing detached circular shoulder/hip joints.
+   if(!beastRemesh&&!felineMaster)
+     g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
      // Each fur region belongs to its own anatomical joint. Previously
      // all three patches lived on 'leg', so the shank and paw coat detached
@@ -917,6 +1458,18 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        width:.014,seed:v*19+side*5+fore*7+31,
        minVertical:-.85,axis:'y',gravity:.20,
      });
+     // Hair-covered shoulder socket follows the proximal bone while
+     // trunk-owned guard hair covers the same seam from the other side.
+     // The two coat layers overlap, but require NO additional limb mesh.
+     const shoulderOverlap=(s.id==='m001'||s.id==='m002')?
+      generateCanineFurGuides({
+       center:[0,.456,fore>0?.002:-.061],
+       radii:[.151,.118,.158],
+       rows:source?19:12,around:source?27:20,
+       length:.119,width:.011,seed:v*31+side*13+fore*17+773,
+       axis:'y',minVertical:-.70,maxVertical:.90,gravity:.29,
+     }).filter(h=>h.root[1]>.355&&h.root[1]<.565)
+       .map(h=>({...h,mid:[h.mid[0],h.mid[1]-.009,h.mid[2]-.012]})):[];
      const lower=generateCanineFurGuides({
        center:[0,s.id==='m001'?-.115:-.28,0],
        radii:s.id==='m001'?[.123,.242,.130]:[.145,.29,.156],
@@ -936,7 +1489,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // moving limb: stable four draw calls across all legs, GPU deformation,
      // and no coat detachment at the elbow/hock/toe joint.
      g.skinnedFur(leg,'skin',[
-       {joint:leg,region:'upper',guides:doubleFurGuides(upper)},
+       {joint:leg,region:'upper',
+         guides:doubleFurGuides(m001Flow([...upper,...shoulderOverlap]))},
        {joint:distal,region:'lower',guides:doubleFurGuides(lower)},
        {joint:toeParent,region:'paw',guides:doubleFurGuides(paw)},
      ],{name:'canine-coat-leg'+name});
@@ -1002,7 +1556,26 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      length:.15,width:.024,seed:v*11+19,
      minVertical:-.94,maxVertical:.79,gravity:.28,
    });
-   addFur(torso,[...flank,...chest]);
+   // A second layer is rooted on the actual torso loft directly over the
+   // shoulder seam. Root positions align with the torso instead of
+   // hovering on a generic ellipsoid. The leg sleeve is feathered into it.
+   const shoulderMantle=(s.id==='m001'||s.id==='m002')?
+     generateCanineAxialFurGuides({
+     stations:bodyStations,rows:source?24:15,around:source?42:30,
+     lengthProfile:[
+       {z:bodyLength*1.01,length:.085},
+       {z:bodyLength*.77,length:.172},
+       {z:bodyLength*.46,length:.193},
+       {z:bodyLength*.13,length:.136},
+       {z:-bodyLength*.24,length:.069},
+       {z:-bodyLength*1.03,length:.036}
+     ],
+     width:.013,seed:v*71+761,minVertical:-.95,maxVertical:.96,
+     gravity:.38,
+   }).filter(h=>Math.abs(h.root[0])>.292&&
+     h.root[2]>.18&&h.root[2]<.65&&
+     h.root[1]>.97&&h.root[1]<1.48):[];
+   addFur(torso,m001Flow([...flank,...chest,...shoulderMantle]));
    // Merge the long ruff with short skull and cheek hairs, preserving
    // the original three material batches and keeping eyes unobstructed.
    const faceGuides=s.id==='m001'?[]:[
@@ -1069,6 +1642,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      const len=Math.hypot(...base)||.001;
      const tier=.88+.20*((i*17%19)/18);
      const target=Math.min(.348,Math.max(.085,len*1.13*tier));
+     if(h.m001ContourGuide)return {...h,
+       wolfKingManeLengthMultiplier:1.2,
+       originalHairLength:Math.hypot(...h.tip.map((v,k)=>v-h.root[k]))};
      const faceCurtain=!!h.m001FaceCurtain;
      const faceUnderfur=!!h.m001ScalpUnderfur;
      const forelock=!!h.m001Forelock;
@@ -1121,6 +1697,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // wolf skull and the mane is entirely groomed on the moving head.
    // Ear / eyebrow / eye clearances are cut out of the hair root mask.
    const wolfKingMane=s.id==='m001'?[
+     // The first layer follows the actual narrow cranium loft, not an
+     // ellipsoid displaced from the skull. This connects cheek and crown
+     // hair continuously to the newly slimmed facial outline.
+     ...m001FittedFacialMane(faceCore,source),
      // Skin-hugging short fibres grow at the *facial* cheek line, not
      // just at the outer nape. Long guard hairs overlay these roots.
      // Both are merged into the ORIGINAL three head material batches.
@@ -1145,14 +1725,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        h.root[1]>-.163&&h.root[1]<.185)
        .map(h=>({...h,m001FaceCurtain:true}))),
      // Brow fringe starts just above the face rather than behind the ears.
-     ...generateCanineFurGuides({
-       center:[0,.245,.163],radii:[.223,.080,.121],
-       rows:source?32:23,around:source?42:32,
-       length:.225,width:.0095,seed:v*103+929,
-       minVertical:-.04,maxVertical:.99,gravity:.40
-     }).filter(h=>h.root[1]>.209&&h.root[2]>.132&&
-       Math.abs(h.root[0])>.071&&Math.abs(h.root[0])<.219)
-       .map(h=>({...h,m001Forelock:true})),
+     // Crown strands above now use the same sculpted skull rings;
+     // the previous free-floating forehead ellipsoid has been removed.
      // Upper crown and both side-manes approach the throat-ruff volume
      // while the bare face stays open; retain three material batches.
      ...generateCanineFurGuides({
@@ -1246,13 +1820,26 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      // The old generic bare-face mask deleted all roots within x=.186,
      // which is precisely why the mane began too far from the face.
      // Anterior scalp guides have their own eye/nose clearance masks.
-     if(h.m001ScalpUnderfur||h.m001FaceCurtain||h.m001Forelock)
+     if(h.m001ContourGuide||h.m001ScalpUnderfur||
+        h.m001FaceCurtain||h.m001Forelock)
        return true;
      return !(h.root[2]>.078&&Math.abs(h.root[0])<.186&&
        h.root[1]>-.223&&h.root[1]<.293);
    }):[];
+   const waveOneCrown=s.id==='m002'?[]:fittedWolfFamilyCrown(s,source);
+   const m002Coat=s.id==='m002'?m002ReferenceMane(source):[];
    const fullHeadCoat=s.id==='m001'?
-     [...headGuides,...referenceLayeredMane(mantle)]:headGuides;
+     [...headGuides,...referenceLayeredMane(mantle)]:
+     s.id==='m002'?referenceLayeredMane(m002Coat):
+     [...headGuides,...waveOneCrown];
+   if(m002Coat.length){
+     g.root.userData.m002SourceM001Mane=true;
+     g.root.userData.referenceGroomWave='m001-source-m002';
+     g.root.userData.m002M001ContourGuides=m002Coat.length;
+     g.root.userData.m002FaceCoatDensityMultiplier=2;
+   }
+   if(waveOneCrown.length)
+     g.root.userData.referenceGroomWave='canine-m002-m004';
    addFur(head,fullHeadCoat);
    if(s.id==='m001'){
      for(const mesh of head.children.slice(maneStart)){
@@ -1262,6 +1849,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        mesh.userData.maneLengthMultiplier=1.2; // groomed layered coat
        mesh.userData.exposedFaceScale=.67;
        mesh.userData.faceRootedRuff=true;
+       mesh.userData.contourAlignedForehead=true;
      }
    }
  }
@@ -1278,7 +1866,37 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
  // so it follows jaw anticipation and neck pitch without floating.
- if(feline&&coatDetail!=='low'){
+ if(felineMaster&&coatDetail!=='low'){
+   const source=coatDetail==='source';
+   // Both hair surfaces are anchored to the SAME anatomical loft as
+   // the skull and the now slender shoulder/rib/waist. No wigs.
+   const torsoCat=generateCanineAxialFurGuides({
+     stations:bodyStations,rows:source?33:22,around:source?42:30,
+     lengthProfile:[
+       {z:bodyLength*1.00,length:felineMaster.guardHair*.64},
+       {z:bodyLength*.70,length:felineMaster.guardHair},
+       {z:bodyLength*.15,length:felineMaster.underHair},
+       {z:-bodyLength*.35,length:felineMaster.underHair*.88},
+       {z:-bodyLength*1.02,length:felineMaster.underHair*.55}
+     ],
+     width:.0085,seed:110+v*17,minVertical:-.96,maxVertical:.96,
+     gravity:.19
+   });
+   const skullCat=fittedFelineMasterHair(felineMaster,source);
+   addFur(torso,m001Flow(torsoCat));
+   addFur(head,m001Flow(skullCat));
+   g.root.userData.felineMasterSource=FELINE_SOURCE_MODEL;
+   g.root.userData.felineReferenceCrownRows=
+     REFERENCE_CROWN_QUALITY[source?'source':'high'].rows;
+   g.root.userData.felineReferenceCrownLayers=
+     REFERENCE_CROWN_QUALITY[source?'source':'high'].layers;
+   g.root.userData.felineReferenceSeamCount=4;
+   g.root.userData.felineMasterVariant=felineMaster.archetype;
+   g.root.userData.felineFaceWidthRatio=felineMaster.headWidth;
+   g.root.userData.felineTorsoWidth=felineMaster.torsoWidth;
+   g.root.userData.felineFurGuides=skullCat.length;
+ }else if(feline&&coatDetail!=='low'){
+   // Keep original protected m006 coat completely unchanged.
    const master=coatDetail==='source',lion=s.id==='m008';
    addFur(torso,generateCanineFurGuides({
      center:[0,1.30,-.025],radii:[.44+(v%2)*.06,.43,.71+v*.06],
@@ -1335,7 +1953,32 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }));
  }
  if(!reptile){
-   if(beastRemesh){
+   if(felineMaster){
+    // The old 8-20 generic back spikes were placed at y=1.70 and
+    // translated another -.72 along z, floating behind the cat's
+    // shoulders. Only the ice sabertooth gets anatomical ice keratin.
+    // Embed every root beneath the actual upper torso loft surface;
+    // leave lion/leopard/tiger backs smooth and naturally feline.
+    if(s.id==='m007'&&coatDetail!=='low'){
+     const crystalCount=6;
+     for(let i=0;i<crystalCount;i++){
+      const z=.51-i*.174;
+      const surface=felineDorsalSurface(felineMaster,z);
+      const x=(i%2?1:-1)*.022;
+      const base=[x,surface-.086,z+.034];
+      const elbow=[x*.9,surface+.025,z-.024];
+      const tip=[x*1.24,surface+.132+(i%3)*.015,z-.080];
+      const ice=g.curvedHorn(torso,i%3===0?'accent':'light',
+       base,elbow,tip,.024,
+       {name:'feline-anatomical-ice-crest-'+i});
+      ice.userData.felineDorsalRooted=true;
+      ice.userData.felineDorsalSurface=surface;
+      ice.userData.felineDorsalRootY=base[1];
+      ice.userData.felineDorsalTipY=tip[1];
+     }
+    }
+    g.root.userData.felineLegacyFloatingSpikesRemoved=true;
+   }else if(beastRemesh){
     const count=9+v*2;
     for(let i=0;i<count;i++){
      const t=i/(count-1),z=.48-.99*t;
@@ -1350,7 +1993,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     const z=-.25+i*.085,y=1.70+.05*Math.sin(i);
     g.spike(torso,i%3===0?'accent':'light',[0,y,z-.72],[0,y+.10+(v===2?.20:.07),z-.78],.028);
    }
-   if(feline){for(let i=0;i<5;i++)for(const side of [-1,1]){
+   if(feline&&!felineMaster){for(let i=0;i<5;i++)for(const side of [-1,1]){
      g.spike(head,'light',[side*.24,.12-i*.06,.1],[side*(.36+i*.02),.02-i*.06,.22],.027);
    }}
  }else{
@@ -1933,6 +2576,12 @@ export function createMonsterModel(spec,{detail='high'}={}){
    default:throw Error('Unknown anatomy: '+spec.family);
  }
  addNonhumanMonsterWardrobe(g,spec);
+ // The optional effects are created lazily only when a rendered near-LOD
+ // m001 performs an action. Pure timing tests can import monster-animation
+ // without importing Three.js or allocating a GPU mesh.
+ if(spec.id==='m001')g.root.m001FxThree=THREE;
+ if(['m002','m007','m008','m009','m010'].includes(spec.id))
+   g.root.beastFxThree=THREE;
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
@@ -1951,5 +2600,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-anatomical-reference-v15-20261117';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m001-crown-motion-v17-20261117';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';

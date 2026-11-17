@@ -29,48 +29,50 @@ footer{display:flex;justify-content:space-between;gap:6px;color:var(--muted);fon
 <div class="buttons"><button id="prev">◀ 戻る</button><button id="next">次のセリフ ▶</button><button id="game">本編を開く</button></div></div>
 <footer><span>4/2/2構成・原画は文字なし・台詞はUI表示</span><span id="approval">仮素材は正式P0未承認</span></footer>
 <script type="module">
-import {compactComicForStage,COMPACT_TWENTY_CHAPTER_PLAN} from './src/story-compact-comic.js';
+import {compactComicForStage,COMPACT_TWENTY_CHAPTER_PLAN} from './src/story-compact-comic.js?v=story-20261117-reader1';
 import {registeredStoryPanelAsset,storyArtDisplayUrl} from './src/story-panel-registered-art.js';
 import {renderStoryRubyText} from './src/story-ruby-display.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
 const $=x=>document.getElementById(x),cast=new Set(STORY_KEY_PEOPLE.map(x=>x.id));
-let scenes=[],sceneIndex=0,lineIndex=0,version=0,mode='pre';
+let scenes=[],sceneIndex=0,lineIndex=0,version=0,mode='pre',recap=null,showRecap=false;
 for(const plan of COMPACT_TWENTY_CHAPTER_PLAN){const o=document.createElement('option');o.value=plan.chapter;o.textContent='第'+plan.chapter+'章';$('chapter').append(o)}
 function stages(){const ch=Number($('chapter').value)||1;$('stage').replaceChildren();for(const id of COMPACT_TWENTY_CHAPTER_PLAN[ch-1].stageIds){const o=document.createElement('option');o.value=id;o.textContent='S'+id.slice(-2);$('stage').append(o)}render()}
 function render(){
  const id=$('stage').value||'c01-s01',gender=$('gender').value;mode=$('outcome').value;
  const context={protagonistGender:gender,chapterOpeningSeen:false,...(mode==='victory'?{battleOutcome:{victory:true}}:mode==='defeat'?{battleOutcome:{victory:false}}:mode==='gameover'?{battleOutcome:{victory:false,playerCommanderDead:true}}:{})};
  const comic=compactComicForStage(id,mode==='pre'?'pre':'post',context);
- scenes=comic.panels;sceneIndex=0;lineIndex=0;show();
+ scenes=comic.panels;recap=comic.recap||null;showRecap=Boolean(recap);sceneIndex=0;lineIndex=0;show();
 }
 function show(){
  if(!scenes.length)return;
- const s=scenes[sceneIndex],talk=s.dialogueTurns?.[lineIndex]||s,cut=s.sharedArtAsset||registeredStoryPanelAsset(s);
+ const s=showRecap?recap:scenes[sceneIndex],talk=showRecap?recap:(s.dialogueTurns?.[lineIndex]||s),cut=showRecap?recap.artAsset:(s.sharedArtAsset||registeredStoryPanelAsset(s));
  const img=$('image'),missing=$('missing'),v=++version;
  img.hidden=true;img.removeAttribute('src');missing.hidden=false;
  const stage=CAMPAIGN_STAGE_BY_ID[s.stageId];
  $('summary').textContent='20章 × 10ステージ｜'+stage.name;
- $('position').textContent=(sceneIndex+1)+'/'+scenes.length+'CG · '+(lineIndex+1)+'/'+(s.dialogueTurns?.length||1)+'台詞';
- $('type').textContent=s.isChapterOpening?'章冒頭（4CG）':s.sharedSceneKind==='defeat'?'共通敗戦（2CG）':s.sharedSceneKind==='gameover'?'共通軍師死亡（2CG）':mode==='pre'?'イベント前（2CG）':'イベント後（2CG）';
- $('identity').textContent=s.id+'／'+s.comicEdition+'／'+(s.protagonistGender==='female'?'女性':'男性');
+ $('position').textContent=showRecap?'あらすじ　→　イベントCG '+scenes.length+'枚':(sceneIndex+1)+'/'+scenes.length+'CG · '+(lineIndex+1)+'/'+(s.dialogueTurns?.length||1)+'台詞';
+ $('type').textContent=showRecap?'ここまでのあらすじ（専用絵）':s.isChapterOpening?'章冒頭（4CG）':s.sharedSceneKind==='defeat'?'共通敗戦（2CG）':s.sharedSceneKind==='gameover'?'共通軍師死亡（2CG）':mode==='pre'?'イベント前（2CG）':'イベント後（2CG）';
+ $('identity').textContent=showRecap?'語り手・男女共通の世界情勢':s.id+'／'+s.comicEdition+'／'+(s.protagonistGender==='female'?'女性':'男性');
  $('speaker').textContent=talk.speaker||'語り手';renderStoryRubyText($('dialogue'),talk);
  const portrait=$('portrait');
- const portraitPath=cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null;
+ const sceneFace=!showRecap&&['c01-s03-m1','c01-s05-m1'].includes(s.id)&&cut?storyArtDisplayUrl(cut):null;
+ const portraitPath=sceneFace||(cast.has(talk.characterId)?'./assets/story-cinema/cast/'+talk.characterId+'.webp':talk.speaker==='軍師'&&s.protagonistGender==='female'?'./assets/story/characters/commander/female-master.webp':null);
+ portrait.style.objectPosition=sceneFace?'30% 22%':'center 20%';
  portrait.hidden=!portraitPath;
  if(portraitPath){portrait.onerror=()=>{if(portrait.getAttribute('src')===portraitPath)portrait.hidden=true};portrait.src=portraitPath}
  else portrait.removeAttribute('src');
- $('approval').textContent=cut?'既存原画を使用（P0品質は別確認）':'このコマの原画は未登録';
- $('prev').disabled=sceneIndex===0&&lineIndex===0;
- $('next').textContent=sceneIndex===scenes.length-1&&lineIndex===(s.dialogueTurns?.length||1)-1?'最終セリフ ▶':'次のセリフ ▶';
+ $('approval').textContent=showRecap?'ユーザー承認・専用あらすじ原画':cut?'既存原画を使用（P0品質は別確認）':'このコマの原画は未登録';
+ $('prev').disabled=showRecap||(sceneIndex===0&&lineIndex===0&&!recap);
+ $('next').textContent=showRecap?'人物の会話へ ▶':sceneIndex===scenes.length-1&&lineIndex===(s.dialogueTurns?.length||1)-1?'最終セリフ ▶':'次のセリフ ▶';
  if(!cut){missing.textContent='未登録。別の性別・ステージ・勝敗の絵は代用しません。';return}
  missing.textContent='原画読込中';
  img.onload=()=>{if(v!==version)return;img.hidden=false;missing.hidden=true};
  img.onerror=()=>{if(v!==version)return;missing.textContent='画像の取得に失敗しました。'};
  img.src=storyArtDisplayUrl(cut);
 }
-$('prev').onclick=()=>{if(lineIndex>0){lineIndex--;show();return}if(sceneIndex>0){sceneIndex--;lineIndex=(scenes[sceneIndex].dialogueTurns?.length||1)-1;show()}};
-$('next').onclick=()=>{if(lineIndex<(scenes[sceneIndex].dialogueTurns?.length||1)-1){lineIndex++;show();return}if(sceneIndex<scenes.length-1){sceneIndex++;lineIndex=0;show()}};
+$('prev').onclick=()=>{if(showRecap)return;if(sceneIndex===0&&lineIndex===0&&recap){showRecap=true;show();return}if(lineIndex>0){lineIndex--;show();return}if(sceneIndex>0){sceneIndex--;lineIndex=(scenes[sceneIndex].dialogueTurns?.length||1)-1;show()}};
+$('next').onclick=()=>{if(showRecap){showRecap=false;show();return}if(lineIndex<(scenes[sceneIndex].dialogueTurns?.length||1)-1){lineIndex++;show();return}if(sceneIndex<scenes.length-1){sceneIndex++;lineIndex=0;show()}};
 $('game').onclick=()=>location.href='./game.html';
 $('chapter').onchange=stages;
 for(const id of ['stage','gender','outcome'])$(id).onchange=render;

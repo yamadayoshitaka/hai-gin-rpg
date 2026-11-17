@@ -41,12 +41,27 @@ on:
       - 'qa/mass-upper-floor-pursuit-quality.test.mjs'
       - 'src/crowd-lod-policy.js'
       - 'src/crowd-performance-budget.js'
+      - 'src/adaptive-battle-resolution.js'
+      - 'qa/mass-crowd-occlusion-performance.test.mjs'
+      - 'qa/battle-board-bald-horse-regression.test.mjs'
       - 'src/confirmed-hit-overlay.js'
       - 'src/damage-number-style.js'
       - 'src/mass-visual-motion.js'
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
       - 'src/character-system/battle-artist-head-graft.js'
+      - 'src/character-system/battle-visual-pipeline.js'
+      - 'src/outfit-maintenance-model.js'
+      - 'character-quality-pipeline.html'
+      - 'master-model-manager.html'
+      - 'qa/battle-visual-pipeline.test.mjs'
+      - 'qa/battle-source-to-game-visual.test.mjs'
+      - 'src/battle-studio-groom-policy.js'
+      - 'src/character-system/rig-motion-transition.js'
+      - 'src/character-system/battle-face-action-policy.js'
+      - 'qa/battle-studio-groom-policy.test.mjs'
+      - 'qa/rig-motion-transition.test.mjs'
+      - 'qa/battle-face-action-policy.test.mjs'
       - 'src/battle-person-pov-camera.js'
       - 'src/battle-ceremony.js'
       - 'qa/battle-person-pov-compact-hud.test.mjs'
@@ -122,6 +137,39 @@ jobs:
           node --check src/targeted-strategy-runtime.js
           node --check src/battle-ceremony.js
           node --check src/combat-world-object-renderer.js
+          node --check src/battle-engagement-camera.js
+          node --check src/battle-situation-pause.js
+          node qa/battle-engagement-camera.test.mjs
+          node --check src/character-system/battle-visual-pipeline.js
+          node --check src/character-system/battle-artist-head-graft.js
+          node --check src/character-system/rigged-outfit-runtime.js
+          node --check src/mass-battle-real-army.js
+          node --check src/character-system/garment-coverage-runtime.js
+          node --check src/adaptive-battle-resolution.js
+          node --check src/crowd-lod-policy.js
+          node --check src/crowd-performance-budget.js
+          node qa/mass-crowd-occlusion-performance.test.mjs
+          node qa/battle-board-bald-horse-regression.test.mjs
+          node qa/crowd-screen-lod.test.mjs
+          node qa/garment-coverage-regression.test.mjs
+          node qa/crowd-longrun-performance.test.mjs
+          node qa/battle-visual-pipeline.test.mjs
+          node qa/battle-source-to-game-visual.test.mjs
+          node --check src/battle-studio-groom-policy.js
+          node --check src/character-system/rig-motion-transition.js
+          node --check src/character-system/battle-face-action-policy.js
+          node --check src/character-system/shared-character-runtime.js
+          node qa/battle-studio-groom-policy.test.mjs
+          node qa/rig-motion-transition.test.mjs
+          node qa/battle-face-action-policy.test.mjs
+          node qa/battle-situation-monitor.test.mjs
+          node qa/battle-upper-body-accent.test.mjs
+          node qa/battle-motion-recommendations.test.mjs
+          node --check src/character-system/battle-upper-body-accent.js
+          node --check src/battle-situation-monitor.js
+          node qa/battle-situation-recommendation.test.mjs
+          node qa/battle-saddle-seat-anchor.test.mjs
+          node qa/battle-objective-checkpoints.test.mjs
           node --check src/mass-battle-worker-runtime.js
           node qa/mount-interior-policy.test.mjs
           node qa/hair-camera-distance-stability.test.mjs

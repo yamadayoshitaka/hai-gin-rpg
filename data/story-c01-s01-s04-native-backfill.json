@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "kind": "CHAPTER1_STAGE01_TO_STAGE04_NATIVE_BACKFILL_SNAPSHOT",
+  "asOf": "2026-11-17",
+  "source": "qa/story-c01-s01-s04-compact-backfill.json",
+  "chapter": 1,
+  "stageRange": [
+    "c01-s01",
+    "c01-s04"
+  ],
+  "sourceStageCount": 4,
+  "observedImageSlots": 72,
+  "nativeVerifiedSlots": 68,
+  "requiresNativeRegeneration": 4,
+  "scope": "compact-4+2+2-character-scenes-only",
+  "reason": "Four existing male stage2 shots are registered but fail >=800x450 exact 16:9 native-size contract",
+  "costPolicy": {
+    "additionalPaidApiYen": 0,
+    "cloudflareFreeOnly": true,
+    "maxProductionRunsPerUtcDate": 1,
+    "retriesAfterProviderBlock": 0
+  },
+  "generationPolicy": {
+    "canonicalIdentity": "stageId|edition|gender|sceneId",
+    "perShotReferenceImageBytesRequired": true,
+    "maleFemaleIsolation": true,
+    "independentNativeImageFirst": true,
+    "realProvenanceRequired": true,
+    "noFalseFormalP0Approval": true,
+    "qaThenReversibleRegistration": true,
+    "prioritizeStage1To4": true
+  },
+  "items": [
+    {
+      "key": "c01-s02|pre|male|c01-s02-m1",
+      "stageId": "c01-s02",
+      "edition": "pre",
+      "gender": "male",
+      "sceneId": "c01-s02-m1",
+      "status": "REGISTERED_BELOW_NATIVE_REGEN_REQUIRED",
+      "targetNativePixels": [
+        800,
+        450
+      ],
+      "action": "regenerate_with_existing_free_batch_and_same-gender-actor-reference",
+      "formalApproval": "pending_individual_visual_QA"
+    },
+    {
+      "key": "c01-s02|pre|male|c01-s02-m15",
+      "stageId": "c01-s02",
+      "edition": "pre",
+      "gender": "male",
+      "sceneId": "c01-s02-m15",
+      "status": "REGISTERED_BELOW_NATIVE_REGEN_REQUIRED",
+      "targetNativePixels": [
+        800,
+        450
+      ],
+      "action": "regenerate_with_existing_free_batch_and_same-gender-actor-reference",
+      "formalApproval": "pending_individual_visual_QA"
+    },
+    {
+      "key": "c01-s02|post-victory|male|c01-s02-m6",
+      "stageId": "c01-s02",
+      "edition": "post-victory",
+      "gender": "male",
+      "sceneId": "c01-s02-m6",
+      "status": "REGISTERED_BELOW_NATIVE_REGEN_REQUIRED",
+      "targetNativePixels": [
+        800,
+        450
+      ],
+      "action": "regenerate_with_existing_free_batch_and_same-gender-actor-reference",
+      "formalApproval": "pending_individual_visual_QA"
+    },
+    {
+      "key": "c01-s02|post-victory|male|c01-s02-m10",
+      "stageId": "c01-s02",
+      "edition": "post-victory",
+      "gender": "male",
+      "sceneId": "c01-s02-m10",
+      "status": "REGISTERED_BELOW_NATIVE_REGEN_REQUIRED",
+      "targetNativePixels": [
+        800,
+        450
+      ],
+      "action": "regenerate_with_existing_free_batch_and_same-gender-actor-reference",
+      "formalApproval": "pending_individual_visual_QA"
+    }
+  ],
+  "notes": "Permanent checkpoint only. Existing registered undersize originals remain preserved for rollback. The production workflow is already prioritized to stages 1-4, with no extra Cloudflare calls permitted on the used UTC date."
+}

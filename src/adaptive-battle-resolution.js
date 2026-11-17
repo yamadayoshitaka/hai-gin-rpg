@@ -4,14 +4,15 @@
  * are unaffected: only GPU drawing-buffer resolution is adjusted.
  */
 export class AdaptiveBattleResolution {
- constructor({maxRatio=1,minRatio=.72,targetFps=45,downStep=.075,upStep=.04,intervalMs=1300}={}){
+ constructor({maxRatio=1,minRatio=.72,initialRatio=maxRatio,targetFps=45,downStep=.075,upStep=.04,intervalMs=1300}={}){
   if(!Number.isFinite(maxRatio)||!Number.isFinite(minRatio)||maxRatio<=0||
-   minRatio<=0||minRatio>maxRatio)throw Error('Invalid adaptive resolution bounds');
+   minRatio<=0||minRatio>maxRatio||!Number.isFinite(initialRatio)||
+   initialRatio<minRatio||initialRatio>maxRatio)throw Error('Invalid adaptive resolution bounds');
   this.maxRatio=maxRatio;
   this.minRatio=minRatio;
   this.targetFps=targetFps;
   this.downStep=downStep;this.upStep=upStep;this.intervalMs=intervalMs;
-  this.ratio=maxRatio;this.lowSamples=0;this.goodSamples=0;this.lastMs=-Infinity;
+  this.ratio=initialRatio;this.lowSamples=0;this.goodSamples=0;this.lastMs=-Infinity;
  }
  sample({fps=0,p95Ms=0,nowMs=0,paused=false}={}){
   if(paused||!Number.isFinite(fps)||fps<=0||!Number.isFinite(nowMs))return null;

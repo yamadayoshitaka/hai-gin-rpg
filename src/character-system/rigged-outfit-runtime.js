@@ -5,16 +5,17 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-rogue-backpanel2';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=20261117-alljobs-back3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.2';
 import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
 import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261116-silhouette-lod1';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-full-root-fibers2';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
 import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261116-torso1';
+import {battleClosedBackCoverage} from './battle-visual-pipeline.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
@@ -22,7 +23,7 @@ import {fitShieldAheadOfForearm,SHIELD_FOREARM_CLEARANCE_METERS}
  from './shield-forearm-fit.js?v=20261116-armclear1';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
-import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=20261117-closedtorso2';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=20261117-exposed-only3';
 
 // The original humanoid is preserved in the reversible skin cache, but
 // opaque trousers must hide the covered visible skin while worn.
@@ -482,7 +483,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
   let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
-  let opaqueTorsoLiningMaterials=0;
+  let opaqueTorsoLiningMaterials=0,sourceOpaqueTorsoMaterials=0;
   let correctedLimbMeshes=0,preservedSkinMaterials=0;
   let suppressedBaseLegMeshes=0,retainedSkinnedLegMeshes=0,retainedSkinnedBootMeshes=0;
   // One imported skinned trouser mesh already contains both animated legs.
@@ -511,6 +512,17 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
       const copy=m.clone();
       const role=outfitSurfaceRole(n,m.name);
+      // Both Quaternius source outfit GLTFs contain a full skinned Body
+      // (MI_Ranger / MI_Peasant), not the MI_Regular skin slot. This real
+      // source tunic is the back covering; count it separately from
+      // converted flesh-coloured material so duplicate back cards can be
+      // reliably removed for swordsmen AND thieves.
+      if(quality==='battle'&&role==='body'&&
+        /^(?:male|female)_(?:ranger|peasant)_body(?:_\d+)?$/i.test(n)){
+        copy.transparent=false;copy.opacity=1;copy.alphaTest=0;
+        copy.depthWrite=true;copy.depthTest=true;copy.side=THREE.DoubleSide;
+        sourceOpaqueTorsoMaterials++;
+      }
       // Some source Ranger/Peasant body material slots are naked chest/back
       // skin in what should be a closed battle tunic. Repurpose only these
       // slots as opaque, photographed woven lining. Same mesh + material
@@ -573,6 +585,22 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank});
   dressed.add(detail);
   const result=skinOutfitDetails(detail,dressed);
+  // The procedural rear panels are broad, nearly planar geometry sampled
+  // from the torso AABB. On a moving soldier they look like a rigid board
+  // strapped across the thief/swordsman's back. Battle outfits already have
+  // an opaque *source* skinned torso (its skin-coloured material was replaced
+  // with photographed linen above), so do not draw duplicate rear sheets.
+  // Keep the source skinned fabric and the real segmented plate equipment.
+  // Retain the backup panel only if no such opaque source fabric was found.
+  let suppressedFlatBackPieces=0;
+  if(lowDetail&&(opaqueTorsoLiningMaterials+sourceOpaqueTorsoMaterials)>0){
+    for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
+      'l-cuirass-closed-flank','r-cuirass-closed-flank']){
+      const panel=detail.getObjectByName(name);
+      if(panel){panel.visible=false;panel.userData.replacedByOpaqueSourceBack=true;
+        suppressedFlatBackPieces++;}
+    }
+  }
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
   // Segment joints use one rigid, separately addressable fabric/armor object
   // per bone. This replaces the torn skin-weighted v3 sleeves and trousers.
@@ -672,22 +700,24 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // Only preserve the entire bare torso when no opaque under-vest exists.
   // With linen lining, surfaceCheck clips skin hidden by actual clothing;
   // always preserving it made bare shoulder blades poke through moving coats.
-  const thiefHasClosedBack=quality==='battle'&&jobId==='job06'&&
-    !!detail.getObjectByName('complete-back-tunic-lining');
-  const battleBackUnderlay=quality==='battle'&&opaqueTorsoLiningMaterials===0&&
-    !thiefHasClosedBack?['torso']:[];
+  // All jobs include the actual rigged complete-back-tunic-lining mesh,
+  // not only thieves. Keep donor torso visible only if lining was not proved.
+  const closedBack=battleClosedBackCoverage({
+   quality,panel:detail.getObjectByName('complete-back-tunic-lining'),
+   opaqueLining:opaqueTorsoLiningMaterials+sourceOpaqueTorsoMaterials,preserveBody
+  });
   const occlusionPreserveRegions=[...new Set([
-   ...studioSkinPolicy.preserveRegions,...battleBackUnderlay
+   ...studioSkinPolicy.preserveRegions,...closedBack.preserveRegions
   ])];
+  const forcedTorsoOcclusion=closedBack.forceCoveredRegions;
   let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
-    preserveRegions:occlusionPreserveRegions,
-    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});
+    preserveRegions:occlusionPreserveRegions,forceCoveredRegions:forcedTorsoOcclusion});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
     if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true,
     preserveRegions:occlusionPreserveRegions,
-    forceCoveredRegions:thiefHasClosedBack?['torso']:[]});bodyMasked=true}
+    forceCoveredRegions:forcedTorsoOcclusion});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
@@ -950,6 +980,11 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     hair?.setHeadwear(show?(style.hood?'hood':armor?'helmet':null):null);
   }
   function setHairVisible(enabled){hair?.setVisible(Boolean(enabled))}
+  function getHairState(){return {
+   attached:!!hair,visible:!!hair?.object?.visible,
+   style:hair?.style??null,scalpPresent:!!hair?.diagnostics?.scalpUnderlay,
+   headwear:hair?.diagnostics?.headwearMode??null,error:hairError
+  }}
   function setArmorDepthOffsets(offsets){
     return armor?.setDepthOffsets?.(offsets)||{helmet:0,chest:0};
   }
@@ -1039,14 +1074,18 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       worstJointOffsets:boneOffsets.slice(0,4).map(entry=>({bone:entry.bone,error:+entry.xyzError.toFixed(5)})),
       gearContacts};
   }
-  return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,
+  return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,getHairState,
     setArmorDepthOffsets,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,
-    opaqueTorsoLiningMaterials,thiefSourceBeltsHidden,
+    opaqueTorsoLiningMaterials,sourceOpaqueTorsoMaterials,suppressedFlatBackPieces,
+    closedBackPanelSkinned:closedBack.closed,
+    torsoForcedCovered:forcedTorsoOcclusion.includes('torso'),
+    bareTorsoPreserved:occlusionPreserveRegions.includes('torso'),
+    thiefSourceBeltsHidden,
     correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,retainedSkinnedBootMeshes,useSourceSkinnedLegs,studioPreferSkinnedLegs,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
