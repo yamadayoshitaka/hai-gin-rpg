@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "category": "monster",
+  "saved": [
+    {
+      "id": "m020",
+      "sourceFiles": [
+        "src/m020-leviathan-anatomical-source.js"
+      ],
+      "commitSha": "12052055e37f1a78fee69ac6bccbe72b24c1e52b",
+      "qa": "unverified"
+    },
+    {
+      "id": "m048",
+      "sourceFiles": [
+        "src/m048-sea-serpent-anatomical-source.js"
+      ],
+      "commitSha": "fd0cb86f864f22f189c39266bb3544ca75b38896",
+      "qa": "unverified"
+    }
+  ],
+  "remainingIds": [
+    "m001",
+    "m002",
+    "m003",
+    "m004",
+    "m007",
+    "m008",
+    "m009",
+    "m010",
+    "m011",
+    "m012",
+    "m013",
+    "m014",
+    "m015",
+    "m016",
+    "m017",
+    "m018",
+    "m019",
+    "m021",
+    "m022",
+    "m023",
+    "m024",
+    "m025",
+    "m026",
+    "m027",
+    "m028",
+    "m029",
+    "m030",
+    "m031",
+    "m032",
+    "m033",
+    "m034",
+    "m035",
+    "m036",
+    "m037",
+    "m038",
+    "m039",
+    "m040",
+    "m041",
+    "m042",
+    "m043",
+    "m044",
+    "m045",
+    "m046",
+    "m047",
+    "m049",
+    "m050"
+  ],
+  "nextAction": "m020 caudal UV patch 12052055: run Node syntax and front/back/left/right WebGL PBR UV checks; m048 static/WebGL QA and Android FPS unverified; do not merge."
+}
