@@ -25,16 +25,20 @@ export function referenceBeastTorsoStations({
  const cat=shape==='feline';
  const fore=cat?.96:1.0;
  const waist=cat?.83:1;
- const y=cat?centerY+.088:centerY;
+ // Retain the ORIGINAL neck/shoulder pivot vertical positions; copying
+ // m001's 1.15m stance verbatim would detach feline paws/neck at 1.275m.
+ const wolfHeights=[.085,.040,.008,-.003,-.008,-.009,.001,.011];
+ const catHeights=[-.080,-.065,-.040,-.016,-.020,-.015,.004,.014];
+ const h=i=>centerY+(cat?catHeights[i]:wolfHeights[i]);
  return [
-  {z:length*1.01,y:y+.085,rx:width*.257,ry:cat?.126:.140},
-  {z:length*.77,y:y+.040,rx:width*1.08*fore,ry:cat?.305:.348},
-  {z:length*.46,y:y+.008,rx:width*1.20*fore,ry:cat?.332:.374},
-  {z:length*.13,y:y-.003,rx:width*1.02,ry:cat?.302:.330},
-  {z:-length*.24,y:y-.008,rx:width*.83*waist,ry:cat?.251:.288},
-  {z:-length*.56,y:y-.009,rx:width*.64*waist,ry:cat?.229:.249},
-  {z:-length*.84,y:y+.001,rx:width*.52,ry:cat?.210:.217},
-  {z:-length*1.03,y:y+.011,rx:cat?width*.256:.087,ry:cat?.095:.100}
+  {z:length*1.01,y:h(0),rx:cat?width*.26:.110,ry:cat?.126:.140},
+  {z:length*.77,y:h(1),rx:width*1.08*fore,ry:cat?.305:.348},
+  {z:length*.46,y:h(2),rx:width*1.20*fore,ry:cat?.332:.374},
+  {z:length*.13,y:h(3),rx:width*1.02,ry:cat?.302:.330},
+  {z:-length*.24,y:h(4),rx:width*.83*waist,ry:cat?.251:.288},
+  {z:-length*.56,y:h(5),rx:width*.64*waist,ry:cat?.229:.249},
+  {z:-length*.84,y:h(6),rx:width*.52,ry:cat?.210:.217},
+  {z:-length*1.03,y:h(7),rx:cat?width*.26:.087,ry:cat?.095:.100}
  ];
 }
 /** Same two offset follicle strips used by m001's real sculpt. */
