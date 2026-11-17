@@ -110,12 +110,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-17T13:46:34+09:00",
+      "lastRunAt": "2026-11-17T14:56:45+09:00",
       "status": "in_review",
       "carryover": true,
-      "subject": "木工家具5種の接合・荷重支持メッシュを専用ブランチで追加改修（QA保留）",
-      "summary": "60種正本・world.enabled=trueを確認。専用ブランチ world/furniture-structural-regression-20261116 に食卓・椅子・寝台・本棚・暖炉の5種の実メッシュ追加改修をコミット（2d163c82）。接合ピン・寝台中央梁と脚・棚受けピン・暖炉目地/炉縁を追加。mainには前回の9種が既に採用済みだが今回の5種は未採用。GitHubのDNS解決失敗でNode/WebGL/Android実測は実施できず、品質合格は0。",
-      "nextAction": "2d163c82のNode構文と指定3QA、実ゲームcreateCatalogObjectでの新旧WebGL比較を実施し、家具5種の描画/衝突と既存9種への退行を検証。合格後のみPR→main。",
+      "subject": "街の木造設備5種の構造補強を実ソースに追加（実描画QA保留）",
+      "summary": "world.enabled=trueを確認。作業ブランチでベンチ、荷箱、掲示板、木柵、荷車の5種に接合ピン、斜材、軸受支持ブロックを実追加。実ソースSHA 53077d65。GitHub DNS失敗でローカルnode --check/指定3QA/新旧WebGL/Androidは未実施。今回main採用0、GLB0、品質QA合格0。",
+      "nextAction": "専用ブランチ53077d65を実行環境へ取得してnode --checkと指定3QA、createCatalogObject新旧WebGL比較、衝突・LOD・Android FPSを検証。不合格なら修正し合格後のみPR/main公開。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -126,10 +126,6 @@
         "deploy": "pending"
       },
       "evidence": [
-        {
-          "label": "実造形9種・マージPR #520",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
-        },
         {
           "label": "実WebGL 9種・6担当QA合格",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
@@ -149,6 +145,10 @@
         {
           "label": "家具5種の追加実メッシュ改修（QA未実施）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/2d163c82bc0ee3a4447077bef0283c22596a0c4c"
+        },
+        {
+          "label": "木造街設備5種の実メッシュ補強",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/53077d65e4dc89c4731187aa6bf8424a12ca09f0"
         }
       ],
       "lastRunOutcome": {
@@ -159,11 +159,11 @@
       },
       "operational": {
         "blockers": [
-          "GitHubへのコンテナDNS解決失敗によりローカルNode/3QA/WebGL比較未実施",
-          "Android実機FPS未計測",
-          "5種の新造形の対象別描画QA未合格、main未採用"
+          "コンテナからgithub.comのDNS解決失敗でnode --check/指定3QAを実行できない",
+          "対象5種の新旧WebGLスクリーンショット・衝突・LOD QA未実施",
+          "Android実機FPS未計測"
         ],
-        "speedPlan": "まず2d163c82を取得できる実行環境でnode --checkと3QA、次に5種のWebGL比較。合格までPR/main公開を保留。",
+        "speedPlan": "53077d65の静的3QA→5種WebGL新旧比較→衝突とFPS。合格までマージ禁止。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
