@@ -186,17 +186,17 @@ test('v67: true crown underlay also covers the upper side roots, without false f
  geo.dispose();
 });
 
-test('v67: subtle eyeshadow hugs upper eyelid and avoids male or back-of-head pigment',()=>{
- const at=v67NaturalEyeMakeup({nx:.346,ny:.725,front:1,lidY:.695,gender:'female'});
+test('v68: stronger eyeshadow hugs the anatomical upper eyelid and avoids male/rear pigment',()=>{
+ const at=v67NaturalEyeMakeup({nx:.123,ny:.725,front:1,lidY:.695,gender:'female'});
  const away=v67NaturalEyeMakeup({nx:.02,ny:.89,front:1,lidY:.695,gender:'female'});
- const rear=v67NaturalEyeMakeup({nx:.346,ny:.725,front:0,lidY:.695,gender:'female'});
- const male=v67NaturalEyeMakeup({nx:.346,ny:.725,front:1,lidY:.695,gender:'male'});
- assert.ok(at.shadow>.60&&at.shadow<=.65,'fivefold female upper-eyelid pigment');
+ const rear=v67NaturalEyeMakeup({nx:.123,ny:.725,front:0,lidY:.695,gender:'female'});
+ const male=v67NaturalEyeMakeup({nx:.123,ny:.725,front:1,lidY:.695,gender:'male'});
+ assert.ok(at.shadow>.80&&at.shadow<=.95,'fivefold female upper-eyelid pigment');
  assert.ok(away.shadow<.00001);
  assert.equal(rear.shadow,0);
  assert.deepEqual(male,{shadow:0,lowerLift:0});
- const lower=v67NaturalEyeMakeup({nx:.346,ny:.640,front:1,lidY:.695,gender:'female'});
- assert.ok(lower.lowerLift>.018&&lower.lowerLift<.020);
+ const lower=v67NaturalEyeMakeup({nx:.123,ny:.640,front:1,lidY:.695,gender:'female'});
+ assert.ok(lower.lowerLift>.006&&lower.lowerLift<.009);
  assert.ok(lower.shadow<.018,'lower eyelid must not become a smoky under-eye bag');
 });
 test('v67: rooted 3D hair shades start at true scalp tone and fade without hair-root bands',()=>{
