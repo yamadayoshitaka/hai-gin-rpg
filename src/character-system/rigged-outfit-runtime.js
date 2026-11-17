@@ -14,7 +14,7 @@ import {attachCharacterHair} from './hair-attachment-runtime.js?v=20261117-full-
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
-import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261116-torso1';
+import {shouldClothLineBattleTorso,applyBattleTorsoLining} from './battle-torso-lining.js?v=20261117-preview-boardfix';
 import {battleClosedBackCoverage} from './battle-visual-pipeline.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
@@ -517,7 +517,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // source tunic is the back covering; count it separately from
       // converted flesh-coloured material so duplicate back cards can be
       // reliably removed for swordsmen AND thieves.
-      if(quality==='battle'&&role==='body'&&
+      if(role==='body'&&
         /^(?:male|female)_(?:ranger|peasant)_body(?:_\d+)?$/i.test(n)){
         copy.transparent=false;copy.opacity=1;copy.alphaTest=0;
         copy.depthWrite=true;copy.depthTest=true;copy.side=THREE.DoubleSide;
@@ -540,7 +540,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // tunic even at close camera distance. Cloth and opaque lining must
       // be enforced on BOTH sides of the existing skinned body surface.
       // This reuses the material slot: zero added meshes/draw calls.
-      if(quality==='battle'&&jobId==='job06'&&role==='body'){
+      if(jobId==='job06'&&role==='body'){
        const leather=textures.leather||textures['linen-fine']||textures.linen;
        if(leather){copy.map=leather;copy.bumpMap=leather;copy.bumpScale=.0006}
        copy.alphaMap=null;copy.transparent=false;copy.opacity=1;
@@ -587,13 +587,13 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const result=skinOutfitDetails(detail,dressed);
   // The procedural rear panels are broad, nearly planar geometry sampled
   // from the torso AABB. On a moving soldier they look like a rigid board
-  // strapped across the thief/swordsman's back. Battle outfits already have
-  // an opaque *source* skinned torso (its skin-coloured material was replaced
-  // with photographed linen above), so do not draw duplicate rear sheets.
+  // strapped across the thief/swordsman's back. BOTH preview and battle
+  // have an opaque source skinned torso (including photographic lining in
+  // former flesh-colored slots), so do not draw duplicate rear sheets.
   // Keep the source skinned fabric and the real segmented plate equipment.
   // Retain the backup panel only if no such opaque source fabric was found.
   let suppressedFlatBackPieces=0;
-  if(lowDetail&&(opaqueTorsoLiningMaterials+sourceOpaqueTorsoMaterials)>0){
+  if((opaqueTorsoLiningMaterials+sourceOpaqueTorsoMaterials)>0){
     for(const name of ['complete-back-tunic-lining','heroic-cuirass-backplate',
       'l-cuirass-closed-flank','r-cuirass-closed-flank']){
       const panel=detail.getObjectByName(name);
