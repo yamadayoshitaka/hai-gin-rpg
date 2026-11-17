@@ -80,7 +80,8 @@ assert.equal(shouldSeekHighGround('archer',0,[2],{hasForcedDestination:true}),fa
  'User-issued orders override autonomous terrain seeking');
 assert.match(game,/combatElevationMap\[z\*WORLD_SIZE\+x\]=terrainY/);
 assert.match(worker,/elevationMap:heightCopy/);
-assert.match(workerRuntime,/elevationMap\}/);
+assert.match(workerRuntime,/elevationMap,mountForbidden\}/,
+ 'Both high-ground and indoor ground-mount masks must survive Worker transfer');
 assert.match(grid,/heightAdvanceCost\(u\.jobId,heightHere/);
 assert.match(game,/priorities=\{'弓使い':0,'魔法使い':1,'忍者':1,'盗賊':2,'シーフ':2,'僧侶':3,'召喚士':3\}/);
 assert.match(game,/const throwingRange=a\.jobId==='ninja'\?10:a\.jobId==='thief'\?6/);
