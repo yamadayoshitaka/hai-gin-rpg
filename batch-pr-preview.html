@@ -31,7 +31,7 @@ small{font-size:11px;color:#aec4d3}
 <div class="controls">
  <label>バッチ系統<select id="group" aria-label="バッチ系統"></select></label>
  <label>改修PR・確認対象<select id="target" aria-label="改修対象"></select></label>
- <button id="refresh" type="button">GitHub状態を更新</button>
+ <button id="refresh" type="button">PR情報を手動取得（GitHub API）</button>
 </div>
 <div class="info" aria-live="polite">
  <div><strong>改修ブランチ</strong><span id="commit">照合中</span></div>
@@ -45,8 +45,8 @@ small{font-size:11px;color:#aec4d3}
 <div class="row"><button id="published" type="button" aria-pressed="true">本編・公開版</button><button id="candidate" type="button" aria-pressed="false">PR・改修版（試験用）</button><span id="which">本編を表示中</span></div>
 <p id="warning" class="warn">PR版は第三者の静的ホスト（raw.githack.com）による試験的表示です。初回は確認ページが表示される場合があります。未公開の秘密情報や私物GLBは送らないでください。表示失敗時は「別タブで開く」をお試しください。</p>
 <iframe id="viewer" title="3Dプレビュー" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
-<p class="summary" id="worldSummary" hidden>53種の品質受入状況を照合中…</p>
-<p><small>GitHub APIは閲覧時に自動呼出ししません。PRの最新SHAは「情報を手動取得」を押した時だけ1回問い合わせます。403発生中も本編とPRリンクは利用できます。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small></p>
+<p class="summary" id="worldSummary" hidden>60種の品質受入状況を照合中…</p>
+<p><small>GitHub APIは閲覧時に自動呼出ししません。PRの最新SHAは「情報を手動取得」を押した時だけ1回問い合わせます。403発生中も本編とPRリンクは利用できます。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small> <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/commits/main" target="_blank" rel="noopener noreferrer">GitHub mainのコミット履歴</a></p>
 </main>
 <script>
 'use strict';
