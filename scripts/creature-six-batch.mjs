@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {CREATURE_RECONSTRUCTION_WORK,CREATURE_RECONSTRUCTION_SUMMARY} from '../src/creature-reconstruction-plan.js';
 import {taxonomyBatch,CREATURE_SIX_FAMILY_LANES} from '../src/creature-quality-six-lanes.js';
-const args=process.argv.slice(2),arg=k=>args[args.indexOf(k)+1];
+const args=process.argv.slice(2),arg=k=>args.includes(k)?args[args.indexOf(k)+1]:undefined;
 const category=arg('--category')||'creatureMonster';
 if(!['creatureMonster','creatureSummon'].includes(category))throw Error('Invalid creature category');
 const minute=new Date().getUTCMinutes(),slotArg=arg('--slot');
