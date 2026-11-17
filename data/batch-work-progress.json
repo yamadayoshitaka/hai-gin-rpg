@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-16T10:05:22.611Z",
+  "asOf": "2026-11-17T04:01:10.939Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
@@ -109,54 +109,66 @@
       }
     },
     "world": {
-      "source": "ChatGPT定期品質回帰の実行結果＋GitHub証跡",
-      "lastRunAt": "2026-11-17T12:51:18+09:00",
-      "status": "work_incomplete",
+      "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
+      "lastRunAt": "2026-11-17T13:01:10+09:00",
+      "status": "in_review",
       "carryover": true,
-      "subject": "60種移行・入口扉5種の実構造メッシュ改修（PR #441、描画QA保留）",
-      "summary": "mainのworld.enabled=trueとcatalog-targets count=60を確認。PR #441作業ブランチsrc/object-catalog.jsで入口扉Lv1〜5共通生成器に縦板6/9枚、裏桟、斜め補強、鍛鉄蝶番ストラップ/鋲を追加。実ソースSHA 8a20ff99。GitHub直結DNS失敗のためnode --checkとQAテストおよびWebGL/Androidは未実施。GLB生成0、QA合格0、main採用0、公開0。",
-      "nextAction": "GitHubソースのNode実行環境への転送経路を復旧し、node --check・指定3テスト・入口扉5種のWebGL新旧比較を実施。既存PR #441の階段QAも完了後、安全な場合だけマージ・公開。",
+      "subject": "実3D 9種類の物理構造を改修・低ドローコール化・main採用・Pages公開（全60種は継続）",
+      "summary": "60種正本のうち9種類（食卓・椅子・寝台・本棚・樽・井戸・荷箱・水槽・道標）の実メッシュと支柱・接合・曲面・巻上げ機構を改善。材質別メッシュ結合で描画を最適化。PR #520のWebGL実撮影9/9成功、drawCalls 3〜5、三角形120〜2050。6担当QAすべて成功、main squash 595d76ed、Pages #44013869408成功。画像の最終外観審査・Android実機FPSは未実施。60種すべての実写品質合格ではない。",
+      "nextAction": "残り51種の実造形改善を継続。既存の入口扉5種 PR #441 は個別WebGL/Android QAと競合の確認を優先。9種は旧版比較・多角度の目視外観、Android実機FPSを測定し、品質未達は次回造形回帰。6担当QAの継続起動・結果統合を監視。",
       "steps": {
         "launch": "done",
         "code": "done",
-        "qa": "pending",
+        "qa": "done",
         "commit": "done",
         "pr": "done",
-        "merge": "pending",
-        "deploy": "pending"
+        "merge": "done",
+        "deploy": "done"
       },
       "evidence": [
         {
-          "label": "入口扉5種の実造形改修SHA",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8a20ff990176deda272d6c389a41f6918b60b4db"
+          "label": "実造形9種・マージPR #520",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/520"
         },
         {
-          "label": "既存Draft PR #441",
+          "label": "実WebGL 9種・6担当QA合格",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013507318"
+        },
+        {
+          "label": "main本番反映 SHA 595d76ed",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/595d76ed9f31aa01104df72ffc1dab2e5efcf641"
+        },
+        {
+          "label": "Pages公開成功 #44013869408",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44013869408"
+        },
+        {
+          "label": "入口扉5種の未完了PR #441",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/441"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
-        "newQAPassed": 0,
-        "newGameAppliedIds": 0,
-        "newSourceCommits": 1
+        "newSourceChangedIds": 9,
+        "newQAPassed": 9,
+        "newGameAppliedIds": 9,
+        "newSourceCommits": 2
       },
       "operational": {
         "blockers": [
-          "GitHubからNode実行環境への直接取得がDNS解決失敗（github.com）",
-          "node --checkと指定3テストは未実施",
-          "WebGL新旧スクリーンショット比較とAndroid FPS未計測",
-          "既存PR #441はDraftかつmergeable=false。対象別QA未合格"
+          "9種類の旧モデルとの定量的な外観比較・目視承認が未完了",
+          "Android実機FPS（50/100/1000人）未測定",
+          "残り51種類の高品質造形回帰が未完了",
+          "旧PR #441 入口扉5種は個別QA・マージ未確認"
         ],
-        "speedPlan": "入口扉Lv1〜5の実ソースSHA 8a20ff99をローカルへ転送し構文→3テスト→WebGLの順に実行。QA合格までPRを保留。",
+        "speedPlan": "次回は残りの類似木工／石組みオブジェクト5〜10種を正本メッシュから改善し、三角形・drawCallsを個別WebGLで記録。外観を悪化させたらマージせずPRで比較。毎時50分の実改修・12分の六担当QAを照合。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 5,
-          "newQAPassed": 0,
-          "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceChangedIds": 9,
+          "newQAPassed": 9,
+          "newGameAppliedIds": 9,
+          "newSourceCommits": 2,
           "newGeneratedGLBs": 0,
           "branchSavedCount": 21,
-          "mainInReviewCount": 11,
+          "mainInReviewCount": 16,
           "mainAcceptedCount": 0
         }
       }
