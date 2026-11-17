@@ -92,7 +92,7 @@ test('two source-derived clay face meshes have owned independent vertices and pr
  assert.equal(female.report.detailedParts.lowerOrbitalVolumeMeshCount,0);
  assert.ok(female.report.detailedParts.irisPolarAngleRadians>.55);
  assert.ok(female.report.detailedParts.pupilPolarAngleRadians>.22);
- assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.044,
+ assert.equal(female.report.detailedParts.mouthHalfWidthFraction,.051,
   'Female upper and lower lips must use the selected half-width option');
  assert.equal(male.report.detailedParts.mouthHalfWidthFraction,.044,
   'Male inherits the same smaller structural mouth, without lipstick');
@@ -506,7 +506,7 @@ test('v26 closed eyeliner corners remain linked without under-eye bags',()=>{
  assert.equal(m.report.detailedParts.eyelinerCornersClosed,true);
  assert.ok(m.report.detailedParts.lipCenterNormalized>=.498);
  assert.ok(m.report.detailedParts.lipCenterNormalized<=.520);
- assert.equal(m.report.detailedParts.blushOpacityFactor,.78);
+ assert.equal(m.report.detailedParts.blushOpacityFactor,1);
  for(const side of ['LEFT','RIGHT']){
   const upper=m.parts.getObjectByName(side+'_UPPER_EYELINER');
   const lower=m.parts.getObjectByName(side+'_LOWER_EYELINER');
@@ -723,7 +723,7 @@ test('v15 eyeshadow is a real eyelid child, lipstick fast updates without shape 
   assert.equal(shadow.parent.name,side+'_UPPER_ANATOMICAL_EYELID');
   assert.equal(shadow.geometry.getAttribute('color').itemSize,4);
   // Edge-faded vertex pigment controls visible intensity; material stays bounded.
-  assert.ok(shadow.material.opacity>=.25&&shadow.material.opacity<=.85);
+  assert.ok(shadow.material.opacity>=.79&&shadow.material.opacity<=1);
  }
  const before=m.face.geometry.getAttribute('position').array.slice();
  const prev=m.face.geometry.getAttribute('color').array.slice();
@@ -1285,13 +1285,13 @@ test('v25 actual contact lens pigment and liner remain visible on linked eyelids
  assert.ok(normalizeFemaleFaceControls({eyeDepth:-9}).eyeDepth>=-.3);
 });
 
-test('v67 makeup remains subtle, face-local and female-only',async()=>{
+test('v68 fivefold makeup stays on face and remains female-only',async()=>{
  const {v67NaturalEyeMakeup}=await import('../src/face-feature-meshes.js');
  const center=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60});
  const away=v67NaturalEyeMakeup({nx:.88,ny:.85,front:1,lidY:.60});
  const back=v67NaturalEyeMakeup({nx:.346,ny:.63,front:0,lidY:.60});
  const male=v67NaturalEyeMakeup({nx:.346,ny:.63,front:1,lidY:.60,gender:'male'});
- assert.ok(center.shadow>0&&center.shadow<=.13);
+ assert.ok(center.shadow>.60&&center.shadow<=.65);
  assert.ok(center.lowerLift>0&&center.lowerLift<=.019);
  assert.ok(away.shadow<center.shadow/100);
  assert.deepEqual(back,{shadow:0,lowerLift:0});

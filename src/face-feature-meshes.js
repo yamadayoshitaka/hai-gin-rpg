@@ -15,6 +15,10 @@ import {resolveAgeBand} from './character-demographics-v47.js?v=49';
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const smoothstep=t=>{const q=clamp(t,0,1);return q*q*(3-2*q)};
+// Requested studio art direction: five times the former female cosmetic
+// pigment strength, capped at opaque coverage to avoid out-of-gamut colors.
+export const FEMALE_MAKEUP_STRENGTH=5;
+const cosmeticOpacity=value=>clamp(value*FEMALE_MAKEUP_STRENGTH,0,1);
 const vertexMakeup=new WeakMap();
 /** Consistent cosmetic palettes for eyelids, lips and actual head vertex pigment.
  * Indices stay compatible with the existing saved 10-piece makeup catalog. */
@@ -57,7 +61,7 @@ function pigmentFactor(base,tint,opacity){
 export function v67NaturalEyeMakeup({nx,ny,front,lidY,gender='female'}){
  if(gender!=='female')return {shadow:0,lowerLift:0};
  const visibility=clamp(front,0,1);
- const shadow=.13*bell(nx,.346,.115)*bell(ny,lidY+.030,.031)*visibility;
+ const shadow=cosmeticOpacity(.13)*bell(nx,.346,.125)*bell(ny,lidY+.030,.031)*visibility;
  const lowerLift=.019*bell(nx,.346,.118)*bell(ny,lidY-.055,.022)*visibility;
  return {shadow,lowerLift};
 }
@@ -187,7 +191,7 @@ function tintRealLipSurface(lip,settings,mode='color',lipColor=FACE_V7_PALETTE.l
  const tint=new THREE.Color(lipColor);
  const shiftU=clamp(settings.lipstickX/.12,-1,1)*.23;
  const shiftV=clamp(settings.lipstickY/.12,-1,1)*.23;
- const width=settings.lipstickWidth*.5,height=settings.lipstickHeight*.5;
+ const width=clamp(settings.lipstickWidth*.67,0,1),height=clamp(settings.lipstickHeight*.65,0,1);
  const colors=[];
  for(let j=0;j<=8;j++)for(let i=0;i<=32;i++){
   const u=i/32,v=j/8;
@@ -195,7 +199,7 @@ function tintRealLipSurface(lip,settings,mode='color',lipColor=FACE_V7_PALETTE.l
    smoothstep(((.5+shiftU+width)-u)/.085);
   const fadeV=smoothstep((v-(.5+shiftV-height))/.11)*
    smoothstep(((.5+shiftV+height)-v)/.11);
-  const rgb=pigmentFactor(natural,tint,.32*fadeU*fadeV);
+  const rgb=pigmentFactor(natural,tint,cosmeticOpacity(.32)*fadeU*fadeV);
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(lip,colors);
@@ -265,16 +269,16 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
-  const cheek=gender==='male'?0:.64*bell(nx,.247,.10)*bell(ny,.551,.063)*front;
-  const mouthX=(px-cx)/Math.max(.00001,d.x*.047*settings.lipstickWidth);
+  const cheek=gender==='male'?0:cosmeticOpacity(.64)*bell(nx,.260,.125)*bell(ny,.563,.074)*front;
+  const mouthX=(px-cx)/Math.max(.00001,d.x*.055*settings.lipstickWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
    Math.max(.00001,d.y*.012*settings.lipstickHeight);
   const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
   const lipY=smoothstep((1-Math.abs(mouthY))/.25);
   // Cosmetic controls may move the color within the lips, but cannot
   // push the pigment onto the chin or philtrum outside the oral region.
-  const anatomicalLipY=(py-lipCenter)/(d.y*.013);
-  const anatomicalLipX=(px-cx)/(d.x*.055*
+  const anatomicalLipY=(py-lipCenter)/(d.y*.019);
+  const anatomicalLipX=(px-cx)/(d.x*.061*
    Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
@@ -294,6 +298,10 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const innerCanthus=bell(nx,.245,.046)*bell(ny,lidY-.014,.028)*front;
    const naturalEyeMakeup=v67NaturalEyeMakeup({nx,ny,front,lidY,gender});
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
+  // A subtle bridge-side contour follows the actual raised cartilage and
+  // strengthens the ridge in frontal light without a floating nose decal.
+  const noseBridgeContour=gender==='female'?
+   bell(nx,.091,.026)*bell(ny,.628,.082)*front:0;
   const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
   const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
   const foreheadBands=[.758,.794,.823].reduce((v,y)=>
@@ -310,11 +318,11 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const contactShade=(.018+.132*youthFade)*underEye+
    (.035+.05*youthFade)*noseWing+.028*philtrum+
    (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
-   .047*upperLidOcclusion+.021*innerCanthus+
+   .047*upperLidOcclusion+.021*innerCanthus+.080*noseBridgeContour+
    (.010+.020*youthFade)*lowerLidOcclusion;
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
-   .multiply(pigmentFactor(skin,lipstick,.30*lipMask))
+   .multiply(pigmentFactor(skin,lipstick,cosmeticOpacity(.30)*lipMask))
    .multiply(pigmentFactor(skin,softEyeshadow,naturalEyeMakeup.shadow))
    .multiplyScalar(s*(1+naturalEyeMakeup.lowerLift));
   colors.push(rgb.x,rgb.y,rgb.z);
@@ -838,7 +846,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // RGBA mesh vertices feather at the edges; no floating decal card.
    const upperEyelid=root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID');
    const shadowMaterial=new THREE.MeshBasicMaterial({
-    color:0xa48087,transparent:true,opacity:.79,
+    color:0x92617d,transparent:true,opacity:.95,
     side:THREE.DoubleSide,depthWrite:false,vertexColors:true
    });
    const upperShadow=buildGrid(eyeLabel+'_UPPER_EYESHADOW',28,6,(u,v)=>{
@@ -849,7 +857,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const pigment=[];
    for(let j=0;j<=6;j++)for(let i=0;i<=28;i++){
     const u=i/28,v=j/6,outer=side===-1?1-u:u;
-    pigment.push(1,1,1,.30*Math.pow(Math.sin(Math.PI*u),.6)*
+    pigment.push(1,1,1,cosmeticOpacity(.30)*Math.pow(Math.sin(Math.PI*u),.6)*
      Math.pow(Math.sin(Math.PI*v),.72)*(.70+.30*outer));
    }
    upperShadow.geometry.setAttribute('color',
@@ -971,7 +979,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // surface, but lipstick is painted ONLY on the original head triangles.
  // Widen the actual vermilion surface only when requested; the v8 saved
  // preset (1x) retains identical 3D lip topology and pigmentation.
- const halfWidth=d.x*.044*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
+ const halfWidth=d.x*(female?.051:.044)*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  const actualLips=new Map();
  for(const upper of [true,false]){
   const material=female?lipMat.clone():lipMat;
@@ -983,7 +991,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
       d.y*.0018*(bell(Math.abs(t),.37,.22)-.42*bell(t,0,.23)):0;
     const cy=lipCenter+(upper?d.y*.006:-d.y*.007)+cupid+
      d.y*.006*(settings.mouthAngle/12)*t;
-    const vertical=(v-.5)*d.y*(upper?.011:.013)*taper;
+    const vertical=(v-.5)*d.y*(female?(upper?.014:.017):(upper?.011:.013))*taper;
     const x=cx+d.x*.004*settings.mouthPositionX+t*halfWidth,y=cy+vertical;
     const fullness=(1-t*t)*Math.sin(Math.PI*v);
     const z=surfaceAt(x,y)+d.z*(.00026+.00155*fullness*taper);
@@ -1066,7 +1074,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   upperEyeshadowMeshCount:female?2:0,shadowOnRealEyelids:female,
   eyeAccentMeshCount:female?2:0,
   blushMeshCount:0,blushVertexTint:female,
-  blushOpacityFactor:female?.78:0,cheekTintVertexCount:actualCheekTintVertices,
+  blushOpacityFactor:female?cosmeticOpacity(.64):0,cheekTintVertexCount:actualCheekTintVertices,
   beardMeshCount:female?0:5,
   beardDensity:gender==='male'?settings.beardDensity:0,
   eyebrowMeshCount:2,eyelashMeshCount:female?4:0,
@@ -1099,7 +1107,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
   irisDiameterRequestFactor:settings.irisDiameter,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
-  mouthHalfWidthFraction:.044,
+  mouthHalfWidthFraction:female?.051:.044,
   lipCreaseCurvature:Number(bestCrease.toFixed(7)),
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,eyeSizeDerivedFromWidthHeight:true,

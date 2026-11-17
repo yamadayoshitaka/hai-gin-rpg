@@ -191,7 +191,7 @@ test('v67: subtle eyeshadow hugs upper eyelid and avoids male or back-of-head pi
  const away=v67NaturalEyeMakeup({nx:.02,ny:.89,front:1,lidY:.695,gender:'female'});
  const rear=v67NaturalEyeMakeup({nx:.346,ny:.725,front:0,lidY:.695,gender:'female'});
  const male=v67NaturalEyeMakeup({nx:.346,ny:.725,front:1,lidY:.695,gender:'male'});
- assert.ok(at.shadow>.1&&at.shadow<=.13);
+ assert.ok(at.shadow>.60&&at.shadow<=.65,'fivefold female upper-eyelid pigment');
  assert.ok(away.shadow<.00001);
  assert.equal(rear.shadow,0);
  assert.deepEqual(male,{shadow:0,lowerLift:0});
