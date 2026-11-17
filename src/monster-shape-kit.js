@@ -226,7 +226,7 @@ export function createSculpture(spec,detail='high'){
   * Station order is nose (+Z) -> tail (-Z). Animated parts remain separate.
   */
  const axialLoft=(parent,shade,stations,{name='axial-anatomical-source',
-   rough=.78,ribbing=.012,faceSculpt=false}={})=>{
+   rough=.78,ribbing=.012,faceSculpt=false,capEnds=false}={})=>{
    if(!Array.isArray(stations)||stations.length<3||
      !stations.every(p=>Number.isFinite(p.z)&&Number.isFinite(p.y)&&
        Number.isFinite(p.rx)&&p.rx>0&&Number.isFinite(p.ry)&&p.ry>0))
@@ -267,6 +267,19 @@ export function createSculpture(spec,detail='high'){
      const a=i*(radial+1)+j,b=a+radial+1;
      indices.push(a,b,a+1,a+1,b,b+1);
    }
+   if(capEnds){
+     // Torso has a genuine closed hull, not just a two-sided open sleeve.
+     const front=vertex.length/3;
+     vertex.push(0,stations[0].y,stations[0].z);uv.push(.5,0);
+     const back=vertex.length/3;
+     const last=stations[stations.length-1];
+     vertex.push(0,last.y,last.z);uv.push(.5,1);
+     const lastRow=(count-1)*(radial+1);
+     for(let j=0;j<radial;j++){
+       indices.push(front,j,j+1);
+       indices.push(back,lastRow+j+1,lastRow+j);
+     }
+   }
    const geo=new THREE.BufferGeometry();
    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertex,3));
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
@@ -282,6 +295,10 @@ export function createSculpture(spec,detail='high'){
    mesh.userData.axialAnatomy=true;
    mesh.userData.anatomicalStations=stations.length;
    mesh.userData.proceduralSource=true;
+   if(capEnds){
+     mesh.userData.closedAnatomicalHull=true;
+     mesh.userData.anatomicalEndCaps=radial*2;
+   }
    return mesh;
  };
  /** Anatomical quadruped muscle surface, in existing articulated joint space.
