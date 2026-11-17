@@ -2050,24 +2050,27 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    // halfway along the waist. Each closed tube overlaps its articulated
    // neighbour: no disconnected white tip or apparent missing tail.
    const caudal=g.tube(tail,'skin',[
-     [0,.035,.19],[0,.020,.045],[0,-.055,-.11],
-     [0,-.170,-.27],[0,-.280,-.44]
+     // Start deeply in the pelvis, then extend *behind* the haunch.
+     // The shortened, downward v10 curve disappeared behind the legs.
+     [0,.035,.19],[0,.070,.035],[0,.130,-.19],
+     [0,.205,-.46],[0,.215,-.72]
    ],.092,{name:'feline-rooted-tail-'+s.id,capEnds:true,taper:.72});
    caudal.userData.felineTailClosedSource=true;
    caudal.userData.felineTailSocketBuried=true;
    tail.userData.felineTailRootedToCroup=true;
+   tail.userData.felineTailSilhouetteRestored=true;
  }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',
-   felineMaster?[0,-.280,-.44]:[0,.08,-.50],tail);
+   felineMaster?[0,.215,-.72]:[0,.08,-.50],tail);
  if(felineMaster){
    const caudalMid=g.tube(tailMid,'skin',[
-     [0,.025,.08],[0,-.015,-.035],[0,-.005,-.14],
-     [.045,.072,-.28]
-   ],.070,{name:'feline-tail-middle-'+s.id,capEnds:true,taper:.48});
+     [0,0,.075],[0,.026,-.14],[.020,.045,-.31],
+     [.045,.075,-.48],[.065,.055,-.64]
+   ],.069,{name:'feline-tail-middle-'+s.id,capEnds:true,taper:.48});
    caudalMid.userData.felineTailClosedSource=true;
  }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',
-   felineMaster?[.045,.072,-.28]:[.09,-.11,-.49-v*.10],tailMid);
+   felineMaster?[.065,.055,-.64]:[.09,-.11,-.49-v*.10],tailMid);
  // The end pad is embedded in the tapered caudal shell, never an
  // isolated ellipse far behind the silhouette.
  if(felineMaster)g.sphere(tailTip,'skin',[0,0,-.009],[.037,.040,.052],
