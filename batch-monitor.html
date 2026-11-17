@@ -102,6 +102,7 @@ small{font-size:11px}strong{font-weight:700}
  <p>「毎時有効」はスケジュールが有効という意味で、いま処理しているという意味ではありません。ChatGPT側は取得時点の記録を表示し、GitHub側は最新のActions履歴を取得します。</p>
  <p><strong>有効／無効：</strong>顔髪・衣装・オブジェクト・モンスター・召喚獣はGitHub Actionsのスイッチ連動。バッチの作業実行を切り替えるには各カードのボタンからGitHub Issueを開き、所有者が「Submit new issue」で確定します。ChatGPTの定期タスクそのもののON/OFF操作とは別です。旧一括人物・モンスターの定期タスクは停止維持します。</p>
  <p><strong>参考画像：</strong>ここに画像を選択・貼り付けて確認し、画像をコピーしてGitHub Issue本文へ貼り付けてください。画像はPagesから直接アップロードされません。</p>
+ <p><strong>GitHub APIの403対策：</strong>ページ表示中は認証なしGitHub APIを自動連続呼出ししません。「状況を更新」を押した時だけ1回まとめて取得し、403・429時は再試行を抑制します。APIが403でもバッチ停止を意味するわけではありません。</p>
  <p><strong>実作業の工程別進捗：</strong>起動・ソース修正・QA・コミット・PR・マージ・公開を別々に表示します。「実作業未完了」は完了扱いにせず、次回引継ぎを表示します。工程台帳は最終保存時点、PRの最新コミットとマージ状態はGitHubから照会します。改修中の画面はPR版比較で開き、本編の公開SHAも別途照合します。</p>
  <p><strong>手動指示の送り方：</strong>各カードに修正内容を入力 →「手動指示を送る」→ GitHubのIssue画面で「Submit new issue」を押してください。これは1回限りの依頼で、GitHub認証情報をこのサイトに入力する必要はありません。</p>
  <p class="note">旧人モデル一括・旧モンスター一括は停止。新しい4系統は10分間隔、オブジェクトは既存の6担当を毎時並列でQA実行します。漫画は既存のChatGPT定期タスクを維持します。現在のスケジュール有効/無効はこのサイトから直接取得できず、最新のChatGPT実行日時は記録時点の情報です。GitHub ActionsのQA成功だけで画像生成・3D修正・本編反映の完了とは判断しません。追加の有料API課金は行いません。</p>
@@ -397,24 +398,31 @@ async function updateProgress(){
   }
  }
 }
+/** PR cards use published metadata. Do not fetch unauthenticated GitHub PR API on load. */
 async function updatePreviewStatus(){
  try{
   const catalog=await fetchJSON('./data/batch-pr-previews.json?ts='+Date.now());
   if(catalog.schemaVersion!==1||!catalog.groups)throw Error('PR紐付け不正');
-  await Promise.all(groups.map(async group=>{
+  for(const group of groups){
    const view=elements.get(group.id),item=catalog.groups[group.previewGroup||group.id]?.[0];
-   if(!view||!item)return;
-   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(group.previewGroup||group.id)+'&pr='+item.pr;
-   try{
-    const pr=await fetchJSON(API+'/pulls/'+item.pr);
-    const sha=String(pr.head?.sha||'');
-    const latest=sha.length>=12?sha.slice(0,12):'不明';
-    view.previewStatus.textContent='直近の確認対象：PR #'+item.pr+' ／ '+latest+' ／ '+
-     (pr.merged_at?'mainマージ済み（Pages公開は別途照合）':pr.draft?'Draft・main未反映':pr.state==='open'?'PR審査中・main未反映':'PR終了・main未反映');
-   }catch(e){view.previewStatus.textContent='PR #'+item.pr+' の状態取得不可。PRの画面で確認：'+e.message}
-  }));
+   if(!view)continue;
+   if(!item){
+    view.previewStatus.textContent='現在の登録済みPRはありません（実改修の完了は未確認）';
+    continue;
+   }
+   view.previewLink.href='./batch-pr-preview.html?group='+
+    encodeURIComponent(group.previewGroup||group.id)+'&pr='+item.pr;
+   view.previewStatus.replaceChildren();
+   view.previewStatus.append(
+    document.createTextNode('比較対象：PR #'+item.pr+' ／ マージ・公開状態はGitHubで確認　'),
+    makeLink('PRを直接確認',GH+'/pull/'+item.pr,true)
+   );
+  }
  }catch(e){
-  for(const group of groups){const v=elements.get(group.id);if(v)v.previewStatus.textContent='関連PRを確認できません：'+e.message}
+  for(const group of groups){
+   const view=elements.get(group.id);
+   if(view)view.previewStatus.textContent='PR比較台帳の取得に失敗：'+e.message;
+  }
  }
 }
 async function updateChapter4(){
@@ -468,21 +476,95 @@ async function updateRelease(){
    (sha.length>=12?sha.slice(0,12):'取得不可')+' ／ 漫画画像も同じ公開コミットに固定';
  }catch(e){$('releaseStatus').textContent='公開版の照合に失敗：'+e.message}
 }
-async function updateRuns(){
+/** Avoid HTTP 403 from unauthenticated API rate limits:
+ * no automatic GitHub API requests, one collection request per manual refresh,
+ * backoff on 403/429; live states are never confused with quality improvement.
+ */
+const RUN_CACHE_KEY='hg-batch-runs-v2',RUN_BACKOFF_KEY='hg-batch-api-backoff-v2';
+const RUN_MIN_REFRESH_MS=60000;
+function readSessionJson(key){
+ try{return JSON.parse(sessionStorage.getItem(key)||'null')}catch{return null}
+}
+function saveSessionJson(key,value){
+ try{sessionStorage.setItem(key,JSON.stringify(value))}catch{}
+}
+function displayRunSnapshot(runs,recordedAt){
+ const stamp=TIME(recordedAt);
+ for(const g of groups){
+  const view=elements.get(g.id);
+  if(!view)continue;
+  const matching=runs.filter(r=>typeof r.path==='string'&&
+    r.path.endsWith('/'+g.workflow));
+  // Under a burst of PR checks, a main event may be missing from the
+  // last 100 runs. Never invent a current "running" state.
+  const run=matching.find(r=>r.head_branch==='main')||matching[0];
+  view.activity.textContent=run?'GitHub QA：'+statusLabel(run)+' ／ '+TIME(run.created_at)+
+   '（取得：'+stamp+'）':'GitHub QA：直近100件には実行記録なし。実行ログから確認';
+  if(run?.html_url)view.log.href=run.html_url;
+  if(g.id==='world'&&run)view.detail.textContent=
+   'GitHub実行：'+TIME(run.created_at)+' ／ '+statusLabel(run)+'（造形成果は別判定）';
+ }
+ $('activeCount').textContent='GitHub実行状況：'+stamp+' の記録';
+ $('fresh').textContent='GitHub Actions情報：'+stamp+
+  '取得。画面ではAPIの自動再照会を行いません。ChatGPT実改修は別タスク。';
+}
+async function updateRuns({request=false}={}){
+ const cache=readSessionJson(RUN_CACHE_KEY);
+ if(!request){
+  if(cache&&Array.isArray(cache.runs))displayRunSnapshot(cache.runs,cache.at);
+  else{
+   for(const g of groups){
+    const view=elements.get(g.id);
+    if(view)view.activity.textContent='GitHub APIを自動照会しません。上の「状況を更新」で取得できます';
+   }
+   $('activeCount').textContent='GitHub API未照会（403アクセス制限の回避）';
+   $('fresh').textContent='静的なバッチ設定と工程記録を表示中。最新のActions履歴は「状況を更新」または実行ログから確認できます。';
+  }
+  return;
+ }
+ const now=Date.now(),blocked=Number(readSessionJson(RUN_BACKOFF_KEY)?.until||0);
+ if(now<blocked){
+  $('activeCount').textContent='GitHub API再試行を制限中（アクセス拒否後）';
+  $('fresh').textContent='GitHub APIへのアクセスを一時停止しています。'+
+   TIME(new Date(blocked).toISOString())+'以降に再確認するか、各バッチの実行ログを開いてください。';
+  if(cache&&Array.isArray(cache.runs))displayRunSnapshot(cache.runs,cache.at);
+  return;
+ }
+ if(cache&&Array.isArray(cache.runs)&&now-Date.parse(cache.at)<RUN_MIN_REFRESH_MS){
+  displayRunSnapshot(cache.runs,cache.at);return;
+ }
  try{
-  const workflows=await fetchJSON(API+'/actions/workflows?per_page=100');
-  const wfList=workflows.workflows||[];
-  await Promise.all(groups.map(async g=>{
-    const view=elements.get(g.id),wf=wfList.find(w=>w.path.endsWith('/'+g.workflow));
-    if(!view||!wf){if(view)view.activity.textContent='GitHub QAワークフローが未登録です';return}
-    const result=await fetchJSON(API+'/actions/workflows/'+wf.id+'/runs?per_page=5');
-    const run=result.workflow_runs?.[0];view.activity.textContent='GitHub QA：'+statusLabel(run)+(run?' ／ '+TIME(run.created_at):'');
-    if(run)view.log.href=run.html_url;
-    if(g.id==='world')view.detail.textContent=run?'最新の実行：'+TIME(run.created_at)+' ／ '+statusLabel(run):'実行履歴なし';
-  }));
-  $('activeCount').textContent='GitHub実行状況：更新済み';
-  $('fresh').textContent='GitHubの直近実行を更新：'+TIME(new Date().toISOString())+' ／ ChatGPTの状態は記録時点の情報です';
- }catch(e){$('activeCount').textContent='GitHubの情報取得に失敗';$('fresh').textContent='GitHub情報を取得できませんでした（'+e.message+'）。「実行ログを見る」で直接確認できます。'}
+  const r=await fetch(API+'/actions/runs?per_page=100',{
+   cache:'no-store',headers:{Accept:'application/vnd.github+json'}
+  });
+  if(!r.ok){
+   const remaining=r.headers.get('x-ratelimit-remaining');
+   const reset=Number(r.headers.get('x-ratelimit-reset'));
+   const isLimited=(r.status===403||r.status===429);
+   if(isLimited){
+    const requested=reset>0?reset*1000:now+15*60000;
+    saveSessionJson(RUN_BACKOFF_KEY,{until:Math.max(now+60000,requested)});
+   }
+   throw Error('HTTP '+r.status+
+    (remaining==='0'?'（GitHub API利用上限）':
+    isLimited?'（GitHub APIの権限／アクセス制限）':''));
+  }
+  const data=await r.json(),runs=data.workflow_runs||[];
+  if(!Array.isArray(runs))throw Error('GitHub実行履歴形式が不正');
+  saveSessionJson(RUN_CACHE_KEY,{at:new Date().toISOString(),runs:runs.map(x=>({
+    path:x.path,status:x.status,conclusion:x.conclusion,created_at:x.created_at,
+    head_branch:x.head_branch,html_url:x.html_url
+  }))});
+  displayRunSnapshot(runs,new Date().toISOString());
+ }catch(e){
+  $('activeCount').textContent='GitHub API取得制限（バッチ停止とは限りません）';
+  $('fresh').textContent='GitHub APIの取得に失敗：'+e.message+
+   '。ページは静的台帳を表示し続けます。各カードの「実行ログを見る」から直接確認してください。';
+  for(const g of groups){
+   const v=elements.get(g.id);
+   if(v&&!cache)v.activity.textContent='APIの状態を取得できません（実行停止とは未判定）';
+  }
+ }
 }
 async function updateWorldSix(){
  try{
@@ -538,6 +620,6 @@ async function start(){
   await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns()});
-start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress();updateRuns()}},90000);
+$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true})});
+start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress()}},90000);
 </script></body></html>
