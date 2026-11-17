@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {FELINE_SOURCE_MODEL,FELINE_QUALITY_WAVE_IDS,
  felineMasterVariant,felineAnatomicalSections}
@@ -103,6 +105,22 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    for(const limb of ['frontL','frontR','rearL','rearR']){
     const skin=get(model,'feline-continuous-skin-'+limb);
     assert.equal(skin?.userData.felineMedialMuscleOrigin,true);
+   }
+   // The v10 tail was technically sealed but too short/downward to
+   // register as a silhouette. Assert tail projects outside the croup.
+   assert.equal(p.tail.userData.felineTailSilhouetteRestored,true);
+   for(const action of ['idle','walk','run','attack']){
+    startMonsterAction(model,action,0);
+    animateMonsterModel(model,action==='attack'?.4:.22);
+    model.updateMatrixWorld(true);
+    const bodyBack=new THREE.Box3().setFromObject(body).min.z;
+    const tip=p.tailTip.getWorldPosition(new THREE.Vector3());
+    const scale=model.userData.homeScale||1;
+    const reach=(bodyBack-tip.z)/scale;
+    assert.ok(reach>.72,
+     id+' '+action+' lost tail outside croup: projected distance '+reach);
+    assert.ok(tip.y>.10*scale,
+     id+' '+action+' tail hidden under terrain');
    }
    assert.equal(model.userData.felineMasterVariant,variant.archetype);
    assert.equal(model.userData.felineFaceWidthRatio,variant.headWidth);
