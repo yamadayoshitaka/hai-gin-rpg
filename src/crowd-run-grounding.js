@@ -10,14 +10,16 @@
 export function createCrowdGroundAnchor(parts,{footBand=.23,maxFootSamples=4096}={}){
   if(!parts?.length)return null;
   let floor=Infinity;
-  for(const p of parts)if(p.isHumanBody&&p.base){
+  // Covered feet may have their skin removed intentionally. In that case
+  // the ACTUAL opaque boot-foot mesh supplies the anatomical contact plane.
+  for(const p of parts)if((p.isHumanBody||p.isFootSurface)&&p.base){
     const a=p.base;
     for(let i=1;i<a.length;i+=3)if(Number.isFinite(a[i]))floor=Math.min(floor,a[i]);
   }
   if(!Number.isFinite(floor))return null;
   let all=[];
   for(let part=0;part<parts.length;part++){
-    const p=parts[part];if(!p.isHumanBody||!p.base)continue;
+    const p=parts[part];if(!(p.isHumanBody||p.isFootSurface)||!p.base)continue;
     const a=p.base;
     for(let index=1;index<a.length;index+=3)
       if(a[index]>=floor-.01&&a[index]<=floor+footBand)
