@@ -9,7 +9,8 @@ import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
 import {felineMasterVariant,felineFaceRings,felineMuzzleRings,
- felineNasalRings,felineAnatomicalSections,FELINE_SOURCE_MODEL}
+ felineNasalRings,felineAnatomicalSections,felineEyeSurface,
+ felineDorsalSurface,FELINE_SOURCE_MODEL}
  from './feline-master-variants.js?v=felid-source-20261117-v1';
 import {MORTAL_HEAD_RINGS,MORTAL_TORSO_RINGS} from './monster-realistic-loft.js';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
@@ -664,28 +665,47 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        {name:'nictitating-membrane',rough:.87});
    }
  }else if(felineMaster){
-   // Cat-specific almond socket follows the SLIM master skull.
-   // All orbital structures are offset together, not just the pupil.
+   // The old m007-m010 irises were buried inside the actual elliptical
+   // skull (z≈.19 while front skull surface is ≈.26). Follow the real
+   // head loft, then angle the outer canthus up for a predatory cat gaze.
+   // All three eye layers stay together for blink/action regression.
    for(const side of [-1,1]){
-     const suffix=side<0?'L':'R',x=side*felineMaster.eyeX,
-       z=felineMaster.eyeZ;
-     g.sphere(head,'shadow',[x,.095,z],
-       [.039,.036,.049],{name:'feline-master-orbit-'+suffix});
-     g.sphere(head,'eye',[x+side*.010,.095,z+.010],
-       [.015,.027,.035],{rough:.24,name:'feline-iris-'+suffix});
-     g.sphere(head,'shadow',[x+side*.021,.094,z+.021],
-       [.0045,.020,.009],{name:'feline-slit-pupil-'+suffix});
-     g.tube(head,'skin',[
-       [x-side*.044,.128,z-.035],[x,.138,z+.017],
-       [x+side*.045,.122,z+.030]],.011);
-     g.tube(head,'shadow',[
-       [x-side*.035,.067,z-.024],[x,.061,z+.011],
-       [x+side*.036,.078,z+.025]],.008);
-     const lid=g.group('eyelid'+suffix,[x,.144,z+.006],head);
+     const suffix=side<0?'L':'R',x=side*felineMaster.eyeX;
+     const eyes=felineEyeSurface(felineMaster,QUADRUPED_CRANIUM_RINGS,
+       {x,y:.104,clearance:.023});
+     const z=eyes.z,halfWidth=.057;
+     const inner=x-side*halfWidth,outer=x+side*halfWidth;
+     const innerEdge=felineEyeSurface(felineMaster,QUADRUPED_CRANIUM_RINGS,
+       {x:inner,y:.091,clearance:.021});
+     const outerEdge=felineEyeSurface(felineMaster,QUADRUPED_CRANIUM_RINGS,
+       {x:outer,y:.125,clearance:.021});
+     // A rotated black almond opening, with narrow vertical exposed
+     // sclera and tapered brow corners, not a round animal eye button.
+     const aperture=g.sphere(head,'shadow',[x,.105,z],
+       [.062,.023,.014],{name:'feline-master-orbit-'+suffix});
+     aperture.rotation.z=side*.27;
+     const iris=g.sphere(head,'eye',[x,.103,z+.014],
+       [.021,.025,.011],{rough:.21,name:'feline-iris-'+suffix});
+     iris.rotation.z=side*.21;
+     const pupil=g.sphere(head,'shadow',[x,.103,z+.025],
+       [.0058,.022,.006],{name:'feline-slit-pupil-'+suffix});
+     pupil.rotation.z=side*.13;
+     const brow=g.tube(head,'shadow',[
+       [inner,.091,innerEdge.z],[x,.130,z+.018],
+       [outer,.125,outerEdge.z]],.0075);
+     brow.name='feline-sharp-upper-canthus-'+suffix;
+     const lower=g.tube(head,'skin',[
+       [inner,.087,innerEdge.z-.003],[x,.081,z+.017],
+       [outer,.124,outerEdge.z-.002]],.008);
+     lower.name='feline-tight-lower-lid-'+suffix;
+     const lid=g.group('eyelid'+suffix,[x,.133,z+.013],head);
      lid.userData.restY=lid.position.y;
-     lid.userData.blinkTravel=.052;
-     g.sphere(lid,'skin',[0,0,0],[.044,.018,.060],
-       {name:'feline-upper-eyelid-'+suffix});
+     lid.userData.blinkTravel=.039;
+     const skin=g.sphere(lid,'skin',[0,0,0],
+       [.058,.011,.017],{name:'feline-upper-eyelid-'+suffix});
+     skin.rotation.z=side*.24;
+     lid.userData.felineEyeSurfaceZ=eyes.surfaceZ;
+     lid.userData.felineEyeApertureZ=z;
    }
  }else if(feline){
    // Preserve protected m006's original eye material/position.
@@ -1742,7 +1762,32 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }));
  }
  if(!reptile){
-   if(beastRemesh){
+   if(felineMaster){
+    // The old 8-20 generic back spikes were placed at y=1.70 and
+    // translated another -.72 along z, floating behind the cat's
+    // shoulders. Only the ice sabertooth gets anatomical ice keratin.
+    // Embed every root beneath the actual upper torso loft surface;
+    // leave lion/leopard/tiger backs smooth and naturally feline.
+    if(s.id==='m007'&&coatDetail!=='low'){
+     const crystalCount=6;
+     for(let i=0;i<crystalCount;i++){
+      const z=.51-i*.174;
+      const surface=felineDorsalSurface(felineMaster,z);
+      const x=(i%2?1:-1)*.022;
+      const base=[x,surface-.086,z+.034];
+      const elbow=[x*.9,surface+.025,z-.024];
+      const tip=[x*1.24,surface+.132+(i%3)*.015,z-.080];
+      const ice=g.curvedHorn(torso,i%3===0?'accent':'light',
+       base,elbow,tip,.024,
+       {name:'feline-anatomical-ice-crest-'+i});
+      ice.userData.felineDorsalRooted=true;
+      ice.userData.felineDorsalSurface=surface;
+      ice.userData.felineDorsalRootY=base[1];
+      ice.userData.felineDorsalTipY=tip[1];
+     }
+    }
+    g.root.userData.felineLegacyFloatingSpikesRemoved=true;
+   }else if(beastRemesh){
     const count=9+v*2;
     for(let i=0;i<count;i++){
      const t=i/(count-1),z=.48-.99*t;
