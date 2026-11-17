@@ -1044,13 +1044,20 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // under the midline of the chest; hips follow the narrower rear flanks.
    // Both toe and hock stay on the SAME lateral axis, no toe-out rotation.
    const lateralX=s.id==='m001'?
-     (fore>0?.402:.317):.29;
+     (fore>0?.402:.317):
+     felineMaster?(fore>0?felineMaster.torsoWidth*.87:
+       felineMaster.torsoWidth*.83):.29;
    const leg=g.group('leg'+name,
      pelvisMounted?
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
        [side*lateralX,beastRemesh?.550:.67,fore*.49],
      pelvisMounted?g.pivots.pelvis:
-       (s.id==='m001'?torso:g.root));
+       (s.id==='m001'||felineMaster?torso:g.root));
+   if(felineMaster){
+     leg.scale.x=felineMaster.legWidth;
+     leg.scale.z=felineMaster.legWidth;
+     leg.userData.felineProximalJoint=fore>0?'scapula':'femur';
+   }
    // Anatomical limb shortening keeps paw clearance at the ground by
    // lowering its hip pivot by the same amount. Distal pivots remain real
    // joints and are not replaced with stretched mesh tubes.
@@ -1074,7 +1081,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        sleeve.userData.jointSeamSleeve=true;
      }
    }
-   if(beastRemesh)g.limbLoft(leg,'skin',(fore>0?[
+   if(beastRemesh||felineMaster)g.limbLoft(leg,'skin',(fore>0?[
      // Forelimb: scapula -> humerus -> elbow. Elbow lies BEHIND the wrist.
      {x:0,y:.55,z:.025,rx:.133,rz:.154},
      {x:0,y:.34,z:.042,rx:.193,rz:.213},
@@ -1088,7 +1095,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {x:0,y:.14,z:.050,rx:.189,rz:.174},
      {x:0,y:-.080,z:.177,rx:.125,rz:.119},
      {x:0,y:-.25,z:.166,rx:.105,rz:.112}
-   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:p),
+   ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:
+      felineMaster?{...p,rx:p.rx*.81,rz:p.rz*.79}:p),
    {name:'beast-upper-limb-'+name});
    else g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
@@ -1103,7 +1111,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
        [0,-.065,.015],leg);
    if(s.id==='m001')distal.userData.anatomicalJoint=
      fore>0?'elbow':'stifle';
-   if(beastRemesh){
+   if(beastRemesh||felineMaster){
     g.limbLoft(distal,'skin',(s.id==='m001'?(fore>0?[
       // Forearm starts over elbow and tapers into elevated carpus.
       {x:0,y:.135,z:-.075,rx:.130,rz:.128},
@@ -1132,6 +1140,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
       {x:0,y:-.38,z:-.172,rx:.091,rz:.091}
     ])).map(p=>s.id==='m001'?{
       ...p,rx:p.rx*.83,rz:p.rz*.84
+    }:felineMaster?{
+      ...p,rx:p.rx*.81,rz:p.rz*.80
     }:p),{name:'beast-shin-'+name});
     if(s.id==='m001'&&coatDetail!=='low'){
       // A small overlapping fascia above/below the actual hinge keeps
