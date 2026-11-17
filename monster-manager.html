@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hover-flight-v23-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hover-flight-v14-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hover-flight-v24-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hover-flight-v15-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -951,6 +951,8 @@ window.__avianWingQA=()=>{
    currentAltitude:model.userData.phoenixCurrentAltitude??model.position.y,
    flightAction:model.userData.phoenixFlightAction||'initial',
    flightWingRig:!!model.userData.phoenixWingFlightRig,
+   fineFeatherBarbs:['L','R'].every(side=>
+    !!model.getObjectByName('avian-guardian-three-layer-wing-m013-'+side)?.userData.phoenixFineFeatherBarbs),
    legsFoldInFlight:!!model.userData.phoenixLegsFoldInFlight,
    wingFlapAngles:['L','R'].map(side=>model.userData.pivots['wing'+side]?.rotation.z||0),
    airborneKnees:['L','R'].map(side=>model.userData.pivots['birdKnee'+side]?.rotation.x||0),
