@@ -1,0 +1,34 @@
+{
+  "assetId": "spiral_stairs_castle_3f_001",
+  "kind": "REAL_WEBGL_CAPTURE_CANDIDATES_NOT_APPROVED",
+  "captures": [
+    {
+      "roughnessScale": 1,
+      "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-1.png",
+      "bytes": 102123,
+      "materials": 3,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 0.83,
+      "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-0_83.png",
+      "bytes": 100574,
+      "materials": 3,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 0.92,
+      "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-0_92.png",
+      "bytes": 100556,
+      "materials": 3,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 1.08,
+      "filename": "qa-reports/world-quality/previews/spiral_stairs_castle_3f_001-rough-1_08.png",
+      "bytes": 101633,
+      "materials": 3,
+      "status": "CAPTURED_QA_PENDING"
+    }
+  ]
+}

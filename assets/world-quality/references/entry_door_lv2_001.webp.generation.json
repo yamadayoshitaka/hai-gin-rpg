@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "AI_2D_REFERENCE_NOT_GAME_3D",
+  "targetKey": "object:entry_door_lv2_001",
+  "model": "@cf/black-forest-labs/flux-2-klein-4b",
+  "promptHash": "6c7cfad67540ff83bfa12b7c8951a4e29b650ec5d7815784295581e743113d29",
+  "referenceSha256": "26220ae63aea8e952a927df29f338410aad5ac55913ea903648bfa526fa21360",
+  "referenceFile": "assets/world-quality/references/entry_door_lv2_001.webp",
+  "widthRequest": 1024,
+  "heightRequest": 576,
+  "originalPixels": "1024x576",
+  "byteSize": 64544,
+  "humanVisualQA": "PENDING",
+  "game3DQuality": "NOT_TESTED",
+  "generatedAt": "2026-11-17T02:39:20.826Z"
+}

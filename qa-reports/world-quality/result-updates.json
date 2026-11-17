@@ -1,6 +1,6 @@
 [
   {
-    "key": "object:treasure_chest_001",
+    "key": "object:spiral_stairs_castle_3f_001",
     "comparisonReport": null,
     "gameScreenshot": null,
     "chosenRoughnessScale": 1,
@@ -9,7 +9,7 @@
     "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25"
   },
   {
-    "key": "object:cottage_stairs_001",
+    "key": "object:entry_door_lv1_001",
     "comparisonReport": null,
     "gameScreenshot": null,
     "chosenRoughnessScale": 1,
@@ -18,7 +18,7 @@
     "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25"
   },
   {
-    "key": "object:spiral_stairs_2f_001",
+    "key": "object:entry_door_lv2_001",
     "comparisonReport": null,
     "gameScreenshot": null,
     "chosenRoughnessScale": 1,

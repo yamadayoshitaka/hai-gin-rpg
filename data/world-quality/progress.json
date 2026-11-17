@@ -145,6 +145,54 @@
       "lastReviewedAt": "2026-11-16T23:43:07.849Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
       "captureAttempts": 3
+    },
+    "object:spiral_stairs_castle_3f_001": {
+      "name": "城の螺旋階段（3階建て用）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/spiral_stairs_castle_3f_001.webp",
+      "referenceSha256": "bb3a30171f8f67255cf71c52407fe4d724f88a198bfdc44a6bbfc3b7ecdd37dd",
+      "referencePromptHash": "9d90c439955448ffb97cdda4915f78e15839f9e2752a770d5b24020d11bece61",
+      "referenceCreatedAt": "2026-11-17T02:39:02.927Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-17T02:39:32.156Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    },
+    "object:entry_door_lv1_001": {
+      "name": "入口扉（鍵Lv.1）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/entry_door_lv1_001.webp",
+      "referenceSha256": "6fa3c4eb1c579462ca82d5ef944b8dd7d3885f87cf739adcc8845bda697d229b",
+      "referencePromptHash": "e01d9fbb888f75222b4fb1f5f96b00311f466511977d2b95ef21aff4b107590c",
+      "referenceCreatedAt": "2026-11-17T02:39:11.922Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-17T02:39:32.156Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
+    },
+    "object:entry_door_lv2_001": {
+      "name": "入口扉（鍵Lv.2）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/entry_door_lv2_001.webp",
+      "referenceSha256": "26220ae63aea8e952a927df29f338410aad5ac55913ea903648bfa526fa21360",
+      "referencePromptHash": "6c7cfad67540ff83bfa12b7c8951a4e29b650ec5d7815784295581e743113d29",
+      "referenceCreatedAt": "2026-11-17T02:39:20.826Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-17T02:39:32.156Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
     }
   },
   "runs": [
@@ -534,11 +582,54 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
       "completedAt": "2026-11-16T23:43:07.849Z"
+    },
+    {
+      "id": "44004217527",
+      "startedAt": "2026-11-17T02:38:52.323Z",
+      "mode": "reference",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:spiral_stairs_castle_3f_001",
+        "object:entry_door_lv1_001",
+        "object:entry_door_lv2_001"
+      ],
+      "generated": 3,
+      "failed": [],
+      "providerCalls": 3,
+      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-17T02:39:20.827Z"
+    },
+    {
+      "id": "44004217527",
+      "startedAt": "2026-11-17T02:39:32.156Z",
+      "mode": "results",
+      "requested": 3,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": null,
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:spiral_stairs_castle_3f_001",
+        "object:entry_door_lv1_001",
+        "object:entry_door_lv2_001"
+      ],
+      "generated": 3,
+      "failed": [],
+      "providerCalls": 3,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-17T02:39:32.156Z"
     }
   ],
   "lastRun": {
-    "id": "43981327152",
-    "startedAt": "2026-11-16T23:43:07.849Z",
+    "id": "44004217527",
+    "startedAt": "2026-11-17T02:39:32.156Z",
     "mode": "results",
     "requested": 3,
     "requestedTarget": null,
@@ -547,15 +638,15 @@
     "stageCount": 200,
     "objectCount": 60,
     "targetIds": [
-      "object:treasure_chest_001",
-      "object:cottage_stairs_001",
-      "object:spiral_stairs_2f_001"
+      "object:spiral_stairs_castle_3f_001",
+      "object:entry_door_lv1_001",
+      "object:entry_door_lv2_001"
     ],
-    "generated": 0,
+    "generated": 3,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 3,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-16T23:43:07.849Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-17T02:39:32.156Z"
   }
 }
