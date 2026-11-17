@@ -60,7 +60,7 @@ const hair=read('src/character-system/hair-attachment-runtime.js');
 assert.match(hair,/length=quality==='battle'\?\.028/,
  'real anatomical scalp retains its visible swept root fibres');
 const battle=read('tactics-wireframe.html');
-assert.match(battle,/20261117-sculpt-hair-saddle4/,
+assert.match(battle,/20261117-ground-walk-yaw1/,
  'browser must load the corrected GPU mesh, not cached prior source');
 assert.match(battle,/20261117-horse-saddle-fix1/,
  'both 50v50 and 1000v1000 riders share the measured horse seat');

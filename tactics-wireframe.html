@@ -1037,7 +1037,7 @@ import {selectBattleFaceExpression,battleFaceExpressionHold} from './src/charact
 import {enableBattleRigidFrustumCulling,countBattleRigCulling} from './src/battle-rigid-frustum-optimization.js?v=20261116-rigid1';
 import {interpolatedSkirmishCameraAnchor,createVisibilityWorkPacer} from './src/battle-frame-pacing.js?v=20261116-p95';
 import {personFacingYaw,writePersonPovOffset} from './src/battle-person-pov-camera.js?v=20261117-person-pov1';
-import {SKIRMISH_DASH_TEMPO,skirmishTravelTempo,realtimeBattleCinematicScale} from './src/battle-tempo-policy.js?v=20261116-tempo1';
+import {SKIRMISH_DASH_TEMPO,skirmishTravelTempo,realtimeBattleCinematicScale} from './src/battle-tempo-policy.js?v=20261117-mass-parity1';
 import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu1';
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {zoomedSquadMember} from './src/battle-zoom-squad-badge.js?v=20261116-zoom1';
@@ -1067,7 +1067,7 @@ import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
 import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-sculpt-hair-saddle4';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
@@ -4027,12 +4027,18 @@ if(massSim){
   if(flyingMount?.flying){
    out.y=terrainY(out.x,out.z)+riderSeatHeight(flyingMount,creatureVisualTime);
    smooth.y=out.y; // GPU instanced mounts read this exact same frame sample.
-  }else if(u.alive&&!upperPoint&&!u.mountId){
-   // A late Worker altitude sample may lag a slope transition. The REAL
-   // displayed terrain/deck defines the boot floor, not an older eased Y.
+  }else if(u.alive&&!upperPoint){
+   // Worker snapshots smooth X/Z only; they are NOT a second ground height
+   // authority. Ground units must stand on the 50v50 terrain/deck surface
+   // after XY interpolation, and mounted units use the same-frame saddle
+   // height as the independently rendered animal.
    const floor=unitGroundY(u,out.x,out.z);
-   if(Number.isFinite(floor)&&out.y<floor+.012){
-    out.y=floor+.012;smooth.y=out.y;
+   if(Number.isFinite(floor)){
+    const seat=u.mountId?riderElevation(u,creatureVisualTime):0;
+    const corrected=floor+seat+(u.mountId?0:.018);
+    if(u.mountId||out.y<corrected){
+      out.y=corrected;smooth.y=corrected;
+    }
    }
   }
   if(!u.alive){
@@ -10175,9 +10181,8 @@ function animate(){
  updateBattleResultCutins();
  // Real-time camera and UI stay responsive; only battle simulation/rigs slow.
  // Preserve the authoritative mass Worker tick duration; space ticks farther apart.
- // Order/result overlays remain visual-only in 50v50. Previously each
- // report slowed combat time AND rig playback to 32%, despite 58 FPS.
- // Retain authored slowdown only in 100+ unit cinematic mode.
+ // Order/result overlays and camera cut-ins are visual-only in BOTH battle
+ // sizes. Tactical time stops only for the explicit 30s decision pause.
  const cinematicPlaybackScale=realtimeBattleCinematicScale({
   town:TOWN_MODE,mass:Boolean(MASS_SIZE),paused,
   commander:Boolean(commanderCinematic),ceremony:battleCeremony.state
