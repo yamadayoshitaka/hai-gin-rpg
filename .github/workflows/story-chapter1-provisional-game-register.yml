@@ -73,9 +73,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add -A -- src/story-chapter1-provisional-live.js assets/story/chapter1-provisional-revisions.json
+          git add -A -- src/story-chapter1-provisional-live.js src/story-new-original-art.js assets/story/chapter1-provisional-revisions.json
           if [ -d assets/story/chapter1-provisional-live ]; then
             git add -A -- assets/story/chapter1-provisional-live
+          fi
+          if [ -d assets/story/new-originals ]; then
+            git add -A -- assets/story/new-originals
           fi
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
