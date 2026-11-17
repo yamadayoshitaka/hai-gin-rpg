@@ -25,7 +25,7 @@ export const CREATURE_FACE_VOLUME_METRICS=metricNames;
 
 export const CREATURE_FACE_VOLUME_PRESETS=Object.freeze({
  wolf:make({anatomicalRims:true,craniumDepth:.032,browDepth:.020,orbitalDepth:.018,cheekDepth:.041,snoutDepth:.037,jawDepth:.026,occipitalDepth:.026}),
- horse:make({craniumDepth:.033,browDepth:.022,orbitalDepth:.019,cheekDepth:.036,snoutDepth:.045,jawDepth:.025,occipitalDepth:.032}),
+ horse:make({anatomicalRims:true,craniumDepth:.033,browDepth:.022,orbitalDepth:.019,cheekDepth:.036,snoutDepth:.045,jawDepth:.025,occipitalDepth:.032}),
  wyvern:make({craniumDepth:.042,browDepth:.032,orbitalDepth:.029,cheekDepth:.055,snoutDepth:.044,jawDepth:.036,occipitalDepth:.036}),
  dragon:make({craniumDepth:.052,browDepth:.038,orbitalDepth:.031,cheekDepth:.069,snoutDepth:.045,jawDepth:.040,occipitalDepth:.045}),
  elder_dragon:make({craniumDepth:.056,browDepth:.040,orbitalDepth:.035,cheekDepth:.077,snoutDepth:.050,jawDepth:.045,occipitalDepth:.047}),
