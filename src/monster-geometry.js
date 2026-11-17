@@ -455,7 +455,8 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  else {
     const body=g.axialLoft(torso,'skin',bodyStations,
       {name:'species-shoulder-rib-pelvis-'+s.id,
-       rough:reptile?.64:.85,ribbing:reptile?.025:.012});
+       rough:reptile?.64:.85,ribbing:reptile?.025:.012,
+       capEnds:!!felineMaster});
     if(felineMaster&&coatDetail!=='low'){
       const p=body.geometry.getAttribute('position');
       for(let i=0;i<p.count;i++){
@@ -1301,8 +1302,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // Both toe and hock stay on the SAME lateral axis, no toe-out rotation.
    const lateralX=s.id==='m001'?
      (fore>0?.402:.317):
-     felineMaster?(fore>0?felineMaster.torsoWidth*.87:
-       felineMaster.torsoWidth*.83):.29;
+     // Move the shoulder and hip sockets INSIDE the trunk instead
+     // of leaving a circular exposed root on the body silhouette.
+     felineMaster?(fore>0?felineMaster.torsoWidth*.73:
+       felineMaster.torsoWidth*.69):.29;
    const leg=g.group('leg'+name,
      pelvisMounted?
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
@@ -1356,6 +1359,23 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    ]).map(p=>s.id==='m001'?{...p,rx:p.rx*.84,rz:p.rz*.86}:
       felineMaster?{...p,rx:p.rx*.81,rz:p.rz*.79}:p),
    {name:'beast-upper-limb-'+name});
+   else if(felineMaster&&coatDetail==='low'){
+     // Distant cats still need continuous legs, not four detached paws.
+     // One cheap anatomical shell per limb; no skinning in 1000v1000.
+     g.limbLoft(leg,'skin',fore>0?[
+       {x:0,y:.63,z:.015,rx:.064,rz:.079},
+       {x:0,y:.38,z:.036,rx:.155,rz:.173},
+       {x:0,y:.12,z:-.056,rx:.123,rz:.133},
+       {x:0,y:-.21,z:-.073,rx:.092,rz:.099},
+       {x:0,y:-.52,z:.11,rx:.093,rz:.110}
+     ]:[
+       {x:0,y:.63,z:-.16,rx:.071,rz:.092},
+       {x:0,y:.39,z:-.13,rx:.180,rz:.187},
+       {x:0,y:.14,z:.09,rx:.148,rz:.140},
+       {x:0,y:-.20,z:-.07,rx:.094,rz:.105},
+       {x:0,y:-.52,z:.13,rx:.093,rz:.105}
+     ],{name:'feline-low-onepiece-leg-'+name});
+   }
    else if(!felineMaster)g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
    // m001 hind "lower" is the true stifle/knee pivot, not a hinge
