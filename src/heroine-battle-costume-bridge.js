@@ -6,7 +6,7 @@ import {clipStudioFaceBustPreservingSurface,restoreStudioFaceSurfaceQuality,
  sampleStudioFacePigment,smoothStudioFaceNormals,
  studioAnatomicalSeamY,taperStudioLowerBustBelowChin} from './studio-face-quality-v56.js?v=60';
 import {createCharacter} from './character-system/shared-character-runtime.js?v=4.6.36';
-import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-no-back-card-v2';
+import {buildRiggedJobOutfit} from './character-system/rigged-outfit-runtime.js?v=20261117-rear-armor-mantle1';
 import {loadJobMotionMap} from './character-system/job-motion-source.js?v=4.6.36';
 import {measureHeadLocalBounds} from './character-system/hair-attachment-runtime.js?v=4.4.89';
 import {createHeroineBattleActionVfx} from './heroine-battle-action-vfx.js?v=40';
@@ -938,7 +938,7 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    const cut=hideBattleDonorFace(fresh.model);
    const skinSurface=enhanceStudioBodyMaterials(fresh.model);
    clothing=await buildRiggedJobOutfit({characterModel:fresh.model,
-    parent:fresh.object3D,job:chosen.name,sex:gender,quality:'preview',
+    parent:fresh.object3D,job:chosen.name,sex:gender,quality:'preview',isProtagonist:true,
     preserveBody:false,rarity:'N',studioPreferSkinnedLegs:true,
     studioPreserveLegAnatomy:true,
     // Keep anatomically skinned calves/feet in the swordsman preview only.
