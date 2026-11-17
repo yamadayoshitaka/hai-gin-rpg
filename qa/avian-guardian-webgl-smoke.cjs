@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-broad-torso-v17-20261118',
+     '&v=phoenix-diamond-scutes-v18-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -41,12 +41,16 @@ const ids=['m011','m012','m013','m014'];
     if(id==='m013'){
      const shape=state.phoenix;
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
-       shape.torsoRadiusY<.46||shape.bellyScaleMultiplier!==3||
+       shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<7||
+       shape.bodyScaleWidth<.16||shape.visibleFaceScales<90||
+       shape.faceScaleWidth<.06||!shape.thighSeparated||
+       !shape.realKnees||!shape.thighMuscles||
+       !shape.floatingWingBandsRemoved||
        !shape.thighScales||!shape.shankScales||!shape.toeScales||
        !shape.wingHandScales||!shape.chickenFeet||
        !shape.neckScaleFade||!shape.headMicroScales||
        !shape.noEars||!shape.smallHead||!shape.longBeak||
-       !shape.allBackCrest||shape.denseScales<1100||
+       !shape.allBackCrest||shape.denseScales<250||
        shape.tailLength<4.55||shape.waveMeshes!==4||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
