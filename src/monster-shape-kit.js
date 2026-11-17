@@ -453,7 +453,8 @@ export function createSculpture(spec,detail='high'){
    // Close BOTH ends in the one skinned shell: a double-sided material
    // cannot cover the missing triangles that looked like black pipes.
    const rootCenter=vertices.length/3;
-   vertices.push(0,sections[0][0]+.026,sections[0][1]);
+   // Cap centre shares the same medial blend as the first ring.
+   vertices.push(-side*.100,sections[0][0]+.026,sections[0][1]);
    uv.push(.5,0);boneIndices.push(0,1,2,0);weights.push(1,0,0,0);
    const pawCenter=vertices.length/3;
    vertices.push(0,last[0]-.018,last[1]);
