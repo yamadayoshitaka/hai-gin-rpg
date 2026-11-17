@@ -9,8 +9,8 @@
  */
 import * as THREE from 'three';
 import {MONSTER_BY_ID} from './monster-catalog.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=avian-guardian-82-feather-v15-20261118';
-import {startMonsterAction,animateMonsterModel} from './monster-animation.js?v=m001-m005-canine-actions-v6-20261118';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=phoenix-scaled-giant-feathers-v16-20261118';
+import {startMonsterAction,animateMonsterModel} from './monster-animation.js?v=phoenix-feather-wave-motion-v7-20261118';
 import {createCosplayedHumanoidMonster} from './monster-character-cosplay.js';
 import {femaleSummonCosplayFor} from './female-summon-forms.js';
 import {buildCombatObjectGeometry} from './combat-creature-geometry.js';
