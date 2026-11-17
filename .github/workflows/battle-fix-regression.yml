@@ -41,6 +41,8 @@ on:
       - 'qa/mass-upper-floor-pursuit-quality.test.mjs'
       - 'src/crowd-lod-policy.js'
       - 'src/crowd-performance-budget.js'
+      - 'src/adaptive-battle-resolution.js'
+      - 'qa/mass-crowd-occlusion-performance.test.mjs'
       - 'src/confirmed-hit-overlay.js'
       - 'src/damage-number-style.js'
       - 'src/mass-visual-motion.js'
@@ -141,6 +143,14 @@ jobs:
           node --check src/character-system/battle-artist-head-graft.js
           node --check src/character-system/rigged-outfit-runtime.js
           node --check src/mass-battle-real-army.js
+          node --check src/character-system/garment-coverage-runtime.js
+          node --check src/adaptive-battle-resolution.js
+          node --check src/crowd-lod-policy.js
+          node --check src/crowd-performance-budget.js
+          node qa/mass-crowd-occlusion-performance.test.mjs
+          node qa/crowd-screen-lod.test.mjs
+          node qa/garment-coverage-regression.test.mjs
+          node qa/crowd-longrun-performance.test.mjs
           node qa/battle-visual-pipeline.test.mjs
           node qa/battle-source-to-game-visual.test.mjs
           node --check src/battle-studio-groom-policy.js
