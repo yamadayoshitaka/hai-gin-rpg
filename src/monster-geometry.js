@@ -1209,6 +1209,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
         [x,-.016,.146],[x*1.11,-.058,.251],.019,
         {name:'rooted-claw-beast-'+digit});
      }
+   }else if(felineMaster){
+     // Four articulated pads on a true cat toe pivot; none of the
+     // cylindrical canine feet or claws are reused on m007-m010.
+     const toe=g.group('toe'+name,[0,-.436,.144],distal);
+     toe.userData.felinePad=true;
+     g.sphere(toe,'skin',[0,-.033,.018],
+       [.133*felineMaster.pawWidth,.055,.145],
+       {name:'feline-master-metacarpal-pad'});
+     for(let digit=0;digit<4;digit++){
+       const x=(digit-1.5)*.056*felineMaster.pawWidth;
+       g.sphere(toe,'skin',[x,-.051,.112],[.033,.043,.079],
+         {name:'feline-master-digit-'+digit});
+       g.rootedSpike(toe,'bone','skin',[x,-.032,.158],
+         [x*1.08,-.077,.213],.016,
+         {name:'feline-master-retractile-claw-'+digit});
+     }
    }else if(s.id!=='m003'){
      // Fenrir owns a separate articulated toe assembly below. Rendering
      // the legacy fixed paw as well made duplicate feet and floating claws.
@@ -1639,7 +1655,32 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
  // so it follows jaw anticipation and neck pitch without floating.
- if(feline&&coatDetail!=='low'){
+ if(felineMaster&&coatDetail!=='low'){
+   const source=coatDetail==='source';
+   // Both hair surfaces are anchored to the SAME anatomical loft as
+   // the skull and the now slender shoulder/rib/waist. No wigs.
+   const torsoCat=generateCanineAxialFurGuides({
+     stations:bodyStations,rows:source?33:22,around:source?42:30,
+     lengthProfile:[
+       {z:bodyLength*1.00,length:felineMaster.guardHair*.64},
+       {z:bodyLength*.70,length:felineMaster.guardHair},
+       {z:bodyLength*.15,length:felineMaster.underHair},
+       {z:-bodyLength*.35,length:felineMaster.underHair*.88},
+       {z:-bodyLength*1.02,length:felineMaster.underHair*.55}
+     ],
+     width:.0085,seed:110+v*17,minVertical:-.96,maxVertical:.96,
+     gravity:.19
+   });
+   const skullCat=fittedFelineMasterHair(felineMaster,source);
+   addFur(torso,torsoCat);
+   addFur(head,skullCat);
+   g.root.userData.felineMasterSource=FELINE_SOURCE_MODEL;
+   g.root.userData.felineMasterVariant=felineMaster.archetype;
+   g.root.userData.felineFaceWidthRatio=felineMaster.headWidth;
+   g.root.userData.felineTorsoWidth=felineMaster.torsoWidth;
+   g.root.userData.felineFurGuides=skullCat.length;
+ }else if(feline&&coatDetail!=='low'){
+   // Keep original protected m006 coat completely unchanged.
    const master=coatDetail==='source',lion=s.id==='m008';
    addFur(torso,generateCanineFurGuides({
      center:[0,1.30,-.025],radii:[.44+(v%2)*.06,.43,.71+v*.06],
@@ -1711,7 +1752,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     const z=-.25+i*.085,y=1.70+.05*Math.sin(i);
     g.spike(torso,i%3===0?'accent':'light',[0,y,z-.72],[0,y+.10+(v===2?.20:.07),z-.78],.028);
    }
-   if(feline){for(let i=0;i<5;i++)for(const side of [-1,1]){
+   if(feline&&!felineMaster){for(let i=0;i<5;i++)for(const side of [-1,1]){
      g.spike(head,'light',[side*.24,.12-i*.06,.1],[side*(.36+i*.02),.02-i*.06,.22],.027);
    }}
  }else{
