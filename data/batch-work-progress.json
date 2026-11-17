@@ -114,12 +114,12 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T02:49:00+09:00",
-      "status": "blocked",
+      "lastRunAt": "2026-11-18T03:50:00+09:00",
+      "status": "work_incomplete",
       "carryover": true,
-      "subject": "街設備5種の実接合・補強造形、Draft PR #614",
-      "summary": "world.enabled=true。正本60種。未完了手動Issueのworld対象0。木製荷車・街ゴミ箱・木柵・麻袋積荷・薬草園の5種に接合/補強の実メッシュを追加。commit 987194bb、Draft PR #614。Node指定QA・新旧WebGL・Android未検証、GLB0・本編採用0・公開0。",
-      "nextAction": "PR #614のnode --check、指定3QA、同一createCatalogObjectによる対象別新旧WebGL・衝突・LOD・1000vs1000 FPSを検証。既存Draft #441/#577/#594/#605との競合も確認。",
+      "subject": "家具5種の構造接合メッシュ改修 PR #620（WebGL QA未完了）",
+      "summary": "mainでworld.enabled=true、正本60種を確認。open手動Issueにworldカテゴリなし。食卓・椅子・寝台・本棚・暖炉の5種の接合/支持メッシュを実改修し、SHA 8261aaac、Draft PR #620。Node構文/指定3QA/WebGL比較/Android未実施。GLB0、ゲーム採用0、公開0。",
+      "nextAction": "PR #620のNode構文と指定3QAをGitHub Actions等で実行。5種の近中遠WebGL新旧比較、接合貫通・衝突・1000vs1000 FPSを確認後、既存PR #441/#577/#594/#605/#614との競合を再評価。",
       "steps": {
         "launch": "done",
         "code": "done",
@@ -131,12 +131,12 @@
       },
       "evidence": [
         {
-          "label": "5種実造形コミット",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/987194bb6c8926b5f4d9bf94d0b687d6c388c39d"
+          "label": "家具5種の実造形コミット",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/8261aaac52c23d64b5a2d8fae6dc8df1c64cb8d0"
         },
         {
-          "label": "Draft PR #614",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/614"
+          "label": "Draft PR #620",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/620"
         }
       ],
       "lastRunOutcome": {
@@ -149,27 +149,29 @@
       },
       "operational": {
         "blockers": [
-          "node --checkと指定3QA未実行",
-          "実WebGL新旧比較・Android FPS未検証",
-          "Draft PR #614未マージ、旧Draftも未検証"
+          "Node --checkと指定3QA未実施",
+          "WebGL新旧実描画比較未実施",
+          "Android実測と1000vs1000 FPS未計測",
+          "PR #620のマージ可能性は未確定"
         ],
-        "speedPlan": "PR #614のnode --check、指定3QA、同一createCatalogObjectによる対象別新旧WebGL・衝突・LOD・1000vs1000 FPSを検証。既存Draft #441/#577/#594/#605との競合も確認。",
+        "speedPlan": "PR #620を先に静的/実描画QA。合格前に本編へ採用しない。",
         "lastRunOutcome": {
           "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
           "newSourceCommits": 1,
           "newGeneratedGLBs": 0,
-          "newPublishedIds": 0
-        },
-        "qaBlocker": "対象別実WebGL QA未実施",
-        "changedIds": [
-          "town_handcart_001",
-          "town_trash_bin_001",
-          "town_fence_001",
-          "town_sacks_001",
-          "town_herb_garden_001"
-        ]
+          "webglPassedIds": [],
+          "gameAppliedIds": [],
+          "sourceChangedIds": [
+            "cottage_table_001",
+            "cottage_chair_001",
+            "cottage_bed_001",
+            "cottage_shelf_001",
+            "cottage_fireplace_001"
+          ],
+          "publicVerified": 0
+        }
       },
       "retiredFromCenter": false,
       "legacyRecord": false
