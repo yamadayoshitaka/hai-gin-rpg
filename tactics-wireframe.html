@@ -806,6 +806,19 @@ body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
 #battleTopDock #battleCasualties [data-camera-team]{pointer-events:auto;cursor:pointer;
  touch-action:manipulation;border-radius:6px;outline-offset:2px}
 #battleTopDock #battleCasualties [data-camera-team]:focus-visible{outline:2px solid #ffe28f}
+/* Camera selection stays available after squad close-up hides the map badges. */
+#battleTeamCameraSwitches{position:fixed;top:calc(var(--battleTopBottom,185px) + 6px);
+ left:8px;right:8px;display:flex;align-items:flex-start;justify-content:space-between;
+ gap:8px;z-index:28;pointer-events:none;font-family:system-ui}
+#battleTeamCameraSwitches[hidden]{display:none!important}
+#battleTeamCameraSwitches button{pointer-events:auto;min-height:43px;min-width:92px;
+ max-width:42vw;padding:5px 8px;border:2px solid #70d7ff;border-radius:12px;
+ box-shadow:0 3px 12px #000c;background:#102c44f2;color:#e6f9ff;
+ font:800 11px/1.35 system-ui;touch-action:manipulation}
+#battleTeamCameraSwitches button.enemy{border-color:#ef8998;background:#3a1e30f2}
+#battleTeamCameraSwitches button.active{border-color:#ffe28e;box-shadow:0 0 0 2px #ffe28e70,0 3px 12px #000e}
+#battleTeamCameraSwitches button small{display:block;font:700 9px/1.2 system-ui;opacity:.86}
+#battleTeamCameraSwitches button:disabled{opacity:.55}
 body #allySquadRibbon,body #enemySquadRibbon,
 body.compact-command-dock #allySquadRibbon,body.compact-command-dock #enemySquadRibbon,
 body.compact-command-dock.squad-closeup #allySquadRibbon,
@@ -853,6 +866,10 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
    <button type="button" id="overviewRecommendPlan">★ 推奨作戦を選ぶ</button>
   </div>
  </section>
+<div id="battleTeamCameraSwitches" hidden role="group" aria-label="味方・敵のカメラ視点を切り替える">
+ <button type="button" id="battleAllyCameraSwitch" aria-label="味方部隊へカメラを切り替える">🔵 味方視点<small>タップして切替</small></button>
+ <button type="button" id="battleEnemyCameraSwitch" class="enemy" aria-label="敵部隊へカメラを切り替える">🔴 敵視点<small>タップして切替</small></button>
+</div>
 <div id="battleSelectedTargetBar" role="status" aria-live="off" hidden><div class="targetHalf left"><div class="targetHeading" id="battleSelectedAlly">味方 第1隊</div><div class="targetCount" id="battleSelectedAllyCount">--/--</div><div class="targetMode" id="battleSelectedAllyOrder">号令：自動</div></div><div class="targetDirection">➜</div><div class="targetHalf right"><div class="targetHeading" id="battleSelectedEnemy">索敵中</div><div class="targetCount" id="battleSelectedEnemyCount">--/--</div><div class="targetMode" id="battleSelectedTargetMode">攻撃対象（自動選択）</div></div></div><button id="battleCancelCircleTarget" type="button" aria-label="対象選択を取り消す">✕</button>
 <div id="squadScreenLabels" aria-label="全味方・敵部隊の接続線付き情報サークル"><svg id="squadCalloutLines" aria-hidden="true"></svg></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -8581,12 +8598,15 @@ function activateSquadLabel(id,team,x=0,y=0){
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
  lastSquadCircleTap=tap.pending;
- // Double tap zooms to a soldier and removes squad overlays.
+ // One tap of the ACTUAL circular squad badge reveals the camera chooser.
+ // Keep the existing double-tap close-up and delay camera movement only,
+ // never the inspector: Android shows immediate visual feedback.
  cancelPendingSquadCircleInfo();
  if(tap.doubleTap){
   zoomToSquadMember(id,team);
   return;
  }
+ selectOverviewSquad(team,id);
  closeSquadCircleInfo();
  if(!$('squadTactics').hidden)closeSquadTactics();
  if(!$('enemySquadIntel').hidden){$('enemySquadIntel').hidden=true;selectedEnemySquadId=null;}
@@ -8767,6 +8787,26 @@ for(const [id,mode] of [['overviewCameraWide','overview'],
  ['overviewCameraSquad','squad'],['overviewCameraPerson','person']])
  $(id).onclick=()=>applyOverviewCamera(mode);
 const lastTeamCameraSquad=new Map();
+$('battleAllyCameraSwitch').onclick=()=>switchTeamCamera(0);
+$('battleEnemyCameraSwitch').onclick=()=>switchTeamCamera(1);
+function syncTeamCameraSwitches(){
+ const bar=$('battleTeamCameraSwitches');
+ const usable=!TOWN_MODE&&battleReady&&!finished&&!battleCeremony.locked;
+ bar.hidden=!usable;
+ if(!usable)return;
+ for(const team of [0,1]){
+  const id=team===0?'battleAllyCameraSwitch':'battleEnemyCameraSwitch';
+  const button=$(id),squad=manualCameraSquad?.team===team?manualCameraSquad:null;
+  button.classList.toggle('active',Boolean(squad));
+  button.disabled=!(team===0?squadIds:enemySquadIds).some(sid=>Boolean(squadCommandFocus(sid,team)));
+  const label=team===0?'🔵 味方視点':'🔴 敵視点';
+  const small=squad?squadName(squad.id,team)+(squad.mode==='person'?'・人物':'・追従'):'タップして切替';
+  if(button.firstChild?.nodeType===3&&button.firstChild.nodeValue!==label)
+   button.firstChild.nodeValue=label;
+  if(button.querySelector('small')?.textContent!==small)
+   button.querySelector('small').textContent=small;
+ }
+}
 function switchTeamCamera(team){
  if(TOWN_MODE||!battleReady||finished||commandOverviewLocked||battleCeremony.locked)return;
  const ids=(team===0?squadIds:enemySquadIds).filter(id=>Boolean(squadCommandFocus(id,team)));
@@ -8777,6 +8817,7 @@ function switchTeamCamera(team){
  if(!selectOverviewSquad(team,id))return;
  lastTeamCameraSquad.set(team,String(id));
  applyOverviewCamera('squad');
+ syncTeamCameraSwitches();
 }
 for(const team of [0,1]){
  const element=$('battleCasualties').querySelector('[data-camera-team="'+team+'"]');
@@ -8807,6 +8848,7 @@ function updateOverviewSquadPins(dt){
  overviewPinClock+=dt;
  if(overviewPinClock<.16)return;
  overviewPinClock=0;
+ syncTeamCameraSwitches();
  const visible=overviewSquadActive();
  if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
  document.body.classList.toggle('overview-squad-map',visible);
@@ -9625,9 +9667,16 @@ function applyOverviewCamera(mode){
   setCameraActive(null);
  }else return false;
  syncOverviewCameraChoices();
+ syncTeamCameraSwitches();
  syncSquadCloseupLabels();
  return true;
 }
+window.getBattlePerspectiveQA=()=>({
+ selected:overviewSelectedKey,
+ camera:manualCameraSquad?{...manualCameraSquad}:null,
+ controlsVisible:!$('battleTeamCameraSwitches').hidden,
+ chooserVisible:!overviewInspector.hidden
+});
 // Ordinary battle camera follows an ACTIVE allied engagement rather than
 // a stationary rear commander. Spatial contacts are scanned at ~1Hz.
 let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
@@ -9660,6 +9709,7 @@ else followSelectedCommander();
 $('camOverview').onclick=()=>{
  if(commandOverviewLocked)return;
  manualCameraSquad=null;manualCameraFocusUntil=0;
+ syncTeamCameraSwitches();
  battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
  focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
  setBattleCamera(new THREE.Vector3(openingOverviewCenter,terrainY(openingOverviewCenter,openingOverviewCenter),openingOverviewCenter),cameraOverviewOffset);
@@ -9668,7 +9718,7 @@ $('camOverview').onclick=()=>{
 $('camFollow').onclick=()=>{if(!commandOverviewLocked){
  manualCameraSquad=null;followSelectedCommander();
  manualCameraFocusUntil=performance.now()+8000;
- syncOverviewCameraChoices();
+ syncOverviewCameraChoices();syncTeamCameraSwitches();
 }};
 $('camReset').onclick=()=>{
  if(commandOverviewLocked)return;
