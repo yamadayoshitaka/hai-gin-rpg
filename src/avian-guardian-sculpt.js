@@ -453,60 +453,151 @@ function phoenixWingHandScutes(parent,s,side,detail,name,segment='elbow'){
  out.userData.phoenixScaleCount=guides.length;
  return out;
 }
+
+/** Continuous muscle mass: bulky upper femur narrows into a real knee.
+ * The shank below the knee remains bony, dark, narrow and skinless-looking.
+ * No shared cylindrical coat bridges the two articulated body parts.
+ */
+function phoenixThighSurface(u,angle){
+ const k=Math.max(0,Math.min(.9999,u));
+ const radius=k<.40?
+  .130+.064*Math.sin(k/.40*Math.PI*.5):
+  .194-.134*Math.pow((k-.40)/.60,.86);
+ const rz=radius*.84;
+ const ca=Math.cos(angle),sn=Math.sin(angle);
+ return {
+  point:new THREE.Vector3(ca*radius,.070-.58*k,.018+.087*k+rz*sn),
+  normal:new THREE.Vector3(ca/radius,.22,sn/rz).normalize(),
+  radius:(radius+rz)*.5
+ };
+}
+function phoenixAnatomicalThigh(g,leg,s,side,detail){
+ const radial=detail==='source'?40:detail==='high'?28:detail==='medium'?18:12;
+ const rings=detail==='source'?27:detail==='high'?19:detail==='medium'?13:8;
+ const points=[],colors=[],uv=[],triangles=[];
+ const main=color(profiles[s.id].mid),deep=color(profiles[s.id].dark);
+ for(let i=0;i<=rings;i++){
+  const u=i/rings;
+  for(let j=0;j<=radial;j++){
+   const a=j/radial*Math.PI*2,v=phoenixThighSurface(u,a).point;
+   points.push(v.x,v.y,v.z);
+   const tint=mix(main,deep,.15+.32*u).multiplyScalar(1+.07*Math.sin(a*5+u*12));
+   colors.push(tint.r,tint.g,tint.b);
+   uv.push(j/radial,u);
+  }
+ }
+ for(let i=0;i<rings;i++)for(let j=0;j<radial;j++){
+  const v=i*(radial+1)+j,w=v+radial+1;
+  triangles.push(v,w,v+1,v+1,w,w+1);
+ }
+ const top=points.length/3;
+ const upper=phoenixThighSurface(0,0).point;
+ points.push(0,upper.y,upper.z);uv.push(.5,0);colors.push(main.r,main.g,main.b);
+ const bottom=points.length/3;
+ const lower=phoenixThighSurface(1,0).point;
+ points.push(0,lower.y,.105);uv.push(.5,1);
+ colors.push(deep.r,deep.g,deep.b);
+ for(let i=0;i<radial;i++){
+  triangles.push(top,i,i+1);
+  const base=rings*(radial+1);
+  triangles.push(bottom,base+i+1,base+i);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setIndex(triangles);geo.computeVertexNormals();geo.computeBoundingSphere();
+ const thigh=mesh(leg,geo,'phoenix-femur-muscle-'+(side<0?'L':'R'),
+   {emissive:true});
+ thigh.userData.phoenixAnatomicalFemur=true;
+ thigh.userData.phoenixFemurContinuousSkin=true;
+ thigh.userData.phoenixFemurMaxRadius=.194;
+ return thigh;
+}
 function buildPhoenixChickenLeg(g,s,torso,side,detail){
  const suffix=side<0?'L':'R',name='leg'+suffix;
- // Long narrow femur, angular knee, thin exposed chicken-like tarsus.
- // The planted outer talon remains at approximately ground Y=0.04.
- const leg=g.group(name,[side*.255,1.19,.080],torso);
- g.bone(leg,'skin',[0,.095,0],[0,-.540,.075],.084,{tipRadius:.054});
- const ankle=g.group('birdAnkle'+suffix,[0,-.540,.075],leg);
- g.bone(ankle,'shadow',[0,.020,0],[0,-.440,.040],.052,{tipRadius:.031});
- const foot=g.group('avianFoot'+suffix,[0,-.425,.040],ankle);
- // A bony narrow ankle/foot rather than the old bulbous ball.
- g.bone(foot,'shadow',[0,.045,.012],[0,-.012,.107],.041,{tipRadius:.028});
+ // The upper thigh is substantial and distinctly separate from the
+ // slender, angular chicken shank. A real knee pivot articulates them.
+ const leg=g.group(name,[side*.275,1.19,-.115],torso);
+ const thighSkin=phoenixAnatomicalThigh(g,leg,s,side,detail);
+ const thigh=phoenixSurfaceScutes(leg,s,detail,
+  'phoenix-long-thigh-scutes-'+suffix,{
+   rows:detail==='source'?12:detail==='high'?9:detail==='medium'?7:5,
+   columns:detail==='source'?15:detail==='high'?12:detail==='medium'?10:8,
+   surface:phoenixThighSurface,
+   widthAt:(u)=>u<.70?.133:.086,
+   kind:'anatomical-upper-femur-keratin-scales'
+  });
+ thigh.userData.phoenixScaleWidth=.133;
+ thigh.userData.phoenixScaleMultiplier=.133/.023;
+ thigh.userData.phoenixScaleBone=leg.name;
+ const knee=g.group('birdKnee'+suffix,[0,-.510,.105],leg);
+ knee.userData.phoenixRealKnee=true;
+ knee.userData.phoenixSeparateUpperLowerLeg=true;
+ // The dark small patella is tucked into the tapered end of the femur.
+ g.sphere(knee,'shadow',[0,-.012,0],[.063,.075,.060],
+  {name:'phoenix-separate-knee-'+suffix,rough:.9});
+ const ankle=g.group('birdAnkle'+suffix,[0,0,0],knee);
+ // A chicken's exposed tarsometatarsus is a slender bony shaft.
+ g.bone(ankle,'shadow',[0,.015,0],[0,-.461,.029],.039,
+  {tipRadius:.027});
+ const foot=g.group('avianFoot'+suffix,[0,-.449,.029],ankle);
+ g.bone(foot,'shadow',[0,.04,.012],[0,-.012,.107],.035,
+  {tipRadius:.024});
  for(let digit=0;digit<3;digit++){
   const spread=(digit-1)*.147;
   const root=[spread*.25,-.012,.102],end=[spread,-.060,.337];
-  g.bone(foot,'shadow',root,end,.033,{tipRadius:.019});
+  g.bone(foot,'shadow',root,end,.030,{tipRadius:.017});
   g.rootedSpike(foot,'bone','shadow',end,
     [spread*1.12,-.145,.449],.026,
     {name:'avian-hooked-talon-'+name+'-'+digit});
  }
- // Reverse hallux: fourth opposing chicken toe for gripping.
- g.bone(foot,'shadow',[0,-.010,-.012],[0,-.050,-.195],.029,
-   {tipRadius:.020});
+ g.bone(foot,'shadow',[0,-.010,-.012],[0,-.050,-.195],.027,
+  {tipRadius:.018});
  g.rootedSpike(foot,'bone','shadow',[0,-.050,-.195],
-   [0,-.120,-.288],.026,{name:'avian-hallux-'+name});
- const thigh=phoenixCylindricalScutes(leg,s,detail,
-  'phoenix-long-thigh-scutes-'+suffix,{
-   rows:10,around:11,fromY:.045,toY:-.530,
-   fromZ:.017,toZ:.071,radiusX:.078,radiusZ:.072,width:.069,scaleY:1.1});
- const shin=phoenixCylindricalScutes(ankle,s,detail,
+  [0,-.120,-.288],.026,{name:'avian-hallux-'+name});
+ const shank=phoenixSurfaceScutes(ankle,s,detail,
   'phoenix-chicken-shank-scutes-'+suffix,{
-   rows:8,around:9,fromY:.004,toY:-.412,
-   fromZ:.005,toZ:.037,radiusX:.046,radiusZ:.045,width:.069,scaleY:.8});
+    rows:detail==='source'?10:detail==='high'?7:detail==='medium'?5:4,
+    columns:detail==='source'?10:detail==='high'?8:6,
+    surface:(u,a)=>{
+     // Leave the top and bottom joints bare to separate thigh, knee,
+     // tarsus and toes visually; scutes cannot bridge the joint.
+     const t=.13+.71*u,cs=Math.cos(a),sn=Math.sin(a);
+     const rad=.041-.010*t;
+     return {point:new THREE.Vector3(rad*cs,-.461*t,.029*t+rad*sn),
+      normal:new THREE.Vector3(cs,.12,sn).normalize(),radius:rad};
+    },
+    widthAt:()=>.057,kind:'narrow-bare-chicken-tarsus-scutes'
+  });
+ shank.userData.phoenixScaleWidth=.057;
+ shank.userData.phoenixScaleMultiplier=.057/.023;
+ shank.userData.phoenixScaleBone=ankle.name;
  const footScutes=[];
  for(let digit=-1;digit<=1;digit++)for(let i=0;i<(detail==='low'?3:6);i++){
   const q=i/(detail==='low'?2:5),x=digit*.147*q*.9;
   footScutes.push({from:[x,-.012-q*.044,.12+.20*q],
    to:[x+digit*.015,-.014-q*.052,.18+.20*q],
-   width:.069,normal:[0,.93,.2],ridge:.012,
+   width:.064,normal:[0,.93,.2],ridge:.013,
    tint:i%3===0?2:1,endTint:3,glow:.20});
  }
  const toes=layeredFeathers(foot,s,detail,
-   'phoenix-foot-toe-scutes-'+suffix,footScutes);
+  'phoenix-foot-toe-scutes-'+suffix,footScutes);
  toes.userData.phoenixAttachedScutes=true;
- toes.userData.phoenixScaleWidth=.069;
- toes.userData.phoenixScaleMultiplier=3;
+ toes.userData.phoenixScaleWidth=.064;
+ toes.userData.phoenixScaleMultiplier=.064/.023;
  toes.userData.phoenixScaleBone=foot.name;
  leg.userData.phoenixLongSlimThigh=true;
- leg.userData.phoenixThighLength=.540;
- leg.userData.phoenixThighRadius=.084;
+ leg.userData.phoenixThighLength=.580;
+ leg.userData.phoenixThighRadius=.194;
+ leg.userData.phoenixSeparateThigh=true;
  ankle.userData.phoenixChickenShank=true;
- ankle.userData.phoenixTarsusLength=.440;
+ ankle.userData.phoenixTarsusLength=.461;
+ ankle.userData.phoenixBareLowerShank=true;
  foot.userData.phoenixChickenToes=4;
  g.root.userData.phoenixChickenLegRig=true;
- return {leg,ankle,foot,thigh,shin,toes};
+ g.root.userData.phoenixThighShankSeparated=true;
+ return {leg,knee,ankle,foot,thighSkin,thigh,shank,toes};
 }
 function bodyFeathers(g,s,p,torso,detail){
  if(s.id==='m013')return phoenixDenseScales(g,s,p,torso,detail);
