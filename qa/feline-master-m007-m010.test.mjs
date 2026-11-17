@@ -18,8 +18,8 @@ const mesh=model=>{const all=[];model.traverse(x=>{if(x.isMesh)all.push(x)});ret
 const get=(m,n)=>mesh(m).find(x=>x.name===n);
 test('m007 is a lean cat master with independently generated lion/leopard/tiger morphs',()=>{
  assert.deepEqual(FELINE_QUALITY_WAVE_IDS,ids);
- assert.equal(felineMasterVariant('m006'),null,
-  'protected original black panther is not a master donor');
+ assert.equal(felineMasterVariant('m006')?.physicalCloneMother,'m001',
+  'black panther now inherits the wolf-king physical mesh');
  const w=ids.map(id=>felineMasterVariant(id));
  assert.ok(w.every(v=>v.source===FELINE_SOURCE_MODEL));
  assert.ok(w.every(v=>v.qualityDonor==='m001'&&
@@ -145,8 +145,10 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
    const pos=rhinarium.geometry.getAttribute('position');
    let noseHalf=0;
    for(let i=0;i<pos.count;i++)noseHalf=Math.max(noseHalf,Math.abs(pos.getX(i)));
-   assert.ok(Math.abs(noseHalf-variant.noseWidth*1.17)<.011,
-    'visible wet nose must preserve each cat profile proportion: '+id);
+   assert.ok(noseHalf<variant.noseWidth*.70&&noseHalf>variant.noseWidth*.38,
+    'wet nose must be a smaller upside-down triangle: '+id);
+   assert.equal(rhinarium.userData.felineInvertedTriangle,true);
+   assert.equal(rhinarium.userData.felineNoseLift,.044);
    records.push({id,noseHalf,headWidth:variant.headWidth,
       torsoWidth:variant.torsoWidth,fur:fur.reduce((n,x)=>n+x.userData.furStrands,0)});
   }finally{disposeMonsterSculpture(model);}
@@ -154,7 +156,7 @@ test('four actual 3D feline sculpts have narrow heads and continuous cat anatomy
  assert.ok(records.find(r=>r.id==='m009').torsoWidth <
     records.find(r=>r.id==='m008').torsoWidth*.85);
 });
-test('protected m006 and low LOD remain free of new heavy feline coat',()=>{
+test('m006 black panther uses the m001 base, while all crowd LODs stay cheap',()=>{
  for(const id of ['m006',...ids]){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
@@ -162,20 +164,20 @@ test('protected m006 and low LOD remain free of new heavy feline coat',()=>{
    assert.equal(model.userData.felineMasterSource,undefined);
    assert.equal(model.userData.felineReferenceFurDensityMultiplier,undefined);
    assert.equal(model.userData.felineReferenceSeamCount,undefined);
-   if(id!=='m006'){
-    assert.equal(model.userData.pivots.toefrontL,undefined,
-     'low crowd geometry must not allocate high-detail toe groups: '+id);
-    const legs=mesh(model).filter(x=>x.name.startsWith('feline-low-onepiece-leg-'));
-    assert.equal(legs.length,4,id+' crowd LOD must retain four real limbs');
-    assert.ok(legs.every(x=>!x.isSkinnedMesh),
-     'crowd LOD uses compact static geometry, not heavy three-bone skinning');
-   }
+   assert.equal(model.userData.pivots.toefrontL,undefined,
+    'low crowd geometry must not allocate high-detail toe groups: '+id);
+   const legs=mesh(model).filter(x=>x.name.startsWith('feline-low-onepiece-leg-'));
+   assert.equal(legs.length,4,id+' crowd LOD must retain four real limbs');
+   assert.ok(legs.every(x=>!x.isSkinnedMesh),
+    'crowd LOD uses compact static geometry, not heavy skinning');
   }finally{disposeMonsterSculpture(model);}
  }
- const protectedModel=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
+ const panther=createMonsterModel(MONSTER_BY_ID.m006,{detail:'high'});
  try{
-  assert.equal(protectedModel.userData.felineMasterSource,undefined);
-  assert.equal(get(protectedModel,'feline-master-rhinarium-m006'),undefined);
-  assert.ok(get(protectedModel,'nose'),'original m006 nose remains');
- }finally{disposeMonsterSculpture(protectedModel);}
+  assert.equal(panther.userData.physicalCloneMother,'m001');
+  assert.equal(panther.userData.clonedFromSpecies,'m001');
+  assert.equal(get(panther,'organic-cranium-m006')?.userData.m001SourceDonor,'M001_CRANIUM_RINGS');
+  assert.ok(get(panther,'species-shoulder-rib-pelvis-m006')?.userData.closedAnatomicalHull);
+  assert.equal(get(panther,'feline-master-rhinarium-m006')?.userData.felineInvertedTriangle,true);
+ }finally{disposeMonsterSculpture(panther);}
 });
