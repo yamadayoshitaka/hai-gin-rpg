@@ -18,7 +18,7 @@ test('female cosmetics receive fivefold pigment without applying makeup to men',
  assert.equal(male.shadow,0);
  assert.equal(rear.shadow,0);
  const sculpt=readFileSync(new URL('../src/face-feature-meshes.js',import.meta.url),'utf8');
- assert.match(sculpt,/const halfWidth=d\.x\*\.051/,'real lip surface must grow, not a floating lipstick card');
+ assert.match(sculpt,/const halfWidth=d\.x\*\(female\?\.051:\.044\)/,'female lip surface must grow without changing male mouth');
  assert.match(sculpt,/cosmeticOpacity\(\.32\)\*fadeU\*fadeV/,'full vermilion tint');
  assert.match(sculpt,/cosmeticOpacity\(\.64\)\*bell\(nx/,'cheek makeup must receive the same multiplier');
  assert.match(sculpt,/noseBridgeContour/,'nose contours are restricted to the real face skin');
