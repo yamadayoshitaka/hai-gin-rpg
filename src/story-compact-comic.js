@@ -40,7 +40,8 @@ function scene(base,turns,{opening=false,sharedKind=null}={}){
  return freeze({...base,compactStory:true,isChapterOpening:opening,
   sharedSceneKind:sharedKind,
   // Only the first defeat CG has a physically verified character-free shared original.
-  // The second defeat frame and all gameover frames must not silently reuse\n  // an unverified shared image; they retain their exact scene art identity.
+  // The second defeat frame and all gameover frames must not silently reuse
+  // an unverified shared image; they retain their exact scene art identity.
   sharedArtAsset:sharedKind==='defeat' && /-m6$/.test(base.id) ? './assets/story/shared/shared-defeat-01.webp' : null,
   protagonistAssetPolicy:'exact-gender-or-proven-neutral-only',
   originalSceneId:base.id,originalComicCell:base.comicCell,
@@ -90,7 +91,8 @@ export function compactComicForStage(stageId,phase,context={}){
  const base=baseIds.map(x=>selectBySuffix(src,x));
  if(phase==='post'&&original.edition.startsWith('post-gameover')){
   const deaths=src.filter(p=>/-death-[12]$/.test(p.id));
-  if(deaths.length===2)base.splice(0,2,...deaths);
+  if(deaths.length!==2)throw Error('Missing dedicated gameover artwork identities '+stageId+' '+original.edition);
+  base.splice(0,2,...deaths);
  }
  if(base.some(x=>!x))throw Error('Missing compact source art identity '+stageId+' '+original.edition);
  const withCount=p=>({...p,sourceSheetCount:original.pages.find(q=>q.number===p.comicPage)?.cellCount||1});
