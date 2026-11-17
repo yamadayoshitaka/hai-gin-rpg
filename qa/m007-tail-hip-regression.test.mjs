@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture}
  from '../src/monster-geometry.js';
@@ -43,4 +45,50 @@ for(const detail of ['source','high','low']){
   disposeMonsterSculpture(model);
  }
 }
-console.log('m007 tail root / articulated continuity / compact hips / planted feet: PASS');
+
+for(const id of ['m005','m007','m008','m009','m010']){
+ for(const detail of ['source','high','low']){
+  const model=createMonsterModel(MONSTER_BY_ID[id],{detail});
+  try{
+   const p=model.userData.pivots,cat=id!=='m005';
+   assert.equal(p.tail.parent,p.torso,id+' '+detail+' tail must follow croup');
+   assert.equal(p.tailMid.parent,p.tail,id+' '+detail+' middle must follow root');
+   assert.equal(p.tailTip.parent,p.tailMid,id+' '+detail+' tip must follow middle');
+   for(const [parent,name] of [
+    [p.tail,cat?'feline-rooted-tail-'+id:'m005-rooted-caudal-skin'],
+    [p.tailMid,cat?'feline-tail-middle-'+id:'m005-middle-caudal-skin']
+   ]){
+    const hull=parent.getObjectByName(name);
+    assert.ok(hull?.isMesh&&hull.geometry.getIndex()?.count>60,
+     id+' '+detail+' must render full caudal hull '+name);
+    assert.equal(hull.userData.closedAnatomicalHull,true,
+     id+' '+detail+' tail needs a 3D cap at each section end');
+   }
+   for(const action of ['idle','walk','run','attack']){
+    startMonsterAction(model,action,0);
+    animateMonsterModel(model,action==='attack'?.4:.22);
+    model.updateMatrixWorld(true);
+    const tip=p.tailTip.getWorldPosition(new THREE.Vector3());
+    const scale=model.userData.homeScale||1;
+    assert.ok(tip.y>.08*scale,
+     id+' '+detail+' '+action+' tail tip must stay above the ground');
+   }
+   if(cat){
+    const nose=model.getObjectByName('feline-master-rhinarium-'+id);
+    assert.equal(nose?.userData.felineNoseForwardOffset,.022);
+    assert.ok(model.getObjectByName('feline-master-nostril-L'));
+    assert.ok(model.getObjectByName('feline-master-nostril-R'));
+    const whiskers=model.getObjectByName('feline-long-vibrissae-'+id);
+    if(detail==='low')assert.equal(whiskers,undefined,
+      id+' crowd LOD should not allocate whiskers');
+    else{
+     assert.equal(whiskers?.userData.felineWhiskers,8);
+     assert.equal(whiskers.parent,p.head,
+      id+' whisker roots must move with the head');
+    }
+   }
+  }finally{disposeMonsterSculpture(model);}
+ }
+}
+
+console.log('m005 and feline tail hulls, actions, noses and whiskers: PASS');
