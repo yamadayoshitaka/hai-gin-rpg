@@ -43,7 +43,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "REUSE_EXISTING_EXACT_SCENE_GENDER_OUTCOME_IF_AVAILABLE_ELSE_PENDING"
         },
         {
           "stageId": "c01-s02",
@@ -62,7 +62,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "REUSE_EXISTING_EXACT_SCENE_GENDER_OUTCOME_IF_AVAILABLE_ELSE_PENDING"
         },
         {
           "stageId": "c01-s03",
@@ -81,7 +81,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "REUSE_EXISTING_EXACT_SCENE_GENDER_OUTCOME_IF_AVAILABLE_ELSE_PENDING"
         },
         {
           "stageId": "c01-s04",
@@ -100,7 +100,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "REUSE_EXISTING_EXACT_SCENE_GENDER_OUTCOME_IF_AVAILABLE_ELSE_PENDING"
         },
         {
           "stageId": "c01-s05",
@@ -119,7 +119,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c01-s06",
@@ -138,7 +138,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c01-s07",
@@ -157,7 +157,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c01-s08",
@@ -176,7 +176,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c01-s09",
@@ -195,7 +195,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c01-s10",
@@ -214,7 +214,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -245,7 +245,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s02",
@@ -264,7 +264,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s03",
@@ -283,7 +283,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s04",
@@ -302,7 +302,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s05",
@@ -321,7 +321,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s06",
@@ -340,7 +340,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s07",
@@ -359,7 +359,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s08",
@@ -378,7 +378,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s09",
@@ -397,7 +397,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c02-s10",
@@ -416,7 +416,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -447,7 +447,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s02",
@@ -466,7 +466,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s03",
@@ -485,7 +485,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s04",
@@ -504,7 +504,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s05",
@@ -523,7 +523,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s06",
@@ -542,7 +542,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s07",
@@ -561,7 +561,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s08",
@@ -580,7 +580,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s09",
@@ -599,7 +599,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c03-s10",
@@ -618,7 +618,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -649,7 +649,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s02",
@@ -668,7 +668,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s03",
@@ -687,7 +687,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s04",
@@ -706,7 +706,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s05",
@@ -725,7 +725,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s06",
@@ -744,7 +744,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s07",
@@ -763,7 +763,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s08",
@@ -782,7 +782,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s09",
@@ -801,7 +801,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c04-s10",
@@ -820,7 +820,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -851,7 +851,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s02",
@@ -870,7 +870,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s03",
@@ -889,7 +889,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s04",
@@ -908,7 +908,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s05",
@@ -927,7 +927,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s06",
@@ -946,7 +946,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s07",
@@ -965,7 +965,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s08",
@@ -984,7 +984,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s09",
@@ -1003,7 +1003,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c05-s10",
@@ -1022,7 +1022,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -1053,7 +1053,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s02",
@@ -1072,7 +1072,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s03",
@@ -1091,7 +1091,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s04",
@@ -1110,7 +1110,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s05",
@@ -1129,7 +1129,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s06",
@@ -1148,7 +1148,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s07",
@@ -1167,7 +1167,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s08",
@@ -1186,7 +1186,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s09",
@@ -1205,7 +1205,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c06-s10",
@@ -1224,7 +1224,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -1255,7 +1255,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s02",
@@ -1274,7 +1274,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s03",
@@ -1293,7 +1293,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s04",
@@ -1312,7 +1312,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s05",
@@ -1331,7 +1331,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s06",
@@ -1350,7 +1350,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s07",
@@ -1369,7 +1369,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s08",
@@ -1388,7 +1388,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s09",
@@ -1407,7 +1407,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c07-s10",
@@ -1426,7 +1426,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -1457,7 +1457,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s02",
@@ -1476,7 +1476,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s03",
@@ -1495,7 +1495,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s04",
@@ -1514,7 +1514,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s05",
@@ -1533,7 +1533,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s06",
@@ -1552,7 +1552,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s07",
@@ -1571,7 +1571,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s08",
@@ -1590,7 +1590,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s09",
@@ -1609,7 +1609,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c08-s10",
@@ -1628,7 +1628,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -1659,7 +1659,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s02",
@@ -1678,7 +1678,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s03",
@@ -1697,7 +1697,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s04",
@@ -1716,7 +1716,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s05",
@@ -1735,7 +1735,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s06",
@@ -1754,7 +1754,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s07",
@@ -1773,7 +1773,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s08",
@@ -1792,7 +1792,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s09",
@@ -1811,7 +1811,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c09-s10",
@@ -1830,7 +1830,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -1861,7 +1861,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s02",
@@ -1880,7 +1880,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s03",
@@ -1899,7 +1899,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s04",
@@ -1918,7 +1918,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s05",
@@ -1937,7 +1937,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s06",
@@ -1956,7 +1956,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s07",
@@ -1975,7 +1975,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s08",
@@ -1994,7 +1994,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s09",
@@ -2013,7 +2013,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c10-s10",
@@ -2032,7 +2032,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -2063,7 +2063,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s02",
@@ -2082,7 +2082,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s03",
@@ -2101,7 +2101,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s04",
@@ -2120,7 +2120,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s05",
@@ -2139,7 +2139,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s06",
@@ -2158,7 +2158,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s07",
@@ -2177,7 +2177,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s08",
@@ -2196,7 +2196,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s09",
@@ -2215,7 +2215,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c11-s10",
@@ -2234,7 +2234,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -2265,7 +2265,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s02",
@@ -2284,7 +2284,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s03",
@@ -2303,7 +2303,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s04",
@@ -2322,7 +2322,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s05",
@@ -2341,7 +2341,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s06",
@@ -2360,7 +2360,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s07",
@@ -2379,7 +2379,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s08",
@@ -2398,7 +2398,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s09",
@@ -2417,7 +2417,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c12-s10",
@@ -2436,7 +2436,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -2467,7 +2467,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s02",
@@ -2486,7 +2486,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s03",
@@ -2505,7 +2505,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s04",
@@ -2524,7 +2524,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s05",
@@ -2543,7 +2543,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s06",
@@ -2562,7 +2562,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s07",
@@ -2581,7 +2581,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s08",
@@ -2600,7 +2600,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s09",
@@ -2619,7 +2619,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c13-s10",
@@ -2638,7 +2638,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -2669,7 +2669,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s02",
@@ -2688,7 +2688,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s03",
@@ -2707,7 +2707,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s04",
@@ -2726,7 +2726,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s05",
@@ -2745,7 +2745,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s06",
@@ -2764,7 +2764,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s07",
@@ -2783,7 +2783,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s08",
@@ -2802,7 +2802,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s09",
@@ -2821,7 +2821,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c14-s10",
@@ -2840,7 +2840,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -2871,7 +2871,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s02",
@@ -2890,7 +2890,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s03",
@@ -2909,7 +2909,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s04",
@@ -2928,7 +2928,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s05",
@@ -2947,7 +2947,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s06",
@@ -2966,7 +2966,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s07",
@@ -2985,7 +2985,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s08",
@@ -3004,7 +3004,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s09",
@@ -3023,7 +3023,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c15-s10",
@@ -3042,7 +3042,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -3073,7 +3073,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s02",
@@ -3092,7 +3092,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s03",
@@ -3111,7 +3111,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s04",
@@ -3130,7 +3130,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s05",
@@ -3149,7 +3149,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s06",
@@ -3168,7 +3168,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s07",
@@ -3187,7 +3187,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s08",
@@ -3206,7 +3206,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s09",
@@ -3225,7 +3225,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c16-s10",
@@ -3244,7 +3244,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -3275,7 +3275,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s02",
@@ -3294,7 +3294,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s03",
@@ -3313,7 +3313,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s04",
@@ -3332,7 +3332,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s05",
@@ -3351,7 +3351,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s06",
@@ -3370,7 +3370,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s07",
@@ -3389,7 +3389,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s08",
@@ -3408,7 +3408,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s09",
@@ -3427,7 +3427,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c17-s10",
@@ -3446,7 +3446,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -3477,7 +3477,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s02",
@@ -3496,7 +3496,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s03",
@@ -3515,7 +3515,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s04",
@@ -3534,7 +3534,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s05",
@@ -3553,7 +3553,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s06",
@@ -3572,7 +3572,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s07",
@@ -3591,7 +3591,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s08",
@@ -3610,7 +3610,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s09",
@@ -3629,7 +3629,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c18-s10",
@@ -3648,7 +3648,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -3679,7 +3679,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s02",
@@ -3698,7 +3698,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s03",
@@ -3717,7 +3717,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s04",
@@ -3736,7 +3736,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s05",
@@ -3755,7 +3755,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s06",
@@ -3774,7 +3774,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s07",
@@ -3793,7 +3793,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s08",
@@ -3812,7 +3812,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s09",
@@ -3831,7 +3831,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c19-s10",
@@ -3850,7 +3850,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     },
@@ -3881,7 +3881,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s02",
@@ -3900,7 +3900,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s03",
@@ -3919,7 +3919,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s04",
@@ -3938,7 +3938,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s05",
@@ -3957,7 +3957,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s06",
@@ -3976,7 +3976,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s07",
@@ -3995,7 +3995,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s08",
@@ -4014,7 +4014,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s09",
@@ -4033,7 +4033,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         },
         {
           "stageId": "c20-s10",
@@ -4052,7 +4052,7 @@
           "gameoverDialogueRef": "global-gameover-v1",
           "genderPolicy": "replace full protagonist/portrait in own gender; share only verified actor-free backgrounds",
           "dialoguePolicy": "all canonical screenplay turns in UI; no printed text in original CG",
-          "artState": "reuse_exact_stage_gender_outcome_registered_when_available_otherwise_PENDING_ART"
+          "artState": "NEW_ORIGINAL_ONLY_NO_HISTORICAL_REUSE"
         }
       ]
     }
@@ -4062,5 +4062,21 @@
     "./assets/story/shared/shared-defeat-02.webp"
   ],
   "sharedDefeatArtStatus": "REAL_2_OF_2_PROVISIONAL_NO_FORMAL_P0",
-  "sharedGameoverAssetsStatus": "PENDING_PRODUCTION_DISTINCT_FROM_DEFEAT"
+  "sharedGameoverAssetsStatus": "PENDING_PRODUCTION_DISTINCT_FROM_DEFEAT",
+  "imageSourcingPolicy": {
+    "version": 2,
+    "ownerDecisionDate": "2026-11-17",
+    "reuseOldImagesOnlyFor": [
+      "c01-s01",
+      "c01-s02",
+      "c01-s03",
+      "c01-s04"
+    ],
+    "newOriginalsFrom": "c01-s05",
+    "newOnlyScope": "c01-s05 onward, all chapters through c20-s10",
+    "rejectedPriorStage5RestorationsKeptAsHistory": true,
+    "allowCrossGenderBorrowing": false,
+    "allowCrossOutcomeBorrowing": false,
+    "noPaidAPI": true
+  }
 }
