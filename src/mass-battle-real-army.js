@@ -528,7 +528,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     let impostorAsset=null;
     if(renderer&&members.length){
       try{
-        impostorAsset=await captureCrowdImpostorAtlas(renderer,representative);
+        impostorAsset=await captureCrowdImpostorAtlas(renderer,representative,
+          {footOriginY:footAnchor?.floor??0});
         if(impostorAsset)impostorTargets.push(impostorAsset.target);
       }catch(error){
         // A missing real RUN clip must never silently become a walking
