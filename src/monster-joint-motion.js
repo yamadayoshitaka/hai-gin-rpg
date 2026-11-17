@@ -149,6 +149,18 @@ function wingMotion(p,phase,action,actionPulse,reference){
   apply(p,'wingElbow'+suffix,'x',power*.26*Math.cos(phase-.40));
   apply(p,'wingWrist'+suffix,'y',side*(.09+power*.31*Math.sin(phase+1.04)));
   apply(p,'wingWrist'+suffix,'z',side*.21*power*Math.cos(phase-.73));
+  // Separate feather-covered hand in front of the chest: slight wing-
+  // synchronized sway, never the full rigid 82-feather wing flap.
+  if(p['phoenixArm'+suffix]){
+   apply(p,'phoenixArm'+suffix,'z',
+    side*(.045+power*.095*Math.sin(phase*.88+.28)));
+   apply(p,'phoenixArm'+suffix,'x',
+    -.12*actionPulse+.055*Math.sin(phase*.68));
+   apply(p,'phoenixForearm'+suffix,'x',
+    -.16*actionPulse+.12*power*Math.sin(phase*.96-.35));
+   apply(p,'phoenixFeatherHand'+suffix,'z',
+    side*(.09+power*.12*Math.cos(phase*.94-.45)));
+  }
   // Phoenix: muscular femur / actual knee / narrow chicken tarsus must
   // articulate separately. A modest flex retains a planted foot in idle.
   if(p['birdKnee'+suffix]){
