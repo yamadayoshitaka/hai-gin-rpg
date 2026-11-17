@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=beast-wolf-family-feline-closed-v9-20261117';
+ from './monster-geometry.js?v=beast-mouth-hip-tail-v10-20261117';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
