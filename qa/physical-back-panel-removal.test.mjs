@@ -18,7 +18,8 @@ assert.match(runtime,/panel\.removeFromParent\(\)/,'legacy panels removed from s
 for(const [s,label] of [[studio,'female studio'],[male,'male studio'],[game,'battle']]){
  assert.ok(s.includes('20261117-shoulder-cape-v75')||s.includes('75-shoulder-cape')||
   s.includes('20261117-pauldron-shoulder-v76')||s.includes('76-pauldron-shoulder')||
-  s.includes('20261117-anatomical-shoulders-v77')||s.includes('77-anatomical-shoulders'),
+  s.includes('20261117-anatomical-shoulders-v77')||s.includes('77-anatomical-shoulders')||
+  s.includes('20261118-exterior-shoulder-caps-v79')||s.includes('v79-exterior-shoulder-caps'),
   label+' must bust cached module URLs');
 }
 console.log('PASS no cardboard back meshes: female, male, battle, source geometry');
