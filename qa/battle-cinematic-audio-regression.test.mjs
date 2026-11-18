@@ -66,7 +66,8 @@ assert.equal(phase,'defeat');
 assert.equal(cinematic.locked,true);
 
 const score=createBattleOrchestralScore({AudioContextClass:null,AudioClass:null});
-assert.equal(score.phase,'battle');
+assert.equal(score.phase,'march');
+score.setPhase('battle');assert.equal(score.phase,'battle');
 score.setPhase('intro');assert.equal(score.phase,'intro');
 score.setPhase('victory');assert.equal(score.phase,'victory');
 score.setPhase('defeat');assert.equal(score.phase,'defeat');
