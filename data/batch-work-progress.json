@@ -418,6 +418,39 @@
         }
       },
       "workflow": "creature-six-lane.yml"
+    },
+    "gameQuality": {
+      "source": "ゲーム全体6レーン・GitHub Actions本番実行ジャーナル（まだ初回未確認）",
+      "lastRunAt": null,
+      "status": "work_incomplete",
+      "carryover": true,
+      "subject": "全モデル→ゲーム横断回帰の初回実行待ち",
+      "summary": "6レーンを登録。初回の実3D変更・実ゲーム描画計測・Android実測・公開は未確認。これらを起動成功と混同しない。",
+      "nextAction": "GitHub Actions game-quality-six-lane.ymlで6テーマのソース回帰を実行、frameでCI WebGL FPS実測、runtime/scaleで1000v1000起動・JSエラーを記録し、安全なsource移植があればcommit SHAを表示する。",
+      "steps": {
+        "launch": "pending",
+        "code": "pending",
+        "qa": "pending",
+        "commit": "pending",
+        "pr": "pending",
+        "merge": "pending",
+        "deploy": "pending"
+      },
+      "evidence": [],
+      "operational": {
+        "blockers": [
+          "初回測定と実ブラウザQAが未実施",
+          "Android実機FPSはCIから計測不可"
+        ],
+        "speedPlan": "同条件の50v50実測FPS/P95/描画数比較とソースSHA差分・実ブラウザで自己回帰"
+      },
+      "lastRunOutcome": {
+        "newSourceChangedIds": 0,
+        "newQAPassed": 0,
+        "newGameAppliedIds": 0,
+        "newSourceCommits": 0,
+        "newGeneratedGLBs": 0
+      }
     }
   }
 }
