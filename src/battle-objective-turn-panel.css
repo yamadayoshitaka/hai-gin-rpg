@@ -107,3 +107,14 @@ body.objective-turn-enabled #battleObjectiveTurnStatus{
  #battleObjectiveTurnPanel header small{font-size:10px}
  #battleObjectiveTurnPanel #objectiveTurnMap{width:min(100%,37dvh,340px)}
 }
+
+/* Turn-mode close-up identity stays below the turn status on narrow phones.
+ * The actual vertical offset is measured from the live status in the battle
+ * runtime, since the status may wrap to multiple lines. */
+body.objective-turn-enabled #battleZoomSquadBadge{
+ max-width:calc(100vw - 20px);
+ font-size:11px!important;
+ white-space:normal!important;
+ overflow-wrap:anywhere;
+ text-align:center;
+}

@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-touch-enditems">
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -1106,7 +1106,7 @@ import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=202611
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
-import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.36';
+import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=20261119-overlap1';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261117-mount-interior1';
 import {createMountInteriorMask,isMountInteriorCell} from './src/mount-interior-policy.js?v=20261117-mount-interior1';
@@ -4154,7 +4154,7 @@ if(massSim){
  // The live match HUD must keep its build visible even after the loading
  // message is replaced with FPS statistics. This exposes stale Pages builds.
  const perfBuildStyle=document.createElement('style');
- perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.69 TURN10 | ";font-weight:800;color:#cdeaff}';
+ perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.69 | ";font-weight:800;color:#cdeaff}';
  document.head.append(perfBuildStyle);
  // HUD belongs above the battle field; the bottom dock stays dedicated to
  // the radar, squad selection and command panels without overlapping metrics.
@@ -8505,8 +8505,14 @@ function refreshZoomSquadBadge(){
  if(lastZoomSquadBadgeText!==label){
   zoomSquadBadge.textContent=label;lastZoomSquadBadgeText=label;
  }
- zoomSquadBadge.style.top=Math.round(Math.min(innerHeight-180,
-  $('battleTopDock').getBoundingClientRect().bottom+8))+'px';
+ // Turn HUD replaces the normal top dock, so measure the visible turn
+ // status instead of the now-hidden dock. Never stack two badges at y=8.
+ const turnStatus=document.getElementById('battleObjectiveTurnStatus');
+ const turnBottom=document.body.classList.contains('objective-turn-enabled')&&
+   turnStatus&&!turnStatus.hidden?turnStatus.getBoundingClientRect().bottom:0;
+ const dockBottom=$('battleTopDock').getBoundingClientRect().bottom;
+ zoomSquadBadge.style.top=Math.round(Math.max(8,Math.min(innerHeight-180,
+  Math.max(turnBottom,dockBottom)+8)))+'px';
  zoomSquadBadge.style.borderColor=team===0?'#75d6f5':'#ffa1a6';
  zoomSquadBadge.hidden=false;
 }
