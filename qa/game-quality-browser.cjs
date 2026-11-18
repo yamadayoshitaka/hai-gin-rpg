@@ -9,6 +9,9 @@ const {chromium}=require('playwright');
 const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
 const args=process.argv.slice(2);
 const lane=(args.find(x=>x.startsWith('--lane='))||'--lane=runtime').split('=')[1];
+const rawWizardTimeout=(args.find(x=>x.startsWith('--wizard-timeout-ms='))||'').split('=')[1];
+const wizardTimeout=rawWizardTimeout?
+ Math.min(240000,Math.max(10000,Number(rawWizardTimeout)||60000)):240000;
 if(!['frame','scale','runtime'].includes(lane))throw Error('unsupported WebGL lane '+lane);
 const dir='qa-reports/game-quality-six';
 fs.mkdirSync(dir,{recursive:true});
@@ -26,11 +29,13 @@ const save=()=>fs.writeFileSync(dir+'/browser-'+lane+'.json',JSON.stringify(resu
    '--ignore-gpu-blocklist','--autoplay-policy=no-user-gesture-required']});
   const page=await browser.newPage({viewport:{width:430,height:932},deviceScaleFactor:1});
   page.on('pageerror',e=>{result.errorMessages.push(String(e.message||e).slice(0,300))});
+  page.on('crash',()=>{result.browserCrash=true;result.errorMessages.push('Chromium page crashed during 3D battle startup')});
+  page.on('close',()=>{if(result.status==='starting')result.pageClosedBeforeResult=true});
   const scenario=result.scenario==='50v50'?'?army=50':'?army=1000';
   await page.goto('http://127.0.0.1:8765/tactics-wireframe.html'+scenario+'&qualityProbe=1',
    {waitUntil:'domcontentloaded',timeout:60000});
   if(lane==='frame'){
-   await launchBattleViaThreeStepWizard(page,{timeout:240000});
+   await launchBattleViaThreeStepWizard(page,{timeout:wizardTimeout});
    await page.waitForFunction(()=>window.getBattleStartupStats?.().ready||
     document.querySelector('#runtimeError')?.style.display==='block',
     null,{timeout:200000,polling:500});
