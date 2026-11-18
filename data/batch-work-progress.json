@@ -248,41 +248,52 @@
       }
     },
     "faceHair": {
-      "source": "2026-11-18 全バッチ手動起動／GitHub Actions実行結果",
-      "lastRunAt": "2026-11-17T23:50:15Z",
+      "source": "GitHub Actions自走本番コミット＋旧手動バッチ（新ジャーナル稼働前の確認済み証跡）",
+      "lastRunAt": "2026-11-18T02:50:15Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "手動起動・静的QA成功／実モデル改修・公開未完了",
-      "summary": "手動GitHub Actionsはsuccess。これは既存ソースの静的検査のみ。新規メッシュ・コミット・ゲーム反映は今回確認できない。WebGL前後/動作とAndroid FPSは未承認。",
-      "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
+      "subject": "自走コミット2件成功：頭皮/髪メッシュ実ソースの修正（WebGL・Android未承認）",
+      "summary": "2026-11-18 11:47頃のGitHub Actions実行により、旧PR #615と#592から src/character-system/hair-attachment-runtime.js の実ソース差分を最新mainへ適用、コミット4b81f5e/c9efebddが成功。各適用時の静的QA成功。新規GLB0・実WebGL正面/側面/背面とAndroid FPS未測定。静的QA成功はFF15外観合格ではない。",
+      "nextAction": "新ジャーナルから直近の実コード変更・対象SHAを自動表示。未解決PR差分は主として髪の実描画・WebGL正面/側面/背面・1000vs1000 LOD・Pixel実機FPSの回帰チェックが必要。",
       "steps": {
         "launch": "done",
-        "code": "pending",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
-        "pr": "pending",
-        "merge": "pending",
+        "commit": "done",
+        "pr": "done",
+        "merge": "done",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "手動顔髪QA（GitHub Actions success）",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44202804727"
+          "label": "自走ソースコミット ① PR #615",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/4b81f5e0536dfb8a6037ef07da4295f85d74995b"
+        },
+        {
+          "label": "自走ソースコミット ② PR #592",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c9efebddce1a7dbd183712db8c0f21706ebc569a"
+        },
+        {
+          "label": "自走バッチ実行／成果あり",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44226026505"
+        },
+        {
+          "label": "後続の未解決競合 Issue",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/639"
         }
       ],
       "operational": {
         "blockers": [
-          "今回の静的/監査QA成功はWebGL目視・Android FPS・本編採用を意味しない",
-          "実3D形状変更・GLB生成は未実施",
-          "実画面WebGL・Android実機FPS未検証",
-          "Pagesへの公開未確認"
+          "静的QAは成功したがWebGL実映像の前後比較/Android FPSは未検証",
+          "未適用の頭皮UV/ヘアマスク関連PRに3-way競合あり",
+          "本編でのハゲ・目の奥まり解消は未承認"
         ],
-        "speedPlan": "最新の6担当結果から失敗する共通造形を選び、ソース実改修/QA証跡を作成して採用判定。",
+        "speedPlan": "ゲーム側・顔髪編集画面双方でのリアルな髪モデル改善と同条件の実ブラウザ計測を進め、実コミット・再描画・Pages SHAを別途検証する",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 2,
           "newGeneratedGLBs": 0
         }
       },
