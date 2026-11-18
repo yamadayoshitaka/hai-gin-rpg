@@ -4,6 +4,10 @@
  * physical pigments. The catalogue/stat data remains untouched.
  */
 export const MONSTER_REALISTIC_PALETTE=Object.freeze({
+ // Owner-approved salamander: black volcanic scutes / orange magma seams.
+ // Other reptile pigments and the original m001 wolf remain untouched.
+ m019:Object.freeze({skin:'#322a2d',light:'#964338',accent:'#fb8a3a',
+   bone:'#efe1c8',eye:'#ffae52',shadow:'#261d24'}),
  m031:Object.freeze({skin:'#777b72',light:'#a6a89a',bone:'#d2c5ab',
    hair:'#302b29',fabric:'#463e3c',mortalSkin:'#828479',eye:'#493e32'}),
  m032:Object.freeze({skin:'#59634d',light:'#879177',bone:'#b8aa8c',
