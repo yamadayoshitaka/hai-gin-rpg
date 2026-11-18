@@ -1481,7 +1481,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
  };
  for(let i=0;i<14;i+=2){
-  if(broken&&!(i+1<6||i>9))continue;
+  if(broken&&!(i+2<6||i>9))continue;
   const x0=(i-7)*cellSize,x1=(i+2-7)*cellSize;
   brace([x0,.06,z],[x1,1.06,z]);
   brace([x0,1.06,z],[x1,.06,z]);
