@@ -114,20 +114,20 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T09:53:09+09:00",
-      "status": "work_incomplete",
+      "lastRunAt": "2026-11-18T10:54:50+09:00",
+      "status": "blocked_branch_behind_main",
       "carryover": true,
-      "subject": "PR #624 継続：井戸・石造アーチ・階段・見張り塔・水槽の荷重支持実造形",
-      "summary": "world.enabled=trueをmainで確認。world Issue #629を対象。PR #624の既存ブランチで5種の実3D生成器を修正。井戸内壁、アーチ基礎/迫元、階段基礎、見張り塔交差筋交い、水槽地面支持を追加。実ソースSHA c592b35f75a5a6d3d42b6b292fc8cb202abc2a5b、共有石材のside汚染防止SHA c1956f2bb28825ace7069c7807038c4f34f95c48。前回Mobile Battle #44198313908はテスト成功後、実ブラウザ録画工程でcancelled。今回WebGL/Android実測は未検証、main採用/公開0。",
-      "nextAction": "PR #624の最新headでCI確認し、Node3種QA→5対象のWebGL新旧撮影→衝突/LOD/FPS。cancelled Mobile Battle録画の実行制限原因を確認。全ゲート通過までDraft維持。",
+      "subject": "PR #624 main追従ブロッカーとWebGL/Android未検証",
+      "summary": "main 6c59dd0015630c32a030afc840f17739702c2081、PR #624 head world/structural-joinery-five-20261118 の比較は diverged（ahead 11 / behind 1、merge-base e3f90dd9de86d637b96a7b3e2110acac06ace09d）。PR #635はmerged。既存PRのCIはArchitecture/photoreal success、Battle visualとsix-lane cancelled。最新mainへの3-way同期が必要だが接続GitHub操作に安全なブランチ同期機能がなく、旧PRへの追記・main上書きは実施しない。今回実3Dソース改修0、QA新規合格0、ゲーム採用0、公開0。",
+      "nextAction": "PR #624を最新main 6c59dd0015630c32a030afc840f17739702c2081 に3-wayマージ（既存造形差分を保護）、behind_by=0とPR #635 ancestry gate確認後、node --checkと指定3種QA、実WebGL正面/側面/背面・LOD・衝突/FPSを検証し、失敗を同じPRで修復。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "blocked",
         "qa": "pending",
-        "commit": "done",
-        "pr": "done",
-        "merge": "pending",
-        "deploy": "pending"
+        "commit": "not_done",
+        "pr": "existing_draft",
+        "merge": "blocked",
+        "deploy": "not_done"
       },
       "evidence": [
         {
@@ -135,38 +135,38 @@
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
         },
         {
-          "label": "実ソース修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c592b35f75a5a6d3d42b6b292fc8cb202abc2a5b"
+          "label": "PR #635 merged ancestry gate",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/635"
         },
         {
-          "label": "共有材質副作用修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c1956f2bb28825ace7069c7807038c4f34f95c48"
+          "label": "Architecture success",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44211554942"
         },
         {
-          "label": "Mobile Battle cancelled",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313908"
-        },
-        {
-          "label": "手動world Issue #629",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/629"
+          "label": "World six-lane cancelled",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44211554910"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 2,
+        "newSourceCommits": 0,
         "newGeneratedGLBs": 0,
-        "newPublishedIds": 0
+        "newPublishedIds": 0,
+        "webglPassedIds": [],
+        "gameAppliedIds": [],
+        "sourceChangedIds": [],
+        "publicVerified": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 headのNode構文/指定3種QAと6レーン再実行結果は未確認",
-          "井戸/石造アーチ/階段/見張り塔/水槽のWebGL実画像・衝突/配置の新旧比較未実施",
-          "Mobile Battle run 44198313908は実ブラウザ録画工程でcancelled（前段Node QAは成功）",
-          "Android/1000vs1000 FPS未計測、main採用とPages公開は保留"
+          "PR #624 diverged from latest main: behind_by=1; safe 3-way merge required before further branch changes",
+          "Connected GitHub tool lacks update-branch/merge-main-into-branch operation; unsafe whole-file replacement prohibited",
+          "Latest PR #624 six-lane and Battle visual workflows cancelled; real WebGL comparison unverified",
+          "Android/1000vs1000 FPS unmeasured"
         ],
-        "speedPlan": "PR #624の最新headでCI確認し、Node3種QA→5対象のWebGL新旧撮影→衝突/LOD/FPS。cancelled Mobile Battle録画の実行制限原因を確認。全ゲート通過までDraft維持。",
+        "speedPlan": "PR #624を最新main 6c59dd0015630c32a030afc840f17739702c2081 に3-wayマージ（既存造形差分を保護）、behind_by=0とPR #635 ancestry gate確認後、node --checkと指定3種QA、実WebGL正面/側面/背面・LOD・衝突/FPSを検証し、失敗を同じPRで修復。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,

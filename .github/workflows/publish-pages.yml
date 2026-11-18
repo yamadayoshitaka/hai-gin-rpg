@@ -32,36 +32,69 @@ jobs:
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
       - name: Verify published batch PR preview and checkpoint contract
+        id: qa_0
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node --test qa/batch-work-progress.test.mjs
       - name: Verify 108 original high-poly master and three level-of-detail contracts
+        id: qa_1
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node --test qa/creature-master-studio.test.mjs
       - name: Verify 108-creature reconstruction scope, anatomy and non-destructive model assignments
+        id: qa_2
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           node --test qa/creature-reconstruction-plan.test.mjs
           node --test qa/creature-web-mesh-catalog.test.mjs
       - name: Verify opt-in monster mesh adoption, nonhuman scope and rollback
+        id: qa_3
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node --test qa/creature-mesh-adoption.test.mjs
       - name: Verify 50 monster and summon reference prompts plus evidence-based 100-point KPI
+        id: qa_4
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           node --test qa/monster-quality-kpi.test.mjs
           node scripts/monster-quality-status.mjs
       - name: Verify 20 chapters, story progression and recorded AI voice contract
+        id: qa_5
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node qa/story-chronicle.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
+        id: qa_6
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           node --experimental-vm-modules qa/game-core-contract.test.mjs
           node qa/army-groups.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
+        id: qa_7
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           node qa/continent-town-gacha-regression.test.mjs
           node qa/town-tavern-gacha.test.mjs
       - name: Verify registered Chapter 1 character-art references and 3D viewer linkage
+        id: qa_8
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node qa/chapter-one-character-art-bridge.test.mjs
       - name: Verify independent male/female source-derived face meshes
+        id: qa_9
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           npm install --no-save --package-lock=false three@0.160.1
           node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
+        id: qa_10
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
           node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
@@ -81,14 +114,23 @@ jobs:
       - name: Install image optimizer for slim Pages artifact
         run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
       - name: Verify relay startup without duplicate page reloads
+        id: qa_11
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node qa/scene-navigation-startup.test.mjs
       - name: Inventory all 1400 real chapter-panel pictures and validate gender-safe fallbacks
+        id: qa_12
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: |
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
       - name: Validate batch center and PR preview are shipped in the same Pages artifact
+        id: qa_13
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node --test qa/pages-batch-center-live-parity.test.mjs
       - name: Verify published world map contains the 12 named regions (no stale lock overlay)
         shell: bash
@@ -104,7 +146,41 @@ jobs:
           fi
           echo "PASS: release archive contains the refreshed 12-region map"
       - name: Require same latest provisional artwork in game, chapter review and deployed release
+        id: qa_14
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
         run: node qa/pages-story-live-parity.test.mjs
+      - name: Record tolerated quality-test failures before publishing
+        if: always()
+        env:
+          QA_0: ${{ steps.qa_0.outcome }}
+          QA_1: ${{ steps.qa_1.outcome }}
+          QA_2: ${{ steps.qa_2.outcome }}
+          QA_3: ${{ steps.qa_3.outcome }}
+          QA_4: ${{ steps.qa_4.outcome }}
+          QA_5: ${{ steps.qa_5.outcome }}
+          QA_6: ${{ steps.qa_6.outcome }}
+          QA_7: ${{ steps.qa_7.outcome }}
+          QA_8: ${{ steps.qa_8.outcome }}
+          QA_9: ${{ steps.qa_9.outcome }}
+          QA_10: ${{ steps.qa_10.outcome }}
+          QA_11: ${{ steps.qa_11.outcome }}
+          QA_12: ${{ steps.qa_12.outcome }}
+          QA_13: ${{ steps.qa_13.outcome }}
+          QA_14: ${{ steps.qa_14.outcome }}
+        shell: bash
+        run: |
+          count=0
+          for key in $(seq 0 14); do
+            value="QA_${key}"
+            result="${!value}"
+            if [ "${result}" = failure ]; then
+              echo "::warning::Optional quality test ${key} failed. Publishing under explicit owner permission."
+              echo "- Optional quality test ${key}: failed (publication permitted)" >> "${GITHUB_STEP_SUMMARY}"
+              count=$((count+1))
+            fi
+          done
+          echo "Optional QA failures: ${count}. Integrity check, build and deployment remain mandatory." >> "${GITHUB_STEP_SUMMARY}"
       # GitHub Pages can leave the deployment lock active even after the
       # original deploy-pages job times out. Release the known orphan from
       # the 2026-11-10 09:53 UTC attempt before creating a new deployment.

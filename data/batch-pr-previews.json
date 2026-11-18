@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "GitHub PR内の実コード改修と本編Pagesの公開差を可視確認するためのPR別表示先。PRは未マージなら本編未反映。PR版のCDNプレビューは外部サービス経由の試験用で実描画QA合格を保証しない。",
+  "description": "【履歴専用／最新ブランチ選定禁止】過去PRの確認用固定台帳。現在の品質評価・改善対象は必ずGitHub APIで最新main SHAとカテゴリ別の未マージPR HEAD SHAを取得する。オブジェクト一覧の現行正本は維持し、旧PRで上書きしない。Pages公開は別SHAで照合。",
   "groups": {
     "world": [
       {
