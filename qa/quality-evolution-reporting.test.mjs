@@ -30,6 +30,11 @@ test('every optimizer run records rejected candidate details on current main',()
  assert.match(script,/report\.completedAt=new Date\(\)\.toISOString\(\)/);
  assert.match(script,/await publishEvolutionRun\(\)/);
  assert.match(script,/baselineBrowserError:report\.baselineBrowser\?\.error/);
+ assert.match(script,/baselineBrowserFps:report\.baselineBrowser\?\.fps/);
+ assert.match(script,/baselineBrowserP95Ms:report\.baselineBrowser\?\.p95Ms/);
+ assert.match(script,/drawCalls:c\.browser\?\.drawCalls/);
+ assert.match(monitor,/CI仮想GPU基準 FPS/);
+ assert.match(monitor,/baselineBrowserDrawCalls/);
  assert.match(script,/sourceCommitSha:report\.sourceCommitSha/);
  assert.match(script,/GITHUB_RUN_ID/);
  assert.match(script,/artisticQualityApproved:false/);
