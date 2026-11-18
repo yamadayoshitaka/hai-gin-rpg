@@ -99,6 +99,46 @@ function browser(){
  try{return JSON.parse(fs.readFileSync(file,'utf8'))}
  catch{return {status:'malformed',error:t.out.slice(-450)}}
 }
+async function publishApprovedEvidence(){
+ const token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN;
+ if(!token)throw Error('Missing token for verified improvement ledger');
+ const route='contents/data/quality-evolution/history.json';
+ const endpoint='https://api.github.com/repos/'+REPO+'/'+route;
+ const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json',
+  'Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'};
+ for(let attempt=0;attempt<3;attempt++){
+  const get=await fetch(endpoint+'?ref=main',{headers});
+  if(!get.ok)throw Error('Cannot read current score ledger: '+get.status);
+  const stored=await get.json();
+  const ledger=JSON.parse(Buffer.from(stored.content.replace(/\\s/g,''),'base64').toString('utf8'));
+  if(ledger.schemaVersion!==1||!Array.isArray(ledger.acceptedChanges))
+   throw Error('Unknown score ledger schema');
+  const record={sourceSha:report.sourceCommitSha,at:report.startedAt,
+   domain:report.domain,baselineValue:report.baseline?.profile,
+   adoptedValue:report.selected?.value,sourcePaths:report.changedSourceFiles,
+   proxyBefore:report.baseline?.proxyScore,proxyAfter:report.selected?.proxyScore,
+   proxyGain:report.selected?.gain,gameFpsBaseline:report.browserGate?.fpsBefore,
+   gameFpsCandidate:report.browserGate?.fpsAfter,
+   gameP95Baseline:report.browserGate?.p95Before,
+   gameP95Candidate:report.browserGate?.p95After,
+   webglPassed:report.browserGate?.approved===true,
+   artisticQualityApproved:false,androidFpsMeasured:false,
+   note:'Objective geometry surrogate improved; FF15 aesthetic quality NOT assessed'};
+  if(!ledger.acceptedChanges.some(x=>x.sourceSha===record.sourceSha))
+   ledger.acceptedChanges.push(record);
+  ledger.acceptedChanges=ledger.acceptedChanges.slice(-70);
+  ledger.lastPublishedBy=record.sourceSha;
+  const response=await fetch(endpoint,{method:'PUT',headers,body:JSON.stringify({
+   branch:'main',sha:stored.sha,
+   message:'chore(quality): record verified 3D geometry and CI FPS evolution evidence',
+   content:Buffer.from(JSON.stringify(ledger,null,2)+'\\n').toString('base64')
+  })});
+  if(response.ok)return (await response.json()).commit?.sha;
+  if(attempt===2||![409,422].includes(response.status))
+   throw Error('Score ledger update rejected: '+response.status);
+ }
+ return null;
+}
 function save(report){
  fs.mkdirSync(logDir,{recursive:true});
  fs.writeFileSync(path.join(logDir,'latest.json'),JSON.stringify(report,null,2)+'\n');
@@ -199,6 +239,12 @@ async function main(){
   report.sourceCommitSha=sourceSha;
   report.changedSourceFiles=[profilePath];
   report.status='committed_measured_proxy_improvement';
+  try{
+   report.ledgerCommitSha=await publishApprovedEvidence();
+  }catch(error){
+   report.ledgerError=String(error.message||error).slice(0,500);
+   report.status='committed_ledger_failed';
+  }
   // Preserve successful source commit even if the independent Pages release
   // dispatch later fails; this cannot be called visually approved.
   const token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN;
@@ -220,7 +266,7 @@ async function main(){
    fs.appendFileSync(process.env.GITHUB_OUTPUT,'changed='+(report.sourceCommitSha?'true':'false')+'\n');
    if(report.sourceCommitSha)fs.appendFileSync(process.env.GITHUB_OUTPUT,'source_sha='+report.sourceCommitSha+'\n');
   }
-  if(report.status==='error'||report.status==='committed_pages_dispatch_failed')
+  if(report.status==='error'||report.status==='committed_pages_dispatch_failed'||report.status==='committed_ledger_failed')
    process.exitCode=1;
  }
 }
