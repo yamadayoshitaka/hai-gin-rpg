@@ -271,6 +271,8 @@ for(const id of ['eyeSpacing','maleEyeSpacing']){
  control.dataset.savedPosition=String((FACE_EYE_SPACING_DEFAULT-FACE_EYE_SPACING_RANGE[0])/
   (FACE_EYE_SPACING_RANGE[1]-FACE_EYE_SPACING_RANGE[0]));
 }
+// Only pause continuous animation for deterministic CI frame sampling.
+const qaFrameCapture=new URLSearchParams(location.search).get('qaCapture')==='1';
 const canvas=$('faceCanvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -460,6 +462,31 @@ function metrics(){
   exportedSurface:'face-only',bodyMeshes:0,sourceUntouched:true};
 }
 window.__faceMasterQA=metrics;
+// Screenshot APIs can stall while SwiftShader draws the animated WebGL canvas.
+// The QA path captures a real render directly with gl.readPixels, without
+// changing any saved face presets, GLBs, game model or production animation.
+if(qaFrameCapture){
+ renderer.setPixelRatio(1);
+ window.__faceQACapture=()=>{
+  if(!ready)throw Error('Face GLB has not loaded');
+  resize();orbit.update();
+  renderer.render(scene,camera);
+  const gl=renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight;
+  if(w<160||h<160||w*h>1500000)throw Error('Unexpected face preview dimensions '+w+'x'+h);
+  const pixels=new Uint8Array(w*h*4);
+  gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+  if(gl.getError()!==gl.NO_ERROR)throw Error('WebGL pixel readback error');
+  const pngCanvas=document.createElement('canvas');
+  pngCanvas.width=w;pngCanvas.height=h;
+  const ctx=pngCanvas.getContext('2d');
+  if(!ctx)throw Error('PNG canvas unavailable');
+  const img=ctx.createImageData(w,h),stride=w*4;
+  for(let y=0;y<h;y++)img.data.set(
+   pixels.subarray(y*stride,(y+1)*stride),(h-1-y)*stride);
+  ctx.putImageData(img,0,0);
+  return pngCanvas.toDataURL('image/png');
+ };
+}
 // Read-only surface probe for actual WebGL crown material diagnostics.
 window.__v65PickRenderedSurface=(u,v)=>{
  const ray=new THREE.Raycaster();
@@ -1239,7 +1266,7 @@ function frame(){
  expressions.get(gender)?.update(dt);
  if(wigOn&&models.get('female')?.root.visible)wigs.get('female')?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
- requestAnimationFrame(frame);
+ if(!qaFrameCapture)requestAnimationFrame(frame);
 }
 init();frame();
 </script></body></html>

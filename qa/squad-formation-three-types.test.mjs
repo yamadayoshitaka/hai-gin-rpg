@@ -57,7 +57,8 @@ for(const count of [50,1000]){
 }
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/openingPlan\.id='openingSquadStrategies'/);
-assert.match(html,/for\(const group of \[1,2,3\]\)/);
+assert.match(html,/for\(const group of Array\.from\(\{length:10\},\(_,i\)=>i\+1\)\)/,
+ 'Ten selectable combat groups must be shown; do not regress to three');
 assert.match(html,/armyGroupBySquad\[id\]=group/);
 assert.match(html,/manualJobs\[id\]/);
 assert.match(html,/function openManualJobEditor\(id\)/);

@@ -18,6 +18,7 @@ on:
     paths:
       - 'scripts/quality-evolution-loop.mjs'
       - 'qa/quality-evolution-probe.mjs'
+      - 'qa/facehair-production-visual.cjs'
       - 'qa/quality-evolution-loop.test.mjs'
       - 'qa/quality-evolution-reporting.test.mjs'
       - 'qa/outfit-fps-diagnostic.test.mjs'
@@ -31,6 +32,7 @@ on:
       - 'qa/quality-evolution-probe.mjs'
       - 'qa/quality-evolution-loop.test.mjs'
       - 'src/character-system/quality-evolution-profile.js'
+      - 'qa/facehair-production-visual.cjs'
       - 'src/face-scalp-wig.js'
       - 'src/face-feature-meshes.js'
       - 'src/outfit-maintenance-model.js'
@@ -85,7 +87,7 @@ jobs:
           echo "## Quality evolution: $domain" >> "$GITHUB_STEP_SUMMARY"
       - name: Install free 3D runtime and Chromium headless renderer
         run: |
-          npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
+          npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0 pngjs@7.0.0
           npx playwright install --with-deps chromium
       - name: Hard test source invariants before attempting any visual candidate
         run: |
@@ -99,6 +101,7 @@ jobs:
         id: optimize
         env:
           QUALITY_DOMAIN: ${{ steps.category.outputs.domain }}
+          FACE_QA_BASE_URL: http://127.0.0.1:8765
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
         run: node scripts/quality-evolution-loop.mjs
@@ -116,6 +119,8 @@ jobs:
             qa-reports/quality-evolution/
             qa-reports/game-quality-six/browser-frame.json
             qa-reports/game-quality-six/frame-webgl.png
+            qa-reports/character-six-lane/faceHair-production-visual.json
+            qa-screenshots/facehair-production/
           retention-days: 30
           if-no-files-found: warn
       - name: Preserve correct claims

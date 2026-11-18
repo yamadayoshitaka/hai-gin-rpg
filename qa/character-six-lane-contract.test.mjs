@@ -52,3 +52,19 @@ test('PR must run ALL six character acceptance lanes instead of the minute-only 
  assert.match(yaml,/--slot "\$\{slot\}"/);
  assert.match(yaml,/if: github\.event_name != 'pull_request'/);
 });
+
+test('Face/hair hourly and PR pipelines capture actual 3D preview and skinned battle face pixels',()=>{
+ const yaml=fs.readFileSync('.github/workflows/character-six-lane.yml','utf8');
+ const capture=fs.readFileSync('qa/facehair-production-visual.cjs','utf8');
+ assert.match(yaml,/Compare female and male face and hair geometry from four live WebGL angles/);
+ assert.match(yaml,/node qa\/facehair-production-visual\.cjs/);
+ assert.match(yaml,/node qa\/battle-face-lit-visual\.cjs/);
+ assert.match(yaml,/qa-screenshots\/facehair-production/);
+ assert.match(yaml,/if: always\(\) && steps\.face_probe\.outputs\.run == 'true'/);
+ assert.match(capture,/face-mesh-studio\.html\?preview=1/);
+ assert.match(capture,/\['female', 'male'\]/);
+ assert.match(capture,/\['front', 'threeQuarter', 'side', 'back'\]/);
+ assert.match(capture,/visibleFaceMeshes/);
+ assert.match(capture,/wigReport/);
+ assert.match(capture,/ff15ArtisticQualityApproved: false/);
+});

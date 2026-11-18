@@ -304,6 +304,28 @@ async function main(){
   const integrity=run('node',['--check',profilePath]);
   const finalQA=run('node',['--test',...choices[domain].tests],240000);
   if(!integrity.ok||!finalQA.ok)throw Error('Final candidate regression failed');
+  // Render actual source-derived high-detail geometry before publication.
+  // Detect missing or blank face/hair output; artistic quality needs approval.
+  if(domain==='face'||domain==='hair'){
+   const visualRun=run('node',['qa/facehair-production-visual.cjs'],270000);
+   const visualFile='qa-reports/character-six-lane/faceHair-production-visual.json';
+   let visualResult=null;
+   try{visualResult=JSON.parse(fs.readFileSync(visualFile,'utf8'))}
+   catch(error){report.faceHairVisualGate={status:'missing_or_invalid_report',error:String(error)}}
+   if(visualResult){
+    report.faceHairVisualGate={
+     status:visualResult.status,frames:visualResult.views?.length||0,
+     artisticApproval:false,source:visualResult.source,
+     screenshotHashes:(visualResult.views||[]).map(x=>x.pngSha256)
+    };
+   }
+   if(!visualRun.ok||visualResult?.status!=='webgl_images_captured_manual_art_review_pending'||
+      visualResult.views?.length!==8){
+    report.status='blocked_facehair_visual_regression';
+    report.error=(visualRun.out||visualResult?.error||'Visual probe failed').slice(-850);
+    return;
+   }
+  }
   const modified=required('git',['diff','--name-only']).split('\n').filter(Boolean);
   if(modified.length!==1||modified[0]!==profilePath)
    throw Error('Unexpected changed source path: '+modified.join(','));

@@ -34,7 +34,7 @@ test('young male hero gets bright eyes and clean-shaven jaw without overwriting 
  assert.equal(hero.controls.beardDensity,0);
  assert.ok(hero.controls.irisDiameter>=YOUNG_HERO_MALE_V50.irisDiameter);
 });
-test('normal body and male armor preview no longer have the heavy 0.93 proportion',()=>{
+test('normal body and male armor have a fitted chest without burying shoulder caps into sleeves',()=>{
  assert.equal(resolveBodyType('normal').width,1);
  assert.equal(resolveBodyType('normal').depth,1);
  assert.ok(resolveBodyType('fat').width>1.3);
@@ -51,9 +51,11 @@ test('normal body and male armor preview no longer have the heavy 0.93 proportio
  const leg=part('male-hero-knee','knee');
  const sword=part('male-hero-sword','weapon');
  const report=refineHeroineCostumeSilhouette(root,{gender:'male',job:'swordsman'});
- assert.ok(report.narrowedCuirass>=2);
+ // Chest is narrowed; shoulder caps intentionally remain fitted to the real rig.
+ assert.ok(report.narrowedCuirass>=1);
  assert.ok(chest.scale.x<=.84&&chest.scale.z<=.84);
- assert.ok(shoulder.scale.x<=.78&&shoulder.scale.z<=.78);
+ assert.equal(shoulder.scale.x,1,'shoulder cap must remain outside fitted sleeves');
+ assert.equal(shoulder.scale.z,1);
  assert.ok(leg.scale.x<=.89);
  assert.equal(sword.scale.x,1);
 });
