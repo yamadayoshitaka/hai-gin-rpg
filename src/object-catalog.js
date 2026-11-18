@@ -1482,6 +1482,19 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const arch=Math.sqrt(Math.max(0,1-phase*phase));
    if(!broken||x<6||x>9)add(cellSize*.98,.65+1.1*(1-arch),.4,px,-.54-.55*(1-arch),z,stone);
   }
+  // Radial voussoirs frame the three visible masonry arches. The curved
+  // stones sit below the walkable deck and do not alter bridge collision.
+  const voussoirGeometry=new THREE.BoxGeometry(cellSize*.43,.34,.38);
+  const archStone=new THREE.MeshStandardMaterial({color:0xaaa79d,roughness:.94,flatShading:true});
+  for(const side of [-1,1])for(const center of [-5,0,5])for(let j=0;j<9;j++){
+   const angle=Math.PI*(j+1)/10;
+   const radius=1.18*cellSize;
+   const voussoir=new THREE.Mesh(voussoirGeometry,archStone);
+   voussoir.position.set((center+Math.cos(angle)*1.12)*cellSize,-1.47+Math.sin(angle)*radius,side*(W/2-.53));
+   voussoir.rotation.z=angle-Math.PI/2;
+   voussoir.castShadow=true;voussoir.receiveShadow=true;
+   root.add(voussoir);
+  }
   for(const x of [-5,0,5])for(const side of [-1,1])add(.85,2.3,.85,x*cellSize,-1.4,side*(W/2-.45),mortar);
   if(broken)for(let i=0;i<13;i++){const x=((i*7)%17-8)*cellSize*.35,z=((i*5)%7-3)*cellSize*.4;const rubble=new THREE.Mesh(new THREE.DodecahedronGeometry(.2+(i%4)*.12,0),i%3?stone:mortar);rubble.position.set(x,-1.4-(i%3)*.2,z);rubble.rotation.set(i*.4,i*.7,i*.2);root.add(rubble)}
   root.userData.catalogId=id;root.userData.footprint={lengthCells:15,widthCells:3};root.userData.passable=!broken;return root;
