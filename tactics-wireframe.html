@@ -9771,6 +9771,7 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  getMoveTargets:getObjectiveMoveTargets,
  getGroupOrigin:turnGroupOrigin,
  getGroupLabel:groupId=>turnGroupLabels.get(Number(groupId))||'混成隊',
+ getBattleStatusRows:()=>battleRpgHud?.rows||[],
  getLegalMapPoint:turnLegalPoint,
  worldSize:WORLD_SIZE,
  drawMapBackground:(ctx,w,h)=>ctx.drawImage(miniBase,0,0,w,h),
