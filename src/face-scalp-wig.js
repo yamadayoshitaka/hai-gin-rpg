@@ -30,9 +30,11 @@ const projectCapsule=(p,a,b,r)=>{
 // lose almost all roots to the much denser triangles on the frontal head.
 const WIG_ZONE_WEIGHTS=Object.freeze([
  // Top/crown roots + real back-of-head roots: sum exactly 1.
- ['crown',.23],['fringeLeft',.05],['fringeRight',.05],
+ // Reallocate 4% of strand roots to the crown to reduce top-scalp
+ // exposure without increasing draw calls or strand count on Android.
+ ['crown',.27],['fringeLeft',.05],['fringeRight',.05],
  ['templeLeft',.105],['templeRight',.105],
- ['backLeft',.18],['backRight',.18],
+ ['backLeft',.16],['backRight',.16],
  ['napeLeft',.05],['napeRight',.05]
 ]);
 function actualScalpCandidates(geo,box){
@@ -43,7 +45,9 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.54||yn>.998)continue;
+  // Retain the uppermost scalp ring for crown-root coverage; discard only
+  // the extreme pole, whose collapsed UV topology produces spiky roots.
+  if(yn<.54||yn>.9995)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -51,7 +55,10 @@ function actualScalpCandidates(geo,box){
   const sample={p,n,index:i};
   all.push(sample);
   // Extend crown follicle range across the upper back of the head.
-  if(yn>.825&&nz<.21)pools.crown.push(sample);
+  // Include the upper rear crown transition (not the face) so that
+  // crown locks cover the parietal rim instead of exposing a bald band.
+  // Keep the lower nape in its own growth zone.
+  if(yn>.79&&nz<.21&&nz>-.48)pools.crown.push(sample);
   // True forehead hairline grows from the top cap, never from between the
   // eyebrows or the cheeks (these generated the disconnected tiny spikes).
   if(yn>.870&&nz>.035&&yn<.992)pools['fringe'+side].push(sample);
@@ -665,9 +672,53 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ // Sort crown follicles around the whorl before low-discrepancy sampling.
+ // Vertex ordering can otherwise bunch all added crown ribbons into one
+ // patch, leaving the opposite side bald despite a higher crown budget.
+ // Use the style's actual whorl, not the bounding-box centre, as the
+ // follicle distribution origin. An off-centre part otherwise leaves a
+ // sparse crescent around the whorl even when the crown has enough roots.
+ const crownCenter=whorl;
+ const crownRoots=pools.crown.slice().sort((a,b)=>{
+  const angleA=Math.atan2(a.p.x-crownCenter.x,a.p.z-crownCenter.z);
+  const angleB=Math.atan2(b.p.x-crownCenter.x,b.p.z-crownCenter.z);
+  return angleA-angleB||
+   a.p.distanceToSquared(crownCenter)-b.p.distanceToSquared(crownCenter);
+ });
+ // Sort each anatomical zone spatially once. Donor vertex order often
+ // follows triangle strips, so direct low-discrepancy indexing can still
+ // concentrate temple and rear locks into a narrow visible bald patch.
+ // The crown keeps its separate whorl-aware angular ordering.
+ const orderedRoots=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>{
+  if(zone==='crown')return [zone,crownRoots];
+  const pool=pools[zone].slice();
+  const rear=zone.startsWith('back')||zone.startsWith('nape');
+  pool.sort((a,b)=>rear
+   ? a.p.x-b.p.x||a.p.y-b.p.y||a.p.z-b.p.z
+   : a.p.y-b.p.y||a.p.x-b.p.x||a.p.z-b.p.z);
+  return [zone,pool];
+ }));
+ // Split crown into inner and outer radial bands around the actual whorl.
+ // Angular-only selection can oversample the inner cap and leave a visible
+ // outer bald ring even with adequate crown strand budget. Alternate bands
+ // without creating additional strands, meshes or draw calls.
+ // Crown coverage is measured in the horizontal scalp footprint. Using 3D
+ // distance incorrectly treats higher scalp vertices as outer-ring roots,
+ // leaving true side/rear rim vertices undersampled on tall head shapes.
+ const crownFootprintRadius=root=>Math.hypot(
+  root.p.x-crownCenter.x,root.p.z-crownCenter.z);
+ const crownRadius=crownRoots.map(crownFootprintRadius)
+  .sort((a,b)=>a-b);
+ const crownMedian=crownRadius[Math.floor(crownRadius.length/2)];
+ const crownBands=[
+  crownRoots.filter(root=>crownFootprintRadius(root)<=crownMedian),
+  crownRoots.filter(root=>crownFootprintRadius(root)>crownMedian)
+ ];
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const crownBand=zone==='crown'?crownBands[index%2]:null;
+  const pool=crownBand?.length?crownBand:
+   rear&&index%3===0?backCenterPools[zone]:orderedRoots[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
