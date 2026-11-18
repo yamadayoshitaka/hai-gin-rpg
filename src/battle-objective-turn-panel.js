@@ -50,42 +50,98 @@ export function installObjectiveTurnPanel({
   return Array.isArray(incoming)?incoming.filter(c=>c&&TURN_MOVE_OPTIONS.some(x=>x.id===c.move)&&
    Number.isFinite(Number(c.x))&&Number.isFinite(Number(c.z))):[];
  };
+ function clampCenter(){
+  const world=Math.max(1,Number(worldSize)||232),half=world/(2*zoom);
+  mapCenterX=clamp(mapCenterX,half,world-half);
+  mapCenterZ=clamp(mapCenterZ,half,world-half);
+ }
  function renderMap(id,order){
   const canvas=$('objectiveTurnMap'),ctx=canvas.getContext('2d');
   if(!ctx)return;
   const world=Math.max(1,Number(worldSize)||232),w=canvas.width,h=canvas.height;
-  ctx.clearRect(0,0,w,h);ctx.fillStyle='#132c42';ctx.fillRect(0,0,w,h);
+  clampCenter();
+  const screen=(x,z)=>({
+   x:(.5+(Number(x)-mapCenterX)*zoom/world)*w,
+   z:(.5+(Number(z)-mapCenterZ)*zoom/world)*h
+  });
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,w,h);
+  ctx.save();
+  ctx.setTransform(w/world*zoom,0,0,h/world*zoom,
+   w*.5-mapCenterX*w/world*zoom,h*.5-mapCenterZ*h/world*zoom);
+  ctx.fillStyle='#132c42';ctx.fillRect(0,0,world,world);
   if(typeof drawMapBackground==='function'){
-   try{drawMapBackground(ctx,w,h)}catch(error){console.warn('Objective map background',error)}
+   try{drawMapBackground(ctx,world,world)}catch(error){console.warn('Objective map background',error)}
   }else{
    ctx.strokeStyle='#4a7085';ctx.lineWidth=.6;
-   for(let n=0;n<=w;n+=29){ctx.beginPath();ctx.moveTo(n,0);ctx.lineTo(n,h);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,n);ctx.lineTo(w,n);ctx.stroke();}
-  }
-  const origin=getGroupOrigin(id);
-  if(origin&&Number.isFinite(origin.x)&&Number.isFinite(origin.z)){
-   ctx.beginPath();ctx.arc(origin.x/world*w,origin.z/world*h,6,0,Math.PI*2);
-   ctx.fillStyle='#5dd7ff';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-  }
-  const enemies=getEnemyGroups();
-  for(const enemy of enemies){
-   if(!Number.isFinite(Number(enemy.x))||!Number.isFinite(Number(enemy.z))||!(enemy.alive>0))continue;
-   ctx.beginPath();ctx.arc(enemy.x/world*w,enemy.z/world*h,3.8,0,Math.PI*2);
-   ctx.fillStyle='#ff6f83';ctx.fill();
-  }
-  mapMarkers=choicesFor(id).map(c=>({...c,px:Number(c.x)/world*w,pz:Number(c.z)/world*h}));
-  for(const [index,c] of mapMarkers.entries()){
-   const chosen=c.move===order.move&&String(c.targetId??'')===String(order.targetId??'');
-   ctx.beginPath();ctx.arc(c.px,c.pz,chosen?7:5,0,Math.PI*2);
-   ctx.fillStyle=chosen?'#ffdb76':c.move==='building'?'#83dfc9':c.move==='bridge_front'?'#ffbb7a':'#a5c6ff';
-   ctx.fill();ctx.strokeStyle='#0a1728';ctx.lineWidth=1.6;ctx.stroke();
-   if(chosen){ctx.fillStyle='#08192d';ctx.font='bold 10px system-ui';ctx.textAlign='center';
-    ctx.fillText('✓',c.px,c.pz+3.5);}
-   if(index<6&&(!chosen||index<3)){
-    ctx.fillStyle='#fff';ctx.font='bold 9px system-ui';ctx.textAlign='left';
-    ctx.fillText(String(c.label||movingLabel(c.move)).slice(0,8),clamp(c.px+7,0,w-52),clamp(c.pz-7,9,h-4));
+   for(let n=0;n<=world;n+=world/8){
+    ctx.beginPath();ctx.moveTo(n,0);ctx.lineTo(n,world);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,n);ctx.lineTo(world,n);ctx.stroke();
    }
   }
+  ctx.restore();
+  const origin=getGroupOrigin(id);
+  if(origin&&Number.isFinite(origin.x)&&Number.isFinite(origin.z)){
+   const center=screen(origin.x,origin.z);
+   ctx.beginPath();ctx.arc(center.x,center.z,11,0,Math.PI*2);
+   ctx.fillStyle='#5dd7ff';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+   ctx.fillStyle='#08263a';ctx.font='bold 12px system-ui';ctx.textAlign='center';
+   ctx.fillText('味',center.x,center.z+4);
+  }
+  for(const enemy of getEnemyGroups()){
+   if(!Number.isFinite(Number(enemy.x))||!Number.isFinite(Number(enemy.z))||!(enemy.alive>0))continue;
+   const p=screen(enemy.x,enemy.z);
+   ctx.beginPath();ctx.arc(p.x,p.z,8,0,Math.PI*2);
+   ctx.fillStyle='#ff6f83';ctx.fill();
+  }
+  mapMarkers=choicesFor(id).map(c=>({...c,...(()=>{
+   const p=screen(c.x,c.z);return {px:p.x,pz:p.z};
+  })()}));
+  let lastLabel=[];
+  for(const [index,c] of mapMarkers.entries()){
+   if(c.px<-20||c.pz<-20||c.px>w+20||c.pz>h+20)continue;
+   const chosen=c.move===order.move&&String(c.targetId??'')===String(order.targetId??'');
+   const radius=chosen?13:11;
+   ctx.beginPath();ctx.arc(c.px,c.pz,radius,0,Math.PI*2);
+   ctx.fillStyle=chosen?'#ffdb76':c.move==='building'?'#83dfc9':c.move==='bridge_front'?'#ffbb7a':'#a5c6ff';
+   ctx.fill();ctx.strokeStyle='#0a1728';ctx.lineWidth=2;ctx.stroke();
+   if(chosen){
+    ctx.fillStyle='#08192d';ctx.font='bold 15px system-ui';ctx.textAlign='center';
+    ctx.fillText('✓',c.px,c.pz+5);
+   }
+   const labelAllowed=chosen||(zoom>=1.75&&index<25);
+   if(labelAllowed&&!lastLabel.some(p=>Math.hypot(p.x-c.px,p.z-c.pz)<46)){
+    const label=String(c.label||movingLabel(c.move)).slice(0,12);
+    const lx=clamp(c.px+15,0,w-110),ly=clamp(c.pz-11,15,h-5);
+    ctx.font='bold 15px system-ui';ctx.textAlign='left';
+    const width=Math.min(w-lx,ctx.measureText(label).width+10);
+    ctx.fillStyle='#071a29e6';ctx.fillRect(lx-3,ly-14,width,19);
+    ctx.fillStyle='#fff';ctx.fillText(label,lx,ly);lastLabel.push({x:c.px,z:c.pz});
+   }
+  }
+ }
+ function zoomMap(next,canvasX=null,canvasY=null){
+  const canvas=$('objectiveTurnMap'),world=Math.max(1,Number(worldSize)||232);
+  const x=canvasX??canvas.width/2,z=canvasY??canvas.height/2;
+  const anchorX=mapCenterX+(x/canvas.width-.5)*world/zoom;
+  const anchorZ=mapCenterZ+(z/canvas.height-.5)*world/zoom;
+  zoom=clamp(next,zoomBounds[0],zoomBounds[1]);
+  mapCenterX=anchorX-(x/canvas.width-.5)*world/zoom;
+  mapCenterZ=anchorZ-(z/canvas.height-.5)*world/zoom;
+  clampCenter();
+  $('objectiveTurnZoomLevel').textContent=Math.round(zoom*100)+'%';
+  redrawMap();
+ }
+ function redrawMap(){
+  if(step!=='map'||root.hidden)return;
+  const state=engine.snapshot(),group=visibleGroup(state);
+  if(group)renderMap(Number(group.id),state.ordersByGroup[group.id]||{move:'hold'});
+ }
+ function recenterMap(id){
+  const origin=getGroupOrigin(id);
+  mapCenterX=Number.isFinite(Number(origin?.x))?Number(origin.x):(Number(worldSize)||232)/2;
+  mapCenterZ=Number.isFinite(Number(origin?.z))?Number(origin.z):(Number(worldSize)||232)/2;
+  clampCenter();
  }
  function render(){
   const state=engine.snapshot(),planning=state.phase==='planning',report=state.phase==='report';
