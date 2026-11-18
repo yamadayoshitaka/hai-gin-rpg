@@ -46,8 +46,7 @@ assert.ok(battle.includes("currentOrder.textContent=intent.order;objective.textC
 assert.ok(battle.includes('label.userDataCurrentOrder.textContent=shortOrder'));
 assert.ok(battle.includes("label.userDataStrength.textContent=sum.n+'/'+sum.total"));
 assert.ok(battle.includes('label.userDataObjective.textContent=intent.purpose'));
-// Both armies retain live-count markers; a single tap selects a squad and its camera,
-// while a double tap zooms and a pending target tap resolves the target.
+// Both armies use circular markers showing live counts; tapping an allied circle opens the action chooser.
 assert.ok(battle.includes('label.userDataCurrentOrder.hidden=false'),
  'Status must remain legible inside the overhead callout circle');
 assert.ok(battle.includes('label.userDataObjective.hidden=true'));
@@ -114,4 +113,4 @@ assert.match(fallen.order,/軍師不在・追加命令不可/);
 const defeated=formatSquadIntent({mode:'defend',defeated:true});
 assert.equal(defeated.purpose,'目的：生存兵なし');
 
-console.log('PASS: natural voice game + current squad camera selection, double-tap zoom, casualties and selected details');
+console.log('PASS: natural voice game + single-tap circular squad markers, casualties and selected details');

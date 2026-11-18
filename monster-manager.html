@@ -77,7 +77,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.24</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.25</small></h1>
  <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a><a href="./monster-quality-review.html?monster=m001">品質KPI管理</a><a href="./creature-reconstruction-plan.html">108体再構成</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hand-face-stable-v22-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hand-face-stable-v13-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hover-flight-v24-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hover-flight-v15-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -365,7 +365,7 @@ function refreshGeometry(){
  const revision=model?.userData?.avianRebuildRevision||'';
  byId('modelRevision').textContent=selected==='m013'?
   (revision?'フェニックス実モデル '+revision+
-     (revision.includes('stable-v8')?' / 新造形':' / 旧造形の可能性'):
+     (revision.includes('flight-realism-v9')?' / 飛行造形':' / 旧造形の可能性'):
    'フェニックス改修版モデルが読み込まれていません'):
   (revision?'モデル正本 '+revision:'標準モデル / 外部モデル');
  byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+
@@ -480,8 +480,15 @@ function selectSpecies(id){
  if(costumeHandle)costumeHandle.start('idle',clock.getElapsedTime());
  else startMonsterAction(model,'idle',clock.getElapsedTime());
  currentAction='idle';nextActionReplay=Infinity;
- for(const button of byId('actions').querySelectorAll('button'))
+ const phoenixActionNames={idle:'滞空',walk:'低速飛行',run:'高速飛行',
+  leap:'急上昇',attack:'急降下攻撃',special:'不死炎翼'};
+ for(const button of byId('actions').querySelectorAll('button')){
   button.setAttribute('aria-pressed',String(button.title==='idle'));
+  const entry=MONSTER_ACTIONS.find(([id])=>id===button.title);
+  button.textContent=id==='m013'?
+   (phoenixActionNames[button.title]||entry?.[1]||button.title):
+   (button.title==='special'?'魔法・固有技':entry?.[1]||button.title);
+ }
  loadEditor(m);
  byId('name').textContent=m.name+' ('+m.rarity+')';
  byId('description').textContent=m.description+' — '+m.skill;
@@ -767,7 +774,10 @@ function frame(){
      byId('hud').textContent='ID '+entry.id+' · Lv'+entry.level+
        ' · HP '+entry.stats.hp+' · 攻 '+entry.stats.attack+
        ' · 防 '+entry.stats.defense+' · 速 '+entry.stats.speed+
-       ' · 動作 '+state.action+' · FPS '+Math.round(fps)+
+       ' · 動作 '+(selected==='m013'&&model.userData.phoenixInAir?'飛行・'+state.action:state.action)+
+    (selected==='m013'&&model.userData.phoenixInAir?
+     ' · 高度 '+model.userData.phoenixCurrentAltitude.toFixed(2):'')+
+    ' · FPS '+Math.round(fps)+
        ' · 三角形 '+(meshStats?.triangles??0).toLocaleString()+
        ' · 3Dモデル';
    }
@@ -935,6 +945,17 @@ window.__avianWingQA=()=>{
    handFeathersPerSide:['L','R'].map(side=>model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.angelFeathersPerSide||0),
    highQualityHandFeathers:['L','R'].every(side=>
     model.getObjectByName('phoenix-feather-hand-vanes-'+side)?.userData.phoenixMiniatureDonorDetail==='high'),
+   flightMode:!!model.userData.phoenixFlightMode,
+   inAir:!!model.userData.phoenixInAir,
+   flightHeight:model.userData.phoenixFlightHeight||0,
+   currentAltitude:model.userData.phoenixCurrentAltitude??model.position.y,
+   flightAction:model.userData.phoenixFlightAction||'initial',
+   flightWingRig:!!model.userData.phoenixWingFlightRig,
+   fineFeatherBarbs:['L','R'].every(side=>
+    !!model.getObjectByName('avian-guardian-three-layer-wing-m013-'+side)?.userData.phoenixFineFeatherBarbs),
+   legsFoldInFlight:!!model.userData.phoenixLegsFoldInFlight,
+   wingFlapAngles:['L','R'].map(side=>model.userData.pivots['wing'+side]?.rotation.z||0),
+   airborneKnees:['L','R'].map(side=>model.userData.pivots['birdKnee'+side]?.rotation.x||0),
    waveMeshes:model.userData.phoenixWaveMeshCount||0
   }:null,
   wings,action:currentAction};
