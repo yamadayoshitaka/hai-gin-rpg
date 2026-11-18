@@ -26,6 +26,9 @@ on:
       - 'src/creature-*.js'
       - 'src/monster-*.js'
       - 'src/combat-creature-*.js'
+      - 'src/avian-guardian-sculpt.js'
+      - 'src/monster-shape-kit.js'
+      - 'src/female-summon-costumes.js'
       - 'data/creature-quality-standards.json'
       - 'scripts/creature-six-batch.mjs'
       - 'qa/creature-six-lane-contract.test.mjs'
@@ -53,7 +56,7 @@ jobs:
       - name: Verify all 108 canonical IDs, protected assets and game adoption route
         run: node --test qa/creature-six-lane-contract.test.mjs
       - name: Review one species family, retain protected ancestors
-        if: inputs.category == 'all' || inputs.category == matrix.category || github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'pull_request' && (inputs.category == 'all' || inputs.category == matrix.category || github.event_name == 'schedule')
         env:
           INPUT_SLOT: ${{ inputs.slot || 'auto' }}
           SCHEDULED_CRON: ${{ github.event.schedule }}
@@ -73,6 +76,15 @@ jobs:
           else
             node scripts/creature-six-batch.mjs --category '${{ matrix.category }}' --slot "$INPUT_SLOT"
           fi
+      - name: Verify every family lane against PR model source
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          for slot in 0 1 2 3 4 5; do
+            echo "::group::${{ matrix.category }} / real monster+summon lane ${slot}"
+            node scripts/creature-six-batch.mjs --category '${{ matrix.category }}' --slot "${slot}"
+            echo "::endgroup::"
+          done
       - name: Save actual QA results (do not claim meshes were generated)
         if: always()
         uses: actions/upload-artifact@v4

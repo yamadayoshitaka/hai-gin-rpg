@@ -80,6 +80,15 @@ export function createMonsterSummonRenderer(scene,{
    statusMarker.position.y=1;
    actor.add(statusMarker);
   }
+  // Measure the FIRST VISIBLE idle pose, not the bind pose. Opening wings
+  // and adjusting joints on the first animation update otherwise changes
+  // the bounding box after the source height has already been normalized
+  // (observed ~9% drift for summoned m012 griffin).
+  // One-time on spawn, not an extra per-frame animation or source remesh.
+  if(!isHumanoid){
+   startMonsterAction(actor,'idle',0);
+   animateMonsterModel(actor,0);
+  }
   // Measure the actual source's visible height, not its item rarity or an
   // estimated sphere. Leviathan retains its native sea-serpent proportions.
   actor.updateMatrixWorld(true);
@@ -139,7 +148,8 @@ export function createMonsterSummonRenderer(scene,{
     actor.userData.modelError=String(error?.message||error);
     if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
    });
-  }else startMonsterAction(actor,'idle',0);
+  }
+  // Nonhuman idle and its initial visible bounds were set before fitting.
   stats.created++;
   const node={actor,anchor,detail,type:object.type,size,costumeHandle,
    statusMarker,externalHandle:null,

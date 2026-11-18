@@ -83,8 +83,13 @@ for(const spec of MONSTER_CATALOG){
    assert.notEqual(p.spineRear.rotation.y,a,'Serpent wave missing '+spec.id);
  }
  if(spec.family==='avian'&&spec.id!=='m015'){
+   // Griffin m012 is a quadruped: its front and rear legs are distinct
+   // animated anatomical limbs, not generic two-legged birdAnkleL/R.
+   const raptorAnkles=spec.id==='m012'
+     ? ['birdAnkleFrontL','birdAnkleFrontR','birdAnkleRearL','birdAnkleRearR']
+     : ['birdAnkleL','birdAnkleR'];
    testAngles(p,['wingL','wingR','wingElbowL','wingWristL','wingElbowR','wingWristR',
-     'birdAnkleL','birdAnkleR']);
+     ...raptorAnkles]);
    startMonsterAction(model,'special',0);
    animateMonsterModel(model,.19);
    const a=p.wingWristL.rotation.y;

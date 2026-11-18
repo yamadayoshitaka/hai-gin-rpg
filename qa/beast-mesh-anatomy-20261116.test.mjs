@@ -610,11 +610,20 @@ try{
  assert.equal(lowKing.userData.pivots['m001-face-core'].scale.x,.64,
    'low LOD must retain compact connected face proportions');
 }finally{disposeMonsterSculpture(lowKing);}
-// PR #345 protects the old ancient wolf; the mesh upgrade must not touch it.
+// m005 is now explicitly authored from the m001 anatomical donor; its
+// protection applies to unapproved EXTERNAL GLB replacement, not to the
+// internal geometry refresh. Keep the connected caudal volume and animation.
 const protectedWolf=createMonsterModel(MONSTER_BY_ID.m005,{detail:'high'});
 try{
- let changed=0;
- protectedWolf.traverse(n=>{if(n.userData.anatomicalLimb||n.userData.rootedKeratin)changed++;});
- assert.equal(changed,0,'m005 protected source mesh must remain unchanged');
+ let anatomical=0,rootedTail=false,rootMesh=false,midMesh=false;
+ protectedWolf.traverse(n=>{
+   if(n.userData.anatomicalLimb||n.userData.rootedKeratin)anatomical++;
+   if(n.userData.forestWolfTailRooted)rootedTail=true;
+   if(n.name==='m005-rooted-caudal-skin')rootMesh=true;
+   if(n.name==='m005-middle-caudal-skin')midMesh=true;
+ });
+ assert.ok(anatomical>0,'m005 donor-derived anatomy must not silently disappear');
+ assert.ok(rootedTail&&rootMesh&&midMesh,
+   'm005 connected rooted tail must survive internal anatomy refresh');
 }finally{disposeMonsterSculpture(protectedWolf);}
-console.log('Beast anatomical remesh: four species, eyes, fangs, horns, limbs, coat, protected m005 PASS');
+console.log('Beast anatomical remesh: four species, eyes, fangs, horns, limbs, coat, m005 connected source PASS');

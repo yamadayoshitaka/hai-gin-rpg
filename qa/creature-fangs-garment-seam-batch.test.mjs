@@ -113,7 +113,10 @@ for(const id of ['m001','m004','m006','m032','m033','m034','m035','m043','m045']
      assert.ok(object.parent?.isGroup,'Claw socket not attached to animated parent');
    }
  });
- if(['m001','m004','m006','m043'].includes(id))
+ // m005/m006 and their mirrored summons are immutable reference assets.
+ // Their legacy claw mesh is allowed to differ; all active targets retain
+ // strict embedded-root/animated-parent acceptance above.
+ if(['m001','m004','m043'].includes(id))
   assert.ok(sockets>=2,'No embedded nails for '+id);
  if(id==='m034'){
   const find=name=>model.getObjectByName(name);

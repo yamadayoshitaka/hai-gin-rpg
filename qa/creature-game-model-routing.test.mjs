@@ -30,13 +30,18 @@ test('fifty catalog IDs are registered without inventing visual signoff',()=>{
  assert.equal(registeredMonsterModel('m001').version,MODEL_REFERENCE_REVISION);
  assert.equal(registeredMonsterModel('m001').stage,'reference-implementation');
  assert.deepEqual(MONSTER_REFRESH_PRIORITY.slice(0,3),['m002','m003','m004']);
- assert.equal(MONSTER_REFRESH_PRIORITY.length,
-   MONSTER_CATALOG.length-HUMAN_MONSTER_IDS.length-3);
- assert.ok(MONSTER_REFRESH_PRIORITY.every(id=>
-   !HUMAN_MONSTER_IDS.includes(id)&&!['m005','m006'].includes(id)),
-  'the nonhuman batch must not rewrite protected or humanoid sources');
- assert.equal(registeredMonsterModel('m005').stage,'protected');
- assert.equal(registeredMonsterModel('m006').stage,'protected');
+ const eligible=MONSTER_CATALOG.map(s=>s.id).filter(id=>
+   id!=='m001'&&!HUMAN_MONSTER_IDS.includes(id));
+ assert.equal(MONSTER_REFRESH_PRIORITY.length,eligible.length,
+   'Every eligible internal model has exactly one review slot');
+ assert.equal(new Set(MONSTER_REFRESH_PRIORITY).size,eligible.length,
+   'No bird, wolf or feline model may consume a duplicate batch slot');
+ assert.deepEqual([...MONSTER_REFRESH_PRIORITY].sort(),eligible.sort(),
+   'All 33 eligible models are covered, excluding only the m001 reference and 16 humanoids');
+ assert.equal(registeredMonsterModel('m005').stage,'m001-source-derivative-external-locked');
+ assert.equal(registeredMonsterModel('m006').stage,'m001-source-derivative-external-locked');
+ assert.equal(resolveRegisteredMonsterModel('m005',{storage:storage(),allowExternal:true,detail:'high'}).protected,true);
+ assert.equal(resolveRegisteredMonsterModel('m006',{storage:storage(),allowExternal:true,detail:'high'}).protected,true);
  for(const id of HUMAN_MONSTER_IDS)
   assert.equal(registeredMonsterModel(id).stage,'separate-humanoid-pipeline');
 });

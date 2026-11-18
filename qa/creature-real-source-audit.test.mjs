@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {MONSTER_CATALOG} from '../src/monster-catalog.js';
 import {CREATURE_MASTER_ENTRIES} from '../src/creature-master-library.js';
+import {resolveRegisteredMonsterModel} from '../src/creature-game-model-routing.js';
 import {REAL_BASE_CRITERIA,REAL_SOURCE_ACCEPTANCE,REAL_SOURCE_AUDIT,
  REAL_SOURCE_SUMMARY,realSourceAuditFor} from '../src/creature-real-source-audit.js';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
@@ -10,7 +11,7 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 test('all 108 source masters have a species anatomy contract, with no false pass',()=>{
  assert.equal(REAL_SOURCE_SUMMARY.total,108);
  assert.equal(REAL_SOURCE_SUMMARY.protected,0);
- assert.equal(REAL_SOURCE_SUMMARY.pending,104);
+ assert.equal(REAL_SOURCE_SUMMARY.pending,108);
  assert.equal(REAL_SOURCE_SUMMARY.realSourceApproved,0);
  assert.equal(REAL_SOURCE_AUDIT.length,CREATURE_MASTER_ENTRIES.length);
  assert.equal(new Set(REAL_SOURCE_AUDIT.map(x=>x.id)).size,108);
@@ -37,9 +38,14 @@ test('all 108 source masters have a species anatomy contract, with no false pass
 test('m005/m006 now use m001 geometry, with external adoption still explicitly locked',()=>{
  const ids=['m005','m006','summon_m005','summon_m006'];
  for(const id of ids){
+  // Source rebuilding is allowed for these internal m001 derivatives, but
+  // an external/preview GLB may NEVER replace their protected game model.
   assert.equal(realSourceAuditFor(id).protected,false);
-  assert.equal(realSourceAuditFor(id).modifiable,false);
+  assert.equal(realSourceAuditFor(id).modifiable,true);
   assert.equal(realSourceAuditFor(id).realSourceApproved,false);
+  const game=resolveRegisteredMonsterModel(id,{detail:'high',allowExternal:true,storage:null});
+  assert.equal(game.protected,true,id+' must reject external adoption');
+  assert.equal(game.externalSource,null,id+' may only use its internal mesh');
  }
  assert.equal(realSourceAuditFor('m020').protected,false);
  const sculpt=read('../src/monster-geometry.js');
