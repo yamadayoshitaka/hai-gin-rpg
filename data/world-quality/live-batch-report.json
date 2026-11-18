@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "0384fc6a4b66004ae99d445cf46f1de7af36a09184db36c11c949abd7f065f51",
+  "sourceFingerprint": "9a75e2e31a920eb7095000f30a07103d68306f2dc02115a2802ad21c28722d04",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for cottage_stairs_001 (visual review still required)"
+        "Real WebGL screenshots available for spiral_stairs_2f_001 (visual review still required)"
       ]
     }
   },
