@@ -96,13 +96,15 @@ export function v71EyeDepthFromEyeliner({upperZ,lowerZ,corneaZ,eyeRadius,eyeDept
  const upper=Number(upperZ),lower=Number(lowerZ),cornea=Number(corneaZ);
  if(![upper,lower,cornea].every(Number.isFinite))
   throw Error('Finite real eyeliner and cornea depths required');
- const deepest=Math.min(upper,lower),nearest=Math.max(upper,lower);
- const eyelinerReferenceZ=deepest*.68+nearest*.32;
- // Sclera is slightly inside the real liner; iris/pupil remain inset too.
- const targetInsetRatio=.065-.056*clamp(Number(eyeDepth)||0,-.3,.85);
+ // v74: Both actual liner rims, rather than deeply recessed donor skin,
+ // establish the optical surface with a small upper-lid preference.
+ const eyelinerReferenceZ=upper*.56+lower*.44;
+ // Sclera and iris should be just behind eyeliner, never in front of it.
+ const targetInsetRatio=.031-.020*clamp(Number(eyeDepth)||0,-.3,.85);
  const targetCorneaZ=eyelinerReferenceZ-radius*targetInsetRatio;
- // Limit regression to roughly one eyelid thickness on malformed GLBs.
- const correctionZ=clamp(targetCorneaZ-cornea,-radius*.17,radius*.17);
+ // The retired ±0.17R cap left markedly sunken real-GLB eyes unrepaired.
+ // Permit a full fit within a bounded 0.85R anatomical correction.
+ const correctionZ=clamp(targetCorneaZ-cornea,-radius*.85,radius*.85);
  return {correctionZ,eyelinerReferenceZ,targetCorneaZ,
   signedDepthRatio:(cornea+correctionZ-eyelinerReferenceZ)/radius,
   requestedInsetRatio:targetInsetRatio,
@@ -314,7 +316,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
   const cheek=gender==='male'?0:cosmeticOpacity(.64)*bell(nx,.260,.125)*bell(ny,.563,.074)*front;
-  const mouthX=(px-cx)/Math.max(.00001,d.x*.060*settings.lipstickWidth);
+  const mouthX=(px-cx)/Math.max(.00001,d.x*.066*settings.lipstickWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
    Math.max(.00001,d.y*.012*settings.lipstickHeight);
   const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
@@ -322,7 +324,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // Cosmetic controls may move the color within the lips, but cannot
   // push the pigment onto the chin or philtrum outside the oral region.
   const anatomicalLipY=(py-lipCenter)/(d.y*.019);
-  const anatomicalLipX=(px-cx)/(d.x*.067*
+  const anatomicalLipX=(px-cx)/(d.x*.073*
    Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
@@ -365,7 +367,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    (.035+.05*youthFade)*noseWing+.028*philtrum+
    (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
    .047*upperLidOcclusion+.021*innerCanthus+.105*noseBridgeContour+
-   (.006+.020*youthFade)*nasolabial+
+   (.015+.028*youthFade)*nasolabial+
    (.010+.020*youthFade)*lowerLidOcclusion+
    v70FaceReliefShadow({nx,ny,front,lidY});
   const s=Math.max(.55,1-contactShade);
@@ -760,7 +762,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
   eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
   eyePatch.userData.anteriorClearanceRatio=(z-faceZ)/eyeRadius;
-  eyePatch.userData.corneaFitVersion='v47-lid-aligned-not-sunken';
+  eyePatch.userData.corneaFitVersion='v74-eyeliner-anchored-slight-recess';
   eyePatch.userData.eyelinerToCenterBulge=true;
   eyePatch.userData.irisFitsApertureWithoutClamp=true;
   eyePatch.userData.eyelinerToCenterBulgeFraction=anteriorGlobeRatio;
@@ -846,15 +848,22 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const height=eyeRadius*eyeApertureRatio*eyeHeight;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
     const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
-    const cornerTilt=(t+1)*eyeRadius*.045*eyeWidth;
-    const nearY=y+(upper?1:-1)*height*arch+cornerTilt;
-    const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*v;
-    const eyeZ=insetZ(x+t*width,nearY)+eyeRadius*.075;
+    // v75: mirrored inner tear-duct and outer canthus contours.
+    const outer=(1+side*t)*.5,inner=1-outer;
+    const tearDuct=Math.pow(inner,10),lateralNotch=Math.pow(outer,9);
+    const cornerTilt=outer*eyeRadius*.078*eyeWidth;
+    const nearY=y+(upper?1:-1)*height*arch+cornerTilt-
+      eyeRadius*.012*tearDuct;
+    const rimTaper=.27+.73*Math.pow(arch,.46);
+    const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*rimTaper*v;
+    const eyeZ=insetZ(x+t*width,nearY)+
+      eyeRadius*(.075-.022*tearDuct-.010*lateralNotch);
     const skinZ=surfaceAt(x+t*width,farY)+d.z*.0033;
     const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
+   mesh.userData.v75MirroredAnatomicalCanthi=true;
    mesh.userData.colorRole='eyelid';
    root.add(mesh);
    if(female){
@@ -903,6 +912,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    eyePatch.userData.anteriorClearanceRatio=
     (z+fit.correctionZ-faceZ)/eyeRadius;
    eyePatch.userData.v71MeasuredAgainstRealEyeliner=true;
+    eyePatch.userData.v74LinerResidualRatio=fit.residualRatio;
+    eyePatch.userData.v74SmallLinerInsetRatio=fit.requestedInsetRatio;
    eyePatch.userData.v71SignedEyelinerDepthRatio=fit.signedDepthRatio;
    eyePatch.userData.v71UpperLinerDistance3D=upperLinerPoint.distanceTo(
     new THREE.Vector3(x,y,z+fit.correctionZ));
@@ -1069,7 +1080,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // surface, but lipstick is painted ONLY on the original head triangles.
  // Widen the actual vermilion surface only when requested; the v8 saved
  // preset (1x) retains identical 3D lip topology and pigmentation.
- const halfWidth=d.x*(female?.051:.044)*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
+ const halfWidth=d.x*(female?.057:.044)*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  const actualLips=new Map();
  for(const upper of [true,false]){
   const material=female?lipMat.clone():lipMat;
@@ -1200,7 +1211,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   pupilPolarAngleRadians:Number(pupilAngle.toFixed(4)),
   irisDiameterRequestFactor:settings.irisDiameter,
   actualIrisDiameterFactor:Number((Math.sin(irisAngle)/Math.sin(originalIrisAngle)).toFixed(3)),
-  mouthHalfWidthFraction:female?.051:.044,
+  mouthHalfWidthFraction:female?.057:.044,
   lipCreaseCurvature:Number(bestCrease.toFixed(7)),
   lipCenterNormalized:Number(((lipCenter-box.min.y)/d.y).toFixed(4)),
   eyeScale,eyeSizeDerivedFromWidthHeight:true,

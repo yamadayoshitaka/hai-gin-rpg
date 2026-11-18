@@ -5,6 +5,11 @@ on:
   # Existing scheduler still owns the 20-chapter queue and all safety checks.
   schedule:
     - cron: '35 0 * * *'
+  # Owner-requested one-shot kick to prove the production/reuse dispatch route.
+  push:
+    branches: [main]
+    paths:
+      - 'ops/run-manga-sequential-once-20261118.trigger'
   workflow_dispatch:
   issues:
     types: [opened]

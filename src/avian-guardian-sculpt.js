@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-keratin-legs-eyeliner-v6-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-hover-flight-realism-v9-20261118';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -86,7 +86,7 @@ export function updatePhoenixFeatherWaves(model,time,action='idle'){
  const affected=model?.userData?.phoenixWaveMeshes;
  if(!affected?.length)return 0;
  const power=action==='special'?1.55:action==='attack'?1.25:
-   action==='run'||action==='leap'?1.12:action==='defeat'?.08:.58;
+   action==='run'||action==='leap'?1.12:action==='defeat'?0:.075;
  for(const part of affected){
   const state=part.material?.userData?.phoenixWaveState;
   if(!state)continue;
@@ -145,31 +145,39 @@ function refineOnce(input){
  if(src!==input)src.dispose();
  return out;
 }
-function guardianDerivedWing(parent,spec,side,detail){
- const p=profiles[spec.id],donor=guardianPair(detail);
+function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}={}){
+ const p=profiles[spec.id],donor=guardianPair(miniature&&detail==='medium'?'low':detail);
  const base=side<0?donor.left:donor.right;
  let geo=base.clone();
- if(detail==='source'){
+ if(detail==='source'&&!miniature){
    const refined=refineOnce(geo);geo.dispose();geo=refined;
  }
- geo.scale(...p.wing);
+ const wingScale=miniature?[.27,.25,.245]:p.wing;
+ geo.scale(...wingScale);
  const positions=geo.getAttribute('position');
  const old=geo.getAttribute('color'),arr=new Float32Array(positions.count*3);
  const dark=color(p.dark),mid=color(p.mid),light=color(p.light),tip=color(p.tip);
  for(let i=0;i<positions.count;i++){
-   const radial=Math.min(1,Math.abs(positions.getX(i))/(2.95*p.wing[0]));
-   const height=Math.min(1,Math.max(0,positions.getY(i)/(1.9*p.wing[1])));
+   const radial=Math.min(1,Math.abs(positions.getX(i))/(2.95*wingScale[0]));
+   const height=Math.min(1,Math.max(0,positions.getY(i)/(1.9*wingScale[1])));
    const sourceShade=old?(old.getX(i)+old.getY(i)+old.getZ(i))/3:1;
    const c=mix(dark,mid,.32+.42*height);
    c.lerp(light,Math.pow(radial,1.2)*.60);
    c.lerp(tip,Math.pow(radial,2.6)*.68);
    // Feather-to-feather tonal variation survives the recolour.
    c.multiplyScalar(.76+.28*sourceShade);
+   if(spec.id==='m013'){
+    // Feathery barb detail encoded in existing vertex colours.
+    // No geometry or draw-call overhead at render time.
+    const barb=.965+.035*Math.sin(positions.getZ(i)*19.0+
+      positions.getY(i)*8.0)*Math.sin(radial*Math.PI);
+    c.multiplyScalar(barb);
+   }
    arr[i*3]=c.r;arr[i*3+1]=c.g;arr[i*3+2]=c.b;
  }
  geo.setAttribute('color',new THREE.Float32BufferAttribute(arr,3));
  geo.computeBoundingSphere();
- const wing=mesh(parent,geo,'avian-guardian-three-layer-wing-'+spec.id+'-'+(side<0?'L':'R'),
+ const wing=mesh(parent,geo,name||'avian-guardian-three-layer-wing-'+spec.id+'-'+(side<0?'L':'R'),
    {emissive:spec.id==='m013'});
  wing.userData.angelSource='seraph_guardian';
  wing.userData.angelFeatherLayers=3;
@@ -178,7 +186,22 @@ function guardianDerivedWing(parent,spec,side,detail){
    (base.index?.count??base.getAttribute('position').count)/3;
  wing.userData.birdWingRealGeometry=true;
  wing.userData.birdWingDetail=detail;
+ if(spec.id==='m013'){
+  wing.material.roughness=.69;wing.material.metalness=.012;
+  wing.material.emissive.setHex(0x6b2411);
+  wing.material.emissiveIntensity=.15;
+  wing.userData.phoenixFineFeatherBarbs=true;
+ }
  wing.userData.birdWingRooted=true;
+ if(miniature){
+  wing.userData.phoenixGuardianFeatherHand=true;
+  wing.userData.phoenixSameWingVaneSource=true;
+  wing.userData.phoenixMiniatureDonorDetail=detail==='low'||detail==='medium'?'low':'high';
+  wing.userData.phoenixMiniatureFeatherCount=wing.userData.angelFeathersPerSide;
+  wing.castShadow=false;wing.receiveShadow=false;
+  wing.rotation.set(-.48,side*.13,-side*.68);
+  wing.position.set(side*.015,.030,-.045);
+ }
  if(spec.id==='m013')addPhoenixWave(wing,'wing');
  return wing;
 }
@@ -203,6 +226,10 @@ function layeredFeathers(parent,spec,detail,name,entries){
    for(let i=0;i<=steps;i++){
      const t=i/steps,sweep=Math.pow(Math.sin(Math.PI*t),.75);
      const center=a.clone().addScaledVector(dir,t);
+     // Optional curling geometry for living flame plumes; other vane
+     // shapes and source wing geometry are unchanged.
+     if(e.curl)center.addScaledVector(lateral,e.curl*Math.sin(Math.PI*t)*t);
+     if(e.rise)center.addScaledVector(normal,e.rise*Math.sin(Math.PI*t));
      const tone=mix(root,C[e.endTint??3],Math.pow(t,2.35)*(e.glow??.28));
      for(let j=0;j<=across;j++){
        const u=j/across*2-1;
@@ -511,58 +538,39 @@ function phoenixFeatheredArm(g,s,torso,side,detail){
  const handSkin=g.sphere(palm,'skin',[side*.030,-.020,.034],
   [.068,.060,.086],{name:'phoenix-feather-hand-palm-'+suffix});
  handSkin.userData.phoenixAvianHandPalm=true;
- const outer=[],inner=[],fingers=[];
- const layers=detail==='low'?9:detail==='medium'?16:detail==='source'?30:24;
+ const outer=[],inner=[];
+ const layers=detail==='low'?7:detail==='medium'?11:detail==='source'?22:16;
  for(let i=0;i<layers;i++){
   const t=i/Math.max(1,layers-1),q=(i%3)-1;
   outer.push({from:[side*(.012+.018*(i%3)),
       .015-.020*(i%4),-.005],
     to:[side*(.24+.045*t),-.185-.035*t,.105+.045*q],
-    width:.090+.030*(1-t),normal:[.03,.50,.90],
+    width:.055+.021*(1-t),normal:[.03,.50,.90],
     ridge:.018,tint:i%4===0?3:i%3===0?2:1,endTint:3,glow:.35});
   inner.push({from:[side*(.020+.016*(i%3)),
     .006-.016*(i%4),-.004],
     to:[side*(.175+.065*t),-.115-.036*t,.125+.060*q],
-    width:.074+.025*(1-t),normal:[.04,.65,.76],
+    width:.049+.018*(1-t),normal:[.04,.65,.76],
     tint:i%3===0?2:1,endTint:3,glow:.32});
  }
  const sleeve=layeredFeathers(root,s,detail,
   'phoenix-feather-arm-sleeve-'+suffix,outer);
  const under=layeredFeathers(forearm,s,detail,
   'phoenix-feather-forearm-sleeve-'+suffix,inner);
- for(let digit=0;digit<3;digit++){
-  const spread=digit-1;
-  const tip=[side*(.24+.065*digit),
-    -.13-.066*digit,.130+.047*spread];
-  const knuckle=[side*(.025+digit*.015),-.025,.022];
-  const digitBone=g.bone(palm,'skin',knuckle,tip,.017,
-    {tipRadius:.008});
-  digitBone.name='phoenix-feather-hand-digit-'+suffix+'-'+digit;
-  // Joints still animate, but feather tips conceal their visual geometry.
-  digitBone.visible=false;
-  for(let layer=0;layer<7;layer++){
-   const t=1-layer*.060,offset=(layer-3)*.013;
-   fingers.push({from:[knuckle[0]+side*offset*.24,
-      knuckle[1]+.005*layer,knuckle[2]+.006*(layer%2)],
-    to:[tip[0]*t+side*offset,tip[1]*t-.010*(layer%3),
-      tip[2]+.022*layer],
-    width:.085-.004*layer,normal:[side*.12,.38,.91],
-    ridge:.024,tint:(digit+layer)%3===0?3:digit%2===0?2:1,
-    endTint:3,glow:.45});
-  }
- }
- const featherHand=layeredFeathers(palm,s,detail,
-  'phoenix-feather-hand-vanes-'+suffix,fingers);
+ // Exact original Guardian 3-layer vane source, recoloured like back wings.
+ const featherHand=guardianDerivedWing(palm,s,side,detail,{
+  miniature:true,name:'phoenix-feather-hand-vanes-'+suffix
+ });
  for(const part of [sleeve,under,featherHand]){
   part.userData.phoenixTrueFeatherForelimb=true;
   part.userData.phoenixFeatherHandSide=suffix;
  }
  featherHand.userData.phoenixFeatherHandDigits=3;
  featherHand.userData.phoenixNoHumanFingers=true;
- // Keep anatomical animation pivots, never render a bare skinned hand.
+ featherHand.userData.phoenixDenseHandCover=true;
+ featherHand.userData.phoenixMiniGuardianWingVisible=true;
  humerus.visible=false;ulna.visible=false;handSkin.visible=false;
  palm.userData.phoenixHiddenHandBones=true;
- featherHand.userData.phoenixDenseHandCover=true;
  root.userData.phoenixIndependentFeatherArm=true;
  forearm.userData.phoenixFeatherWrappedUlna=true;
  palm.userData.phoenixAvianFeatherHand=true;
@@ -802,6 +810,61 @@ function phoenixSculptedEyes(head,detail){
  head.userData.phoenixSculptedEyeLiner=true;
 }
 
+/** One merged flame-plumage mesh, rooted into brow, temple and cheek.
+ * Real curled vanes trail backwards, not forward across the eye sockets.
+ * No transparent billboards or per-feather draw calls.
+ */
+function phoenixCranialFireFeathers(head,s,detail){
+ const strands=[],n=detail==='low'?6:detail==='medium'?9:
+   detail==='source'?18:14;
+ for(const side of [-1,1]){
+  for(let i=0;i<n;i++){
+   const t=i/Math.max(1,n-1);
+   // Eyebrow roots stay above the eye socket (eye centre y=.050).
+   strands.push({
+    from:[side*(.060+.052*t),.167+.012*(i%2),.25-.22*t],
+    to:[side*(.21+.145*t),.32+.105*t,-.20-.62*t],
+    width:.043+.026*(1-t),normal:[side*.37,.88,.39],
+    ridge:.028,curl:side*(.048+.033*t),rise:.043,
+    tint:i%4===0?3:i%3===0?2:1,endTint:3,glow:.90
+   });
+   // Cheek flame roots stay BELOW and behind the eyeliner, so the
+   // new amber eyes and their pupil remain in clear view.
+   strands.push({
+    from:[side*(.149+.012*(i%2)),-.090-.024*t,.16-.23*t],
+    to:[side*(.235+.115*t),-.022+.072*t,-.38-.48*t],
+    width:.041+.019*(1-t),normal:[side*.75,.30,.57],
+    ridge:.024,curl:side*(.036+.030*t),rise:.033,
+    tint:i%3===0?1:i%3===1?2:0,endTint:3,glow:.88
+   });
+  }
+ }
+ const central=detail==='low'?4:detail==='medium'?6:9;
+ for(let i=0;i<central;i++){
+  const t=i/Math.max(1,central-1),side=i%2?-1:1;
+  strands.push({
+   from:[side*(.012+.036*t),.176,.21-.13*t],
+   to:[side*(.050+.085*t),.36+.086*t,-.26-.40*t],
+   width:.038+.013*t,normal:[side*.10,.94,.35],
+   ridge:.032,curl:side*.035,rise:.050,
+   tint:i%3===0?2:1,endTint:3,glow:.95
+  });
+ }
+ const flame=layeredFeathers(head,s,detail,
+  'phoenix-cranial-fire-plumage',strands);
+ flame.material.emissive.setHex(0xe9470c);
+ flame.material.emissiveIntensity=.48;
+ flame.material.roughness=.53;
+ flame.castShadow=false;flame.receiveShadow=false;
+ flame.userData.phoenixCranialFireSculpt=true;
+ flame.userData.phoenixRaisedFireVanes=true;
+ flame.userData.phoenixCranialFlameVanes=strands.length;
+ flame.userData.phoenixEyesUncovered=true;
+ flame.userData.phoenixLayeredFlameSculpt=true;
+ addPhoenixWave(flame,'crest');
+ return flame;
+}
+
 function headAndCrest(g,s,p,torso,detail){
  const head=g.group('head',[0,s.id==='m014'?1.99:2.065,.365*p.neck],torso);
  // Phoenix crown is a compact, LONG skull: narrow brow, pronounced
@@ -860,7 +923,10 @@ function headAndCrest(g,s,p,torso,detail){
  }else{
    // A tiny phoenix skull cannot use the adult eagle's wide eye socket.
    // Recess both eyes into the narrow original head, not outside the mesh.
-   if(s.id==='m013')phoenixSculptedEyes(head,detail);
+   if(s.id==='m013'){
+     phoenixSculptedEyes(head,detail);
+     phoenixCranialFireFeathers(head,s,detail);
+   }
    else g.eyes(head,.235,.063,.172*p.head,.054);
  }
  const crest=[];
@@ -965,6 +1031,13 @@ export function buildGuardianDerivedBird(g,s){
   g.root.userData.phoenixTorsoRadiusY=.468;
   g.root.userData.phoenixNoExternalEars=true;
    g.root.userData.phoenixVisibleEyeliner=true;
+    g.root.userData.phoenixFaceFlames=true;
+    g.root.userData.phoenixMiniGuardianHandWings=true;
+   // Flight is an anatomical state, not a legacy ground-walk animation.
+   g.root.userData.phoenixFlightMode=true;
+   g.root.userData.phoenixFlightHeight=1.55;
+   g.root.userData.phoenixWingFlightRig=true;
+   g.root.userData.phoenixLegsFoldInFlight=true;
    g.root.userData.phoenixHandSkinHiddenUnderFeathers=true;
   g.root.userData.phoenixWingSpanFactor=p.wing[0];
  }
@@ -1032,5 +1105,6 @@ export function buildGuardianDerivedBird(g,s){
   g.root.userData.phoenixWaveMeshCount=animated.length;
  }
  g.root.scale.setScalar(s.size*.80);
+ if(s.id==='m013')g.root.position.y=g.root.userData.phoenixFlightHeight;
  return true;
 }

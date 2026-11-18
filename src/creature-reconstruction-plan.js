@@ -119,8 +119,8 @@ const notes=Object.freeze({
  m048:'蛇状の海竜の鰭・長胴を固有化',
  m049:'巨大クラーケンの腕・吸盤の位置と水面を検証'
 });
-// m005/m006 are now eligible for real m001-donor geometry regression.
-const protectedIds=new Set();
+// Owner-protected models: never modify or QA m005/m006 or their summon mirrors.
+const protectedIds=new Set(['m005','m006']);
 const humanoids=new Set(HUMAN_MONSTER_IDS);
 const shared=monster=>{
  const humanoid=humanoids.has(monster.id);
@@ -220,7 +220,7 @@ export const CREATURE_RECONSTRUCTION_SUMMARY=Object.freeze({
 export function validateReconstructionPlan(){
  const s=CREATURE_RECONSTRUCTION_SUMMARY;
  if(s.total!==108||s.monster!==50||s.summon!==50||s.dedicated!==8||
-  s.humanMonster!==16||s.protectedMonster!==0)
+  s.humanMonster!==16||s.protectedMonster!==2)
   throw Error('Unexpected reconstruction scope/count');
  const ids=new Set(CREATURE_RECONSTRUCTION_WORK.map(x=>x.id));
  if(ids.size!==108)throw Error('Duplicated reconstruction ids');
