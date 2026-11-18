@@ -44,5 +44,5 @@ test('skips same run; caps writes; never produces a code patch',async()=>{
  assert.equal(out.issueWrites,3);
  assert.equal(out.records[0].runId,3);
  assert.equal(out.sourceCodeFixes,0);
- assert.equal(calls.filter(c=>c.method==='PATCH').length,3);
+ assert.equal(calls.filter(c=>c.method==='POST').length,3);
 });
