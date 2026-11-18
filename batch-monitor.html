@@ -944,29 +944,90 @@ async function updateRuns({request=false}={}){
   }
  }
 }
+/** A green Actions job proves that the runner executed; it never proves
+ * a new 3D mesh, game-quality gain or a successful model commit.
+ * Report EVERY watched pipeline for each of the 7 groups; do not let the
+ * older character QA hide failed FPS or evolution-run evidence.
+ */
 async function updateRecoverySnapshot(){
  try{
   const evidence=await fetchJSON('./data/batch-regression-runtime.json?ts='+Date.now());
   if(evidence.schemaVersion!==1||!Array.isArray(evidence.workflows))return;
+  const checkedAt=Date.parse(evidence.checkedAt);
+  const auditOld=!Number.isFinite(checkedAt)||Date.now()-checkedAt>100*60000;
+  const aliases={
+   'character-six-lane.yml':'人物・衣装QA',
+   'creature-six-lane.yml':'敵・召喚QA',
+   'world-six-lane.yml':'ワールドQA',
+   'game-quality-six-lane.yml':'本編FPS・実行QA',
+   'quality-evolution-loop.yml':'顔・髪・衣装の品質探索',
+   'batch-rule-self-heal.yml':'既知エラー自己修復',
+   'batch-self-drive.yml':'旧PR実ソース移植',
+   'story-sequential-missing-batch.yml':'漫画不足画像補完',
+   'story-cloudflare-free-daily.yml':'Cloudflare画像枠',
+   'story-chapter1-free-complete-draft-production.yml':'第1章画像生成'
+  };
+  const summarize=row=>{
+   const age=Date.now()-Date.parse(row.lastStartedAt||'');
+   const overdue=Number.isFinite(age)&&age>Number(row.maxAgeMinutes||120)*60000;
+   const label=aliases[row.workflow]||row.workflow;
+   let state='実行記録なし';
+   if(row.status==='disabled_by_owner')state='ユーザー停止';
+   else if(row.status==='api_error')state='GitHub API障害（起動状況未確認）';
+   else if(['queued','in_progress','waiting','pending'].includes(row.status))state='実行中・待機中';
+   else if(row.status==='failure'||row.status==='timed_out')state='最終実行失敗';
+   else if(row.status==='success')state=overdue?'定期実行が遅延（過去のQA成功）':'QA起動成功（実改修は別判定）';
+   else if(row.status==='cancelled')state='前回キャンセル';
+   if(row.decision==='dispatch')state='定期実行欠落：'+state;
+   if(row.action==='dispatch_missing_schedule')state+='／復旧起動を要求';
+   if(row.action==='rerun_failed_jobs_once')state+='／失敗ジョブ再試行を要求';
+   if(row.action==='deferred_bounded_recovery_budget')state+='／次回復旧枠へ繰越';
+   if(row.action?.startsWith('escalated'))state+='／修正Issueへ引継ぎ';
+   if(row.error)state+='／'+String(row.error).slice(0,90);
+   return label+'：'+state+'（最終 '+TIME(row.lastStartedAt)+')';
+  };
+  let healthy=0,delayed=0,failed=0,disabled=0;
   for(const g of groups){
-   const view=elements.get(g.id),run=evidence.workflows.find(x=>x.groups?.includes(g.id)&&x.enabled);
-   if(!view||!run)continue;
-   const status=run.status==='success'?'Actions成功（造形未承認）':
-    run.status==='api_error'?'GitHub API障害':run.status==='failure'?'Actions失敗':
-    run.status==='in_progress'?'実行中':run.status==='queued'?'待機中':run.status||'未確認';
-   const recovery='回帰監視：'+status+
-    (run.action&&run.action!=='none'?' ／ 復旧：'+run.action:'')+
-    ' ／ 監視更新 '+TIME(evidence.checkedAt);
-   if(view.activity)view.activity.textContent=recovery;
-   if(view.log&&run.runUrl)view.log.href=run.runUrl;
-   if(view.progress?.progressTime)view.progress.progressTime.textContent+=' ／ '+recovery;
+   const view=elements.get(g.id);
+   if(!view)continue;
+   const rows=evidence.workflows.filter(x=>Array.isArray(x.groups)&&
+    x.groups.includes(g.id));
+   if(!rows.length){
+    view.activity.textContent='この系統の自動復旧監視が未登録（稼働確認不可）';
+    continue;
+   }
+   const enabled=rows.filter(x=>x.enabled);
+   const troubled=enabled.filter(x=>x.status==='api_error'||
+    ['failure','timed_out'].includes(x.status)||
+    ['dispatch','escalate','stale'].includes(x.decision)||
+    x.action==='deferred_bounded_recovery_budget');
+   if(!enabled.length)disabled++;
+   else if(troubled.length) {
+    delayed++;
+    if(troubled.some(x=>['failure','timed_out','api_error'].includes(x.status)))failed++;
+   }else healthy++;
+   const report=rows.map(summarize).join(' ／ ');
+   const caption=(auditOld?'監視記録が古い。最新実行は未確認。':'回帰監視（最終取得 '+TIME(evidence.checkedAt)+'）')+
+    ' ／ '+report;
+   view.activity.textContent=caption;
+   // The oldest human QA result is not a useful link when the FPS
+   // optimizer is the failing dependency. Prefer a troubled run.
+   const linked=enabled.find(x=>x.status==='failure'||x.status==='api_error')||
+    enabled.find(x=>x.decision==='dispatch')||enabled[0];
+   if(view.log&&linked?.runUrl)view.log.href=linked.runUrl;
+   if(view.progress?.progressTime){
+    const original=view.progress.progressTime.textContent.split(' ／ 回帰監視（')[0]
+     .split(' ／ 監視記録が古い。')[0].split(' ／ 回帰監視：')[0];
+    view.progress.progressTime.textContent=original+' ／ '+caption;
+   }
   }
+  $('activeCount').textContent=(auditOld?'監視台帳が古い：':'最新の回帰監視：')+
+   healthy+'系統の直近QA実行／'+delayed+'系統の遅延・要対応／'+
+   disabled+'系統OFF（うち失敗・API障害 '+failed+'系統）';
  }catch(_error){
-  // First recovery run may not have published evidence yet.
-  // Do not infer that scheduled Actions or actual model changes failed.
+  $('activeCount').textContent='回帰監視データを取得できません（未起動と断定しません）';
  }
 }
-
 async function updateWorldSix(){
  try{
   const catalog=await fetchJSON('./data/world-quality/catalog-targets.json?ts='+Date.now());
