@@ -119,6 +119,7 @@ small{font-size:11px}strong{font-weight:700}
 </footer>
 </main>
 <script src="./src/batch-live-ref-selection.js?v=20261118-live-head"></script>
+<script src="./src/batch-pages-release-gate.js?v=20261118-publish-verified"></script>
 <script>
 'use strict';
 const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO,API='https://api.github.com/repos/'+REPO;
@@ -446,6 +447,14 @@ async function updateProgress(){
  * Never infer mesh generation or visual approval from a green Actions job.
  */
 async function updateSelfDriveEvidence(staticProgress){
+ // release.json and this HTML build stamp must match. Both files are
+ // delivered on the same Pages origin as the autonomous run journal.
+ const pageSha=document.querySelector('meta[name="hai-gin-pages-sha"]')?.content||null;
+ let releaseSha=null;
+ try{
+  const release=await fetchJSON('./release.json?ts='+Date.now());
+  if(/^[0-9a-f]{40}$/.test(String(release?.sha||'')))releaseSha=release.sha;
+ }catch(_error){ /* Never invent a published SHA. */ }
  const ids=['faceHair','outfit','creatureMonster','creatureSummon','world','anime','gameQuality'];
  await Promise.all(ids.map(async id=>{
   const ui=elements.get(id),v=ui?.progress;
@@ -461,9 +470,9 @@ async function updateSelfDriveEvidence(staticProgress){
   const last=audit.latest,verified=audit.latestSourceCommit;
   if(typeof last.checkedAt!=='string'||!Number.isFinite(Date.parse(last.checkedAt)))return;
   const old=staticProgress.groups?.[id]||{};
-  const oldTime=Date.parse(old.lastRunAt||staticProgress.asOf||'');
-  // If a newer explicit project audit exists, preserve its more recent facts.
-  if(Number.isFinite(oldTime)&&Date.parse(last.checkedAt)<oldTime)return;
+  // A static manual timestamp must never suppress a verified autonomous
+  // run journal, even when the old ledger was edited more recently.
+  // Keep the archival timestamp only for comparison in the caption.
   const hasSource=verified&&verified.sourceCommits>0&&
    /^[0-9a-f]{40}$/.test(verified.mainAfterSha||'');
   const lastSource=hasSource?verified:null;
@@ -475,14 +484,16 @@ async function updateSelfDriveEvidence(staticProgress){
    last.status==='art_generation_not_automatable_in_actions'?'今回は画像生成なし':
    '今回：実ソース変更なし（'+last.status+'）';
   v.current.textContent=header+(hasSource&&!realNow?' ／ 過去のコミット実績あり':'');
-  v.current.className='progress-status'+(realNow?' ok':'');
+  const proof=window.HaiGinPagesAudit.evaluate({
+   pageSha,releaseSha,last,verifiedSource:lastSource
+  });
+  if(proof.published&&!realNow)
+   v.current.textContent+=' ／ Pages公開済み（今回ソース改修なし）';
+  v.current.className='progress-status'+(realNow&&proof.published?' ok':'');
   v.stageGrid.replaceChildren();
-  const marks={launch:'done',code:hasSource?'done':'pending',
-   qa:'pending',commit:hasSource?'done':'pending',
-   pr:hasSource&&lastSource.pr?'done':'pending',
-   merge:hasSource?'done':'pending',deploy:'pending'};
   for(const [key,label] of PROGRESS_STAGES)
-   v.stageGrid.appendChild(tag('span','stage '+marks[key],label+'：'+STEP_LABELS[marks[key]]));
+   v.stageGrid.appendChild(tag('span','stage '+proof.steps[key],
+    label+'：'+STEP_LABELS[proof.steps[key]]));
   v.progressTime.textContent='最新GitHub自走：'+TIME(last.checkedAt)+
    ' ／ 旧工程台帳：'+TIME(old.lastRunAt||staticProgress.asOf)+
    '（別記録）';
@@ -494,7 +505,8 @@ async function updateSelfDriveEvidence(staticProgress){
    (last.sourceCommits||0)+'件／新規GLB'+glbs+'件／'+staticQa+
    '。WebGL・Android FPSは'+
    (last.webglApproved&&last.androidFpsVerified?'確認記録あり':'未承認')+
-   '。過去の最新実ソースコミット：'+(hasSource?lastSource.mainAfterSha.slice(0,12):'なし')+'。';
+   '。過去の最新実ソースコミット：'+(hasSource?lastSource.mainAfterSha.slice(0,12):'なし')+
+   '。'+proof.message+'。';
   v.nextAction.textContent=blocked?
    '次回引継ぎ：競合内容を修正して最新mainへの安全な再適用を続行':
    hasSource?'次回確認：追加造形、実WebGL四方向、動作とAndroid FPS、公開SHAの照合':
@@ -502,6 +514,12 @@ async function updateSelfDriveEvidence(staticProgress){
   v.progressEvidence.replaceChildren();
   if(typeof last.runUrl==='string'&&last.runUrl.startsWith(GH+'/actions/runs/'))
    v.progressEvidence.appendChild(makeLink('最新自走バッチの実行ログ',last.runUrl,true));
+  if(proof.published){
+   v.progressEvidence.appendChild(makeLink('公開済みPages SHA '+proof.releaseSha.slice(0,12),
+    GH+'/commit/'+proof.releaseSha,true));
+   v.progressEvidence.appendChild(makeLink('Pagesの公開実行履歴',
+    GH+'/actions/workflows/publish-pages.yml',true));
+  }
   if(hasSource)
    v.progressEvidence.appendChild(makeLink('実ソースコミット '+lastSource.mainAfterSha.slice(0,12),
     GH+'/commit/'+lastSource.mainAfterSha,true));
@@ -563,7 +581,8 @@ async function updateSelfDriveEvidence(staticProgress){
     '／FPS '+fps+'／前後比較 '+change+
     '／JSエラー '+(Number.isFinite(browser.runtimeErrors)?browser.runtimeErrors:'未測定')+
     '件。自動ソース変更 '+(last.sourceCommits||0)+
-    '件、GLB '+(last.generatedGLBs||0)+'件。実機FPS・FF15外観合格は未確認。';
+    '件、GLB '+(last.generatedGLBs||0)+'件。'+proof.message+
+    '。実機FPS・FF15外観合格は未確認。';
   }
   const health=ui?.health;
   if(health){
