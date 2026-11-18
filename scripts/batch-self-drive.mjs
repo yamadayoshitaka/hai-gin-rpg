@@ -174,6 +174,7 @@ async function savePublicRunEvidence(report){
  const route='contents/data/batch-self-drive/'+group+'.json';
  const runUrl='https://github.com/'+REPO+'/actions/runs/'+process.env.GITHUB_RUN_ID;
  const current=publicRunSummary(report);
+ current.pagesDispatch='awaiting_release_dispatch';
  current.runUrl=runUrl;
  for(let attempt=0;attempt<3;attempt++){
   let old=null;
@@ -181,7 +182,7 @@ async function savePublicRunEvidence(report){
   catch(error){if(!/GitHub 404 /.test(String(error.message||error)))throw error}
   let previous={};
   if(old?.content){
-   try{previous=JSON.parse(Buffer.from(old.content.replace(/\\s/g,''),'base64').toString('utf8'))}
+   try{previous=JSON.parse(Buffer.from(old.content.replace(/\s/g,''),'base64').toString('utf8'))}
    catch(error){throw Error('Existing verified audit JSON is malformed: '+error.message)}
   }
   const history=appendVerifiedHistory(previous.history,current);
@@ -194,7 +195,7 @@ async function savePublicRunEvidence(report){
    latest:current,latestSourceCommit,history
   };
   const payload={branch:'main',message:'chore(batch): persist '+group+' actual source/QA/commit evidence',
-   content:Buffer.from(JSON.stringify(output,null,2)+'\\n').toString('base64')};
+   content:Buffer.from(JSON.stringify(output,null,2)+'\n').toString('base64')};
   if(old?.sha)payload.sha=old.sha;
   try{
    const saved=await api(route,{method:'PUT',body:payload});
