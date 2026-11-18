@@ -34,7 +34,7 @@ export function isAllowedSource(group,file){
  return !!rules[group]?.test(file);
 }
 export function eligiblePr(pr,group){
- if(!pr||pr.state!=='open'||pr.base?.ref!=='main'||pr.head?.repo?.full_name!==REPO)return false;
+ if(!pr||pr.state!=='open'||pr.base?.ref!=='main'||pr.head?.repo?.full_name!==REPO||pr.user?.login!=='yamadayoshitaka')return false;
  if(!/^[0-9a-f]{40}$/.test(pr.head.sha||''))return false;
  const value=(pr.title||'')+' '+(pr.head.ref||'');
  const patterns={
