@@ -93,8 +93,12 @@ function readProfile(domain){
   s.replace(match[0],domain+':Object.freeze({'+key+':'+v+'})')};
 }
 function browser(){
- const t=run('node',['qa/game-quality-browser.cjs','--lane=frame'],240000);
  const file='qa-reports/game-quality-six/browser-frame.json';
+ // A failed/force-killed Chromium process must NEVER reuse a previous
+ // candidate's green reading. Full-game CI can exhaust software WebGL RAM.
+ fs.rmSync(file,{force:true});
+ const t=run('node',['qa/game-quality-browser.cjs',
+  '--lane=frame','--wizard-timeout-ms=65000'],85000);
  if(!fs.existsSync(file))return {status:'missing',error:t.out.slice(-450)};
  try{return JSON.parse(fs.readFileSync(file,'utf8'))}
  catch{return {status:'malformed',error:t.out.slice(-450)}}
@@ -139,6 +143,70 @@ async function publishApprovedEvidence(){
  }
  return null;
 }
+/** Every run writes a durable result, including rejected candidates, instead
+ * of silently leaving the last faceHair self-drive journal from hours ago.
+ * This is raw latest main data, so no expensive Pages build is required for
+ * a non-improving run. Never call it a quality or FPS improvement.
+ */
+async function publishEvolutionRun(){
+ const token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN;
+ if(!token||process.env.GITHUB_REPOSITORY!==REPO)
+  throw Error('Refusing unsigned evolution progress evidence');
+ const domain=report.domain;
+ if(!choices[domain])throw Error('Invalid evolution evidence category');
+ const path='data/quality-evolution/runs/'+domain+'.json';
+ const url='https://api.github.com/repos/'+REPO+'/contents/'+path;
+ const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json',
+  'Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'};
+ const summary={
+  schemaVersion:1,domain,
+  startedAt:report.startedAt,completedAt:report.completedAt,
+  status:report.status,
+  runUrl:'https://github.com/'+REPO+'/actions/runs/'+(process.env.GITHUB_RUN_ID||'unknown'),
+  baselineSha:report.baselineSha||null,
+  sourceCommitSha:report.sourceCommitSha||null,
+  candidates:(report.candidates||[]).map(c=>({
+   value:c.value,proxyScore:c.proxyScore??null,gain:c.gain??null,
+   qaPassed:c.qaPassed??null,status:c.status,reason:c.decision||c.error||null,
+   browserStatus:c.browser?.status||null,
+   browserError:c.browser?.error||null,
+   fps:c.browser?.fps??null,p95Ms:c.browser?.p95Ms??null
+  })),
+  baselineProxy:report.baseline?.proxyScore??null,
+  baselineBrowserStatus:report.baselineBrowser?.status||'not_run',
+  baselineBrowserError:report.baselineBrowser?.error||null,
+  initialProfile:report.baseline?.profile||null,
+  selected:report.selected?.value??null,
+  gameFpsApproved:report.browserGate?.approved===true,
+  artisticQualityApproved:false,androidFpsMeasured:false,
+  note:report.note||report.error||'Geometry and CI browser only; no verified FF15 artistic approval'
+ };
+ for(let attempt=0;attempt<4;attempt++){
+  const request=await fetch(url+'?ref=main',{headers});
+  let original={},sha=null;
+  if(request.ok){
+   const file=await request.json();sha=file.sha;
+   original=JSON.parse(Buffer.from(file.content.replace(/\s/g,''),'base64').toString('utf8'));
+   if(original.schemaVersion!==1||original.domain!==domain)
+    throw Error('Unknown run evidence schema');
+  }else if(request.status!==404)throw Error('Cannot read evolution journal: '+request.status);
+  const history=(Array.isArray(original.history)?original.history:[])
+   .filter(x=>x&&x.runUrl!==summary.runUrl).slice(-15);
+  history.push(summary);
+  const body={branch:'main',message:'chore(quality): record '+domain+
+   ' latest attempted variants and blocking reason',
+   content:Buffer.from(JSON.stringify({
+    schemaVersion:1,domain,
+    latest:summary,history
+   },null,2)+'\n').toString('base64')};
+  if(sha)body.sha=sha;
+  const update=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
+  if(update.ok)return (await update.json()).commit?.sha||null;
+  if(attempt===3||![409,422].includes(update.status))
+   throw Error('Cannot persist evolution journal: '+update.status);
+ }
+ return null;
+}
 function save(report){
  fs.mkdirSync(logDir,{recursive:true});
  fs.writeFileSync(path.join(logDir,'latest.json'),JSON.stringify(report,null,2)+'\n');
@@ -174,6 +242,7 @@ async function main(){
   const prof=readProfile(domain);
   const pre=evaluate(domain);
   report.baseline=pre.result;
+  report.baselineSha=required('git',['rev-parse','HEAD']);
   if(!pre.ok){report.status='baseline_generator_failed';return}
   const baselineQA=run('node',['--test',...choices[domain].tests],240000);
   if(!baselineQA.ok){report.status='baseline_regression_failed';report.error=baselineQA.out;return}
@@ -181,6 +250,9 @@ async function main(){
   // SwiftShader and is NEVER reported as Android FPS.
   const baselineBrowser=browser();
   report.baselineBrowser=baselineBrowser;
+  // If the real battle could not start, try geometry candidates but never
+  // spend 4 minutes per candidate replaying the same crashed Chromium.
+  const baselineBrowserHealthy=compareBrowser(baselineBrowser,baselineBrowser).approved;
   let best=null;
   for(const value of candidateValues(domain,prof.value)){
    fs.writeFileSync(profilePath,prof.replace(value));
@@ -194,13 +266,18 @@ async function main(){
      const staticQA=run('node',['--test',...choices[domain].tests],240000);
      record.qaPassed=staticQA.ok;
      if(staticQA.ok){
-      const perf=browser();
-      record.browser=perf;
-      record.browserGate=compareBrowser(baselineBrowser,perf);
-      if(record.browserGate.approved){
-       record.status='accepted_candidate';
-       if(!best||record.gain>best.gain)best=record;
-      }else record.status='blocked_browser_or_fps';
+      if(!baselineBrowserHealthy){
+       record.status='blocked_browser_baseline';
+       record.decision='CI production battle browser failed at baseline: no comparable FPS; do not auto-adopt';
+      }else{
+       const perf=browser();
+       record.browser=perf;
+       record.browserGate=compareBrowser(baselineBrowser,perf);
+       if(record.browserGate.approved){
+        record.status='accepted_candidate';
+        if(!best||record.gain>best.gain)best=record;
+       }else record.status='blocked_browser_or_fps';
+      }
      }else{record.status='regression_failed';record.qaError=staticQA.out}
     }
     report.candidates.push(record);
@@ -208,8 +285,10 @@ async function main(){
    finally{fs.writeFileSync(profilePath,original)}
   }
   if(!best){
-   report.status='no_safe_measured_improvement';
-   report.note='All candidate scores are proxies, not finished character art. No commit without actual browser FPS.';
+   report.status=baselineBrowserHealthy?'no_safe_measured_improvement':'blocked_browser_baseline';
+   report.note=baselineBrowserHealthy?
+    'No candidate improved the measured 3D geometry while maintaining CI WebGL FPS.':
+    'Actual battle browser did not provide baseline FPS. Rejected all source changes; see browser error.';
    return;
   }
   report.selected=best;
@@ -261,6 +340,13 @@ async function main(){
  }catch(error){report.status='error';report.error=String(error.stack||error).slice(0,1100)}
  finally{
   fs.writeFileSync(profilePath,original);
+  report.completedAt=new Date().toISOString();
+  try{
+   report.progressEvidenceSha=await publishEvolutionRun();
+  }catch(error){
+   report.progressEvidenceError=String(error.message||error).slice(0,450);
+   if(!report.sourceCommitSha)process.exitCode=1;
+  }
   save(report);
   if(process.env.GITHUB_OUTPUT){
    fs.appendFileSync(process.env.GITHUB_OUTPUT,'changed='+(report.sourceCommitSha?'true':'false')+'\n');
