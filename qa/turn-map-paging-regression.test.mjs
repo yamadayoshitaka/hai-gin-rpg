@@ -82,6 +82,10 @@ test('battle starts directly without opening wizard and shows live ally job powe
  assert.match(styles,/objectiveTurnJobs/);
  assert.match(styles,/body\.objective-turn-enabled #battleTeamCameraSwitches/);
  assert.match(styles,/body\.objective-turn-enabled #battleTopDock/);
+ assert.match(battle,/const turnBottom=document\.body\.classList\.contains\('objective-turn-enabled'\)/,
+  'Focused squad badge follows the actual visible turn HUD instead of the hidden dock');
+ assert.match(styles,/body\.objective-turn-enabled #battleZoomSquadBadge/,
+  'Narrow mobile turn HUD keeps the focused squad identity legible');
 });
 test('the tactical map supports enlarge, zoom, pinch and pan without losing target selection',()=>{
  const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
