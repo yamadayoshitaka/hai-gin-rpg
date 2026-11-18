@@ -31,7 +31,7 @@ small{font-size:11px;color:#aec4d3}
 <div class="controls">
  <label>バッチ系統<select id="group" aria-label="バッチ系統"></select></label>
  <label>改修PR・確認対象<select id="target" aria-label="改修対象"></select></label>
- <button id="refresh" type="button">PR情報を手動取得（GitHub API）</button>
+ <button id="refresh" type="button">最新main・作業PRを再取得（GitHub API）</button>
 </div>
 <div class="info" aria-live="polite">
  <div><strong>改修ブランチ</strong><span id="commit">照合中</span></div>
@@ -48,6 +48,7 @@ small{font-size:11px;color:#aec4d3}
 <p class="summary" id="worldSummary" hidden>60種の品質受入状況を照合中…</p>
 <p><small>GitHub APIは閲覧時に自動呼出ししません。PRの最新SHAは「情報を手動取得」を押した時だけ1回問い合わせます。403発生中も本編とPRリンクは利用できます。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small> <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/commits/main" target="_blank" rel="noopener noreferrer">GitHub mainのコミット履歴</a></p>
 </main>
+<script src="./src/batch-live-ref-selection.js?v=20261118-live-head"></script>
 <script>
 'use strict';
 const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO;
@@ -55,7 +56,7 @@ const API='https://api.github.com/repos/'+REPO,PROD='https://yamadayoshitaka.git
 const PREVIEW='https://raw.githack.com/'+REPO+'/';
 const $=id=>document.getElementById(id);
 let data=null,row=null,pr=null,mode='published',releaseSha=null,mainSha=null,seq=0;
-const groups={world:'🏰 オブジェクト',human:'👤 人モデル',monster:'🐉 モンスター',anime:'🎬 漫画'};
+const groups={world:'🏰 オブジェクト',faceHair:'👤 顔・髪',outfit:'🛡️ 衣装',creatureMonster:'🐉 モンスター',creatureSummon:'✨ 召喚獣',anime:'🎬 漫画'};
 const short=s=>typeof s==='string'?s.slice(0,12):'不明';
 const escapePart=s=>encodeURIComponent(s).replace(/%2F/gi,'/');
 const queryFor=t=>t.params?'?'+t.params:t.object?'?object='+encodeURIComponent(t.object):'';
@@ -101,9 +102,14 @@ function show(){
  $('published').setAttribute('aria-pressed',String(mode==='published'));
  $('candidate').setAttribute('aria-pressed',String(mode==='candidate'));
  $('candidate').disabled=!u.draft;
- $('which').textContent=mode==='candidate'?'PR版を表示中（外部プレビュー・品質未承認）':'本編の公開版を表示中';
+ $('which').textContent=mode==='candidate'?(row?.pr===0?'mainソース版（外部プレビュー、公開状態とは別）':'PR版を表示中（外部プレビュー・品質未承認）'):'本編の公開版を表示中';
 }
 function verifyRelease(p){
+ if(row?.pr===0){
+  $('mainStatus').textContent=mainSha?'最新main '+short(mainSha):'main SHA未照合';
+  $('pageStatus').textContent=releaseSha===mainSha?'公開SHAが最新mainと一致：'+short(releaseSha):'公開SHA '+short(releaseSha)+' ／ main '+short(mainSha)+'（差分あり、最新mainの公開は未確認）';
+  return;
+ }
  if(!p?.merged_at){
   $('mainStatus').textContent='未マージ（本編未反映）';
   $('pageStatus').textContent='未公開（PR段階）';return;
@@ -136,17 +142,34 @@ async function readCheckpoint(p,category,token){
  }catch(e){if(token===seq)display.textContent='途中保存：このPRに対象別チェックポイントが未記録、または取得不可（'+e.message+'）。PRのコミットは上のリンクで確認できます。'}
 }
 async function refresh({live=false}={}){
+ const category=$('group').value;
+ // The only unconditionally valid head is current main. Historical PR pins
+ // must never silently become the current comparison target.
+ if(Number($('target').value)===0){
+  row=window.HaiGinBatchRefs.mainRow(category,mainSha);
+  pr={head:{sha:mainSha||'main'},merged_at:null};
+  setLink('prLink',GH+'/commits/main');
+  $('commit').textContent=mainSha?'正本 main / '+short(mainSha):'正本 main（GitHub API未確認）';
+  $('checks').textContent='最新mainを正式な品質基準に使用（QA・実描画結果は別途確認）';
+  $('qa').textContent=mainSha?'公開版と現在のmainコミットを比較。オブジェクト一覧は変更しません。':
+   'GitHub APIが利用できないため最新mainのSHAは未確認。古いPR版は使用しません。';
+  $('checkpoint').textContent='正本main：オブジェクトなど現行のゲームモデルを保持。作業PR採用前に同一対象の差分検証。';
+  mode='published';verifyRelease(pr);show();return;
+ }
+
  const token=++seq;row=data?.groups?.[$('group').value]?.find(x=>x.pr===Number($('target').value));
  if(!row)return;
- pr=null;
- $('commit').textContent='PR #'+row.pr+'（最新SHAは未取得）';
+ // The live /pulls response already contains the immutable HEAD commit SHA.
+ // Render that exact candidate immediately instead of forcing another API call.
+ pr=row.sha?{head:{sha:row.sha,ref:row.branch},draft:row.draft,merged_at:null}:null;
+ $('commit').textContent='PR #'+row.pr+' ／ '+short(row.sha)+' ／ '+(row.branch||'ブランチ未確認');
  $('checks').textContent='未確認（API取得を省略）';
  $('mainStatus').textContent='未照合';
  $('pageStatus').textContent=releaseSha?'Pages公開SHA '+short(releaseSha)+'（PR採用は未照合）':'公開SHA未取得';
- $('qa').textContent='APIの自動呼出しを停止中。PR詳細は直接GitHubで確認できます';
+ $('qa').textContent='最新GitHub APIで取得した作業PR：'+row.title+'。main基準で審査し、未承認の変更は自動採用しません。';
  $('checkpoint').textContent='途中保存：PRのコミットとcheckpointをGitHubで確認してください';
  setLink('prLink',GH+'/pull/'+row.pr);
- show();
+ verifyRelease(pr);show();
  if(!live){
   const cached=getSaved(PR_CACHE_PREFIX+row.pr);
   if(cached?.data&&Date.now()-Date.parse(cached.at)<5*60000){
@@ -179,9 +202,10 @@ async function setGroup(){
  const category=$('group').value;
  $('target').replaceChildren();
  const list=data.groups[category]||[];
- for(const row of list){const option=document.createElement('option');option.value=String(row.pr);option.textContent='#'+row.pr+' '+row.title;$('target').appendChild(option)}
+ for(const row of list){const option=document.createElement('option');option.value=String(row.pr);option.textContent=(row.pr?'#'+row.pr:'main')+' '+row.title;$('target').appendChild(option)}
  const asked=new URL(location.href).searchParams.get('pr');
  if(list.some(x=>String(x.pr)===asked))$('target').value=asked;
+ else $('target').value='0';
  $('worldSummary').hidden=category!=='world';
  if(category==='world'){
   try{const s=await getJSON('./data/world-quality/object-realism-acceptance.json');
@@ -190,20 +214,46 @@ async function setGroup(){
  }
  await refresh();
 }
+async function reloadLiveHeads(){
+ let prs=[],warning='';
+ try{
+  // One bounded read of current main and open PR heads on each deliberate
+  // refresh. A GitHub 403 never makes an obsolete snapshot authoritative.
+  const [commit,open]=await Promise.all([
+   getJSON(API+'/commits/main'),getJSON(API+'/pulls?state=open&sort=updated&direction=desc&per_page=100')
+  ]);
+  if(!/^[0-9a-f]{40}$/.test(commit.sha)||!Array.isArray(open))throw Error('GitHub最新参照形式が不正');
+  mainSha=commit.sha;prs=open;
+ }catch(error){
+  mainSha=null;warning='GitHub最新照合不可（'+error.message+'）。古い固定PRは選択しません。';
+ }
+ data={schemaVersion:1,groups:{}};
+ for(const id of Object.keys(groups))data.groups[id]=window.HaiGinBatchRefs.liveRows(prs,id,mainSha);
+ if(warning)$('qa').textContent=warning;
+ const current=$('group').value||'world',currentPr=$('target').value;
+ await setGroup();
+ // Keep a requested live PR only if it was returned by the current GitHub API.
+ if(currentPr&&data.groups[current]?.some(item=>String(item.pr)===currentPr)){
+  $('target').value=currentPr;await refresh();
+ }
+}
 async function init(){
  try{
-  data=await getJSON('./data/batch-pr-previews.json');
-  if(data.schemaVersion!==1||!data.groups)throw Error('プレビューデータ形式が不正');
-  for(const [key,name] of Object.entries(groups)){const o=document.createElement('option');o.value=key;o.textContent=name;$('group').appendChild(o)}
+  // No historical preview JSON as the source of live branch selection.
+  // Its former static PR #442 etc. remain accessible only as history.
+  for(const [key,name] of Object.entries(groups)){
+   const o=document.createElement('option');o.value=key;o.textContent=name;$('group').appendChild(o);
+  }
   const asked=new URL(location.href).searchParams.get('group');
-  if(data.groups[asked])$('group').value=asked;
+  const canonical=window.HaiGinBatchRefs.groupOf(asked);
+  if(groups[canonical])$('group').value=canonical;
   try{const r=await getJSON('./release.json?ts='+Date.now());releaseSha=/^[0-9a-f]{40}$/.test(r.sha)?r.sha:null}catch{}
-  await setGroup();
- }catch(e){$('qa').textContent='初期化に失敗：'+e.message}
+  await reloadLiveHeads();
+ }catch(e){$('qa').textContent='最新ブランチ照合の初期化に失敗：'+e.message}
 }
 $('group').addEventListener('change',setGroup);
 $('target').addEventListener('change',()=>refresh());
-$('refresh').addEventListener('click',()=>refresh({live:true}));
+$('refresh').addEventListener('click',()=>reloadLiveHeads());
 $('published').addEventListener('click',()=>{mode='published';show()});
 $('candidate').addEventListener('click',()=>{mode='candidate';show()});
 init();

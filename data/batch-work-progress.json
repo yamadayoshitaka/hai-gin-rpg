@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-17T11:53:59.796Z",
+  "asOf": "2026-11-17T23:58:08.941Z",
   "description": "工程別の実作業証跡。GitHub Actionsの成功や定期タスクの実行完了を、3D改修・PR・デプロイの完了と混同しない。これはGitHubに最後に記録されたスナップショットであり、ChatGPTサービスのライブ状態ではない。 追加のoperational欄は直近の証跡から特定した滞留原因と次の改善策であり、実行成功や品質達成の認定ではない。",
   "stageOrder": [
     "launch",
@@ -114,71 +114,69 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T07:50:16+09:00",
-      "status": "work_incomplete",
+      "lastRunAt": "2026-11-18T10:54:50+09:00",
+      "status": "blocked_branch_behind_main",
       "carryover": true,
-      "subject": "PR #624 旧サークルUI QA修正＋鍵Lv1〜5扉の実3D木組み補強",
-      "summary": "world.enabled=true。PR #624のarchitecture/mobile失敗はqa/battle-unified-voice-and-intent.test.mjs:62の廃止済み命令ポップアップ期待値。現行の単押し部隊選択・視点切替、ダブルタップ拡大、対象選択を検証するQAに更新（95f909af）。さらに既存PR #624のsrc/object-catalog.jsで鍵Lv1〜5の5種類に板目地・裏側の貫と斜材・鍛鉄蝶番と鋲・敷居・水切りの実メッシュを追加（b7e7d922）。今回のNode/WebGL/Android QA実行結果は未取得、GLB0、main採用0、Pages公開0。6レーンの過去成功は今回の品質合格ではない。",
-      "nextAction": "PR #624 head b7e7d922のCIを確認し、node --checkとworld-quality-contract/object-list-catalog/stage-static-instancing、architecture/mobileテストを再検証。扉Lv1〜5の表裏・斜材・蝶番の新旧WebGL画像と接地・1000vs1000 FPSを検査。全合格までDraft・未マージ。",
+      "subject": "PR #624 main追従ブロッカーとWebGL/Android未検証",
+      "summary": "main 6c59dd0015630c32a030afc840f17739702c2081、PR #624 head world/structural-joinery-five-20261118 の比較は diverged（ahead 11 / behind 1、merge-base e3f90dd9de86d637b96a7b3e2110acac06ace09d）。PR #635はmerged。既存PRのCIはArchitecture/photoreal success、Battle visualとsix-lane cancelled。最新mainへの3-way同期が必要だが接続GitHub操作に安全なブランチ同期機能がなく、旧PRへの追記・main上書きは実施しない。今回実3Dソース改修0、QA新規合格0、ゲーム採用0、公開0。",
+      "nextAction": "PR #624を最新main 6c59dd0015630c32a030afc840f17739702c2081 に3-wayマージ（既存造形差分を保護）、behind_by=0とPR #635 ancestry gate確認後、node --checkと指定3種QA、実WebGL正面/側面/背面・LOD・衝突/FPSを検証し、失敗を同じPRで修復。",
       "steps": {
         "launch": "done",
-        "code": "done",
+        "code": "blocked",
         "qa": "pending",
-        "commit": "done",
-        "pr": "done",
-        "merge": "pending",
-        "deploy": "pending"
+        "commit": "not_done",
+        "pr": "existing_draft",
+        "merge": "blocked",
+        "deploy": "not_done"
       },
       "evidence": [
         {
-          "label": "5扉の実メッシュ構造改修",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/b7e7d9222bd2db5dbd248fb063341fd55cd6861b"
-        },
-        {
-          "label": "旧サークルQA契約修正",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/95f909af46a37a86d82232a4c1ef35fc36d0caac"
-        },
-        {
-          "label": "継続Draft PR #624",
+          "label": "PR #624",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
         },
         {
-          "label": "失敗した旧architecture CI",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44173930260"
+          "label": "PR #635 merged ancestry gate",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/635"
+        },
+        {
+          "label": "Architecture success",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44211554942"
+        },
+        {
+          "label": "World six-lane cancelled",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44211554910"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 5,
+        "newSourceChangedIds": 0,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 1,
+        "newSourceCommits": 0,
         "newGeneratedGLBs": 0,
-        "newPublishedIds": 0
+        "newPublishedIds": 0,
+        "webglPassedIds": [],
+        "gameAppliedIds": [],
+        "sourceChangedIds": [],
+        "publicVerified": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 head b7e7d922のNode構文・3件QAとarchitecture/mobile CI結果未確認",
-          "鍵Lv1〜5の実WebGL前後・裏側接合と衝突/配置の個別QA未実施",
-          "Androidおよび1000vs1000 FPS未計測",
-          "GLB/高密度原型再生成なし・main未採用・Pages未公開"
+          "PR #624 diverged from latest main: behind_by=1; safe 3-way merge required before further branch changes",
+          "Connected GitHub tool lacks update-branch/merge-main-into-branch operation; unsafe whole-file replacement prohibited",
+          "Latest PR #624 six-lane and Battle visual workflows cancelled; real WebGL comparison unverified",
+          "Android/1000vs1000 FPS unmeasured"
         ],
-        "speedPlan": "既存PR #624のCI失敗ジョブから再開し、旧テスト修正後の実行結果を検査。5扉のWebGL前後比較を最優先、失敗なら同一PR内で修正。",
+        "speedPlan": "PR #624を最新main 6c59dd0015630c32a030afc840f17739702c2081 に3-wayマージ（既存造形差分を保護）、behind_by=0とPR #635 ancestry gate確認後、node --checkと指定3種QA、実WebGL正面/側面/背面・LOD・衝突/FPSを検証し、失敗を同じPRで修復。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 5,
+          "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 1,
+          "newSourceCommits": 0,
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
           "webglPassedIds": [],
           "gameAppliedIds": [],
-          "sourceChangedIds": [
-            "entry_door_lv1_001",
-            "entry_door_lv2_001",
-            "entry_door_lv3_001",
-            "entry_door_lv4_001",
-            "entry_door_lv5_001"
-          ],
+          "sourceChangedIds": [],
           "publicVerified": 0
         }
       },
@@ -186,23 +184,27 @@
       "legacyRecord": false
     },
     "anime": {
-      "source": "Cloudflare Free日次ワークフロー再実行＋880場面キュー実CI検証",
-      "lastRunAt": "2026-11-16T10:05:22.611Z",
+      "source": "2026-11-18 全バッチ手動起動／GitHub Actions実行結果",
+      "lastRunAt": "2026-11-17T23:50:25Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "880場面の最小構成へ変更済み。無料バッチは本日1回/日制限で追加生成を自動抑止",
-      "summary": "20章200ステージ通常進行880場面に正規化（旧男女展開1760は上限としてのみ扱い、性別別の必要枚数は視覚QA確定後）。2026-11-16 19:03 JST頃のGitHub Actions #43845263704（RPG data architecture checks）PASS: 880基本場面、少なくとも片側WebPがある場面21、男女双方既存WebPあり20、両方とも既存CGなし859、男女別の実参照41、性別別未登録1719、視覚QA済み中立共通化0。無料用生成器第1章44場面/安全な男女別最大88件の計画テストPASS。2026-11-16 19:04 JST頃、無料ディスパッチャ #43819398953 を手動再実行（attempt 2）しジョブ成功だが、当日すでに本番生成バッチが1回開始済みのため 'Cloudflare production already attempted today (1 times); skip additional request.' と判定、実Cloudflare画像API新規呼出0・新CG生成0・登録0。制限解除や無料API利用可能の判定はしていない。",
+      "subject": "手動漫画監査は成功（実画像生成0・追加課金0）。登録42/1760、保留1、未登録1718",
+      "summary": "2026-11-18 08:50 JSTの手動監査 #44202828033: 正本880場面/男女1760枠、実登録42、未登録1718、人物マスター保留1。次の作成対象 c01-s02|post-victory|c01-s02-m6|male。今回生成0・仮登録0・正式P0承認0。無料枠当日使用済み、同日重複生成無し。",
       "nextAction": "日本時間11月17日09:20頃の次のCloudflare Free日次枠にて、新880場面/第1章44場面の計画、重複発注抑止と認証を確認し、旧不要なm8ではなくコンパクトCGの不足場面から実生成。API応答・生成WebP実バイト・SHA・画素・男女別性・監査承認・コミットを区別して記録。Cloudflare Free quota超過は追加課金せず停止。",
       "steps": {
         "launch": "done",
-        "code": "done",
-        "qa": "done",
-        "commit": "done",
+        "code": "skipped",
+        "qa": "pending",
+        "commit": "skipped",
         "pr": "skipped",
         "merge": "skipped",
         "deploy": "pending"
       },
       "evidence": [
+        {
+          "label": "漫画200ステージ監査（success・生成0枚）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44202828033"
+        },
         {
           "label": "880場面生成キューCI成功（880/21/859/20/41の実集計）",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/43845263704"
@@ -237,6 +239,7 @@
           "provenNeutralArtShares": 0
         },
         "blockers": [
+          "今回の静的/監査QA成功はWebGL目視・Android FPS・本編採用を意味しない",
           "本日UTC 2026-11-16のCloudflare本番生成ワークフロー1回/日上限（再実行attempt 2は追加APIをSKIP）",
           "API実呼出0回のためCloudflare Freeの現在の空き枠/制限状態は未判定",
           "性別中立の実画像は視覚QAで証明できておらず自動的に男女共通化不可"
@@ -245,15 +248,15 @@
       }
     },
     "faceHair": {
-      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
-      "lastRunAt": null,
+      "source": "2026-11-18 全バッチ手動起動／GitHub Actions実行結果",
+      "lastRunAt": "2026-11-17T23:50:15Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
-      "summary": "目/鼻/口/表情/髪型6群/髪の動作とLODをFF15級目標に順番QA。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "subject": "手動起動・静的QA成功／実モデル改修・公開未完了",
+      "summary": "手動GitHub Actionsはsuccess。これは既存ソースの静的検査のみ。新規メッシュ・コミット・ゲーム反映は今回確認できない。WebGL前後/動作とAndroid FPSは未承認。",
       "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
       "steps": {
-        "launch": "pending",
+        "launch": "done",
         "code": "pending",
         "qa": "pending",
         "commit": "pending",
@@ -261,9 +264,15 @@
         "merge": "pending",
         "deploy": "pending"
       },
-      "evidence": [],
+      "evidence": [
+        {
+          "label": "手動顔髪QA（GitHub Actions success）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44202804727"
+        }
+      ],
       "operational": {
         "blockers": [
+          "今回の静的/監査QA成功はWebGL目視・Android FPS・本編採用を意味しない",
           "実3D形状変更・GLB生成は未実施",
           "実画面WebGL・Android実機FPS未検証",
           "Pagesへの公開未確認"
@@ -280,15 +289,15 @@
       "workflow": "character-six-lane.yml"
     },
     "outfit": {
-      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
-      "lastRunAt": null,
+      "source": "2026-11-18 全バッチ手動起動／GitHub Actions実行結果",
+      "lastRunAt": "2026-11-17T23:50:29Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
-      "summary": "衣装造形/PBR/結合/小物/アクション/LODの6テーマ巡回QA。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "subject": "手動起動・静的QA成功／実モデル改修・公開未完了",
+      "summary": "手動GitHub Actionsはsuccess。これは既存ソースの静的検査のみ。新規メッシュ・コミット・ゲーム反映は今回確認できない。WebGL前後/動作とAndroid FPSは未承認。",
       "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
       "steps": {
-        "launch": "pending",
+        "launch": "done",
         "code": "pending",
         "qa": "pending",
         "commit": "pending",
@@ -296,9 +305,15 @@
         "merge": "pending",
         "deploy": "pending"
       },
-      "evidence": [],
+      "evidence": [
+        {
+          "label": "手動衣装QA（GitHub Actions success）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44202838493"
+        }
+      ],
       "operational": {
         "blockers": [
+          "今回の静的/監査QA成功はWebGL目視・Android FPS・本編採用を意味しない",
           "実3D形状変更・GLB生成は未実施",
           "実画面WebGL・Android実機FPS未検証",
           "Pagesへの公開未確認"
@@ -315,25 +330,35 @@
       "workflow": "character-six-lane.yml"
     },
     "creatureMonster": {
-      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
-      "lastRunAt": null,
+      "source": "2026-11-18 全バッチ手動起動／GitHub Actions実行結果",
+      "lastRunAt": "2026-11-17T23:54:00Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
-      "summary": "モンスター50体を6種族グループに分割し解剖/質感/動作/LODを点検。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "subject": "鳥類頭蓋の実メッシュ修正コミット＋Draft PR #633／6レーン静的QA成功・ゲーム未採用",
+      "summary": "手動実行でm011の顔メッシュ回帰失敗を検出。src/avian-guardian-sculpt.jsの頭蓋形状にfaceSculpt=trueを適用し実頂点を補正。コミット a607284a、PR #633（Draft）。旧QAが保護m006に新爪を要求していた不一致は5e7c4beeで修正。敵/召喚の各6レーンCIは成功。WebGL・Android実測／main・Pages採用は未確認。",
       "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
       "steps": {
-        "launch": "pending",
-        "code": "pending",
+        "launch": "done",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
-        "pr": "pending",
+        "commit": "done",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
-      "evidence": [],
+      "evidence": [
+        {
+          "label": "鳥類実造形修正 Draft PR #633（本編未採用）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/633"
+        },
+        {
+          "label": "鳥類修正PRの敵6レーンQA（success）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44203431021"
+        }
+      ],
       "operational": {
         "blockers": [
+          "今回の静的/監査QA成功はWebGL目視・Android FPS・本編採用を意味しない",
           "実3D形状変更・GLB生成は未実施",
           "実画面WebGL・Android実機FPS未検証",
           "Pagesへの公開未確認"
@@ -343,32 +368,42 @@
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0
         }
       },
       "workflow": "creature-six-lane.yml"
     },
     "creatureSummon": {
-      "source": "新GitHub Actions（毎時6回の静的QAを設定。初回実行結果は未確認）",
-      "lastRunAt": null,
+      "source": "2026-11-18 全バッチ手動起動／GitHub Actions実行結果",
+      "lastRunAt": "2026-11-17T23:54:00Z",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "品質目標と6分割QAを登録（実3D改善未実施）",
-      "summary": "召喚獣50派生+8専用を種族6グループに分けて品質/導入を点検。新コードはPR登録段階。PRマージ/WebGL/Android/実モデル変更の証拠は未確認。",
+      "subject": "鳥類頭蓋の実メッシュ修正コミット＋Draft PR #633／6レーン静的QA成功・ゲーム未採用",
+      "summary": "手動実行でm011の顔メッシュ回帰失敗を検出。src/avian-guardian-sculpt.jsの頭蓋形状にfaceSculpt=trueを適用し実頂点を補正。コミット a607284a、PR #633（Draft）。旧QAが保護m006に新爪を要求していた不一致は5e7c4beeで修正。敵/召喚の各6レーンCIは成功。WebGL・Android実測／main・Pages採用は未確認。",
       "nextAction": "本編と同じ正本3Dソースの実改善→WebGL前後左右/動作QA→Android FPS→PR→main→Pages導入。毎回成果0なら0と記録する。",
       "steps": {
-        "launch": "pending",
-        "code": "pending",
+        "launch": "done",
+        "code": "done",
         "qa": "pending",
-        "commit": "pending",
-        "pr": "pending",
+        "commit": "done",
+        "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
-      "evidence": [],
+      "evidence": [
+        {
+          "label": "鳥類実造形修正 Draft PR #633（本編未採用）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/633"
+        },
+        {
+          "label": "鳥類修正PRの召喚6レーンQA（success）",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44203431021"
+        }
+      ],
       "operational": {
         "blockers": [
+          "今回の静的/監査QA成功はWebGL目視・Android FPS・本編採用を意味しない",
           "実3D形状変更・GLB生成は未実施",
           "実画面WebGL・Android実機FPS未検証",
           "Pagesへの公開未確認"
@@ -378,7 +413,7 @@
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0
         }
       },
