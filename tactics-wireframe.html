@@ -11097,11 +11097,8 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   refreshCommanderOrderOptions();
   const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
-  // Story mode has already locked its initial positions on the FULL radar
-  // at world-map launch. Never show the old formation / initial-order wizard.
-  // Start real-time autonomous combat immediately after loading. Manual
-  // tactics and items now live only in the pause-and-command center.
-  // All battle routes now require formation confirmation; there is no direct-start bypass.
+  // The prebattle page is required for all battle routes. The turn engine
+  // owns subsequent movement, arrival actions and items.
   // The opening screen owns strategy selection. There is no in-battle
   // strategy dropdown: after launch the chosen assignments are immutable.
   const openingPlan=document.createElement('section');
@@ -11344,7 +11341,29 @@ async function finishBattleLoading(){
   const launch=()=>{
    if(battleLaunched)return;
    battleLaunched=true;startButton.disabled=true;silentButton.disabled=true;
-   // Keep each soldier's job, equipment, captain bonus and original squad identity.
+   // The prebattle formation controls must change the authoritative simulation,
+   // not only the on-screen badge. Recompose existing soldiers, never clone models.
+   const selectedFormationTypes=formationTypes();
+   if(massSim){
+    const planned=massSim.setSquadFormationTypes(selectedFormationTypes,0);
+    if(planned?.assignments){
+     if(massWorker?.active)massWorker.setSquadFormationTypes(selectedFormationTypes,0,planned.assignments);
+     for(const actor of actors){
+      if(actor.team!==0||actor.massUnitId==null)continue;
+      const soldier=massSim.units[actor.massUnitId];
+      if(!soldier)continue;
+      actor.squadId=soldier.squadId;actor.formationType=soldier.formationType;
+      const position=massWorldPositionFn?.(soldier,{});
+      if(position&&actor.root?.position){
+       actor.root.position.set(position.x,position.y,position.z);
+       actor.cell=gridFromWorld(actor.root.position);
+      }
+     }
+    }else log('選択した陣形を反映できませんでした。既存の編成を保持します。');
+   }else for(const actor of actors){
+    if(actor.team===0)actor.formationType=selectedFormationTypes[String(actor.squadId)]||'balanced';
+   }
+   // Keep each soldier's job, equipment and captain bonus.
    if(!massSim){
     occupiedCells.clear();reservedCells.clear();
     for(const soldier of actors){
