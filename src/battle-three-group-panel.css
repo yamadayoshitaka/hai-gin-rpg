@@ -24,3 +24,10 @@ body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid{grid-template-col
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button{min-width:0;min-height:41px;padding:3px 1px;font-size:10px;overflow:hidden}
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button strong{font-size:10px;white-space:nowrap}
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button small{font-size:9px;line-height:1.15;overflow-wrap:anywhere}
+
+/* Live aggregate HP: surviving HP divided by the entire team's initial capacity. */
+body.story-three-group-ui .threeGroupHpTrack{display:block;height:6px;border-radius:9px;overflow:hidden;background:#563940;border:1px solid #86939b;width:100%}
+body.story-three-group-ui .threeGroupHpTrack>span{display:block;height:100%;background:linear-gradient(90deg,#cf8b57,#83d59b);transition:width .3s}
+body.story-three-group-ui .tenGroupGrid button.danger .threeGroupHpTrack>span{background:#dc7366}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button{min-height:61px}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button small{font-size:9px;line-height:1.1}

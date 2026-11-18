@@ -18,6 +18,12 @@ export function createBattleThreeGroupPanel({
  const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits);
  const back=(where,label)=>'<button type="button" data-back="'+where+'">◀ '+label+'</button>';
  const groupTitle=group=>'第'+group.id+'班';
+ const groupHp=group=>{
+  const current=Math.round(group.hp||0),max=Math.round(group.initialMaxHp||group.maxHp||0);
+  const percent=max?Math.max(0,Math.min(100,Math.round(current/max*100))):0;
+  return '<span class="threeGroupHpTrack" role="meter" aria-label="'+groupTitle(group)+' 総合HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><span style="width:'+percent+'%"></span></span>'+
+   '<small>総HP '+current+' / '+max+' ('+percent+'%)</small>';
+ };
  function render(force=false,targetsActive=false){
   const stamp=performance.now();
   if(!force&&stamp-lastRenderAt<450)return;
@@ -26,7 +32,7 @@ export function createBattleThreeGroupPanel({
   let html='';
   if(level==='groups'){
    html='<div class="threeGroupStep">① 班を選択（最大10班）</div><div class="tenGroupGrid">'+
-    groups.map(g=>'<button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong><small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人 · '+g.divisions.length+'分隊'+(g.danger?' ⚠':'')+'</small></button>').join('')+'</div>';
+    groups.map(g=>'<button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong>'+groupHp(g)+'<small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人'+(g.danger?' ⚠':'')+'</small></button>').join('')+'</div>';
   }else if(level==='divisions'){
    html=back('groups','10班に戻る')+
     '<div class="threeGroupStep">② '+groupTitle(selected)+' · 分隊を選択</div>'+

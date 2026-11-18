@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-turn10"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=1">
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261118-move-action-hp1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-turn10';
+import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-move-action-hp1';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -9583,44 +9583,131 @@ function setBattlePaused(next){
 }
 $('pause').onclick=()=>{if(pickingSquadDestination){finishSquadDestination(false);return}setBattlePaused(!paused)};
 
+// Every army group has an independent destination followed by an arrival action.
+// Map destinations use real stage-building and bridge instances; no invented coordinates.
+const objectiveTurnDestinations=new Map();
+const turnGroupSquads=id=>squadIds.filter(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===Number(id));
+const turnGroupOrigin=id=>{
+ const centers=turnGroupSquads(id).map(sid=>squadCenter(sid,0)).filter(Boolean);
+ if(!centers.length)return null;
+ const total=centers.reduce((n,p)=>n+(p.n||1),0);
+ return {x:centers.reduce((n,p)=>n+p.x*(p.n||1),0)/total,
+  z:centers.reduce((n,p)=>n+p.z*(p.n||1),0)/total};
+};
+const turnEnemies=()=>enemySquadIds.map(id=>squadCenter(id,1)).filter(Boolean);
+function turnLegalPoint(x,z){
+ const desired={x:Math.round(x),z:Math.round(z)};
+ if(traversableCell(desired.x,desired.z))return desired;
+ for(let radius=1;radius<=20;radius++){
+  for(let delta=-radius;delta<=radius;delta++){
+   for(const [dx,dz] of [[delta,-radius],[delta,radius],[-radius,delta],[radius,delta]]){
+    const cx=desired.x+dx,cz=desired.z+dz;
+    if(traversableCell(cx,cz))return {x:cx,z:cz};
+   }
+  }
+ }
+ return null;
+}
+function getObjectiveMoveTargets(groupId,move){
+ const origin=turnGroupOrigin(groupId);
+ const distance=point=>origin?Math.hypot(point.x-origin.x,point.z-origin.z):Infinity;
+ if(move==='building')
+  return availableExplorationBuildings({all:true})
+   .map(b=>({id:b.id,label:b.name, x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0}))
+   .sort((a,b)=>distance(a)-distance(b))
+   .slice(0,30);
+ if(move==='bridge_front')
+  return bridges.filter(b=>!b.destroyed).map(b=>({id:String(b.index),label:(b.type==='stone'?'石橋':'木橋')+' '+b.index,
+   x:116+Math.round(5*Math.sin(b.row*.055)),z:b.row})).sort((a,b)=>distance(a)-distance(b));
+ return [];
+}
+function turnDestination(groupId,order){
+ const origin=turnGroupOrigin(groupId);
+ if(!origin||['hold','retreat'].includes(order.move))return null;
+ const enemies=turnEnemies().sort((a,b)=>
+  Math.hypot(a.x-origin.x,a.z-origin.z)-Math.hypot(b.x-origin.x,b.z-origin.z));
+ const enemy=enemies[0];
+ if(order.move==='building'){
+  const target=getObjectiveMoveTargets(groupId,'building')
+   .find(t=>String(t.id)===String(order.targetId))||
+   getObjectiveMoveTargets(groupId,'building')[0];
+  if(!target)return null;
+  const b=townInstances.find(b=>String(b.model.uuid)===String(target.id));
+  const spread=Math.ceil(Math.max(Number(b?.data.w)||8,Number(b?.data.d)||8)/2)+3;
+  const dx=origin.x-target.x,dz=origin.z-target.z,norm=Math.hypot(dx,dz)||1;
+  return turnLegalPoint(target.x+dx/norm*spread,target.z+dz/norm*spread);
+ }
+ if(order.move==='bridge_front'){
+  const target=getObjectiveMoveTargets(groupId,'bridge_front')
+   .find(t=>String(t.id)===String(order.targetId))||
+   getObjectiveMoveTargets(groupId,'bridge_front')[0];
+  if(!target)return null;
+  const side=origin.x<target.x?-1:1;
+  return turnLegalPoint(target.x+side*14,target.z);
+ }
+ if(order.move==='enemy'&&enemy){
+  const dx=origin.x-enemy.x,dz=origin.z-enemy.z,norm=Math.hypot(dx,dz)||1;
+  return turnLegalPoint(enemy.x+dx/norm*5,enemy.z+dz/norm*5);
+ }
+ if(order.move==='ally'){
+  const allies=squadIds.filter(sid=>!turnGroupSquads(groupId).includes(sid))
+   .map(sid=>squadCenter(sid,0)).filter(Boolean)
+   .sort((a,b)=>Math.hypot(a.x-origin.x,a.z-origin.z)-Math.hypot(b.x-origin.x,b.z-origin.z));
+  return allies[0]?turnLegalPoint(allies[0].x,allies[0].z):null;
+ }
+ if(order.move==='rear'){
+  // Prefer a shield/defense group as the front line, otherwise use the nearest bridge.
+  const orders=objectiveTurnUI?.snapshot()?.ordersByGroup||{};
+  const frontId=Object.keys(orders).map(Number).find(id=>id!==Number(groupId)&&
+   orders[id]?.action==='defend'&&turnGroupOrigin(id));
+  const front=frontId?objectiveTurnDestinations.get(frontId)||turnGroupOrigin(frontId):null;
+  const bridge=getObjectiveMoveTargets(groupId,'bridge_front')[0];
+  const anchor=front||bridge||origin;
+  const awayX=enemy?anchor.x-enemy.x:(origin.x<116?-1:1);
+  const awayZ=enemy?anchor.z-enemy.z:0;
+  const norm=Math.hypot(awayX,awayZ)||1;
+  return turnLegalPoint(anchor.x+awayX/norm*12,anchor.z+awayZ/norm*12);
+ }
+ return null;
+}
 const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  groupIds:Array.from({length:10},(_,i)=>i+1),
  getGroups:()=>threeGroupOverview(squadRoster,armyGroupBySquad,storyRequest?.units??squadRoster),
+ getMoveTargets:getObjectiveMoveTargets,
+ hasArrived:(groupId,order)=>{
+  const destination=objectiveTurnDestinations.get(Number(groupId));
+  if(!destination)return true;
+  const centers=turnGroupSquads(groupId).map(id=>squadCenter(id,0)).filter(Boolean);
+  if(!centers.length)return true;
+  return centers.filter(center=>Math.hypot(center.x-destination.x,center.z-destination.z)<=8).length>=Math.max(1,Math.ceil(centers.length*.6));
+ },
  onPause:value=>setBattlePaused(value),
- onMove:(groupId,goal)=>{
-  const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
-  if(!ids.length)return;
-  const origin=squadCenter(ids[0],0);
-  const enemy=enemySquadIds.map(id=>squadCenter(id,1)).filter(Boolean)
-   .sort((a,b)=>origin?(a.x-origin.x)**2+(a.z-origin.z)**2-
-    ((b.x-origin.x)**2+(b.z-origin.z)**2):0)[0];
-  const allies=squadIds.filter(id=>!ids.includes(id)).map(id=>({
-   id,center:squadCenter(id,0),wounded:squadRoster.filter(u=>u.team===0&&
-    String(u.squadId)===String(id)&&u.hp>0&&u.hp<u.maxHp).length
-  })).filter(x=>x.center&&x.wounded>0).sort((a,b)=>b.wounded-a.wounded);
-  const target=goal.move==='enemy'?enemy:
-   goal.move==='ally'?(allies[0]?.center||origin):
-   goal.move==='objective'?{x:Math.floor(WORLD_SIZE/2),z:Math.floor(WORLD_SIZE/2)}:origin;
-  const mode=goal.move==='retreat'?'retreat':goal.move==='hold'?'hold':
-   target&&traversableCell(Math.round(target.x),Math.round(target.z))?'move':'hold';
+ onMove:(groupId,order)=>{
+  const ids=turnGroupSquads(groupId);
+  const destination=turnDestination(groupId,order);
+  objectiveTurnDestinations.set(Number(groupId),destination);
+  const mode=order.move==='retreat'?'retreat':destination?'move':'hold';
   const prior=selectedSquadId;
   try{for(const id of ids){
    if(!squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)))continue;
    selectedSquadId=String(id);
-   issueIndividualSquadOrder(mode,mode==='move'?{x:Math.round(target.x),z:Math.round(target.z)}:null,true);
+   issueIndividualSquadOrder(mode,mode==='move'?destination:null,true);
   }}finally{selectedSquadId=prior;}
  },
- onAction:(groupId,goal)=>{
-  const ids=squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(groupId));
-  const previous=selectedSquadId;
+ onAction:(groupId,order)=>{
+  const ids=turnGroupSquads(groupId);
+  // Ranged jobs auto-fire from their hold position; other jobs guard the position.
+  // Support uses the existing defense/healing AI; do not turn it into a charge.
+  const mode=order.action==='ranged'?'hold':order.action==='support'?'defend':order.action;
+  const prior=selectedSquadId;
   try{for(const id of ids){
    if(!squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)))continue;
-   selectedSquadId=String(id);issueIndividualSquadOrder(goal.after,null,true);
-  }}finally{selectedSquadId=previous;}
+   selectedSquadId=String(id);issueIndividualSquadOrder(mode,null,true);
+  }}finally{selectedSquadId=prior;}
  },
  onReport:rows=>{
   const casualties=rows.reduce((n,x)=>n+x.losses,0);
-  log('TURN 終了：戦死 '+casualties+'人。次ターンは全班の目的を引き継ぎます。');
+  log('TURN 終了：戦死 '+casualties+'人。次ターンも移動先→行動を引き継ぎます。');
  }
 }):null;
 window.getBattleObjectiveTurnsQA=()=>objectiveTurnUI?.snapshot()??null;
@@ -10965,7 +11052,7 @@ async function finishBattleLoading(){
   // tactics and items now live only in the pause-and-command center.
   const directBattlePreview=!TOWN_MODE&&!storyRequest&&battleParams.get('storyBattle')!=='1'&&
    !battleParams.has('legacySetup');
-  if(storyRequest||directBattlePreview){
+  if(storyRequest?.sortieTeamCount||directBattlePreview){
    for(const id of squadIds){
     squadStrategies.set(id,'eliminate');
     setStartingSquadOrder(0,id,'charge'); // Default AI, not a user-selected opening order.
@@ -10991,7 +11078,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大10班・レベル依存隊数、4×4固定陣形と隊長を引き継ぎます。出撃人数はステージ上限内です。作戦は系統・目的・方法の3段階で、敵・地図・オブジェクトを指定します。':'最大10班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
+  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大10班・レベル依存隊数、4×4固定陣形と隊長を引き継ぎます。出撃人数はステージ上限内です。戦闘開始後は各班ごとに「①移動先（建物・橋など）→②到着後の行動（遠距離・防御など）」を選びます。':'最大10班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -11144,7 +11231,7 @@ async function finishBattleLoading(){
   orderPlan.style.cssText=openingPlan.style.cssText;
   const orderTitle=document.createElement('strong');orderTitle.textContent='📯 開戦前の初期号令（味方・敵）';
   const orderHint=document.createElement('p');
-  orderHint.textContent='初期号令を決めて開戦。探索先は地図の建物をタップして複数選択します。敵も戦況に応じて行動します。';
+  orderHint.textContent='開戦時の初期号令です。開始後は各班の移動先→到着後の行動を中央パネルで指定し、次ターンも自動継承します。';
   orderHint.style.cssText=planHint.style.cssText;
   const orderList=document.createElement('div');orderList.id='openingOrderList';
   orderList.style.cssText='overflow:hidden;display:grid;gap:6px';

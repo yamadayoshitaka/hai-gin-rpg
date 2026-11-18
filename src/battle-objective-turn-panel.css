@@ -14,3 +14,11 @@
 #battleObjectiveTurnPanel #objectiveTurnAdvance{width:100%;padding:11px;background:#356f56;border:1px solid #a8dfbc;border-radius:8px;font-size:14px}
 #battleObjectiveTurnPanel .objectiveTurnReport{font-size:12px;color:#ffe6aa;line-height:1.5}
 #battleObjectiveTurnStatus{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:21;max-width:94vw;padding:4px 10px;background:#0b2c42dd;border:1px solid #8db0c8;border-radius:9px;font:700 11px system-ui;color:#f7e4ae;pointer-events:none;white-space:nowrap}
+
+/* Two independent decisions per team: destination followed by arrival action. */
+#battleObjectiveTurnPanel .objectiveTurnGroup label{display:flex;flex-direction:column;gap:2px;font:700 10px/1.3 system-ui;color:#e4cf9a}
+#battleObjectiveTurnPanel .objectiveTurnGroup>small{font:10px/1.2 system-ui;color:#b6d8e9}
+#battleObjectiveTurnPanel .objectiveTurnHp{height:7px;width:100%;border-radius:9px;overflow:hidden;border:1px solid #637b8a;background:#56343d}
+#battleObjectiveTurnPanel .objectiveTurnHp>span{display:block;height:100%;background:#7cd09b;transition:width .25s}
+#battleObjectiveTurnPanel .objectiveTurnGroup select{font-size:11px;padding:5px 3px}
+#battleObjectiveTurnPanel .objectiveTurnGroup{gap:5px}
