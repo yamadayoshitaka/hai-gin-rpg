@@ -1468,6 +1468,24 @@ export function createObjectById(id,{cellSize=2.2}={}){
  if(!broken){box(length,.25,.23,0,-.3,side*cellSize*.42,wood);box(length,.16,.16,0,1.1,z,wood);box(length,.1,.13,0,.57,z,wood)}
  for(let i=0;i<15;i++)if(broken&&(i<6||i>9)){box(cellSize*.96,.25,.23,(i-7)*cellSize,-.3,side*cellSize*.42,wood);box(cellSize*.96,.16,.16,(i-7)*cellSize,1.1,z,wood);box(cellSize*.96,.1,.13,(i-7)*cellSize,.57,z,wood)}
  for(let i=0;i<15;i+=2)if(!broken||i<6||i>9)box(.18,1.2,.18,(i-7)*cellSize,.57,z,wood);
+ // Mortised diagonal braces triangulate each intact handrail bay. Broken spans
+ // retain only braces whose two endpoints remain on the surviving deck.
+ const braceGeometry=new THREE.BoxGeometry(.115,1,.115);
+ const brace=(a,b)=>{
+  const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);
+  const delta=end.clone().sub(start);
+  const mesh=new THREE.Mesh(braceGeometry,wood);
+  mesh.position.copy(start).add(end).multiplyScalar(.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize());
+  mesh.scale.y=delta.length();
+  mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
+ };
+ for(let i=0;i<14;i+=2){
+  if(broken&&!(i+1<6||i>9))continue;
+  const x0=(i-7)*cellSize,x1=(i+2-7)*cellSize;
+  brace([x0,.06,z],[x1,1.06,z]);
+  brace([x0,1.06,z],[x1,.06,z]);
+ }
  for(const i of [-5,0,5])box(.34,2.7,.34,i*cellSize,-1.4,side*cellSize*.4,wood);
  }
  if(broken)for(let i=0;i<9;i++){const plank=new THREE.Mesh(new THREE.BoxGeometry(cellSize*.6,.13,.28),deck);plank.position.set(((i*7)%11-5)*cellSize*.35,-1.1-(i%3)*.14,((i*3)%5-2)*cellSize*.4);plank.rotation.y=i*.41;root.add(plank)}
