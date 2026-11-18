@@ -41,13 +41,37 @@ test('all movement and strategy choices are button and map based, without select
  assert.match(panel,/objectiveTurnIntelRows/);
  assert.doesNotMatch(panel,/<select(?:\s|>)/i);
 });
-test('opening formation is shown in every battle route; retired switches and orders are hidden',()=>{
+test('battle starts directly without opening wizard and shows live ally job power',()=>{
  const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
  const styles=readFileSync(new URL('../src/battle-objective-turn-panel.css',import.meta.url),'utf8');
- assert.match(battle,/setOpeningWizardPage\('formation'\)/);
- assert.match(battle,/massSim\.setSquadFormationTypes\(selectedFormationTypes,0\)/);
- assert.match(battle,/massWorker\.setSquadFormationTypes\(selectedFormationTypes,0,planned\.assignments\)/);
- assert.doesNotMatch(battle,/if\(storyRequest\?\.sortieTeamCount\|\|directBattlePreview\)/);
+ assert.doesNotMatch(battle,/setOpeningWizardPage\('formation'\)/);
+ assert.doesNotMatch(battle,/const openingPlan=document\.createElement/);
+ assert.match(battle,/setBattlePaused\(true\)/);
+ assert.match(battle,/loading\.hidden=true/);
+ assert.match(battle,/updateUI\(\);animate\(\)/);
+ assert.match(battle,/getGroupJobs:groupId=>jobPowerBreakdown/);
+ assert.match(battle,/jobs:jobPowerBreakdown\(alive\)/);
+ assert.match(panel,/getGroupJobs=()=>\[\]/);
+ assert.match(panel,/objectiveTurnJobs/);
+ assert.match(panel,/objectiveIntelJobs/);
+ assert.match(styles,/objectiveTurnJobs/);
  assert.match(styles,/body\.objective-turn-enabled #battleTeamCameraSwitches/);
  assert.match(styles,/body\.objective-turn-running #battleTopDock/);
+});
+test('the tactical map supports enlarge, zoom, pinch and pan without losing target selection',()=>{
+ const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
+ const styles=readFileSync(new URL('../src/battle-objective-turn-panel.css',import.meta.url),'utf8');
+ assert.match(panel,/data-map-zoom="in"/);
+ assert.match(panel,/data-map-zoom="out"/);
+ assert.match(panel,/data-map-zoom="reset"/);
+ assert.match(panel,/data-map-expand/);
+ assert.match(panel,/setPointerCapture/);
+ assert.match(panel,/pointermove/);
+ assert.match(panel,/pointerDist/);
+ assert.match(panel,/pointerup/);
+ assert.match(panel,/wheel/);
+ assert.match(panel,/zoomMap/);
+ assert.match(panel,/chooseChoice\(index\)/);
+ assert.match(styles,/#objectiveTurnMapStep\.expanded/);
 });
