@@ -7,7 +7,8 @@ import {createObjectiveTurnEngine,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS} from '.
  */
 export function installObjectiveTurnPanel({
  groupIds,getGroups,getMoveTargets=()=>[],getMapChoices=()=>[],
- getGroupPowers=()=>({}),getGroupJobs=()=>[],getEnemyGroups=()=>[],getGroupOrigin=()=>null,
+ getGroupPowers=()=>({}),getGroupJobs=()=>[],getGroupLabel=()=>'',getEnemyGroups=()=>[],getGroupOrigin=()=>null,
+ getLegalMapPoint=(x,z)=>({x,z}),
  getItems=()=>[],drawMapBackground=null,worldSize=232,
  hasArrived=null,onPause,onMove,onAction,onReport
 }){
@@ -45,10 +46,20 @@ export function installObjectiveTurnPanel({
    all.filter(g=>Number(g.alive)>0||Number(g.initial)>0):all;
  };
  const visibleGroup=state=>activeGroups(state)[clamp(page,0,Math.max(0,activeGroups(state).length-1))]||null;
- const choicesFor=id=>{
+ const choicesFor=(id,order=null)=>{
   const incoming=getMapChoices(id);
-  return Array.isArray(incoming)?incoming.filter(c=>c&&TURN_MOVE_OPTIONS.some(x=>x.id===c.move)&&
+  const choices=Array.isArray(incoming)?incoming.filter(c=>c&&TURN_MOVE_OPTIONS.some(x=>x.id===c.move)&&
    Number.isFinite(Number(c.x))&&Number.isFinite(Number(c.z))):[];
+  if(order?.move==='point'&&order.targetId){
+   const match=/^(\d+),(\d+)$/.exec(String(order.targetId));
+   if(match){
+    const x=Number(match[1]),z=Number(match[2]);
+    if(Number.isFinite(x)&&Number.isFinite(z))choices.push({
+     move:'point',targetId:order.targetId,label:'指定地点 ('+x+', '+z+')',x,z
+    });
+   }
+  }
+  return choices;
  };
  function clampCenter(){
   const world=Math.max(1,Number(worldSize)||232),half=world/(2*zoom);
@@ -94,7 +105,7 @@ export function installObjectiveTurnPanel({
    ctx.beginPath();ctx.arc(p.x,p.z,8,0,Math.PI*2);
    ctx.fillStyle='#ff6f83';ctx.fill();
   }
-  mapMarkers=choicesFor(id).map(c=>({...c,...(()=>{
+  mapMarkers=choicesFor(id,order).map(c=>({...c,...(()=>{
    const p=screen(c.x,c.z);return {px:p.x,pz:p.z};
   })()}));
   let lastLabel=[];
@@ -163,13 +174,14 @@ export function installObjectiveTurnPanel({
   $('objectiveTurnHint').textContent=planning?'各班をページで切り替え。地図の印から移動先を選び、次に到着後の作戦を設定します。変更しない班は命令を継続します。戦力Pはレアリティ換算値です。':
    '前ターンの移動先と作戦を引き継ぎます。変更したい班だけ選んでください。';
   $('objectiveTurnForces').innerHTML='<span>🔵 味方合計戦力 <b>'+Math.round(allyPower*10)/10+'</b></span><span>🔴 敵合計戦力 <b>'+Math.round(enemyPower*10)/10+'</b></span>';
-  $('objectiveTurnPage').textContent='第'+id+'班（'+(page+1)+' / '+groups.length+'）';
+  $('objectiveTurnPage').textContent='第'+id+'隊（'+(page+1)+' / '+groups.length+'）';
   const nav=root.querySelectorAll('[data-pager]');
   nav[0].disabled=page<=0;nav[1].disabled=page>=groups.length-1;
   const max=Math.round(Number(group?.initialMaxHp||group?.maxHp)||0),hp=Math.round(Number(group?.hp)||0);
   const pct=max?clamp(Math.round(hp/max*100),0,100):0;
   const jobs=getGroupJobs(id);
-  $('objectiveTurnGroup').innerHTML='<strong>🔵 味方 第'+id+'班 · '+(Math.round((Number(power[id])||0)*10)/10)+' 戦力P · '+(Number(group?.alive)||0)+'人</strong>'+
+  const groupLabel=String(getGroupLabel(id,jobs)||((jobs[0]?.name||'混成')+'隊'));
+  $('objectiveTurnGroup').innerHTML='<strong>🔵 '+esc(groupLabel)+'（第'+id+'隊） · '+(Math.round((Number(power[id])||0)*10)/10)+' 戦力P · '+(Number(group?.alive)||0)+'人</strong>'+
    '<div class="objectiveTurnHp"><span style="width:'+pct+'%"></span></div>'+
    '<small>総合HP '+hp+' / '+max+' ('+pct+'%)　現在：'+esc(movingLabel(order.move))+' → '+esc(actionLabel(order.action))+'</small>'+
    '<div class="objectiveTurnJobs" aria-label="味方のジョブ別戦力">'+
@@ -182,7 +194,7 @@ export function installObjectiveTurnPanel({
    renderMap(id,order);
    const options=mapMarkers;
    const pages=Math.max(1,Math.ceil(options.length/4));choicePage=clamp(choicePage,0,pages-1);
-   $('objectiveTurnMapHint').textContent=options.length?'＋／−で拡大・縮小、指でドラッグ／ピンチ操作。地点をタップすると作戦選択へ進みます。':'移動可能な地点がありません。現在地で待機を選択してください。';
+   $('objectiveTurnMapHint').textContent='地図のどこでもタップして移動先を指定できます。印は候補地点。ドラッグで地図移動、＋／−で拡大。';
    $('objectiveTurnChoices').innerHTML=options.slice(choicePage*4,choicePage*4+4).map((c,i)=>
     '<button type="button" data-map-choice="'+(choicePage*4+i)+'" class="'+
     (c.move===order.move&&String(c.targetId??'')===String(order.targetId??'')?'selected':'')+'">'+
@@ -224,7 +236,7 @@ export function installObjectiveTurnPanel({
  }
  function chooseChoice(index){
   const g=visibleGroup(engine.snapshot());if(!g||!(g.alive>0))return;
-  const choice=choicesFor(Number(g.id))[index];if(!choice)return;
+  const choice=mapMarkers[index];if(!choice)return;
   if(engine.setMove(g.id,choice.move,choice.targetId??null)){$('objectiveTurnMapStep').classList.remove('expanded');const button=root.querySelector('[data-map-expand]');button.textContent='⛶ 大きく';button.setAttribute('aria-expanded','false');step='action';render();}
  }
  root.addEventListener('click',event=>{
@@ -322,9 +334,22 @@ export function installObjectiveTurnPanel({
   }
   const hitRadius=Math.max(15,24/Math.max(1,rect.width)*mapCanvas.width);
   if(index>=0&&min<=hitRadius){chooseChoice(index);lastTap=0;return;}
-  const now=Date.now();
-  if(now-lastTap<350)zoomMap(zoom*1.65,xy.x,xy.z);
-  lastTap=now;
+  // Any walkable cell can be selected, not only the landmark markers.
+  const world=Math.max(1,Number(worldSize)||232);
+  const mapX=mapCenterX+(xy.x/mapCanvas.width-.5)*world/zoom;
+  const mapZ=mapCenterZ+(xy.z/mapCanvas.height-.5)*world/zoom;
+  if(mapX<0||mapZ<0||mapX>=world||mapZ>=world)return;
+  const point=getLegalMapPoint(Math.round(mapX),Math.round(mapZ));
+  const g=visibleGroup(engine.snapshot());
+  if(!g?.alive||!point||!Number.isFinite(Number(point.x))||!Number.isFinite(Number(point.z))){
+   $('objectiveTurnMapHint').textContent='その場所は進入できません。通れる地形を選んでください。';
+   return;
+  }
+  if(engine.setMove(g.id,'point',Math.round(point.x)+','+Math.round(point.z))){
+   step='action';$('objectiveTurnMapStep').classList.remove('expanded');
+   const button=root.querySelector('[data-map-expand]');button.textContent='⛶ 大きく';
+   button.setAttribute('aria-expanded','false');render();
+  }
  }
  mapCanvas.addEventListener('pointerup',event=>dropPointer(event));
  mapCanvas.addEventListener('pointercancel',event=>dropPointer(event,true));

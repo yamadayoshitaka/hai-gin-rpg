@@ -11,7 +11,7 @@ export const OBJECTIVE_TURN_GOALS=Object.freeze([
  Object.freeze({id:'retreat',label:'安全圏へ後退',move:'retreat',after:'retreat'})
 ]);
 export const TURN_MOVE_OPTIONS=Object.freeze([
- {id:'hold',label:'現在地で待機'},{id:'enemy',label:'敵の近くへ移動'},
+ {id:'hold',label:'現在地で待機'},{id:'point',label:'地図で指定した地点'},{id:'enemy',label:'敵の近くへ移動'},
  {id:'building',label:'建物へ移動'},{id:'bridge_front',label:'橋の手前へ移動'},
  {id:'rear',label:'前衛の後ろへ移動'},{id:'ally',label:'味方へ合流'},
  {id:'retreat',label:'後退する'}
@@ -27,7 +27,7 @@ const MOVE_IDS=new Set(TURN_MOVE_OPTIONS.map(x=>x.id));
 const ACTION_IDS=new Set(TURN_ACTION_OPTIONS.map(x=>x.id));
 const bounded=n=>Number.isFinite(Number(n))?Math.max(0,Number(n)):0;
 export function createObjectiveTurnEngine({
- groupIds=Array.from({length:10},(_,i)=>i+1),moveSeconds=65,actionSeconds=15,
+ groupIds=Array.from({length:10},(_,i)=>i+1),moveSeconds=20,actionSeconds=4,
  onPause=()=>{},onMove=()=>{},onAction=()=>{},onReport=()=>{},getGroups=()=>[],hasArrived=null
 }={}){
  const ids=[...new Set(groupIds.map(Number))].filter(x=>Number.isInteger(x)&&x>=1&&x<=10);

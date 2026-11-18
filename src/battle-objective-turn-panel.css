@@ -46,7 +46,7 @@ body.objective-turn-enabled #squadTactics,body.objective-turn-enabled #battleOrd
 body.objective-turn-enabled #battleTargetConfirm,body.objective-turn-enabled #dockCommandSlot{display:none!important}
 @media(max-height:670px){
  #battleObjectiveTurnPanel .objectiveTurnCard{gap:4px;padding:5px}
- #battleObjectiveTurnPanel #objectiveTurnMap{max-height:31dvh}
+ #battleObjectiveTurnPanel #objectiveTurnMap{max-height:min(43dvh,245px)}
  #battleObjectiveTurnPanel .objectiveTurnGroup{padding:4px}
  #battleObjectiveTurnPanel button{min-height:32px}
  #battleObjectiveTurnPanel #objectiveTurnAdvance{min-height:40px}
@@ -72,4 +72,13 @@ body.objective-turn-enabled #battleTargetConfirm,body.objective-turn-enabled #do
  #battleObjectiveTurnPanel #objectiveTurnMapStep.expanded #objectiveTurnMap{width:min(calc(100vw - 20px),calc(100dvh - 185px),560px);max-height:calc(100dvh - 185px)}
  #battleObjectiveTurnPanel .objectiveTurnMapTools{grid-template-columns:minmax(0,1fr) 28px 40px 28px 40px 62px}
  #battleObjectiveTurnPanel .objectiveTurnMapTools button{font-size:11px}
+}
+
+/* Landscape phones: enlarge the selectable map and keep touch targets visible. */
+@media(max-height:500px){
+ #battleObjectiveTurnPanel .objectiveTurnCard{gap:3px;padding:4px}
+ #battleObjectiveTurnPanel #objectiveTurnMap{max-height:44dvh}
+ #battleObjectiveTurnPanel .objectiveTurnGroup{max-height:78px;overflow:hidden}
+ #battleObjectiveTurnPanel header small{display:none}
+ #battleObjectiveTurnPanel #objectiveTurnMapHint{font-size:10px}
 }
