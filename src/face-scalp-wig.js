@@ -696,9 +696,22 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    : a.p.y-b.p.y||a.p.x-b.p.x||a.p.z-b.p.z);
   return [zone,pool];
  }));
+ // Split crown into inner and outer radial bands around the actual whorl.
+ // Angular-only selection can oversample the inner cap and leave a visible
+ // outer bald ring even with adequate crown strand budget. Alternate bands
+ // without creating additional strands, meshes or draw calls.
+ const crownRadius=crownRoots.map(root=>root.p.distanceTo(crownCenter))
+  .sort((a,b)=>a-b);
+ const crownMedian=crownRadius[Math.floor(crownRadius.length/2)];
+ const crownBands=[
+  crownRoots.filter(root=>root.p.distanceTo(crownCenter)<=crownMedian),
+  crownRoots.filter(root=>root.p.distanceTo(crownCenter)>crownMedian)
+ ];
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:orderedRoots[zone];
+  const crownBand=zone==='crown'?crownBands[index%2]:null;
+  const pool=crownBand?.length?crownBand:
+   rear&&index%3===0?backCenterPools[zone]:orderedRoots[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
