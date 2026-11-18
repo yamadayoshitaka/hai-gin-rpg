@@ -9675,6 +9675,50 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  groupIds:Array.from({length:10},(_,i)=>i+1),
  getGroups:()=>threeGroupOverview(squadRoster,armyGroupBySquad,storyRequest?.units??squadRoster),
  getMoveTargets:getObjectiveMoveTargets,
+ getGroupOrigin:turnGroupOrigin,
+ worldSize:WORLD_SIZE,
+ drawMapBackground:(ctx,w,h)=>ctx.drawImage(miniBase,0,0,w,h),
+ getMapChoices:groupId=>{
+  const origin=turnGroupOrigin(groupId);
+  if(!origin)return [];
+  const choices=[];
+  for(const move of TURN_MOVE_OPTIONS){
+   if(move.id==='building'||move.id==='bridge_front'){
+    for(const target of getObjectiveMoveTargets(groupId,move.id))
+     choices.push({move:move.id,targetId:target.id,label:move.label+'：'+target.label,x:target.x,z:target.z});
+    continue;
+   }
+   const point=move.id==='hold'?origin:
+    move.id==='retreat'?turnLegalPoint(origin.x+(origin.x<WORLD_SIZE/2?-14:14),origin.z):
+    turnDestination(groupId,{move:move.id,targetId:null});
+   if(point)choices.push({move:move.id,targetId:null,label:move.label,x:point.x,z:point.z});
+  }
+  return choices;
+ },
+ getGroupPowers:()=>{
+  const power={};
+  for(let group=1;group<=10;group++)
+   power[group]=squadPower(squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.hp>0&&u.alive!==false&&
+    normalizeArmyGroup(u.armyGroupId??armyGroupBySquad[String(u.squadId)])===group));
+  return power;
+ },
+ getEnemyGroups:()=>enemySquadIds.map((id,i)=>{
+  const all=squadRoster.filter(u=>u.team===1&&!u.isStrategist&&String(u.squadId)===String(id));
+  const alive=all.filter(u=>u.hp>0&&u.alive!==false);
+  const center=squadCenter(id,1);
+  return {id:i+1,alive:alive.length,hp:alive.reduce((n,u)=>n+(Number(u.hp)||0),0),
+   maxHp:all.reduce((n,u)=>n+(Number(u.maxHp)||0),power:squadPower(alive),x:center?.x,z:center?.z};
+ }),
+ getItems:()=>{
+  const stock=new Map();
+  for(const item of allyItemStocks()){
+   const type=ROOM_ITEM_TYPES[item.itemId];
+   if(!type||!['heal','squad_buff'].includes(type.kind))continue;
+   const entry=stock.get(item.itemId)||{id:item.itemId,name:type.name,count:0};
+   entry.count+=(Number(item.quantity)||0);stock.set(item.itemId,entry);
+  }
+  return [...stock.values()].map(item=>({id:item.id,label:item.name+' ×'+item.count}));
+ },
  hasArrived:(groupId,order)=>{
   const destination=objectiveTurnDestinations.get(Number(groupId));
   if(!destination)return true;
