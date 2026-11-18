@@ -12,6 +12,7 @@ import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
 import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=4.5.18';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js';
+import {AVIAN_REALISM_REVISION} from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
 import {createHumanoidMonsterCombatMotion} from './monster-humanoid-combat-poses.js?v=4.5.18';
 import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
@@ -56,6 +57,39 @@ const DEFAULT_MOTION=Object.freeze({
 const TIME_LIMITS=Object.freeze({
  attack:1.1,special:1.6,roar:1.3,guard:.9,dodge:.7,hit:.45,leap:1.25
 });
+
+
+/** Actual flying behaviour for the canonical humanoid GLB, not merely
+ * the procedural m015 fallback. All movement derives from absolute time,
+ * not accumulated drift; the person's approved head mesh stays untouched.
+ */
+function updateCanonicalTenguFlight(root,host,visual,action,time,elapsed){
+ const inAir=action!=='defeat',height=1.42;
+ const hover=.056*Math.sin(time*1.7)+.014*Math.sin(time*3.2);
+ const p=clamp(elapsed/1.15,0,1),land=1-p*p*(3-2*p);
+ const attack=action==='attack'?Math.sin(Math.PI*clamp(elapsed/1.1,0,1)):0;
+ const leap=action==='leap'?Math.sin(Math.PI*clamp(elapsed/1.25,0,1)):0;
+ const altitude=inAir?Math.max(.44,height+hover+.50*leap-.33*attack):height*land;
+ root.position.y=altitude;
+ root.userData.avianInAir=inAir&&altitude>.4;
+ root.userData.avianCurrentAltitude=altitude;
+ root.userData.tenguFlightAction=action;
+ root.userData.tenguLegsTucked=inAir;
+ root.userData.tenguGuardianFeatherRig=!!visual?.userData?.tenguGuardianFeatherRig;
+ host.rotation.x=inAir?-(action==='run'?.12:.03)-.18*attack:0;
+ host.rotation.z=inAir?.045*Math.sin(time*.83):0;
+ const tempo=action==='run'?5.2:action==='attack'?6.1:3.5;
+ for(const pivot of visual?.userData?.tenguWingPivots||[]){
+  const side=pivot.userData.tenguFlightWingSide,beat=Math.sin(time*tempo);
+  pivot.rotation.z=side*(inAir?.20+.47*beat:.06);
+  pivot.rotation.x=inAir?-.10+.17*Math.cos(time*tempo-.35):0;
+  pivot.rotation.y=side*(inAir?.07:0);
+ }
+ // Original canonical mixer writes each leg before the aerodynamic tuck.
+ // No shared skeletons, facial expressions or native GLB clips are replaced.
+ if(inAir)for(const leg of visual?.userData?.tenguLegBones||[])
+  if(leg)leg.rotation.x+=.32;
+}
 
 /** Convert a visible canonical human rig bone into an anatomical world-metre
  * attachment frame, inherited by every subsequent skeletal animation pose. */
@@ -467,6 +501,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     ownedGeo.push(geometry);ownedMats.push(material);
    }
    model.userData.tenguWingPivots=wingPivots;
+   model.userData.tenguLegBones=joints.legs;
    model.userData.tenguGuardianFeatherRig=true;
   }else{
   // Wing roots are rigidly anchored to the canonical upper torso;
@@ -559,6 +594,14 @@ export function createCosplayedHumanoidMonster(spec,{
   studioPackage:studioActorPackage
  });
  const root=new THREE.Group();root.name=spec.id+'-'+spec.name+'-cosplay';
+ const isFlyingTengu=spec.id==='m015';
+ if(isFlyingTengu){
+  root.userData.avianFlightMode=true;
+  root.userData.tenguFlightMode=true;
+  root.userData.avianFlightHeight=1.42;
+  root.userData.avianGameSourceRevision=AVIAN_REALISM_REVISION;
+  root.userData.tenguCanonicalFacePreserved=true;
+ }
  const fallback=withoutFallback?null:createMonsterModel(spec,{detail});
  if(fallback)root.add(fallback);
  const host=new THREE.Group();host.name='character-cosplay-host';root.add(host);
@@ -610,7 +653,8 @@ export function createCosplayedHumanoidMonster(spec,{
    if(!motion)return;
    // A cast is not a sword swing. Keep the native idle base and overlay
    // a per-instance casting gesture; ordinary attacks still use the GLB clip.
-   const clip=action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
+   const clip=isFlyingTengu&&['run','walk','leap'].includes(action)?'idle':
+    action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
    const chosen=motion.actions[clip]?clip:'idle';
    if(lastAction!==chosen||!motion.active){
     if(motion.active&&motion.active!==motion.actions[chosen])
@@ -624,6 +668,7 @@ export function createCosplayedHumanoidMonster(spec,{
    const delta=lastTime===null?0:clamp(time-lastTime,0,.13);
    lastTime=time;motion.mixer.update(delta);
    combatMotion?.update(action,clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
+   if(isFlyingTengu)updateCanonicalTenguFlight(root,host,visual,action,time,elapsed);
    if(profile.costume==='seraph_female'){
     for(const pivot of seraphWingPivots){
      const side=pivot.userData.seraphFlightWingSide,beat=Math.sin(time*4.1);
