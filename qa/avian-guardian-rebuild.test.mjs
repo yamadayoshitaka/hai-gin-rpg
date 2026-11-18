@@ -376,3 +376,45 @@ test('Phoenix physical eyebrow feathers frame forward-projecting eyeliner and ir
   }
  }finally{disposeMonsterSculpture(m);}
 });
+
+
+test('Phoenix v11 physically refreshes all five bird species without losing battle LOD',()=>{
+ for(const id of ['m011','m012','m013','m014','m015']){
+  const m=build(id,'high');
+  try{
+   for(const side of ['L','R']){
+    const cover=m.getObjectByName(
+      'avian-phoenix-master-wing-coverts-'+id+'-'+side);
+    assert.ok(cover?.isMesh,id+' missing fitted feather coat '+side);
+    assert.equal(cover.userData.avianDonorSurfaceAttached,true);
+    assert.ok(cover.userData.avianMergedOverlappingCoverts>5);
+    const wing=m.getObjectByName(
+      'avian-guardian-three-layer-wing-'+id+'-'+side);
+    const donor=wing.geometry.getAttribute('position');
+    const points=cover.geometry.getAttribute('position');
+    const root=new THREE.Vector3(points.getX(0),points.getY(0),points.getZ(0));
+    let nearest=Infinity;
+    for(let i=0;i<donor.count;i++)nearest=Math.min(nearest,
+      root.distanceTo(new THREE.Vector3(
+       donor.getX(i),donor.getY(i),donor.getZ(i))));
+    assert.ok(nearest<.03,id+' wing root is detached from donor '+nearest);
+   }
+   if(id==='m013'){
+    const fire=m.getObjectByName('phoenix-master-volumetric-fire-plumage');
+    assert.equal(fire?.userData.phoenixVolumetricFireAnatomy,true);
+    assert.ok(fire.userData.phoenixSurfaceRootedFlames>75);
+   }else if(id==='m015'){
+    assert.ok(m.getObjectByName('avian-phoenix-master-tail-m015'));
+    assert.ok(m.userData.pivots.legL,'Tengu must retain humanoid legs');
+    assert.ok(!m.userData.pivots.wingElbowL,'Tengu keeps protected upper-body rig');
+   }else{
+    const body=m.getObjectByName('avian-layered-body-plumage-'+id);
+    assert.equal(body?.userData.avianPlumageAttachedToActualLoft,true);
+    assert.equal(body.userData.avianFeatherRows,15);
+    assert.ok(body.userData.curvedAvianFeathers>=300);
+    if(id!=='m014')assert.equal(m.userData.pivots.head.userData.avianPhoenixMasterEyes,true);
+   }
+   assert.ok(triangles(m)<500000,id+' exceeds mobile triangle budget');
+  }finally{disposeMonsterSculpture(m);}
+ }
+});

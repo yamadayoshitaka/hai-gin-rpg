@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-master-birds-v10-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-master-birds-v11-20261118';
 export const PHOENIX_FAMILY_MASTER='m013';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
@@ -33,7 +33,7 @@ const profiles=Object.freeze({
 });
 export const avianProfile=id=>profiles[id]||null;
 const TENGU_WING_PROFILE=Object.freeze({wing:[.64,.58,.89],
- dark:0x292437,mid:0x544762,light:0x867293,tip:0x9c8bae});
+ dark:0x292437,mid:0x544762,light:0x867293,tip:0x9c8bae,breast:0x817b90});
 const PHOENIX_HEAD_STATIONS=Object.freeze([
    {z:.475,y:-.074,rx:.024,ry:.037},
    {z:.366,y:-.053,rx:.070,ry:.089},
@@ -240,7 +240,7 @@ function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}
  * natural layered overlap. All coordinates are local to its parent pivot.
  */
 function layeredFeathers(parent,spec,detail,name,entries){
- const p=profiles[spec.id],source=detail==='source',low=detail==='low';
+ const p=profiles[spec.id]||(spec.id==='m015'?TENGU_WING_PROFILE:null),source=detail==='source',low=detail==='low';
  const steps=source?13:detail==='high'?9:detail==='medium'?6:3,
    across=low?2:4;
  const points=[],uvs=[],indices=[],colors=[];
@@ -779,33 +779,167 @@ function buildPhoenixChickenLeg(g,s,torso,side,detail){
  g.root.userData.phoenixThighShankSeparated=true;
  return {leg,knee,ankle,foot,thighSkin,thigh,shank,toes};
 }
-function bodyFeathers(g,s,p,torso,detail){
- if(s.id==='m013')return phoenixDenseScales(g,s,p,torso,detail);
- const source=detail==='source',low=detail==='low';
- const rings=low?4:source?12:detail==='high'?9:6,
-   around=low?10:source?36:detail==='high'?28:18;
- const plumes=[];
- for(let i=0;i<rings;i++){
-   const t=i/(rings-1),z=.44*p.body-.87*p.body*t;
-   const bulge=Math.pow(Math.sin(Math.PI*(.08+.86*t)),.64);
-   const rx=(.29+.045*Math.sin(t*Math.PI))*p.body*bulge;
-   const ry=(.355+.045*Math.sin(t*Math.PI))*p.body*bulge;
-   for(let j=0;j<around;j++){
-     const a=2*Math.PI*(j+.5*(i%2))/around;
-     const x=Math.cos(a)*rx,y=1.43+Math.sin(a)*ry;
-     const cream=Math.abs(x)<.28&&z>.08;
-     plumes.push({
-       from:[x,y,z],to:[x*1.065,y-.085-.04*Math.sin(j*3),z-.085-.032*(j%3)],
-       width:.021+.012*(1-t),normal:[Math.cos(a),Math.sin(a),.22],
-       tint:cream?4:j%5===0?2:j%2===0?1:0,
-       endTint:cream?4:3,glow:s.id==='m013'?.42:.10,
-       ridge:.009
-     });
-   }
+function phoenixMasterBodyPlumage(g,s,p,torso,detail){
+ const stations=plumageStations(p);
+ const rows=detail==='source'?22:detail==='high'?15:detail==='medium'?10:7;
+ const cols=detail==='source'?34:detail==='high'?26:detail==='medium'?18:12;
+ const feathers=[];
+ for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+  const u=(i+.26)/rows,a=2*Math.PI*(j+(i%2)*.5)/cols;
+  const root=phoenixAxialSurface(stations,u,a);
+  const tip=phoenixAxialSurface(stations,Math.min(.999,u+.095),
+   a+.025*Math.sin(i*1.13+j*.73));
+  const from=root.point.clone().addScaledVector(root.normal,.009);
+  const to=tip.point.clone().addScaledVector(tip.normal,.031);
+  const breast=root.z>.10&&Math.sin(a)<-.12;
+  feathers.push({from:from.toArray(),to:to.toArray(),
+   normal:root.normal.toArray(),width:(detail==='low'?.076:.052)*(breast?1.10:1),
+   ridge:detail==='low'?.013:.020,rise:.009,
+   tint:breast?4:j%7===0?2:j%3===0?1:0,endTint:breast?4:2,glow:.13});
  }
- const result=layeredFeathers(torso,s,detail,'avian-layered-body-plumage-'+s.id,plumes);
- g.root.userData.avianBodyFeatherCount=plumes.length;
+ const coat=layeredFeathers(torso,s,detail,'avian-layered-body-plumage-'+s.id,feathers);
+ coat.userData.avianPhoenixMasterBodySurface=true;
+ coat.userData.avianPlumageAttachedToActualLoft=true;
+ coat.userData.avianFeatherRows=rows;
+ coat.userData.avianFeatherColumns=cols;
+ g.root.userData.avianBodyFeatherCount=feathers.length;
+ return coat;
+}
+
+
+function phoenixMasterWingCoverts(wing,s,side,detail,donor){
+ const pos=donor.geometry.getAttribute('position'),n=pos.count;
+ let mx=.001,lo=Infinity,hi=-Infinity;
+ for(let i=0;i<n;i++){
+  mx=Math.max(mx,Math.abs(pos.getX(i)));
+  lo=Math.min(lo,pos.getY(i));hi=Math.max(hi,pos.getY(i));
+ }
+ const rows=detail==='source'?13:detail==='high'?9:detail==='medium'?6:4;
+ const cols=detail==='source'?6:detail==='high'?5:3;
+ const bins=new Map(),step=Math.max(1,Math.floor(n/9500));
+ for(let i=0;i<n;i+=step){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const a=Math.abs(x)/mx,b=(y-lo)/Math.max(.001,hi-lo);
+  if(a<.09||a>.88||b<.16||b>.89)continue;
+  const u=Math.min(rows-1,Math.floor((a-.09)/.79*rows));
+  const v=Math.min(cols-1,Math.floor((b-.16)/.73*cols));
+  const key=u+':'+v,prev=bins.get(key);
+  if(!prev||z>prev.z)bins.set(key,{x,y,z});
+ }
+ const feathers=[];
+ for(const v of bins.values()){
+  const sign=Math.sign(v.x)||side;
+  feathers.push({from:[v.x,v.y,v.z+.006],
+   to:[v.x+sign*.11,v.y-.051,v.z-.092],
+   width:.043,normal:[0,.37,1],ridge:.015,rise:.012,
+   tint:feathers.length%4===0?2:feathers.length%3===0?1:0,
+   endTint:3,glow:s.id==='m013'?.48:.16});
+ }
+ if(!feathers.length)return null;
+ const coat=layeredFeathers(wing,s,detail,
+  'avian-phoenix-master-wing-coverts-'+s.id+'-'+(side<0?'L':'R'),feathers);
+ coat.userData.avianDonorSurfaceAttached=true;
+ coat.userData.avianCovertSource='guardian-real-wing-vertices';
+ coat.userData.avianMergedOverlappingCoverts=feathers.length;
+ coat.castShadow=false;
+ return coat;
+}
+
+
+function phoenixMasterFireMantle(g,s,p,torso,detail){
+ const stations=plumageStations(p);
+ const rows=detail==='source'?12:detail==='high'?9:detail==='medium'?6:4;
+ const cols=detail==='source'?28:detail==='high'?22:detail==='medium'?16:10;
+ const flames=[];
+ for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+  const u=.12+.58*(i+.35)/rows,angle=2*Math.PI*(j+.5*(i%2))/cols;
+  if(Math.sin(angle)<-.42)continue; // leave the sternum and bare talons visible
+  const root=phoenixAxialSurface(stations,u,angle);
+  const tip=phoenixAxialSurface(stations,Math.min(.992,u+.16),angle);
+  const from=root.point.clone().addScaledVector(root.normal,.026);
+  const to=tip.point.clone().addScaledVector(tip.normal,.09);
+  to.y+=.12+.10*(1-u);
+  to.x+=Math.cos(angle)*.04;
+  flames.push({from:from.toArray(),to:to.toArray(),normal:root.normal.toArray(),
+   width:.040+.010*Math.sin(Math.PI*u),ridge:.031,curl:Math.cos(angle)*.044,
+   rise:.045,tint:j%4===0?3:j%3===0?2:1,endTint:3,glow:.92});
+ }
+ const fire=layeredFeathers(torso,s,detail,
+   'phoenix-master-volumetric-fire-plumage',flames);
+ fire.material.roughness=.55;fire.material.emissive.setHex(0xa82c08);
+ fire.material.emissiveIntensity=.39;
+ fire.castShadow=false;
+ fire.userData.phoenixVolumetricFireAnatomy=true;
+ fire.userData.phoenixSurfaceRootedFlames=flames.length;
+ g.root.userData.phoenixVolumetricFireFeathers=flames.length;
+ return fire;
+}
+
+
+function phoenixMasterRaptorEyes(head,s,detail){
+ const owl=s.id==='m014',griffin=s.id==='m012';
+ const seg=detail==='low'?10:18;
+ const shell=(parent,name,at,scale,tint)=>{
+  const geo=new THREE.SphereGeometry(1,seg,detail==='low'?8:12);
+  const c=color(tint),rgb=new Float32Array(geo.getAttribute('position').count*3);
+  for(let j=0;j<rgb.length;j+=3){rgb[j]=c.r;rgb[j+1]=c.g;rgb[j+2]=c.b;}
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+  const obj=mesh(parent,geo,name);obj.position.set(...at);obj.scale.set(...scale);
+  obj.material.roughness=.39;
+  return obj;
+ };
+ for(const side of [-1,1]){
+  const label=side<0?'L':'R';
+  const socket=new THREE.Group();socket.name='avian-master-eye-orbit-'+s.id+'-'+label;
+  socket.position.set(side*(owl?.134:griffin?.190:.165),.078,
+    owl?.247:griffin?.165:.181);
+  socket.rotation.y=side*(owl?.15:.68);
+  head.add(socket);
+  const k=owl?1.12:griffin?1.08:1;
+  shell(socket,'avian-master-eyeliner-'+label,[0,0,.002],
+   [.063*k,.048*k,.020],0x18151b);
+  shell(socket,'avian-master-iris-'+label,[0,0,.014],
+   [.045*k,.036*k,.013],owl?0xe3b265:0xeac275);
+  shell(socket,'avian-master-pupil-'+label,[0,0,.023],
+   [.017*k,.024*k,.007],0x0a1017);
+  shell(socket,'avian-master-cornea-'+label,[-.013,.012,.030],
+   [.007,.006,.003],0xfff6dc);
+  const arc=new THREE.CatmullRomCurve3([
+   [-.059,.005,.016],[-.035,.038,.025],[0,.048,.027],
+   [.038,.039,.025],[.060,.005,.016]].map(x=>new THREE.Vector3(...x)));
+  const geo=new THREE.TubeGeometry(arc,detail==='low'?8:16,.006,4,false);
+  const c=color(0x1c1117),rgb=new Float32Array(geo.getAttribute('position').count*3);
+  for(let j=0;j<rgb.length;j+=3){rgb[j]=c.r;rgb[j+1]=c.g;rgb[j+2]=c.b;}
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+  mesh(socket,geo,'avian-master-upper-lash-'+label);
+ }
+ head.userData.avianPhoenixMasterEyes=true;
+}
+
+
+export function buildPhoenixDerivedTenguTail(g,s,tail,detail){
+ if(s.id!=='m015')return null;
+ const count=detail==='low'?7:detail==='medium'?11:detail==='source'?25:17;
+ const feathers=[];
+ for(let i=0;i<count;i++){
+  const q=(i-(count-1)*.5)/Math.max(1,(count-1)*.5);
+  feathers.push({from:[q*.082,.018,-.015],
+   to:[q*.48,-.19-.07*(1-Math.abs(q)),-1.14*(.85+.20*(1-Math.abs(q)))],
+   width:.080,normal:[q*.16,.76,.35],ridge:.023,curl:q*.12,
+   tint:i%3,endTint:3,glow:.17});
+ }
+ const result=layeredFeathers(tail,s,detail,'avian-phoenix-master-tail-'+s.id,feathers);
+ result.userData.avianPhoenixMasterTail=true;
  return result;
+}
+
+function bodyFeathers(g,s,p,torso,detail){
+ if(s.id==='m013'){
+  const scutes=phoenixDenseScales(g,s,p,torso,detail);
+  phoenixMasterFireMantle(g,s,p,torso,detail);
+  return scutes;
+ }
+ return phoenixMasterBodyPlumage(g,s,p,torso,detail);
 }
 // Outward-facing avian orbits with independent dark almond eyeliner.
 function phoenixSculptedEyes(head,detail){
@@ -997,7 +1131,7 @@ function headAndCrest(g,s,p,torso,detail){
      phoenixOrbitalBrowPlumage(head,s,detail);
      phoenixCranialFireFeathers(head,s,detail);
    }
-   else g.eyes(head,.235,.063,.172*p.head,.054);
+   else phoenixMasterRaptorEyes(head,s,detail);
  }
  const crest=[];
  const count=detail==='low'?Math.min(6,p.crest):p.crest;
@@ -1091,6 +1225,7 @@ function tailFeathers(g,s,p,torso,detail){
 export function buildPhoenixDerivedTenguWing(parent,s,side,detail){
  if(s.id!=='m015')return null;
  const wing=guardianDerivedWing(parent,s,side,detail);
+ phoenixMasterWingCoverts(parent,s,side,detail,wing);
  wing.userData.phoenixTenguHumanRigPreserved=true;
  return wing;
 }
@@ -1125,6 +1260,8 @@ export function buildGuardianDerivedBird(g,s){
    {name:'avian-keel-rib-cavity-'+s.id,rough:.91,ribbing:.006,capEnds:true});
  body.userData.avianClosedThorax=true;
  bodyFeathers(g,s,p,torso,detail);
+ g.root.userData.avianPhoenixMasterChassis=true;
+ g.root.userData.avianPhoenixMasterLODSurface=detail;
  // Feathered sternum and a continuous forward cervix, not a neck sphere.
  g.bridge(torso,'skin',[0,1.55,.22*p.body],
    [0,1.96,.30*p.neck],.217*p.body,.149*p.neck);
@@ -1138,6 +1275,7 @@ export function buildGuardianDerivedBird(g,s){
    const suffix=side<0?'L':'R';
    const wing=g.group('wing'+suffix,[side*.295*p.body,1.71,-.10],torso);
    const donor=guardianDerivedWing(wing,s,side,detail);
+   phoenixMasterWingCoverts(wing,s,side,detail,donor);
    g.sphere(wing,'skin',[0,0,-.025],[.165,.177,.185],
      {name:'avian-scapula-cover-'+suffix});
    const elbow=g.group('wingElbow'+suffix,
