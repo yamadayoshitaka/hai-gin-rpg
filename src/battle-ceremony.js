@@ -109,8 +109,9 @@ export function createBattleCeremony({
   max-width:88vw;min-width:0;box-sizing:border-box;margin:0;padding:18px 16px;
   transform:translate(-50%,-50%);border:2px solid #dcb87a;border-radius:15px;
   background:linear-gradient(110deg,#122f48f7,#152033f7);box-shadow:0 12px 55px #000e;
-  animation:ceremonyRise .38s ease-out both
+  animation:ceremonyImpact .38s ease-out both
  }
+ @keyframes ceremonyImpact{from{opacity:0;transform:translate(-50%,-50%) scale(1.14)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
  #battleCeremony.engagement .ceremonyEmblem,#battleCeremony.wipeout .ceremonyEmblem{font-size:clamp(36px,8vw,65px)}
  #battleCeremony.engagement .ceremonyTitle,#battleCeremony.wipeout .ceremonyTitle{
   font:900 clamp(31px,8vw,70px)/1.12 serif;color:#ffe1a3;
