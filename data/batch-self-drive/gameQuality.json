@@ -4,10 +4,10 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-18T06:55:18.021Z",
+    "checkedAt": "2026-11-18T07:04:54.246Z",
     "category": "gameQuality",
     "status": "blocked_candidates",
-    "mainBeforeSha": "15ff0b05dde11ecdc5d82922c4c5e7c90dad784c",
+    "mainBeforeSha": "c5a557a1fb03dbd3cd49e104d9ab7b2ba1f9ca25",
     "mainAfterSha": null,
     "pr": null,
     "sourceCommits": 0,
@@ -46,7 +46,7 @@
         "reason": ""
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44254866743"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44256035560"
   },
   "latestSourceCommit": null,
   "history": [
@@ -233,6 +233,51 @@
         }
       ],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44254866743"
+    },
+    {
+      "checkedAt": "2026-11-18T07:04:54.246Z",
+      "category": "gameQuality",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "c5a557a1fb03dbd3cd49e104d9ab7b2ba1f9ca25",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
+      "gameQuality": {
+        "lane": "model",
+        "label": "全モデル→ゲーム",
+        "sourceFingerprint": "0373bd47087c6340e704a521514d394f78b84e899672cb55f450d10919327709",
+        "staticPassed": true,
+        "staticStatus": "static_pass",
+        "failedTests": [],
+        "browser": {
+          "status": "not_run",
+          "reason": "This lane has no browser sample"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [
+        {
+          "pr": 412,
+          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44256035560"
     }
   ]
 }
