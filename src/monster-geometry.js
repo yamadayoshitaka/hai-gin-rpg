@@ -22,10 +22,8 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  referenceBeastTorsoStations,referenceDoubleCoat,referenceBeastFlow}
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
-import {magmaSkullFromWolfKing,magmaTorsoFromWolfKing,
- sculptMagmaSalamanderEye,sculptMagmaSalamanderHorn,
- sculptMagmaSalamanderBack,markMagmaSalamander,
- MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js';
+import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
+ from './magma-salamander-sculpt.js';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
