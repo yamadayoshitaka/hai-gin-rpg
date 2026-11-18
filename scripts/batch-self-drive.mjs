@@ -22,6 +22,15 @@ const protectedSet=new Set(PROTECTED_WORLD_FILES);
 export function categoryFromMinute(minute){
  return ({7:'faceHair',22:'outfit',37:'creatureMonster',52:'world',57:'anime'})[minute]||'faceHair';
 }
+// Scheduled Actions can start several minutes late. Use the intended cron slot,
+// not the wall-clock minute on whichever runner GitHub eventually allocated.
+export function categoryFromCron(cron){
+ return ({
+  '7 * * * *':'faceHair','22 * * * *':'outfit',
+  '37 * * * *':'creatureMonster','52 * * * *':'world',
+  '57 * * * *':'anime'
+ })[String(cron||'')]||null;
+}
 export function isAllowedSource(group,file){
  if(!file||file.startsWith('/')||file.includes('..')||protectedSet.has(file))return false;
  const rules={
@@ -127,13 +136,84 @@ function resetToMain(){
  command('git',['reset','--hard','origin/main']);
  command('git',['clean','-fd','--','src','qa-reports/batch-self-drive']);
 }
+/** Save the verified result as a REAL static Pages input.
+ * The dashboard's old manually edited work-progress snapshot is not a live
+ * record and must never override this SHA-backed per-category journal.
+ * Use Contents API optimistic locking (no rebase, no source-file rewrites).
+ */
+export function publicRunSummary(report){
+ return {
+  checkedAt:report.startedAt,category:report.category,
+  status:report.status,mainBeforeSha:report.mainSha||null,
+  mainAfterSha:report.mainAfter||null,
+  pr:report.pr||null,sourceCommits:report.sourceCommits||0,
+  modifiedSourceFiles:report.modelChanges||0,
+  sourceFiles:(report.attempts||[]).find(a=>a.status==='merged_to_main')?.sourceFiles||[],
+  qaStatus:report.qa||'not_run',
+  pagesDispatch:report.pagesDispatch||'not_requested',
+  generatedGLBs:report.glbsGenerated||0,
+  webglApproved:report.webglApproved===true,
+  androidFpsVerified:report.androidFpsVerified===true,
+  error:report.error||null,
+  issueUrl:report.issueUrl||null,
+  attempts:(report.attempts||[]).map(a=>({
+   pr:a.pr,sha:a.sha,status:a.status,reason:a.reason||''
+  }))
+ };
+}
+export function appendVerifiedHistory(existing,summary,limit=24){
+ const history=Array.isArray(existing)?existing.filter(x=>x&&
+  typeof x.checkedAt==='string'&&typeof x.status==='string'):[];
+ if(!history.some(x=>x.checkedAt===summary.checkedAt&&x.status===summary.status))
+  history.push(summary);
+ return history.slice(-limit);
+}
+async function savePublicRunEvidence(report){
+ const group=report.category;
+ if(!GROUPS.includes(group))throw Error('Cannot publish evidence for unknown group');
+ const route='contents/data/batch-self-drive/'+group+'.json';
+ const runUrl='https://github.com/'+REPO+'/actions/runs/'+process.env.GITHUB_RUN_ID;
+ const current=publicRunSummary(report);
+ current.runUrl=runUrl;
+ for(let attempt=0;attempt<3;attempt++){
+  let old=null;
+  try{old=await api(route+'?ref=main')}
+  catch(error){if(!/GitHub 404 /.test(String(error.message||error)))throw error}
+  let previous={};
+  if(old?.content){
+   try{previous=JSON.parse(Buffer.from(old.content.replace(/\\s/g,''),'base64').toString('utf8'))}
+   catch(error){throw Error('Existing verified audit JSON is malformed: '+error.message)}
+  }
+  const history=appendVerifiedHistory(previous.history,current);
+  const verifiedSource=history.filter(x=>x.sourceCommits>0&&
+   /^[0-9a-f]{40}$/.test(x.mainAfterSha||''));
+  const latestSourceCommit=verifiedSource.at(-1)||null;
+  const output={
+   schemaVersion:1,category:group,source:'GitHub Actions verified autonomous run journal',
+   description:'A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.',
+   latest:current,latestSourceCommit,history
+  };
+  const payload={branch:'main',message:'chore(batch): persist '+group+' actual source/QA/commit evidence',
+   content:Buffer.from(JSON.stringify(output,null,2)+'\\n').toString('base64')};
+  if(old?.sha)payload.sha=old.sha;
+  try{
+   const saved=await api(route,{method:'PUT',body:payload});
+   return saved.commit?.sha||null;
+  }catch(error){
+   if(attempt===2||!/GitHub (409|422) /.test(String(error.message||error)))throw error;
+  }
+ }
+ return null;
+}
 const report={schemaVersion:1,startedAt:new Date().toISOString(),mainSha:null,
  category:null,status:'starting',sourceCommits:0,modelChanges:0,glbsGenerated:0,
  androidFpsVerified:false,webglApproved:false,pagesSha:null,attempts:[]};
 async function run(){
  if(process.env.GITHUB_REPOSITORY!==REPO)throw Error('Refusing unexpected repo');
  const group=process.env.INPUT_CATEGORY&&GROUPS.includes(process.env.INPUT_CATEGORY)
-  ?process.env.INPUT_CATEGORY:categoryFromMinute(new Date().getUTCMinutes());
+  ?process.env.INPUT_CATEGORY:
+   categoryFromCron(process.env.SCHEDULED_CRON)||
+   categoryFromMinute(new Date().getUTCMinutes());
  report.category=group;
  const switches=JSON.parse(fs.readFileSync(path.join(ROOT,'data/batch-center-switches.json'),'utf8'));
  if(switches.groups?.[group]?.enabled!==true){report.status='disabled';return}
@@ -209,18 +289,9 @@ async function run(){
     attempt.status='merged_to_main';report.status='source_committed_main';
     report.sourceCommits=1;report.modelChanges=changed.length;
     report.mainAfter=attempt.commitSha;report.pr=pr.number;report.qa=qa.status;
-    // A push authenticated with GITHUB_TOKEN does not trigger other push
-    // workflows. Explicit workflow_dispatch is required to publish this
-    // newly created commit. Never mark Pages success until verified.
-    try{
-     await api('actions/workflows/publish-pages.yml/dispatches',{method:'POST',body:{ref:'main'}});
-     report.pagesDispatch='requested';
-     report.note='Explicit Pages workflow_dispatch requested; release SHA and visual quality not yet verified.';
-    }catch(error){
-     report.pagesDispatch='failed';
-     report.pagesError=String(error.message||error);
-     report.note='Source committed to main, but Pages dispatch failed and must be retried.';
-    }
+    // Publish only after the per-category journal is committed. The
+    // terminal handler handles Pages dispatch for both source and status.
+    report.note='Source commit confirmed on main. Public progress evidence is next.';
     return;
    }
    // A branch is a durable artifact when main write permissions are restricted.
@@ -250,6 +321,24 @@ async function run(){
 async function main(){
  try{await run()}catch(e){report.status='error';report.error=String(e.stack||e)}
  finally{
+  // A run only becomes visible in the batch center when it has this
+  // separately verified data commit. Never report success for a missing
+  // journal; retain the run artifact and fail the workflow transparently.
+  try{
+   const committed=await savePublicRunEvidence(report);
+   if(!committed)throw Error('Contents API returned no evidence commit SHA');
+   report.evidenceCommitSha=committed;
+   // GitHub-token commits do not fire push workflows. This deliberate
+   // dispatch publishes the status AND, when present, the real source patch.
+   await api('actions/workflows/publish-pages.yml/dispatches',{
+    method:'POST',body:{ref:'main'}
+   });
+   report.pagesDispatch='requested';
+  }catch(error){
+   report.evidenceError=String(error.message||error);
+   report.pagesDispatch=report.pagesDispatch||'failed';
+   process.exitCode=1;
+  }
   const output=path.join(ROOT,'qa-reports/batch-self-drive');
   fs.mkdirSync(output,{recursive:true});
   fs.writeFileSync(path.join(output,'latest.json'),JSON.stringify(report,null,2)+'\n');
@@ -262,7 +351,7 @@ async function main(){
    '\n- New GLB bytes: 0; WebGL approval: NOT verified; mobile FPS: NOT verified'+
    '\n- Last issue: '+(report.issueUrl||'none')+'\n');
   console.log(JSON.stringify(report));
-  if(report.status==='error')process.exitCode=1;
+  if(report.status==='error'||report.evidenceError)process.exitCode=1;
  }
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))
