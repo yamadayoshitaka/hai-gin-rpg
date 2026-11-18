@@ -995,11 +995,23 @@ function phoenixMasterRaptorEyes(head,s,detail){
  const seg=detail==='low'?10:18;
  const shell=(parent,name,at,scale,tint)=>{
   const geo=new THREE.SphereGeometry(1,seg,detail==='low'?8:12);
-  const c=color(tint),rgb=new Float32Array(geo.getAttribute('position').count*3);
-  for(let j=0;j<rgb.length;j+=3){rgb[j]=c.r;rgb[j+1]=c.g;rgb[j+2]=c.b;}
+  const c=color(tint),pos=geo.getAttribute('position'),rgb=new Float32Array(pos.count*3);
+  const texturedIris=name.startsWith('avian-master-iris-');
+  for(let j=0;j<pos.count;j++){
+   // Fine baked radial amber fibres, replacing the flat toy-like yellow disk.
+   // Shader-free vertex color is shared across every model LOD.
+   const x=pos.getX(j),y=pos.getY(j),
+    phi=Math.atan2(y,x),radius=Math.min(1,Math.hypot(x,y));
+   const shade=texturedIris?1-.17*radius+
+    .11*Math.sin(phi*18+.8)*Math.pow(radius,.8):1;
+   rgb[j*3]=Math.max(0,Math.min(1,c.r*shade));
+   rgb[j*3+1]=Math.max(0,Math.min(1,c.g*shade));
+   rgb[j*3+2]=Math.max(0,Math.min(1,c.b*shade));
+  }
   geo.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
   const obj=mesh(parent,geo,name);obj.position.set(...at);obj.scale.set(...scale);
-  obj.material.roughness=.39;
+  obj.material.roughness=name.includes('iris')?.46:.68;
+  if(texturedIris)obj.userData.avianIrisRadialMicrotexture=true;
   return obj;
  };
  for(const side of [-1,1]){
