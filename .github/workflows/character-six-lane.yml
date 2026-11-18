@@ -53,7 +53,9 @@ permissions:
   contents: read
 concurrency:
   group: character-six-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: false
+  # Superseded PR revisions must not block the latest visual QA; scheduled
+  # quality lanes remain non-cancelling and continue their 10-minute rotation.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   six-lane-regression:
     strategy:
