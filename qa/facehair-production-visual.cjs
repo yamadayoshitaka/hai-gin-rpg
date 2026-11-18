@@ -122,6 +122,9 @@ function imageAudit(buffer) {
     // Human-readable side-by-side review against the registered ORIGINAL
     // Chapter 1 commander illustration. It is a provisional character master,
     // not a finalized turn-around and not a proprietary FF15 model asset.
+    // Release the heavy WebGL context before taking a regular screenshot
+    // of the static reference comparison sheet.
+    await page.close();
     const reference='assets/story/characters/commander/female-master.webp';
     const sheet=await browser.newPage({viewport:{width:1200,height:540},deviceScaleFactor:1});
     const examples=['female-front','female-threeQuarter','female-side'];
