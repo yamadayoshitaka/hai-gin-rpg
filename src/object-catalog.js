@@ -638,13 +638,15 @@ export function createObjectById(id,{cellSize=2.2}={}){
     log.castShadow=true;root.add(log);
     for(const side of [-1,1]){
      const cut=new THREE.Mesh(new THREE.CircleGeometry(radius*.90,9),endGrain);
-     cut.rotation.y=side*Math.PI/2;
-     cut.position.set(log.position.x+side*length*.50,log.position.y,log.position.z);
-     root.add(cut);
+     // Attach end grain to the log's local Y axis before rotation, so
+     // the cut face and growth ring follow its bow, yaw and taper.
+     cut.rotation.x=side===1?-Math.PI/2:Math.PI/2;
+     cut.position.set(0,side*(length*.5+.002*c),0);
+     log.add(cut);
      const ring=new THREE.Mesh(new THREE.TorusGeometry(radius*.54,.012*c,4,9),heartwood);
-     ring.rotation.y=Math.PI/2;
-     ring.position.set(log.position.x+side*(length*.50+.003*c),log.position.y,log.position.z);
-     root.add(ring);
+     ring.rotation.x=Math.PI/2;
+     ring.position.set(0,side*(length*.5+.004*c),0);
+     log.add(ring);
     }
    }
   }
