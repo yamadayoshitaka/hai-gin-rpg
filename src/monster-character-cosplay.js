@@ -24,7 +24,7 @@ import {addConstructMonsterCostume,isConstructCostume}
  from './monster-construct-costume.js';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
-import {addFemaleSummonCostume,isFemaleSummonCostume}
+import {addFemaleSummonCostume,isFemaleSummonCostume,createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=4.5.21';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
@@ -42,6 +42,12 @@ import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  from './monster-regal-garments.js?v=4.5.19';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const tenguWingDonors=new Map();
+function getTenguWingDonor(detail){
+ const key=['source','high'].includes(detail)?'high':'low';
+ if(!tenguWingDonors.has(key))tenguWingDonors.set(key,createOriginalGuardianWingPair({detail:key}));
+ return tenguWingDonors.get(key);
+}
 const boneName=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const DEFAULT_MOTION=Object.freeze({
  idle:'idle',walk:'walk',run:'run',attack:'attack',special:'attack',
@@ -420,6 +426,49 @@ function buildMonsterCostume(THREE,model,profile,detail){
   attach(frames.chest,g,'cloth','draped-cape');
  }
  if(!gothic&&!demonic&&!femaleSummon&&profile.wings){
+  if(costume==='tengu'){
+   // Keep the canonical face/skeleton; use REAL 3-layer feather geometry.
+   const source=getTenguWingDonor(detail),wingPivots=[];
+   for(const side of [-1,1]){
+    const suffix=side<0?'L':'R',pivot=new THREE.Group();
+    pivot.name='tengu-flight-wing-pivot-'+suffix;
+    pivot.position.set(side*.22,.14,-.24);
+    pivot.userData.tenguFlightWingSide=side;
+    frames.chest.add(pivot);
+    const geometry=(side<0?source.left:source.right).clone();
+    geometry.scale(.64,.58,.89);
+    geometry.computeBoundingBox();
+    if((geometry.boundingBox.min.z+geometry.boundingBox.max.z)*.5>0)
+     geometry.scale(1,1,-1);
+    const pos=geometry.getAttribute('position'),old=geometry.getAttribute('color'),
+     rgb=new Float32Array(pos.count*3);
+    const dark=new THREE.Color(0x262b37),mid=new THREE.Color(0x586274),
+     bright=new THREE.Color(0x8994a5);
+    for(let i=0;i<pos.count;i++){
+     const r=clamp(Math.abs(pos.getX(i))/2.1,0,1),
+      shade=old?(old.getX(i)+old.getY(i)+old.getZ(i))/3:.7;
+     const tone=dark.clone().lerp(mid,.26+.34*shade)
+      .lerp(bright,Math.pow(r,1.7)*.46);
+     rgb[i*3]=tone.r;rgb[i*3+1]=tone.g;rgb[i*3+2]=tone.b;
+    }
+    geometry.setAttribute('color',new THREE.Float32BufferAttribute(rgb,3));
+    geometry.computeVertexNormals();
+    const material=new THREE.MeshStandardMaterial({
+     vertexColors:true,side:THREE.DoubleSide,roughness:.80,metalness:.015
+    });
+    const wing=new THREE.Mesh(geometry,material);
+    wing.name='avian-guardian-three-layer-wing-m015-'+suffix;
+    wing.userData.angelSource='seraph_guardian';
+    wing.userData.angelFeatherLayers=3;
+    wing.userData.angelFeathersPerSide=detail==='low'||detail==='medium'?18:82;
+    wing.userData.avianCanonicalTenguWing=true;
+    wing.castShadow=true;wing.receiveShadow=true;
+    pivot.add(wing);wingPivots.push(pivot);
+    ownedGeo.push(geometry);ownedMats.push(material);
+   }
+   model.userData.tenguWingPivots=wingPivots;
+   model.userData.tenguGuardianFeatherRig=true;
+  }else{
   // Wing roots are rigidly anchored to the canonical upper torso;
   // skinned shoulders retain their original motion and proportions.
   for(const side of [-1,1]){
@@ -437,6 +486,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     [0,0,.4,.9,.9,1,.6,0,1,0],2));
    g.setIndex(indices);g.computeVertexNormals();
    attach(frames.chest,g,'cloth','scapular-wing-'+side);
+  }
   }
  }
  if(profile.mage){
