@@ -57,10 +57,12 @@ export function makeBattleRpgStatusRows({
    mode:getMode(id,team),effects:effectsFor(team,id),
    center:alive>0?{x:stat.x/alive,z:stat.z/alive}:null});
  }
+ // Evaluate both armies before removing temporary centroids. Mutating centroids
+ // in the same loop would mark the first side as engaged but not the second.
  for(const row of rows){
   row.inContact=Boolean(row.center&&rows.some(other=>other.team!==row.team&&other.center&&
    Math.hypot(row.center.x-other.center.x,row.center.z-other.center.z)<=10));
-  delete row.center;
  }
+ for(const row of rows)delete row.center;
  return rows;
 }
