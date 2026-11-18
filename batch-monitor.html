@@ -388,7 +388,7 @@ async function updateProgress(){
     const result=Object.hasOwn(STEP_LABELS,entry.steps[step])?entry.steps[step]:'unknown';
     view.stageGrid.appendChild(tag('span','stage '+result,label+'：'+STEP_LABELS[result]));
    }
-   view.progressTime.textContent='最終記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（GitHub保存時点）';
+   view.progressTime.textContent='旧工程台帳の記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（自走結果ではない）';
    // The scheduling metadata is an old static snapshot; show actual logged execution instead.
    if(g.id!=='world'&&entry.lastRunAt){
     elements.get(g.id).detail.textContent='直近の実行記録：'+TIME(entry.lastRunAt)+'（GitHub工程台帳の時刻・実行中判定ではない）';
@@ -422,6 +422,7 @@ async function updateProgress(){
     view.progressEvidence.appendChild(makeLink(ev.label||'証跡を開く',ev.url,true));
    }
   }
+  await updateSelfDriveEvidence(data);
  }catch(e){
   for(const g of groups){
    const health=elements.get(g.id)?.health;
@@ -434,6 +435,87 @@ async function updateProgress(){
    p.stageGrid.replaceChildren();p.progressEvidence.replaceChildren();
   }
  }
+}
+/** GitHub self-drive writes a per-category SHA-backed journal, packaged by
+ * Pages on each verified run. The old work-progress file is archival only.
+ * Never infer mesh generation or visual approval from a green Actions job.
+ */
+async function updateSelfDriveEvidence(staticProgress){
+ const ids=['faceHair','outfit','creatureMonster','creatureSummon','world','anime'];
+ await Promise.all(ids.map(async id=>{
+  const ui=elements.get(id),v=ui?.progress;
+  if(!v)return;
+  let audit;
+  try{audit=await fetchJSON('./data/batch-self-drive/'+encodeURIComponent(id)+'.json?ts='+Date.now())}
+  catch(error){
+   v.progressTime.textContent+=' ／ 最新自走記録：未公開（旧工程台帳の表示）';
+   return;
+  }
+  if(audit?.schemaVersion!==1||audit.category!==id||!audit.latest||
+   !Array.isArray(audit.history))return;
+  const last=audit.latest,verified=audit.latestSourceCommit;
+  if(typeof last.checkedAt!=='string'||!Number.isFinite(Date.parse(last.checkedAt)))return;
+  const old=staticProgress.groups?.[id]||{};
+  const oldTime=Date.parse(old.lastRunAt||staticProgress.asOf||'');
+  // If a newer explicit project audit exists, preserve its more recent facts.
+  if(Number.isFinite(oldTime)&&Date.parse(last.checkedAt)<oldTime)return;
+  const hasSource=verified&&verified.sourceCommits>0&&
+   /^[0-9a-f]{40}$/.test(verified.mainAfterSha||'');
+  const lastSource=hasSource?verified:null;
+  const realNow=last.sourceCommits>0&&/^[0-9a-f]{40}$/.test(last.mainAfterSha||'');
+  const blocked=last.status==='blocked_candidates'||last.status==='error';
+  const header=realNow?'今回：実ソース修正・mainコミット完了':
+   blocked?'今回：競合・未解決（作業記録あり）':
+   last.status==='no_open_source_pr'?'今回：取り込み対象PRなし':
+   last.status==='art_generation_not_automatable_in_actions'?'今回は画像生成なし':
+   '今回：実ソース変更なし（'+last.status+'）';
+  v.current.textContent=header+(hasSource&&!realNow?' ／ 過去のコミット実績あり':'');
+  v.current.className='progress-status'+(realNow?' ok':'');
+  v.stageGrid.replaceChildren();
+  const marks={launch:'done',code:hasSource?'done':'pending',
+   qa:'pending',commit:hasSource?'done':'pending',
+   pr:hasSource&&lastSource.pr?'done':'pending',
+   merge:hasSource?'done':'pending',deploy:'pending'};
+  for(const [key,label] of PROGRESS_STAGES)
+   v.stageGrid.appendChild(tag('span','stage '+marks[key],label+'：'+STEP_LABELS[marks[key]]));
+  v.progressTime.textContent='最新GitHub自走：'+TIME(last.checkedAt)+
+   ' ／ 旧工程台帳：'+TIME(old.lastRunAt||staticProgress.asOf)+
+   '（別記録）';
+  const lastCount=Number.isSafeInteger(last.modifiedSourceFiles)?last.modifiedSourceFiles:0;
+  const glbs=Number.isSafeInteger(last.generatedGLBs)?last.generatedGLBs:0;
+  const staticQa=last.qaStatus==='passed'?'静的QA成功':
+   last.qaStatus==='failed'?'静的QA失敗':'静的QA未実施';
+  v.progressSummary.textContent='最新実行：変更ソースファイル'+lastCount+'件／実ソースコミット'+
+   (last.sourceCommits||0)+'件／新規GLB'+glbs+'件／'+staticQa+
+   '。WebGL・Android FPSは'+
+   (last.webglApproved&&last.androidFpsVerified?'確認記録あり':'未承認')+
+   '。過去の最新実ソースコミット：'+(hasSource?lastSource.mainAfterSha.slice(0,12):'なし')+'。';
+  v.nextAction.textContent=blocked?
+   '次回引継ぎ：競合内容を修正して最新mainへの安全な再適用を続行':
+   hasSource?'次回確認：追加造形、実WebGL四方向、動作とAndroid FPS、公開SHAの照合':
+   '次回引継ぎ：変更可能な実モデルソースと失敗理由を確認し、差分をコミット';
+  v.progressEvidence.replaceChildren();
+  if(typeof last.runUrl==='string'&&last.runUrl.startsWith(GH+'/actions/runs/'))
+   v.progressEvidence.appendChild(makeLink('最新自走バッチの実行ログ',last.runUrl,true));
+  if(hasSource)
+   v.progressEvidence.appendChild(makeLink('実ソースコミット '+lastSource.mainAfterSha.slice(0,12),
+    GH+'/commit/'+lastSource.mainAfterSha,true));
+  if(typeof last.issueUrl==='string'&&last.issueUrl.startsWith(GH+'/issues/'))
+   v.progressEvidence.appendChild(makeLink('競合の修正Issue',last.issueUrl,true));
+  const health=ui?.health;
+  if(health){
+   health.metrics.textContent='最新実行：ソース変更'+lastCount+'ファイル／自動コミット'+
+    (last.sourceCommits||0)+'件／GLB '+glbs+'件 ／ 最新の過去コミット '+
+    (hasSource?lastSource.mainAfterSha.slice(0,8):'未確認');
+   const failure=Array.isArray(last.attempts)?last.attempts.filter(x=>
+    ['conflict','error','safety_rejected'].includes(x.status)).slice(0,3):[];
+   health.blocker.textContent='未達：'+(failure.length?
+    failure.map(x=>'PR #'+x.pr+' '+x.status).join(' ／ '):
+    '実描画・Android品質・公開採用の証跡が不足');
+   health.speed.textContent='自走出力：'+last.status+
+    ' ／ 実3Dの品質合格はWebGL・動作・FPSの別検証が必要';
+  }
+ }));
 }
 /** Current main is the canonical evaluation baseline; open PRs are candidates.
  * Old data/batch-pr-previews.json is retained for history only and MUST NOT
