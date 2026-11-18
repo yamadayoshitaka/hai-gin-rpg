@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261118-move-action-hp1">
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261118-map-paging2">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-move-action-hp1';
+import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-map-paging2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -898,7 +898,8 @@ import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4
 import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
-import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
+import {tacticalCooldownSeconds,squadPower} from './src/tactical-command-evaluation.js?v=2.1';
+import {TURN_MOVE_OPTIONS} from './src/battle-objective-turns.js?v=20261118-map-paging2';
 import {AdaptiveBattleResolution} from './src/adaptive-battle-resolution.js?v=20261117-initial-upscale1';
 import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './src/tactical-command-descriptions.js?v=1';
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
@@ -11052,7 +11053,7 @@ async function finishBattleLoading(){
   // tactics and items now live only in the pause-and-command center.
   const directBattlePreview=!TOWN_MODE&&!storyRequest&&battleParams.get('storyBattle')!=='1'&&
    !battleParams.has('legacySetup');
-  if(storyRequest?.sortieTeamCount||directBattlePreview){
+  if(false){ // retired direct-start branch; confirmation is mandatory
    for(const id of squadIds){
     squadStrategies.set(id,'eliminate');
     setStartingSquadOrder(0,id,'charge'); // Default AI, not a user-selected opening order.
@@ -11078,7 +11079,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大10班・レベル依存隊数、4×4固定陣形と隊長を引き継ぎます。出撃人数はステージ上限内です。戦闘開始後は各班ごとに「①移動先（建物・橋など）→②到着後の行動（遠距離・防御など）」を選びます。':'最大10班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
+  planHint.textContent='宿屋で編成した隊と隊長・装備を引き継ぎます。開戦前に各隊の所属班と陣形を選択してください。開戦後は地図から移動先を選び、到着後の作戦を設定します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -11093,8 +11094,15 @@ async function finishBattleLoading(){
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
     const savedType=storyRequest?.sortieTeamCount?storyRequest.units.find(u=>String(u.squadId)===String(detail.squadId))?.formationType:null;
-     const actualType=['attack','balanced','support'].includes(savedType)?savedType:classifySquad(detail);
+     const configured=formationPlanTypes.get(detail.squadId);
+     const actualType=['attack','balanced','support'].includes(configured)?configured:
+      ['attack','balanced','support'].includes(savedType)?savedType:classifySquad(detail);
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
+    for(const button of refs.formationButtons.querySelectorAll('button')){
+     const active=button.dataset.formation===actualType;
+     button.style.background=active?'#497c56':'#1d3951';
+     button.style.borderColor=active?'#ffe49a':'#7494aa';
+    }
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
     const strategy=squadStrategies.get(String(detail.squadId))||'eliminate';
@@ -11113,11 +11121,11 @@ async function finishBattleLoading(){
   };
   for(const id of squadIds){
    const row=document.createElement('div');
-   row.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,132px);gap:2px 9px;align-items:center;padding:5px 0;border-bottom:1px solid #315371;font:12px system-ui';
+   row.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:5px 0;border-bottom:1px solid #315371;font:12px system-ui';
    const name=document.createElement('span');
    name.style.cssText='min-width:0;font-weight:650;overflow-wrap:anywhere';
    const preview=document.createElement('small');
-   preview.style.cssText='grid-column:1/-1;color:#b8d7e8;font:10px/1.4 system-ui';
+   preview.style.cssText='color:#b8d7e8;font:10px/1.4 system-ui';
    const buttons=document.createElement('div');
    buttons.style.cssText='display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;min-width:0';
    for(const group of Array.from({length:10},(_,i)=>i+1)){
@@ -11131,7 +11139,7 @@ async function finishBattleLoading(){
    manual.textContent='✎ 職業を選んで手動編成';
    manual.style.cssText='grid-column:1/-1;min-height:38px;color:#fff;background:#30577b;border:1px solid #94b5d1;border-radius:7px';
    manual.onclick=()=>openManualJobEditor(id);
-    if(storyRequest?.sortieTeamCount){buttons.hidden=true;manual.hidden=true;}
+    // Story battles also offer formation and army-group selection.
    const itemModeLine=document.createElement('label');
    itemModeLine.style.cssText='grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:7px;color:#bde7f9;font:11px system-ui';
    const itemModeText=document.createElement('span');itemModeText.textContent='🎒 アイテム使用';
@@ -11144,9 +11152,17 @@ async function finishBattleLoading(){
    itemMode.value=squadItemPolicies.get(id);
    itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);};
    itemModeLine.append(itemModeText,itemMode);
-   formationRows.set(id,{name,preview,buttons,manual,itemMode});
+   const formationButtons=document.createElement('div');
+   formationButtons.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px';
+   for(const [type,label] of [['attack','⚔ 前衛重視'],['balanced','⚖ 均衡'],['support','✚ 支援重視']]){
+    const button=document.createElement('button');button.type='button';button.dataset.formation=type;
+    button.textContent=label;button.style.cssText='min-height:39px;color:white;border:1px solid #7494aa;border-radius:6px;font:11px system-ui';
+    button.onclick=()=>{formationPlanTypes.set(id,type);refreshFormationPreview()};
+    formationButtons.append(button);
+   }
+   formationRows.set(id,{name,preview,buttons,formationButtons,manual,itemMode});
    manual.hidden=true;
-   row.append(name,buttons,preview,manual,itemModeLine);planList.append(row);
+   row.append(name,buttons,formationButtons,preview,manual,itemModeLine);planList.append(row);
   }
   // Full-screen profession editor: one tap reserves actual soldiers of that
   // class (10 for large squads, one for small squads). Counts, not percentages.
@@ -11330,7 +11346,7 @@ async function finishBattleLoading(){
   const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
-  intro.textContent=storyRequest?.sortieTeamCount?'宿屋の3隊編成を反映しました。初期号令を確認して開戦してください。':'編成・初期号令の確認が済んだら開戦してください。号令は班の全隊へ発令します。';
+  intro.textContent='所属する班・陣形を確認したら開戦してください。開戦後は地図で目的地を選び、移動後の作戦を設定します。命令は次ターンに継続されます。';
   const openingTacticalSummary=createPreBattleTacticalSummary({
    getStageName:()=>selectedStage.name,
    getUnits:()=>squadRoster,
@@ -11343,17 +11359,17 @@ async function finishBattleLoading(){
   });
   let wizardPage='formation';
   const wizardButtons=new Map();
-  for(const [page,label] of [['formation','① 編成'],['orders','② 初期号令'],['launch','③ 開戦']]){
+  for(const [page,label] of [['formation','① 隊列・陣形'],['launch','② 開戦']]){
    const button=document.createElement('button');button.type='button';button.textContent=label;
    button.onclick=()=>setOpeningWizardPage(page);
    wizardTabs.append(button);wizardButtons.set(page,button);
   }
   function setOpeningWizardPage(page){
    wizardPage=page;
-   openingPlan.hidden=page!=='formation';orderPlan.hidden=page!=='orders';intro.hidden=page!=='launch';
+   openingPlan.hidden=page!=='formation';orderPlan.hidden=true;intro.hidden=page!=='launch';
    startButton.hidden=page!=='launch';
-   openingTacticalSummary.element.hidden=page!=='launch';
-   if(page==='launch')openingTacticalSummary.refresh();
+   openingTacticalSummary.element.hidden=true;
+   // No initial orders: all movement and actions are now turn-based.
    for(const [key,button] of wizardButtons)button.classList.toggle('active',key===page);
   }
   $('loadingCard').insertBefore(wizardTabs,openingPlan);
@@ -11362,7 +11378,7 @@ async function finishBattleLoading(){
   startButton.hidden=false;startButton.disabled=false;
   loading.classList.add('prebattle-setup');
   $('loadingCard').classList.add('prebattle-command-ui');
-   $('loadingStage').textContent='準備完了：隊列編成と初期号令を選択';
+   $('loadingStage').textContent='準備完了：隊列と陣形を確認して開戦';
    setOpeningWizardPage('formation');
   let battleLaunched=false;
   const launch=()=>{
