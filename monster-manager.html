@@ -919,7 +919,7 @@ window.__avianWingQA=()=>{
   bodyFeathers:model.userData.avianBodyFeatherCount||0,
    phoenixMaster:!!model.userData.avianPhoenixMasterChassis||
      !!model.getObjectByName('avian-phoenix-master-tail-m015'),
-   physicalOrbit:!!model.userData.pivots.head?.userData.avianPhoenixMasterEyes,
+   physicalOrbit:!!p.head?.userData.avianPhoenixMasterEyes,
   tail:model.getObjectByName('avian-tail-rooted-streamers-'+selected)?.userData.curvedAvianFeathers||model.getObjectByName('avian-phoenix-master-tail-'+selected)?.userData.curvedAvianFeathers||0,
   shape:model.userData.avianAnatomicalKind,
   phoenix:selected==='m013'?{
