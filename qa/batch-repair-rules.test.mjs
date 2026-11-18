@@ -109,4 +109,7 @@ test('game quality status is never promoted by tests alone',()=>{
  assert.match(script,/androidFpsMeasured:false/);
  assert.match(script,/modelGlbsGenerated:0/);
  assert.match(script,/no_known_error_to_fix/);
+ assert.match(script,/disabled_by_batch_center/);
+ assert.match(script,/batch-center-switches\\.json/);
+ assert.match(script,/isEnabled\\('faceHair'\\)\\&\\&isEnabled\\('outfit'\\)/);
 });
