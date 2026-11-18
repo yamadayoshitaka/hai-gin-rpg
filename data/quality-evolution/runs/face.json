@@ -4,11 +4,11 @@
   "latest": {
     "schemaVersion": 1,
     "domain": "face",
-    "startedAt": "2026-11-18T06:57:09.832Z",
-    "completedAt": "2026-11-18T06:58:31.280Z",
-    "status": "blocked_browser_baseline",
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44254865878",
-    "baselineSha": "15ff0b05dde11ecdc5d82922c4c5e7c90dad784c",
+    "startedAt": "2026-11-18T07:11:52.267Z",
+    "completedAt": "2026-11-18T07:15:48.706Z",
+    "status": "no_safe_measured_improvement",
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44256035619",
+    "baselineSha": "c5a557a1fb03dbd3cd49e104d9ab7b2ba1f9ca25",
     "sourceCommitSha": null,
     "candidates": [
       {
@@ -16,12 +16,12 @@
         "proxyScore": 96.00000000000003,
         "gain": 1.9999999999999716,
         "qaPassed": true,
-        "status": "blocked_browser_baseline",
-        "reason": "CI production battle browser failed at baseline: no comparable FPS; do not auto-adopt",
-        "browserStatus": null,
+        "status": "blocked_browser_or_fps",
+        "reason": "measurable geometry proxy improved, pending browser and visual gates",
+        "browserStatus": "measured_ci_fps",
         "browserError": null,
-        "fps": null,
-        "p95Ms": null
+        "fps": 2,
+        "p95Ms": 2499.2
       },
       {
         "value": 0.033,
@@ -40,17 +40,17 @@
         "proxyScore": 98,
         "gain": 3.999999999999943,
         "qaPassed": true,
-        "status": "blocked_browser_baseline",
-        "reason": "CI production battle browser failed at baseline: no comparable FPS; do not auto-adopt",
-        "browserStatus": null,
+        "status": "blocked_browser_or_fps",
+        "reason": "measurable geometry proxy improved, pending browser and visual gates",
+        "browserStatus": "measured_ci_fps",
         "browserError": null,
-        "fps": null,
-        "p95Ms": null
+        "fps": 1,
+        "p95Ms": 4648.9
       }
     ],
     "baselineProxy": 94.00000000000006,
-    "baselineBrowserStatus": "failed",
-    "baselineBrowserError": "Error: Battle opening wizard did not become visible: {\"stage\":\"音楽・描画準備完了：タップして開戦\",\"tabs\":[{\"label\":\"⚙ 操作\",\"visible\":false},{\"label\":\"◉ 表示\",\"visible\":false},{\"label\":\"⋯ その他\",\"visible\":false}],\"startHidden\":true,\"percent\":\"100%\",\"startup\":{\"ready\":true,\"error\":null,\"resolutionScale\":0.92,\"adaptiveQuality\":{\"ratio\":0.72,\"min\":0.72,\"max\":0.92,\"targetFps\":45},\"pixelRatio\":0.92,\"antiAliasing\":\"GPU FXAA\",\"bufferWidth\":395,\"bufferHeight\":857,\"actors\":100,\"dressed\":100,\"buildingBatchStats\":{\"sourceMeshes\":1694,\"batches\":478,\"instances\":1694},\"stageBatchStats\":{\"objects\":656,\"sourceMeshes\":16861,\"batches\":4087,\"occlusionCandidates\":[{\"key\":\"tree_deciduous_001:71:0\",\"id\":\"tree_deciduous_001\",\"x\":71,\"z\":0,\"tree\":true,\"bounds\":{\"minX\":58.67988187074661,\"maxX\":72.74090504646301,\"minY\":2.6500000834465016",
+    "baselineBrowserStatus": "measured_ci_fps",
+    "baselineBrowserError": null,
     "initialProfile": {
       "eyeInsetRatio": 0.031
     },
@@ -58,7 +58,7 @@
     "gameFpsApproved": false,
     "artisticQualityApproved": false,
     "androidFpsMeasured": false,
-    "note": "Actual battle browser did not provide baseline FPS. Rejected all source changes; see browser error."
+    "note": "No candidate improved the measured 3D geometry while maintaining CI WebGL FPS."
   },
   "history": [
     {
@@ -119,6 +119,65 @@
       "artisticQualityApproved": false,
       "androidFpsMeasured": false,
       "note": "Actual battle browser did not provide baseline FPS. Rejected all source changes; see browser error."
+    },
+    {
+      "schemaVersion": 1,
+      "domain": "face",
+      "startedAt": "2026-11-18T07:11:52.267Z",
+      "completedAt": "2026-11-18T07:15:48.706Z",
+      "status": "no_safe_measured_improvement",
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44256035619",
+      "baselineSha": "c5a557a1fb03dbd3cd49e104d9ab7b2ba1f9ca25",
+      "sourceCommitSha": null,
+      "candidates": [
+        {
+          "value": 0.029,
+          "proxyScore": 96.00000000000003,
+          "gain": 1.9999999999999716,
+          "qaPassed": true,
+          "status": "blocked_browser_or_fps",
+          "reason": "measurable geometry proxy improved, pending browser and visual gates",
+          "browserStatus": "measured_ci_fps",
+          "browserError": null,
+          "fps": 2,
+          "p95Ms": 2499.2
+        },
+        {
+          "value": 0.033,
+          "proxyScore": 92,
+          "gain": -2.000000000000057,
+          "qaPassed": null,
+          "status": "rejected",
+          "reason": "insufficient measurable geometry-proxy gain",
+          "browserStatus": null,
+          "browserError": null,
+          "fps": null,
+          "p95Ms": null
+        },
+        {
+          "value": 0.027,
+          "proxyScore": 98,
+          "gain": 3.999999999999943,
+          "qaPassed": true,
+          "status": "blocked_browser_or_fps",
+          "reason": "measurable geometry proxy improved, pending browser and visual gates",
+          "browserStatus": "measured_ci_fps",
+          "browserError": null,
+          "fps": 1,
+          "p95Ms": 4648.9
+        }
+      ],
+      "baselineProxy": 94.00000000000006,
+      "baselineBrowserStatus": "measured_ci_fps",
+      "baselineBrowserError": null,
+      "initialProfile": {
+        "eyeInsetRatio": 0.031
+      },
+      "selected": null,
+      "gameFpsApproved": false,
+      "artisticQualityApproved": false,
+      "androidFpsMeasured": false,
+      "note": "No candidate improved the measured 3D geometry while maintaining CI WebGL FPS."
     }
   ]
 }
