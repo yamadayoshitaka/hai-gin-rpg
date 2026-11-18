@@ -13,7 +13,8 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-hover-flight-realism-v9-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-master-birds-v10-20261118';
+export const PHOENIX_FAMILY_MASTER='m013';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
@@ -31,6 +32,8 @@ const profiles=Object.freeze({
    dark:0x534c47,mid:0x918474,light:0xbeb1a0,tip:0xe2d8c4}),
 });
 export const avianProfile=id=>profiles[id]||null;
+const TENGU_WING_PROFILE=Object.freeze({wing:[.64,.58,.89],
+ dark:0x292437,mid:0x544762,light:0x867293,tip:0x9c8bae});
 const PHOENIX_HEAD_STATIONS=Object.freeze([
    {z:.475,y:-.074,rx:.024,ry:.037},
    {z:.366,y:-.053,rx:.070,ry:.089},
@@ -40,10 +43,35 @@ const PHOENIX_HEAD_STATIONS=Object.freeze([
    {z:-.395,y:.056,rx:.040,ry:.055}
  ]);
 const guardianDonors=new Map();
+const phoenixWingMasters=new Map();
 function guardianPair(detail){
  const d=detail==='source'||detail==='high'?'high':'low';
  if(!guardianDonors.has(d))guardianDonors.set(d,createOriginalGuardianWingPair({detail:d}));
  return guardianDonors.get(d);
+}
+/** The Phoenix physically sculpts the common real-feather wing source.
+ * Each other species clones these actual vertices before morph/colour.
+ */
+function phoenixMasterWing(side,detail){
+ const donorDetail=['source','high'].includes(detail)?'high':'low';
+ const key=detail+':'+side;
+ if(phoenixWingMasters.has(key))return phoenixWingMasters.get(key);
+ const pair=guardianPair(donorDetail),base=side<0?pair.left:pair.right;
+ let geo=base.clone();
+ if(detail==='source'){
+  const fine=refineOnce(geo);geo.dispose();geo=fine;
+ }
+ const a=geo.getAttribute('position');
+ for(let i=0;i<a.count;i++){
+  const x=a.getX(i),y=a.getY(i),z=a.getZ(i),distal=Math.min(1,Math.abs(x)/3.35);
+  const arch=.052*Math.pow(distal,1.5)*Math.sin(z*2.7+distal*2.1);
+  const sweep=.075*Math.pow(distal,1.9);
+  const vane=.014*distal*Math.cos(y*6.1+z*3.4);
+  a.setXYZ(i,x,y+arch,z-sweep+vane);
+ }
+ a.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
+ phoenixWingMasters.set(key,geo);
+ return geo;
 }
 const color=hex=>new THREE.Color(hex);
 const mix=(a,b,t)=>a.clone().lerp(b,Math.max(0,Math.min(1,t)));
@@ -146,12 +174,11 @@ function refineOnce(input){
  return out;
 }
 function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}={}){
- const p=profiles[spec.id],donor=guardianPair(miniature&&detail==='medium'?'low':detail);
+ const p=profiles[spec.id]||(spec.id==='m015'?TENGU_WING_PROFILE:null);
+ if(!p)throw Error('Unknown Phoenix wing derivative '+spec.id);
+ const donor=guardianPair(miniature&&detail==='medium'?'low':detail);
  const base=side<0?donor.left:donor.right;
- let geo=base.clone();
- if(detail==='source'&&!miniature){
-   const refined=refineOnce(geo);geo.dispose();geo=refined;
- }
+ let geo=phoenixMasterWing(side,miniature&&detail==='medium'?'low':detail).clone();
  const wingScale=miniature?[.27,.25,.245]:p.wing;
  geo.scale(...wingScale);
  const positions=geo.getAttribute('position');
@@ -180,6 +207,8 @@ function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}
  const wing=mesh(parent,geo,name||'avian-guardian-three-layer-wing-'+spec.id+'-'+(side<0?'L':'R'),
    {emissive:spec.id==='m013'});
  wing.userData.angelSource='seraph_guardian';
+ wing.userData.phoenixFamilyMaster=PHOENIX_FAMILY_MASTER;
+ wing.userData.phoenixMasterGeometryRevision=AVIAN_REALISM_REVISION;
  wing.userData.angelFeatherLayers=3;
  wing.userData.angelFeathersPerSide=detail==='low'||detail==='medium'?18:82;
  wing.userData.angelDonorGeometryTriangles=
@@ -787,7 +816,7 @@ function phoenixSculptedEyes(head,detail){
   const suffix=side<0?'L':'R',socket=new THREE.Group();
   socket.name='phoenix-sculpted-orbit-'+suffix;
   // Lateral skull fitting prevents eyes disappearing inside the beak.
-  socket.position.set(side*.105,.050,.262);
+  socket.position.set(side*.116,.062,.273);
   socket.rotation.y=side*.91;head.add(socket);
   shell(socket,'phoenix-eye-socket-'+suffix,[0,0,.003],
    [.051,.036,.012],0x200e13,.86);
@@ -806,10 +835,28 @@ function phoenixSculptedEyes(head,detail){
    [-.046,-.008,.022],[-.025,-.025,.026],[0,-.029,.027],
    [.027,-.022,.026],[.048,-.008,.019]],.0045,0x39161a);
   socket.userData.phoenixEyesVisible=true;
+  socket.userData.phoenixEyeProjectionFollowsEyeliner=true;
  }
  head.userData.phoenixSculptedEyeLiner=true;
 }
 
+/** Actual curved feathers around, not across, the visible iris. */
+function phoenixOrbitalBrowPlumage(head,s,detail){
+ const guides=[],count=detail==='source'?10:detail==='high'?8:detail==='medium'?5:3;
+ for(const side of [-1,1])for(let i=0;i<count;i++){
+  const t=i/Math.max(1,count-1);
+  guides.push({from:[side*(.108+.030*t),.136+.010*Math.sin(t*Math.PI),.285-.145*t],
+   to:[side*(.167+.091*t),.192+.082*t,-.046-.33*t],
+   width:.014+.013*(1-t),normal:[side*.63,.72,.31],
+   ridge:.010,curl:side*.011,rise:.017,
+   tint:i%3===0?3:i%2===0?2:1,endTint:3,glow:.78});
+ }
+ const brow=layeredFeathers(head,s,detail,'phoenix-orbital-brow-feathers',guides);
+ brow.userData.phoenixEyesUncovered=true;
+ brow.userData.phoenixRootedBrowVanes=guides.length;
+ brow.castShadow=false;
+ return brow;
+}
 /** One merged flame-plumage mesh, rooted into brow, temple and cheek.
  * Real curled vanes trail backwards, not forward across the eye sockets.
  * No transparent billboards or per-feather draw calls.
@@ -931,6 +978,7 @@ function headAndCrest(g,s,p,torso,detail){
    // Recess both eyes into the narrow original head, not outside the mesh.
    if(s.id==='m013'){
      phoenixSculptedEyes(head,detail);
+     phoenixOrbitalBrowPlumage(head,s,detail);
      phoenixCranialFireFeathers(head,s,detail);
    }
    else g.eyes(head,.235,.063,.172*p.head,.054);
@@ -1024,11 +1072,21 @@ function tailFeathers(g,s,p,torso,detail){
  tail.userData.avianTailRootFitted=true;
  return tail;
 }
+export function buildPhoenixDerivedTenguWing(parent,s,side,detail){
+ if(s.id!=='m015')return null;
+ const wing=guardianDerivedWing(parent,s,side,detail);
+ wing.userData.phoenixTenguHumanRigPreserved=true;
+ return wing;
+}
 export function buildGuardianDerivedBird(g,s){
  const p=profiles[s.id];if(!p)return false;
  const detail=g.root.userData.detail,torso=g.group('torso');
  g.root.userData.avianRebuildRevision=AVIAN_REALISM_REVISION;
  g.root.userData.avianGuardianGeometryDonor='seraph_guardian';
+ g.root.userData.avianPhoenixSourceMaster=PHOENIX_FAMILY_MASTER;
+ g.root.userData.avianPhoenixMasterRevision=AVIAN_REALISM_REVISION;
+ g.root.userData.avianFlightMode=true;
+ g.root.userData.avianFlightHeight=s.id==='m013'?1.55:s.id==='m012'?1.25:s.id==='m014'?1.10:1.35;
  g.root.userData.avianAnatomicalKind=p.type;
  if(s.id==='m013'){
   g.root.userData.phoenixSlenderAnatomy=false;
@@ -1111,6 +1169,6 @@ export function buildGuardianDerivedBird(g,s){
   g.root.userData.phoenixWaveMeshCount=animated.length;
  }
  g.root.scale.setScalar(s.size*.80);
- if(s.id==='m013')g.root.position.y=g.root.userData.phoenixFlightHeight;
+ g.root.position.y=g.root.userData.avianFlightHeight;
  return true;
 }
