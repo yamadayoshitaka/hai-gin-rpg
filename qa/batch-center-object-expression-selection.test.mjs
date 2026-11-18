@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-test('six category selector is backed by the same six active registry IDs',()=>{
+test('seven category selector is backed by the same seven active registry IDs',()=>{
  const dashboard=JSON.parse(fs.readFileSync('data/hourly-batch-dashboard.json','utf8'));
  const sw=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
  const ids=dashboard.groups.map(group=>group.id);
- assert.deepEqual(ids,['faceHair','outfit','world','creatureMonster','creatureSummon','anime']);
+ assert.deepEqual(ids,['faceHair','outfit','world','creatureMonster','creatureSummon','anime','gameQuality']);
  for(const id of ids)assert.equal(sw.groups[id].enabled,true,id+' must be active');
  for(const id of ['human','monster'])assert.equal(sw.groups[id].enabled,false,id+' legacy should stay off');
  const page=fs.readFileSync('batch-monitor.html','utf8');
