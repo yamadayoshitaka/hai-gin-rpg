@@ -30,9 +30,11 @@ const projectCapsule=(p,a,b,r)=>{
 // lose almost all roots to the much denser triangles on the frontal head.
 const WIG_ZONE_WEIGHTS=Object.freeze([
  // Top/crown roots + real back-of-head roots: sum exactly 1.
- ['crown',.23],['fringeLeft',.05],['fringeRight',.05],
+ // Reallocate 4% of strand roots to the crown to reduce top-scalp
+ // exposure without increasing draw calls or strand count on Android.
+ ['crown',.27],['fringeLeft',.05],['fringeRight',.05],
  ['templeLeft',.105],['templeRight',.105],
- ['backLeft',.18],['backRight',.18],
+ ['backLeft',.16],['backRight',.16],
  ['napeLeft',.05],['napeRight',.05]
 ]);
 function actualScalpCandidates(geo,box){
