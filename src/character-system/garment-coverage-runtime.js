@@ -234,8 +234,10 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
     const hiddenCorners=cut[a]+cut[b]+cut[c];
     const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
-    const canCut=surfaceCheck?
-      (opaqueEnvelope?hiddenCorners>=2&&!visibleEdge:hiddenCorners===3):hiddenCorners>=2;
+    // A partially covered triangle straddles an exposed seam. Removing it
+    // tears the back, hip or boot rim in motion, even for an opaque outfit.
+    // Only wholly covered triangles away from protected skin may be removed.
+    const canCut=hiddenCorners===3&&!visibleEdge;
     if(!canCut)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
