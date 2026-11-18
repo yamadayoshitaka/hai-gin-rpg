@@ -159,15 +159,17 @@ async function refresh({live=false}={}){
 
  const token=++seq;row=data?.groups?.[$('group').value]?.find(x=>x.pr===Number($('target').value));
  if(!row)return;
- pr=null;
- $('commit').textContent='PR #'+row.pr+'（最新SHAは未取得）';
+ // The live /pulls response already contains the immutable HEAD commit SHA.
+ // Render that exact candidate immediately instead of forcing another API call.
+ pr=row.sha?{head:{sha:row.sha,ref:row.branch},draft:row.draft,merged_at:null}:null;
+ $('commit').textContent='PR #'+row.pr+' ／ '+short(row.sha)+' ／ '+(row.branch||'ブランチ未確認');
  $('checks').textContent='未確認（API取得を省略）';
  $('mainStatus').textContent='未照合';
  $('pageStatus').textContent=releaseSha?'Pages公開SHA '+short(releaseSha)+'（PR採用は未照合）':'公開SHA未取得';
- $('qa').textContent='APIの自動呼出しを停止中。PR詳細は直接GitHubで確認できます';
+ $('qa').textContent='最新GitHub APIで取得した作業PR：'+row.title+'。main基準で審査し、未承認の変更は自動採用しません。';
  $('checkpoint').textContent='途中保存：PRのコミットとcheckpointをGitHubで確認してください';
  setLink('prLink',GH+'/pull/'+row.pr);
- show();
+ verifyRelease(pr);show();
  if(!live){
   const cached=getSaved(PR_CACHE_PREFIX+row.pr);
   if(cached?.data&&Date.now()-Date.parse(cached.at)<5*60000){
@@ -200,7 +202,7 @@ async function setGroup(){
  const category=$('group').value;
  $('target').replaceChildren();
  const list=data.groups[category]||[];
- for(const row of list){const option=document.createElement('option');option.value=String(row.pr);option.textContent='#'+row.pr+' '+row.title;$('target').appendChild(option)}
+ for(const row of list){const option=document.createElement('option');option.value=String(row.pr);option.textContent=(row.pr?'#'+row.pr:'main')+' '+row.title;$('target').appendChild(option)}
  const asked=new URL(location.href).searchParams.get('pr');
  if(list.some(x=>String(x.pr)===asked))$('target').value=asked;
  else $('target').value='0';
