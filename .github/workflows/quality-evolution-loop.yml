@@ -19,6 +19,7 @@ on:
       - 'scripts/quality-evolution-loop.mjs'
       - 'qa/quality-evolution-probe.mjs'
       - 'qa/quality-evolution-loop.test.mjs'
+      - 'qa/quality-evolution-reporting.test.mjs'
       - '.github/workflows/quality-evolution-loop.yml'
   pull_request:
     paths:
@@ -55,7 +56,7 @@ jobs:
         run: |
           node --check scripts/quality-evolution-loop.mjs
           node --check qa/quality-evolution-probe.mjs
-          node --test qa/quality-evolution-loop.test.mjs
+          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs
   evolve:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
@@ -84,7 +85,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Hard test source invariants before attempting any visual candidate
         run: |
-          node --test qa/quality-evolution-loop.test.mjs
+          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs
           node --test qa/studio-model-route-contract.test.mjs
       - name: Launch local real game for identical baseline/candidate WebGL probes
         run: |

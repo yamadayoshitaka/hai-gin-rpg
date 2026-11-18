@@ -429,6 +429,7 @@ async function updateProgress(){
    }
   }
   await updateSelfDriveEvidence(data);
+  await updateEvolutionResults();
  }catch(e){
   for(const g of groups){
    const health=elements.get(g.id)?.health;
@@ -653,6 +654,94 @@ async function updateSelfDriveEvidence(staticProgress){
     ' ／ 実3Dの品質合格はWebGL・動作・FPSの別検証が必要';
   }
  }));
+}
+/** The existing faceHair self-drive journal and the NEW evolutionary
+ * geometry/FPS optimizer are different workflows. Do not show the old
+ * 12:39 self-drive timestamp as if it were the last quality-evolution run.
+ * The optimizer writes raw main JSON after EVERY run, including rejections;
+ * no Pages redeployment is necessary just to show a blocked run.
+ */
+async function updateEvolutionResults(){
+ const docs=await Promise.all(['face','hair','outfit'].map(async domain=>{
+  const url='https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/'+
+   'data/quality-evolution/runs/'+domain+'.json?ts='+Date.now();
+  try{
+   const response=await fetchJSON(url);
+   return {domain,data:response?.schemaVersion===1&&response.domain===domain?
+     response.latest:null};
+  }catch(error){return {domain,data:null,error:String(error.message||error)}}
+ }));
+ const grouped={faceHair:docs.filter(x=>x.domain==='face'||x.domain==='hair'),
+  outfit:docs.filter(x=>x.domain==='outfit'),
+  gameQuality:docs};
+ for(const [group,entries] of Object.entries(grouped)){
+  const progress=elements.get(group)?.progress;
+  if(!progress?.changesList)continue;
+  const title=tag('div','improvement-row');
+  title.appendChild(paragraph('品質進化バッチ：実3D候補の検査・採否（従来の自走バッチとは別）','status'));
+  title.appendChild(makeLink('顔・髪・衣装のGitHub Actions実行履歴',
+   GH+'/actions/workflows/quality-evolution-loop.yml',true));
+  progress.changesList.prepend(title);
+  let freshest=null;
+  for(const {domain,data,error} of entries){
+   const panel=tag('div','improvement-row');
+   const label={face:'顔／眼球の奥行き',hair:'髪／頭皮根元',outfit:'衣装／PBR素材'}[domain];
+   if(data&&typeof data.startedAt==='string'&&
+    Number.isFinite(Date.parse(data.startedAt))){
+    const all=Array.isArray(data.candidates)?data.candidates:[];
+    const accepted=data.sourceCommitSha&&/^[0-9a-f]{40}$/.test(data.sourceCommitSha);
+    const qa=all.filter(x=>x.qaPassed===true).length;
+    const blocked=data.status==='blocked_browser_baseline';
+    const state=accepted?'実ソース採用済み':
+     blocked?'実WebGLのFPS計測失敗・採用保留':
+     data.status==='no_safe_measured_improvement'?'採用できる候補なし':
+     data.status==='baseline_generator_failed'||data.status==='baseline_regression_failed'?
+      'モデル/静的QA失敗':
+      data.status==='disabled_by_batch_center'?'設定OFF':'今回採用0件（'+data.status+'）';
+    panel.appendChild(paragraph(label+'：'+state+' ／ '+TIME(data.startedAt)+
+     ' ／ 候補'+all.length+'件、個別QA通過'+qa+'件','status'));
+    const candidates=all.slice(0,3).map(x=>{
+     const v=Number.isFinite(x.value)?x.value:'不明';
+     return String(v)+'→'+({rejected:'不採用',
+      blocked_browser_baseline:'FPS比較不可',blocked_browser_or_fps:'FPS条件未達',
+      accepted_candidate:'採用候補',regression_failed:'テスト失敗',
+      probe_exception:'モデル検査失敗'}[x.status]||x.status);
+    });
+    if(candidates.length)panel.appendChild(paragraph('実測候補：'+candidates.join(' ／ '),'note'));
+    if(blocked){
+     panel.appendChild(paragraph('停止要因：'+
+      String(data.baselineBrowserError||'戦闘画面をCIで起動できず、FPSを取得できませんでした').slice(0,230),
+      'note'));
+    }
+    if(accepted)panel.appendChild(makeLink('実モデル採用のコミット',
+     GH+'/commit/'+data.sourceCommitSha,true));
+    if(typeof data.runUrl==='string'&&data.runUrl.startsWith(GH+'/actions/runs/'))
+     panel.appendChild(makeLink('今回の実行ログ',data.runUrl,true));
+    if(!freshest||Date.parse(data.startedAt)>Date.parse(freshest.startedAt))
+     freshest={...data,domain,label,state};
+   }else{
+    panel.appendChild(paragraph(label+'：本番実行の結果台帳がまだありません。'+
+     (error?'（記録の取得失敗）':''),'note'));
+   }
+   progress.changesList.prepend(panel);
+  }
+  // The old self-drive can still be valuable, but it must not hide newer
+  // executed geometry QA or claim green Pages == successful 3D improvement.
+  if(freshest&&group!=='gameQuality'){
+   progress.current.textContent='品質進化：'+freshest.label+'・'+freshest.state+
+    ' ／ 従来自走：'+progress.current.textContent;
+   progress.progressTime.textContent='品質進化の最新実行：'+
+    TIME(freshest.startedAt)+' ／ '+progress.progressTime.textContent;
+   const inspected=(freshest.candidates||[]).length;
+   const accepted=Number(Boolean(freshest.sourceCommitSha));
+   progress.progressSummary.textContent='品質進化：実3D候補'+inspected+
+    '件／新規採用コミット'+accepted+'件／'+
+    (freshest.baselineBrowserStatus==='measured_ci_fps'?
+     'CI WebGL計測あり':'CI WebGL FPS測定不能')+
+    '／実機Android FPS・FF15外観未承認。従来自走：'+
+    progress.progressSummary.textContent;
+  }
+ }
 }
 /** Current main is the canonical evaluation baseline; open PRs are candidates.
  * Old data/batch-pr-previews.json is retained for history only and MUST NOT
