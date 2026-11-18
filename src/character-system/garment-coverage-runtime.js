@@ -234,8 +234,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
     const hiddenCorners=cut[a]+cut[b]+cut[c];
     const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
-    const canCut=surfaceCheck?
-      hiddenCorners===3&&!visibleEdge;
+    const canCut=hiddenCorners===3&&!visibleEdge;
     if(!canCut)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
