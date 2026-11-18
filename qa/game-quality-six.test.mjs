@@ -30,7 +30,8 @@ test('FPS before/after is valid only on comparable real CI measurements',()=>{
 });
 test('new batch may safely port runtime optimization but never overwrite newest object or story catalog',()=>{
  for(const p of ['src/battle-frame-pacing.js','src/crowd-performance-budget.js',
-   'src/stage-static-instancing.js','src/battle-rigid-frustum-optimization.js'])
+   'src/stage-static-instancing.js','src/battle-rigid-frustum-optimization.js',
+   'src/creature-game-model-routing.js'])
   assert(isAllowedSource('gameQuality',p),p);
  for(const p of ['object-list.html','src/object-catalog.js','src/tree-seasons.js',
   'tactics-wireframe.html','data/story-chapter1.json','.github/workflows/publish-pages.yml'])
