@@ -597,6 +597,23 @@ function phoenixFeatheredArm(g,s,torso,side,detail){
   part.userData.phoenixTrueFeatherForelimb=true;
   part.userData.phoenixFeatherHandSide=suffix;
  }
+ // Three small physical primary vanes, merged per digit and nested under
+ // the guardian feather hand. There are no visible human fingers.
+ for(let digit=0;digit<3;digit++){
+  const lateral=digit-1;
+  const primary=layeredFeathers(palm,s,detail,
+   'phoenix-feather-hand-digit-'+suffix+'-'+digit,[
+    {from:[side*.035,-.018,.027+lateral*.026],
+     to:[side*(.20+.036*digit),-.152-.018*digit,.122+lateral*.069],
+     width:.043,normal:[0,.58,.82],ridge:.014,
+     tint:digit===1?2:1,endTint:3,glow:.42},
+    {from:[side*.045,-.009,.017+lateral*.022],
+     to:[side*(.175+.034*digit),-.121-.022*digit,.106+lateral*.058],
+     width:.030,normal:[0,.65,.74],ridge:.010,
+     tint:2,endTint:3,glow:.36}
+   ]);
+  primary.userData.phoenixPhysicalFeatherDigit=true;
+ }
  featherHand.userData.phoenixFeatherHandDigits=3;
  featherHand.userData.phoenixNoHumanFingers=true;
  featherHand.userData.phoenixDenseHandCover=true;
