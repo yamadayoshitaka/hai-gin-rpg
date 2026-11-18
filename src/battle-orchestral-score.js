@@ -16,6 +16,7 @@ export function createBattleOrchestralScore({
  // Full-recorded, commercially reusable CC0 music copied into the repository
  // by import-cc0-battle-soundtrack.yml (attributions in LICENSES.md).
  const RECORDED_TRACKS={
+  march:'./assets/audio/town.mp3',
   battle:'./assets/audio/battle/battle.ogg',
   victory:'./assets/audio/battle/victory.ogg',
   defeat:'./assets/audio/battle/defeat.ogg'
@@ -39,7 +40,7 @@ export function createBattleOrchestralScore({
  let preparedMedia=null,preparedSource='',prepared=false;
  const duration={intro:.27,march:.33,battle:.225,victory:.245,defeat:.42};
  const battleRecording=()=> './assets/audio/battle/'+stageTheme.file;
- const recordedVolume=track=>track==='battle'?(narrationActive?.14:.43):track==='victory'?.78:.70;
+ const recordedVolume=track=>track==='march'?(narrationActive?.14:.33):track==='battle'?(narrationActive?.14:.43):track==='victory'?.78:.70;
  const fallbackMixGain=()=>narrationActive&&phase==='battle'?.18:.50;
  const pitch=n=>440*Math.pow(2,(n-69)/12);
  function initialize(){
