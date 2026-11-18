@@ -35,7 +35,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const minSummary=requiredJobs.map(x=>'<span class="'+(x.valid?'ok':'missing')+'">'+
   esc(x.job||x.options.join('/'))+'（'+esc(ROLE_NAMES[x.role])+'） '+
   x.current+'/'+x.min+'人</span>').join('');
- const groupButtons='<div class="sortieTeams" role="group" aria-label="班の選択">'+teams.map(t=>{
+ const groupButtons='<div class="sortieTeams sortieTenTeams" role="group" aria-label="班の選択">'+teams.map(t=>{
   const total=sortieTeamCount(t),count=sortieTeamSquads(game,t.id).length;
   return button('data-sortie-team="'+t.id+'"','<strong>第'+t.id+'班 · '+total+'人</strong><small>'+count+'/'+(SORTIE_FORMATIONS[t.formation]?.slots||cap)+'隊</small>',t.id===team.id);
  }).join('')+'</div>';
@@ -186,8 +186,8 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const tabBar='<nav class="sortieModeTabs" aria-label="宿屋の機能">'+tabList.map(([key,label])=>
  button('data-sortie-view="'+key+'"',esc(label),view===key)).join('')+'</nav>';
  const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel,battlePlans,assessment};
- return '<section class="sortiePlanner" aria-label="最大3班・Lvに応じた隊数・4×4配置">'+
-  '<div class="sortieTop"><b>⚑ 最大3班・Lv.'+level+'（仮）</b><small>予定出撃 '+plannedTotal+'/'+battleCap+'人 · 予備'+Math.max(0,inventoryTotal-plannedTotal)+'人</small></div>'+
+ return '<section class="sortiePlanner" aria-label="最大10班・Lvに応じた隊数・4×4配置">'+
+  '<div class="sortieTop"><b>⚑ 最大10班・Lv.'+level+'（仮）</b><small>予定出撃 '+plannedTotal+'/'+battleCap+'人 · 予備'+Math.max(0,inventoryTotal-plannedTotal)+'人</small></div>'+
   groupButtons+tabBar+'<div class="sortieViewBody">'+(pagesByView[view]||main)+'</div>'+
   '<small class="sortieHint sortiePlannerFoot">次戦「'+esc(stageName)+'」 上限'+battleCap+'人。'+
     '陣形：攻撃+'+Math.round(formBuff.attack*100)+'%／防御+'+Math.round(formBuff.defense*100)+'%。</small></section>';

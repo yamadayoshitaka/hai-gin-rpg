@@ -1,5 +1,5 @@
 /**
- * User-directed three-team sortie planning. Teams are separate from strategists:
+ * User-directed ten-team sortie planning. Teams are separate from strategists:
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
@@ -7,7 +7,7 @@ import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FO
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts} from './sortie-formation-template-rules.js';
-export const SORTIE_TEAM_IDS=Object.freeze([1,2,3]);
+export const SORTIE_TEAM_IDS=Object.freeze(Array.from({length:10},(_,i)=>i+1));
 export const SORTIE_SQUADS_PER_GROUP=16;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
 export const SORTIE_TEST_LEVEL=99;
@@ -92,7 +92,7 @@ export function sortieFormationBuff(game,teamId){
  const f=SORTIE_FORMATIONS[sortieFormationStatus(game,teamId).id]||{};
  return {attack:f.attack||0,defense:f.defense||0,mobility:f.mobility||0,healing:f.healing||0};
 }
-export const SORTIE_ENTRY_SLOTS=Object.freeze([9,10,11]);
+export const SORTIE_ENTRY_SLOTS=Object.freeze([9,10,11,6,7,8,3,4,5,0]);
 export const SORTIE_TOTAL_RENDER_LIMIT=50; // The current campaign battle renderer.
 /** This is the next battle's real cap, not the total number in the army inventory. */
 export function sortiePlanningStage(game){
@@ -493,14 +493,15 @@ export function setSortieSlot(game,stage,teamId,slot){
  if(!team||!Number.isInteger(value)||!allowedSortieSlots(game,stage).includes(value))
   throw Error('未制圧では入口のみ選択できます。');
  // Teams must have distinct starting positions.
- if(game.sortiePlan.teams.some(t=>t!==team&&sortieTeamCount(t)>0&&t.deploymentSlot===value))
+ if(allowedSortieSlots(game,stage).length>=game.sortiePlan.teams.filter(t=>sortieTeamCount(t)>0).length&&
+    game.sortiePlan.teams.some(t=>t!==team&&sortieTeamCount(t)>0&&t.deploymentSlot===value))
   throw Error('その出撃地点は別の隊が使用中です。');
  team.deploymentSlot=value;return team;
 }
 export function resolvedSortieSlot(game,stage,team){
  const valid=allowedSortieSlots(game,stage);
  if(valid.includes(team.deploymentSlot))return team.deploymentSlot;
- return SORTIE_ENTRY_SLOTS[team.id-1];
+ return valid[(team.id-1)%valid.length];
 }
 export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
@@ -590,7 +591,7 @@ export function allocateThreeTeamSortie(game,stage,limit=SORTIE_TOTAL_RENDER_LIM
  for(const team of active){
   const valid=allowedSortieSlots(game,stage);
   const wanted=resolvedSortieSlot(game,stage,team);
-  const slot=!occupied.has(wanted)?wanted:valid.find(x=>!occupied.has(x));
+  const slot=!occupied.has(wanted)?wanted:(valid.find(x=>!occupied.has(x))??wanted);
   if(slot===undefined)throw Error('出撃可能な場所が不足しています。');
   positions.set(team.id,slot);occupied.add(slot);
  }

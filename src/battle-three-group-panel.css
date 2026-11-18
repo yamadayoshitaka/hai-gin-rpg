@@ -1,4 +1,4 @@
-/* Story campaigns: keep only three group entries visible until drilled into. */
+/* Story campaigns: ten compact group choices, drill down to subdivisions as before. */
 body.story-three-group-ui #allySquadRibbon .ribbonList,
 body.story-three-group-ui #allySquadRibbon .ribbonPager,
 body.story-three-group-ui #enemySquadRibbon .ribbonList,
@@ -15,3 +15,6 @@ body.story-three-group-ui .battleThreeGroupPanel .threeGroupActions{display:grid
 body.story-three-group-ui .battleThreeGroupPanel .threeGroupStep{color:#ffde9c;font:700 11px/1.35 system-ui}
 body.story-three-group-ui #battleEnemyGroupSummary{display:block;width:100%;padding:8px 4px;border:1px solid #a37a87;background:#443440;color:#fbe5e8;border-radius:7px;font:700 12px/1.35 system-ui}
 body.story-three-group-ui #allySquadRibbon,body.story-three-group-ui #enemySquadRibbon{max-height:75dvh}
+
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button{min-height:37px}

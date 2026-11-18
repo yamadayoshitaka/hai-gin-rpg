@@ -1,0 +1,16 @@
+/* Ten-group objective turns: compact enough for a phone; no separate per-squad orders. */
+#battleObjectiveTurnPanel[hidden],#battleObjectiveTurnStatus[hidden]{display:none!important}
+#battleObjectiveTurnPanel{position:fixed;inset:0;z-index:39;background:#071422c9;display:flex;align-items:center;justify-content:center;padding:9px}
+#battleObjectiveTurnPanel .objectiveTurnCard{width:min(96vw,560px);max-height:calc(100dvh - 18px);overflow:auto;background:#0e273e;border:2px solid #b6cfe0;border-radius:13px;box-shadow:0 12px 44px #000b;padding:11px;display:flex;flex-direction:column;gap:10px}
+#battleObjectiveTurnPanel header{display:flex;flex-direction:column;gap:4px}
+#battleObjectiveTurnPanel header strong{font-size:17px;color:#f5db9b}
+#battleObjectiveTurnPanel header small{font-size:11px;line-height:1.4;color:#b6d3e9}
+#battleObjectiveTurnPanel .objectiveTurnGroups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#battleObjectiveTurnPanel .objectiveTurnGroup{display:flex;flex-direction:column;gap:4px;min-width:0;padding:6px;background:#163650;border:1px solid #648ca8;border-radius:7px}
+#battleObjectiveTurnPanel .objectiveTurnGroup b{display:flex;justify-content:space-between;gap:5px;font-size:12px}
+#battleObjectiveTurnPanel .objectiveTurnGroup small{font-size:10px;color:#b8d7e9}
+#battleObjectiveTurnPanel .objectiveTurnGroup.empty{opacity:.42}
+#battleObjectiveTurnPanel select{width:100%;min-width:0;padding:6px 2px;font:700 11px system-ui;color:#fff;background:#285474;border:1px solid #729bb6;border-radius:5px}
+#battleObjectiveTurnPanel #objectiveTurnAdvance{width:100%;padding:11px;background:#356f56;border:1px solid #a8dfbc;border-radius:8px;font-size:14px}
+#battleObjectiveTurnPanel .objectiveTurnReport{font-size:12px;color:#ffe6aa;line-height:1.5}
+#battleObjectiveTurnStatus{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:21;max-width:94vw;padding:4px 10px;background:#0b2c42dd;border:1px solid #8db0c8;border-radius:9px;font:700 11px system-ui;color:#f7e4ae;pointer-events:none;white-space:nowrap}
