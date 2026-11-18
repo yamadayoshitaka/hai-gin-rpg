@@ -53,7 +53,10 @@ function actualScalpCandidates(geo,box){
   const sample={p,n,index:i};
   all.push(sample);
   // Extend crown follicle range across the upper back of the head.
-  if(yn>.825&&nz<.21)pools.crown.push(sample);
+  // Include the upper rear crown transition (not the face) so that
+  // crown locks cover the parietal rim instead of exposing a bald band.
+  // Keep the lower nape in its own growth zone.
+  if(yn>.79&&nz<.21&&nz>-.48)pools.crown.push(sample);
   // True forehead hairline grows from the top cap, never from between the
   // eyebrows or the cheeks (these generated the disconnected tiny spikes).
   if(yn>.870&&nz>.035&&yn<.992)pools['fringe'+side].push(sample);
