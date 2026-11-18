@@ -1,0 +1,43 @@
+name: Auto-dev failure triage and repair handoff
+on:
+  schedule:
+    - cron: '17 * * * *'
+    - cron: '47 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/auto-dev-triage.mjs','qa/auto-dev-triage.test.mjs','.github/workflows/auto-dev-triage.yml']
+  pull_request:
+    paths: ['scripts/auto-dev-triage.mjs','qa/auto-dev-triage.test.mjs','.github/workflows/auto-dev-triage.yml']
+permissions:
+  contents: read
+  actions: read
+  issues: write
+concurrency:
+  group: hai-gin-auto-dev-triage
+  cancel-in-progress: false
+jobs:
+  triage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test deterministic classification and issue deduplication
+        run: node --test qa/auto-dev-triage.test.mjs
+      - name: Create concrete code-editing handoffs for unknown failures
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/auto-dev-triage.mjs
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name != 'pull_request'
+        with:
+          name: auto-dev-triage-${{ github.run_id }}
+          path: qa-reports/auto-dev/triage.json
+          if-no-files-found: warn
+          retention-days: 30
