@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
- from './avian-guardian-sculpt.js?v=phoenix-predatory-face-v12-20261118';
+ from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v13-tengu-flight-20261118';
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-cat-torso-anchor-tail-v12-20261118';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
@@ -2406,6 +2406,15 @@ function bird(g,s){
  const tail=g.group('tail',[0,1.25,-.40]);
  buildPhoenixDerivedTenguTail(g,s,tail,g.root.userData.detail);
  g.root.scale.setScalar(s.size*.80);
+ if(s.id==='m015'){
+  // The humanoid face and wing geometry stay intact; movement is airborne.
+  g.root.userData.avianFlightMode=true;
+  g.root.userData.avianFlightHeight=1.42;
+  g.root.userData.tenguFlightMode=true;
+  g.root.userData.tenguFlightRig='protected-humanoid-wings-and-legs';
+  g.root.userData.avianGameSourceRevision=AVIAN_REALISM_REVISION;
+  g.root.position.y=1.42;
+ }
 }
 function insect(g,s,{spider=false}={}){
  const v=s.variant;

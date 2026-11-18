@@ -458,3 +458,60 @@ test('avian v12 replaces juvenile rounded eyes with hooded raptor skull detail',
   }
  }
 });
+
+test('avian v13 grown-up griffin eagle and owl sculpt is fitted to skull in both LODs',()=>{
+ const profiles={m011:.91,m012:.87,m014:1.04};
+ for(const detail of ['high','low']){
+  for(const [id,ratio] of Object.entries(profiles)){
+   const m=build(id,detail);
+   try{
+    const head=m.getObjectByName('avian-cranium-'+id);
+    const feather=m.getObjectByName('avian-adult-cranial-contour-'+id);
+    assert.equal(head.userData.avianMatureHeadRatio,ratio);
+    assert.equal(feather?.userData.avianAdultFittedHeadPlumage,true);
+    assert.equal(feather.userData.avianNoJuvenileFaceVolume,true);
+    assert.ok(feather.userData.scaleCount>12,'crown must contain real bevelled geometry');
+    assert.ok(feather.geometry.getAttribute('normal'));
+    if(id==='m012'){
+     assert.ok(avianProfile(id).head<.90,'griffin head too large/baby-like');
+     assert.ok(avianProfile(id).crest<=9,'griffin juvenile fluffy crest remains');
+    }
+    assert.ok(triangles(m)<500000,'mobile avian budget regression');
+   }finally{disposeMonsterSculpture(m);}
+  }
+ }
+});
+test('Tengu takes flight with preserved humanlike face and real flying animations',()=>{
+ for(const detail of ['high','low']){
+  const m=build('m015',detail);
+  try{
+   assert.equal(m.userData.avianFlightMode,true);
+   assert.equal(m.userData.tenguFlightMode,true);
+   assert.equal(m.userData.avianFlightHeight,1.42);
+   assert.equal(m.userData.avianGameSourceRevision,AVIAN_REALISM_REVISION);
+   assert.ok(m.userData.pivots.head);
+   assert.ok(m.userData.pivots.legL);
+   assert.equal(m.userData.pivots.wingElbowL,undefined);
+   let previousRotation=null;
+   for(const action of ['idle','walk','run','attack','special','leap']){
+    startMonsterAction(m,action,0);
+    animateMonsterModel(m,.18);
+    assert.ok(m.userData.avianInAir,action+' must be airborne');
+    assert.ok(m.position.y>.4,action+' must be above terrain');
+    assert.ok(m.userData.tenguLegsTucked,action+' tuck must be active');
+    assert.ok(m.userData.pivots.legL.rotation.x>.15);
+    assert.ok(Number.isFinite(m.userData.pivots.wingL.rotation.z));
+    if(action==='run')previousRotation=m.userData.pivots.wingL.rotation.z;
+   }
+   startMonsterAction(m,'run',0);
+   animateMonsterModel(m,.34);
+   assert.notEqual(m.userData.pivots.wingL.rotation.z,previousRotation,
+     'flying Tengu wing must flap across time');
+   startMonsterAction(m,'defeat',0);
+   animateMonsterModel(m,1.2);
+   assert.ok(m.position.y<.08,'defeated Tengu must land');
+   assert.equal(m.userData.avianInAir,false);
+   assert.equal(m.userData.tenguLegsTucked,false);
+  }finally{disposeMonsterSculpture(m);}
+ }
+});

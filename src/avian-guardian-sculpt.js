@@ -13,23 +13,23 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-predatory-face-v12-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-adult-raptor-v13-tengu-flight-20261118';
 export const PHOENIX_FAMILY_MASTER='m013';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
 const profiles=Object.freeze({
  m011:Object.freeze({type:'eagle',wing:[.65,.58,.91],tail:1.18,
-   body:1,neck:1,head:1,crest:6,breast:0xbaa688,
-   dark:0x523829,mid:0x9c7051,light:0xd4bc93,tip:0xe1d1ae}),
+   body:1,neck:1.08,head:.91,crest:6,breast:0xa59680,
+   dark:0x3d3026,mid:0x80684e,light:0xb0a089,tip:0xc8bc9d}),
  m012:Object.freeze({type:'griffin',wing:[.81,.67,.96],tail:1.02,
-   body:1.20,neck:1.12,head:1.14,crest:13,breast:0xf0d1a0,
-   dark:0x674b35,mid:0xa47d52,light:0xe4c58d,tip:0xffecc1}),
+   body:1.20,neck:1.16,head:.87,crest:9,breast:0xb9a17e,
+   dark:0x3d3027,mid:0x76634a,light:0xa9987b,tip:0xd1c5a7}),
  m013:Object.freeze({type:'phoenix',wing:[1.24,1.03,1.19],tail:3.22,
    body:1.16,neck:1.38,head:.68,crest:25,breast:0xffe8c6,
    dark:0x871d20,mid:0xd83f27,light:0xff871e,tip:0xffdf8b}),
  m014:Object.freeze({type:'owl',wing:[.57,.46,.84],tail:.66,
-   body:1.16,neck:.76,head:1.22,crest:11,breast:0xd9c7a9,
-   dark:0x534c47,mid:0x918474,light:0xbeb1a0,tip:0xe2d8c4}),
+   body:1.16,neck:.86,head:1.04,crest:8,breast:0xb3a99a,
+   dark:0x414247,mid:0x747577,light:0xa7a5a0,tip:0xc8c7c2}),
 });
 export const avianProfile=id=>profiles[id]||null;
 const TENGU_WING_PROFILE=Object.freeze({wing:[.64,.58,.89],
@@ -967,11 +967,11 @@ function phoenixMasterRaptorEyes(head,s,detail){
  for(const side of [-1,1]){
   const label=side<0?'L':'R';
   const socket=new THREE.Group();socket.name='avian-master-eye-orbit-'+s.id+'-'+label;
-  socket.position.set(side*(owl?.134:griffin?.190:.165),.078,
-    owl?.247:griffin?.165:.181);
+  socket.position.set(side*(owl?.134:griffin?.155:.153),.082,
+    owl?.247:griffin?.192:.186);
   socket.rotation.y=side*(owl?.15:.68);
   head.add(socket);
-  const k=owl?1.12:griffin?1.08:1;
+  const k=owl?1.05:griffin?.82:.88;
   shell(socket,'avian-master-eyeliner-'+label,[0,0,.002],
    [.066*k,.028*k,.020],0x18151b);
   shell(socket,'avian-master-iris-'+label,[0,0,.014],
@@ -1151,6 +1151,28 @@ function phoenixCranialFireFeathers(head,s,detail){
  return flame;
 }
 
+
+/** Short surface-fitted plumage on the shared Phoenix head loft. It stays
+ * behind the deep ocular arches: no stuffed-toy cheek or separate hair cap. */
+function adultAvianCrownPlumage(head,s,p,detail){
+ if(s.id==='m013')return null;
+ const stations=phoenixDerivedCranium(p);
+ const rows=detail==='low'?6:detail==='medium'?9:13;
+ const columns=detail==='low'?12:detail==='medium'?16:22;
+ const coat=phoenixSurfaceScutes(head,s,detail,
+  'avian-adult-cranial-contour-'+s.id,{
+   rows,columns,
+   surface:(u,a)=>phoenixAxialSurface(stations,u,a),
+   skip:(u,a)=>u<.35||Math.sin(a)<.45,
+   widthAt:(u)=>.030+.010*u,
+   kind:'adult-raptor-crown-short-contour-plumage'
+  });
+ coat.userData.avianAdultFittedHeadPlumage=true;
+ coat.userData.avianNoJuvenileFaceVolume=true;
+ coat.castShadow=false;
+ return coat;
+}
+
 function headAndCrest(g,s,p,torso,detail){
  const head=g.group('head',[0,s.id==='m014'?1.99:2.065,.365*p.neck],torso);
  // Phoenix crown is a compact, LONG skull: narrow brow, pronounced
@@ -1164,11 +1186,13 @@ function headAndCrest(g,s,p,torso,detail){
  // deforms these SAME contiguous vertices before normal generation and LOD,
  // preserving eye/beak attachment, the head pivot and capped skull topology.
  skull.userData.avianRealCranium=true;
+  skull.userData.avianMatureHeadRatio=p.head;
+  adultAvianCrownPlumage(head,s,p,detail);
  if(s.id==='m013'){
   skull.userData.phoenixSmallElongatedHead=true;
   skull.userData.phoenixNoEars=true;
  }
- const beakSize=s.id==='m014'?.72:s.id==='m012'?1.13:1;
+ const beakSize=s.id==='m014'?.78:s.id==='m012'?1.26:1;
  const beak=s.id==='m013'?
    g.curvedHorn(head,'bone',
      [0,-.073,.353],[0,-.104,.531],[0,-.268,.688],.054,
