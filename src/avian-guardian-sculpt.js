@@ -286,28 +286,26 @@ function layeredFeathers(parent,spec,detail,name,entries){
  result.userData.mergedFeatherBatches=1;
  return result;
 }
+const PHOENIX_THORAX_MASTER=Object.freeze([
+ {z:.69,y:1.58,rx:.080,ry:.136},{z:.50,y:1.48,rx:.265,ry:.345},
+ {z:.25,y:1.44,rx:.356,ry:.442},{z:-.12,y:1.44,rx:.365,ry:.468},
+ {z:-.49,y:1.46,rx:.292,ry:.363},{z:-.82,y:1.49,rx:.054,ry:.086}
+]);
 function plumageStations(p){
- if(p.type==='phoenix')return [
-   // Strong chest & deep abdomen, small head remains unchanged.
-   // Full continuous hull: shoulder keel, ribcage, pelvis, caudal socket.
-   {z:.69,y:1.58,rx:.080,ry:.136},
-   {z:.50,y:1.48,rx:.265,ry:.345},
-   {z:.25,y:1.44,rx:.356,ry:.442},
-   {z:-.12,y:1.44,rx:.365,ry:.468},
-   {z:-.49,y:1.46,rx:.292,ry:.363},
-   {z:-.82,y:1.49,rx:.054,ry:.086}
- ];
- const k=p.body;
- return [
-  {z:.58*k,y:1.56,rx:.084*k,ry:.13*k},
-  {z:.40*k,y:1.47,rx:.25*k,ry:.34*k},
-  {z:.15*k,y:1.42,rx:.35*k,ry:.45*k},
-  {z:-.12*k,y:1.44,rx:.36*k,ry:.44*k},
-  {z:-.40*k,y:1.45,rx:.28*k,ry:.32*k},
-  {z:-.64*k,y:1.45,rx:.06*k,ry:.085*k}
- ];
+ const morph=p.type==='phoenix'?1:p.body/1.16;
+ return PHOENIX_THORAX_MASTER.map(s=>({
+  z:s.z*morph,y:1.44+(s.y-1.44)*(p.type==='phoenix'?1:.90),
+  rx:s.rx*morph,ry:s.ry*morph
+ }));
 }
-
+function phoenixDerivedCranium(p){
+ if(p.type==='phoenix')return PHOENIX_HEAD_STATIONS;
+ const factor=p.head/.68;
+ return PHOENIX_HEAD_STATIONS.map(s=>({
+  z:s.z*(.62+.18*factor),y:s.y*factor*.97,
+  rx:s.rx*factor*1.12,ry:s.ry*factor*.97
+ }));
+}
 /** Continuous mathematical surface of the actual anatomical cross-section
  * loft, including the same Catmull-Rom interpolation used by axialLoft.
  * Scales inherit THIS surface. Never place a loose belt at a guessed radius.
@@ -916,13 +914,8 @@ function headAndCrest(g,s,p,torso,detail){
  const head=g.group('head',[0,s.id==='m014'?1.99:2.065,.365*p.neck],torso);
  // Phoenix crown is a compact, LONG skull: narrow brow, pronounced
  // nasal bridge, no ears or lateral ear-like crests.
- const skull=g.axialLoft(head,'skin',s.id==='m013'?PHOENIX_HEAD_STATIONS:[
-  {z:.36*p.head,y:-.045,rx:.037,ry:.056},
-  {z:.25*p.head,y:0,rx:.16*p.head,ry:.175*p.head},
-  {z:.06,y:.055,rx:.235*p.head,ry:.235*p.head},
-  {z:-.18,y:.063,rx:.245*p.head,ry:.245*p.head},
-  {z:-.34,y:.055,rx:.07,ry:.095}
- ],{name:'avian-cranium-'+s.id,rough:.82,ribbing:.004,
+ const skull=g.axialLoft(head,'skin',phoenixDerivedCranium(p),
+  {name:'avian-cranium-'+s.id,rough:.82,ribbing:.004,
    faceSculpt:true,capEnds:true});
  // The guardian-derived eagle/griffin/phoenix/owl previously bypassed the
  // shared facial-volume loft entirely: the external beak and eyes existed,
