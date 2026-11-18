@@ -131,6 +131,10 @@ const ids=['m011','m012','m013','m014'];
    await tenguPage.waitForFunction(()=>
     window.__avianWingQA?.()?.id==='m015'&&window.__avianWingQA?.()?.tengu?.flightMode,
     null,{timeout:70000});
+   const tenguRig=await tenguPage.evaluate(()=>window.__avianWingQA?.());
+   if(!tenguRig?.wings.every(w=>w?.donor==='seraph_guardian'&&
+    w.layers===3&&w.feathers===82))
+    throw Error('Tengu real feather wings missing from WebGL rig: '+JSON.stringify(tenguRig));
    for(const action of ['idle','run','attack']){
     await tenguPage.locator('#actions button[title="'+action+'"]').click({timeout:15000});
     await tenguPage.waitForFunction(a=>{
