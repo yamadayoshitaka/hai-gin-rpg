@@ -45,7 +45,9 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.54||yn>.998)continue;
+  // Retain the uppermost scalp ring for crown-root coverage; discard only
+  // the extreme pole, whose collapsed UV topology produces spiky roots.
+  if(yn<.54||yn>.9995)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
