@@ -4,34 +4,86 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-18T09:37:58.220Z",
+    "checkedAt": "2026-11-18T12:10:51.044Z",
     "category": "creatureMonster",
-    "status": "source_committed_main",
-    "mainBeforeSha": "81223cb85b9053a05f1c7dc3d1f4a9d00feee88d",
-    "mainAfterSha": "60492275d39ebafb5c11c6e23c83d2986c5cd495",
-    "pr": 663,
-    "sourceCommits": 1,
-    "modifiedSourceFiles": 1,
-    "sourceFiles": [
-      "src/creature-face-volume.js"
-    ],
-    "qaStatus": "passed",
+    "status": "blocked_candidates",
+    "mainBeforeSha": "8d095334648cfe794597298acb20edd0d517597d",
+    "mainAfterSha": null,
+    "pr": null,
+    "sourceCommits": 0,
+    "modifiedSourceFiles": 0,
+    "sourceFiles": [],
+    "qaStatus": "not_run",
     "pagesDispatch": "awaiting_release_dispatch",
     "generatedGLBs": 0,
     "webglApproved": false,
     "androidFpsVerified": false,
     "error": null,
-    "issueUrl": null,
+    "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/684",
     "gameQuality": null,
     "attempts": [
       {
         "pr": 663,
         "sha": "2d411e1ea02308efee0e9d738354b9066c052e52",
-        "status": "merged_to_main",
+        "status": "already_applied",
         "reason": ""
+      },
+      {
+        "pr": 646,
+        "sha": "72880ac6e5c18cdf53def8b993776df283e0f35d",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 633,
+        "sha": "c7d9e670ba991c8cb99f1f0f9df8d33d96f2dc5f",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/avian-guardian-sculpt.js' with conflicts.\nApplied patch to 'src/creature-game-model-routing.js' with conflicts.\nApplied patch to 'src/monster-summon-renderer.js' cleanly.\nU src/avian-guardian-sculpt.js\nU src/creature-game-model-routing.js\n"
+      },
+      {
+        "pr": 565,
+        "sha": "54a2d88d2cbac32b7ef569887eeecb86c19465c2",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/creature-face-volume.js' with conflicts.\nU src/creature-face-volume.js\n"
+      },
+      {
+        "pr": 422,
+        "sha": "c3380285b1044d125e9432deb1197053899f5478",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/creature-master-runtime.js' cleanly.\nApplied patch to 'src/creature-mesh-adoption.js' with conflicts.\nApplied patch to 'src/creature-real-source-catalog.js' cleanly.\nU src/creature-mesh-adoption.js\n"
+      },
+      {
+        "pr": 382,
+        "sha": "435b7d42365016d6b48a0b83f920b92c72409e2f",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/monster-geometry.js' with conflicts.\nU src/monster-geometry.js\n"
+      },
+      {
+        "pr": 405,
+        "sha": "ae05de355e56262a1939d52de2077ecbed4b9547",
+        "status": "no_applicable_source",
+        "reason": ""
+      },
+      {
+        "pr": 403,
+        "sha": "14937f79825376aabf335c0f3a0ff31af7ad009a",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/creature-mesh-adoption.js' with conflicts.\nApplied patch to 'src/creature-real-source-catalog.js' cleanly.\nApplied patch to 'src/monster-geometry.js' with conflicts.\nApplied patch to 'src/monster-source-composite.js' cleanly.\nU src/creature-mesh-adoption.js\nU src/monster-geometry.js\n"
+      },
+      {
+        "pr": 345,
+        "sha": "b7bb403d56da9698b4cbf3eceb81216dc5dc7431",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/monster-animation.js' with conflicts.\nApplied patch to 'src/monster-geometry.js' with conflicts.\nApplied patch to 'src/monster-joint-motion.js' cleanly.\nU src/monster-animation.js\nU src/monster-geometry.js\n"
+      },
+      {
+        "pr": 206,
+        "sha": "167dcf7382c07b4ce9feb6deced5b322a29e7bbe",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/monster-geometry.js' with conflicts.\nU src/monster-geometry.js\n"
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44277678336"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44301403791"
   },
   "latestSourceCommit": {
     "checkedAt": "2026-11-18T09:37:58.220Z",
@@ -93,6 +145,88 @@
         }
       ],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44277678336"
+    },
+    {
+      "checkedAt": "2026-11-18T12:10:51.044Z",
+      "category": "creatureMonster",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "8d095334648cfe794597298acb20edd0d517597d",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/684",
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 663,
+          "sha": "2d411e1ea02308efee0e9d738354b9066c052e52",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 646,
+          "sha": "72880ac6e5c18cdf53def8b993776df283e0f35d",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 633,
+          "sha": "c7d9e670ba991c8cb99f1f0f9df8d33d96f2dc5f",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/avian-guardian-sculpt.js' with conflicts.\nApplied patch to 'src/creature-game-model-routing.js' with conflicts.\nApplied patch to 'src/monster-summon-renderer.js' cleanly.\nU src/avian-guardian-sculpt.js\nU src/creature-game-model-routing.js\n"
+        },
+        {
+          "pr": 565,
+          "sha": "54a2d88d2cbac32b7ef569887eeecb86c19465c2",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/creature-face-volume.js' with conflicts.\nU src/creature-face-volume.js\n"
+        },
+        {
+          "pr": 422,
+          "sha": "c3380285b1044d125e9432deb1197053899f5478",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/creature-master-runtime.js' cleanly.\nApplied patch to 'src/creature-mesh-adoption.js' with conflicts.\nApplied patch to 'src/creature-real-source-catalog.js' cleanly.\nU src/creature-mesh-adoption.js\n"
+        },
+        {
+          "pr": 382,
+          "sha": "435b7d42365016d6b48a0b83f920b92c72409e2f",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/monster-geometry.js' with conflicts.\nU src/monster-geometry.js\n"
+        },
+        {
+          "pr": 405,
+          "sha": "ae05de355e56262a1939d52de2077ecbed4b9547",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 403,
+          "sha": "14937f79825376aabf335c0f3a0ff31af7ad009a",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/creature-mesh-adoption.js' with conflicts.\nApplied patch to 'src/creature-real-source-catalog.js' cleanly.\nApplied patch to 'src/monster-geometry.js' with conflicts.\nApplied patch to 'src/monster-source-composite.js' cleanly.\nU src/creature-mesh-adoption.js\nU src/monster-geometry.js\n"
+        },
+        {
+          "pr": 345,
+          "sha": "b7bb403d56da9698b4cbf3eceb81216dc5dc7431",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/monster-animation.js' with conflicts.\nApplied patch to 'src/monster-geometry.js' with conflicts.\nApplied patch to 'src/monster-joint-motion.js' cleanly.\nU src/monster-animation.js\nU src/monster-geometry.js\n"
+        },
+        {
+          "pr": 206,
+          "sha": "167dcf7382c07b4ce9feb6deced5b322a29e7bbe",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/monster-geometry.js' with conflicts.\nU src/monster-geometry.js\n"
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44301403791"
     }
   ]
 }
