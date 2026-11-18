@@ -4,11 +4,11 @@
   "canonicalPages": 132,
   "counts": {
     "expected": 462,
-    "existingRegistrationNotP0Approved": 56,
+    "existingRegistrationNotP0Approved": 51,
     "liveOriginalRegistrations": 178,
     "legacyNativeRegenerationRequired": 0,
     "validRealReviewDraft": 121,
-    "missing": 276,
+    "missing": 281,
     "providerBlocked": 9,
     "incorrectNativePixels": 0,
     "invalidProof": 0,
@@ -372,7 +372,7 @@
           "panelId": "c01-s02-m1",
           "gender": "male",
           "edition": "pre",
-          "originalLiveSource": "./assets/story/chapters/c01/panels/c01-s02-m01-male.webp",
+          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s02-pre-male/p01/c01-s02-m01-pre-male.webp",
           "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
         },
@@ -2086,6 +2086,7 @@
           "panelId": "c01-s05-m1",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/new-originals/c01-s05__pre__male__c01-s05-m1.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p01/c01-s05-m01-pre-male.webp",
           "dimensions": [
             1024,
@@ -2146,6 +2147,7 @@
           "panelId": "c01-s05-m15",
           "gender": "male",
           "edition": "pre",
+          "originalLiveSource": "./assets/story/new-originals/c01-s05__pre__male__c01-s05-m15.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-male/p02/c01-s05-m15-pre-male.webp",
           "dimensions": [
             1024,
@@ -2158,45 +2160,40 @@
           "panelId": "c01-s05-m1",
           "gender": "female",
           "edition": "pre",
-          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m1.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m01-pre-female.webp",
-          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+          "status": "MISSING_REAL_ART"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m2",
           "panelId": "c01-s05-m2",
           "gender": "female",
           "edition": "pre",
-          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m2.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m02-pre-female.webp",
-          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+          "status": "MISSING_REAL_ART"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m3",
           "panelId": "c01-s05-m3",
           "gender": "female",
           "edition": "pre",
-          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m3.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m03-pre-female.webp",
-          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+          "status": "MISSING_REAL_ART"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m4",
           "panelId": "c01-s05-m4",
           "gender": "female",
           "edition": "pre",
-          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m4.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m04-pre-female.webp",
-          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+          "status": "MISSING_REAL_ART"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m5",
           "panelId": "c01-s05-m5",
           "gender": "female",
           "edition": "pre",
-          "originalLiveSource": "./assets/story/chapter1-provisional-live/c01-s05__pre__female__c01-s05-m5.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-pre-female/p01/c01-s05-m05-pre-female.webp",
-          "status": "EXISTING_REGISTERED_NOT_P0_CERTIFIED"
+          "status": "MISSING_REAL_ART"
         },
         {
           "key": "c01-s05|pre|female|c01-s05-m11",
@@ -2227,6 +2224,7 @@
           "panelId": "c01-s05-m6",
           "gender": "male",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/new-originals/c01-s05__post-victory__male__c01-s05-m6.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p01/c01-s05-m06-post-victory-male.webp",
           "dimensions": [
             1024,
@@ -2279,6 +2277,7 @@
           "panelId": "c01-s05-m10",
           "gender": "male",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/new-originals/c01-s05__post-victory__male__c01-s05-m10.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-male/p02/c01-s05-m10-post-victory-male.webp",
           "dimensions": [
             1024,
@@ -2291,6 +2290,7 @@
           "panelId": "c01-s05-m6",
           "gender": "female",
           "edition": "post-victory",
+          "originalLiveSource": "./assets/story/new-originals/c01-s05__post-victory__female__c01-s05-m6.webp",
           "path": "assets/story/chapter-drafts/c01/cloudflare-chapter1-free/c01-s05-post-victory-female/p01/c01-s05-m06-post-victory-female.webp",
           "dimensions": [
             1024,
