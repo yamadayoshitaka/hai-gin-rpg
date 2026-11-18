@@ -431,6 +431,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
    ring.position.y=.48*c;ring.castShadow=true;root.add(ring);
    const surface=new THREE.Mesh(new THREE.CircleGeometry(1.07*c,24),water);
    surface.rotation.x=-Math.PI/2;surface.position.y=.52*c;root.add(surface);
+   // An inner stone lining gives the well wall real thickness, not a single-sided shell.
+   const innerLining=new THREE.Mesh(new THREE.CylinderGeometry(1.04*c,1.04*c,.92*c,20,1,true),stone);
+   innerLining.position.y=.48*c;innerLining.material.side=THREE.DoubleSide;innerLining.name='well_inner_masonry';root.add(innerLining);
    for(const y of [.12,.50,.96]){
     const masonry=new THREE.Mesh(new THREE.TorusGeometry(1.19*c,.07*c,7,24),stone);
     masonry.rotation.x=Math.PI/2;masonry.position.y=y*c;root.add(masonry);
@@ -544,6 +547,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='stone_archway_001'){
+   // Broad footings spread the voussoir thrust into the ground; springer blocks
+   // support the first arch stones rather than suspending them above a bare post.
+   for(const sign of [-1,1]){
+    box(1.03*c,.24*c,1.26*c,sign*2*c,.12*c,0,stone).name='arch_footing';
+    box(.84*c,.24*c,1.13*c,sign*2*c,3.29*c,0,stone).name='arch_springer';
+   }
    for(const sign of [-1,1]){
     box(.68*c,3.5*c,.9*c,sign*2*c,1.75*c,0,stone);
     box(.93*c,.3*c,1.1*c,sign*2*c,3.5*c,0,stone);
@@ -558,10 +567,23 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(.65*c,.68*c,1.1*c,0,5.45*c,0,stone).name='arch_keystone';
   }
   if(id==='stone_steps_001'){
+   // Continuous side foundations and a compacted base keep the treads bearing
+   // on masonry instead of floating as seven disconnected slabs.
+   box(3.55*c,.12*c,3.05*c,0,.06*c,0,stone).name='stair_foundation';
+   for(const x of [-1.73,1.73])box(.22*c,.52*c,2.8*c,x*c,.26*c,0,stone).name='stair_side_bearing';
    for(let i=0;i<7;i++)box(3.8*c,(i+1)*.16*c,.46*c,0,(i+1)*.08*c,(i-3)*.40*c,stone);
    for(const x of [-1.95,1.95])box(.23*c,1.25*c,3*c,x*c,.65*c,0,stone);
   }
   if(id==='wooden_watchtower_001'){
+   // Cross-bracing prevents a tall four-post tower from racking sideways.
+   // Beams connect the same corner posts that support the raised platform.
+   for(const side of [-1,1]){
+    for(const slope of [-1,1]){
+     const brace=box(.14*c,4.35*c,.15*c,side*1.65*c,2.25*c,0,wood);
+     brace.rotation.x=slope*Math.atan2(3.30,4.35);
+     brace.name='tower_cross_brace';
+    }
+   }
    for(const x of [-1.65,1.65])for(const z of [-1.65,1.65])box(.28*c,5.1*c,.28*c,x*c,2.55*c,z*c,wood);
    box(3.8*c,.28*c,3.8*c,0,4*c,0,wood);
    for(let i=0;i<9;i++)box(.13*c,.1*c,.25*c,-1.65*c,(i+.5)*.46*c,1.05*c,wood);
@@ -637,7 +659,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_water_trough_001'){
-   box(2.8*c,.15*c,1.4*c,0,.1*c,0,wood);
+   // Two transverse bearers lift the wet trough floor clear of ground contact.
+   for(const x of [-.96,.96])box(.22*c,.18*c,1.45*c,x*c,.09*c,0,wood).name='trough_ground_bearer';
+   box(2.8*c,.15*c,1.4*c,0,.23*c,0,wood);
    for(const z of [-.73,.73]){
     box(2.9*c,.85*c,.13*c,0,.5*c,z*c,wood);
     box(2.96*c,.09*c,.19*c,0,.93*c,z*c,wood);
