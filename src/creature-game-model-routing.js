@@ -28,14 +28,15 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    spec.id==='m006'?'m001-panther-skull-mini-nose-v14-20261118':
    firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
-   avianWave.has(spec.id)?'phoenix-featherhands-bigscutes-v19-20261118':
+   spec.id==='m015'?'phoenix-master-tengu-wing-v20-20261118':
+   avianWave.has(spec.id)?'phoenix-master-bird-family-v20-20261118':
    'catalog-baseline',
   stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m001'?'reference-implementation':
    firstWave.has(spec.id)?'copied-wolf-king-geometry-in-review':
    felineWave.has(spec.id)?'copied-m007-feline-geometry-in-review':
-   avianWave.has(spec.id)?'original-seraph-wing-avian-remesh-in-review':
+   avianWave.has(spec.id)?'phoenix-master-bird-anatomy-in-review':
    'pending-review',
   // Releasing a model does not mean its visual QA has been approved.
   mobileVisualApproved:false,
