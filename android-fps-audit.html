@@ -71,7 +71,7 @@ $('sample').onclick=async()=>{
   result.contextLost=samples.some(x=>x.lost);
   result.runtimeErrors=errors+(win.document.querySelector('#runtimeError')?.style.display==='block'?1:0);
   if(result.contextLost||result.runtimeErrors)throw Error('WebGLコンテキスト喪失または実行時エラー');
-  result.status='measured_android_browser';
+  result.status=/Android/i.test(navigator.userAgent)?'measured_android_browser':'measured_non_android_browser';
   status.textContent='実機ブラウザ上の測定が完了しました。結果を保存してください。';
  }catch(e){result.status='not_measured';result.error=String(e.message||e);
   status.textContent='未測定：'+result.error;

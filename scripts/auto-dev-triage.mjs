@@ -68,9 +68,14 @@ export async function triage(apiCall=api,now=Date.now()){
  ]);
  const failures=(runs.workflow_runs||[]).filter(r=>actionable(r,now)).slice(0,32);
  const records=[];
+ const seen=new Set();
  for(const run of failures){
   if(records.length===MAX_WRITES)break;
   const category=categoryFor(run.name),key=marker(run.name,category);
+  // Inspect only the newest failure per workflow/category; stale runs
+  // must not churn one Issue repeatedly or starve unrelated categories.
+  if(seen.has(key))continue;
+  seen.add(key);
   const old=(issues||[]).find(i=>!i.pull_request&&String(i.body||'').includes('<!-- '+key+' -->'));
   if(old&&String(old.body||'').includes('/actions/runs/'+run.id))continue;
   const detail=await apiCall('actions/runs/'+run.id+'/jobs?per_page=100').catch(()=>({jobs:[]}));
