@@ -95,7 +95,15 @@ function imageAudit(buffer) {
         assert.ok(metrics.visiblePartMeshes>=2,
           'Visible face has lost its real eye and lid features');
         assert.ok(metrics.wigReport,'No built 3D scalp-anchored wig report');
-        const screenshot=await page.locator('#faceCanvas').screenshot({
+        // The render canvas animates on every frame; element.screenshot()
+        // waits for element stability and times out even when WebGL is healthy.
+        // Capture its bounding rect directly without a stability wait.
+        const canvasBox=await page.locator('#faceCanvas').boundingBox();
+        assert.ok(canvasBox&&canvasBox.width>=160&&canvasBox.height>=160,
+          'Real face WebGL canvas is missing or has zero size');
+        const screenshot=await page.screenshot({
+          clip:{x:Math.max(0,canvasBox.x),y:Math.max(0,canvasBox.y),
+            width:canvasBox.width,height:canvasBox.height},
           animations:'disabled',timeout:40000
         });
         const image=imageAudit(screenshot);
