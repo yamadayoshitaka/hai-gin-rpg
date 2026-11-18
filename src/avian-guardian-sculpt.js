@@ -218,7 +218,7 @@ function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}
  if(spec.id==='m013'){
   wing.material.roughness=.69;wing.material.metalness=.012;
   wing.material.emissive.setHex(0x6b2411);
-  wing.material.emissiveIntensity=.15;
+  wing.material.emissiveIntensity=.21;
   wing.userData.phoenixFineFeatherBarbs=true;
  }
  wing.userData.birdWingRooted=true;
@@ -227,11 +227,12 @@ function guardianDerivedWing(parent,spec,side,detail,{miniature=false,name=null}
   wing.userData.phoenixSameWingVaneSource=true;
   wing.userData.phoenixMiniatureDonorDetail=detail==='low'||detail==='medium'?'low':'high';
   wing.userData.phoenixMiniatureFeatherCount=wing.userData.angelFeathersPerSide;
+  wing.userData.curvedAvianFeathers=wing.userData.angelFeathersPerSide;
   wing.castShadow=false;wing.receiveShadow=false;
   wing.rotation.set(-.48,side*.13,-side*.68);
   wing.position.set(side*.015,.030,-.045);
  }
- if(spec.id==='m013')addPhoenixWave(wing,'wing');
+ if(spec.id==='m013'&&!miniature)addPhoenixWave(wing,'wing');
  return wing;
 }
 /** One merged, curved vane mesh per body region. No 200 separate draw calls.
@@ -910,7 +911,8 @@ function phoenixCranialFireFeathers(head,s,detail){
  flame.userData.phoenixCranialFlameVanes=strands.length;
  flame.userData.phoenixEyesUncovered=true;
  flame.userData.phoenixLayeredFlameSculpt=true;
- addPhoenixWave(flame,'crest');
+ // Keep the fire-face detail motionless: full-face wave looked like a
+ // trembling camera on mobile. Back crest and long tail still breathe.
  return flame;
 }
 
