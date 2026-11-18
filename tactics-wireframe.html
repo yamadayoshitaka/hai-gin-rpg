@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=rpg-status1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -888,6 +888,8 @@ import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
 import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261119-touch-enditems';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=rpg-status1';
+import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -6806,6 +6808,7 @@ $('dockSquadSelect').replaceChildren(...squadIds.map(id=>{const option=document.
 $('dockSquadOpen').onclick=()=>openSquadTactics($('dockSquadSelect').value);
 const squadKey=(team,id)=>team+':'+id;
 const squadOrderRegistry=new Map(),squadMarkers=new Map(),squadTargets=new Map();
+let battleRpgHud=null;
 const squadRecoveryRequests=new Map();
 
 const squadCommanderAliveHistory=new Map();
@@ -8623,6 +8626,7 @@ function zoomToSquadMember(id,team){
  return true;
 }
 function activateSquadLabel(id,team,x=0,y=0){
+ battleRpgHud?.select(team,id);
  // Show the inspection strip only after the double-tap window expires.
  // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished||squadCloseupLabelsHidden||
@@ -8674,6 +8678,7 @@ function makeSquadLabel(id,team){
  const intent=squadIntent(id,team);
  currentOrder.textContent=intent.order;objective.textContent=intent.purpose;
  label.append(markerIcon,title,strength,currentOrder,objective);
+ label.userDataSquadTitle=title;
  label.userDataMarkerIcon=markerIcon;
  label.userDataStrength=strength;label.userDataCurrentOrder=currentOrder;label.userDataObjective=objective;
  label.setAttribute('aria-label',(team===0?'味方':'敵')+squadName(id,team));
@@ -8987,6 +8992,34 @@ const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map(),ribbonPageNodes=n
 const ribbonPages=[0,0],ribbonPageSize=5;
 let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
 let trackedAllySquadId=squadIds[0]??null;
+battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
+ onFocus:(team,id)=>{
+  if(!battleReady||finished||battleCeremony.locked)return;
+  if(team===0)trackedAllySquadId=String(id);
+  else selectedEnemySquadId=String(id);
+  for(const [key,marker] of squadMarkers)
+   marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
+  beginSquadFocusCinematic(String(id),team,'result');
+ }
+}):null;
+if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,trackedAllySquadId);
+function refreshBattleRpgSquadHud(sums){
+ if(!battleRpgHud)return;
+ const rows=makeBattleRpgStatusRows({
+  sums,units:squadRoster,allyIds:squadIds,enemyIds:enemySquadIds,
+  getJob:(id,team)=>squadPrimaryJob(id,team,sums),
+  getMode:(id,team)=>squadEffectiveOrder(id,team).mode,
+  mass:Boolean(massSim),now:elapsed,simTime:massSim?.time??elapsed,
+  itemTypes:ROOM_ITEM_TYPES,auras:activeSquadBuffVfx,skirmishBuffs:skirmishSquadItemBuffs,
+  massDebuffs:massSim?.squadDebuffs,skirmishDebuffs:skirmishStrategicDebuffs
+ });
+ battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked&&
+  document.getElementById('battleObjectiveTurnPanel')?.hidden!==false});
+}
+window.getBattleRpgSquadHudQA=()=>({
+ rows:battleRpgHud?.rows||[],selected:battleRpgHud?.selected||'',visible:battleRpgHud?.visible||false
+});
+
 const firstAutoChargeIssued=new Set();
 const ribbonIconForType=type=>({attack:'⚔',balanced:'♟',ranged:'🏹',support:'✚'})[type]||'♟';
 function ribbonCommanderAlive(team,id){
@@ -9337,6 +9370,10 @@ function updateSquadMarkerPositions(dt){
    }
    label.userDataStrength.textContent=sum.n+'/'+sum.total;
    const intent=squadIntent(marker.userData.squadId,marker.userData.team,sum.n===0,commanderReason);
+   const squadTeam=marker.userData.team,squadId=String(marker.userData.squadId);
+   label.userDataSquadTitle.textContent=(squadTeam===0?'🔵':'🔴')+
+    ((squadTeam===0?squadIds:enemySquadIds).indexOf(squadId)+1)+'隊 '+
+    squadPrimaryJob(squadId,squadTeam,sums).slice(0,2);
    const shortOrder=commanderReason?'☠ 指揮不能':sum.n===0?'戦闘不能':intent.order.replace(/^号令：/,'').slice(0,7);
    if(label.userDataCurrentOrder.textContent!==shortOrder)label.userDataCurrentOrder.textContent=shortOrder;
    if(label.userDataObjective.textContent!==intent.purpose)label.userDataObjective.textContent=intent.purpose;
@@ -9356,6 +9393,7 @@ function updateSquadMarkerPositions(dt){
    marker.position.copy(marker.userData.visualTarget);
   }
   renderSquadRibbons(sums);
+  refreshBattleRpgSquadHud(sums);
   refreshSquadCircleInfo();
   drawSquadMiniMap();
  }
@@ -9398,7 +9436,7 @@ function updateSquadScreenLabels(dt){
   selectingTarget:Boolean(pendingCircleTarget),
   selectingDestination:pickingSquadDestination||pickingStrategistWarp,
   selectingMission:Boolean(pickingSquadMission)
- });
+ })||Boolean(battleRpgHud?.selected);
  if(!showCallouts){
   squadSelectedAttackArrow.style.display='none';
   // The previous edge-pinned offscreen circles obscured actual people.
@@ -9429,8 +9467,9 @@ function updateSquadScreenLabels(dt){
   const isFocus=marker.userData.team===0?
    String(marker.userData.squadId)===String(focusAlly):
    String(marker.userData.squadId)===String(focusEnemy);
+  const closeVisible=marker.position.distanceTo(controls.target)<42;
   if(pageZoomed||!marker.visible||(targetTeam!==null&&!actionable)||
-     (targetTeam===null&&!isFocus)){
+     (targetTeam===null&&!isFocus&&!closeVisible&&zoomDistance<=70)){
    label.hidden=true;marker.userData.calloutLine.style.display='none';
    marker.userData.calloutDot.style.display='none';continue;
   }
@@ -9732,6 +9771,7 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  getMoveTargets:getObjectiveMoveTargets,
  getGroupOrigin:turnGroupOrigin,
  getGroupLabel:groupId=>turnGroupLabels.get(Number(groupId))||'混成隊',
+ getBattleStatusRows:()=>battleRpgHud?.rows||[],
  getLegalMapPoint:turnLegalPoint,
  worldSize:WORLD_SIZE,
  drawMapBackground:(ctx,w,h)=>ctx.drawImage(miniBase,0,0,w,h),
