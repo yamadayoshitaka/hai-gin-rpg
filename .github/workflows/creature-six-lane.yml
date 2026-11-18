@@ -21,9 +21,17 @@ on:
         default: 'auto'
         type: choice
         options: ['auto','0','1','2','3','4','5']
+  push:
+    branches: [main]
+    paths:
+      - 'src/avian-guardian-sculpt.js'
+      - 'qa/creature-face-volume-batch.test.mjs'
+      - '.github/workflows/creature-six-lane.yml'
   pull_request:
     paths:
       - 'src/creature-*.js'
+      - 'src/avian-guardian-sculpt.js'
+      - 'qa/creature-face-volume-batch.test.mjs'
       - 'src/monster-*.js'
       - 'src/combat-creature-*.js'
       - 'data/creature-quality-standards.json'
@@ -52,6 +60,9 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.160.1
       - name: Verify all 108 canonical IDs, protected assets and game adoption route
         run: node --test qa/creature-six-lane-contract.test.mjs
+      - name: Verify true avian head relief in both categories before main adoption
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: node --test qa/creature-face-volume-batch.test.mjs
       - name: Review one species family, retain protected ancestors
         if: inputs.category == 'all' || inputs.category == matrix.category || github.event_name != 'workflow_dispatch'
         env:
