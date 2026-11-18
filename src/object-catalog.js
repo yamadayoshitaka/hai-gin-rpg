@@ -683,6 +683,16 @@ export function createObjectById(id,{cellSize=2.2}={}){
     const tip=new THREE.Mesh(new THREE.ConeGeometry(.25*c,.46*c,3),wood);
     tip.rotation.z=direction*-Math.PI/2;tip.position.set(x*c,y*c,0);root.add(tip);
    }
+   // Mortised diagonal knee braces carry the cantilevered signboards into the post.
+   // Reuse the timber material so the existing material-batch merge remains effective.
+   for(const [sx,sy,ex,ey] of [[.13,2.43,.93,2.56],[-.13,1.72,-.78,1.85]]){
+    const start=new THREE.Vector3(sx*c,sy*c,0),end=new THREE.Vector3(ex*c,ey*c,0);
+    const axis=new THREE.Vector3().subVectors(end,start);
+    const brace=new THREE.Mesh(new THREE.CylinderGeometry(.085*c,.105*c,axis.length(),6),wood);
+    brace.position.copy(start).add(end).multiplyScalar(.5);
+    brace.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.normalize());
+    root.add(brace);
+   }
    for(const y of [2,2.75]){
     const peg=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.15*c,8),iron);
     peg.rotation.x=Math.PI/2;peg.position.set(0,y*c,.10*c);root.add(peg);
