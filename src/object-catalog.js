@@ -242,6 +242,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.46,.46])b(1.68*c,.16*c,.095*c,0,.72*c,z*c,dark);
    for(const x of [-.82,.82])b(.095*c,.16*c,.83*c,x*c,.72*c,0,dark);
    for(let i=0;i<6;i++)b(.012*c,.009*c,1.23*c,(i-2.5)*.3*c,.922*c,0,dark);
+   // Drawbored tenons and visible end-grain pegs tie the aprons into the legs.
+   for(const x of [-.82,.82])for(const z of [-.46,.46]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.024*c,.024*c,.017*c,8),dark);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,.72*c,(z>0?.523:-.523)*c);root.add(peg);
+   }
   }
   if(id==='cottage_chair_001'){
    b(.7*c,.11*c,.65*c,0,.48*c,0);
@@ -253,6 +258,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.23,.23])b(.54*c,.09*c,.09*c,0,.23*c,z*c,dark);
    for(const y of [.91,1.37])b(.66*c,.1*c,.09*c,0,y*c,-.29*c);
    for(const x of [-.14,0,.14])b(.065*c,.41*c,.08*c,x*c,1.14*c,-.29*c,dark);
+   // A curved backrest is carried by both rear posts, not floating trim.
+   const back=new THREE.Mesh(new THREE.TorusGeometry(.34*c,.045*c,6,16,Math.PI),timber);
+   back.rotation.z=Math.PI;back.position.set(0,1.39*c,-.29*c);root.add(back);
   }
   if(id==='cottage_bed_001'){
    b(1.6*c,.22*c,2.5*c,0,.36*c,0,dark);
@@ -264,12 +272,19 @@ export function createObjectById(id,{cellSize=2.2}={}){
    b(1.51*c,.18*c,.14*c,0,1.0*c,-1.18*c);
    for(const x of [-.45,-.15,.15,.45])b(.075*c,.53*c,.12*c,x*c,.71*c,-1.18*c);
    b(1.1*c,.14*c,.5*c,0,.77*c,-.78*c,linen);
+   // Slatted underframe supports the mattress across the bed rails.
+   for(let i=0;i<7;i++)b(1.39*c,.055*c,.12*c,0,.49*c,(-.94+i*.31)*c,timber);
   }
   if(id==='cottage_shelf_001'){
    for(const x of [-.8,.8])b(.14*c,2.8*c,.73*c,x*c,1.4*c,0,dark);
    for(const y of [.56,1.48,2.4])for(const x of [-.72,.72])
     b(.07*c,.15*c,.70*c,x*c,y*c,0,dark);
    b(1.79*c,.1*c,.1*c,0,2.69*c,-.33*c,dark);
+   // Continuous diagonal back straps stop the tall shelf from racking.
+   for(const x of [-.68,.68]){
+    const strap=b(.075*c,2.54*c,.045*c,x*c,1.40*c,-.395*c,dark);
+    strap.rotation.z=x>0?.20:-.20;
+   }
    for(let y=.3;y<2.8;y+=.62){
     b(1.8*c,.12*c,.8*c,0,y*c,0);
     for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen);
@@ -286,6 +301,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const [y,r] of [[.16,.49],[.60,.55],[1.0,.49]]){
     const hoop=new THREE.Mesh(new THREE.TorusGeometry(r*c,.027*c,7,32),ironHoop);
     hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;root.add(hoop);
+   }
+   // Hoop rivets and stave end grain make the cooperage joints legible.
+   for(const y of [.16,.60,1.0])for(let k=0;k<12;k++){
+    const a=k*Math.PI/6;
+    const rivet=new THREE.Mesh(new THREE.SphereGeometry(.021*c,6,4),ironHoop);
+    rivet.position.set(Math.cos(a)*.55*c,y*c,Math.sin(a)*.55*c);root.add(rivet);
    }
    for(let k=0;k<12;k++){
     const theta=k*Math.PI/6;
