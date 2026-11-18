@@ -1,0 +1,92 @@
+name: Free known-error self-heal, commit and Pages release
+on:
+  schedule:
+    - cron: '58 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/batch-repair-rules.mjs'
+      - 'scripts/batch-rule-self-heal.mjs'
+      - 'scripts/batch-rule-pages-verify.mjs'
+      - 'qa/batch-repair-rules.test.mjs'
+      - '.github/workflows/batch-rule-self-heal.yml'
+  pull_request:
+    paths:
+      - 'scripts/batch-repair-rules.mjs'
+      - 'scripts/batch-rule-self-heal.mjs'
+      - 'scripts/batch-rule-pages-verify.mjs'
+      - 'qa/batch-repair-rules.test.mjs'
+      - '.github/workflows/batch-rule-self-heal.yml'
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: read
+concurrency:
+  group: free-rule-self-heal-${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+  cancel-in-progress: false
+jobs:
+  validate-repair-rules:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile and test all simulated known-error repair recipes
+        run: |
+          node --check scripts/batch-rule-self-heal.mjs
+          node --check scripts/batch-repair-rules.mjs
+          node --check scripts/batch-rule-pages-verify.mjs
+          node --test qa/batch-repair-rules.test.mjs
+  repair-retest-commit-deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - name: Checkout latest main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install open-source Three.js test dependency (no paid APIs)
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Validate hard allowlist and simulated recovery of deliberately broken fixtures
+        run: |
+          node --check scripts/batch-rule-self-heal.mjs
+          node --check scripts/batch-repair-rules.mjs
+          node --test qa/batch-repair-rules.test.mjs
+      - name: Detect, apply recognized source repairs, rerun QA up to three passes, commit and request Pages
+        id: repair
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/batch-rule-self-heal.mjs
+      - name: Verify public Pages release includes the repaired main commit
+        if: steps.repair.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/batch-rule-pages-verify.mjs --source=${{ steps.repair.outputs.source_sha }}
+      - name: Preserve real fixes, failed tests, exact source SHA and deployment verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-rule-self-heal-${{ github.run_id }}
+          path: qa-reports/batch-rule-self-heal/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Do not report quality improvements from an empty run
+        if: always()
+        run: |
+          echo 'Only changed allowed source files plus successful regression QA yield a repair commit.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This workflow performs no ChatGPT/OpenAI/Gemini API calls and creates no 3D meshes or GLB bytes.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'A successful release SHA is not proof of FPS or FF15 image quality.' >> "$GITHUB_STEP_SUMMARY"
