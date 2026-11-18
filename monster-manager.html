@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-adult-raptor-v13-tengu-flight-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-tengu-flight-motion-v13-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -899,7 +899,19 @@ window.__avianWingQA=()=>{
   !!model.getObjectByName('avian-predatory-brow-'+selected+'-'+side)?.userData.avianBrowBoneSculpt);
  const sweptCheeks=!!model.getObjectByName(
   'avian-predatory-malar-plumage-'+selected)?.userData.avianSweptPredatoryCheeks;
+ const adultCere=['m011','m012','m014'].includes(selected)?
+  !!model.getObjectByName('avian-adult-keratin-cere-'+selected)?.userData.avianContiguousBeakNasalVolume&&
+  ['L','R'].every(side=>!!model.getObjectByName('avian-adult-malar-bone-'+selected+'-'+side)?.userData.avianMalarContinuousIntoCere):null;
  return {id:selected,revision:model.userData.avianRebuildRevision,
+  adultCere,
+  tengu:selected==='m015'?{
+   flightMode:!!model.userData.tenguFlightMode,
+   inAir:!!model.userData.avianInAir,
+   altitude:model.userData.avianCurrentAltitude??model.position.y,
+   legsTucked:!!model.userData.tenguLegsTucked,
+   flightAction:model.userData.tenguFlightAction||model.userData.action||null,
+   sourceRevision:model.userData.avianGameSourceRevision||null
+  }:null,
   hardBrow,sweptCheeks,
   angularOwl:selected==='m014'?['L','R'].every(side=>
    !!model.getObjectByName('owl-facial-disc-'+side)?.userData.avianAngularMask):null,
