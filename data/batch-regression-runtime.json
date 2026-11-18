@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-11-18T07:55:23.939Z",
+  "checkedAt": "2026-11-18T08:32:44.837Z",
   "source": "GitHub Actions authorized workflow-run API",
   "note": "Actions success verifies task execution, NOT 3D mesh change, QA visual approval, commit, merge or Pages deployment.",
-  "recoveryPolicy": "one bounded QA retry; missed schedule dispatch; persistent error to code-editing regression issue; paid image workflows never rerun",
+  "recoveryPolicy": "watch all seven registered categories plus their game-quality, evolution, rule-self-heal and PR-source helpers; max three recovery launches per inspection; one bounded QA retry; persistent errors produce a code-editing Issue; paid image workflows are never retried",
   "workflows": [
     {
       "workflow": "character-six-lane.yml",
@@ -12,17 +12,19 @@
         "outfit"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-18T07:55:23.939Z",
+      "checkedAt": "2026-11-18T08:32:44.837Z",
       "status": "success",
-      "runId": 44227765066,
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44227765066",
+      "runId": 44262658383,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44262658383",
       "runAttempt": 1,
-      "action": "dispatch_missing_schedule",
+      "action": "none",
       "issueUrl": null,
       "error": null,
-      "lastStartedAt": "2026-11-18T03:04:12Z",
-      "headSha": "7ffa5bc3bbe0212e7c0815886c72c5c826289822",
-      "decision": "dispatch"
+      "maxAgeMinutes": 80,
+      "decision": "success",
+      "dispatchInputs": null,
+      "lastStartedAt": "2026-11-18T07:55:25Z",
+      "headSha": "e5afb6c31986a025d313d6fa3bc37df996fd6a3b"
     },
     {
       "workflow": "creature-six-lane.yml",
@@ -31,17 +33,19 @@
         "creatureSummon"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-18T07:55:23.939Z",
+      "checkedAt": "2026-11-18T08:32:44.837Z",
       "status": "failure",
       "runId": 44228039645,
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44228039645",
-      "runAttempt": 1,
-      "action": "rerun_failed_jobs_once",
-      "issueUrl": null,
+      "runAttempt": 2,
+      "action": "escalated_to_source_fix_issue",
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/664",
       "error": null,
-      "lastStartedAt": "2026-11-18T03:06:27Z",
-      "headSha": "7ffa5bc3bbe0212e7c0815886c72c5c826289822",
-      "decision": "rerun_failed"
+      "maxAgeMinutes": 80,
+      "decision": "escalate",
+      "dispatchInputs": null,
+      "lastStartedAt": "2026-11-18T07:55:26Z",
+      "headSha": "7ffa5bc3bbe0212e7c0815886c72c5c826289822"
     },
     {
       "workflow": "world-six-lane.yml",
@@ -49,17 +53,106 @@
         "world"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-18T07:55:23.939Z",
+      "checkedAt": "2026-11-18T08:32:44.837Z",
+      "status": "in_progress",
+      "runId": 44267877613,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44267877613",
+      "runAttempt": 1,
+      "action": "none",
+      "issueUrl": null,
+      "error": null,
+      "maxAgeMinutes": 110,
+      "decision": "running",
+      "dispatchInputs": null,
+      "lastStartedAt": "2026-11-18T08:32:30Z",
+      "headSha": "181e821313d8d244a8402416785b227a9e94af6d"
+    },
+    {
+      "workflow": "game-quality-six-lane.yml",
+      "groups": [
+        "gameQuality"
+      ],
+      "enabled": true,
+      "checkedAt": "2026-11-18T08:32:44.837Z",
       "status": "success",
-      "runId": 44212093478,
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44212093478",
+      "runId": 44256035560,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44256035560",
+      "runAttempt": 1,
+      "action": "none",
+      "issueUrl": null,
+      "error": null,
+      "maxAgeMinutes": 90,
+      "decision": "success",
+      "dispatchInputs": null,
+      "lastStartedAt": "2026-11-18T07:04:26Z",
+      "headSha": "c5a557a1fb03dbd3cd49e104d9ab7b2ba1f9ca25"
+    },
+    {
+      "workflow": "quality-evolution-loop.yml",
+      "groups": [
+        "faceHair",
+        "outfit",
+        "gameQuality"
+      ],
+      "enabled": true,
+      "checkedAt": "2026-11-18T08:32:44.837Z",
+      "status": "success",
+      "runId": 44262419772,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44262419772",
+      "runAttempt": 1,
+      "action": "none",
+      "issueUrl": null,
+      "error": null,
+      "maxAgeMinutes": 120,
+      "decision": "success",
+      "dispatchInputs": null,
+      "lastStartedAt": "2026-11-18T07:53:34Z",
+      "headSha": "e5afb6c31986a025d313d6fa3bc37df996fd6a3b"
+    },
+    {
+      "workflow": "batch-rule-self-heal.yml",
+      "groups": [
+        "gameQuality"
+      ],
+      "enabled": true,
+      "checkedAt": "2026-11-18T08:32:44.837Z",
+      "status": "success",
+      "runId": 44246458956,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44246458956",
       "runAttempt": 1,
       "action": "dispatch_missing_schedule",
       "issueUrl": null,
       "error": null,
-      "lastStartedAt": "2026-11-18T00:57:58Z",
-      "headSha": "ae1d8a362241b297d1f9772b2f4f6fde0b3f20a5",
-      "decision": "dispatch"
+      "maxAgeMinutes": 125,
+      "decision": "dispatch",
+      "dispatchInputs": {},
+      "lastStartedAt": "2026-11-18T05:45:31Z",
+      "headSha": "ef6fd4898f5fa63f9183340641d8c216fb289a66"
+    },
+    {
+      "workflow": "batch-self-drive.yml",
+      "groups": [
+        "faceHair",
+        "outfit",
+        "creatureMonster",
+        "world"
+      ],
+      "enabled": true,
+      "checkedAt": "2026-11-18T08:32:44.837Z",
+      "status": "success",
+      "runId": 44231899253,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44231899253",
+      "runAttempt": 1,
+      "action": "dispatch_missing_schedule",
+      "issueUrl": null,
+      "error": null,
+      "maxAgeMinutes": 125,
+      "decision": "dispatch",
+      "dispatchInputs": {
+        "category": "world"
+      },
+      "lastStartedAt": "2026-11-18T03:39:01Z",
+      "headSha": "914664dc79ddb85556fb095415cb3e7b51ee4307"
     },
     {
       "workflow": "story-sequential-missing-batch.yml",
@@ -67,7 +160,7 @@
         "anime"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-18T07:55:23.939Z",
+      "checkedAt": "2026-11-18T08:32:44.837Z",
       "status": "success",
       "runId": 44262283995,
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44262283995",
@@ -75,9 +168,11 @@
       "action": "none",
       "issueUrl": null,
       "error": null,
+      "maxAgeMinutes": 1620,
+      "decision": "success",
+      "dispatchInputs": null,
       "lastStartedAt": "2026-11-18T07:52:31Z",
-      "headSha": "207f6393a35ce22432144868c29a293ec1140449",
-      "decision": "success"
+      "headSha": "207f6393a35ce22432144868c29a293ec1140449"
     },
     {
       "workflow": "story-cloudflare-free-daily.yml",
@@ -85,7 +180,7 @@
         "anime"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-18T07:55:23.939Z",
+      "checkedAt": "2026-11-18T08:32:44.837Z",
       "status": "success",
       "runId": 44261047787,
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44261047787",
@@ -93,9 +188,11 @@
       "action": "none",
       "issueUrl": null,
       "error": null,
+      "maxAgeMinutes": 1620,
+      "decision": "success",
+      "dispatchInputs": null,
       "lastStartedAt": "2026-11-18T07:43:02Z",
-      "headSha": "207f6393a35ce22432144868c29a293ec1140449",
-      "decision": "success"
+      "headSha": "207f6393a35ce22432144868c29a293ec1140449"
     },
     {
       "workflow": "story-chapter1-free-complete-draft-production.yml",
@@ -103,7 +200,7 @@
         "anime"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-18T07:55:23.939Z",
+      "checkedAt": "2026-11-18T08:32:44.837Z",
       "status": "failure",
       "runId": 44261095029,
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44261095029",
@@ -111,9 +208,11 @@
       "action": "escalated_to_source_fix_issue",
       "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/661",
       "error": null,
+      "maxAgeMinutes": null,
+      "decision": "escalate",
+      "dispatchInputs": null,
       "lastStartedAt": "2026-11-18T07:43:24Z",
-      "headSha": "207f6393a35ce22432144868c29a293ec1140449",
-      "decision": "escalate"
+      "headSha": "207f6393a35ce22432144868c29a293ec1140449"
     }
   ]
 }
