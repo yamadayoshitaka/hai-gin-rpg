@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261118-map-paging2">
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-touch-enditems">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-map-paging2';
+import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261119-touch-enditems';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -1263,10 +1263,10 @@ const initialView=battleViewportSize();
 // The 1000v1000 battle starts at a safe ~0.92 ratio. If crowd batching
 // recovers enough GPU budget, upscale the original PBR render to ~1.14x.
 // Never raise resolution on a device still suffering frame-time spikes.
-const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE>=1000?1.24:MASS_SIZE?1.1:TOWN_MODE?1.5:1.0)*BATTLE_RESOLUTION_SCALE;
+const nativeBattlePixelRatio=Math.min(devicePixelRatio,MASS_SIZE>=1000?1.24:MASS_SIZE>100?1.1:MASS_SIZE?1.4:TOWN_MODE?1.5:1.25)*BATTLE_RESOLUTION_SCALE;
 const initialBattlePixelRatio=MASS_SIZE>=1000?Math.min(.92,nativeBattlePixelRatio):nativeBattlePixelRatio;
 const adaptiveBattleResolution=new AdaptiveBattleResolution({
- maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*.65),
+ maxRatio:nativeBattlePixelRatio,minRatio:Math.max(.72,nativeBattlePixelRatio*(MASS_SIZE>=1000?.65:.82)),
  initialRatio:initialBattlePixelRatio,targetFps:45
 });
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE&&!useGpuFxaa});renderer.setPixelRatio(initialBattlePixelRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
@@ -9793,12 +9793,6 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  },
  onAction:(groupId,order)=>{
   const ids=turnGroupSquads(groupId);
-  if(order.action==='item'){
-   const target=ids.find(id=>squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)));
-   if(!order.itemId||!target||!performSquadBattleItem(order.itemId,target,{automatic:true}))
-    log('第'+groupId+'班：使用できるアイテムがありません。所持数・状態を確認してください。');
-   return;
-  }
   // Ranged jobs auto-fire from their hold position; other jobs guard the position.
   // Support uses the existing defense/healing AI; do not turn it into a charge.
   const mode=order.action==='ranged'?'hold':order.action==='support'?'defend':order.action;
@@ -9807,6 +9801,13 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
    if(!squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)))continue;
    selectedSquadId=String(id);issueIndividualSquadOrder(mode,null,true);
   }}finally{selectedSquadId=prior;}
+ },
+ onItem:(groupId,itemId)=>{
+  const target=turnGroupSquads(groupId).find(id=>squadRoster.some(u=>
+   u.team===0&&u.hp>0&&u.alive!==false&&String(u.squadId)===String(id)));
+  const used=Boolean(target&&performSquadBattleItem(itemId,target,{automatic:true}));
+  if(!used)log('第'+groupId+'隊：道具を使用できません。所持数・対象・効果を確認してください。');
+  return used;
  },
  onReport:rows=>{
   const casualties=rows.reduce((n,x)=>n+x.losses,0);
