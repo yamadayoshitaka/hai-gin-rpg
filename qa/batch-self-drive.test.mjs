@@ -58,6 +58,21 @@ test('red optional QA is not a prerequisite but conflict, syntax, ID and ref saf
   assert.equal(canPublish({...ok,[k]:k==='changed'?0:false}),false,k);
  }
 });
+test('scheduled source repair receives intended cron instead of delayed runner minute',()=>{
+ const yaml=fs.readFileSync('.github/workflows/batch-self-drive.yml','utf8');
+ const script=fs.readFileSync('scripts/batch-self-drive.mjs','utf8');
+ assert(yaml.includes("SCHEDULED_CRON: ${{ github.event.schedule || '' }}"));
+ assert.match(script,/categoryFromCron\(process\.env\.SCHEDULED_CRON\)/);
+});
+test('candidate regression QA must pass before unattended main commit',()=>{
+ const script=fs.readFileSync('scripts/batch-self-drive.mjs','utf8');
+ const qa=script.indexOf('const qa=qualityChecks(group)');
+ const barrier=script.indexOf("if(qa.status!=='passed')",qa);
+ const commit=script.indexOf("command('git',['commit'",qa);
+ assert(qa>=0&&barrier>qa&&commit>barrier,'red QA gate precedes commit');
+ assert.match(script,/attempt\.status='qa_rejected'/);
+ assert.match(script,/resetToMain\(\);\s*continue;/);
+});
 test('scheduled GitHub workflow persists real source evidence and never misreports model quality',()=>{
  const yaml=fs.readFileSync('.github/workflows/batch-self-drive.yml','utf8');
  const script=fs.readFileSync('scripts/batch-self-drive.mjs','utf8');

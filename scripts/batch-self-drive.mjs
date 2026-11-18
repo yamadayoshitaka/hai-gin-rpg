@@ -137,7 +137,7 @@ async function recordIssue(group,report){
    'Attempts:',...(report.attempts||[]).map(x=>
     '- PR #'+x.pr+' '+x.sha+' '+x.status+': '+String(x.reason||'').slice(0,350)),
    '','次のChatGPT定期改修はこのIssueから、mainの現行コードと候補PRの**必要な3D差分のみ**を読み、衝突原因をコード修正して別ブランチへコミット。オブジェクト一覧・ID・protected m005/m006と漫画の人物同一性を保持すること。',
-   '静的QAが失敗しても公開可能。ただし破損コード、ID欠損、衝突の自動採用は禁止。',
+   '自動採用は対象回帰QAが成功した候補のみ。失敗した候補はPRとIssueに残し、誤った品質改善報告をしない。',
    '新規GLB・実画面品質・Android FPSは未確認。'].join('\n');
   if(existing){await api('issues/'+existing.number,{method:'PATCH',body:{body}});return existing.html_url}
   const created=await api('issues',{method:'POST',body:{title,body}});
@@ -327,8 +327,15 @@ async function run(){
     attempt.status='safety_rejected';attempt.reason=safety.reason;resetToMain();continue;
    }
    const qa=qualityChecks(group);attempt.qa=qa;
-   // The owner has permitted optional quality QA failures; syntax and world ID
-   // integrity remain hard gates. A red QA is never reported as a pass.
+   // A candidate with red QA may be broken even if its JavaScript parses.
+   // Never publish it as an automatic improvement; keep the issue and PR
+   // for targeted source repair instead of regressing the deployed game.
+   if(qa.status!=='passed'){
+    attempt.status='qa_rejected';
+    attempt.reason=('Regression QA did not pass: '+qa.status+' '+(qa.detail||'')).slice(0,900);
+    resetToMain();
+    continue;
+   }
    command('git',['commit','-m','fix('+group+'): reconcile PR #'+pr.number+' source with latest main']);
    attempt.commitSha=command('git',['rev-parse','HEAD']);
    const checked=await api('pulls/'+pr.number);
