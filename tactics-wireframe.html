@@ -245,7 +245,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 .openingPageControls,.openingWizardTabs,.quickTabs,.quickCountChoices,.quickPager{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center}
 .openingPageControls button,.openingWizardTabs button,.quickPager button{min-height:35px;padding:5px 9px}
 .openingPageControls span,.quickPager span{font-size:11px;color:#d4e7f6;min-width:32px;text-align:center}
-.openingWizardTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px}
+.openingWizardTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
 .openingWizardTabs button{font-size:11px;min-width:0;padding:7px 1px}
 .openingWizardTabs button.active,.quickTabs button.active,.quickCountChoices button.active{background:#447b95;border-color:#f8dda0;color:#fff4ca}
 #squadTactics[data-panel="main"]{max-height:min(74dvh,620px);overflow:hidden!important}
@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261118-move-action-hp1">
+<link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261118-map-paging2">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-move-action-hp1';
+import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261118-map-paging2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -898,7 +898,8 @@ import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4
 import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
-import {tacticalCooldownSeconds} from './src/tactical-command-evaluation.js?v=2.1';
+import {tacticalCooldownSeconds,squadPower} from './src/tactical-command-evaluation.js?v=2.1';
+import {TURN_MOVE_OPTIONS} from './src/battle-objective-turns.js?v=20261118-map-paging2';
 import {AdaptiveBattleResolution} from './src/adaptive-battle-resolution.js?v=20261117-initial-upscale1';
 import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './src/tactical-command-descriptions.js?v=1';
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
@@ -7289,8 +7290,8 @@ function positionSquadMenuBelowLabel(id,force=false){
 function openSquadTactics(id){
  if(!TOWN_MODE){
   if(!battleReady||finished||battleCeremony.locked)return false;
-  const group=normalizeArmyGroup(armyGroupBySquad[String(id)]);
-  return targetedStrategyUi.open(group,{groupOnly:true,startAtRecommendations:true});
+  if(objectiveTurnUI){objectiveTurnUI.open();return true;}
+  return false;
  }
  closeSquadCircleInfo();
  if(!battleReady||finished||!squadIds.includes(String(id))||pendingCircleTarget)return false;
@@ -9674,6 +9675,50 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  groupIds:Array.from({length:10},(_,i)=>i+1),
  getGroups:()=>threeGroupOverview(squadRoster,armyGroupBySquad,storyRequest?.units??squadRoster),
  getMoveTargets:getObjectiveMoveTargets,
+ getGroupOrigin:turnGroupOrigin,
+ worldSize:WORLD_SIZE,
+ drawMapBackground:(ctx,w,h)=>ctx.drawImage(miniBase,0,0,w,h),
+ getMapChoices:groupId=>{
+  const origin=turnGroupOrigin(groupId);
+  if(!origin)return [];
+  const choices=[];
+  for(const move of TURN_MOVE_OPTIONS){
+   if(move.id==='building'||move.id==='bridge_front'){
+    for(const target of getObjectiveMoveTargets(groupId,move.id))
+     choices.push({move:move.id,targetId:target.id,label:move.label+'：'+target.label,x:target.x,z:target.z});
+    continue;
+   }
+   const point=move.id==='hold'?origin:
+    move.id==='retreat'?turnLegalPoint(origin.x+(origin.x<WORLD_SIZE/2?-14:14),origin.z):
+    turnDestination(groupId,{move:move.id,targetId:null});
+   if(point)choices.push({move:move.id,targetId:null,label:move.label,x:point.x,z:point.z});
+  }
+  return choices;
+ },
+ getGroupPowers:()=>{
+  const power={};
+  for(let group=1;group<=10;group++)
+   power[group]=squadPower(squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.hp>0&&u.alive!==false&&
+    normalizeArmyGroup(u.armyGroupId??armyGroupBySquad[String(u.squadId)])===group));
+  return power;
+ },
+ getEnemyGroups:()=>enemySquadIds.map((id,i)=>{
+  const all=squadRoster.filter(u=>u.team===1&&!u.isStrategist&&String(u.squadId)===String(id));
+  const alive=all.filter(u=>u.hp>0&&u.alive!==false);
+  const center=squadCenter(id,1);
+  return {id:i+1,alive:alive.length,hp:alive.reduce((n,u)=>n+(Number(u.hp)||0),0),
+   maxHp:all.reduce((n,u)=>n+(Number(u.maxHp)||0),0),power:squadPower(alive),x:center?.x,z:center?.z};
+ }),
+ getItems:()=>{
+  const stock=new Map();
+  for(const item of allyItemStocks()){
+   const type=ROOM_ITEM_TYPES[item.itemId];
+   if(!type||!['heal','squad_buff'].includes(type.kind))continue;
+   const entry=stock.get(item.itemId)||{id:item.itemId,name:type.name,count:0};
+   entry.count+=(Number(item.quantity)||0);stock.set(item.itemId,entry);
+  }
+  return [...stock.values()].map(item=>({id:item.id,label:item.name+' ×'+item.count}));
+ },
  hasArrived:(groupId,order)=>{
   const destination=objectiveTurnDestinations.get(Number(groupId));
   if(!destination)return true;
@@ -9696,6 +9741,12 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  },
  onAction:(groupId,order)=>{
   const ids=turnGroupSquads(groupId);
+  if(order.action==='item'){
+   const target=ids.find(id=>squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)));
+   if(!order.itemId||!target||!performSquadBattleItem(order.itemId,target,{automatic:true}))
+    log('第'+groupId+'班：使用できるアイテムがありません。所持数・状態を確認してください。');
+   return;
+  }
   // Ranged jobs auto-fire from their hold position; other jobs guard the position.
   // Support uses the existing defense/healing AI; do not turn it into a charge.
   const mode=order.action==='ranged'?'hold':order.action==='support'?'defend':order.action;
@@ -11046,30 +11097,8 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   refreshCommanderOrderOptions();
   const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
-  // Story mode has already locked its initial positions on the FULL radar
-  // at world-map launch. Never show the old formation / initial-order wizard.
-  // Start real-time autonomous combat immediately after loading. Manual
-  // tactics and items now live only in the pause-and-command center.
-  const directBattlePreview=!TOWN_MODE&&!storyRequest&&battleParams.get('storyBattle')!=='1'&&
-   !battleParams.has('legacySetup');
-  if(storyRequest?.sortieTeamCount||directBattlePreview){
-   for(const id of squadIds){
-    squadStrategies.set(id,'eliminate');
-    setStartingSquadOrder(0,id,'charge'); // Default AI, not a user-selected opening order.
-   }
-   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
-   followSelectedCommander();
-   battleReady=true;loading.hidden=true;
-   battleAudio.unlock().catch(()=>{}); // Autoplay may be blocked; BGM can be enabled on tap.
-   initialCommanderCinematicPending=squadIds.find(id=>hasSquadCommander(id))??null;
-   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
-   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
-    text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
-   clock.getDelta();
-   log(storyRequest?storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人':
-    '公開戦闘プレビュー開始：中央作戦パネルの「作戦」から操作できます');
-   updateUI();animate();return;
-  }
+  // The prebattle page is required for all battle routes. The turn engine
+  // owns subsequent movement, arrival actions and items.
   // The opening screen owns strategy selection. There is no in-battle
   // strategy dropdown: after launch the chosen assignments are immutable.
   const openingPlan=document.createElement('section');
@@ -11078,7 +11107,7 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent=storyRequest?.sortieTeamCount?'宿屋の最大10班・レベル依存隊数、4×4固定陣形と隊長を引き継ぎます。出撃人数はステージ上限内です。戦闘開始後は各班ごとに「①移動先（建物・橋など）→②到着後の行動（遠距離・防御など）」を選びます。':'最大10班へ隊を割り当てます。号令は班全体へ届き、職業に応じて攻撃・守備・支援を行います。宿屋で隊長を選定できます。';
+  planHint.textContent='宿屋で編成した隊と隊長・装備を引き継ぎます。開戦前に各隊の所属班と陣形を選択してください。開戦後は地図から移動先を選び、到着後の作戦を設定します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');planList.id='openingPlanList';
   planList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -11093,8 +11122,15 @@ async function finishBattleLoading(){
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
     const savedType=storyRequest?.sortieTeamCount?storyRequest.units.find(u=>String(u.squadId)===String(detail.squadId))?.formationType:null;
-     const actualType=['attack','balanced','support'].includes(savedType)?savedType:classifySquad(detail);
+     const configured=formationPlanTypes.get(detail.squadId);
+     const actualType=['attack','balanced','support'].includes(configured)?configured:
+      ['attack','balanced','support'].includes(savedType)?savedType:classifySquad(detail);
     selectedSquadFormations.set('0:'+detail.squadId,actualType);
+    for(const button of refs.formationButtons.querySelectorAll('button')){
+     const active=button.dataset.formation===actualType;
+     button.style.background=active?'#497c56':'#1d3951';
+     button.style.borderColor=active?'#ffe49a':'#7494aa';
+    }
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
     const assigned=Object.values(manualJobs[detail.squadId]||{}).reduce((n,v)=>n+v,0);
     const strategy=squadStrategies.get(String(detail.squadId))||'eliminate';
@@ -11113,11 +11149,11 @@ async function finishBattleLoading(){
   };
   for(const id of squadIds){
    const row=document.createElement('div');
-   row.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,132px);gap:2px 9px;align-items:center;padding:5px 0;border-bottom:1px solid #315371;font:12px system-ui';
+   row.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:5px 0;border-bottom:1px solid #315371;font:12px system-ui';
    const name=document.createElement('span');
    name.style.cssText='min-width:0;font-weight:650;overflow-wrap:anywhere';
    const preview=document.createElement('small');
-   preview.style.cssText='grid-column:1/-1;color:#b8d7e8;font:10px/1.4 system-ui';
+   preview.style.cssText='color:#b8d7e8;font:10px/1.4 system-ui';
    const buttons=document.createElement('div');
    buttons.style.cssText='display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;min-width:0';
    for(const group of Array.from({length:10},(_,i)=>i+1)){
@@ -11131,7 +11167,7 @@ async function finishBattleLoading(){
    manual.textContent='✎ 職業を選んで手動編成';
    manual.style.cssText='grid-column:1/-1;min-height:38px;color:#fff;background:#30577b;border:1px solid #94b5d1;border-radius:7px';
    manual.onclick=()=>openManualJobEditor(id);
-    if(storyRequest?.sortieTeamCount){buttons.hidden=true;manual.hidden=true;}
+    // Story battles also offer formation and army-group selection.
    const itemModeLine=document.createElement('label');
    itemModeLine.style.cssText='grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:7px;color:#bde7f9;font:11px system-ui';
    const itemModeText=document.createElement('span');itemModeText.textContent='🎒 アイテム使用';
@@ -11144,9 +11180,17 @@ async function finishBattleLoading(){
    itemMode.value=squadItemPolicies.get(id);
    itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);};
    itemModeLine.append(itemModeText,itemMode);
-   formationRows.set(id,{name,preview,buttons,manual,itemMode});
+   const formationButtons=document.createElement('div');
+   formationButtons.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px';
+   for(const [type,label] of [['attack','⚔ 前衛重視'],['balanced','⚖ 均衡'],['support','✚ 支援重視']]){
+    const button=document.createElement('button');button.type='button';button.dataset.formation=type;
+    button.textContent=label;button.style.cssText='min-height:39px;color:white;border:1px solid #7494aa;border-radius:6px;font:11px system-ui';
+    button.onclick=()=>{formationPlanTypes.set(id,type);refreshFormationPreview()};
+    formationButtons.append(button);
+   }
+   formationRows.set(id,{name,preview,buttons,formationButtons,manual,itemMode});
    manual.hidden=true;
-   row.append(name,buttons,preview,manual,itemModeLine);planList.append(row);
+   row.append(name,buttons,formationButtons,preview,manual,itemModeLine);planList.append(row);
   }
   // Full-screen profession editor: one tap reserves actual soldiers of that
   // class (10 for large squads, one for small squads). Counts, not percentages.
@@ -11227,81 +11271,10 @@ async function finishBattleLoading(){
   }
   refreshFormationPreview();
   openingPlan.append(planHeading,planHint,planList);
-  const orderPlan=document.createElement('section');orderPlan.id='openingSquadOrders';
-  orderPlan.style.cssText=openingPlan.style.cssText;
-  const orderTitle=document.createElement('strong');orderTitle.textContent='📯 開戦前の初期号令（味方・敵）';
-  const orderHint=document.createElement('p');
-  orderHint.textContent='開戦時の初期号令です。開始後は各班の移動先→到着後の行動を中央パネルで指定し、次ターンも自動継承します。';
-  orderHint.style.cssText=planHint.style.cssText;
+  const orderPlan=document.createElement('section');orderPlan.id='openingSquadOrders';orderPlan.hidden=true;
   const orderList=document.createElement('div');orderList.id='openingOrderList';
-  orderList.style.cssText='overflow:hidden;display:grid;gap:6px';
-  const availableBuildings=availableExplorationBuildings();
-  for(const team of [0,1]){
-   const subtitle=document.createElement('strong');
-   subtitle.textContent=team===0?'🔵 味方の初期号令':'🔴 敵AIの初期号令（同じルール）';
-   subtitle.style.cssText='font:700 12px system-ui;color:'+(team===0?'#a9dfff':'#ffc0c5');
-   orderList.append(subtitle);
-   for(const id of team===0?squadIds:enemySquadIds){
-    const squad=squadRoster.filter(u=>u.team===team&&String(u.squadId)===id&&u.hp>0&&!u.isStrategist);
-    const row=document.createElement('div');row.style.cssText='display:grid;gap:4px;padding:5px;border-bottom:1px solid #3b546a';
-    const name=document.createElement('span');name.textContent=(team===0?'🔵 味方 ':'🔴 敵 ')+squadName(id,team)+'（'+squad.length+'人）';
-    name.style.cssText='font:11px system-ui;color:#dce9f5';
-    const orderSelect=document.createElement('select');orderSelect.setAttribute('aria-label',squadName(id,team)+'の初期号令');
-    orderSelect.style.cssText='width:100%;padding:7px;color:white;background:#193852;border:1px solid #6b90ac;border-radius:6px';
-    for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
-     const option=document.createElement('option');option.value=value;option.textContent=label;
-      if(team===0&&storyRequest?.sortieTeamCount){
-       const allowed=storyRequest.availableSquadOrders?.[String(id)];
-       if(allowed){if(!allowed.includes(value))option.disabled=true;}
-       else{
-        const jobs=storyRequest.units.filter(u=>String(u.squadId)===String(id)).map(u=>u.job);
-        if(value==='support'&&!jobs.includes('僧侶'))option.disabled=true;
-        if(value==='explore'&&!jobs.some(j=>j==='忍者'||j==='盗賊'))option.disabled=true;
-       }
-      }
-      orderSelect.append(option);
-    }
-    const innOrder=team===0?storyRequest?.initialSquadOrders?.[String(id)]:null;
-     const validInn=innOrder&&Object.hasOwn(INITIAL_ORDER_LABELS,innOrder)&&innOrder!=='explore'&&
-      !orderSelect.querySelector('option[value="'+innOrder+'"]')?.disabled;
-     orderSelect.value=validInn?innOrder:(team===0&&storyRequest?.sortieTeamCount?'hold':'charge');
-    const effectLabel=document.createElement('small');
-    effectLabel.className='openingCommandEffect';effectLabel.textContent=orderEffect(orderSelect.value);
-    const buildingPicker=createExplorationPicker();
-    buildingPicker.element.hidden=true;
-    buildingPicker.element.style.maxHeight='none';buildingPicker.element.style.overflow='hidden';
-    if(!availableBuildings.length)orderSelect.querySelector('option[value="explore"]').disabled=true;
-    orderSelect.onchange=()=>{
-     buildingPicker.element.hidden=orderSelect.value!=='explore';
-     effectLabel.textContent=orderEffect(orderSelect.value);
-    };
-    row.append(name,orderSelect,effectLabel,buildingPicker.element);orderList.append(row);
-    initialOrderInputs.push({team,id,orderSelect,buildingPicker,name});
-   }
-  }
-  function refreshGroupInitialOrderRows(){
-   const seen=new Set();
-   for(const entry of initialOrderInputs){
-    if(entry.team!==0)continue;
-    const group=normalizeArmyGroup(armyGroupBySquad[entry.id]);
-    entry.orderSelect.parentElement.dataset.groupDuplicate=String(seen.has(group));seen.add(group);
-    entry.name.textContent=commandGroupName(entry.id)+'・全'+commandGroupIds(entry.id).length+'隊の初期号令';
-    if(entry.groupBound)continue;
-    entry.groupBound=true;
-    const original=entry.orderSelect.onchange;
-    entry.orderSelect.onchange=()=>{
-     for(const other of initialOrderInputs){
-      if(other.team!==0||!commandGroupIds(entry.id).includes(other.id))continue;
-      other.orderSelect.value=entry.orderSelect.value;
-      other.buildingPicker.element.hidden=true;
-     }
-     original?.();
-    };
-   }
-   initialOrderPager?.();
-  }
-  refreshGroupInitialOrderRows();
-  orderPlan.append(orderTitle,orderHint,orderList);
+  orderPlan.append(orderList);
+  const refreshGroupInitialOrderRows=()=>{}; // Historical squad order dropdowns were retired.
   // No vertical lists: both army setup screens expose button-based pages.
   function openingPager(container,items,pageSize=1){
    let page=0;
@@ -11330,7 +11303,7 @@ async function finishBattleLoading(){
   const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
   const intro=document.createElement('div');intro.id='openingLaunchSummary';
   intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
-  intro.textContent=storyRequest?.sortieTeamCount?'宿屋の3隊編成を反映しました。初期号令を確認して開戦してください。':'編成・初期号令の確認が済んだら開戦してください。号令は班の全隊へ発令します。';
+  intro.textContent='所属する班・陣形を確認したら開戦してください。開戦後は地図で目的地を選び、移動後の作戦を設定します。命令は次ターンに継続されます。';
   const openingTacticalSummary=createPreBattleTacticalSummary({
    getStageName:()=>selectedStage.name,
    getUnits:()=>squadRoster,
@@ -11343,17 +11316,17 @@ async function finishBattleLoading(){
   });
   let wizardPage='formation';
   const wizardButtons=new Map();
-  for(const [page,label] of [['formation','① 編成'],['orders','② 初期号令'],['launch','③ 開戦']]){
+  for(const [page,label] of [['formation','① 隊列・陣形'],['launch','② 開戦']]){
    const button=document.createElement('button');button.type='button';button.textContent=label;
    button.onclick=()=>setOpeningWizardPage(page);
    wizardTabs.append(button);wizardButtons.set(page,button);
   }
   function setOpeningWizardPage(page){
    wizardPage=page;
-   openingPlan.hidden=page!=='formation';orderPlan.hidden=page!=='orders';intro.hidden=page!=='launch';
+   openingPlan.hidden=page!=='formation';orderPlan.hidden=true;intro.hidden=page!=='launch';
    startButton.hidden=page!=='launch';
-   openingTacticalSummary.element.hidden=page!=='launch';
-   if(page==='launch')openingTacticalSummary.refresh();
+   openingTacticalSummary.element.hidden=true;
+   // No initial orders: all movement and actions are now turn-based.
    for(const [key,button] of wizardButtons)button.classList.toggle('active',key===page);
   }
   $('loadingCard').insertBefore(wizardTabs,openingPlan);
@@ -11362,13 +11335,35 @@ async function finishBattleLoading(){
   startButton.hidden=false;startButton.disabled=false;
   loading.classList.add('prebattle-setup');
   $('loadingCard').classList.add('prebattle-command-ui');
-   $('loadingStage').textContent='準備完了：隊列編成と初期号令を選択';
+   $('loadingStage').textContent='準備完了：隊列と陣形を確認して開戦';
    setOpeningWizardPage('formation');
   let battleLaunched=false;
   const launch=()=>{
    if(battleLaunched)return;
    battleLaunched=true;startButton.disabled=true;silentButton.disabled=true;
-   // Keep each soldier's job, equipment, captain bonus and original squad identity.
+   // The prebattle formation controls must change the authoritative simulation,
+   // not only the on-screen badge. Recompose existing soldiers, never clone models.
+   const selectedFormationTypes=formationTypes();
+   if(massSim){
+    const planned=massSim.setSquadFormationTypes(selectedFormationTypes,0);
+    if(planned?.assignments){
+     if(massWorker?.active)massWorker.setSquadFormationTypes(selectedFormationTypes,0,planned.assignments);
+     for(const actor of actors){
+      if(actor.team!==0||actor.massUnitId==null)continue;
+      const soldier=massSim.units[actor.massUnitId];
+      if(!soldier)continue;
+      actor.squadId=soldier.squadId;actor.formationType=soldier.formationType;
+      const position=massWorldPositionFn?.(soldier,{});
+      if(position&&actor.root?.position){
+       actor.root.position.set(position.x,position.y,position.z);
+       actor.cell=gridFromWorld(actor.root.position);
+      }
+     }
+    }else log('選択した陣形を反映できませんでした。既存の編成を保持します。');
+   }else for(const actor of actors){
+    if(actor.team===0)actor.formationType=selectedFormationTypes[String(actor.squadId)]||'balanced';
+   }
+   // Keep each soldier's job, equipment and captain bonus.
    if(!massSim){
     occupiedCells.clear();reservedCells.clear();
     for(const soldier of actors){
@@ -11379,16 +11374,9 @@ async function finishBattleLoading(){
       'eliminate');
     }
    }
-   for(const {team,id,orderSelect,buildingPicker} of initialOrderInputs){
-    const representative=team===0?initialOrderInputs.find(e=>e.team===0&&armyGroupBySquad[e.id]===armyGroupBySquad[id]):null;
-    if(representative)orderSelect.value=representative.orderSelect.value;
-    const selected=orderSelect.value==='explore'
-     ?queueSquadExplorations(team,id,(representative?.buildingPicker||buildingPicker).getIds(),{beforeBattle:true})
-     :setStartingSquadOrder(team,id,orderSelect.value);
-    if(!selected){
-     orderSelect.value='charge';setStartingSquadOrder(team,id,'charge');
-    }
-   }
+   // Opening commands retired: first movement belongs to the turn engine.
+   for(const id of squadIds)setStartingSquadOrder(0,id,'hold');
+   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
    followSelectedCommander();
    battleReady=true;loading.hidden=true;
    initialCommanderCinematicPending=squadIds.find(id=>hasSquadCommander(id))??null;
