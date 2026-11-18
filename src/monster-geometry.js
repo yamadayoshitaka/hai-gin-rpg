@@ -23,12 +23,12 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js';
+ from './magma-salamander-sculpt.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
