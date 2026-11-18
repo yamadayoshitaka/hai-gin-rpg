@@ -25,6 +25,8 @@ test('batch center and control assets are in the delivered Pages archive',()=>{
  assert(groups.some(x=>x.id==='gameQuality'&&x.workflow==='game-quality-six-lane.yml'));
  assert(monitor.includes('gameQuality'),'Full-game quality card must reach public Pages');
  assert(monitor.includes('実際に何が改善されたか'),'Per-commit improvements must be visible');
+ assert(monitor.includes('batch-pages-release-gate.js'),'The release verification script must be shipped in Pages');
+ assert(fs.existsSync(path.join(root,'src/batch-pages-release-gate.js')),'Missing verified Pages release helper in published assets');
  for(const required of [
   'id="batchDisplaySelect"','id="batchLaunchEvidence"','id="worldObjectPicker"',
   'id="faceExpressionSelect"','ChatGPT用指示をコピー','GitHubでIssueを作成して起動',
