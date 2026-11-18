@@ -72,7 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/batch-rule-self-heal.mjs
       - name: Verify public Pages release includes the repaired main commit
-        if: steps.repair.outputs.changed == 'true'
+        if: always() && steps.repair.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/batch-rule-pages-verify.mjs --source=${{ steps.repair.outputs.source_sha }}
