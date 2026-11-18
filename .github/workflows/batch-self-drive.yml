@@ -15,6 +15,11 @@ on:
         required: true
         default: faceHair
         options: [faceHair, outfit, creatureMonster, world, anime]
+  pull_request:
+    paths:
+      - 'scripts/batch-self-drive.mjs'
+      - 'qa/batch-self-drive.test.mjs'
+      - '.github/workflows/batch-self-drive.yml'
   push:
     branches: [main]
     paths:
@@ -49,13 +54,14 @@ jobs:
           node --check scripts/batch-self-drive.mjs
           node --test qa/batch-self-drive.test.mjs
       - name: Attempt latest main + one current source PR and publish real source changes
+        if: github.event_name != 'pull_request'
         id: reconcile
         env:
           GH_TOKEN: ${{ github.token }}
           INPUT_CATEGORY: ${{ inputs.category || '' }}
         run: node scripts/batch-self-drive.mjs
       - name: Archive exact outcome, even when model QA is red or no commit was possible
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: batch-self-drive-${{ github.run_id }}
