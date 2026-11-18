@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-hover-flight-v24-20261118',
+     '&v=phoenix-master-birds-v25-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
