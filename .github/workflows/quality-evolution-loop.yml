@@ -20,6 +20,7 @@ on:
       - 'qa/quality-evolution-probe.mjs'
       - 'qa/quality-evolution-loop.test.mjs'
       - 'qa/quality-evolution-reporting.test.mjs'
+      - 'qa/outfit-fps-diagnostic.test.mjs'
       - 'qa/battle-ready-gate.cjs'
       - 'qa/battle-ready-gate.test.cjs'
       - 'qa/game-quality-browser.cjs'
@@ -59,7 +60,7 @@ jobs:
         run: |
           node --check scripts/quality-evolution-loop.mjs
           node --check qa/quality-evolution-probe.mjs
-          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs qa/battle-ready-gate.test.cjs
+          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs qa/outfit-fps-diagnostic.test.mjs qa/battle-ready-gate.test.cjs
   evolve:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
@@ -79,7 +80,7 @@ jobs:
           OWNER_DOMAIN: ${{ inputs.domain || '' }}
           CRON: ${{ github.event.schedule || '' }}
         run: |
-          domain=$(node --input-type=module -e "const d=process.env.OWNER_DOMAIN;const m={'8 * * * *':'face','28 * * * *':'hair','48 * * * *':'outfit'};console.log(['face','hair','outfit'].includes(d)?d:m[process.env.CRON]||'face')")
+          domain=$(node --input-type=module -e "const d=process.env.OWNER_DOMAIN;const m={'8 * * * *':'face','28 * * * *':'hair','48 * * * *':'outfit'};console.log(['face','hair','outfit'].includes(d)?d:m[process.env.CRON]||'outfit')")
           echo "domain=$domain" >> "$GITHUB_OUTPUT"
           echo "## Quality evolution: $domain" >> "$GITHUB_STEP_SUMMARY"
       - name: Install free 3D runtime and Chromium headless renderer
@@ -88,7 +89,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Hard test source invariants before attempting any visual candidate
         run: |
-          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs
+          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs qa/outfit-fps-diagnostic.test.mjs
           node --test qa/studio-model-route-contract.test.mjs
       - name: Launch local real game for identical baseline/candidate WebGL probes
         run: |
