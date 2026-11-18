@@ -29,6 +29,25 @@ test('turn sequence accepts map destination then inventory action and persists c
  assert.deepEqual(engine.snapshot().ordersByGroup[2],
   {move:'bridge_front',action:'item',targetId:'bridge-1',itemId:'healing_potion'});
 });
+test('free map cell selection, faster turn tempo, and job-based groups stay wired',()=>{
+ const engine=createObjectiveTurnEngine({groupIds:[1],getGroups:()=>[{id:1,alive:5,initial:5,hp:100}]});
+ assert.equal(engine.begin().phase,'planning');
+ assert.equal(engine.setMove(1,'point','105,118'),true);
+ assert.equal(engine.snapshot().ordersByGroup[1].targetId,'105,118');
+ assert.equal(engine.start(),true);
+ assert.equal(engine.status().remaining,20);
+ engine.update(20);
+ assert.equal(engine.status().phase,'acting');
+ assert.equal(engine.status().remaining,4);
+ const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
+ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(panel,/getLegalMapPoint/);
+ assert.match(panel,/engine.setMove\(g.id,'point'/);
+ assert.match(battle,/order.move==='point'/);
+ assert.match(battle,/getGroupLabel:groupId=>turnGroupLabels/);
+ assert.match(battle,/battleAudio.setPhase\('battle'\)/);
+ assert.match(battle,/announceBattleLoot/);
+});
 test('all movement and strategy choices are button and map based, without select dropdowns',()=>{
  const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
  assert.ok(TURN_MOVE_OPTIONS.some(option=>option.id==='building'));

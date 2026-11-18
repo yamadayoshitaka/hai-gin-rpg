@@ -1008,7 +1008,7 @@ const battleAudio=(()=>{
  }
  function setPhase(phase){
   battleScore.setPhase(phase);
-  const label={intro:'開戦演出',battle:'戦場BGM',victory:'勝利ファンファーレ',defeat:'敗北BGM'}[phase]||'BGM';
+  const label={intro:'開戦演出',march:'行軍BGM',battle:'交戦BGM',victory:'勝利ファンファーレ',defeat:'敗北BGM'}[phase]||'BGM';
   const toggle=document.getElementById('soundToggle'),top=document.getElementById('topBgm');
   if(toggle)toggle.textContent=enabled?'♪ '+label:'♪ BGM OFF';
   if(top)top.title='再生予定：'+label;
@@ -2432,14 +2432,29 @@ function canChangeSquadOrder(id){
 }
 const battleCeremony=createBattleCeremony({
  // The stage's recorded BGM plays DURING the opening cut-in, not only after it.
- onPhase:phase=>{if(phase==='intro')battleAudio.orderFanfare();
+ onPhase:phase=>{if(phase==='intro'){battleAudio.setPhase('march');battleAudio.orderFanfare();}
   else battleAudio.setPhase(phase)},
- onIntroFinished:()=>battleAudio.setPhase('battle'),
+ onIntroFinished:()=>battleAudio.setPhase('march'),
  onOutroFinished:()=>$('endScreen').style.display='flex'
 });
 // Result cut-ins are queued: the new troop/HP/item status is narrated only
 // AFTER the visual cut-in has closed. Never interrupt the opening or outro.
 const resultCutinQueue=[],reportsAfterCutin=[];
+const battleLootToast=document.createElement('div');
+battleLootToast.id='battleLootPickupToast';battleLootToast.hidden=true;
+battleLootToast.style.cssText='position:fixed;z-index:9999;top:10%;left:50%;transform:translateX(-50%);max-width:90vw;min-width:min(290px,85vw);box-sizing:border-box;padding:12px 18px;border-radius:12px;border:2px solid #ffda87;background:#142b43f2;color:#fff0bb;box-shadow:0 5px 30px #000b;text-align:center;font:800 clamp(16px,4vw,26px)/1.35 system-ui;pointer-events:none';
+document.body.appendChild(battleLootToast);
+let battleLootToastTimer=null;
+function announceBattleLoot(collector,loot){
+ if(collector?.team!==0)return;
+ const name=ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item||'不明なアイテム';
+ const quantity=Math.max(1,Number(loot.quantity)||1);
+ battleLootToast.textContent='🎁 '+name+' ×'+quantity+' を入手！';
+ battleLootToast.hidden=false;
+ clearTimeout(battleLootToastTimer);
+ battleLootToastTimer=setTimeout(()=>{battleLootToast.hidden=true},3900);
+ log('戦利品獲得：'+name+' ×'+quantity);
+}
 let firstHealingReportShown=false;
 let battleResultSerial=0;
 function reportAfterBattleCutin(text,{team=0,squadId=null,priority=86}={}){
@@ -2459,7 +2474,8 @@ function updateBattleResultCutins(){
  }
  if(finished||!battleReady||tacticalPlanningActive||!resultCutinQueue.length)return;
  const next=resultCutinQueue.shift();
- battleCeremony.showResult(next.title);
+ if(/撃破|壊滅|全滅/.test(next.title))battleCeremony.showAnnihilation(next.title,next.text);
+ else battleCeremony.showResult(next.title);
  if(next.squadId!=null&&
    (next.title.includes('撃破')||next.title.includes('壊滅')||next.title.includes('回復')))
   beginSquadFocusCinematic(next.squadId,next.cameraTeam??0,'result');
@@ -5028,7 +5044,8 @@ function updateUnitFloorTravel(a,dt){
      id:stack.itemId,name:stack.name,quantity:stack.quantity
     }));
     hideCollectedRoomLootMarkers(travel.building,loot);
-    queueBattleResultCutin('🎁 アイテム入手',
+    announceBattleLoot(a,loot);
+    queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
      (a.team===0?'味方':'敵')+squadName(a.squadId,a.team)+'が'+loot.item+
      'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId)});
     if(!itemPanel.hidden)renderBattleItemManagement();
@@ -5419,9 +5436,11 @@ function collectMassRoomItems(){
  const picks=massRoomLootCollector.collect(massSim.units,{destroyedBuildings:destroyedTownBuildings});
  if(!picks.length)return;
  for(const {loot,building,unit} of picks){
+  recordBattleTreasure(unit,loot);
   hideCollectedRoomLootMarkers(building,loot);
+  announceBattleLoot(unit,loot);
   unit.inventory=roomItemRegistry.owned(unit.id).map(item=>({id:item.itemId,name:item.name,quantity:item.quantity}));
-  queueBattleResultCutin('🎁 アイテム入手',
+  queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
     (unit.team===0?'味方':'敵')+squadName(unit.squadId,unit.team)+'が'+
     building.data.kind+'で'+loot.item+'を入手。所持品に反映しました。',
     {team:unit.team,squadId:String(unit.squadId),priority:86});
@@ -5468,7 +5487,8 @@ function collectNearbyRoomItems(){
     id:item.itemId,name:item.name,quantity:item.quantity
    }));
    hideCollectedRoomLootMarkers(b,loot);
-   queueBattleResultCutin('🎁 アイテム入手',
+   announceBattleLoot(a,loot);
+   queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
     (a.team===0?'味方':'敵')+squadName(a.squadId,a.team)+'が'+loot.item+
     'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId)});
    pickedUp++;
@@ -9587,7 +9607,19 @@ $('pause').onclick=()=>{if(pickingSquadDestination){finishSquadDestination(false
 // Every army group has an independent destination followed by an arrival action.
 // Map destinations use real stage-building and bridge instances; no invented coordinates.
 const objectiveTurnDestinations=new Map();
-const turnGroupSquads=id=>squadIds.filter(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===Number(id));
+// Group the existing deployed squads by their dominant job, without touching their members.
+const turnJobNames=[...new Set(squadIds.map(id=>squadPrimaryJob(id)))];
+const turnJobSlot=new Map(turnJobNames.map((name,index)=>[name,Math.min(10,index+1)]));
+const turnGroupBySquad=new Map(squadIds.map(id=>[String(id),turnJobSlot.get(squadPrimaryJob(id))||10]));
+const turnGroupLabels=new Map();
+for(const [name,group] of turnJobSlot)
+ turnGroupLabels.set(group,turnJobNames.length>10&&group===10?'その他ジョブ隊':name+'隊');
+const turnGroupSquads=id=>squadIds.filter(sid=>turnGroupBySquad.get(String(sid))===Number(id));
+const turnGroupOverview=()=>threeGroupOverview(
+ squadRoster.filter(u=>u.team===0&&!u.isStrategist).map(u=>({
+  ...u,armyGroupId:turnGroupBySquad.get(String(u.squadId))||10
+ })),{},[]);
+
 const turnGroupOrigin=id=>{
  const centers=turnGroupSquads(id).map(sid=>squadCenter(sid,0)).filter(Boolean);
  if(!centers.length)return null;
@@ -9625,6 +9657,10 @@ function getObjectiveMoveTargets(groupId,move){
 function turnDestination(groupId,order){
  const origin=turnGroupOrigin(groupId);
  if(!origin||['hold','retreat'].includes(order.move))return null;
+ if(order.move==='point'){
+  const match=/^(\d+),(\d+)$/.exec(String(order.targetId||''));
+  return match?turnLegalPoint(Number(match[1]),Number(match[2])):null;
+ }
  const enemies=turnEnemies().sort((a,b)=>
   Math.hypot(a.x-origin.x,a.z-origin.z)-Math.hypot(b.x-origin.x,b.z-origin.z));
  const enemy=enemies[0];
@@ -9684,9 +9720,11 @@ const jobPowerBreakdown=units=>{
 };
 const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  groupIds:Array.from({length:10},(_,i)=>i+1),
- getGroups:()=>threeGroupOverview(squadRoster,armyGroupBySquad,storyRequest?.units??squadRoster),
+ getGroups:turnGroupOverview,
  getMoveTargets:getObjectiveMoveTargets,
  getGroupOrigin:turnGroupOrigin,
+ getGroupLabel:groupId=>turnGroupLabels.get(Number(groupId))||'混成隊',
+ getLegalMapPoint:turnLegalPoint,
  worldSize:WORLD_SIZE,
  drawMapBackground:(ctx,w,h)=>ctx.drawImage(miniBase,0,0,w,h),
  getMapChoices:groupId=>{
@@ -9694,6 +9732,7 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
   if(!origin)return [];
   const choices=[];
   for(const move of TURN_MOVE_OPTIONS){
+   if(move.id==='point')continue; // Arbitrary map cells are picked on the canvas.
    if(move.id==='building'||move.id==='bridge_front'){
     for(const target of getObjectiveMoveTargets(groupId,move.id))
      choices.push({move:move.id,targetId:target.id,label:move.label+'：'+target.label,x:target.x,z:target.z});
@@ -9707,12 +9746,12 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
   return choices;
  },
  getGroupJobs:groupId=>jobPowerBreakdown(squadRoster.filter(u=>
-  u.team===0&&normalizeArmyGroup(u.armyGroupId??armyGroupBySquad[String(u.squadId)])===Number(groupId))),
+  u.team===0&&turnGroupBySquad.get(String(u.squadId))===Number(groupId))),
  getGroupPowers:()=>{
   const power={};
   for(let group=1;group<=10;group++)
    power[group]=squadPower(squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.hp>0&&u.alive!==false&&
-    normalizeArmyGroup(u.armyGroupId??armyGroupBySquad[String(u.squadId)])===group));
+    turnGroupBySquad.get(String(u.squadId))===group));
   return power;
  },
  getEnemyGroups:()=>enemySquadIds.map((id,i)=>{
@@ -9775,6 +9814,27 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  }
 }):null;
 window.getBattleObjectiveTurnsQA=()=>objectiveTurnUI?.snapshot()??null;
+// Switch from march to combat score on actual first contact.
+let firstBattleEngagement=false,lastBattleContactCheck=-Infinity;
+function updateBattleEngagement(){
+ if(TOWN_MODE||!battleReady||finished||paused||firstBattleEngagement||
+    elapsed-lastBattleContactCheck<.55)return;
+ lastBattleContactCheck=elapsed;
+ const enemies=turnEnemies();
+ if(!enemies.length)return;
+ for(const sid of squadIds){
+  const ally=squadCenter(sid,0);
+  if(!ally)continue;
+  if(enemies.some(enemy=>Math.hypot(ally.x-enemy.x,ally.z-enemy.z)<=10)){
+   firstBattleEngagement=true;
+   battleAudio.setPhase('battle');
+   battleCeremony.showEngagement(squadPrimaryJob(sid)+'隊、敵と交戦！');
+   break;
+  }
+ }
+}
+window.getBattleEngagementQA=()=>({engaged:firstBattleEngagement,music:battleAudio.musicStatus});
+
 
 // Open at the central bridge instead of the north-front soldier beside the
 // enormous castle wall. The north-front view could be completely occluded by
@@ -10503,6 +10563,7 @@ function animate(){
  battleSituationPause.update(bankDelta);
  if(objectiveTurnUI&&battleReady&&!finished&&battleCeremony.state!=='intro'&&battleCeremony.state!=='outro')objectiveTurnUI.begin();
  if(objectiveTurnUI&&battleReady&&!finished)objectiveTurnUI.update(paused?0:dt,bankDelta);
+ updateBattleEngagement();
  if(tacticalPlanningActive&&!finished){
   tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
   if(tacticalBankRemaining<=0){tacticalPlanningActive=false;if(!commandOverviewLocked)setBattlePaused(false);}

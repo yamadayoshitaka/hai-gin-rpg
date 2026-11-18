@@ -97,6 +97,30 @@ export function createBattleCeremony({
  @media(max-width:430px){#battleCeremony.order .ceremonyContent,
   #battleCeremony.result .ceremonyContent{width:min(205px,46vw);max-width:46vw;padding:6px}
   #battleCeremony .ceremonySub{font-size:10px}}
+ /* Large, short, non-blocking cut-ins for first engagement and wiped-out squads. */
+ #battleCeremony.engagement .ceremonyShade,#battleCeremony.wipeout .ceremonyShade{
+  display:block!important;opacity:.6;pointer-events:none
+ }
+ #battleCeremony.engagement .ceremonyBeam,#battleCeremony.wipeout .ceremonyBeam{
+  display:block!important;animation:ceremonyBeam .85s ease-out both
+ }
+ #battleCeremony.engagement .ceremonyContent,#battleCeremony.wipeout .ceremonyContent{
+  position:absolute;left:50%;right:auto;top:50%;width:min(88vw,720px);
+  max-width:88vw;min-width:0;box-sizing:border-box;margin:0;padding:18px 16px;
+  transform:translate(-50%,-50%);border:2px solid #dcb87a;border-radius:15px;
+  background:linear-gradient(110deg,#122f48f7,#152033f7);box-shadow:0 12px 55px #000e;
+  animation:ceremonyImpact .38s ease-out both
+ }
+ @keyframes ceremonyImpact{from{opacity:0;transform:translate(-50%,-50%) scale(1.14)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+ #battleCeremony.engagement .ceremonyEmblem,#battleCeremony.wipeout .ceremonyEmblem{font-size:clamp(36px,8vw,65px)}
+ #battleCeremony.engagement .ceremonyTitle,#battleCeremony.wipeout .ceremonyTitle{
+  font:900 clamp(31px,8vw,70px)/1.12 serif;color:#ffe1a3;
+  text-shadow:0 2px 18px #f8bd6870;letter-spacing:.04em
+ }
+ #battleCeremony.engagement .ceremonySub,#battleCeremony.wipeout .ceremonySub{
+  font:700 clamp(13px,2.4vw,24px)/1.35 system-ui;max-width:85vw
+ }
+ #battleCeremony.wipeout .ceremonyTitle{color:#ffb5ad}
  @media(prefers-reduced-motion:reduce){#battleCeremony *{animation:none!important;transition:none!important}}
  `;
  doc.head.appendChild(style);
@@ -116,7 +140,9 @@ export function createBattleCeremony({
   victory:['🏆','勝利','戦場に勝鬨が響く'],
   defeat:['⚑','敗北','軍勢は退却を余儀なくされた'],
   order:['♟','号令','軍師の命令が全軍へ響く'],
-  result:['✦','戦況報告','行動結果を報告します']
+  result:['✦','戦況報告','行動結果を報告します'],
+  engagement:['⚔','交戦開始','敵味方が激突！'],
+  wipeout:['☠','部隊全滅','部隊が戦場から消滅した！']
  };
  function begin(kind,detail='',duration=null,stageName='',buffText=''){
   const content=formats[kind];if(!content)return;
@@ -127,7 +153,7 @@ export function createBattleCeremony({
   const readingCharacters=String(detail||'').length+String(buffText||'').length;
   const readableMs=kind==='order'?Math.min(3100,1600+readingCharacters*22):
    kind==='result'?Math.min(2700,1550+readingCharacters*25):
-   kind==='intro'?2400:3500;
+   kind==='engagement'?1850:kind==='wipeout'?2300:kind==='intro'?2400:3500;
   locked=major;until=now()+(duration??readableMs);
   el.hidden=false;el.className=kind+' visible'+(locked?' locked':'');
   // Restart CSS transitions/entrance per command, without dynamic 3D work.
@@ -149,6 +175,8 @@ export function createBattleCeremony({
   startIntro:({stageName='',stageFeature=''}={})=>begin('intro',stageFeature||'',null,stageName),
   showOrder:(detail,buff='')=>{if(!locked)begin('order',detail,null,'',buff);},
   showResult:detail=>{if(!locked)begin('result',detail);},
+  showEngagement:detail=>{if(!locked)begin('engagement',detail);},
+  showAnnihilation:(headline,detail='')=>{if(!locked){begin('wipeout',detail);title.textContent=headline;}},
   finish:(win,detail='')=>begin(win?'victory':'defeat',detail),
   update,
   get locked(){return locked},
