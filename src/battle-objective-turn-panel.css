@@ -82,3 +82,28 @@ body.objective-turn-enabled #battleTargetConfirm,body.objective-turn-enabled #do
  #battleObjectiveTurnPanel header small{display:none}
  #battleObjectiveTurnPanel #objectiveTurnMapHint{font-size:10px}
 }
+
+/* Mobile turn gameplay: one top indicator, never two overlapping HUDs. */
+body.objective-turn-enabled #battleTopDock,
+body.objective-turn-enabled #battleMenu,
+body.objective-turn-enabled #battleMenuToggle,
+body.objective-turn-enabled #topQuickActions{display:none!important}
+body.objective-turn-enabled #battleObjectiveTurnStatus{
+ top:calc(8px + env(safe-area-inset-top));left:8px;right:auto;transform:none;
+ max-width:calc(100vw - 16px);white-space:normal;line-height:1.35;z-index:45;
+}
+#battleObjectiveTurnPanel .objectiveTurnCard{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y}
+#battleObjectiveTurnPanel #objectiveTurnMapStep{flex:0 0 auto;overflow:visible}
+#battleObjectiveTurnPanel #objectiveTurnMap{
+ width:min(100%,42dvh,350px);max-height:none;flex:none;align-self:center;touch-action:none;
+}
+#battleObjectiveTurnPanel .objectiveTurnEndItems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;flex:none}
+#battleObjectiveTurnPanel .objectiveTurnEndItems strong,
+#battleObjectiveTurnPanel .objectiveTurnEndItems small{grid-column:1/-1}
+#battleObjectiveTurnPanel .objectiveTurnEndItems strong{color:#ffe2a0;font:700 12px system-ui}
+#battleObjectiveTurnPanel .objectiveTurnEndItems small{color:#cfe6eb;font:12px system-ui}
+#battleObjectiveTurnPanel #objectiveTurnAdvance{position:sticky;bottom:0;z-index:1}
+@media(max-width:430px){#battleObjectiveTurnPanel .objectiveTurnCard{gap:5px;padding:6px}
+ #battleObjectiveTurnPanel header small{font-size:10px}
+ #battleObjectiveTurnPanel #objectiveTurnMap{width:min(100%,37dvh,340px)}
+}

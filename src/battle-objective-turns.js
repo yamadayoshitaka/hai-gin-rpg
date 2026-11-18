@@ -19,8 +19,8 @@ export const TURN_MOVE_OPTIONS=Object.freeze([
 export const TURN_ACTION_OPTIONS=Object.freeze([
  {id:'charge',label:'近接攻撃'},{id:'ranged',label:'遠距離攻撃（弓・魔法）'},
  {id:'defend',label:'防御・足止め'},{id:'support',label:'支援・回復'},
- {id:'hold',label:'待機・警戒'},{id:'retreat',label:'撤退'},
- {id:'item',label:'道具を使う'}
+ {id:'hold',label:'待機・警戒'},{id:'retreat',label:'撤退'}
+
 ]);
 const GOAL_BY_ID=new Map(OBJECTIVE_TURN_GOALS.map(g=>[g.id,g]));
 const MOVE_IDS=new Set(TURN_MOVE_OPTIONS.map(x=>x.id));
@@ -28,18 +28,18 @@ const ACTION_IDS=new Set(TURN_ACTION_OPTIONS.map(x=>x.id));
 const bounded=n=>Number.isFinite(Number(n))?Math.max(0,Number(n)):0;
 export function createObjectiveTurnEngine({
  groupIds=Array.from({length:10},(_,i)=>i+1),moveSeconds=20,actionSeconds=4,
- onPause=()=>{},onMove=()=>{},onAction=()=>{},onReport=()=>{},getGroups=()=>[],hasArrived=null
+ onPause=()=>{},onMove=()=>{},onAction=()=>{},onItem=()=>false,onReport=()=>{},getGroups=()=>[],hasArrived=null
 }={}){
  const ids=[...new Set(groupIds.map(Number))].filter(x=>Number.isInteger(x)&&x>=1&&x<=10);
  const goals=new Map(ids.map(id=>[id,'attack']));
  const orders=new Map(ids.map(id=>[id,{move:'enemy',action:'charge',targetId:null,itemId:null}]));
- const issuedActions=new Set();
+ const issuedActions=new Set(),endItemUses=new Map();
  const orderFor=id=>({...GOAL_BY_ID.get(goals.get(id)),...orders.get(id),after:orders.get(id).action});
  let phase='idle',turn=1,remaining=0,previous=[],lastReport=[],lastError='',urgent=false,manualHold=false;
  const active=()=>getGroups().filter(g=>ids.includes(Number(g.id))&&Number(g.alive)>0);
  const status=()=>({phase,turn,remaining,urgent,manualHold});
  const snapshot=()=>({...status(),goalByGroup:Object.fromEntries(goals),ordersByGroup:Object.fromEntries(orders),groups:getGroups(),
-  report:lastReport,error:lastError});
+  report:lastReport,error:lastError,endItemsByGroup:Object.fromEntries(endItemUses)});
  const transition=next=>{phase=next;return status();};
  return {
   snapshot,status,
@@ -71,19 +71,24 @@ export function createObjectiveTurnEngine({
    if(phase==='report'){manualHold=true;remaining=Infinity;}
    return true;
   },
-  setItem(id,itemId){
-   const group=Number(id);
-   if(!ids.includes(group)||!['planning','report'].includes(phase))return false;
-   orders.set(group,{...orders.get(group),action:'item',itemId:itemId==null?null:String(itemId)});
-   if(phase==='report'){manualHold=true;remaining=Infinity;}return true;
+  useEndTurnItem(id,itemId){
+   const group=Number(id),item=String(itemId??'');
+   if(phase!=='report'||!ids.includes(group)||!item||endItemUses.has(group)||
+      !active().some(g=>Number(g.id)===group))return false;
+   try{
+    if(onItem(group,item)!==true){
+     lastError='第'+group+'隊：道具を使用できませんでした。所持数と対象を確認してください。';
+     return false;
+    }
+   }catch(error){lastError=String(error?.message||error);return false;}
+   endItemUses.set(group,item);lastError='';
+   return true;
   },
   start(){
    if(!['planning','report'].includes(phase))return false;
    if(phase==='report')turn++;
-   const missing=active().filter(g=>orders.get(Number(g.id))?.action==='item'&&!orders.get(Number(g.id))?.itemId);
-   if(missing.length){lastError=missing.map(g=>'第'+g.id+'班').join('、')+'の使用アイテムを選んでください';return false;}
    previous=getGroups().map(x=>({...x}));
-   lastError='';lastReport=[];urgent=false;manualHold=false;issuedActions.clear();
+   lastError='';lastReport=[];urgent=false;manualHold=false;issuedActions.clear();endItemUses.clear();
    transition('moving');
    remaining=bounded(moveSeconds);
    for(const group of active()){
@@ -94,11 +99,8 @@ export function createObjectiveTurnEngine({
    return true;
   },
   update(dt,{wallDt=dt}={}){
-   if(phase==='report'){
-    if(!manualHold){remaining=Math.max(0,remaining-bounded(wallDt));
-     if(remaining<=0){this.start();return status();}}
-    return status();
-   }
+   if(phase==='report')return status(); // Wait for optional item use or next-turn confirmation.
+
    if(phase!=='moving'&&phase!=='acting')return status();
    remaining=Math.max(0,remaining-bounded(dt));
    if(phase==='moving'){
@@ -132,7 +134,7 @@ export function createObjectiveTurnEngine({
    }).filter(g=>g.alive>0||g.losses>0);
    urgent=lastReport.some(g=>g.danger&&g.losses>0||
     g.losses>=Math.max(2,Math.ceil((before.get(g.id)?.alive||0)*.25)));
-   remaining=urgent?30:2;manualHold=false;
+   remaining=Infinity;manualHold=true;
    transition('report');onPause(true);onReport(lastReport,snapshot());
    return status();
   },

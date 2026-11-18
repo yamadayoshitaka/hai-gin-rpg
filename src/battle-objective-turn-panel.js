@@ -1,18 +1,18 @@
-import {createObjectiveTurnEngine,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS} from './battle-objective-turns.js?v=20261118-map-paging2';
+import {createObjectiveTurnEngine,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS} from './battle-objective-turns.js?v=20261119-touch-enditems';
 
 /**
  * Phone-sized objective turn interface.
  * One army group per page -> tap a real location on the battlefield map ->
- * choose one arrival action, optionally choosing an owned item.
+ * choose one arrival action; owned items are available only when the turn ends.
  */
 export function installObjectiveTurnPanel({
  groupIds,getGroups,getMoveTargets=()=>[],getMapChoices=()=>[],
  getGroupPowers=()=>({}),getGroupJobs=()=>[],getGroupLabel=()=>'',getEnemyGroups=()=>[],getGroupOrigin=()=>null,
  getLegalMapPoint=(x,z)=>({x,z}),
  getItems=()=>[],drawMapBackground=null,worldSize=232,
- hasArrived=null,onPause,onMove,onAction,onReport
+ hasArrived=null,onPause,onMove,onAction,onItem,onReport
 }){
- const engine=createObjectiveTurnEngine({groupIds,getGroups,hasArrived,onPause,onMove,onAction,onReport});
+ const engine=createObjectiveTurnEngine({groupIds,getGroups,hasArrived,onPause,onMove,onAction,onItem,onReport});
  const root=document.createElement('section');
  root.id='battleObjectiveTurnPanel';root.hidden=true;root.setAttribute('role','dialog');
  root.setAttribute('aria-label','ターン制：地図で移動先を決めて作戦を選ぶ');
@@ -25,7 +25,8 @@ export function installObjectiveTurnPanel({
   '<div id="objectiveTurnMapStep"><div class="objectiveTurnMapTools"><strong>🗺 移動先をタップ</strong><button type="button" data-map-zoom="out" aria-label="地図を縮小">−</button><span id="objectiveTurnZoomLevel">100%</span><button type="button" data-map-zoom="in" aria-label="地図を拡大">＋</button><button type="button" data-map-zoom="reset">全体</button><button type="button" data-map-expand aria-expanded="false">⛶ 大きく</button></div><canvas id="objectiveTurnMap" width="464" height="464" aria-label="戦場地図。二本指で拡大、ドラッグで移動、地点をタップして選択"></canvas><div id="objectiveTurnMapHint"></div><div id="objectiveTurnChoices" class="objectiveTurnChoices"></div><div class="objectiveChoicePager"><button type="button" data-choice-page="-1">◀</button><span id="objectiveChoicePage"></span><button type="button" data-choice-page="1">▶</button></div></div>'+
   '<div id="objectiveTurnActionStep" hidden><div id="objectiveTurnArrival"></div><div id="objectiveTurnActions" class="objectiveTurnActions"></div><div id="objectiveTurnItems" class="objectiveTurnItems"></div></div>'+
   '<div id="objectiveTurnIntel" hidden><div id="objectiveTurnIntelRows"></div><div class="objectiveChoicePager"><button type="button" data-intel-page="-1">◀ 前</button><span id="objectiveIntelPage"></span><button type="button" data-intel-page="1">次 ▶</button></div></div>'+
-  '<div id="objectiveTurnReport" class="objectiveTurnReport"></div>'+
+  '<div id="objectiveTurnReport" class="objectiveTurnReport"></div>'+ 
+  '<div id="objectiveTurnEndItems" class="objectiveTurnEndItems" hidden></div>'+
   '<button id="objectiveTurnAdvance" type="button">この作戦でターン開始</button></div>';
  document.body.append(root);
  document.body.classList.add('objective-turn-enabled');
@@ -37,7 +38,8 @@ export function installObjectiveTurnPanel({
  const actionLabel=id=>TURN_ACTION_OPTIONS.find(x=>x.id===id)?.label||'作戦未設定';
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  let shown=false,page=0,step='map',choicePage=0,intelPage=0,mapMarkers=[];
- let zoom=1,mapCenterX=(Number(worldSize)||232)/2,mapCenterZ=mapCenterX,lastTap=0;
+ let zoom=1,mapCenterX=(Number(worldSize)||232)/2,mapCenterZ=mapCenterX;
+ let lastGestureAt=-Infinity,lastTapHandledAt=-Infinity;
  const pointers=new Map();
  const zoomBounds=[1,6];
  const activeGroups=state=>{
@@ -156,7 +158,7 @@ export function installObjectiveTurnPanel({
  }
  function render(){
   const state=engine.snapshot(),planning=state.phase==='planning',report=state.phase==='report';
-  const visible=planning||(report&&(state.urgent||state.manualHold));
+  const visible=planning||report;
   root.hidden=!visible;status.hidden=state.phase==='idle'||state.phase==='done';
   document.body.classList.toggle('objective-turn-running',['moving','acting','report'].includes(state.phase));
   status.textContent='TURN '+state.turn+' ｜ '+({
@@ -172,7 +174,7 @@ export function installObjectiveTurnPanel({
   const allyPower=Object.values(power).reduce((n,p)=>n+(Number(p)||0),0);
   $('objectiveTurnTitle').textContent='TURN '+state.turn+'｜'+(planning?'移動 → 作戦':'戦況・次ターン');
   $('objectiveTurnHint').textContent=planning?'各班をページで切り替え。地図の印から移動先を選び、次に到着後の作戦を設定します。変更しない班は命令を継続します。戦力Pはレアリティ換算値です。':
-   '前ターンの移動先と作戦を引き継ぎます。変更したい班だけ選んでください。';
+   'ターン終了。必要な隊だけ道具を使用できます（各隊1個）。次ターンへ進むと移動先と作戦を引き継ぎます。';
   $('objectiveTurnForces').innerHTML='<span>🔵 味方合計戦力 <b>'+Math.round(allyPower*10)/10+'</b></span><span>🔴 敵合計戦力 <b>'+Math.round(enemyPower*10)/10+'</b></span>';
   $('objectiveTurnPage').textContent='第'+id+'隊（'+(page+1)+' / '+groups.length+'）';
   const nav=root.querySelectorAll('[data-pager]');
@@ -206,12 +208,7 @@ export function installObjectiveTurnPanel({
     ' → 到着後に実行する作戦を選択（未到着なら移動を継続）';
    $('objectiveTurnActions').innerHTML=TURN_ACTION_OPTIONS.map(a=>'<button type="button" data-action-id="'+esc(a.id)+'"'+
     (a.id===order.action?' class="selected"':'')+'>'+esc(a.label)+'</button>').join('');
-   const items=getItems(id);
-   $('objectiveTurnItems').innerHTML=order.action==='item'?(
-    '<strong>使用するアイテム（1班・1ターンにつき1個）</strong>'+
-    (items.length?items.map(item=>'<button type="button" data-item-id="'+esc(item.id)+'" class="'+
-     (String(item.id)===String(order.itemId)?'selected':'')+'">'+esc(item.label)+'</button>').join(''):
-     '<small>使用可能なアイテムがありません。別の作戦を選んでください。</small>')):'';
+   $('objectiveTurnItems').innerHTML='';
   }else{
    const allies=groups.map(g=>({team:0,id:g.id,alive:g.alive,hp:g.hp,maxHp:g.initialMaxHp||g.maxHp,power:Number(power[g.id])||0,jobs:getGroupJobs(Number(g.id))}));
    const all=[...allies,...enemies.map(e=>({...e,team:1}))];
@@ -228,7 +225,17 @@ export function installObjectiveTurnPanel({
   $('objectiveTurnReport').hidden=!report;
   $('objectiveTurnReport').textContent=report?
    (rows.filter(x=>x.losses||x.danger).map(x=>'第'+x.id+'班 '+(x.losses?'戦死'+x.losses+'人':'損耗注意')+(x.danger?' ⚠':'')).join('／')||'大きな損耗なし。命令は次ターンへ継続します。'):'';
-  $('objectiveTurnAdvance').textContent=report?'この作戦で次ターンへ':'設定した作戦でターン開始';
+  const endItems=$('objectiveTurnEndItems');
+  endItems.hidden=!report;
+  if(report){
+   const used=state.endItemsByGroup?.[id];
+   const items=getItems(id).filter(item=>Number.isFinite(Number(item.count))?Number(item.count)>0:true);
+   endItems.innerHTML='<strong>🎒 ターン終了時の道具（第'+id+'隊・1回まで）</strong>'+
+    (used?'<small>✓ この隊は道具を使用済みです。</small>':
+     (items.length?items.map(item=>'<button type="button" data-end-item-id="'+esc(item.id)+'">'+esc(item.label)+'</button>').join(''):
+      '<small>使用可能な道具はありません。そのまま次ターンへ進めます。</small>'));
+  }
+  $('objectiveTurnAdvance').textContent=report?'道具を使わず／使用後に次ターンへ':'設定した作戦でターン開始';
   $('objectiveTurnAdvance').disabled=state.groups.every(g=>!g.alive);
   if(state.error)$('objectiveTurnHint').textContent+=' ⚠ '+state.error;
   $('objectiveTurnZoomLevel').textContent=Math.round(zoom*100)+'%';
@@ -269,15 +276,14 @@ export function installObjectiveTurnPanel({
   if(action){
    const g=visibleGroup(engine.snapshot());if(!g||!(g.alive>0))return;
    engine.setAction(g.id,action.dataset.actionId);
-   if(action.dataset.actionId==='item'){
-    const items=getItems(Number(g.id));
-    const selected=engine.snapshot().ordersByGroup[g.id]?.itemId;
-    if(!items.some(x=>String(x.id)===String(selected))&&items[0])engine.setItem(g.id,items[0].id);
-   }
    render();return;
   }
-  const item=event.target.closest('[data-item-id]');
-  if(item){const g=visibleGroup(engine.snapshot());if(g?.alive>0){engine.setItem(g.id,item.dataset.itemId);render();}}
+  const item=event.target.closest('[data-end-item-id]');
+  if(item&&engine.status().phase==='report'){
+   const g=visibleGroup(engine.snapshot());
+   if(g?.alive>0)engine.useEndTurnItem(g.id,item.dataset.endItemId);
+   render();return;
+  }
  });
  const mapCanvas=$('objectiveTurnMap');
  const canvasPoint=(event,rect=mapCanvas.getBoundingClientRect())=>({
@@ -288,16 +294,17 @@ export function installObjectiveTurnPanel({
  const pointerDist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
  mapCanvas.addEventListener('pointerdown',event=>{
   if(root.hidden||step!=='map')return;
-  mapCanvas.setPointerCapture?.(event.pointerId);
+  try{mapCanvas.setPointerCapture?.(event.pointerId)}catch{}
   pointers.set(event.pointerId,{x:event.clientX,y:event.clientY,
-   sx:event.clientX,sy:event.clientY,moved:false});
+   sx:event.clientX,sy:event.clientY,moved:false,type:event.pointerType});
  });
  mapCanvas.addEventListener('pointermove',event=>{
   const current=pointers.get(event.pointerId);if(!current)return;
   const oldValues=[...pointers.values()].map(p=>({...p}));
   const dx=event.clientX-current.x,dy=event.clientY-current.y;
   current.x=event.clientX;current.y=event.clientY;
-  if(Math.hypot(current.x-current.sx,current.y-current.sy)>7)current.moved=true;
+  if(Math.hypot(current.x-current.sx,current.y-current.sy)>(current.type==='touch'?18:8))current.moved=true;
+  if(current.moved)lastGestureAt=performance.now();
   const rect=mapCanvas.getBoundingClientRect();
   if(pointers.size===2){
    const newValues=[...pointers.values()];
@@ -320,39 +327,54 @@ export function installObjectiveTurnPanel({
   }
   if(current.moved||pointers.size>1)event.preventDefault();
  });
- function dropPointer(event,cancelled=false){
-  const p=pointers.get(event.pointerId);if(!p)return;
-  const solitary=pointers.size===1;
-  pointers.delete(event.pointerId);
-  if(cancelled||!solitary||p.moved||root.hidden||step!=='map')return;
+ function selectMapAt(clientX,clientY){
+  if(root.hidden||step!=='map')return false;
   const rect=mapCanvas.getBoundingClientRect();
-  const xy=canvasPoint({clientX:p.x,clientY:p.y},rect);
+  if(!(rect.width>0&&rect.height>0))return false;
+  if(clientX<rect.left||clientX>rect.right||clientY<rect.top||clientY>rect.bottom)return false;
+  const xy=canvasPoint({clientX,clientY},rect);
   let index=-1,min=Infinity;
   for(let i=0;i<mapMarkers.length;i++){
    const distance=Math.hypot(xy.x-mapMarkers[i].px,xy.z-mapMarkers[i].pz);
    if(distance<min){min=distance;index=i;}
   }
-  const hitRadius=Math.max(15,24/Math.max(1,rect.width)*mapCanvas.width);
-  if(index>=0&&min<=hitRadius){chooseChoice(index);lastTap=0;return;}
-  // Any walkable cell can be selected, not only the landmark markers.
+  // CSS-sized hit area, regardless of device resolution or zoom.
+  const hitRadius=Math.max(15,20/Math.max(1,rect.width)*mapCanvas.width);
+  if(index>=0&&min<=hitRadius){chooseChoice(index);return true;}
   const world=Math.max(1,Number(worldSize)||232);
   const mapX=mapCenterX+(xy.x/mapCanvas.width-.5)*world/zoom;
   const mapZ=mapCenterZ+(xy.z/mapCanvas.height-.5)*world/zoom;
-  if(mapX<0||mapZ<0||mapX>=world||mapZ>=world)return;
+  if(mapX<0||mapZ<0||mapX>=world||mapZ>=world){
+   $('objectiveTurnMapHint').textContent='戦場の範囲内をタップしてください。';return false;
+  }
   const point=getLegalMapPoint(Math.round(mapX),Math.round(mapZ));
   const g=visibleGroup(engine.snapshot());
   if(!g?.alive||!point||!Number.isFinite(Number(point.x))||!Number.isFinite(Number(point.z))){
-   $('objectiveTurnMapHint').textContent='その場所は進入できません。通れる地形を選んでください。';
+   $('objectiveTurnMapHint').textContent='その場所は進入できません。通れる地形を選んでください。';return false;
+  }
+  if(!engine.setMove(g.id,'point',Math.round(point.x)+','+Math.round(point.z)))return false;
+  step='action';$('objectiveTurnMapStep').classList.remove('expanded');
+  const button=root.querySelector('[data-map-expand]');button.textContent='⛶ 大きく';
+  button.setAttribute('aria-expanded','false');render();
+  return true;
+ }
+ function dropPointer(event,cancelled=false){
+  const p=pointers.get(event.pointerId);if(!p)return;
+  const solitary=pointers.size===1;
+  pointers.delete(event.pointerId);
+  if(cancelled||!solitary||p.moved||root.hidden||step!=='map'){
+   if(cancelled||p.moved)lastGestureAt=performance.now();
    return;
   }
-  if(engine.setMove(g.id,'point',Math.round(point.x)+','+Math.round(point.z))){
-   step='action';$('objectiveTurnMapStep').classList.remove('expanded');
-   const button=root.querySelector('[data-map-expand]');button.textContent='⛶ 大きく';
-   button.setAttribute('aria-expanded','false');render();
-  }
+  lastTapHandledAt=performance.now();
+  selectMapAt(p.x,p.y);
  }
  mapCanvas.addEventListener('pointerup',event=>dropPointer(event));
  mapCanvas.addEventListener('pointercancel',event=>dropPointer(event,true));
+ mapCanvas.addEventListener('click',event=>{
+  if(performance.now()-lastTapHandledAt<400||performance.now()-lastGestureAt<450||pointers.size)return;
+  selectMapAt(event.clientX,event.clientY);
+ });
  mapCanvas.addEventListener('wheel',event=>{
   if(root.hidden||step!=='map')return;
   event.preventDefault();
