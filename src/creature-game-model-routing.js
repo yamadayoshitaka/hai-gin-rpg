@@ -44,13 +44,17 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
 ));
 // Nonhuman wave remains separate from the independent humanoid cosplay
 // workstream. m005/m006 are now in the internal physical donor queue.
-export const MONSTER_REFRESH_PRIORITY=Object.freeze([
+const initialPhysicalWave=Object.freeze([
  'm002','m003','m004','m005','m006','m007','m008','m009','m010',
- 'm011','m012','m013','m014',
+ 'm011','m012','m013','m014'
+]);
+// Once-only queue: m011..m014 used to be appended TWICE by the
+// catalog fallback. m005/m006 receive internal donor improvements but
+// are still protected from unapproved external GLB replacement.
+export const MONSTER_REFRESH_PRIORITY=Object.freeze([
+ ...initialPhysicalWave,
  ...MONSTER_CATALOG.map(s=>s.id).filter(id=>
-  !humanoids.has(id)&&
-  !['m001','m002','m003','m004','m005','m006',
-     'm007','m008','m009','m010'].includes(id))
+   !humanoids.has(id)&&id!=='m001'&&!initialPhysicalWave.includes(id))
 ]);
 export const HUMANOID_MONSTER_REVIEW_QUEUE=Object.freeze(
  HUMAN_MONSTER_IDS.filter(id=>!!GAME_MONSTER_MODEL_REGISTRY[id])
