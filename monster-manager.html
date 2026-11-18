@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-predatory-face-v12-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-predatory-motion-v12-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-adult-raptor-v13-tengu-flight-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-tengu-flight-motion-v13-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -362,10 +362,10 @@ function disposeCurrent(){
 }
 function refreshGeometry(){
  meshStats=meshQualityStats(model);
- const revision=model?.userData?.avianRebuildRevision||'';
+ const revision=model?.userData?.avianRebuildRevision||model?.userData?.avianGameSourceRevision||'';
  byId('modelRevision').textContent=selected==='m013'?
   (revision?'フェニックス実モデル '+revision+
-     (revision.includes('predatory-face-v12')?' / 猛禽顔リメッシュ':' / モデル版を確認'):
+     (revision.includes('adult-raptor-v13')?' / 猛禽顔リメッシュ':' / モデル版を確認'):
    'フェニックス改修版モデルが読み込まれていません'):
   (revision?'モデル正本 '+revision:'標準モデル / 外部モデル');
  byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+

@@ -1,6 +1,6 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=phoenix-flight-joints-v9-20261118';
 import {updatePhoenixFeatherWaves}
- from './avian-guardian-sculpt.js?v=phoenix-predatory-face-v12-20261118';
+ from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v13-tengu-flight-20261118';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
@@ -99,6 +99,7 @@ export function animateMonsterModel(model,time=0){
  const phoenixFlight=model.userData.speciesId==='m013'&&
   model.userData.phoenixFlightMode===true;
  const avianFlight=model.userData.avianFlightMode===true;
+ const tenguFlight=model.userData.tenguFlightMode===true;
  const phoenixIdle=avianFlight&&action==='idle';
  const sway=Math.sin(motionTime*2.1)*.027*(phoenixIdle?.10:1)*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
@@ -202,6 +203,31 @@ export function animateMonsterModel(model,time=0){
    }else if(name==='torso'){
      part.rotation.z=sway+hit*.16+dying*.10;
    }
+ }
+ // m015 retains its humanlike facial rig, shoulder bones and two legs.
+ // Drive true airborne motions using existing pivots without replacing them.
+ if(tenguFlight){
+  const flying=action!=='defeat';
+  const q=motionTime*(action==='run'?4.8:action==='walk'?3.7:2.9);
+  const power=!flying?0:action==='run'?.96:action==='attack'?.92:
+   action==='leap'||action==='special'?.89:action==='walk'?.72:.56;
+  for(const side of [-1,1]){
+   const suffix=side<0?'L':'R',wing=p['wing'+suffix],leg=p['leg'+suffix];
+   if(wing){
+    const sweep=Math.sin(q+(side<0?0:.06));
+    wing.rotation.x=-.12+power*.15*Math.cos(q-.42);
+    wing.rotation.y=side*(.07+power*.09*Math.sin(q-.65));
+    wing.rotation.z=side*(flying?.28+power*.60*sweep:.18*dying);
+   }
+   if(leg){
+    // Fold humanlike legs in the air, including during long runs.
+    leg.rotation.x=flying?.34+.075*Math.sin(q+(side<0?0:Math.PI)):
+     .34*(1-dying);
+    leg.rotation.z=side*(flying?.075:.075*(1-dying));
+   }
+  }
+  model.userData.tenguFlightAction=action;
+  model.userData.tenguLegsTucked=flying;
  }
  // Preserve the existing action contracts, then use real extra joint pivots
  // for nonhumanoid anatomy. Human and humanlike rigs are excluded.

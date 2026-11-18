@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-predatory-face-v12-20261118',
+     '&v=phoenix-adult-raptor-v13-tengu-flight-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -45,7 +45,7 @@ const ids=['m011','m012','m013','m014'];
     if(id==='m013'){
      const shape=state.phoenix;
       if(shape?.volumetricFire<75)throw Error('Phoenix real flame-mantle feathers missing');
-     if(!state.revision?.includes('phoenix-predatory-face-v12'))throw Error('Old Phoenix revision still loaded: '+state.revision);
+     if(!state.revision?.includes('phoenix-adult-raptor-v13'))throw Error('Old Phoenix revision still loaded: '+state.revision);
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
        shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
        shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||
