@@ -4,46 +4,98 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-18T11:28:55.072Z",
+    "checkedAt": "2026-11-18T20:23:48.312Z",
     "category": "faceHair",
-    "status": "source_committed_main",
-    "mainBeforeSha": "511a0bf56b26a76757980c185c413a2f91db5006",
-    "mainAfterSha": "de343141af7e18898e9092fe91da9307a58ddb5a",
-    "pr": 668,
-    "sourceCommits": 1,
-    "modifiedSourceFiles": 1,
-    "sourceFiles": [
-      "src/face-scalp-wig.js"
-    ],
-    "qaStatus": "passed",
+    "status": "blocked_candidates",
+    "mainBeforeSha": "733f700b087c04cb69ad4fa1500e5c6588955709",
+    "mainAfterSha": null,
+    "pr": null,
+    "sourceCommits": 0,
+    "modifiedSourceFiles": 0,
+    "sourceFiles": [],
+    "qaStatus": "not_run",
     "pagesDispatch": "awaiting_release_dispatch",
     "generatedGLBs": 0,
     "webglApproved": false,
     "androidFpsVerified": false,
     "error": null,
-    "issueUrl": null,
+    "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/639",
     "gameQuality": null,
     "attempts": [
       {
-        "pr": 679,
-        "sha": "598d733c630826c24f0279908a9d2e6745a804ba",
-        "status": "no_applicable_source",
-        "reason": ""
+        "pr": 699,
+        "sha": "c94344ec6ef634673d8483a40c5c6daf8dd10a85",
+        "status": "qa_rejected",
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.18738\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.779733\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.341459\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.177703\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 680,
-        "sha": "faf20d99c1a1cb983d96a94b6d0f55950dc9c774",
+        "sha": "27c41a9f137a083dbd9062ecbd0e6085bb722e3f",
         "status": "no_applicable_source",
         "reason": ""
       },
       {
         "pr": 668,
         "sha": "93428ab3a0138e22658a4c42b8c8c4e91e955d44",
-        "status": "merged_to_main",
+        "status": "already_applied",
         "reason": ""
+      },
+      {
+        "pr": 656,
+        "sha": "0fcbb32c89ff0ae5325799c1923d406b74105916",
+        "status": "qa_rejected",
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.244983\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.704684\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.34343\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.166543\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+      },
+      {
+        "pr": 648,
+        "sha": "958797f06a9b2115306f2f9701931487cdbff829",
+        "status": "qa_rejected",
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.184738\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.743885\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.34074\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.174866\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+      },
+      {
+        "pr": 615,
+        "sha": "ee58162ca81840ef473588e591cbefb06e44540d",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 601,
+        "sha": "9833e99abe7b9ec440e111fe4d2a99a5ba28fc43",
+        "status": "no_applicable_source",
+        "reason": ""
+      },
+      {
+        "pr": 608,
+        "sha": "23a6c00e36e4a72eb30d79f14609f4f4b13af5f5",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 592,
+        "sha": "3dad9b296cbe5b56a0ac760911b6ca43c4b149e0",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 597,
+        "sha": "f23309246946e4946244bcfd64dd5f69b47870cb",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+      },
+      {
+        "pr": 568,
+        "sha": "6af848e3e6ab377656ebbbddebe2bb03b7a71f7a",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+      },
+      {
+        "pr": 551,
+        "sha": "b824ca9a902af073ffc45f1eca45714664d3de8d",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44295012731"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44390469380"
   },
   "latestSourceCommit": {
     "checkedAt": "2026-11-18T11:28:55.072Z",
@@ -317,6 +369,100 @@
         }
       ],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44295012731"
+    },
+    {
+      "checkedAt": "2026-11-18T20:23:48.312Z",
+      "category": "faceHair",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "733f700b087c04cb69ad4fa1500e5c6588955709",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/639",
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 699,
+          "sha": "c94344ec6ef634673d8483a40c5c6daf8dd10a85",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.18738\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.779733\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.341459\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.177703\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 680,
+          "sha": "27c41a9f137a083dbd9062ecbd0e6085bb722e3f",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 668,
+          "sha": "93428ab3a0138e22658a4c42b8c8c4e91e955d44",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 656,
+          "sha": "0fcbb32c89ff0ae5325799c1923d406b74105916",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.244983\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.704684\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.34343\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.166543\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 648,
+          "sha": "958797f06a9b2115306f2f9701931487cdbff829",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.184738\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.743885\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.34074\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.174866\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 615,
+          "sha": "ee58162ca81840ef473588e591cbefb06e44540d",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 601,
+          "sha": "9833e99abe7b9ec440e111fe4d2a99a5ba28fc43",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 608,
+          "sha": "23a6c00e36e4a72eb30d79f14609f4f4b13af5f5",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 592,
+          "sha": "3dad9b296cbe5b56a0ac760911b6ca43c4b149e0",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 597,
+          "sha": "f23309246946e4946244bcfd64dd5f69b47870cb",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        },
+        {
+          "pr": 568,
+          "sha": "6af848e3e6ab377656ebbbddebe2bb03b7a71f7a",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        },
+        {
+          "pr": 551,
+          "sha": "b824ca9a902af073ffc45f1eca45714664d3de8d",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44390469380"
     }
   ]
 }
