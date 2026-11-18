@@ -667,9 +667,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ // Sort crown follicles around the whorl before low-discrepancy sampling.
+ // Vertex ordering can otherwise bunch all added crown ribbons into one
+ // patch, leaving the opposite side bald despite a higher crown budget.
+ const crownCenter=center.clone();
+ const crownRoots=pools.crown.slice().sort((a,b)=>{
+  const angleA=Math.atan2(a.p.x-crownCenter.x,a.p.z-crownCenter.z);
+  const angleB=Math.atan2(b.p.x-crownCenter.x,b.p.z-crownCenter.z);
+  return angleA-angleB||a.p.y-b.p.y;
+ });
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const pool=zone==='crown'?crownRoots:
+   rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
