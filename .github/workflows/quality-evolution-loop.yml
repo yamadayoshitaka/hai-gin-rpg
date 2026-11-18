@@ -1,0 +1,121 @@
+name: Free continuous 3D face-hair-outfit quality evolution
+on:
+  schedule:
+    # No paid API. One bounded domain per interval; latest main every run.
+    - cron: '8 * * * *'
+    - cron: '28 * * * *'
+    - cron: '48 * * * *'
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: '3D parameter search category'
+        type: choice
+        required: true
+        default: face
+        options: [face, hair, outfit]
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/quality-evolution-loop.mjs'
+      - 'qa/quality-evolution-probe.mjs'
+      - 'qa/quality-evolution-loop.test.mjs'
+      - '.github/workflows/quality-evolution-loop.yml'
+  pull_request:
+    paths:
+      - 'scripts/quality-evolution-loop.mjs'
+      - 'qa/quality-evolution-probe.mjs'
+      - 'qa/quality-evolution-loop.test.mjs'
+      - 'src/character-system/quality-evolution-profile.js'
+      - 'src/face-scalp-wig.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/outfit-maintenance-model.js'
+      - '.github/workflows/quality-evolution-loop.yml'
+permissions:
+  contents: write
+  issues: write
+  actions: write
+concurrency:
+  group: hai-gin-quality-evolution-main
+  cancel-in-progress: false
+jobs:
+  safety-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real geometry dependency with no paid API
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Run 3-domain real source probes and safe continuous search acceptance
+        run: |
+          node --check scripts/quality-evolution-loop.mjs
+          node --check qa/quality-evolution-probe.mjs
+          node --test qa/quality-evolution-loop.test.mjs
+  evolve:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Select one of three real 3D model evolution categories
+        id: category
+        env:
+          OWNER_DOMAIN: ${{ inputs.domain || '' }}
+          CRON: ${{ github.event.schedule || '' }}
+        run: |
+          domain=$(node --input-type=module -e "const d=process.env.OWNER_DOMAIN;const m={'8 * * * *':'face','28 * * * *':'hair','48 * * * *':'outfit'};console.log(['face','hair','outfit'].includes(d)?d:m[process.env.CRON]||'face')")
+          echo "domain=$domain" >> "$GITHUB_OUTPUT"
+          echo "## Quality evolution: $domain" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install free 3D runtime and Chromium headless renderer
+        run: |
+          npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Hard test source invariants before attempting any visual candidate
+        run: |
+          node --test qa/quality-evolution-loop.test.mjs
+          node --test qa/studio-model-route-contract.test.mjs
+      - name: Launch local real game for identical baseline/candidate WebGL probes
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/evolution-game-server.log 2>&1 &
+          sleep 2
+      - name: Measure baseline, explore at most 3 controlled 3D variants, reject FPS regressions, adopt only safe improvements
+        id: optimize
+        env:
+          QUALITY_DOMAIN: ${{ steps.category.outputs.domain }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/quality-evolution-loop.mjs
+      - name: Verify a committed improvement reached the public Pages release SHA
+        if: steps.optimize.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/batch-rule-pages-verify.mjs --source=${{ steps.optimize.outputs.source_sha }}
+      - name: Archive ALL scores, source fingerprint, CI FPS and candidate decisions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evolution-${{ github.run_id }}
+          path: |
+            qa-reports/quality-evolution/
+            qa-reports/game-quality-six/browser-frame.json
+            qa-reports/game-quality-six/frame-webgl.png
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Preserve correct claims
+        if: always()
+        run: |
+          echo "Static QA or a surrogate geometry score is not FF15 artistic approval." >> "$GITHUB_STEP_SUMMARY"
+          echo "No changes are committed if real game browser FPS/screenshots are unavailable or regress." >> "$GITHUB_STEP_SUMMARY"
+          echo "All CI FPS measurements use software WebGL and are not physical Android FPS." >> "$GITHUB_STEP_SUMMARY"
