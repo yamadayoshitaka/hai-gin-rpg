@@ -22,6 +22,8 @@ jobs:
         run: node --check scripts/batch-self-drive.mjs && node --test qa/batch-self-drive.test.mjs
       - name: Pages-publication proof and batch quality status contract
         run: node --test qa/batch-pages-release-gate.test.mjs
+      - name: Free known-error repair recipe and protected-assets contract
+        run: node --check scripts/batch-rule-self-heal.mjs && node --test qa/batch-repair-rules.test.mjs
       - name: Full replacement contract
         run: npm run test:full-replacement
       - name: Syntax and imports
