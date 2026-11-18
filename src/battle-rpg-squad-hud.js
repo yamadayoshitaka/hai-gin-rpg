@@ -19,7 +19,7 @@ export function rpgHudHealth(hp,maxHp){
 }
 export function rpgHudStatus(row){
  if(!(Number(row.alive)>0))return '☠ 全滅';
- if(Number(row.alive)<=Math.max(1,Math.floor((Number(row.total)||1)*.25)) ||
+ if(Number(row.alive)/Math.max(1,Number(row.total)||1)<=.25 ||
     rpgHudHealth(row.hp,row.maxHp)<=25)return '🆘 壊滅寸前';
  if(row.inContact)return '⚔ 交戦中';
  const mode=String(row.mode||'');
