@@ -37,6 +37,9 @@ for(const detail of ['low','high']){
    model.traverse(o=>{if(o.isMesh){meshes.push(o);nameSet.add(o.name)}});
    assert(meshes.length>0,'real triangle meshes are required');
    assert(nameSet.has('m019-m001-sourced-closed-cranium'));
+   const skull=meshes.find(m=>m.name==='m019-m001-sourced-closed-cranium');
+   assert.equal(skull.geometry.userData.faceVolumeApplied,true,
+    'm019 must preserve the existing physically sculpted facial surface');
    assert(nameSet.has('m019-grand-horn-L')&&nameSet.has('m019-grand-horn-R'),
     'both large horns must follow the head pivot');
    assert(nameSet.has('m019-vertical-pupil-L')&&nameSet.has('m019-vertical-pupil-R'));
