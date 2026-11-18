@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import {createOriginalGuardianWingPair}
  from './female-summon-costumes.js?v=avian-guardian-donor-v1-20261118';
 
-export const AVIAN_REALISM_REVISION='phoenix-adult-raptor-v13-tengu-flight-20261118';
+export const AVIAN_REALISM_REVISION='phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
 export const PHOENIX_FAMILY_MASTER='m013';
 export const AVIAN_REFRESH_IDS=Object.freeze(['m011','m012','m013','m014']);
 
@@ -952,6 +952,44 @@ function avianSternCheekMantle(head,s,detail){
  return mantle;
 }
 
+
+/**
+ * Non-Phoenix adult raptors: the cere connects the hooked beak directly to
+ * the skull, with inset nostrils and rooted malar ridges BELOW each orbit.
+ * Each surface belongs to the original head pivot (no floating nose shell).
+ */
+function sculptAdultRaptorCere(g,head,s,detail){
+ if(s.id==='m013')return null;
+ const griffin=s.id==='m012',owl=s.id==='m014';
+ const k=griffin?1.25:owl?.80:1;
+ const cere=g.axialLoft(head,'bone',[
+  {z:.465*k,y:-.145,rx:.016,ry:.021},
+  {z:.405*k,y:-.125,rx:.049,ry:.047},
+  {z:.328*k,y:-.099,rx:.076,ry:.072},
+  {z:.241*k,y:-.075,rx:.084,ry:.063},
+  {z:.164*k,y:-.060,rx:.040,ry:.043}
+ ],{name:'avian-adult-keratin-cere-'+s.id,rough:.87,
+  ribbing:.003,capEnds:true});
+ cere.userData.avianContiguousBeakNasalVolume=true;
+ cere.userData.avianSourcePhoenixFace=true;
+ for(const side of [-1,1]){
+  const suffix=side<0?'L':'R';
+  const cheek=g.tube(head,'skin',[
+   [side*.078,-.055,.255*k],[side*.137,-.062,.172*k],
+   [side*.172,-.080,.011],[side*.165,-.102,-.167]
+  ],.016,{name:'avian-adult-malar-bone-'+s.id+'-'+suffix,
+    taper:.62,capEnds:true});
+  cheek.userData.avianMalarContinuousIntoCere=true;
+  const nostril=g.sphere(head,'shadow',[
+   side*(griffin?.070:.061),-.089,.335*k
+  ],[.011,.009,.020],{
+   name:'avian-adult-cere-nostril-'+s.id+'-'+suffix,rough:.86});
+  nostril.userData.avianKeratinNostril=true;
+ }
+ cere.userData.avianRaptorCheekCount=2;
+ return cere;
+}
+
 function phoenixMasterRaptorEyes(head,s,detail){
  const owl=s.id==='m014',griffin=s.id==='m012';
  const seg=detail==='low'?10:18;
@@ -1192,7 +1230,7 @@ function headAndCrest(g,s,p,torso,detail){
   skull.userData.phoenixSmallElongatedHead=true;
   skull.userData.phoenixNoEars=true;
  }
- const beakSize=s.id==='m014'?.78:s.id==='m012'?1.26:1;
+ const beakSize=s.id==='m014'?.78:s.id==='m012'?1.28:1;
  const beak=s.id==='m013'?
    g.curvedHorn(head,'bone',
      [0,-.073,.353],[0,-.104,.531],[0,-.268,.688],.054,
@@ -1203,6 +1241,10 @@ function headAndCrest(g,s,p,torso,detail){
      [0,-.259,.615*beakSize],.083*beakSize,
      {name:'avian-hooked-beak-'+s.id});
  beak.userData.avianHookedKeratin=true;
+ if(s.id!=='m013'){
+  const cere=sculptAdultRaptorCere(g,head,s,detail);
+  skull.userData.avianAdultCereFitted=!!cere;
+ }
  if(s.id==='m013'){
   beak.userData.phoenixLongNarrowBeak=true;
   beak.userData.phoenixBeakLength=.688;
