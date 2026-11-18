@@ -165,14 +165,20 @@ test('v60: both body studios and face editor offer one shared four-build contrac
   assert.ok(source.includes('超痩せ型'),file);
   assert.ok(source.includes('character-demographics-v47.js?v=60'),file);
  }
+ const bridgeCacheKeys=[];
  for(const file of ['face-body-studio.html','male-body-studio.html']){
   const source=readFileSync(new URL('../'+file,import.meta.url),'utf8');
   assert.ok(source.includes('setQAView:'),file);
   assert.ok(source.includes('threeQuarterLeft'),file);
   assert.ok(source.includes('threeQuarterRight'),file);
-  const bridgeVersion=source.match(/heroine-battle-costume-bridge\.js\?v=(\d+)/);
-   assert.ok(bridgeVersion&&Number(bridgeVersion[1])>=64,file);
+  // Cache keys may be numeric or descriptive (e.g. v80-outer-acromion-pauldron).
+  // Validate the active module import and minimum revision, not obsolete URL spelling.
+  const bridgeVersion=source.match(/heroine-battle-costume-bridge\.js\?v=(?:v)?(\d+)([\w-]*)/);
+  assert.ok(bridgeVersion&&Number(bridgeVersion[1])>=64,file+' requires current costume bridge');
+  bridgeCacheKeys.push(bridgeVersion[0]);
  }
+ assert.equal(bridgeCacheKeys[0],bridgeCacheKeys[1],
+  'female and male studios must load the same active costume bridge revision');
 });
 
 test('v60: inline browser ESM in all three studios is syntactically valid',()=>{
