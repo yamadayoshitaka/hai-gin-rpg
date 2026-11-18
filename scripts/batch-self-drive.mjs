@@ -209,7 +209,18 @@ async function run(){
     attempt.status='merged_to_main';report.status='source_committed_main';
     report.sourceCommits=1;report.modelChanges=changed.length;
     report.mainAfter=attempt.commitSha;report.pr=pr.number;report.qa=qa.status;
-    report.note='Pages push triggered; release SHA and visual quality not yet verified.';
+    // A push authenticated with GITHUB_TOKEN does not trigger other push
+    // workflows. Explicit workflow_dispatch is required to publish this
+    // newly created commit. Never mark Pages success until verified.
+    try{
+     await api('actions/workflows/publish-pages.yml/dispatches',{method:'POST',body:{ref:'main'}});
+     report.pagesDispatch='requested';
+     report.note='Explicit Pages workflow_dispatch requested; release SHA and visual quality not yet verified.';
+    }catch(error){
+     report.pagesDispatch='failed';
+     report.pagesError=String(error.message||error);
+     report.note='Source committed to main, but Pages dispatch failed and must be retried.';
+    }
     return;
    }
    // A branch is a durable artifact when main write permissions are restricted.
