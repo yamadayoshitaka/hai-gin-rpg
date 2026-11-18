@@ -43,7 +43,7 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.54||yn>.998)continue;
+  if(yn<.54||yn>.9995)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -51,7 +51,7 @@ function actualScalpCandidates(geo,box){
   const sample={p,n,index:i};
   all.push(sample);
   // Extend crown follicle range across the upper back of the head.
-  if(yn>.825&&nz<.21)pools.crown.push(sample);
+  if(yn>.79&&nz<.21&&nz>-.48)pools.crown.push(sample);
   // True forehead hairline grows from the top cap, never from between the
   // eyebrows or the cheeks (these generated the disconnected tiny spikes).
   if(yn>.870&&nz>.035&&yn<.992)pools['fringe'+side].push(sample);
