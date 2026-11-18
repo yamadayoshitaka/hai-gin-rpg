@@ -275,7 +275,27 @@ export function createObjectById(id,{cellSize=2.2}={}){
     for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen);
    }
   }
-  if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
+  if(id==='cottage_fireplace_001'){
+   // Ashlar jambs, a voussoir lintel and a recessed firebox: the opening
+   // stays clear rather than being covered by a solid stone facade.
+   b(2.6*c,.30*c,1*c,0,.15*c,0,stone);
+   for(const x of [-1.1,1.1]){
+    b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);
+    for(let course=1;course<6;course++)
+     b(.025*c,.018*c,.94*c,x*c,course*.41*c,-.006*c,dark);
+   }
+   b(2.65*c,.40*c,1.05*c,0,2.5*c,0,stone);
+   for(const x of [-.78,-.39,0,.39,.78])
+    b(.023*c,.34*c,.055*c,x*c,2.5*c,.535*c,dark);
+   b(1.86*c,1.78*c,.08*c,0,1.20*c,-.43*c,dark);
+   b(1.75*c,.10*c,.74*c,0,.36*c,-.01*c,stone);
+   b(1.2*c,.25*c,.36*c,0,.49*c,.10*c,fire);
+   // Projecting mantel is supported by two corbels instead of floating.
+   for(const x of [-.96,.96]){
+    const corbel=b(.22*c,.43*c,.30*c,x*c,2.16*c,.30*c,stone);
+    corbel.rotation.x=-.12;
+   }
+  }
   if(id==='cottage_barrel_001'){
    // Actual coopered belly profile; no straight cylinder masquerading as staves.
    const profile=[[0,0],[.43,0],[.49,.15],[.54,.45],[.55,.60],[.53,.82],[.49,1.01],[.43,1.15],[0,1.15]]
@@ -304,10 +324,36 @@ export function createObjectById(id,{cellSize=2.2}={}){
     const band=new THREE.Mesh(new THREE.BoxGeometry(.07*c,.19*c,.75*c),metal);
     band.position.set(x*c,.03*c,.35*c);lid.add(band);
    }
+   // The lock escutcheon and forged hinge barrels are independent of the
+   // animated lid; the barrels follow the lid during its opening motion.
+   const escutcheon=new THREE.Mesh(new THREE.BoxGeometry(.16*c,.20*c,.035*c),metal);
+   escutcheon.name='treasure_chest_lock_plate';
+   escutcheon.position.set(0,.37*c,.37*c);root.add(escutcheon);
+   for(const x of [-.30,.30]){
+    const hinge=new THREE.Mesh(new THREE.CylinderGeometry(.032*c,.032*c,.14*c,8),metal);
+    hinge.name='treasure_chest_hinge';
+    hinge.rotation.z=Math.PI/2;hinge.position.set(x*c,.025*c,0);lid.add(hinge);
+   }
    root.add(lid);root.userData.openable=true;root.userData.opened=false;
    root.userData.lidName='treasure_chest_lid';
   }
-  if(id==='cottage_stairs_001'){for(let i=0;i<9;i++)b(1.8*c,.16*c,.48*c,0,(i+.5)*.34*c,(i-4)*.43*c);for(const x of [-.85,.85])b(.12*c,3.2*c,.12*c,x*c,1.6*c,0,dark)}
+  if(id==='cottage_stairs_001'){
+   // Each tread is supported by continuous side stringers and riser boards.
+   // Preserve the original nine tread elevations and overall footprint.
+   for(let i=0;i<9;i++){
+    const y=(i+.5)*.34*c,z=(i-4)*.43*c;
+    b(1.8*c,.16*c,.48*c,0,y,z);
+    b(1.72*c,.24*c,.065*c,0,y-.20*c,z+.21*c,dark);
+    for(const x of [-.77,.77])
+     b(.10*c,.34*c,.44*c,x*c,y-.14*c,z,dark);
+   }
+   for(const x of [-.85,.85]){
+    const stringer=b(.12*c,3.8*c,.16*c,x*c,1.57*c,0,dark);
+    stringer.rotation.x=Math.atan2(3.06,3.44);
+    for(const z of [-1.55,0,1.55])
+     b(.13*c,.92*c,.13*c,x*c,.55*c+(z+1.55)*.72*c,z*c,dark);
+   }
+  }
   // Physically richer furniture retains few draw calls through material baking.
   // The animated treasure-chest lid intentionally stays a separate object.
   if(new Set(['cottage_table_001','cottage_chair_001','cottage_bed_001',
