@@ -21,6 +21,9 @@ on:
       - 'qa/battle-ui-objective-rewards.test.mjs'
       - 'story-mode.html'
       - 'tactics-wireframe.html'
+      - 'src/battle-objective-turn*.js'
+      - 'qa/objective-turns-ten-groups.test.mjs'
+      - 'qa/objective-turns-all-battles.test.mjs'
       - 'src/tactical-command-*.js'
       - 'src/tactical-command-ui.css'
       - 'src/story-battle-bridge.js'
@@ -48,6 +51,9 @@ on:
       - 'qa/battle-ui-objective-rewards.test.mjs'
       - 'story-mode.html'
       - 'tactics-wireframe.html'
+      - 'src/battle-objective-turn*.js'
+      - 'qa/objective-turns-ten-groups.test.mjs'
+      - 'qa/objective-turns-all-battles.test.mjs'
       - 'src/tactical-command-*.js'
       - 'qa/tactical-command-ui.test.mjs'
   workflow_dispatch:
@@ -72,6 +78,9 @@ jobs:
           node --check src/battle-victory-rewards.js
           node --experimental-vm-modules qa/battle-ui-objective-rewards.test.mjs
           node qa/tactical-command-ui.test.mjs
+          node --experimental-vm-modules qa/objective-turns-ten-groups.test.mjs
+          node --experimental-vm-modules qa/objective-turns-all-battles.test.mjs
+          node --experimental-vm-modules qa/strict-formation-three-group-summon-size.test.mjs
           node qa/battle-situation-monitor.test.mjs
           node qa/battle-motion-recommendations.test.mjs
           node --check src/inn-strategy-templates.js

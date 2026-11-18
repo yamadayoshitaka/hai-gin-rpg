@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
-import {AVIAN_REFRESH_IDS,AVIAN_REALISM_REVISION,avianProfile}
+import {AVIAN_REFRESH_IDS,AVIAN_REALISM_REVISION,avianProfile,PHOENIX_FAMILY_MASTER}
  from '../src/avian-guardian-sculpt.js';
 
 const meshes=root=>{
@@ -29,6 +29,9 @@ test('four distinct avian masters reuse the real 82-feather guardian wing',()=>{
    assert.equal(model.userData.avianRebuildRevision,AVIAN_REALISM_REVISION);
    assert.equal(model.userData.avianGameSourceRevision,AVIAN_REALISM_REVISION);
    assert.equal(model.userData.avianGuardianGeometryDonor,'seraph_guardian');
+   assert.equal(model.userData.avianPhoenixSourceMaster,PHOENIX_FAMILY_MASTER);
+   assert.equal(model.userData.avianPhoenixMasterRevision,AVIAN_REALISM_REVISION);
+   assert.equal(model.userData.avianFlightMode,true);
    distinct.add(model.userData.avianAnatomicalKind);
    const p=model.userData.pivots;
    assert.equal(p.wingL.parent,p.torso);
@@ -42,6 +45,8 @@ test('four distinct avian masters reuse the real 82-feather guardian wing',()=>{
     assert.ok(wing?.isMesh&&wing.visible,id+' missing guardian-derived feather wing');
     assert.equal(wing.parent,p['wing'+suffix]);
     assert.equal(wing.userData.angelSource,'seraph_guardian');
+    assert.equal(wing.userData.phoenixFamilyMaster,'m013');
+    assert.equal(wing.userData.phoenixMasterGeometryRevision,AVIAN_REALISM_REVISION);
     assert.equal(wing.userData.angelFeatherLayers,3);
     assert.equal(wing.userData.angelFeathersPerSide,82);
     assert.ok(wing.userData.angelDonorGeometryTriangles>1000);
@@ -325,7 +330,226 @@ test('m015 humanlike Tengu remains on the previous independently maintained path
  try{
   assert.equal(avianProfile('m015'),null);
   assert.equal(m.userData.avianRebuildRevision,undefined);
-  assert.equal(m.getObjectByName('avian-guardian-three-layer-wing-m015-L'),undefined);
+  const inherited=m.getObjectByName('avian-guardian-three-layer-wing-m015-L');
+  assert.ok(inherited?.isMesh,'Tengu wing must share Phoenix feather donor');
+  assert.equal(inherited.userData.phoenixFamilyMaster,'m013');
+  assert.equal(inherited.userData.phoenixTenguHumanRigPreserved,true);
+  assert.ok(!m.userData.pivots.wingElbowL,'Tengu shoulder remains protected');
   assert.ok(m.userData.pivots.wingL&&m.userData.pivots.legL);
  }finally{disposeMonsterSculpture(m);}
+});
+
+test('four natural Phoenix-derived birds have unique coloured wings and maintain flight',()=>{
+ const unique=new Set();
+ for(const id of AVIAN_REFRESH_IDS){
+  const m=build(id,'medium');
+  try{
+   const w=m.getObjectByName('avian-guardian-three-layer-wing-'+id+'-L');
+   assert.equal(w.userData.phoenixFamilyMaster,'m013');
+   assert.equal(w.userData.birdWingDetail,'medium');
+   const colours=w.geometry.getAttribute('color');
+   unique.add([...colours.array.slice(0,9)].map(n=>n.toFixed(5)).join(','));
+   for(const action of ['idle','run','attack']){
+    startMonsterAction(m,action,0);
+    animateMonsterModel(m,.24);
+    assert.equal(m.userData.avianInAir,true,id+' grounded in '+action);
+    assert.ok(m.position.y>.40,id+' should stay above ground');
+    assert.ok(Number.isFinite(m.userData.pivots.wingL.rotation.z));
+   }
+  }finally{disposeMonsterSculpture(m);}
+ }
+ assert.equal(unique.size,4,'the species must not share identical colour schemes');
+});
+test('Phoenix physical eyebrow feathers frame forward-projecting eyeliner and iris',()=>{
+ const m=build('m013','high');
+ try{
+  const brow=m.getObjectByName('phoenix-orbital-brow-feathers');
+  assert.ok(brow?.isMesh,'rooted brow feather mesh missing');
+  assert.ok(brow.userData.phoenixRootedBrowVanes>=16);
+  assert.equal(brow.userData.phoenixEyesUncovered,true);
+  for(const side of ['L','R']){
+   const socket=m.getObjectByName('phoenix-sculpted-orbit-'+side);
+   assert.ok(socket.position.x*(side==='L'?-1:1)>.11);
+   assert.equal(socket.userData.phoenixEyeProjectionFollowsEyeliner,true);
+   assert.ok(m.getObjectByName('phoenix-upper-eyeliner-'+side));
+   assert.ok(m.getObjectByName('phoenix-iris-'+side));
+  }
+ }finally{disposeMonsterSculpture(m);}
+});
+
+
+test('Phoenix v11 physically refreshes all five bird species without losing battle LOD',()=>{
+ for(const id of ['m011','m012','m013','m014','m015']){
+  const m=build(id,'high');
+  try{
+   for(const side of ['L','R']){
+    const cover=m.getObjectByName(
+      'avian-phoenix-master-wing-coverts-'+id+'-'+side);
+    assert.ok(cover?.isMesh,id+' missing fitted feather coat '+side);
+    assert.equal(cover.userData.avianDonorSurfaceAttached,true);
+    assert.ok(cover.userData.avianMergedOverlappingCoverts>5);
+    const wing=m.getObjectByName(
+      'avian-guardian-three-layer-wing-'+id+'-'+side);
+    const donor=wing.geometry.getAttribute('position');
+    const points=cover.geometry.getAttribute('position');
+    const root=new THREE.Vector3(points.getX(0),points.getY(0),points.getZ(0));
+    let nearest=Infinity;
+    for(let i=0;i<donor.count;i++)nearest=Math.min(nearest,
+      root.distanceTo(new THREE.Vector3(
+       donor.getX(i),donor.getY(i),donor.getZ(i))));
+    assert.ok(nearest<.03,id+' wing root is detached from donor '+nearest);
+   }
+   if(id==='m013'){
+    const fire=m.getObjectByName('phoenix-master-volumetric-fire-plumage');
+    assert.equal(fire?.userData.phoenixVolumetricFireAnatomy,true);
+    assert.ok(fire.userData.phoenixSurfaceRootedFlames>75);
+   }else if(id==='m015'){
+    assert.ok(m.getObjectByName('avian-phoenix-master-tail-m015'));
+    assert.ok(m.userData.pivots.legL,'Tengu must retain humanoid legs');
+    assert.ok(!m.userData.pivots.wingElbowL,'Tengu keeps protected upper-body rig');
+   }else{
+    const body=m.getObjectByName('avian-layered-body-plumage-'+id);
+    assert.equal(body?.userData.avianPlumageAttachedToActualLoft,true);
+    assert.equal(body.userData.avianFeatherRows,15);
+    assert.ok(body.userData.curvedAvianFeathers>=300);
+    if(id!=='m014')assert.equal(m.userData.pivots.head.userData.avianPhoenixMasterEyes,true);
+   }
+   assert.ok(triangles(m)<500000,id+' exceeds mobile triangle budget');
+  }finally{disposeMonsterSculpture(m);}
+ }
+});
+
+test('avian v12 replaces juvenile rounded eyes with hooded raptor skull detail',()=>{
+ for(const detail of ['high','low']){
+  for(const id of ['m011','m012','m013','m014']){
+   const m=build(id,detail);
+   try{
+    const head=m.userData.pivots.head;
+    const cheeks=m.getObjectByName('avian-predatory-malar-plumage-'+id);
+    assert.equal(cheeks?.parent,head);
+    assert.equal(cheeks.userData.avianSweptPredatoryCheeks,true);
+    assert.ok(cheeks.userData.curvedAvianFeathers>=6);
+    for(const side of ['L','R']){
+     const brow=m.getObjectByName('avian-predatory-brow-'+id+'-'+side);
+     assert.ok(brow?.isMesh,id+' '+detail+' missing solid brow');
+     assert.equal(brow.userData.avianBrowBoneSculpt,true);
+     assert.ok(brow.userData.avianInnerBrowDecline>.2);
+     assert.ok(brow.geometry.index.count>=30);
+     const eye=id==='m013'?
+       m.getObjectByName('phoenix-amber-eye-'+side):
+       id==='m014'?
+        m.getObjectByName('owl-iris-'+(side==='L'?-1:1)):
+        m.getObjectByName('avian-master-iris-'+side);
+     assert.ok(eye?.isMesh,id+' '+detail+' missing eye');
+     assert.ok(eye.scale.x>eye.scale.y*1.65,
+      id+' eye should be a narrow hunting slit, not round');
+     if(id==='m014'){
+      const mask=m.getObjectByName('owl-facial-disc-'+side);
+      assert.equal(mask?.userData.avianAngularMask,true);
+      assert.ok(mask.geometry.index.count>=24);
+     }
+    }
+    if(id==='m013'){
+     const beak=m.getObjectByName('avian-hooked-beak-m013');
+     assert.ok(beak.userData.phoenixBeakLength>=.68);
+    }
+    assert.ok(triangles(m)<500000,'face geometry must fit mobile LOD');
+   }finally{disposeMonsterSculpture(m);}
+  }
+ }
+});
+
+test('avian v13 grown-up griffin eagle and owl sculpt is fitted to skull in both LODs',()=>{
+ const profiles={m011:.91,m012:.87,m014:1.04};
+ for(const detail of ['high','low']){
+  for(const [id,ratio] of Object.entries(profiles)){
+   const m=build(id,detail);
+   try{
+    const head=m.getObjectByName('avian-cranium-'+id);
+    const feather=m.getObjectByName('avian-adult-cranial-contour-'+id);
+    assert.equal(head.userData.avianMatureHeadRatio,ratio);
+    assert.equal(feather?.userData.avianAdultFittedHeadPlumage,true);
+    assert.equal(feather.userData.avianNoJuvenileFaceVolume,true);
+    assert.ok(feather.userData.scaleCount>12,'crown must contain real bevelled geometry');
+    assert.ok(feather.geometry.getAttribute('normal'));
+    if(id==='m012'){
+     assert.ok(avianProfile(id).head<.90,'griffin head too large/baby-like');
+     assert.ok(avianProfile(id).crest<=9,'griffin juvenile fluffy crest remains');
+    }
+    assert.ok(triangles(m)<500000,'mobile avian budget regression');
+   }finally{disposeMonsterSculpture(m);}
+  }
+ }
+});
+
+test('avian v14 adult cere, two nostrils and malar bone join to real griffin eagle owl heads',()=>{
+ for(const detail of ['high','low']){
+  for(const id of ['m011','m012','m014']){
+   const m=build(id,detail);
+   try{
+    const head=m.userData.pivots.head;
+    const skull=m.getObjectByName('avian-cranium-'+id);
+    const cere=m.getObjectByName('avian-adult-keratin-cere-'+id);
+    assert.equal(skull.userData.avianAdultCereFitted,true);
+    assert.equal(cere?.parent,head,id+' '+detail+' detached cere');
+    assert.equal(cere.userData.avianSourcePhoenixFace,true);
+    assert.equal(cere.userData.avianContiguousBeakNasalVolume,true);
+    assert.ok(cere.geometry.getAttribute('normal'));
+    for(const side of ['L','R']){
+     const bone=m.getObjectByName('avian-adult-malar-bone-'+id+'-'+side);
+     const nostril=m.getObjectByName('avian-adult-cere-nostril-'+id+'-'+side);
+     assert.equal(bone?.parent,head,'malar contour not head-rigged');
+     assert.equal(bone.userData.avianMalarContinuousIntoCere,true);
+     assert.equal(nostril?.userData.avianKeratinNostril,true);
+     const iris=m.getObjectByName('avian-master-iris-'+side);
+     if(id!=='m014'){
+      assert.equal(iris?.userData.avianIrisRadialMicrotexture,true);
+      const colors=iris.geometry.getAttribute('color');
+      let lowest=1,highest=0;
+      for(let i=0;i<colors.count;i++){
+       lowest=Math.min(lowest,colors.getX(i));
+       highest=Math.max(highest,colors.getX(i));
+      }
+      assert.ok(highest-lowest>.025,'physical iris must not be uniformly coloured');
+     }
+    }
+    assert.ok(triangles(m)<500000,'face enhancement exceeds mobile LOD budget');
+   }finally{disposeMonsterSculpture(m);}
+  }
+ }
+});
+
+test('Tengu takes flight with preserved humanlike face and real flying animations',()=>{
+ for(const detail of ['high','low']){
+  const m=build('m015',detail);
+  try{
+   assert.equal(m.userData.avianFlightMode,true);
+   assert.equal(m.userData.tenguFlightMode,true);
+   assert.equal(m.userData.avianFlightHeight,1.42);
+   assert.equal(m.userData.avianGameSourceRevision,AVIAN_REALISM_REVISION);
+   assert.ok(m.userData.pivots.head);
+   assert.ok(m.userData.pivots.legL);
+   assert.equal(m.userData.pivots.wingElbowL,undefined);
+   let previousRotation=null;
+   for(const action of ['idle','walk','run','attack','special','leap']){
+    startMonsterAction(m,action,0);
+    animateMonsterModel(m,.18);
+    assert.ok(m.userData.avianInAir,action+' must be airborne');
+    assert.ok(m.position.y>.4,action+' must be above terrain');
+    assert.ok(m.userData.tenguLegsTucked,action+' tuck must be active');
+    assert.ok(m.userData.pivots.legL.rotation.x>.15);
+    assert.ok(Number.isFinite(m.userData.pivots.wingL.rotation.z));
+    if(action==='run')previousRotation=m.userData.pivots.wingL.rotation.z;
+   }
+   startMonsterAction(m,'run',0);
+   animateMonsterModel(m,.34);
+   assert.notEqual(m.userData.pivots.wingL.rotation.z,previousRotation,
+     'flying Tengu wing must flap across time');
+   startMonsterAction(m,'defeat',0);
+   animateMonsterModel(m,1.2);
+   assert.ok(m.position.y<.08,'defeated Tengu must land');
+   assert.equal(m.userData.avianInAir,false);
+   assert.equal(m.userData.tenguLegsTucked,false);
+  }finally{disposeMonsterSculpture(m);}
+ }
 });

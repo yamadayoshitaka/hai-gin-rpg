@@ -61,10 +61,10 @@ const units=[
 const initial=units.filter(u=>u.team===0).map(u=>({...u}));
 const groups={ 'g1-main':1,'g1-part':1,'g1-reserve':1,'g2-main':2 };
 let summary=threeGroupOverview(units,groups,initial);
-assert.equal(summary.length,3);
-assert.deepEqual(summary.map(g=>g.alive),[9,1,0]);
+assert.equal(summary.length,10);
+assert.deepEqual(summary.slice(0,3).map(g=>g.alive),[9,1,0]);
 const requestForm=initial.map(({team,...u})=>u);
-assert.deepEqual(threeGroupOverview(units,groups,requestForm).map(g=>g.initial),[9,1,0],
+assert.deepEqual(threeGroupOverview(units,groups,requestForm).slice(0,3).map(g=>g.initial),[9,1,0],
  'story battle requests omit team=0 yet must still report correct initial counts');
 assert.ok(summary[0].divisions.some(x=>x.id==='g1-part'));
 const identity=units.filter(u=>u.team===0).map(u=>u.id).sort().join(',');
@@ -74,7 +74,7 @@ assert.equal(result.count,2);
 assert.equal(units.filter(u=>u.squadId==='g1-part'&&u.hp>0).length,4);
 assert.equal(units.filter(u=>u.squadId==='g1-reserve'&&u.hp>0).length,2);
 summary=threeGroupOverview(units,groups,initial);
-assert.deepEqual(summary.map(g=>g.alive),[9,1,0],'reinforcements move real people, never duplicate');
+assert.deepEqual(summary.slice(0,3).map(g=>g.alive),[9,1,0],'reinforcements move real people, never duplicate');
 assert.equal(units.filter(u=>u.team===0).map(u=>u.id).sort().join(','),identity);
 assert.equal(reinforceDivision(units,groups,'g1-part',{fromId:'g2-main'}).ok,false);
 assert.equal(mergeDivision(units,groups,'g1-main').ok,false,'hero stays in command');
@@ -95,10 +95,10 @@ const source=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'
 assert.match(source,/createBattleThreeGroupPanel/);
 assert.match(source,/threeGroupPanel\?\.render/);
 assert.match(source,/storyRequest\.units\.length,storyRequest\.enemyCount/);
-assert.match(source,/3段階作戦を選ぶ/);
+assert.match(source,/ターンの目的を確認/);
 assert.match(source,/20261117-horse-saddle-fix1/);
 for(const file of ['src/battle-three-group-hierarchy.js','src/battle-three-group-panel.js',
  'src/three-team-sortie.js','src/three-team-sortie-ui.js']){
  new SourceTextModule(readFileSync(new URL('../'+file,import.meta.url),'utf8'),{identifier:file});
 }
-console.log('PASS: 92 owned / 40 deployed, locked formations, 3-group UI, zero-copy support/merge and restored natural summons');
+console.log('PASS: 92 owned / 40 deployed, locked formations, 10-group UI, zero-copy support/merge and restored natural summons');

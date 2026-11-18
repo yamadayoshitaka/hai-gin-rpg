@@ -26,6 +26,9 @@ test('batch center and control assets are in the delivered Pages archive',()=>{
  assert(monitor.includes('gameQuality'),'Full-game quality card must reach public Pages');
  assert(monitor.includes('実際に何が改善されたか'),'Per-commit improvements must be visible');
  assert(monitor.includes('batch-pages-release-gate.js'),'The release verification script must be shipped in Pages');
+ assert(monitor.includes('batch-release-parity.js'),'Live main-vs-Pages parity script must ship');
+ assert(monitor.includes('id="releaseParityPanel"'),'Pages must show release divergence');
+ assert(fs.existsSync(path.join(root,'src/batch-release-parity.js')),'Missing main-vs-Pages helper in published assets');
  assert(fs.existsSync(path.join(root,'src/batch-pages-release-gate.js')),'Missing verified Pages release helper in published assets');
  for(const required of [
   'id="batchDisplaySelect"','id="batchLaunchEvidence"','id="worldObjectPicker"',

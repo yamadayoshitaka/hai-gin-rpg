@@ -1,0 +1,19 @@
+{
+  "build": "turn10-objective-battles-20261118",
+  "sourceCommit": "763ca971f34c7b928de81e95edcadd78d8e37d97",
+  "battleModes": [
+    "story",
+    "50v50",
+    "100v100",
+    "200v200",
+    "500v500",
+    "1000v1000"
+  ],
+  "groups": 10,
+  "turns": {
+    "moveSeconds": 12,
+    "arrivalSeconds": 15,
+    "autoContinue": true
+  },
+  "note": "Deploy marker: the live 3D battle and existing formations remain authoritative."
+}

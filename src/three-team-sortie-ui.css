@@ -163,3 +163,10 @@
 
 /* Closed inn must never intercept town taps; specificity beats active flex layout. */
 #panel.formation-command-ui[hidden]{display:none!important;pointer-events:none!important}
+
+/* Ten groups, two short rows on mobile without adding a scrolling menu. */
+.sortieTeams.sortieTenTeams{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.sortieTeams.sortieTenTeams button{min-height:43px!important;padding:5px 2px!important;text-align:center}
+.sortieTeams.sortieTenTeams strong{font-size:clamp(9px,2.45vw,12px);white-space:nowrap}
+.sortieTeams.sortieTenTeams small{font-size:9px;margin-top:2px}
+@media(max-width:380px){.sortieTeams.sortieTenTeams{gap:2px}.sortieTeams.sortieTenTeams button{min-height:38px!important}}

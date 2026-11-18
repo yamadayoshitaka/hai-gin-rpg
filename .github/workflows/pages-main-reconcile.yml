@@ -1,0 +1,38 @@
+name: Reconcile latest main to public Pages
+on:
+  schedule:
+    # GITHUB_TOKEN-originated commits do not trigger normal push workflows.
+    - cron: '9 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: pages-main-reconcile
+  cancel-in-progress: false
+jobs:
+  release-if-behind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch only when latest main has not been published or queued
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          published_sha=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')
+          echo "main=${main_sha:0:12}, latest successful Pages source=${published_sha:0:12}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$main_sha" == "$published_sha" ]]; then
+            echo "Published source is current; no deploy needed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          queued=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/runs?branch=main&per_page=30" \
+            --jq "[.workflow_runs[] | select(.head_sha == \"$main_sha\" and (.status == \"queued\" or .status == \"in_progress\" or .status == \"waiting\" or .status == \"requested\" or .status == \"pending\"))] | length")
+          if [[ "$queued" != "0" ]]; then
+            echo "Pages run already pending/running for latest main; no duplicate dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh workflow run publish-pages.yml --ref main
+          echo "Dispatched publish-pages for latest main ${main_sha}; deployment and public SHA checks are still pending." >> "$GITHUB_STEP_SUMMARY"

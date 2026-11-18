@@ -1,6 +1,6 @@
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=phoenix-flight-joints-v9-20261118';
 import {updatePhoenixFeatherWaves}
- from './avian-guardian-sculpt.js?v=phoenix-sculpt-v9-feather-r1-20261118';
+ from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
 import {updateM001ActionEffects} from './m001-action-effects.js?v=m001-action-perf-v1-20261117';
 import {updateReferenceBeastFx} from './beast-action-effects.js?v=ref-action-v1-20261117';
 import {monsterLeapPose,applyMonsterLeapMotion} from './monster-leap-kinematics.js?v=1';
@@ -98,7 +98,9 @@ export function animateMonsterModel(model,time=0){
  const sourceFeline=['m007','m008','m009','m010'].includes(model.userData.speciesId);
  const phoenixFlight=model.userData.speciesId==='m013'&&
   model.userData.phoenixFlightMode===true;
- const phoenixIdle=phoenixFlight&&action==='idle';
+ const avianFlight=model.userData.avianFlightMode===true;
+ const tenguFlight=model.userData.tenguFlightMode===true;
+ const phoenixIdle=avianFlight&&action==='idle';
  const sway=Math.sin(motionTime*2.1)*.027*(phoenixIdle?.10:1)*(1-dying);
  // Rare, brief eye closure with a per-species offset. No random state,
  // material allocations or extra draw calls during the animation loop.
@@ -107,9 +109,9 @@ export function animateMonsterModel(model,time=0){
  const blink=action==='defeat'?dying:
    Math.max(0,1-Math.abs(blinkClock-4.50)/.13);
  // The Phoenix banks and pitches in the air, rather than running on earth.
- const flightPitch=phoenixFlight&&action!=='defeat'?
+ const flightPitch=avianFlight&&action!=='defeat'?
    (action==='run'?-.17:action==='walk'?-.09:0)-.27*strike-.12*special:0;
- const flightBank=phoenixFlight&&action==='run'?
+ const flightBank=avianFlight&&action==='run'?
    .075*Math.sin(motionTime*.75):0;
  model.rotation.set(-(strike*.23+special*.12+hit*.16)+dying*.19+
    (leap?.pitch??0)+flightPitch,
@@ -126,17 +128,22 @@ export function animateMonsterModel(model,time=0){
  const groundPoseY=springLift-(springBeast&&action!=='leap'?.014:0)+
    (leap?.height??0)-dying*.48;
  // Absolute analytic position, no per-frame accumulated displacement.
- const flightHeight=model.userData.phoenixFlightHeight??1.55;
- const hover=phoenixFlight&&action!=='defeat'?
+ const flightHeight=model.userData.avianFlightHeight??
+  model.userData.phoenixFlightHeight??1.55;
+ const hover=avianFlight&&action!=='defeat'?
    .055*Math.sin(motionTime*1.55)+.015*Math.sin(motionTime*3.10):0;
- const dive=phoenixFlight?(.48*strike+.20*special):0;
- const climb=phoenixFlight&&action==='leap'?pulse*.70:0;
- const altitude=phoenixFlight?
+ const dive=avianFlight?(.48*strike+.20*special):0;
+ const climb=avianFlight&&action==='leap'?pulse*.70:0;
+ const altitude=avianFlight?
    (action==='defeat'?
       Math.max(0,flightHeight*(1-smooth(0,1,progress))):
       Math.max(.40,flightHeight+hover-dive+climb)):groundPoseY;
  model.position.set(dodge*Math.sin(progress*Math.PI)*1.3,
-   altitude,phoenixFlight&&action==='run'?.13*Math.sin(motionTime*.90):0);
+   altitude,avianFlight&&action==='run'?.13*Math.sin(motionTime*.90):0);
+ if(avianFlight){
+  model.userData.avianInAir=action!=='defeat'&&altitude>.40;
+  model.userData.avianCurrentAltitude=altitude;
+ }
  if(phoenixFlight){
    model.userData.phoenixInAir=action!=='defeat'&&altitude>.40;
    model.userData.phoenixCurrentAltitude=altitude;
@@ -196,6 +203,31 @@ export function animateMonsterModel(model,time=0){
    }else if(name==='torso'){
      part.rotation.z=sway+hit*.16+dying*.10;
    }
+ }
+ // m015 retains its humanlike facial rig, shoulder bones and two legs.
+ // Drive true airborne motions using existing pivots without replacing them.
+ if(tenguFlight){
+  const flying=action!=='defeat';
+  const q=motionTime*(action==='run'?4.8:action==='walk'?3.7:2.9);
+  const power=!flying?0:action==='run'?.96:action==='attack'?.92:
+   action==='leap'||action==='special'?.89:action==='walk'?.72:.56;
+  for(const side of [-1,1]){
+   const suffix=side<0?'L':'R',wing=p['wing'+suffix],leg=p['leg'+suffix];
+   if(wing){
+    const sweep=Math.sin(q+(side<0?0:.06));
+    wing.rotation.x=-.12+power*.15*Math.cos(q-.42);
+    wing.rotation.y=side*(.07+power*.09*Math.sin(q-.65));
+    wing.rotation.z=side*(flying?.28+power*.60*sweep:.18*dying);
+   }
+   if(leg){
+    // Fold humanlike legs in the air, including during long runs.
+    leg.rotation.x=flying?.34+.075*Math.sin(q+(side<0?0:Math.PI)):
+     .34*(1-dying);
+    leg.rotation.z=side*(flying?.075:.075*(1-dying));
+   }
+  }
+  model.userData.tenguFlightAction=action;
+  model.userData.tenguLegsTucked=flying;
  }
  // Preserve the existing action contracts, then use real extra joint pivots
  // for nonhumanoid anatomy. Human and humanlike rigs are excluded.

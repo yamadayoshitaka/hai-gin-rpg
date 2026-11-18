@@ -1,9 +1,9 @@
 import {threeGroupOverview,reinforceDivision,mergeDivision} from './battle-three-group-hierarchy.js';
-/** Campaign HUD: three groups -> subdivisions -> personnel/status/actions.
+/** Campaign HUD: ten groups -> subdivisions -> personnel/status/actions.
  * The old job list remains in the DOM for targeting and compatibility, hidden
  * until the player expands enemy selection. */
 export function createBattleThreeGroupPanel({
- alliedNav,enemyNav,actors,groupBySquad,initialUnits=[],enemyInitial=0,
+ alliedNav,enemyNav,actors,groupBySquad,initialUnits=[],enemyInitial=0,allowRecompose=true,
  onSquadSelect=()=>{},onStrategy=()=>{},onInspect=()=>{},onReinforce=()=>{},
  onMerge=()=>{},onLog=()=>{}
 }){
@@ -13,19 +13,28 @@ export function createBattleThreeGroupPanel({
  const enemy=document.createElement('button');enemy.type='button';enemy.id='battleEnemyGroupSummary';
  enemyNav.insertBefore(enemy,enemyNav.querySelector('.ribbonList'));
  document.body.classList.add('story-three-group-ui');
- let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,lastPointerAt=-Infinity,oldMarkup='',oldEnemy='';
+ let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,lastPointerAt=-Infinity,lastRenderAt=-Infinity,oldMarkup='',oldEnemy='';
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits);
  const back=(where,label)=>'<button type="button" data-back="'+where+'">◀ '+label+'</button>';
  const groupTitle=group=>'第'+group.id+'班';
+ const groupHp=group=>{
+  const current=Math.round(group.hp||0),max=Math.round(group.initialMaxHp||group.maxHp||0);
+  const percent=max?Math.max(0,Math.min(100,Math.round(current/max*100))):0;
+  return '<span class="threeGroupHpTrack" role="meter" aria-label="'+groupTitle(group)+' 総合HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><span style="width:'+percent+'%"></span></span>'+
+   '<small>総HP '+current+' / '+max+' ('+percent+'%)</small>';
+ };
  function render(force=false,targetsActive=false){
+  const stamp=performance.now();
+  if(!force&&stamp-lastRenderAt<450)return;
+  lastRenderAt=stamp;
   const groups=summaries(),selected=groups.find(g=>g.id===groupId)||groups[0];
   let html='';
   if(level==='groups'){
-   html='<div class="threeGroupStep">① 班を選択（最大3班）</div>'+
-    groups.map(g=>'<button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong><small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人 · '+g.divisions.length+'分隊'+(g.danger?' ⚠':'')+'</small></button>').join('');
+   html='<div class="threeGroupStep">① 班を選択（最大10班）</div><div class="tenGroupGrid">'+
+    groups.map(g=>'<button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong>'+groupHp(g)+'<small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人'+(g.danger?' ⚠':'')+'</small></button>').join('')+'</div>';
   }else if(level==='divisions'){
-   html=back('groups','3班に戻る')+
+   html=back('groups','10班に戻る')+
     '<div class="threeGroupStep">② '+groupTitle(selected)+' · 分隊を選択</div>'+
     (selected.divisions.map(d=>{
      const job=Object.entries(d.jobCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'兵士';
@@ -41,8 +50,8 @@ export function createBattleThreeGroupPanel({
     '<div class="threeGroupActions">'+
     '<button data-action="strategy" '+(!d?'disabled':'')+'>🎯 作戦</button>'+
     '<button data-action="inspect" '+(!d?'disabled':'')+'>📊 詳細</button>'+
-    '<button data-action="reinforce" '+(!d||selected.divisions.length<2?'disabled':'')+'>🛡 同班から援軍</button>'+
-    '<button data-action="merge" '+(!d||selected.divisions.length<2?'disabled':'')+'>⇄ 再統合</button></div>';
+    '<button data-action="reinforce" '+(!allowRecompose||!d||selected.divisions.length<2?'disabled':'')+'>🛡 同班から援軍</button>'+
+    '<button data-action="merge" '+(!allowRecompose||!d||selected.divisions.length<2?'disabled':'')+'>⇄ 再統合</button></div>';
   }
   if((force||html!==oldMarkup)&&!pointerDown&&
    (force||performance.now()-lastPointerAt>400)){ally.innerHTML=html;oldMarkup=html;}

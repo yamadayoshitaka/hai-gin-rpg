@@ -1,0 +1,109 @@
+/* Objective turn: one active group per page, real map -> arrival action, never select dropdowns. */
+#battleObjectiveTurnPanel[hidden],#battleObjectiveTurnStatus[hidden]{display:none!important}
+#battleObjectiveTurnPanel{position:fixed;inset:0;z-index:93;background:#041322e8;display:flex;align-items:center;justify-content:center;padding:5px;color:#eaf5ff;font-family:system-ui}
+#battleObjectiveTurnPanel .objectiveTurnCard{width:min(98vw,560px);height:min(98dvh,840px);max-height:calc(100dvh - 10px);display:flex;flex-direction:column;gap:7px;overflow:hidden;background:#10263a;border:2px solid #9fc5db;border-radius:13px;padding:9px;box-shadow:0 12px 45px #000c}
+#battleObjectiveTurnPanel header{display:flex;flex-direction:column;gap:3px;flex:none}
+#battleObjectiveTurnPanel header strong{font-size:17px;color:#f5dfa6}
+#battleObjectiveTurnPanel header small{font-size:11px;line-height:1.35;color:#c3dff0}
+#battleObjectiveTurnPanel button{border:1px solid #86b0cf;border-radius:7px;background:#204a65;color:#fff;padding:8px 5px;font:700 12px/1.25 system-ui;min-height:38px;touch-action:manipulation}
+#battleObjectiveTurnPanel button.selected,#battleObjectiveTurnPanel button.active{border-color:#ffe39b;background:#426f56;color:#fff9df;box-shadow:inset 0 0 0 1px #f0dfad}
+#battleObjectiveTurnPanel button:disabled{opacity:.4}
+#battleObjectiveTurnPanel .objectiveTurnForces{flex:none;display:flex;justify-content:space-between;gap:5px;font:700 11px/1.35 system-ui}
+#battleObjectiveTurnPanel .objectiveTurnForces span{flex:1;border:1px solid #537e9b;padding:6px;background:#183750;border-radius:5px}
+#battleObjectiveTurnPanel .objectiveTurnPager{flex:none;display:grid;grid-template-columns:1fr 1.2fr 1fr;align-items:center;gap:5px;text-align:center}
+#battleObjectiveTurnPanel .objectiveTurnPager b{font:800 12px system-ui;color:#ffe5a1}
+#battleObjectiveTurnPanel .objectiveTurnGroup{flex:none;padding:7px;background:#15384d;border:1px solid #658c9e;border-radius:7px;display:flex;flex-direction:column;gap:4px}
+#battleObjectiveTurnPanel .objectiveTurnGroup strong{font:800 12px system-ui}
+#battleObjectiveTurnPanel .objectiveTurnGroup small{font:11px/1.4 system-ui;color:#d2e9f4}
+#battleObjectiveTurnPanel .objectiveTurnHp{width:100%;height:8px;border:1px solid #7896a5;background:#5a3744;border-radius:10px;overflow:hidden}
+#battleObjectiveTurnPanel .objectiveTurnHp span{display:block;height:100%;background:#78ce9d;transition:width .2s}
+#battleObjectiveTurnPanel .objectiveTurnSteps{display:grid;grid-template-columns:1fr 1fr .75fr;gap:5px;flex:none}
+#battleObjectiveTurnPanel .objectiveTurnSteps button{font-size:11px;padding:5px 2px}
+#battleObjectiveTurnMapStep,#objectiveTurnActionStep,#objectiveTurnIntel{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:5px}
+#battleObjectiveTurnPanel [hidden]{display:none!important}
+#battleObjectiveTurnPanel #objectiveTurnMap{display:block;max-height:min(38dvh,280px);height:auto;min-height:0;aspect-ratio:1/1;width:auto;max-width:100%;margin:0 auto;border:1px solid #8aafc2;border-radius:7px;touch-action:manipulation;cursor:crosshair;background:#152a3a}
+#battleObjectiveTurnPanel #objectiveTurnMapHint,#battleObjectiveTurnPanel #objectiveTurnArrival{font:11px/1.4 system-ui;color:#d8e6ee;flex:none}
+#battleObjectiveTurnPanel .objectiveTurnChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-height:0}
+#battleObjectiveTurnPanel .objectiveTurnChoices button{font-size:11px;min-height:34px;overflow:hidden;text-overflow:ellipsis}
+#battleObjectiveTurnPanel .objectiveChoicePager{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:6px;text-align:center;flex:none}
+#battleObjectiveTurnPanel .objectiveChoicePager span{font:12px system-ui}
+#battleObjectiveTurnPanel .objectiveChoicePager button{min-height:30px}
+#battleObjectiveTurnPanel .objectiveTurnActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:auto;flex:0 1 auto;max-height:42dvh}
+#battleObjectiveTurnPanel .objectiveTurnItems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:auto;min-height:0}
+#battleObjectiveTurnPanel .objectiveTurnItems strong,#battleObjectiveTurnPanel .objectiveTurnItems small{grid-column:1/-1}
+#battleObjectiveTurnPanel .objectiveTurnItems strong{font:700 12px system-ui;color:#ffe2a0}
+#battleObjectiveTurnPanel .objectiveTurnReport{font:11px/1.4 system-ui;color:#ffdea0;flex:none}
+#battleObjectiveTurnPanel #objectiveTurnIntelRows{overflow:auto;min-height:0;flex:1}
+#battleObjectiveTurnPanel #objectiveTurnIntelRows>div{padding:9px 6px;margin:3px 0;border:1px solid #6098b8;border-radius:7px;font:12px/1.4 system-ui;background:#183c54}
+#battleObjectiveTurnPanel #objectiveTurnIntelRows>div.enemy{border-color:#b86f86;background:#4a2637}
+#battleObjectiveTurnPanel #objectiveTurnAdvance{flex:none;background:#426d4e;border-color:#b9d9aa;min-height:48px;font-size:14px}
+#battleObjectiveTurnStatus{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:30;max-width:94vw;background:#09293de8;color:#ffe3a5;border:1px solid #99bbce;border-radius:9px;padding:7px 12px;font:800 11px system-ui;white-space:nowrap;pointer-events:none}
+body.objective-turn-running #battleTopDock,body.objective-turn-running #topQuickActions,
+body.objective-turn-running #battleMenuToggle,body.objective-turn-running #battleMenu,
+body.objective-turn-running #menuToggle{display:none!important}
+body.objective-turn-enabled #battleTeamCameraSwitches,body.objective-turn-enabled #allySquadRibbon,body.objective-turn-enabled #enemySquadRibbon{display:none!important}
+body.objective-turn-enabled #squadTactics,body.objective-turn-enabled #battleOrderConfirm,
+body.objective-turn-enabled #battleTargetConfirm,body.objective-turn-enabled #dockCommandSlot{display:none!important}
+@media(max-height:670px){
+ #battleObjectiveTurnPanel .objectiveTurnCard{gap:4px;padding:5px}
+ #battleObjectiveTurnPanel #objectiveTurnMap{max-height:min(43dvh,245px)}
+ #battleObjectiveTurnPanel .objectiveTurnGroup{padding:4px}
+ #battleObjectiveTurnPanel button{min-height:32px}
+ #battleObjectiveTurnPanel #objectiveTurnAdvance{min-height:40px}
+}
+
+
+/* Turn-page job intelligence: preserve space for the live battlefield map. */
+#battleObjectiveTurnPanel .objectiveTurnJobs{display:flex;gap:5px;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;padding:3px 1px 4px;scrollbar-width:thin;scroll-snap-type:x proximity}
+#battleObjectiveTurnPanel .objectiveTurnJobs>span{white-space:nowrap;flex:none;scroll-snap-align:start;padding:5px 8px;border:1px solid #7aabc6;background:#19435c;border-radius:6px;font:700 11px/1.3 system-ui;color:#e8f6ff}
+#battleObjectiveTurnPanel .objectiveIntelJobs{font:11px/1.55 system-ui;color:#d9eaf5;margin-top:6px;overflow-wrap:anywhere}
+#battleObjectiveTurnPanel .objectiveTurnMapTools{flex:none;display:grid;grid-template-columns:minmax(0,1fr) 32px 43px 32px 43px 69px;align-items:center;gap:3px;padding:0 1px}
+#battleObjectiveTurnPanel .objectiveTurnMapTools strong{font:700 11px/1.25 system-ui;color:#ffe0a1;min-width:0}
+#battleObjectiveTurnPanel .objectiveTurnMapTools button{min-height:34px;padding:4px 1px;font-size:12px}
+#battleObjectiveTurnPanel .objectiveTurnMapTools span{text-align:center;white-space:nowrap;color:#e9f4ff;font:700 11px system-ui}
+#battleObjectiveTurnPanel #objectiveTurnMap{touch-action:none;user-select:none;-webkit-user-select:none;image-rendering:auto;max-height:min(42dvh,350px)}
+/* Expand the exact same interactive map to the available screen size. */
+#battleObjectiveTurnPanel #objectiveTurnMapStep.expanded{position:fixed;inset:0;z-index:150;width:100vw;height:100dvh;max-height:none;padding:calc(10px + env(safe-area-inset-top)) 9px calc(10px + env(safe-area-inset-bottom));background:#071a2af7;box-shadow:0 0 0 9999px #000d;gap:8px;overflow:hidden}
+#battleObjectiveTurnPanel #objectiveTurnMapStep.expanded #objectiveTurnMap{flex:0 1 auto;display:block;width:min(calc(100vw - 20px),calc(100dvh - 210px),640px);height:auto;max-height:calc(100dvh - 205px);max-width:100%;align-self:center;aspect-ratio:1/1;border:2px solid #b7dfed}
+#battleObjectiveTurnPanel #objectiveTurnMapStep.expanded #objectiveTurnMapHint{flex:none}
+#battleObjectiveTurnPanel #objectiveTurnMapStep.expanded #objectiveTurnChoices{flex:0 1 auto;overflow-y:auto;min-height:0}
+#battleObjectiveTurnPanel #objectiveTurnMapStep.expanded .objectiveChoicePager{margin-top:auto}
+@media(max-height:670px){
+ #battleObjectiveTurnPanel #objectiveTurnMapStep.expanded #objectiveTurnMap{width:min(calc(100vw - 20px),calc(100dvh - 185px),560px);max-height:calc(100dvh - 185px)}
+ #battleObjectiveTurnPanel .objectiveTurnMapTools{grid-template-columns:minmax(0,1fr) 28px 40px 28px 40px 62px}
+ #battleObjectiveTurnPanel .objectiveTurnMapTools button{font-size:11px}
+}
+
+/* Landscape phones: enlarge the selectable map and keep touch targets visible. */
+@media(max-height:500px){
+ #battleObjectiveTurnPanel .objectiveTurnCard{gap:3px;padding:4px}
+ #battleObjectiveTurnPanel #objectiveTurnMap{max-height:44dvh}
+ #battleObjectiveTurnPanel .objectiveTurnGroup{max-height:78px;overflow:hidden}
+ #battleObjectiveTurnPanel header small{display:none}
+ #battleObjectiveTurnPanel #objectiveTurnMapHint{font-size:10px}
+}
+
+/* Mobile turn gameplay: one top indicator, never two overlapping HUDs. */
+body.objective-turn-enabled #battleTopDock,
+body.objective-turn-enabled #battleMenu,
+body.objective-turn-enabled #battleMenuToggle,
+body.objective-turn-enabled #topQuickActions{display:none!important}
+body.objective-turn-enabled #battleObjectiveTurnStatus{
+ top:calc(8px + env(safe-area-inset-top));left:8px;right:auto;transform:none;
+ max-width:calc(100vw - 16px);white-space:normal;line-height:1.35;z-index:45;
+}
+#battleObjectiveTurnPanel .objectiveTurnCard{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y}
+#battleObjectiveTurnPanel #objectiveTurnMapStep{flex:0 0 auto;overflow:visible}
+#battleObjectiveTurnPanel #objectiveTurnMap{
+ width:min(100%,42dvh,350px);max-height:none;flex:none;align-self:center;touch-action:none;
+}
+#battleObjectiveTurnPanel .objectiveTurnEndItems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;flex:none}
+#battleObjectiveTurnPanel .objectiveTurnEndItems strong,
+#battleObjectiveTurnPanel .objectiveTurnEndItems small{grid-column:1/-1}
+#battleObjectiveTurnPanel .objectiveTurnEndItems strong{color:#ffe2a0;font:700 12px system-ui}
+#battleObjectiveTurnPanel .objectiveTurnEndItems small{color:#cfe6eb;font:12px system-ui}
+#battleObjectiveTurnPanel #objectiveTurnAdvance{position:sticky;bottom:0;z-index:1}
+@media(max-width:430px){#battleObjectiveTurnPanel .objectiveTurnCard{gap:5px;padding:6px}
+ #battleObjectiveTurnPanel header small{font-size:10px}
+ #battleObjectiveTurnPanel #objectiveTurnMap{width:min(100%,37dvh,340px)}
+}

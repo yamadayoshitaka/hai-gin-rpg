@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-hover-flight-v24-20261118',
+     '&v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -34,13 +34,20 @@ const ids=['m011','m012','m013','m014'];
     const state=await page.evaluate(()=>window.__avianWingQA());
     if(!state||state.donor!=='seraph_guardian'||
       !state.wings.every(w=>w&&w.donor==='seraph_guardian'&&
-       w.layers===3&&w.feathers===82&&w.shoulder&&w.elbow&&w.wrist))
+       w.layers===3&&w.feathers===82&&w.surfaceRooted&&w.phoenixCoverts>5&&
+       w.shoulder&&w.elbow&&w.wrist))
       throw Error(id+' original guardian wing donor absent: '+JSON.stringify(state));
-    if(state.bodyFeathers<100||state.tail<9)
+    if(!state.hardBrow||!state.sweptCheeks||
+       (id==='m014'&&!state.angularOwl))
+      throw Error(id+' stern predator face not applied in WebGL: '+JSON.stringify(state));
+     if(id!=='m013'&&!state.adultCere)
+      throw Error(id+' real adult cere missing from WebGL: '+JSON.stringify(state));
+     if(state.bodyFeathers<100||state.tail<9)
       throw Error(id+' rebuilt plumage missing: '+JSON.stringify(state));
     if(id==='m013'){
      const shape=state.phoenix;
-     if(!state.revision?.includes('flight-realism-v9'))throw Error('Old Phoenix revision still loaded: '+state.revision);
+      if(shape?.volumetricFire<75)throw Error('Phoenix real flame-mantle feathers missing');
+     if(!state.revision?.includes('phoenix-adult-raptor-v14'))throw Error('Old Phoenix revision still loaded: '+state.revision);
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
        shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
        shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||
@@ -65,7 +72,7 @@ const ids=['m011','m012','m013','m014'];
         !shape.highQualityHandFeathers||
         !shape.flightMode||!shape.inAir||!shape.flightWingRig||
         !shape.legsFoldInFlight||!shape.fineFeatherBarbs||shape.currentAltitude<.80||
-        shape.tailLength<4.55||shape.waveMeshes!==7||state.tail!==31)
+        shape.tailLength<4.55||shape.waveMeshes!==4||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
     }
@@ -75,20 +82,20 @@ const ids=['m011','m012','m013','m014'];
      await page.waitForFunction(a=>
       window.__monsterViewerLayoutQA?.()?.selectedMotion===a,
       action,{timeout:12000});
-     await page.waitForTimeout(220);
+     // Sample the time-limited animation before the SwiftShader screenshot.
+     // GPU readback may exceed attack duration and return the actor to idle.
+     if(id==='m013')await page.waitForFunction(expected=>{
+      const flight=window.__avianWingQA?.()?.phoenix;
+      return flight?.flightAction===expected&&flight.inAir&&
+       flight.currentAltitude>.35&&flight.airborneKnees.every(k=>k<-.4);
+     },action,{timeout:10000});
+     await page.waitForTimeout(120);
      const filename=path.join(folder,id+'-'+action+'.png');
      const image=await page.locator('#view canvas').screenshot({
       path:filename,timeout:45000});
      if(image.byteLength<12000)
       throw Error(id+' '+action+' empty GPU frame: '+image.byteLength);
      frames.push({name:filename,bytes:image.byteLength,action});
-     if(id==='m013'){
-      const flight=await page.evaluate(()=>window.__avianWingQA()?.phoenix);
-      if(!flight?.inAir||flight.currentAltitude<.35||
-        flight.flightAction!==action||
-        !flight.airborneKnees.every(k=>k<-.4))
-       throw Error('Phoenix '+action+' flight/legs missing: '+JSON.stringify(flight));
-     }
     }
     if(id==='m013'){
      await page.locator('#actions button[title="defeat"]').click({timeout:15000});
@@ -115,8 +122,48 @@ const ids=['m011','m012','m013','m014'];
      frames,technicalPass:true,visualApproved:false});
    }finally{await page.close();}
   }
+
+  // m015 preserves the humanoid face, but must use real airborne movement.
+  const tenguPage=await browser.newPage({viewport:{width:1000,height:710},deviceScaleFactor:1});
+  try{
+   await tenguPage.goto('http://127.0.0.1:8765/monster-manager.html?monster=m015&v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118',
+    {waitUntil:'domcontentloaded',timeout:90000});
+   // Wait for the canonical humanoid GLB and its REAL feather geometry,
+   // not merely the procedural fallback's premature flight-mode flag.
+   await tenguPage.waitForFunction(()=>{
+    const q=window.__avianWingQA?.();
+    return q?.id==='m015'&&q.tengu?.flightMode&&q.tengu.canonicalFace&&
+     q.tengu.canonicalWings&&q.wings?.every(w=>
+      w?.donor==='seraph_guardian'&&w.layers===3&&w.feathers===82);
+   },null,{timeout:70000});
+   const tenguRig=await tenguPage.evaluate(()=>window.__avianWingQA?.());
+   if(!tenguRig?.wings.every(w=>w?.donor==='seraph_guardian'&&
+    w.layers===3&&w.feathers===82))
+    throw Error('Tengu real feather wings missing from WebGL rig: '+JSON.stringify(tenguRig));
+   for(const action of ['idle','run','attack']){
+    await tenguPage.locator('#actions button[title="'+action+'"]').click({timeout:15000});
+    await tenguPage.waitForFunction(a=>{
+     const t=window.__avianWingQA?.()?.tengu;
+     return t?.inAir&&t.altitude>.40&&t.legsTucked&&
+      t.flightAction===a&&t.sourceRevision?.includes('raptor-v14');
+    },action,{timeout:12000});
+   }
+   await tenguPage.locator('#actions button[title="idle"]').click({timeout:15000});
+   await tenguPage.waitForTimeout(200);
+   const filename=path.join(folder,'m015-flight-idle.png');
+   const image=await tenguPage.locator('#view canvas').screenshot({path:filename,timeout:45000});
+   if(image.byteLength<12000)throw Error('Tengu blank flight frame');
+   await tenguPage.locator('#actions button[title="defeat"]').click({timeout:15000});
+   await tenguPage.waitForTimeout(1400);
+   const landed=await tenguPage.evaluate(()=>window.__avianWingQA?.()?.tengu);
+   if(landed?.inAir||landed?.altitude>.15||landed?.legsTucked)
+    throw Error('Tengu did not land on defeat: '+JSON.stringify(landed));
+   report.push({id:'m015',source:'preserved-humanoid-flight-rig',
+    frames:[{name:filename,bytes:image.byteLength,action:'flight-idle'}],
+    technicalPass:true,visualApproved:false,landed:true});
+  }finally{await tenguPage.close();}
   const summary={status:'webgl-capture-complete-not-art-approved',
-   species:ids,reference:'original-seraph-82-feather-wing',results:report,
+   species:[...ids,'m015'],reference:'original-seraph-82-feather-wing',results:report,
    date:new Date().toISOString()};
   fs.writeFileSync(path.join(folder,'results.json'),JSON.stringify(summary,null,2));
   console.log(JSON.stringify({status:summary.status,frames:report.flatMap(x=>x.frames).length,
