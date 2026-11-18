@@ -225,11 +225,26 @@ export function installObjectiveTurnPanel({
  function chooseChoice(index){
   const g=visibleGroup(engine.snapshot());if(!g||!(g.alive>0))return;
   const choice=choicesFor(Number(g.id))[index];if(!choice)return;
-  if(engine.setMove(g.id,choice.move,choice.targetId??null)){step='action';render();}
+  if(engine.setMove(g.id,choice.move,choice.targetId??null)){$('objectiveTurnMapStep').classList.remove('expanded');const button=root.querySelector('[data-map-expand]');button.textContent='⛶ 大きく';button.setAttribute('aria-expanded','false');step='action';render();}
  }
  root.addEventListener('click',event=>{
+  const zoomButton=event.target.closest('[data-map-zoom]');
+  if(zoomButton){
+   const mode=zoomButton.dataset.mapZoom;
+   if(mode==='reset'){zoom=1;recenterMap(Number(visibleGroup(engine.snapshot())?.id)||1);redrawMap();}
+   else zoomMap(zoom*(mode==='in'?1.6:1/1.6));
+   $('objectiveTurnZoomLevel').textContent=Math.round(zoom*100)+'%';
+   return;
+  }
+  const expand=event.target.closest('[data-map-expand]');
+  if(expand){
+   const expanded=$('objectiveTurnMapStep').classList.toggle('expanded');
+   expand.textContent=expanded?'↙ 戻る':'⛶ 大きく';
+   expand.setAttribute('aria-expanded',String(expanded));
+   redrawMap();return;
+  }
   const pager=event.target.closest('[data-pager]');
-  if(pager){page+=Number(pager.dataset.pager);choicePage=0;step='map';render();return;}
+  if(pager){page+=Number(pager.dataset.pager);choicePage=0;step='map';recenterMap(Number(visibleGroup(engine.snapshot())?.id)||1);render();return;}
   const tab=event.target.closest('[data-step]');
   if(tab){step=tab.dataset.step;render();return;}
   const choice=event.target.closest('[data-map-choice]');
@@ -252,18 +267,74 @@ export function installObjectiveTurnPanel({
   const item=event.target.closest('[data-item-id]');
   if(item){const g=visibleGroup(engine.snapshot());if(g?.alive>0){engine.setItem(g.id,item.dataset.itemId);render();}}
  });
- $('objectiveTurnMap').addEventListener('click',event=>{
-  const rect=event.currentTarget.getBoundingClientRect();
-  if(!rect.width||!rect.height||!mapMarkers.length)return;
-  const x=(event.clientX-rect.left)/rect.width*232,z=(event.clientY-rect.top)/rect.height*232;
-  let best=-1,distance=Infinity;
-  for(let i=0;i<mapMarkers.length;i++){
-   const d=Math.hypot(x-mapMarkers[i].px,z-mapMarkers[i].pz);
-   if(d<distance){distance=d;best=i;}
-  }
-  if(distance<=13&&best>=0)chooseChoice(best);
+ const mapCanvas=$('objectiveTurnMap');
+ const canvasPoint=(event,rect=mapCanvas.getBoundingClientRect())=>({
+  x:(event.clientX-rect.left)/Math.max(1,rect.width)*mapCanvas.width,
+  z:(event.clientY-rect.top)/Math.max(1,rect.height)*mapCanvas.height
  });
- $('objectiveTurnAdvance').addEventListener('click',()=>{engine.start();render();});
+ const pointerMid=(a,b)=>({x:(a.x+b.x)/2,z:(a.z+b.z)/2});
+ const pointerDist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+ mapCanvas.addEventListener('pointerdown',event=>{
+  if(root.hidden||step!=='map')return;
+  mapCanvas.setPointerCapture?.(event.pointerId);
+  pointers.set(event.pointerId,{x:event.clientX,y:event.clientY,
+   sx:event.clientX,sy:event.clientY,moved:false});
+ });
+ mapCanvas.addEventListener('pointermove',event=>{
+  const current=pointers.get(event.pointerId);if(!current)return;
+  const oldValues=[...pointers.values()].map(p=>({...p}));
+  const dx=event.clientX-current.x,dy=event.clientY-current.y;
+  current.x=event.clientX;current.y=event.clientY;
+  if(Math.hypot(current.x-current.sx,current.y-current.sy)>7)current.moved=true;
+  const rect=mapCanvas.getBoundingClientRect();
+  if(pointers.size===2){
+   const newValues=[...pointers.values()];
+   newValues.forEach(p=>p.moved=true);
+   const oldDistance=pointerDist({x:oldValues[0].x,y:oldValues[0].y},{x:oldValues[1].x,y:oldValues[1].y});
+   const newDistance=pointerDist({x:newValues[0].x,y:newValues[0].y},{x:newValues[1].x,y:newValues[1].y});
+   const before=pointerMid({x:oldValues[0].x,y:oldValues[0].y},{x:oldValues[1].x,y:oldValues[1].y});
+   const after=pointerMid({x:newValues[0].x,y:newValues[0].y},{x:newValues[1].x,y:newValues[1].y});
+   if(oldDistance>5&&newDistance>5){
+    const point=canvasPoint({clientX:after.x,clientY:after.y},rect);
+    zoomMap(zoom*newDistance/oldDistance,point.x,point.z);
+   }
+   mapCenterX-=(after.x-before.x)/Math.max(1,rect.width)*(Number(worldSize)||232)/zoom;
+   mapCenterZ-=(after.y-before.y)/Math.max(1,rect.height)*(Number(worldSize)||232)/zoom;
+   clampCenter();redrawMap();
+  }else if(current.moved&&zoom>1){
+   mapCenterX-=dx/Math.max(1,rect.width)*(Number(worldSize)||232)/zoom;
+   mapCenterZ-=dy/Math.max(1,rect.height)*(Number(worldSize)||232)/zoom;
+   clampCenter();redrawMap();
+  }
+  if(current.moved||pointers.size>1)event.preventDefault();
+ });
+ function dropPointer(event,cancelled=false){
+  const p=pointers.get(event.pointerId);if(!p)return;
+  const solitary=pointers.size===1;
+  pointers.delete(event.pointerId);
+  if(cancelled||!solitary||p.moved||root.hidden||step!=='map')return;
+  const rect=mapCanvas.getBoundingClientRect();
+  const xy=canvasPoint({clientX:p.x,clientY:p.y},rect);
+  let index=-1,min=Infinity;
+  for(let i=0;i<mapMarkers.length;i++){
+   const distance=Math.hypot(xy.x-mapMarkers[i].px,xy.z-mapMarkers[i].pz);
+   if(distance<min){min=distance;index=i;}
+  }
+  const hitRadius=Math.max(15,24/Math.max(1,rect.width)*mapCanvas.width);
+  if(index>=0&&min<=hitRadius){chooseChoice(index);lastTap=0;return;}
+  const now=Date.now();
+  if(now-lastTap<350)zoomMap(zoom*1.65,xy.x,xy.z);
+  lastTap=now;
+ }
+ mapCanvas.addEventListener('pointerup',event=>dropPointer(event));
+ mapCanvas.addEventListener('pointercancel',event=>dropPointer(event,true));
+ mapCanvas.addEventListener('wheel',event=>{
+  if(root.hidden||step!=='map')return;
+  event.preventDefault();
+  const xy=canvasPoint(event);
+  zoomMap(zoom*(event.deltaY<0?1.3:1/1.3),xy.x,xy.z);
+ },{passive:false});
+  $('objectiveTurnAdvance').addEventListener('click',()=>{engine.start();render();});
  function update(dt,wallDt=dt){
   const before=engine.status();engine.update(dt,{wallDt});const after=engine.status();
   if(before.phase!==after.phase||Math.ceil(before.remaining)!==Math.ceil(after.remaining))render();
