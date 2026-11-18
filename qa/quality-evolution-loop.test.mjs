@@ -92,3 +92,13 @@ test('schedule is 3 independent domains and never auto-publishes unknown FF15 ar
  assert.match(script,/androidFpsMeasured:false/);
  assert.match(script,/actions\/workflows\/publish-pages\.yml\/dispatches/);
 });
+
+test('automatic face or hair parameter adoption requires actual rendered model screenshots',()=>{
+ const script=fs.readFileSync('scripts/quality-evolution-loop.mjs','utf8');
+ const workflow=fs.readFileSync('.github/workflows/quality-evolution-loop.yml','utf8');
+ assert.match(script,/qa\/facehair-production-visual\.cjs/);
+ assert.match(script,/blocked_facehair_visual_regression/);
+ assert.match(script,/visualResult\.views\?\.length!==8/);
+ assert.match(workflow,/FACE_QA_BASE_URL: http:\/\/127\.0\.0\.1:8765/);
+ assert.match(workflow,/qa-screenshots\/facehair-production/);
+});
