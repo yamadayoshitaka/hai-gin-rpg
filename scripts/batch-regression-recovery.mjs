@@ -24,7 +24,7 @@ export const WATCHED = Object.freeze([
  {workflow:'story-chapter1-free-complete-draft-production.yml',groups:['anime'],maxAgeMinutes:null,retry:false,dispatch:false}
 ]);
 
-export function decideRecovery(spec,run,now=Date.now()){
+export function decideRecovery(spec,run,now=Date.now(),currentMainSha=null){
  if(!run)return spec.maxAgeMinutes===null?'observe_only':spec.dispatch?'dispatch':'stale';
  if(['queued','in_progress','waiting','pending','requested'].includes(run.status))return 'running';
  const ageMinutes=(now-Date.parse(run.created_at||run.run_started_at))/60000;
@@ -34,6 +34,13 @@ export function decideRecovery(spec,run,now=Date.now()){
   return 'success';
  }
  if(['failure','timed_out','cancelled','action_required'].includes(run.conclusion)){
+  // A rerun keeps the ORIGINAL source SHA. An old failed commit must not
+  // continue blocking an already-fixed latest main (e.g. protected m006 QA).
+  // Never auto-dispatch paid image production or disabled workflows.
+  if(spec.dispatch&&!spec.groups.includes('anime')&&
+    /^[0-9a-f]{40}$/.test(currentMainSha||'')&&
+    /^[0-9a-f]{40}$/.test(run.head_sha||'')&&
+    run.head_sha!==currentMainSha)return 'dispatch_latest_main';
   if(spec.retry&&Number(run.run_attempt||1)<2&&run.conclusion!=='action_required')return 'rerun_failed';
   return 'escalate';
  }
@@ -130,7 +137,7 @@ async function createOrRefreshIssue(spec,run,reason){
  const created=await api('issues','POST',{title,body});
  return created.html_url;
 }
-async function inspect(spec,switches,{canRecover=true}={}){
+async function inspect(spec,switches,{canRecover=true,currentMainSha=null}={}){
  const active=spec.groups.some(k=>switches.groups?.[k]?.enabled===true);
  const row={workflow:spec.workflow,groups:spec.groups,enabled:active,checkedAt,
   status:'unknown',runId:null,runUrl:null,runAttempt:0,action:'none',issueUrl:null,error:null,
@@ -142,10 +149,11 @@ async function inspect(spec,switches,{canRecover=true}={}){
   if(run){row.status=run.status==='completed'?(run.conclusion||'unknown'):run.status;
    row.runId=run.id;row.runUrl=run.html_url;row.runAttempt=run.run_attempt||1;
    row.lastStartedAt=run.run_started_at||run.created_at;row.headSha=run.head_sha;}
-  const decision=decideRecovery(spec,run);
+  const decision=decideRecovery(spec,run,Date.now(),currentMainSha);
+  row.currentMainSha=currentMainSha;
   row.decision=decision;
   if(dryRun||['success','running','observe_only','unknown'].includes(decision))return row;
-  if(!canRecover&&['rerun_failed','dispatch'].includes(decision)){
+  if(!canRecover&&['rerun_failed','dispatch','dispatch_latest_main'].includes(decision)){
    row.action='deferred_bounded_recovery_budget';
    return row;
   }
@@ -153,7 +161,7 @@ async function inspect(spec,switches,{canRecover=true}={}){
    // A retry is safe for QA-only jobs. Image-generation workflows are NEVER rerun.
    await api('actions/runs/'+run.id+'/rerun-failed-jobs','POST');
    row.action='rerun_failed_jobs_once';
-  }else if(decision==='dispatch'){
+  }else if(decision==='dispatch'||decision==='dispatch_latest_main'){
    // Recreate a missed schedule, not an extra free provider dispatch.
    const inputs=dispatchInputFor(spec,checkedAt,switches,lastEvolutionCheck);
    if(inputs===null){
@@ -164,7 +172,8 @@ async function inspect(spec,switches,{canRecover=true}={}){
    await api('actions/workflows/'+encodeURIComponent(spec.workflow)+'/dispatches','POST',{
     ref:'main',...(Object.keys(inputs).length?{inputs}:{})
    });
-   row.action='dispatch_missing_schedule';
+   row.action=decision==='dispatch_latest_main'?
+    'dispatch_fixed_latest_main':'dispatch_missing_schedule';
   }else if(decision==='escalate'||decision==='stale'){
    row.issueUrl=await createOrRefreshIssue(spec,run,decision);
    row.action='escalated_to_source_fix_issue';
@@ -181,10 +190,19 @@ async function main(){
  const switches=JSON.parse(fs.readFileSync(path.join(ROOT,'data/batch-center-switches.json'),'utf8'));
  const rows=[];
  let remaining=MAX_RECOVERIES_PER_CHECK;
+ let currentMainSha=process.env.GITHUB_SHA||null;
+ try{
+  const branch=await api('branches/main');
+  if(/^[0-9a-f]{40}$/.test(branch?.commit?.sha||''))
+   currentMainSha=branch.commit.sha;
+ }catch(error){
+  console.warn('Latest main SHA unavailable, stale-run SHA discrimination disabled:',error.message);
+ }
  for(const spec of WATCHED){
-  const row=await inspect(spec,switches,{canRecover:remaining>0});
+  const row=await inspect(spec,switches,{canRecover:remaining>0,currentMainSha});
   rows.push(row);
-  if(['dispatch_missing_schedule','rerun_failed_jobs_once'].includes(row.action))remaining--;
+  if(['dispatch_missing_schedule','dispatch_fixed_latest_main',
+   'rerun_failed_jobs_once'].includes(row.action))remaining--;
  }
  const report={schemaVersion:1,checkedAt,source:'GitHub Actions authorized workflow-run API',
   note:'Actions success verifies task execution, NOT 3D mesh change, QA visual approval, commit, merge or Pages deployment.',
