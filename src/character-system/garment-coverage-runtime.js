@@ -5,6 +5,19 @@
 import * as THREE from 'three';
 import {buildGarmentSurfaceCoverage} from './garment-surface-coverage.js?v=4.4.93';
 const maskCache=new WeakMap();
+// Cache identical surface policies without retaining discarded garment meshes.
+const surfacePolicyKeys=new WeakMap();
+function surfacePolicyKey(coverage,preserved,forced){
+ if(!coverage||typeof coverage!=='object')return 'missing-coverage';
+ if(!preserved.size&&!forced.length)return coverage;
+ let keys=surfacePolicyKeys.get(coverage);
+ if(!keys){keys=new Map();surfacePolicyKeys.set(coverage,keys)}
+ const signature='preserve:'+([...preserved].sort().join(','))+
+  '|force:'+([...forced].sort().join(','));
+ if(!keys.has(signature))keys.set(signature,{coverage,signature});
+ return keys.get(signature);
+}
+
 // Each live skinned body can be referenced by more than one asynchronous
 // costume build. A disposed old outfit must NOT unmask a newer outfit.
 const activeMasks=new WeakMap();
@@ -193,8 +206,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   // Each verified closed-tunic policy needs an isolated cached mask.
   // Otherwise a bare source mesh can reuse an incompatible earlier mask.
   const cacheKey=surfaceCheck?
-   (preserved.size||forceCoveredRegions.length?
-     {coverage,preserved:[...preserved],forced:[...forceCoveredRegions]}:coverage):
+   surfacePolicyKey(coverage,preserved,forceCoveredRegions):
    coverage.signature+'|preserve:'+([...preserved].sort().join(','))+
      '|force:'+([...forceCoveredRegions].sort().join(','));
   let record=variants.get(cacheKey);
@@ -229,13 +241,12 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
    // Verified opaque panels and fitted pants have no visible internal skin.
    // Cut majority-covered triangles, but protect neck/hand/exposed seams.
    // All non-verified outfits keep the previous conservative cut rule.
-   const opaqueEnvelope=surfaceCheck&&enclosed.size>0;
    for(let i=0;i<sourceIndices.count;i+=3){
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
     const hiddenCorners=cut[a]+cut[b]+cut[c];
     const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
-    const canCut=surfaceCheck?
-      (opaqueEnvelope?hiddenCorners>=2&&!visibleEdge:hiddenCorners===3):hiddenCorners>=2;
+    // Preserve triangles touching an exposed seam in both preview and battle.
+    const canCut=hiddenCorners===3&&!visibleEdge;
     if(!canCut)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
