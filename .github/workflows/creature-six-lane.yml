@@ -26,6 +26,8 @@ on:
     paths:
       - 'src/avian-guardian-sculpt.js'
       - 'src/magma-salamander-sculpt.js'
+      - 'src/salamander-lineage-sculpt.js'
+      - 'qa/salamander-lineage-remesh.test.mjs'
       - 'src/monster-geometry.js'
       - 'src/monster-realistic-palettes.js'
       - 'src/battle-registered-monster-model.js'
@@ -37,6 +39,8 @@ on:
       - 'src/creature-*.js'
       - 'src/avian-guardian-sculpt.js'
       - 'src/magma-salamander-sculpt.js'
+      - 'src/salamander-lineage-sculpt.js'
+      - 'qa/salamander-lineage-remesh.test.mjs'
       - 'src/monster-geometry.js'
       - 'src/monster-realistic-palettes.js'
       - 'src/battle-registered-monster-model.js'
@@ -68,11 +72,14 @@ jobs:
           node-version: '22'
       - name: Install deterministic open-source geometry runtime
         run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Verify magma-derived salamander lineage, real skulls, joints, tail and LOD
+        if: matrix.category == 'creatureMonster'
+        run: |
+          node --check src/monster-geometry.js
+          node --check src/salamander-lineage-sculpt.js
+          node --test qa/m019-salamander-sculpt.test.mjs qa/salamander-lineage-remesh.test.mjs
       - name: Verify all 108 canonical IDs, protected assets and game adoption route
         run: node --test qa/creature-six-lane-contract.test.mjs
-      - name: Verify magma salamander wolf-derived head, eyes, horns, planted short legs and LOD
-        if: matrix.category == 'creatureMonster'
-        run: node --test qa/m019-salamander-sculpt.test.mjs
       - name: Verify true avian head relief in both categories before main adoption
         if: github.event_name == 'pull_request' || github.event_name == 'push'
         run: node --test qa/creature-face-volume-batch.test.mjs
