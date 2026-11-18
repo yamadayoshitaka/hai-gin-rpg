@@ -20,6 +20,8 @@ jobs:
         run: node --test qa/batch-live-ref-selection.test.mjs
       - name: Autonomous latest-main reconciliation safety contract
         run: node --check scripts/batch-self-drive.mjs && node --test qa/batch-self-drive.test.mjs
+      - name: Pages-publication proof and batch quality status contract
+        run: node --test qa/batch-pages-release-gate.test.mjs
       - name: Full replacement contract
         run: npm run test:full-replacement
       - name: Syntax and imports
