@@ -157,7 +157,9 @@ async function selfHeal(){
   const checked=suites(rule.tests);
   if(!checked.ok)report.detected.push({id:rule.id,error:checked.text.slice(-1100)});
  }
- const integrity=run('node',['qa/pages-publication-integrity.cjs']);
+ // Match the existing Pages publication check: vm.SourceTextModule
+ // requires this flag on the current GitHub Node.js runner.
+ const integrity=run('node',['--experimental-vm-modules','qa/pages-publication-integrity.cjs']);
  if(!integrity.ok)report.detected.push({id:'pages-integrity',error:integrity.text.slice(-1100)});
  const files=requireRun('git',['diff','--name-only']).split('\n').filter(Boolean);
  if(!ruleFilesOnly(files)){
