@@ -1,0 +1,68 @@
+name: Auto-recover failed latest-main Pages deployment
+on:
+  workflow_run:
+    workflows: ['Publish RPG Pages']
+    types: [completed]
+  pull_request:
+    paths:
+      - '.github/workflows/pages-publish-autoretry.yml'
+      - 'qa/batch-pages-release-gate.test.mjs'
+permissions:
+  contents: read
+  actions: write
+  issues: write
+concurrency:
+  group: retry-pages-latest
+  cancel-in-progress: false
+jobs:
+  verify-policy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test qa/batch-pages-release-gate.test.mjs
+  recover-release:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Re-dispatch only a current-main Pages failure, at most once per SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILED_SHA: ${{ github.event.workflow_run.head_sha }}
+          FAILED_RUN: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)
+          if [[ "${FAILED_SHA}" != "${current}" ]]; then
+            echo "Old Pages SHA ${FAILED_SHA}; current main ${current}. Never deploy a stale source." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          snapshot=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/runs?branch=main&per_page=100")
+          failed_count=$(jq -r --arg sha "${FAILED_SHA}" '[.workflow_runs[] | select(.head_sha == $sha and .conclusion == "failure")] | length' <<< "${snapshot}")
+          success_count=$(jq -r --arg sha "${FAILED_SHA}" '[.workflow_runs[] | select(.head_sha == $sha and .conclusion == "success")] | length' <<< "${snapshot}")
+          active_count=$(jq -r --arg sha "${FAILED_SHA}" '[.workflow_runs[] | select(.head_sha == $sha and (.status == "queued" or .status == "in_progress"))] | length' <<< "${snapshot}")
+          if [[ "${success_count}" -gt 0 ]]; then
+            echo "This source SHA is already published successfully. No retry." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          if [[ "${active_count}" -gt 0 ]]; then
+            echo "Another Pages deployment for this SHA is pending; no duplicate." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          # A deployment loop or a broken source must not cause indefinite paid
+          # GitHub runner usage. Optional quality tests already permit red QA.
+          if [[ "${failed_count}" -gt 1 ]]; then
+            echo "::error::Pages failed twice at the same main SHA; stop retrying and report source/run."
+            echo "Pages still failed: ${FAILED_SHA} (last run ${FAILED_RUN})" >> "${GITHUB_STEP_SUMMARY}"
+            exit 1
+          fi
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/dispatches" -f ref=main
+          echo "Re-dispatched latest main ${FAILED_SHA} after Pages failure ${FAILED_RUN}." >> "${GITHUB_STEP_SUMMARY}"
