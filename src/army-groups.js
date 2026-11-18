@@ -1,11 +1,11 @@
-/** Three command groups, independent of deployment cells and soldier jobs. */
-export const ARMY_GROUP_IDS=Object.freeze([1,2,3]);
+/** Ten command groups, independent of deployment cells and soldier jobs. */
+export const ARMY_GROUP_IDS=Object.freeze(Array.from({length:10},(_,i)=>i+1));
 export const normalizeArmyGroup=value=>ARMY_GROUP_IDS.includes(Number(value))?Number(value):1;
 const leaders=state=>[{...state.commander,id:'player'},...(state.commanders||[])];
 const leaderFor=(state,id)=>String(id)==='player'?state.commander:state.commanders.find(c=>String(c.id)===String(id));
 export function armyGroupFor(state,id){return normalizeArmyGroup(leaderFor(state,id)?.armyGroupId);}
 export function setArmyGroup(state,id,group){
- if(!ARMY_GROUP_IDS.includes(Number(group)))throw Error('班は第1〜第3班から選んでください。');
+ if(!ARMY_GROUP_IDS.includes(Number(group)))throw Error('班は第1〜第10班から選んでください。');
  const leader=leaderFor(state,id);if(!leader)throw Error('隊が見つかりません。');
  leader.armyGroupId=Number(group);
 }

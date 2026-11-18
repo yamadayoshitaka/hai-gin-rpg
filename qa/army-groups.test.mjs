@@ -8,7 +8,7 @@ const game=createNewGame('班試験',{gender:'female',faceId:0}),state=game.camp
 state.commanders.push({id:1,name:'副軍師',level:1,active:true});
 state.squads.push({id:3,count:10,commanderId:'1',job:'騎士',rarity:'UR'});
 assert.equal(armyGroupFor(state,'player'),1,'old saves default to first group');
-assert.equal(armyGroups(state).length,3);
+assert.equal(armyGroups(state).length,10);
 setArmyGroup(state,'1',3);
 assert.equal(armyGroupFor(state,'1'),3);
 assert.throws(()=>setArmyGroup(state,'1',4));
@@ -53,4 +53,4 @@ context.canChangeSquadOrder=()=>true;context.squadCommanderUnavailableReason=()=
 assert.equal(context.issueSquadOrder('charge'),false);assert.equal(calls.length,0,'no surviving group commander means no issue');
 state.squads.find(s=>s.id===3).count=0;
 assert.equal(armyCaptain(state,'1'),null,'removed character cannot continue supplying buffs');
-console.log('Army groups: migration, max three groups, captain ownership/replacement, passive buffs, sortie, four whole-group orders and atomic cooldown passed');
+console.log('Army groups: migration, max ten groups, captain ownership/replacement, passive buffs, sortie, four whole-group orders and atomic cooldown passed');

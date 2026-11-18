@@ -8,14 +8,14 @@ import {storyStageContext} from './story-narrative-flow.js';
 import {recommendBattlePlans,battleStageContext} from './battle-plan-recommendations.js';
 import {allocateThreeTeamSortie,availableSortieOrders,sortieDebuffTypes,sortieFormationBuff,sortieLevel,sortieTeamCount,sortieTeams,SORTIE_FORMATION_CELLS,SORTIE_FORMATIONS} from './three-team-sortie.js';
 
-/** Battle-compatible adaptation of the three user-defined sortie teams.
+/** Battle-compatible adaptation of the ten user-defined sortie teams.
  * Strategists are never assigned a deployment cell: the protagonist is carried
  * by the first active team, while the selected captain buffs that entire team.
  */
 export function makeThreeTeamBattleRequest(game,stage,battleId){
  const chosen=allocateThreeTeamSortie(game,stage);
  const teams=sortieTeams(game).filter(t=>sortieTeamCount(t)>0);
- if(teams.length>3)throw Error('出撃できる隊は最大3隊です。');
+ if(teams.length>10)throw Error('出撃できる隊は最大10隊です。');
  const formationIntegrity=Object.fromEntries(teams.map(team=>{
   const deployed=chosen.filter(item=>item.teamId===team.id),
    requiredSources=team.slots.filter(Boolean).map(String),
