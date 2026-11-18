@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-hover-flight-v24-20261118',
+     '&v=phoenix-master-birds-v25-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -40,7 +40,7 @@ const ids=['m011','m012','m013','m014'];
       throw Error(id+' rebuilt plumage missing: '+JSON.stringify(state));
     if(id==='m013'){
      const shape=state.phoenix;
-     if(!state.revision?.includes('flight-realism-v9'))throw Error('Old Phoenix revision still loaded: '+state.revision);
+     if(!state.revision?.includes('phoenix-master-birds-v10'))throw Error('Old Phoenix revision still loaded: '+state.revision);
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
        shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
        shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||
@@ -65,7 +65,7 @@ const ids=['m011','m012','m013','m014'];
         !shape.highQualityHandFeathers||
         !shape.flightMode||!shape.inAir||!shape.flightWingRig||
         !shape.legsFoldInFlight||!shape.fineFeatherBarbs||shape.currentAltitude<.80||
-        shape.tailLength<4.55||shape.waveMeshes!==7||state.tail!==31)
+        shape.tailLength<4.55||shape.waveMeshes!==4||state.tail!==31)
        throw Error('Phoenix requested remodel absent in actual WebGL viewer: '+
         JSON.stringify(shape));
     }

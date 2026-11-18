@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
-import {AVIAN_REFRESH_IDS,AVIAN_REALISM_REVISION,avianProfile}
+import {AVIAN_REFRESH_IDS,AVIAN_REALISM_REVISION,avianProfile,PHOENIX_FAMILY_MASTER}
  from '../src/avian-guardian-sculpt.js';
 
 const meshes=root=>{
@@ -29,6 +29,9 @@ test('four distinct avian masters reuse the real 82-feather guardian wing',()=>{
    assert.equal(model.userData.avianRebuildRevision,AVIAN_REALISM_REVISION);
    assert.equal(model.userData.avianGameSourceRevision,AVIAN_REALISM_REVISION);
    assert.equal(model.userData.avianGuardianGeometryDonor,'seraph_guardian');
+   assert.equal(model.userData.avianPhoenixSourceMaster,PHOENIX_FAMILY_MASTER);
+   assert.equal(model.userData.avianPhoenixMasterRevision,AVIAN_REALISM_REVISION);
+   assert.equal(model.userData.avianFlightMode,true);
    distinct.add(model.userData.avianAnatomicalKind);
    const p=model.userData.pivots;
    assert.equal(p.wingL.parent,p.torso);
@@ -42,6 +45,8 @@ test('four distinct avian masters reuse the real 82-feather guardian wing',()=>{
     assert.ok(wing?.isMesh&&wing.visible,id+' missing guardian-derived feather wing');
     assert.equal(wing.parent,p['wing'+suffix]);
     assert.equal(wing.userData.angelSource,'seraph_guardian');
+    assert.equal(wing.userData.phoenixFamilyMaster,'m013');
+    assert.equal(wing.userData.phoenixMasterGeometryRevision,AVIAN_REALISM_REVISION);
     assert.equal(wing.userData.angelFeatherLayers,3);
     assert.equal(wing.userData.angelFeathersPerSide,82);
     assert.ok(wing.userData.angelDonorGeometryTriangles>1000);
@@ -325,7 +330,49 @@ test('m015 humanlike Tengu remains on the previous independently maintained path
  try{
   assert.equal(avianProfile('m015'),null);
   assert.equal(m.userData.avianRebuildRevision,undefined);
-  assert.equal(m.getObjectByName('avian-guardian-three-layer-wing-m015-L'),undefined);
+  const inherited=m.getObjectByName('avian-guardian-three-layer-wing-m015-L');
+  assert.ok(inherited?.isMesh,'Tengu wing must share Phoenix feather donor');
+  assert.equal(inherited.userData.phoenixFamilyMaster,'m013');
+  assert.equal(inherited.userData.phoenixTenguHumanRigPreserved,true);
+  assert.ok(!m.userData.pivots.wingElbowL,'Tengu shoulder remains protected');
   assert.ok(m.userData.pivots.wingL&&m.userData.pivots.legL);
+ }finally{disposeMonsterSculpture(m);}
+});
+
+test('four natural Phoenix-derived birds have unique coloured wings and maintain flight',()=>{
+ const unique=new Set();
+ for(const id of AVIAN_REFRESH_IDS){
+  const m=build(id,'medium');
+  try{
+   const w=m.getObjectByName('avian-guardian-three-layer-wing-'+id+'-L');
+   assert.equal(w.userData.phoenixFamilyMaster,'m013');
+   assert.equal(w.userData.birdWingDetail,'medium');
+   const colours=w.geometry.getAttribute('color');
+   unique.add([...colours.array.slice(0,9)].map(n=>n.toFixed(5)).join(','));
+   for(const action of ['idle','run','attack']){
+    startMonsterAction(m,action,0);
+    animateMonsterModel(m,.24);
+    assert.equal(m.userData.avianInAir,true,id+' grounded in '+action);
+    assert.ok(m.position.y>.40,id+' should stay above ground');
+    assert.ok(Number.isFinite(m.userData.pivots.wingL.rotation.z));
+   }
+  }finally{disposeMonsterSculpture(m);}
+ }
+ assert.equal(unique.size,4,'the species must not share identical colour schemes');
+});
+test('Phoenix physical eyebrow feathers frame forward-projecting eyeliner and iris',()=>{
+ const m=build('m013','high');
+ try{
+  const brow=m.getObjectByName('phoenix-orbital-brow-feathers');
+  assert.ok(brow?.isMesh,'rooted brow feather mesh missing');
+  assert.ok(brow.userData.phoenixRootedBrowVanes>=16);
+  assert.equal(brow.userData.phoenixEyesUncovered,true);
+  for(const side of ['L','R']){
+   const socket=m.getObjectByName('phoenix-sculpted-orbit-'+side);
+   assert.ok(socket.position.x*(side==='L'?-1:1)>.11);
+   assert.equal(socket.userData.phoenixEyeProjectionFollowsEyeliner,true);
+   assert.ok(m.getObjectByName('phoenix-upper-eyeliner-'+side));
+   assert.ok(m.getObjectByName('phoenix-iris-'+side));
+  }
  }finally{disposeMonsterSculpture(m);}
 });

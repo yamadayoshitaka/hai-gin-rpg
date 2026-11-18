@@ -4,8 +4,8 @@
  * Each specimen is real 3D geometry, never an image billboard.
  */
 import * as THREE from 'three';
-import {buildGuardianDerivedBird,AVIAN_REALISM_REVISION}
- from './avian-guardian-sculpt.js?v=phoenix-sculpt-v9-feather-r1-20261118';
+import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,AVIAN_REALISM_REVISION}
+ from './avian-guardian-sculpt.js?v=phoenix-master-birds-v10-20261118';
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-cat-torso-anchor-tail-v12-20261118';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
@@ -2366,14 +2366,10 @@ function bird(g,s){
    if(s.id==='m015'){
      // Humanoid tengu uses shared humanoid assets: preserve the exact
      // pre-refactor wing/leg geometry and animation contracts.
-     g.tube(wing,'skin',[[0,0,0],[side*.55,.25,-.05],[side*1.18,.36,-.29],[side*1.56,.18,-.53]],.085);
-     for(let i=0;i<15+v*4;i++){
-       const t=i/(14+v*4),x=side*(.22+1.31*t);
-       g.fin(wing,i%3?'light':'accent',[x,.12,-.10-t*.32],
-         [x+side*(.20+.35*t),-.40-t*.47,-.20-t*.34],.07+Math.sin(t*Math.PI)*.09);
-       g.fin(wing,'skin',[x,.17,-.08-t*.23],
-         [x+side*(.14+.18*t),-.13-t*.18,-.17-t*.26],.058);
-     }
+     // Phoenix master physically replaces the crude membrane fins;
+     // the original protected humanlike shoulder and leg rig is intact.
+     buildPhoenixDerivedTenguWing(wing,s,side,g.root.userData.detail);
+     g.root.userData.tenguPhoenixWingSource=AVIAN_REALISM_REVISION;
      const leg=g.group('leg'+(side<0?'L':'R'),[side*.17,1.09,.10]);
      g.bone(leg,'skin',[0,0,0],[0,-.93,.12],.075);
      g.sphere(leg,'shadow',[0,-.93,.16],[.10,.08,.16]);
