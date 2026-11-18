@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const stages=['launch','code','qa','commit','pr','merge','deploy'];
-const values=new Set(['done','pending','failed','skipped','unknown']);
+const values=new Set(['done','pending','failed','skipped','unknown','blocked','not_done','existing_draft']);
 const kinds=['human','monster','world','anime'];
 test('batch work progress uses evidence-backed stage status without treating scheduled tasks as implementation',()=>{
  const state=JSON.parse(fs.readFileSync('data/batch-work-progress.json','utf8'));
