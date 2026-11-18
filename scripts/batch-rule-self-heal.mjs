@@ -191,7 +191,7 @@ async function main(){
  try{await selfHeal()}catch(e){
   report.status=report.sourceCommitSha?'source_committed_but_publication_failed':'error';
   report.error=String(e.stack||e).slice(0,1200);
-  if(!report.sourceCommitSha)report.issueUrl=await openOrUpdateIssue();
+  report.issueUrl=await openOrUpdateIssue();
  }
  finally{
   fs.writeFileSync(path.join(evidenceDir,'latest.json'),JSON.stringify(report,null,2)+'\n');
