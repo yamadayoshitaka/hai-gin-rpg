@@ -122,8 +122,17 @@ async function recordIssue(group,report){
  try{
   const issues=await api('issues?state=open&per_page=100');
   const existing=issues.find(x=>x.title===title&&!x.pull_request);
+  const measurement=group==='gameQuality'?gameQualityFromEvidence():null;
+  const browser=measurement?.browser||{};
   const body=['# 自走バッチ｜最新mainに差分統合できなかった原因',
    'Category: '+group,'Main SHA: '+report.mainSha,
+   ...(measurement?['Lane: '+measurement.lane,
+     'Static QA: '+measurement.staticStatus,
+     'CI browser status: '+browser.status,
+     'CI FPS: '+(browser.fps??'not measured')+
+      ', P95ms: '+(browser.p95Ms??'not measured')+
+      ', JS errors: '+(browser.runtimeErrors??'not measured'),
+     'Browser failure: '+String(browser.error||'none').slice(0,300)]:[]),
    'Last check: '+report.startedAt,'',
    'Attempts:',...(report.attempts||[]).map(x=>
     '- PR #'+x.pr+' '+x.sha+' '+x.status+': '+String(x.reason||'').slice(0,350)),
@@ -272,7 +281,13 @@ async function run(){
  const all=await api('pulls?state=open&sort=updated&direction=desc&per_page=100');
  const prs=all.filter(x=>eligiblePr(x,group)).slice(0,12);
  report.candidateCount=prs.length;
- if(!prs.length){report.status='no_open_source_pr';return}
+ if(!prs.length){
+  const quality=group==='gameQuality'?gameQualityFromEvidence():null;
+  const regression=quality&&(!quality.staticPassed||quality.browser?.status==='failed');
+  report.status=regression?'regression_detected_no_safe_patch':'no_open_source_pr';
+  if(regression)report.issueUrl=await recordIssue(group,report);
+  return;
+ }
  const beforeWorldIds=group==='world'?allWorldIds():null;
  const work=fs.mkdtempSync(path.join(os.tmpdir(),'hai-gin-self-drive-'));
  try{
@@ -355,7 +370,9 @@ async function run(){
    try{resetToMain()}catch{}
   }
  }
- report.status='blocked_candidates';
+ const quality=group==='gameQuality'?gameQualityFromEvidence():null;
+ report.status=quality&&(!quality.staticPassed||quality.browser?.status==='failed')?
+  'regression_detected_no_safe_patch':'blocked_candidates';
  report.issueUrl=await recordIssue(group,report);
  }finally{fs.rmSync(work,{recursive:true,force:true});}
 }
