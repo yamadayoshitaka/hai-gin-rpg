@@ -176,7 +176,7 @@ async function run(){
    const diff=command('git',['diff','--binary','--no-ext-diff',base,candidate,'--',...source]);
    if(!diff){attempt.status='no_patch';continue}
    resetToMain();
-   const patch=path.join(work,'candidate-'+pr.number+'.patch');fs.writeFileSync(patch,diff);
+   const patch=path.join(work,'candidate-'+pr.number+'.patch');fs.writeFileSync(patch,diff+'\n');
    const applied=tryCommand('git',['apply','--index','--3way',patch]);
    if(!applied.ok){
     attempt.status='conflict';attempt.reason=applied.out.slice(-700);resetToMain();continue;
