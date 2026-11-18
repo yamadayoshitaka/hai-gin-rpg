@@ -110,7 +110,7 @@ async function publishApprovedEvidence(){
   const get=await fetch(endpoint+'?ref=main',{headers});
   if(!get.ok)throw Error('Cannot read current score ledger: '+get.status);
   const stored=await get.json();
-  const ledger=JSON.parse(Buffer.from(stored.content.replace(/\\s/g,''),'base64').toString('utf8'));
+  const ledger=JSON.parse(Buffer.from(stored.content.replace(/\s/g,''),'base64').toString('utf8'));
   if(ledger.schemaVersion!==1||!Array.isArray(ledger.acceptedChanges))
    throw Error('Unknown score ledger schema');
   const record={sourceSha:report.sourceCommitSha,at:report.startedAt,
@@ -131,7 +131,7 @@ async function publishApprovedEvidence(){
   const response=await fetch(endpoint,{method:'PUT',headers,body:JSON.stringify({
    branch:'main',sha:stored.sha,
    message:'chore(quality): record verified 3D geometry and CI FPS evolution evidence',
-   content:Buffer.from(JSON.stringify(ledger,null,2)+'\\n').toString('base64')
+   content:Buffer.from(JSON.stringify(ledger,null,2)+'\n').toString('base64')
   })});
   if(response.ok)return (await response.json()).commit?.sha;
   if(attempt===2||![409,422].includes(response.status))
