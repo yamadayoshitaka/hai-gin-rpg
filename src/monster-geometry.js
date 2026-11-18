@@ -4,8 +4,9 @@
  * Each specimen is real 3D geometry, never an image billboard.
  */
 import * as THREE from 'three';
-import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,AVIAN_REALISM_REVISION}
- from './avian-guardian-sculpt.js?v=phoenix-master-birds-v10-20261118';
+import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
+ buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
+ from './avian-guardian-sculpt.js?v=phoenix-master-birds-v11-20261118';
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=beast-cat-torso-anchor-tail-v12-20261118';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
@@ -2403,7 +2404,7 @@ function bird(g,s){
    g.claws(ankle,[0,-.48,.14],1,3,1.3);
  }
  const tail=g.group('tail',[0,1.25,-.40]);
- for(let i=-3;i<=3;i++)g.fin(tail,i%2?'accent':'light',[i*.055,0,0],[i*.12,-.18,-.84-v*.10],.10);
+ buildPhoenixDerivedTenguTail(g,s,tail,g.root.userData.detail);
  g.root.scale.setScalar(s.size*.80);
 }
 function insect(g,s,{spider=false}={}){
