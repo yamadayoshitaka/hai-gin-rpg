@@ -34,7 +34,7 @@ test('skips same run; caps writes; never produces a code patch',async()=>{
  const old={number:4,body:'<!-- '+marker(name,'faceHair')+' -->\n/actions/runs/1'};
  const api=async(route,options={})=>{
   calls.push({route,method:options.method});
-  if(route.startsWith('actions/runs?'))return {workflow_runs:[run(1),run(2),run(3),run(4)]};
+  if(route.startsWith('actions/runs?'))return {workflow_runs:[run(1),run(2),run(3,'World six lane'),run(4,'Outfit armor QA'),run(5,'Manga chapter'),run(6,'Battle FPS')]};
   if(route.startsWith('issues?'))return [old];
   if(route.endsWith('/jobs?per_page=100'))return {jobs:[]};
   if(route==='issues'&&options.method==='POST')return {number:20,html_url:'https://github.com/yamadayoshitaka/hai-gin-rpg/issues/20'};
@@ -42,7 +42,7 @@ test('skips same run; caps writes; never produces a code patch',async()=>{
  };
  const out=await triage(api,now);
  assert.equal(out.issueWrites,3);
- assert.equal(out.records[0].runId,2);
+ assert.equal(out.records[0].runId,3);
  assert.equal(out.sourceCodeFixes,0);
  assert.equal(calls.filter(c=>c.method==='PATCH').length,3);
 });

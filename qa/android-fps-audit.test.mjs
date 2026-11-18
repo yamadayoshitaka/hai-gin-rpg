@@ -5,6 +5,7 @@ test('device benchmark measures real engine metrics and never claims synthetic A
  assert.match(page,/getSkirmishPerformanceStats/);
  assert.match(page,/getMassBattleStats/);
  assert.match(page,/measured_android_browser/);
+ assert.match(page,/measured_non_android_browser/);
  assert.match(page,/samples\.length<12/);
  assert.match(page,/runtimeErrors/);
  assert.match(page,/frameP95Ms/);
