@@ -423,7 +423,26 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(.16*c,.1*c,.18*c,1.15*c,2.25*c,0,iron);
   }
   if(id==='town_planter_001'){
-   box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
+   // A hollow, bevel-cut stone trough: the soil sits inside the masonry rather than on a solid box.
+   const rimOutline=new THREE.Shape();
+   rimOutline.moveTo(-1.5*c,-.9*c);
+   rimOutline.lineTo(1.5*c,-.9*c);
+   rimOutline.lineTo(1.5*c,.9*c);
+   rimOutline.lineTo(-1.5*c,.9*c);
+   rimOutline.closePath();
+   const cavity=new THREE.Path();
+   cavity.moveTo(-1.29*c,-.69*c);
+   cavity.lineTo(-1.29*c,.69*c);
+   cavity.lineTo(1.29*c,.69*c);
+   cavity.lineTo(1.29*c,-.69*c);
+   cavity.closePath();
+   rimOutline.holes.push(cavity);
+   const troughGeometry=new THREE.ExtrudeGeometry(rimOutline,{
+    depth:.46*c,steps:1,bevelEnabled:true,bevelThickness:.025*c,bevelSize:.035*c,bevelSegments:2,curveSegments:1
+   });
+   troughGeometry.rotateX(-Math.PI/2);
+   const trough=new THREE.Mesh(troughGeometry,stone);
+   trough.position.y=.04*c;trough.castShadow=true;trough.receiveShadow=true;root.add(trough);
    const soil=new THREE.MeshStandardMaterial({color:0x463827,roughness:1});
    box(2.7*c,.07*c,1.5*c,0,.54*c,0,soil);
    const petals=[0xf1a0a7,0xffd05c,0xb68ce5,0xf5f1dc].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}));
