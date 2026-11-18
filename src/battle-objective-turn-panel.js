@@ -164,6 +164,7 @@ export function installObjectiveTurnPanel({
   const signature=JSON.stringify(rows.map(r=>[r.team,r.id,r.name,r.alive,r.total,r.hp,r.maxHp,r.effects]));
   if(signature===rpgStatusSignature)return;
   rpgStatusSignature=signature;
+  const preservedScroll=[...target.querySelectorAll('.objectiveTurnRpgStrip')].map(node=>node.scrollLeft);
   target.innerHTML=[0,1].map(team=>{
    const selected=rows.filter(r=>Number(r.team)===team);
    return '<div class="objectiveTurnRpgSide '+(team?'enemy':'ally')+'">'+
@@ -176,6 +177,9 @@ export function installObjectiveTurnPanel({
       ' 残'+(Number(r.alive)||0)+'/'+(Number(r.total)||0)+(buff?' '+buff:'')+'</small></span>';
     }).join(''):'<small>隊情報を取得中</small>')+'</div></div>';
   }).join('');
+  [...target.querySelectorAll('.objectiveTurnRpgStrip')].forEach((node,index)=>{
+   node.scrollLeft=preservedScroll[index]||0;
+  });
  }
  function render(){
   const state=engine.snapshot(),planning=state.phase==='planning',report=state.phase==='report';
