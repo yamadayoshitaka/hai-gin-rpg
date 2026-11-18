@@ -365,6 +365,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.userData.farmland=true;root.userData.passable=true;
   }
   if(id==='town_bench_001'){
+   // Mortise-style under-seat apron and diagonal corner braces transfer seat load to legs.
+   for(const z of [-.31,.31])box(2.35*c,.12*c,.09*c,0,.35*c,z*c,wood);
+   for(const x of [-1.1,1.1])box(.09*c,.12*c,.58*c,x*c,.34*c,0,wood);
+   for(const x of [-1.1,1.1])for(const z of [-.3,.3]){
+    const brace=new THREE.Mesh(new THREE.BoxGeometry(.07*c,.36*c,.07*c),wood);
+    brace.position.set(x*c,.42*c,z*c);brace.rotation.x=(z>0?1:-1)*.38;brace.castShadow=true;root.add(brace);
+   }
    for(const z of [-.38,.38])box(2.7*c,.12*c,.18*c,0,.78*c,z*c,wood);
    box(2.8*c,.16*c,.8*c,0,.47*c,0,wood);
    for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
@@ -418,6 +425,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
     box(.05*c,.05*c,.022*c,x*c,y*c,.52*c,iron);
   }
   if(id==='town_notice_001'){
+   // Rear frame and timber corner joints, separate from the paper surface.
+   for(const y of [1.25,2.45])box(2.15*c,.11*c,.13*c,0,y*c,-.13*c,wood);
+   for(const x of [-.98,.98])box(.11*c,1.25*c,.13*c,x*c,1.85*c,-.13*c,wood);
+   for(const x of [-.8,.8])box(.24*c,.12*c,.25*c,x*c,.19*c,0,stone);
    for(const x of [-.8,.8])box(.16*c,2.5*c,.18*c,x*c,1.25*c,0,wood);
    box(2.1*c,1.25*c,.16*c,0,1.85*c,0,wood);
    const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
@@ -439,6 +450,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_handcart_001'){
+   // Axle bearings, wheel hubs and a longitudinal chassis under the load bed.
+   for(const z of [-1.04,1.04]){
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.19*c,.19*c,.19*c,12),iron);
+    hub.rotation.x=Math.PI/2;hub.position.set(0,.58*c,z*c);hub.castShadow=true;root.add(hub);
+   }
+   box(2.4*c,.15*c,.16*c,0,.86*c,0,wood);
+   for(const x of [-1.08,1.08])box(.15*c,.36*c,.15*c,x*c,.77*c,0,wood);
    box(2.8*c,.23*c,1.65*c,0,1.08*c,0,wood);
    for(const z of [-.73,.73])box(2.9*c,.46*c,.14*c,0,1.42*c,z*c,wood);
    for(const x of [-1.33,1.33])box(.13*c,.46*c,1.6*c,x*c,1.42*c,0,wood);
@@ -453,6 +471,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.5,.5])box(1.8*c,.1*c,.1*c,2*c,.93*c,z*c,wood);
   }
   if(id==='stone_fence_001'){
+   // Discrete staggered voussoir-like rail stones and bed joints.
+   for(const y of [.42,.91])for(let i=0;i<6;i++){
+    const x=(-1.25+i*.5)*c;
+    box(.46*c,.025*c,.275*c,x,y*c-.13*c,0,stone);
+   }
    for(const x of [-1.3,0,1.3]){
     box(.32*c,1.25*c,.32*c,x*c,.625*c,0,stone);
     box(.43*c,.16*c,.43*c,x*c,1.32*c,0,stone);
@@ -460,6 +483,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const y of [.42,.91])box(3*c,.23*c,.25*c,0,y*c,0,stone);
   }
   if(id==='town_fence_001'){
+   // Rail-to-post tenon blocks and raised post caps; no change to footprint.
+   for(const x of [-1.3,0,1.3]){
+    box(.23*c,.09*c,.23*c,x*c,1.33*c,0,wood);
+    for(const y of [.45,.95])box(.21*c,.18*c,.20*c,x*c,y*c,0,wood);
+   }
    for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
    for(const y of [.45,.95])box(3*c,.13*c,.15*c,0,y*c,0,wood);
   }
