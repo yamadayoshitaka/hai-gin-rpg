@@ -10,6 +10,7 @@
   const published=validSha(pageSha)&&validSha(releaseSha)&&pageSha===releaseSha;
   const mainCommitted=last?.status==='source_committed_main'&&
    Number(last.sourceCommits)>0&&validSha(last.mainAfterSha);
+  const sourcePublished=published&&mainCommitted&&last.mainAfterSha.toLowerCase()===releaseSha.toLowerCase();
   const previousCommit=Number(verifiedSource?.sourceCommits)>0&&
    validSha(verifiedSource?.mainAfterSha);
   const staticPassed=last?.qaStatus==='passed'||last?.gameQuality?.staticPassed===true;
@@ -25,12 +26,13 @@
    deploy:published?'done':'pending'
   };
   return Object.freeze({
-   steps,published,mainCommitted,previousCommit,
+   steps,published,mainCommitted,previousCommit,sourcePublished,
    releaseSha:published?releaseSha:null,
    message:published?
     ('Pages公開を確認：'+releaseSha.slice(0,12)+
-     (mainCommitted?'／今回の実ソース変更が本編に反映':
-      previousCommit?'／過去の実ソースコミットの記録も配信中':
+     (mainCommitted?(sourcePublished?'／今回の実ソースコミットと公開SHAが一致':
+      '／今回の実ソースコミットの公開反映は未照合'):
+      previousCommit?'／過去の実ソースコミット記録あり（公開反映は未照合）':
       '／今回は実ソース変更なし')):
     'Pages公開SHA未照合：workflow_dispatchだけでは公開完了にしません',
    improvementVerified:false

@@ -84,6 +84,12 @@ small{font-size:11px}strong{font-weight:700}
  <div class="links"><a href="./android-fps-audit.html">Android実機FPSを測定</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aopen+is%3Aissue+%22%5Bauto-dev%5D%22" target="_blank" rel="noopener noreferrer">未知障害の修正キュー</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/auto-dev-triage.yml" target="_blank" rel="noopener noreferrer">障害収集の実行履歴</a></div>
 </section>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
+<section class="panel" id="releaseParityPanel" aria-label="最新mainとPagesの差分" role="status" aria-live="polite">
+ <h2>最新mainと公開Pagesの反映状況</h2>
+ <p id="releaseParityText">最新main・公開HTML・公開記録のSHAを照合中…</p>
+ <p id="releaseParityChecked" class="muted">照合時刻を確認中…</p>
+ <div class="links"><a id="releaseParityDiff" href="https://github.com/yamadayoshitaka/hai-gin-rpg/commits/main" target="_blank" rel="noopener noreferrer" hidden>mainと公開Pagesの差分コミットを確認</a></div>
+</section>
 <section class="panel" id="faceExpressionPanel" aria-label="顔モデルの表情を選択">
  <h2>顔・髪｜表情を選んで3D確認</h2>
  <p class="muted">実際のモデル画面に用意された22種類の表情を切り替えます。表情を選ぶだけではゲームの配役・表情設定は変更されません。</p>
@@ -125,6 +131,7 @@ small{font-size:11px}strong{font-weight:700}
 </main>
 <script src="./src/batch-live-ref-selection.js?v=20261118-live-head"></script>
 <script src="./src/batch-pages-release-gate.js?v=20261118-publish-verified"></script>
+<script src="./src/batch-release-parity.js?v=20261118-main-pages-diff"></script>
 <script>
 'use strict';
 const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO,API='https://api.github.com/repos/'+REPO;
@@ -381,7 +388,7 @@ async function updateSwitches(){
   for(const g of groups){const v=elements.get(g.id);if(v){v.swText.textContent='切替設定の取得に失敗：'+error.message;v.swBtn.disabled=true}}
  }
 }
-async function updateProgress(){
+async function updateProgress({forceLive=false}={}){
  try{
   const data=await fetchJSON('./data/batch-work-progress.json?ts='+Date.now());
   if(data.schemaVersion!==1||!data.groups||!Array.isArray(data.stageOrder)
@@ -433,7 +440,7 @@ async function updateProgress(){
     view.progressEvidence.appendChild(makeLink(ev.label||'証跡を開く',ev.url,true));
    }
   }
-  await updateSelfDriveEvidence(data);
+  await updateSelfDriveEvidence(data,{forceLive});
   await updateEvolutionResults();
  }catch(e){
   for(const g of groups){
@@ -452,7 +459,24 @@ async function updateProgress(){
  * Pages on each verified run. The old work-progress file is archival only.
  * Never infer mesh generation or visual approval from a green Actions job.
  */
-async function updateSelfDriveEvidence(staticProgress){
+const LIVE_JOURNAL_TTL_MS=5*60*1000;
+const liveJournalCache=new Map();
+async function readSelfDriveJournal(id,{forceLive=false}={}){
+ const now=Date.now(),cached=liveJournalCache.get(id);
+ if(!forceLive&&cached&&now-cached.at<LIVE_JOURNAL_TTL_MS)return cached;
+ try{
+  const audit=await fetchJSON('https://raw.githubusercontent.com/'+REPO+
+   '/main/data/batch-self-drive/'+encodeURIComponent(id)+'.json?ts='+now);
+  const result={audit,origin:'main',at:Date.now()};
+  liveJournalCache.set(id,result);
+  return result;
+ }catch(error){
+  // Fall back to the published snapshot; never call it "latest main".
+  const audit=await fetchJSON('./data/batch-self-drive/'+encodeURIComponent(id)+'.json?ts='+now);
+  return {audit,origin:'pages',at:Date.now()};
+ }
+}
+async function updateSelfDriveEvidence(staticProgress,{forceLive=false}={}){
  // release.json and this HTML build stamp must match. Both files are
  // delivered on the same Pages origin as the autonomous run journal.
  const pageSha=document.querySelector('meta[name="hai-gin-pages-sha"]')?.content||null;
@@ -465,8 +489,8 @@ async function updateSelfDriveEvidence(staticProgress){
  await Promise.all(ids.map(async id=>{
   const ui=elements.get(id),v=ui?.progress;
   if(!v)return;
-  let audit;
-  try{audit=await fetchJSON('./data/batch-self-drive/'+encodeURIComponent(id)+'.json?ts='+Date.now())}
+  let audit,origin='unknown';
+  try{({audit,origin}=await readSelfDriveJournal(id,{forceLive}))}
   catch(error){
    v.progressTime.textContent+=' ／ 最新自走記録：未公開（旧工程台帳の表示）';
    return;
@@ -495,12 +519,17 @@ async function updateSelfDriveEvidence(staticProgress){
   });
   if(proof.published&&!realNow)
    v.current.textContent+=' ／ Pages公開済み（今回ソース改修なし）';
-  v.current.className='progress-status'+(realNow&&proof.published?' ok':'');
+  if(realNow&&proof.published&&!proof.sourcePublished)
+   v.current.textContent+=' ／ 今回ソースの公開反映は未照合';
+  if(realNow&&proof.sourcePublished)
+   v.current.textContent+=' ／ 今回ソースと公開SHAが一致';
+  v.current.className='progress-status'+(realNow&&proof.sourcePublished?' ok':'');
   v.stageGrid.replaceChildren();
   for(const [key,label] of PROGRESS_STAGES)
    v.stageGrid.appendChild(tag('span','stage '+proof.steps[key],
     label+'：'+STEP_LABELS[proof.steps[key]]));
-  v.progressTime.textContent='最新GitHub自走：'+TIME(last.checkedAt)+
+  v.progressTime.textContent='最新自走：'+TIME(last.checkedAt)+
+   (origin==='main'?'（GitHub mainから直接取得）':'（Pages台帳・main直取得不可）')+
    ' ／ 旧工程台帳：'+TIME(old.lastRunAt||staticProgress.asOf)+
    '（別記録）';
   const lastCount=Number.isSafeInteger(last.modifiedSourceFiles)?last.modifiedSourceFiles:0;
@@ -767,6 +796,22 @@ async function updateEvolutionResults(){
  * Fetch a bounded live snapshot once per page entry and on manual refresh.
  */
 let currentMainHead=null,liveReviewHeads=null,liveBranchCheckedAt=null;
+let publishedReleaseSha=null,publishedReleaseCheckedAt=null;
+function renderReleaseParity(){
+ const pageSha=document.querySelector('meta[name="hai-gin-pages-sha"]')?.content||null;
+ const result=window.HaiGinReleaseParity.evaluate({
+  mainSha:currentMainHead,releaseSha:publishedReleaseSha,pageSha
+ });
+ $('releaseParityText').textContent='main '+(result.main?.slice(0,12)||'未取得')+
+  ' ／ Pages '+(result.release?.slice(0,12)||'未取得')+' ／ '+result.message;
+ $('releaseParityChecked').textContent='main取得：'+TIME(liveBranchCheckedAt)+
+  ' ／ Pages照合：'+TIME(publishedReleaseCheckedAt)+
+  '。SHA不一致は公開差分の可能性を示し、反映完了とは判定しません。';
+ const link=$('releaseParityDiff');
+ link.hidden=!result.compareUrl;
+ if(result.compareUrl)link.href=result.compareUrl;
+ $('releaseParityPanel').dataset.status=result.status;
+}
 async function updatePreviewStatus({request=false}={}){
  if(request||!liveBranchCheckedAt){
   const now=Date.now(),stored=readSessionJson('hg-batch-live-refs-v1');
@@ -807,6 +852,7 @@ async function updatePreviewStatus({request=false}={}){
     :'現在のmain/PR SHAは未確認。旧固定PRで品質を判定せず、最新ブランチを取得してから評価します。';
   }
  }
+ renderReleaseParity();
 }
 async function updateChapter4(){
  try{
@@ -852,12 +898,16 @@ async function updateStoryBudget(){
  }catch(e){$('storySpendPolicy').textContent='追加課金禁止。予算設定を取得できません：'+e.message;}
 }
 async function updateRelease(){
+ publishedReleaseSha=null;
+ publishedReleaseCheckedAt=new Date().toISOString();
  try{
   const release=await fetchJSON('./release.json?ts='+Date.now());
   const sha=String(release.sha||'');
+  if(/^[0-9a-f]{40}$/i.test(sha))publishedReleaseSha=sha;
   $('releaseStatus').textContent='現在表示中のPages公開版：'+
-   (sha.length>=12?sha.slice(0,12):'取得不可')+' ／ 漫画画像も同じ公開コミットに固定';
+   (publishedReleaseSha?publishedReleaseSha.slice(0,12):'取得不可')+' ／ 漫画画像も同じ公開コミットに固定';
  }catch(e){$('releaseStatus').textContent='公開版の照合に失敗：'+e.message}
+ renderReleaseParity();
 }
 /** Avoid HTTP 403 from unauthenticated API rate limits:
  * no automatic GitHub API requests, one collection request per manual refresh,
@@ -1095,8 +1145,39 @@ async function start(){
   $('schedulerCount').textContent='ChatGPT定期タスク：'+activeTasks.size+'件有効・'+pausedGroups+'系統停止（共有タスクは1件と計算、記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
   await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus({request:true});await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateRecoverySnapshot();
+  lastLivePollAt=Date.now();lastRunPollAt=Date.now();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus({request:true});await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true});await updateRecoverySnapshot()});
-start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress().then(updateRecoverySnapshot)}},90000);
+// Budget: main+PR <= every 5 minutes and Actions <= every 10 minutes.
+const LIVE_POLL_MS=5*60*1000,RUN_POLL_MS=10*60*1000;
+let lastLivePollAt=0,lastRunPollAt=0,livePollInFlight=false;
+async function refreshLiveIfDue({force=false,withRuns=false}={}){
+ if(livePollInFlight||document.hidden||!groups.length)return;
+ const now=Date.now();
+ if(!force&&now-lastLivePollAt<LIVE_POLL_MS&&now-lastRunPollAt<RUN_POLL_MS)return;
+ livePollInFlight=true;
+ try{
+  if(force||now-lastLivePollAt>=LIVE_POLL_MS){
+   await updatePreviewStatus({request:true});
+   await updateRelease();
+   lastLivePollAt=Date.now();
+  }
+  if(withRuns||now-lastRunPollAt>=RUN_POLL_MS){
+   await updateRuns({request:true});
+   lastRunPollAt=Date.now();
+  }
+ }finally{livePollInFlight=false}
+}
+$('refresh').addEventListener('click',async()=>{
+ await updateWorldSix();await updateSwitches();await updateProgress({forceLive:true});
+ await refreshLiveIfDue({force:true,withRuns:true});
+ await updateChapter4();await updateStoryBudget();await updateRecoverySnapshot();
+});
+start();
+setInterval(()=>{if(!document.hidden&&groups.length){
+ void updateSwitches();
+ void updateProgress().then(updateRecoverySnapshot);
+ void refreshLiveIfDue();
+}},90000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&groups.length)void refreshLiveIfDue()});
 </script></body></html>

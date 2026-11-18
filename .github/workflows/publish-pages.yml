@@ -131,7 +131,9 @@ jobs:
         id: qa_13
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
-        run: node --test qa/pages-batch-center-live-parity.test.mjs
+        run: |
+          node --test qa/pages-batch-center-live-parity.test.mjs
+          node --test qa/batch-main-pages-parity.test.mjs
       - name: Verify published world map contains the 12 named regions (no stale lock overlay)
         shell: bash
         run: |
