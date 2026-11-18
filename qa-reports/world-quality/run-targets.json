@@ -1,10 +1,10 @@
 {
   "targets": [
-    "object:entry_door_lv3_001"
+    "object:entry_door_lv4_001"
   ],
   "run": {
-    "id": "44287812420",
-    "startedAt": "2026-11-18T10:43:18.901Z",
+    "id": "44381860765",
+    "startedAt": "2026-11-18T19:36:18.789Z",
     "mode": "results",
     "requested": 1,
     "requestedTarget": null,
@@ -13,13 +13,13 @@
     "stageCount": 200,
     "objectCount": 60,
     "targetIds": [
-      "object:entry_door_lv3_001"
+      "object:entry_door_lv4_001"
     ],
-    "generated": 0,
+    "generated": 1,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 1,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-18T10:43:18.902Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-18T19:36:18.790Z"
   }
 }
