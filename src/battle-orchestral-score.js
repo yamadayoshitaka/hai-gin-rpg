@@ -22,6 +22,7 @@ export function createBattleOrchestralScore({
  };
  const melody={
   intro:[62,65,69,74,72,69,65,67,69,72,74,77,74,72,69,74],
+  march:[62,65,69,65,67,69,72,69,65,67,62,60,62,65,67,62],
   battle:[62,62,65,69,67,65,64,62,60,62,65,67,69,67,65,64,
     62,65,69,74,72,69,67,65,64,65,67,69,65,64,62,57],
   victory:[74,74,74,70,77,74,70,65,67,69,70,72,74,77,79,81,
@@ -29,14 +30,14 @@ export function createBattleOrchestralScore({
   defeat:[57,55,53,52,50,48,47,45,50,48,45,43,41,40,38,38]
  };
  const bass={
-  intro:[38,41,38,36],battle:[38,36,34,33,38,41,34,33],
+  intro:[38,41,38,36],march:[38,41,36,38],battle:[38,36,34,33,38,41,34,33],
   victory:[43,43,41,43,46,46,43,43],defeat:[38,36,33,31,29,28,26,26]
  };
- let phase='battle',enabled=true,unlocked=false,ctx=null,mix=null,
+ let phase='march',enabled=true,unlocked=false,ctx=null,mix=null,
      noise=null,timer=null,media=null,nextTime=0,index=0,mediaActive=false,
      currentSource='',error='',stageTheme=soundtrackForStage(null),narrationActive=false;
  let preparedMedia=null,preparedSource='',prepared=false;
- const duration={intro:.27,battle:.225,victory:.245,defeat:.42};
+ const duration={intro:.27,march:.33,battle:.225,victory:.245,defeat:.42};
  const battleRecording=()=> './assets/audio/battle/'+stageTheme.file;
  const recordedVolume=track=>track==='battle'?(narrationActive?.14:.43):track==='victory'?.78:.70;
  const fallbackMixGain=()=>narrationActive&&phase==='battle'?.18:.50;
