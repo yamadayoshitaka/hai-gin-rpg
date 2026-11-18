@@ -544,6 +544,33 @@ async function updateSelfDriveEvidence(staticProgress){
    v.changesList?.appendChild(line);
   }
   if(id==='gameQuality'){
+   // A scheduled QA pass is not a repair. This separate journal is written
+   // only when the bounded no-API repair engine actually commits source.
+   const fixPanel=tag('div','improvement-row');
+   fixPanel.appendChild(makeLink('無料・既知エラー自己修復バッチの実行履歴',
+    GH+'/actions/workflows/batch-rule-self-heal.yml',true));
+   try{
+    const repair=await fetchJSON('./data/batch-rule-self-heal/latest.json?ts='+Date.now());
+    const applied=repair?.latest;
+    if(repair?.schemaVersion===1&&applied?.status==='source_repaired_main'&&
+      /^[0-9a-f]{40}$/.test(applied.sourceCommitSha||'')){
+     fixPanel.appendChild(paragraph('ルール修復の実ソースコミット：'+
+      applied.sourceCommitSha.slice(0,12)+'／修復'+(applied.improvements?.length||0)+
+      '件。デプロイはPages公開SHAとの照合が別途必要。','status'));
+     for(const improvement of (applied.improvements||[]).slice(0,4))
+      fixPanel.appendChild(paragraph(improvement.rule+'：'+improvement.file+
+       '（'+(improvement.qa==='passed'?'修正後QA合格':'QA未確認')+'）','note'));
+     fixPanel.appendChild(makeLink('修復ソースの差分を見る',
+      GH+'/commit/'+applied.sourceCommitSha,true));
+    }else fixPanel.appendChild(paragraph(
+     '既知ルールによる実コード修復・mainコミットの公開記録は未確認。起動成功だけで改善済みにしません。',
+     'note'));
+   }catch(_error){
+    fixPanel.appendChild(paragraph(
+     'ルール自己修復の本編採用証跡はまだ公開されていません。実行結果はActions履歴で確認。',
+     'note'));
+   }
+   v.changesList?.appendChild(fixPanel);
    // Each lane records independent verification; actual Android never inferred.
    const seen=new Set();
    for(const row of [...audit.history].reverse()){
