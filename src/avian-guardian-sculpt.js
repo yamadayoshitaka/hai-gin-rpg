@@ -875,7 +875,13 @@ function headAndCrest(g,s,p,torso,detail){
   {z:.06,y:.055,rx:.235*p.head,ry:.235*p.head},
   {z:-.18,y:.063,rx:.245*p.head,ry:.245*p.head},
   {z:-.34,y:.055,rx:.07,ry:.095}
- ],{name:'avian-cranium-'+s.id,rough:.82,ribbing:.004,capEnds:true});
+ ],{name:'avian-cranium-'+s.id,rough:.82,ribbing:.004,
+   faceSculpt:true,capEnds:true});
+ // The guardian-derived eagle/griffin/phoenix/owl previously bypassed the
+ // shared facial-volume loft entirely: the external beak and eyes existed,
+ // but the actual skull lacked recesses and cheek relief. faceSculpt above
+ // deforms these SAME contiguous vertices before normal generation and LOD,
+ // preserving eye/beak attachment, the head pivot and capped skull topology.
  skull.userData.avianRealCranium=true;
  if(s.id==='m013'){
   skull.userData.phoenixSmallElongatedHead=true;

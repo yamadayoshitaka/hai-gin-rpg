@@ -137,4 +137,44 @@ for(const id of organisms){
   'Material leak after facial mesh replacement '+id);
 }
 assert.equal(organisms.length,31,'Batch coverage changed unexpectedly');
+
+const {avianProfile}=await import('../src/avian-guardian-sculpt.js');
+for(const id of ['m011','m012','m013','m014']){
+ for(const detail of ['high','low']){
+  const bird=createMonsterModel(MONSTER_BY_ID[id],{detail});
+  const crania=[];
+  bird.traverse(node=>{
+   if(node.isMesh&&node.name==='avian-cranium-'+id)crania.push(node);
+  });
+  assert.equal(crania.length,1,id+' '+detail+' must use one moving cranium, not a second face ball');
+  const skull=crania[0];
+  assert.ok(skull.userData.avianRealCranium);
+  assert.ok(skull.userData.anatomyLoft,id+' '+detail+' must sculpt the actual skull');
+  assert.equal(skull.geometry.userData.anatomy,'face',id+' '+detail+' no facial relief geometry');
+  assert.equal(skull.geometry.userData.faceVolumeApplied,true);
+  assert.ok(skull.userData.closedAnatomicalHull,id+' skull caps should not disappear');
+  assert.equal(skull.parent,bird.userData.pivots.head,id+' sculpt follows head animations');
+  assert.ok(skull.geometry.getAttribute('position').array.every(Number.isFinite));
+  assert.ok(skull.geometry.getAttribute('normal').array.every(Number.isFinite));
+  assert.ok(skull.geometry.getIndex().count>200);
+  if(id==='m011'&&detail==='high'){
+   // Check an actual vertex, not just a metadata flag. The middle (third)
+   // skull station is z=.06, y=.055, rx=.235*head; frontal relief is
+   // sculpted into this position before buffer normals are generated.
+   const radial=36,steps=4,row=2*steps,idx=row*(radial+1);
+   const baselineX=.235*avianProfile(id).head*
+     (1+.004*Math.sin(.06*3.1)*Math.sin(Math.PI/2));
+   const expected=sculptAxialFacePoint(baselineX,.055,.06,.5,0,
+     creatureFaceVolume(id,'avian'));
+   const p=skull.geometry.getAttribute('position');
+   for(const [actual,coordinate] of [[p.getX(idx),0],[p.getY(idx),1],[p.getZ(idx),2]])
+    assert.ok(Math.abs(actual-expected[coordinate])<.00001,
+     'm011 actual cranium vertex did not receive physical facial sculpt on axis '+coordinate);
+   assert.ok(p.getX(idx)>baselineX+.002,'m011 skull facial silhouette has no real lateral relief');
+  }
+  disposeMonsterSculpture(bird);
+  assert.equal(monsterSculptCacheStats().activeMaterials,0,'avian sculpt leaked GPU material '+id);
+ }
+}
+
 console.log('One-batch face depth PASS: 7 controls, 8 summon species, 31 monster heads, physical 3/4 relief, jaw, LOD, GPU and disposal');
