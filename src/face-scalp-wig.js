@@ -70,10 +70,20 @@ function actualScalpCandidates(geo,box){
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const frontal=zone.startsWith('fringe');
   const temple=zone.startsWith('temple');
-  const candidates=all.filter(q=>onSide(q)&&
-   (!rear||q.p.z<center.z-d.z*.04)&&
-   (!frontal||(q.p.y-box.min.y)/d.y>.895)&&
-   (!temple||(q.p.y-box.min.y)/d.y>.81));
+  // Preserve anatomical growth zones when the source head is sparsely
+  // tessellated. A rear fallback drawn from the crown makes nape locks
+  // float above the neck; a fringe fallback drawn from the back exposes
+  // the forehead at medium distance.
+  const candidates=all.filter(q=>{
+   if(!onSide(q))return false;
+   const height=(q.p.y-box.min.y)/d.y;
+   const depth=(q.p.z-center.z)/d.z;
+   if(zone.startsWith('nape'))return depth<-.04&&height>=.54&&height<.79;
+   if(zone.startsWith('back'))return depth<-.04&&height>=.61;
+   if(frontal)return depth>.025&&height>.87&&height<.995;
+   if(temple)return Math.abs((q.p.x-center.x)/d.x)>.15&&height>.80&&height<.96;
+   return height>.80;
+  });
   if(candidates.length) pools[zone]=candidates;
   else{
    // Keep explicit QA failure instead of silently growing "rear" locks
