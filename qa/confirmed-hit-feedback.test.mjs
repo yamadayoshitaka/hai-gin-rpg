@@ -101,3 +101,29 @@ if(THREE){
 assert.match(page,/' 命中 '\+confirmedHitOverlay\.activeCount/,
  'Performance panel shows only actual simplified visible hits');
 console.log('PASS camera-centered damage circles, remaining HP, and low-cost overlay');
+
+const {selectReadableHitLabels}=await import('../src/battle-hit-label-layout.js');
+const pixelHit=(x,y,damage=15,remainingHp=60)=>({
+ point:{x,y,centerDistance:Math.hypot(x-200,y-200)/300},
+ hit:{damage,remainingHp,maxHp:100}
+});
+const dense=[pixelHit(190,200),pixelHit(195,204),pixelHit(201,207),
+ pixelHit(330,240),pixelHit(90,320),pixelHit(200,8)];
+const compact=selectReadableHitLabels(dense,{width:400,height:400});
+assert.equal(compact.damage.length,3,
+ 'Nearby melee victims share readable damage-label slots without changing events');
+assert.ok(compact.hp.length<=3,
+ 'HP sublabels are capped independently of the confirmed damage values');
+assert.ok(compact.damage.every(entry=>entry.point.y>=48),
+ 'Turn HUD and report footer must be clear of damage labels');
+const fatal=selectReadableHitLabels([
+ pixelHit(180,200,9,50),pixelHit(181,201,65,0)
+],{width:400,height:400});
+assert.equal(fatal.damage[0].hit.remainingHp,0,
+ 'In a visual collision, fatal damage takes precedence');
+const crowded=Array.from({length:2000},(_,id)=>
+ pixelHit(20+(id%45)*24,60+(Math.floor(id/45)%25)*20,10+(id%40)));
+const limited=selectReadableHitLabels(crowded,{width:1080,height:720});
+assert.ok(limited.damage.length<=10&&limited.hp.length<=4,
+ '2,000-person bridge fights keep both text layers at a fixed draw budget');
+assert.equal(crowded.length,2000,'Label decluttering does not discard actual combat events');
