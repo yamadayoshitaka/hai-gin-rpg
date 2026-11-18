@@ -9,6 +9,11 @@ const root=process.cwd();
 const source='qa-reports/story-sequential-missing/canonical.json';
 const result='qa-reports/story-sequential-missing/next.json';
 const sw=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
+// Disabled batches must not write queue artifacts or invoke generators.
+if(sw.groups?.anime?.enabled!==true){
+ console.log(JSON.stringify({enabled:false,skipped:true,reason:'ANIME_BATCH_DISABLED'}));
+ process.exit(0);
+}
 const policy=JSON.parse(fs.readFileSync('data/story-generation-spend-policy.json','utf8'));
 if(policy.allowedAdditionalPaidApiSpendJpy!==0||policy.cloudflare?.paidTierOrTopUpsAllowed!==false)
  throw Error('Paid provider forbidden');
@@ -28,6 +33,8 @@ function webpOK(rel){
  try {
   const b=fs.readFileSync(full);
   if(b.length<32||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP')return false;
+  // Reject truncated or appended payloads rather than counting a header-only stub as real art.
+  if(b.readUInt32LE(4)+8!==b.length)return false;
   const t=b.toString('ascii',12,16);
   let w=0,h=0;
   if(t==='VP8 '){w=b.readUInt16LE(26)&16383;h=b.readUInt16LE(28)&16383;}
