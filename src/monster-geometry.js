@@ -574,7 +574,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const cranium=magmaSalamander?
    g.axialLoft(head,'skin',magmaSkullFromWolfKing(M001_CRANIUM_RINGS),
      {name:'m019-m001-sourced-closed-cranium',rough:.77,
-      ribbing:.019,capEnds:true}):
+      ribbing:.019,faceSculpt:true,capEnds:true}):
    s.id==='m001'?
    g.axialLoft(faceCore,'skin',M001_CRANIUM_RINGS,
      {name:'organic-cranium-m001',rough:.91,ribbing:.003,faceSculpt:true}):
