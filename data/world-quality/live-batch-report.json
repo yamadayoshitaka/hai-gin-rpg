@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "546ba143264c905d24dbdc5c9df29818a2c18d7472fb6559846dd91502b85d23",
+  "sourceFingerprint": "ce93d50374ed76aa033b5f02ed30eb334855dadeed42d2a04d0c9bddc12ede3b",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for town_bench_001 (visual review still required)"
+        "Real WebGL screenshots available for town_fence_001 (visual review still required)"
       ]
     }
   },
