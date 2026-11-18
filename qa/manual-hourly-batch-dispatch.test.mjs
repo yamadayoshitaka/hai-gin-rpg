@@ -6,13 +6,14 @@ import {MARKER,parseRequest} from '../scripts/manual-hourly-batch-dispatch.mjs';
 function issue(category,target='',instruction='Quality improvement',max=1){
  return {title:'[hai-gin-batch] '+category,user:{login:'yamadayoshitaka'},body:MARKER+'\n```json\n'+JSON.stringify({category,target,instruction,max})+'\n```'};
 }
-test('owner can submit six active batch categories',()=>{
+test('owner can submit seven active batch categories',()=>{
  const selected=[
  ['faceHair','character-six-lane.yml'],
  ['outfit','character-six-lane.yml'],
  ['world','world-quality-photoreal.yml'],
  ['creatureMonster','creature-six-lane.yml'],
  ['creatureSummon','creature-six-lane.yml'],
+ ['gameQuality','game-quality-six-lane.yml'],
  ['anime','story-sequential-missing-batch.yml']];
  for(const [kind,wf] of selected)assert.equal(parseRequest(issue(kind),'yamadayoshitaka').workflow,wf);
 });
@@ -28,10 +29,10 @@ test('reject non-owner and malformed payloads',()=>{
  assert.throws(()=>parseRequest(issue('faceHair','female','hello',4),'yamadayoshitaka'),/size/);
  assert.throws(()=>parseRequest(issue('outfit','','x'.repeat(501)),'yamadayoshitaka'),/Instruction/);
 });
-test('dashboard lists six active quality and story groups',()=>{
+test('dashboard lists seven active quality and story groups',()=>{
  const d=JSON.parse(fs.readFileSync('data/hourly-batch-dashboard.json','utf8'));
- assert.equal(d.groups.length,6);
- assert.deepEqual(d.groups.map(g=>g.id),['faceHair','outfit','world','creatureMonster','creatureSummon','anime']);
+ assert.equal(d.groups.length,7);
+ assert.deepEqual(d.groups.map(g=>g.id),['faceHair','outfit','world','creatureMonster','creatureSummon','anime','gameQuality']);
  const switches=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
  assert.deepEqual(d.groups.map(g=>g.autoEnabled),d.groups.map(g=>switches.groups[g.id].enabled));
  for(const g of ['human','monster'])assert.equal(switches.groups[g].enabled,false);
@@ -46,4 +47,8 @@ test('dashboard lists six active quality and story groups',()=>{
  const script=start>7&&end>start?html.slice(start,end):null;
  assert(script,'Dashboard JavaScript must exist');
  assert.doesNotThrow(()=>new vm.Script(script),'Inline batch control JavaScript must parse');
+});
+
+test('game-quality owner instructions dispatch the real six-lane workflow',()=>{
+ assert.equal(parseRequest(issue('gameQuality','frame','measure the actual frame P95'),'yamadayoshitaka').workflow,'game-quality-six-lane.yml');
 });

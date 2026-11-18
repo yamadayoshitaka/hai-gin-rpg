@@ -56,7 +56,7 @@ const API='https://api.github.com/repos/'+REPO,PROD='https://yamadayoshitaka.git
 const PREVIEW='https://raw.githack.com/'+REPO+'/';
 const $=id=>document.getElementById(id);
 let data=null,row=null,pr=null,mode='published',releaseSha=null,mainSha=null,seq=0;
-const groups={world:'🏰 オブジェクト',faceHair:'👤 顔・髪',outfit:'🛡️ 衣装',creatureMonster:'🐉 モンスター',creatureSummon:'✨ 召喚獣',anime:'🎬 漫画'};
+const groups={world:'🏰 オブジェクト',faceHair:'👤 顔・髪',outfit:'🛡️ 衣装',creatureMonster:'🐉 モンスター',creatureSummon:'✨ 召喚獣',gameQuality:'🎮 ゲーム画質/FPS/エラー',anime:'🎬 漫画'};
 const short=s=>typeof s==='string'?s.slice(0,12):'不明';
 const escapePart=s=>encodeURIComponent(s).replace(/%2F/gi,'/');
 const queryFor=t=>t.params?'?'+t.params:t.object?'?object='+encodeURIComponent(t.object):'';

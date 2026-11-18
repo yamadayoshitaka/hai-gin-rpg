@@ -44,6 +44,12 @@
       "enabled": true,
       "registeredAt": "2026-11-17",
       "workflow": "creature-six-lane.yml"
+    },
+    "gameQuality": {
+      "enabled": true,
+      "registeredAt": "2026-11-18",
+      "workflow": "game-quality-six-lane.yml",
+      "reason": "Owner requested a separate six-way game-wide visual quality, FPS and runtime error self-regression batch"
     }
   }
 }

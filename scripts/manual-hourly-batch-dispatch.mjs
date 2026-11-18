@@ -15,6 +15,7 @@ const allowed={
  creatureMonster:'creature-six-lane.yml',
  creatureSummon:'creature-six-lane.yml',
  world:'world-quality-photoreal.yml',
+ gameQuality:'game-quality-six-lane.yml',
  anime:'story-sequential-missing-batch.yml'
 };
 export function parseRequest(issue,owner){
@@ -41,6 +42,10 @@ function execute(command){
  const args=['workflow','run',command.workflow,'--ref','main'];
  if(['faceHair','outfit','creatureMonster','creatureSummon'].includes(command.category)){
   args.push('-f','slot=auto','-f','category='+command.category);
+ }
+ if(command.category==='gameQuality'){
+  const lanes=['model','fidelity','motion','frame','scale','runtime'];
+  args.push('-f','lane='+(lanes.includes(command.target)?command.target:'model'));
  }
  if(command.category==='world'){
   const type=command.target.startsWith('object:')?'object':command.target.startsWith('stage:')?'stage':'all';
