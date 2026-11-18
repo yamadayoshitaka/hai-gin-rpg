@@ -42,7 +42,9 @@ test('dashboard lists seven active quality and story groups',()=>{
  assert(html.includes('現在の画面を見る'));
  assert(html.includes('次の手動指示'));
  assert(html.includes('issues/new?'));
- assert(html.includes('daily')===false);
+ // Legitimate Cloudflare daily workflow IDs are allowed in audit telemetry.
+ // The UI must not promise an unlimited daily paid-image production loop.
+ assert.equal(html.includes('Cloudflare毎日自動生成（無制限）'),false);
  const start=html.indexOf('<script>')+8, end=html.indexOf('</script>',start);
  const script=start>7&&end>start?html.slice(start,end):null;
  assert(script,'Dashboard JavaScript must exist');

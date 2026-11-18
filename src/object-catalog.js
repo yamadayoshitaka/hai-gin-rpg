@@ -365,6 +365,16 @@ export function createObjectById(id,{cellSize=2.2}={}){
    root.userData.farmland=true;root.userData.passable=true;
   }
   if(id==='town_bench_001'){
+   // Mortise-and-tenon rails and angled under-seat braces carry the seat load.
+   for(const x of [-1.1,1.1]){
+    box(.16*c,.14*c,.66*c,x*c,.31*c,0,wood);
+    for(const z of [-.3,.3]){
+     const brace=box(.12*c,.43*c,.12*c,x*c,.38*c,z*c,wood);
+     brace.rotation.z=x<0?-.38:.38;
+    }
+   }
+   box(2.45*c,.12*c,.13*c,0,.26*c,-.3*c,wood);
+   box(2.45*c,.12*c,.13*c,0,.26*c,.3*c,wood);
    for(const z of [-.38,.38])box(2.7*c,.12*c,.18*c,0,.78*c,z*c,wood);
    box(2.8*c,.16*c,.8*c,0,.47*c,0,wood);
    for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
@@ -418,6 +428,16 @@ export function createObjectById(id,{cellSize=2.2}={}){
     box(.05*c,.05*c,.022*c,x*c,y*c,.52*c,iron);
   }
   if(id==='town_notice_001'){
+   // Back frame, pegged cross-members and masonry post shoes are real geometry.
+   for(const x of [-.8,.8]){
+    box(.29*c,.32*c,.31*c,x*c,.16*c,0,stone);
+    for(const y of [1.36,2.34])box(.21*c,.15*c,.26*c,x*c,y*c,-.14*c,wood);
+   }
+   for(const y of [1.27,2.42])box(2.14*c,.13*c,.18*c,0,y*c,-.13*c,wood);
+   for(const x of [-.69,0,.69]){
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.037*c,.037*c,.045*c,8),wood);
+    peg.rotation.x=Math.PI/2;peg.position.set(x*c,2.42*c,-.245*c);root.add(peg);
+   }
    for(const x of [-.8,.8])box(.16*c,2.5*c,.18*c,x*c,1.25*c,0,wood);
    box(2.1*c,1.25*c,.16*c,0,1.85*c,0,wood);
    const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
@@ -439,6 +459,14 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_handcart_001'){
+   // Load-bearing longitudinal chassis rails and axle sleeves, not floating trim.
+   for(const z of [-.56,.56])box(3.15*c,.19*c,.18*c,0,.91*c,z*c,wood);
+   const axle=new THREE.Mesh(new THREE.CylinderGeometry(.095*c,.095*c,2.26*c,12),iron);
+   axle.rotation.x=Math.PI/2;axle.position.y=.58*c;root.add(axle);
+   for(const z of [-1.04,1.04]){
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.21*c,.21*c,.23*c,12),iron);
+    hub.rotation.x=Math.PI/2;hub.position.set(0,.58*c,z*c);root.add(hub);
+   }
    box(2.8*c,.23*c,1.65*c,0,1.08*c,0,wood);
    for(const z of [-.73,.73])box(2.9*c,.46*c,.14*c,0,1.42*c,z*c,wood);
    for(const x of [-1.33,1.33])box(.13*c,.46*c,1.6*c,x*c,1.42*c,0,wood);
@@ -453,6 +481,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const z of [-.5,.5])box(1.8*c,.1*c,.1*c,2*c,.93*c,z*c,wood);
   }
   if(id==='stone_fence_001'){
+   // Split coping into bonded courses with recessed vertical mortar joints.
+   const mortarJoint=new THREE.MeshStandardMaterial({color:0x68645e,roughness:1});
+   for(const y of [.42,.91])for(let i=0;i<8;i++){
+    const x=(-1.29+i*.37)*c;
+    box(.025*c,.235*c,.255*c,x,y*c,0,mortarJoint);
+   }
+   for(const x of [-1.3,0,1.3])box(.39*c,.055*c,.39*c,x*c,1.43*c,0,stone);
    for(const x of [-1.3,0,1.3]){
     box(.32*c,1.25*c,.32*c,x*c,.625*c,0,stone);
     box(.43*c,.16*c,.43*c,x*c,1.32*c,0,stone);
@@ -460,6 +495,15 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const y of [.42,.91])box(3*c,.23*c,.25*c,0,y*c,0,stone);
   }
   if(id==='town_fence_001'){
+   // Through-bolted rail/post joints and beveled post caps.
+   for(const x of [-1.3,0,1.3]){
+    const cap=new THREE.Mesh(new THREE.ConeGeometry(.145*c,.16*c,4),wood);
+    cap.rotation.y=Math.PI/4;cap.position.set(x*c,1.37*c,0);root.add(cap);
+    for(const y of [.45,.95]){
+     const pin=new THREE.Mesh(new THREE.CylinderGeometry(.032*c,.032*c,.2*c,8),iron);
+     pin.rotation.x=Math.PI/2;pin.position.set(x*c,y*c,.12*c);root.add(pin);
+    }
+   }
    for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
    for(const y of [.45,.95])box(3*c,.13*c,.15*c,0,y*c,0,wood);
   }

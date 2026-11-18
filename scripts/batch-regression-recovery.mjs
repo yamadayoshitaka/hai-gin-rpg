@@ -13,12 +13,18 @@ export const WATCHED = Object.freeze([
  {workflow:'character-six-lane.yml',groups:['faceHair','outfit'],maxAgeMinutes:80,retry:true,dispatch:true},
  {workflow:'creature-six-lane.yml',groups:['creatureMonster','creatureSummon'],maxAgeMinutes:80,retry:true,dispatch:true},
  {workflow:'world-six-lane.yml',groups:['world'],maxAgeMinutes:110,retry:true,dispatch:true},
+ // All of these were added AFTER the six-group recovery workflow: monitoring
+ // the dashboard switch alone did not make their GitHub schedules run.
+ {workflow:'game-quality-six-lane.yml',groups:['gameQuality'],maxAgeMinutes:90,retry:true,dispatch:true},
+ {workflow:'quality-evolution-loop.yml',groups:['faceHair','outfit','gameQuality'],maxAgeMinutes:120,retry:false,dispatch:true},
+ {workflow:'batch-rule-self-heal.yml',groups:['gameQuality'],maxAgeMinutes:125,retry:true,dispatch:true},
+ {workflow:'batch-self-drive.yml',groups:['faceHair','outfit','creatureMonster','world'],maxAgeMinutes:125,retry:false,dispatch:true},
  {workflow:'story-sequential-missing-batch.yml',groups:['anime'],maxAgeMinutes:1620,retry:false,dispatch:true},
  {workflow:'story-cloudflare-free-daily.yml',groups:['anime'],maxAgeMinutes:1620,retry:false,dispatch:false},
  {workflow:'story-chapter1-free-complete-draft-production.yml',groups:['anime'],maxAgeMinutes:null,retry:false,dispatch:false}
 ]);
 
-export function decideRecovery(spec,run,now=Date.now()){
+export function decideRecovery(spec,run,now=Date.now(),currentMainSha=null){
  if(!run)return spec.maxAgeMinutes===null?'observe_only':spec.dispatch?'dispatch':'stale';
  if(['queued','in_progress','waiting','pending','requested'].includes(run.status))return 'running';
  const ageMinutes=(now-Date.parse(run.created_at||run.run_started_at))/60000;
@@ -28,10 +34,49 @@ export function decideRecovery(spec,run,now=Date.now()){
   return 'success';
  }
  if(['failure','timed_out','cancelled','action_required'].includes(run.conclusion)){
+  // A rerun keeps the ORIGINAL source SHA. An old failed commit must not
+  // continue blocking an already-fixed latest main (e.g. protected m006 QA).
+  // Never auto-dispatch paid image production or disabled workflows.
+  if(spec.dispatch&&!spec.groups.includes('anime')&&
+    /^[0-9a-f]{40}$/.test(currentMainSha||'')&&
+    /^[0-9a-f]{40}$/.test(run.head_sha||'')&&
+    run.head_sha!==currentMainSha)return 'dispatch_latest_main';
   if(spec.retry&&Number(run.run_attempt||1)<2&&run.conclusion!=='action_required')return 'rerun_failed';
   return 'escalate';
  }
  return 'unknown';
+}
+export const MAX_RECOVERIES_PER_CHECK=3;
+export const GAME_LANES=Object.freeze(['model','fidelity','motion','frame','scale','runtime']);
+export const EVOLUTION_DOMAINS=Object.freeze(['face','hair','outfit']);
+export const SOURCE_REPAIR_DOMAINS=Object.freeze(['faceHair','outfit','creatureMonster','world','anime']);
+
+/** Input selection for a missed GitHub schedule is explicit; default 'model'
+ * or default 'outfit' every time would starve the other 5/2 quality lanes.
+ * The latest per-domain evidence is a read-only hint; no speculative source
+ * adoption, GLBs or Android FPS are created by this dispatch.
+ */
+export function dispatchInputFor(spec,checkedAt,switches,readDomain=()=>null){
+ const hour=new Date(checkedAt).getUTCHours();
+ if(spec.workflow==='game-quality-six-lane.yml')
+  return {lane:GAME_LANES[hour%GAME_LANES.length]};
+ if(spec.workflow==='quality-evolution-loop.yml'){
+  const available=EVOLUTION_DOMAINS.filter(x=>
+   switches?.groups?.[x==='outfit'?'outfit':'faceHair']?.enabled===true);
+  if(!available.length)return null;
+  const ordered=available.map(domain=>({
+   domain,time:Date.parse(readDomain(domain)||'1970-01-01T00:00:00Z')
+  })).sort((a,b)=>(a.time||0)-(b.time||0)||
+   available.indexOf(a.domain)-available.indexOf(b.domain));
+  return {domain:ordered[0].domain};
+ }
+ if(spec.workflow==='batch-self-drive.yml'){
+  const available=SOURCE_REPAIR_DOMAINS.filter(x=>
+   switches?.groups?.[x]?.enabled===true);
+  if(!available.length)return null;
+  return {category:available[hour%available.length]};
+ }
+ return {};
 }
 export function isAuthorizedRepo(repo){
  return repo==='yamadayoshitaka/hai-gin-rpg';
@@ -43,6 +88,16 @@ const ownerRepo=process.env.GITHUB_REPOSITORY||'yamadayoshitaka/hai-gin-rpg';
 const token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN||'';
 const dryRun=process.argv.includes('--dry-run');
 const checkedAt=new Date().toISOString();
+/** Read only already-committed per-domain run evidence. The watchdog itself
+ * does not run a model generator or create any imagery. */
+function lastEvolutionCheck(domain){
+ const source=path.join(ROOT,'data/quality-evolution/runs',domain+'.json');
+ if(!fs.existsSync(source))return null;
+ try{
+  const data=JSON.parse(fs.readFileSync(source,'utf8'));
+  return data?.latest?.completedAt||data?.latest?.startedAt||null;
+ }catch{return null}
+}
 
 async function api(endpoint,method='GET',body=null){
  if(!isAuthorizedRepo(ownerRepo))throw Error('Refusing unexpected repository');
@@ -82,10 +137,11 @@ async function createOrRefreshIssue(spec,run,reason){
  const created=await api('issues','POST',{title,body});
  return created.html_url;
 }
-async function inspect(spec,switches){
+async function inspect(spec,switches,{canRecover=true,currentMainSha=null}={}){
  const active=spec.groups.some(k=>switches.groups?.[k]?.enabled===true);
  const row={workflow:spec.workflow,groups:spec.groups,enabled:active,checkedAt,
-  status:'unknown',runId:null,runUrl:null,runAttempt:0,action:'none',issueUrl:null,error:null};
+  status:'unknown',runId:null,runUrl:null,runAttempt:0,action:'none',issueUrl:null,error:null,
+  maxAgeMinutes:spec.maxAgeMinutes,decision:'unknown',dispatchInputs:null};
  if(!active){row.status='disabled_by_owner';return row;}
  try{
   const data=await api('actions/workflows/'+encodeURIComponent(spec.workflow)+'/runs?branch=main&per_page=6');
@@ -93,17 +149,31 @@ async function inspect(spec,switches){
   if(run){row.status=run.status==='completed'?(run.conclusion||'unknown'):run.status;
    row.runId=run.id;row.runUrl=run.html_url;row.runAttempt=run.run_attempt||1;
    row.lastStartedAt=run.run_started_at||run.created_at;row.headSha=run.head_sha;}
-  const decision=decideRecovery(spec,run);
+  const decision=decideRecovery(spec,run,Date.now(),currentMainSha);
+  row.currentMainSha=currentMainSha;
   row.decision=decision;
   if(dryRun||['success','running','observe_only','unknown'].includes(decision))return row;
+  if(!canRecover&&['rerun_failed','dispatch','dispatch_latest_main'].includes(decision)){
+   row.action='deferred_bounded_recovery_budget';
+   return row;
+  }
   if(decision==='rerun_failed'){
    // A retry is safe for QA-only jobs. Image-generation workflows are NEVER rerun.
    await api('actions/runs/'+run.id+'/rerun-failed-jobs','POST');
    row.action='rerun_failed_jobs_once';
-  }else if(decision==='dispatch'){
+  }else if(decision==='dispatch'||decision==='dispatch_latest_main'){
    // Recreate a missed schedule, not an extra free provider dispatch.
-   await api('actions/workflows/'+encodeURIComponent(spec.workflow)+'/dispatches','POST',{ref:'main'});
-   row.action='dispatch_missing_schedule';
+   const inputs=dispatchInputFor(spec,checkedAt,switches,lastEvolutionCheck);
+   if(inputs===null){
+    row.action='skipped_disabled_category';
+    return row;
+   }
+   row.dispatchInputs=inputs;
+   await api('actions/workflows/'+encodeURIComponent(spec.workflow)+'/dispatches','POST',{
+    ref:'main',...(Object.keys(inputs).length?{inputs}:{})
+   });
+   row.action=decision==='dispatch_latest_main'?
+    'dispatch_fixed_latest_main':'dispatch_missing_schedule';
   }else if(decision==='escalate'||decision==='stale'){
    row.issueUrl=await createOrRefreshIssue(spec,run,decision);
    row.action='escalated_to_source_fix_issue';
@@ -119,10 +189,24 @@ async function inspect(spec,switches){
 async function main(){
  const switches=JSON.parse(fs.readFileSync(path.join(ROOT,'data/batch-center-switches.json'),'utf8'));
  const rows=[];
- for(const spec of WATCHED)rows.push(await inspect(spec,switches));
+ let remaining=MAX_RECOVERIES_PER_CHECK;
+ let currentMainSha=process.env.GITHUB_SHA||null;
+ try{
+  const branch=await api('branches/main');
+  if(/^[0-9a-f]{40}$/.test(branch?.commit?.sha||''))
+   currentMainSha=branch.commit.sha;
+ }catch(error){
+  console.warn('Latest main SHA unavailable, stale-run SHA discrimination disabled:',error.message);
+ }
+ for(const spec of WATCHED){
+  const row=await inspect(spec,switches,{canRecover:remaining>0,currentMainSha});
+  rows.push(row);
+  if(['dispatch_missing_schedule','dispatch_fixed_latest_main',
+   'rerun_failed_jobs_once'].includes(row.action))remaining--;
+ }
  const report={schemaVersion:1,checkedAt,source:'GitHub Actions authorized workflow-run API',
   note:'Actions success verifies task execution, NOT 3D mesh change, QA visual approval, commit, merge or Pages deployment.',
-  recoveryPolicy:'one bounded QA retry; missed schedule dispatch; persistent error to code-editing regression issue; paid image workflows never rerun',
+  recoveryPolicy:'watch all seven registered categories plus their game-quality, evolution, rule-self-heal and PR-source helpers; max three recovery launches per inspection; one bounded QA retry; persistent errors produce a code-editing Issue; paid image workflows are never retried',
   workflows:rows};
  const output=path.join(ROOT,'data/batch-regression-runtime.json');
  fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');
