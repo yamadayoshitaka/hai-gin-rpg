@@ -27,6 +27,7 @@ export function installObjectiveTurnPanel({
   '<div id="objectiveTurnReport" class="objectiveTurnReport"></div>'+
   '<button id="objectiveTurnAdvance" type="button">この作戦でターン開始</button></div>';
  document.body.append(root);
+ document.body.classList.add('objective-turn-enabled');
  const status=document.createElement('div');status.id='battleObjectiveTurnStatus';status.hidden=true;
  document.body.append(status);
  const $=id=>root.querySelector('#'+id);
