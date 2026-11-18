@@ -36,7 +36,11 @@ export function installObjectiveTurnPanel({
  const actionLabel=id=>TURN_ACTION_OPTIONS.find(x=>x.id===id)?.label||'作戦未設定';
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  let shown=false,page=0,step='map',choicePage=0,intelPage=0,mapMarkers=[];
- const activeGroups=state=>state.groups.filter(g=>groupIds.includes(Number(g.id)));
+ const activeGroups=state=>{
+  const all=state.groups.filter(g=>groupIds.includes(Number(g.id)));
+  return all.filter(g=>Number(g.alive)>0||Number(g.initial)>0).length?
+   all.filter(g=>Number(g.alive)>0||Number(g.initial)>0):all;
+ };
  const visibleGroup=state=>activeGroups(state)[clamp(page,0,Math.max(0,activeGroups(state).length-1))]||null;
  const choicesFor=id=>{
   const incoming=getMapChoices(id);
@@ -97,7 +101,7 @@ export function installObjectiveTurnPanel({
   const enemyPower=enemies.reduce((n,e)=>n+(Number(e.power)||0),0);
   const allyPower=Object.values(power).reduce((n,p)=>n+(Number(p)||0),0);
   $('objectiveTurnTitle').textContent='TURN '+state.turn+'｜'+(planning?'移動 → 作戦':'戦況・次ターン');
-  $('objectiveTurnHint').textContent=planning?'各班をページで切り替え。地図上の印をタップし、次に到着後の行動を指定します。変更しない班は前ターンの設定を継続します。':
+  $('objectiveTurnHint').textContent=planning?'各班をページで切り替え。地図の印から移動先を選び、次に到着後の作戦を設定します。変更しない班は命令を継続します。戦力Pはレアリティ換算値です。':
    '前ターンの移動先と作戦を引き継ぎます。変更したい班だけ選んでください。';
   $('objectiveTurnForces').innerHTML='<span>🔵 味方合計戦力 <b>'+Math.round(allyPower*10)/10+'</b></span><span>🔴 敵合計戦力 <b>'+Math.round(enemyPower*10)/10+'</b></span>';
   $('objectiveTurnPage').textContent='第'+id+'班（'+(page+1)+' / '+groups.length+'）';
