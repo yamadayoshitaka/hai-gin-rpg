@@ -20,8 +20,11 @@ test('batch center and control assets are in the delivered Pages archive',()=>{
  const compare=read('batch-pr-preview.html');
  const groups=JSON.parse(read('data/hourly-batch-dashboard.json')).groups;
  const switches=JSON.parse(read('data/batch-center-switches.json')).groups;
- assert.equal(groups.length,6,'All six quality categories must be visible');
+ assert.equal(groups.length,7,'All seven quality categories (including full-game six-lane batch) must be visible');
  for(const g of groups)assert.equal(typeof switches[g.id]?.enabled,'boolean',g.id);
+ assert(groups.some(x=>x.id==='gameQuality'&&x.workflow==='game-quality-six-lane.yml'));
+ assert(monitor.includes('gameQuality'),'Full-game quality card must reach public Pages');
+ assert(monitor.includes('実際に何が改善されたか'),'Per-commit improvements must be visible');
  for(const required of [
   'id="batchDisplaySelect"','id="batchLaunchEvidence"','id="worldObjectPicker"',
   'id="faceExpressionSelect"','ChatGPT用指示をコピー','GitHubでIssueを作成して起動',
