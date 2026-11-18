@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "category": "faceHair",
+  "source": "GitHub Actions verified autonomous run journal",
+  "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
+  "latest": {
+    "checkedAt": "2026-11-18T03:33:25.292Z",
+    "category": "faceHair",
+    "status": "blocked_candidates",
+    "mainBeforeSha": "fb7be111f638754017e7913785193436dcd0776c",
+    "mainAfterSha": null,
+    "pr": null,
+    "sourceCommits": 0,
+    "modifiedSourceFiles": 0,
+    "sourceFiles": [],
+    "qaStatus": "not_run",
+    "pagesDispatch": "awaiting_release_dispatch",
+    "generatedGLBs": 0,
+    "webglApproved": false,
+    "androidFpsVerified": false,
+    "error": null,
+    "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/639",
+    "gameQuality": null,
+    "attempts": [
+      {
+        "pr": 615,
+        "sha": "ee58162ca81840ef473588e591cbefb06e44540d",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 601,
+        "sha": "9833e99abe7b9ec440e111fe4d2a99a5ba28fc43",
+        "status": "no_applicable_source",
+        "reason": ""
+      },
+      {
+        "pr": 608,
+        "sha": "23a6c00e36e4a72eb30d79f14609f4f4b13af5f5",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 592,
+        "sha": "3dad9b296cbe5b56a0ac760911b6ca43c4b149e0",
+        "status": "already_applied",
+        "reason": ""
+      },
+      {
+        "pr": 597,
+        "sha": "f23309246946e4946244bcfd64dd5f69b47870cb",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+      },
+      {
+        "pr": 568,
+        "sha": "6af848e3e6ab377656ebbbddebe2bb03b7a71f7a",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+      },
+      {
+        "pr": 551,
+        "sha": "b824ca9a902af073ffc45f1eca45714664d3de8d",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+      },
+      {
+        "pr": 529,
+        "sha": "569f1e5b19ed1370529535b23257413d270ed4f6",
+        "status": "no_applicable_source",
+        "reason": ""
+      },
+      {
+        "pr": 509,
+        "sha": "849fa8d5a10dd4ad3882ca22eaa2cc1ed6936bf8",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+      },
+      {
+        "pr": 190,
+        "sha": "6563e57c76e03cac5f07671e5c5c78936f1e3ec8",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/face-feature-meshes.js' with conflicts.\nU src/face-feature-meshes.js\n"
+      },
+      {
+        "pr": 191,
+        "sha": "9acf589cd4dd891d6701af47148921a5499878d7",
+        "status": "conflict",
+        "reason": "\nApplied patch to 'src/face-feature-meshes.js' with conflicts.\nU src/face-feature-meshes.js\n"
+      },
+      {
+        "pr": 150,
+        "sha": "4838fbf4d495f1cd2b407d467daf44fbcaf30235",
+        "status": "no_applicable_source",
+        "reason": ""
+      }
+    ],
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44231191697"
+  },
+  "latestSourceCommit": null,
+  "history": [
+    {
+      "checkedAt": "2026-11-18T03:33:25.292Z",
+      "category": "faceHair",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "fb7be111f638754017e7913785193436dcd0776c",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/639",
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 615,
+          "sha": "ee58162ca81840ef473588e591cbefb06e44540d",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 601,
+          "sha": "9833e99abe7b9ec440e111fe4d2a99a5ba28fc43",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 608,
+          "sha": "23a6c00e36e4a72eb30d79f14609f4f4b13af5f5",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 592,
+          "sha": "3dad9b296cbe5b56a0ac760911b6ca43c4b149e0",
+          "status": "already_applied",
+          "reason": ""
+        },
+        {
+          "pr": 597,
+          "sha": "f23309246946e4946244bcfd64dd5f69b47870cb",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        },
+        {
+          "pr": 568,
+          "sha": "6af848e3e6ab377656ebbbddebe2bb03b7a71f7a",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        },
+        {
+          "pr": 551,
+          "sha": "b824ca9a902af073ffc45f1eca45714664d3de8d",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        },
+        {
+          "pr": 529,
+          "sha": "569f1e5b19ed1370529535b23257413d270ed4f6",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 509,
+          "sha": "849fa8d5a10dd4ad3882ca22eaa2cc1ed6936bf8",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/character-system/hair-attachment-runtime.js' with conflicts.\nU src/character-system/hair-attachment-runtime.js\n"
+        },
+        {
+          "pr": 190,
+          "sha": "6563e57c76e03cac5f07671e5c5c78936f1e3ec8",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/face-feature-meshes.js' with conflicts.\nU src/face-feature-meshes.js\n"
+        },
+        {
+          "pr": 191,
+          "sha": "9acf589cd4dd891d6701af47148921a5499878d7",
+          "status": "conflict",
+          "reason": "\nApplied patch to 'src/face-feature-meshes.js' with conflicts.\nU src/face-feature-meshes.js\n"
+        },
+        {
+          "pr": 150,
+          "sha": "4838fbf4d495f1cd2b407d467daf44fbcaf30235",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44231191697"
+    }
+  ]
+}
