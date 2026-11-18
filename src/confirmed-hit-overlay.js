@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three';
 import {damageNumberStyle} from './damage-number-style.js?v=4.6.35';
+import {selectReadableHitLabels} from './battle-hit-label-layout.js?v=20261119-overlap1';
 
 const MAX_VISIBLE=16;
 const LIFE=1.0;
@@ -107,9 +108,15 @@ export class ConfirmedHitOverlay{
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,width,height);
   this.painted=this.hits.length>0;
-  for(const hit of this.hits){
-   const to=projectCombatPoint(hit.target,this.camera,width,height);
-   if(!to)continue;
+  // Greedy, camera-centered decluttering prevents HP labels turning into
+  // one unreadable pile at bridges and melee choke points.
+  const projected=this.hits.map(hit=>({
+   hit,point:projectCombatPoint(hit.target,this.camera,width,height)
+  })).filter(row=>row.point);
+  const labels=selectReadableHitLabels(projected,{width,height});
+  const hpVisible=new Set(labels.hp);
+  for(const entry of labels.damage){
+   const {hit,point:to}=entry;
    const progress=hit.age/LIFE;
    ctx.save();ctx.globalAlpha=Math.min(1,(1-progress)*2.5);
    // No blue/red target circles: keep the battlefield unobstructed.
@@ -122,7 +129,7 @@ export class ConfirmedHitOverlay{
    const text='−'+hit.damage;
    ctx.strokeText(text,to.x,to.y-rise);
    ctx.fillStyle=style.color;ctx.fillText(text,to.x,to.y-rise);
-   if(hit.remainingHp!==null){
+   if(hit.remainingHp!==null&&hpVisible.has(entry)){
     ctx.font='700 11px system-ui,sans-serif';
     const hp='HP '+hit.remainingHp+(hit.maxHp!==null?'/'+hit.maxHp:'');
     const y=to.y+11-progress*13;
