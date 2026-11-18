@@ -21,6 +21,8 @@ on:
       - '.github/workflows/game-quality-six-lane.yml'
       - 'scripts/game-quality-six-batch.mjs'
       - 'qa/game-quality-browser.cjs'
+      - 'qa/battle-ready-gate.cjs'
+      - 'qa/battle-ready-gate.test.cjs'
       - 'qa/game-quality-six.test.mjs'
       - 'src/creature-*.js'
       - 'src/monster-*.js'
@@ -89,7 +91,7 @@ jobs:
         run: |
           node --check scripts/game-quality-six-batch.mjs
           node --check qa/game-quality-browser.cjs
-          node --test qa/game-quality-six.test.mjs
+          node --test qa/game-quality-six.test.mjs qa/battle-ready-gate.test.cjs
       - name: Install software WebGL browser only for live FPS or game-error lanes
         if: steps.lane.outputs.lane == 'frame' || steps.lane.outputs.lane == 'scale' || steps.lane.outputs.lane == 'runtime'
         run: |
