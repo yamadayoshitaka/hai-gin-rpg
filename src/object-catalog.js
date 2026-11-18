@@ -580,6 +580,49 @@ export function createObjectById(id,{cellSize=2.2}={}){
     peg.rotation.x=Math.PI/2;peg.position.set(0,y*c,.10*c);root.add(peg);
    }
   }
+  // Shared structural detailing for five town props: all dimensions remain
+  // inside their catalog footprints and the same meshes ship to battle/preview.
+  if(id==='town_firewood_001'){
+   for(const z of [-.76,.76]){
+    box(.16*c,.15*c,1.42*c,-.58*c,.10*c,z*c,wood);
+    box(.16*c,.15*c,1.42*c,.58*c,.10*c,z*c,wood);
+   }
+   for(const x of [-1.05,1.05]){
+    const strap=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.035*c,5,14),iron);
+    strap.rotation.y=Math.PI/2;strap.position.set(x*c,.48*c,0);root.add(strap);
+   }
+  }
+  if(id==='town_water_trough_001'){
+   for(const x of [-1.12,0,1.12]){
+    box(.14*c,.16*c,1.64*c,x*c,.12*c,0,wood);
+    for(const z of [-.78,.78]){
+     const nail=new THREE.Mesh(new THREE.CylinderGeometry(.045*c,.045*c,.035*c,8),iron);
+     nail.rotation.x=Math.PI/2;nail.position.set(x*c,.72*c,z*c);root.add(nail);
+    }
+   }
+  }
+  if(id==='town_signpost_001'){
+   for(const [y,side] of [[2.75,1],[2,-1]]){
+    const brace=new THREE.Mesh(new THREE.CylinderGeometry(.055*c,.075*c,.76*c,6),wood);
+    brace.rotation.z=side*.68;brace.position.set(side*.27*c,(y-.36)*c,-.035*c);root.add(brace);
+   }
+   const collar=new THREE.Mesh(new THREE.CylinderGeometry(.19*c,.23*c,.24*c,8),iron);
+   collar.position.y=.21*c;root.add(collar);
+  }
+  if(id==='town_sacks_001'){
+   for(let i=0;i<5;i++){
+    const knot=new THREE.Mesh(new THREE.SphereGeometry(.095*c,7,5),wood);
+    knot.position.set(((i%2)*.86-.43)*c,(.65+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);
+    root.add(knot);
+   }
+  }
+  if(id==='town_brazier_001'){
+   for(const y of [.85,1.16]){
+    const rim=new THREE.Mesh(new THREE.TorusGeometry((y===.85?.68:.86)*c,.045*c,6,20),iron);
+    rim.rotation.x=Math.PI/2;rim.position.y=y*c;root.add(rim);
+   }
+   for(const x of [-.58,.58])box(1.25*c,.07*c,.08*c,0,.22*c,x*c,iron);
+  }
   if(id==='town_sacks_001'){
    const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
    for(let i=0;i<5;i++){
