@@ -191,7 +191,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=tengu-canonical-flight-v14-20261118';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
 import {beastfolkRecipeFor,BEASTFOLK_PROTOTYPE_IDS}
@@ -906,6 +906,8 @@ window.__avianWingQA=()=>{
   adultCere,
   tengu:selected==='m015'?{
    flightMode:!!model.userData.tenguFlightMode,
+   canonicalWings:!!model.userData.tenguGuardianFeatherRig,
+   canonicalFace:!!model.userData.tenguCanonicalFacePreserved,
    inAir:!!model.userData.avianInAir,
    altitude:model.userData.avianCurrentAltitude??model.position.y,
    legsTucked:!!model.userData.tenguLegsTucked,

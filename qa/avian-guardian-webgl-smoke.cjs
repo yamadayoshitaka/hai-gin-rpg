@@ -128,9 +128,14 @@ const ids=['m011','m012','m013','m014'];
   try{
    await tenguPage.goto('http://127.0.0.1:8765/monster-manager.html?monster=m015&v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118',
     {waitUntil:'domcontentloaded',timeout:90000});
-   await tenguPage.waitForFunction(()=>
-    window.__avianWingQA?.()?.id==='m015'&&window.__avianWingQA?.()?.tengu?.flightMode,
-    null,{timeout:70000});
+   // Wait for the canonical humanoid GLB and its REAL feather geometry,
+   // not merely the procedural fallback's premature flight-mode flag.
+   await tenguPage.waitForFunction(()=>{
+    const q=window.__avianWingQA?.();
+    return q?.id==='m015'&&q.tengu?.flightMode&&q.tengu.canonicalFace&&
+     q.tengu.canonicalWings&&q.wings?.every(w=>
+      w?.donor==='seraph_guardian'&&w.layers===3&&w.feathers===82);
+   },null,{timeout:70000});
    const tenguRig=await tenguPage.evaluate(()=>window.__avianWingQA?.());
    if(!tenguRig?.wings.every(w=>w?.donor==='seraph_guardian'&&
     w.layers===3&&w.feathers===82))
