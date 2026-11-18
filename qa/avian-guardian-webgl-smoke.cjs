@@ -24,7 +24,7 @@ const ids=['m011','m012','m013','m014'];
    });
    try{
     await page.goto('http://127.0.0.1:8765/monster-manager.html?monster='+id+
-     '&v=phoenix-master-birds-v26-mantle-20261118',
+     '&v=phoenix-predatory-face-v12-20261118',
      {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(expected=>{
      const v=window.__monsterQualityQA?.();
@@ -37,12 +37,15 @@ const ids=['m011','m012','m013','m014'];
        w.layers===3&&w.feathers===82&&w.surfaceRooted&&w.phoenixCoverts>5&&
        w.shoulder&&w.elbow&&w.wrist))
       throw Error(id+' original guardian wing donor absent: '+JSON.stringify(state));
-    if(state.bodyFeathers<100||state.tail<9)
+    if(!state.hardBrow||!state.sweptCheeks||
+       (id==='m014'&&!state.angularOwl))
+      throw Error(id+' stern predator face not applied in WebGL: '+JSON.stringify(state));
+     if(state.bodyFeathers<100||state.tail<9)
       throw Error(id+' rebuilt plumage missing: '+JSON.stringify(state));
     if(id==='m013'){
      const shape=state.phoenix;
       if(shape?.volumetricFire<75)throw Error('Phoenix real flame-mantle feathers missing');
-     if(!state.revision?.includes('phoenix-master-birds-v11'))throw Error('Old Phoenix revision still loaded: '+state.revision);
+     if(!state.revision?.includes('phoenix-predatory-face-v12'))throw Error('Old Phoenix revision still loaded: '+state.revision);
      if(!shape?.enlargedBody||shape.torsoRadiusX<.36||
        shape.torsoRadiusY<.46||shape.bellyScaleMultiplier<11||
        shape.bodyScaleWidth<.25||shape.visibleFaceScales<90||

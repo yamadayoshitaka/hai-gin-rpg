@@ -6,9 +6,9 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=phoenix-master-birds-v26-mantle-20261118';
+ from './monster-geometry.js?v=phoenix-predatory-face-v12-20261118';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=phoenix-master-flight-v17-mantle-20261118';
+ from './monster-animation.js?v=phoenix-predatory-motion-v12-20261118';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js?v=phoenix-master-routing-v21-mantle-20261118';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
