@@ -4,10 +4,10 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-18T10:10:43.206Z",
+    "checkedAt": "2026-11-18T12:20:22.666Z",
     "category": "gameQuality",
     "status": "blocked_candidates",
-    "mainBeforeSha": "0183d462020c359531a55b25b5828bf96abe7021",
+    "mainBeforeSha": "4b164d872f6cde9e1fd46ea30ad37537c6656afb",
     "mainAfterSha": null,
     "pr": null,
     "sourceCommits": 0,
@@ -21,15 +21,33 @@
     "error": null,
     "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
     "gameQuality": {
-      "lane": "model",
-      "label": "全モデル→ゲーム",
-      "sourceFingerprint": "895d536e0f818c8c2d0f3b8cdea08c5a1ff364a8eea1997d956f12dcaa5f552a",
+      "lane": "scale",
+      "label": "50対50・1000対1000・LOD・メモリ",
+      "sourceFingerprint": "b537e2d4fbba812da1211fae57d5c0d2e775f02f800138be7b2033d516d5fbb8",
       "staticPassed": true,
       "staticStatus": "static_pass",
       "failedTests": [],
       "browser": {
-        "status": "not_run",
-        "reason": "This lane has no browser sample"
+        "schemaVersion": 1,
+        "lane": "scale",
+        "at": "2026-11-18T12:20:11.854Z",
+        "environment": "github-actions-swiftshader-chromium",
+        "scenario": "1000v1000",
+        "status": "boot_verified_no_fps",
+        "runtimeErrors": 0,
+        "errorMessages": [],
+        "fps": null,
+        "p95Ms": null,
+        "drawCalls": null,
+        "gpuGeometries": null,
+        "gpuTextures": null,
+        "webglContextLost": null,
+        "screenshotBytes": 0,
+        "visualApproved": false,
+        "androidFpsMeasured": false,
+        "massPerSide": 1000,
+        "pixelRatio": 0.92,
+        "antiAliasing": "GPU FXAA"
       },
       "modelSourceModified": 0,
       "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
@@ -46,7 +64,7 @@
         "reason": ""
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44282805622"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44301789869"
   },
   "latestSourceCommit": null,
   "history": [
@@ -413,6 +431,269 @@
         }
       ],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44282805622"
+    },
+    {
+      "checkedAt": "2026-11-18T11:41:55.721Z",
+      "category": "gameQuality",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "7fb117d60be1d7b80af731edd647a0892e2c0386",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
+      "gameQuality": {
+        "lane": "model",
+        "label": "全モデル→ゲーム",
+        "sourceFingerprint": "ca791ce3336ec447aff5d0027f7d271f932d4c804372867e9fedfccc58dae1c7",
+        "staticPassed": true,
+        "staticStatus": "static_pass",
+        "failedTests": [],
+        "browser": {
+          "status": "not_run",
+          "reason": "This lane has no browser sample"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [
+        {
+          "pr": 412,
+          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44296991092"
+    },
+    {
+      "checkedAt": "2026-11-18T11:58:34.832Z",
+      "category": "gameQuality",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "a4fa791682ff7161410c9b156fbda3a8bdc82cc3",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
+      "gameQuality": {
+        "lane": "model",
+        "label": "全モデル→ゲーム",
+        "sourceFingerprint": "3beab61a64dd0f0a32d32e69bfe88da12bd2f50bc64ea4dc1a9cc96dd2407e1b",
+        "staticPassed": true,
+        "staticStatus": "static_pass",
+        "failedTests": [],
+        "browser": {
+          "status": "not_run",
+          "reason": "This lane has no browser sample"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [
+        {
+          "pr": 412,
+          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44299454801"
+    },
+    {
+      "checkedAt": "2026-11-18T12:06:10.189Z",
+      "category": "gameQuality",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "61e617da40fa9ce3fbe2fc0f5417cc278156946c",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
+      "gameQuality": {
+        "lane": "model",
+        "label": "全モデル→ゲーム",
+        "sourceFingerprint": "b537e2d4fbba812da1211fae57d5c0d2e775f02f800138be7b2033d516d5fbb8",
+        "staticPassed": true,
+        "staticStatus": "static_pass",
+        "failedTests": [],
+        "browser": {
+          "status": "not_run",
+          "reason": "This lane has no browser sample"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [
+        {
+          "pr": 412,
+          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44300648110"
+    },
+    {
+      "checkedAt": "2026-11-18T12:14:28.941Z",
+      "category": "gameQuality",
+      "status": "regression_detected_no_safe_patch",
+      "mainBeforeSha": "cd2f9f8e33d57ac789d8c09057258f59e0f0468b",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
+      "gameQuality": {
+        "lane": "frame",
+        "label": "フレーム間隔・FPS・描画負荷",
+        "sourceFingerprint": "b537e2d4fbba812da1211fae57d5c0d2e775f02f800138be7b2033d516d5fbb8",
+        "staticPassed": false,
+        "staticStatus": "static_fail",
+        "failedTests": [
+          "qa/battle-frame-pacing.test.mjs",
+          "qa/battle-phase-profiler.test.mjs",
+          "qa/command-touch-camera-performance.test.mjs"
+        ],
+        "browser": {
+          "schemaVersion": 1,
+          "lane": "frame",
+          "at": "2026-11-18T12:13:13.488Z",
+          "environment": "github-actions-swiftshader-chromium",
+          "scenario": "50v50",
+          "status": "measured_ci_fps",
+          "runtimeErrors": 0,
+          "errorMessages": [],
+          "fps": 2,
+          "p95Ms": 4311.4,
+          "drawCalls": 2609,
+          "gpuGeometries": 6011,
+          "gpuTextures": 1066,
+          "webglContextLost": false,
+          "screenshotBytes": 513715,
+          "visualApproved": false,
+          "androidFpsMeasured": false,
+          "startupMode": "running"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [
+        {
+          "pr": 412,
+          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44301721450"
+    },
+    {
+      "checkedAt": "2026-11-18T12:20:22.666Z",
+      "category": "gameQuality",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "4b164d872f6cde9e1fd46ea30ad37537c6656afb",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
+      "gameQuality": {
+        "lane": "scale",
+        "label": "50対50・1000対1000・LOD・メモリ",
+        "sourceFingerprint": "b537e2d4fbba812da1211fae57d5c0d2e775f02f800138be7b2033d516d5fbb8",
+        "staticPassed": true,
+        "staticStatus": "static_pass",
+        "failedTests": [],
+        "browser": {
+          "schemaVersion": 1,
+          "lane": "scale",
+          "at": "2026-11-18T12:20:11.854Z",
+          "environment": "github-actions-swiftshader-chromium",
+          "scenario": "1000v1000",
+          "status": "boot_verified_no_fps",
+          "runtimeErrors": 0,
+          "errorMessages": [],
+          "fps": null,
+          "p95Ms": null,
+          "drawCalls": null,
+          "gpuGeometries": null,
+          "gpuTextures": null,
+          "webglContextLost": null,
+          "screenshotBytes": 0,
+          "visualApproved": false,
+          "androidFpsMeasured": false,
+          "massPerSide": 1000,
+          "pixelRatio": 0.92,
+          "antiAliasing": "GPU FXAA"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [
+        {
+          "pr": 412,
+          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
+          "status": "no_applicable_source",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44301789869"
     }
   ]
 }

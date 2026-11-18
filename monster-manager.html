@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-hover-flight-v24-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-hover-flight-v15-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-master-birds-v26-mantle-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-master-flight-v17-mantle-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -880,28 +880,35 @@ window.__beastFaceCameraQA=angle=>{
    wolfDonorStrands:model.userData.wolfKingDonorStrands||0};
 };
 window.__avianWingQA=()=>{
- if(!model||!['m011','m012','m013','m014'].includes(selected))return null;
+ if(!model||!['m011','m012','m013','m014','m015'].includes(selected))return null;
  const p=model.userData.pivots||{};
  const wings=['L','R'].map(side=>{
   const part=model.getObjectByName('avian-guardian-three-layer-wing-'+selected+'-'+side);
+   const cover=model.getObjectByName('avian-phoenix-master-wing-coverts-'+selected+'-'+side);
   return part?{side,donor:part.userData.angelSource,
    layers:part.userData.angelFeatherLayers,
    feathers:part.userData.angelFeathersPerSide,
+    phoenixCoverts:cover?.userData.avianMergedOverlappingCoverts||0,
+    surfaceRooted:!!cover?.userData.avianDonorSurfaceAttached,
    vertices:part.geometry.getAttribute('position')?.count||0,
    shoulder:part.parent===p['wing'+side],
-   elbow:p['wingElbow'+side]?.parent===p['wing'+side],
-   wrist:p['wingWrist'+side]?.parent===p['wingElbow'+side]}:null;
+   elbow:selected==='m015'||p['wingElbow'+side]?.parent===p['wing'+side],
+   wrist:selected==='m015'||p['wingWrist'+side]?.parent===p['wingElbow'+side]}:null;
  });
  return {id:selected,revision:model.userData.avianRebuildRevision,
   donor:model.userData.avianGuardianGeometryDonor,
   bodyFeathers:model.userData.avianBodyFeatherCount||0,
-  tail:model.getObjectByName('avian-tail-rooted-streamers-'+selected)?.userData.curvedAvianFeathers||0,
+   phoenixMaster:!!model.userData.avianPhoenixMasterChassis||
+     !!model.getObjectByName('avian-phoenix-master-tail-m015'),
+   physicalOrbit:!!model.userData.pivots.head?.userData.avianPhoenixMasterEyes,
+  tail:model.getObjectByName('avian-tail-rooted-streamers-'+selected)?.userData.curvedAvianFeathers||model.getObjectByName('avian-phoenix-master-tail-'+selected)?.userData.curvedAvianFeathers||0,
   shape:model.userData.avianAnatomicalKind,
   phoenix:selected==='m013'?{
    enlargedBody:!!model.userData.phoenixExpandedThorax,
    torsoRadiusX:model.userData.phoenixTorsoRadiusX||0,
    torsoRadiusY:model.userData.phoenixTorsoRadiusY||0,
    denseScales:model.userData.phoenixDenseScaleCount||0,
+    volumetricFire:model.getObjectByName('phoenix-master-volumetric-fire-plumage')?.userData.phoenixSurfaceRootedFlames||0,
    bellyScaleMultiplier:model.getObjectByName('avian-layered-body-plumage-m013')?.userData.phoenixBellyScaleMultiplier||0,
    bodyScaleWidth:model.getObjectByName('avian-layered-body-plumage-m013')?.userData.phoenixAbdomenLargeScaleWidth||0,
    visibleFaceScales:model.getObjectByName('phoenix-fine-head-scales')?.userData.scaleCount||0,

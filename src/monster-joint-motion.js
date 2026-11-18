@@ -140,9 +140,9 @@ function wingMotion(p,phase,action,actionPulse,reference){
  // Dedicated airborne rig for m013; the other birds keep their existing
  // approved biomechanics. Flap phase is slowed from the walking gait,
  // while flying actions accelerate it naturally.
- if(reference?.id==='m013'){
+ if(['m011','m012','m013','m014'].includes(reference?.id)){
   const flying=action!=='defeat';
-  const q=phase*.42;
+  const q=phase*(reference.id==='m014'?.35:.42);
   const power=!flying?0:action==='idle'?.60:
     action==='walk'?.53:action==='guard'?.28:
     action==='run'?.90:action==='attack'?.96:1;
@@ -178,6 +178,11 @@ function wingMotion(p,phase,action,actionPulse,reference){
    apply(p,'birdKnee'+suffix,'x',-.74*tuck+.10*pedal);
    apply(p,'birdAnkle'+suffix,'x',.40*tuck);
    apply(p,'avianFoot'+suffix,'x',.22*tuck);
+  }
+  // The griffin retains four genuine limbs and folds both pairs in flight.
+  if(reference.id==='m012')for(const suffix of ['L','R']){
+   apply(p,'legFront'+suffix,'x',flying?.38:0);
+   apply(p,'legRear'+suffix,'x',flying?.43:0);
   }
   apply(p,'tail','x',flying?-.08+power*.06*Math.sin(q-.30):0);
   return;
