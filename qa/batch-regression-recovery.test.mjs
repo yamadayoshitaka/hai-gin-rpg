@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WATCHED,decideRecovery,isAuthorizedRepo} from '../scripts/batch-regression-recovery.mjs';
+import fs from 'node:fs';
+import {WATCHED,decideRecovery,isAuthorizedRepo,dispatchInputFor,MAX_RECOVERIES_PER_CHECK} from '../scripts/batch-regression-recovery.mjs';
 
 const stamp=Date.parse('2026-11-18T00:00:00Z');
 const live=(conclusion,age=10,attempt=1)=>({
@@ -10,7 +11,7 @@ const live=(conclusion,age=10,attempt=1)=>({
 test('every active batch category has a recovery watcher',()=>{
  const groups=new Set(WATCHED.flatMap(x=>x.groups));
  assert.deepEqual([...groups].sort(),
-  ['faceHair','outfit','creatureMonster','creatureSummon','world','anime'].sort());
+  ['faceHair','outfit','creatureMonster','creatureSummon','world','anime','gameQuality'].sort());
 });
 test('successful executions are not called source improvements',()=>{
  for(const s of WATCHED){
@@ -38,4 +39,93 @@ test('queued runs are left alone; repository guard is exact',()=>{
  assert.equal(decideRecovery(qa,{status:'queued',created_at:new Date(stamp).toISOString()},stamp),'running');
  assert.equal(isAuthorizedRepo('yamadayoshitaka/hai-gin-rpg'),true);
  assert.equal(isAuthorizedRepo('other/other'),false);
+});
+
+test('newly-added game quality, evolution, self-heal and source recovery are actually watched',()=>{
+ for(const name of ['game-quality-six-lane.yml','quality-evolution-loop.yml',
+  'batch-rule-self-heal.yml','batch-self-drive.yml']){
+  const spec=WATCHED.find(x=>x.workflow===name);
+  assert(spec,name+' not watched');
+  assert.equal(spec.dispatch,true);
+  assert(spec.maxAgeMinutes>=80);
+  assert.equal(decideRecovery(spec,null,stamp),'dispatch');
+  assert.equal(decideRecovery(spec,live('success',spec.maxAgeMinutes+1),stamp),'dispatch');
+ }
+ assert.equal(MAX_RECOVERIES_PER_CHECK,3,
+  'no bulk restart of all heavy FPS/3D workflows within one watchdog run');
+});
+test('stale game QA dispatch rotates six different FPS and model lanes',()=>{
+ const spec=WATCHED.find(x=>x.workflow==='game-quality-six-lane.yml');
+ const switches={groups:{gameQuality:{enabled:true}}};
+ const values=new Set();
+ for(let hour=0;hour<6;hour++){
+  values.add(dispatchInputFor(spec,'2026-11-18T'+String(hour).padStart(2,'0')+':00:00Z',switches).lane);
+ }
+ assert.equal(values.size,6);
+});
+test('stale quality evolution dispatch favors the oldest real unmeasured model domain',()=>{
+ const spec=WATCHED.find(x=>x.workflow==='quality-evolution-loop.yml');
+ const switches={groups:{faceHair:{enabled:true},outfit:{enabled:true}}};
+ const last=domain=>({
+  face:'2026-11-18T07:00:00Z',
+  hair:null,
+  outfit:'2026-11-18T08:00:00Z'
+ })[domain];
+ assert.equal(dispatchInputFor(spec,'2026-11-18T09:00:00Z',switches,last).domain,'hair');
+ const disabled={groups:{faceHair:{enabled:false},outfit:{enabled:true}}};
+ assert.equal(dispatchInputFor(spec,'2026-11-18T09:00:00Z',disabled,last).domain,'outfit');
+ assert.equal(dispatchInputFor(spec,'2026-11-18T09:00:00Z',{groups:{}},last),null);
+});
+test('source recovery chooses only enabled categories and never overwrites artifacts',()=>{
+ const spec=WATCHED.find(x=>x.workflow==='batch-self-drive.yml');
+ const cfg={groups:{faceHair:{enabled:false},outfit:{enabled:false},
+  creatureMonster:{enabled:true},world:{enabled:false},anime:{enabled:false}}};
+ assert.equal(dispatchInputFor(spec,'2026-11-18T09:00:00Z',cfg).category,'creatureMonster');
+ assert.equal(dispatchInputFor(spec,'2026-11-18T09:00:00Z',{groups:{}}),null);
+ const standard=WATCHED.find(x=>x.workflow==='world-six-lane.yml');
+ assert.deepEqual(dispatchInputFor(standard,'2026-11-18T09:00:00Z',cfg),{});
+});
+
+test('public batch center shows all 7 watched domains and stale schedule warnings',()=>{
+ const html=fs.readFileSync('batch-monitor.html','utf8');
+ assert.match(html,/async function updateRecoverySnapshot\(\)/);
+ assert.match(html,/回帰監視（最終取得/);
+ assert.match(html,/定期実行欠落/);
+ assert.match(html,/復旧起動を要求/);
+ assert.match(html,/次回復旧枠へ繰越/);
+ assert.match(html,/監視記録が古い/);
+ assert.match(html,/本編FPS・実行QA/);
+ assert.match(html,/既知エラー自己修復/);
+ assert.match(html,/品質探索/);
+ assert.match(html,/系統の遅延・要対応/);
+ assert.doesNotMatch(html,/run\.status==='success'\?'Actions成功（造形未承認）'/);
+});
+
+test('failed old-SHA QA is dispatched on latest main, not rerun forever on stale code',()=>{
+ const spec=WATCHED.find(x=>x.workflow==='creature-six-lane.yml');
+ const old={...live('failure',180,2),head_sha:'a'.repeat(40)};
+ assert.equal(decideRecovery(spec,old,stamp,'b'.repeat(40)),'dispatch_latest_main');
+ assert.equal(decideRecovery(spec,old,stamp,'a'.repeat(40)),'escalate');
+ const first={...live('failure',180,1),head_sha:'a'.repeat(40)};
+ assert.equal(decideRecovery(spec,first,stamp,'b'.repeat(40)),'dispatch_latest_main');
+ assert.equal(decideRecovery(spec,first,stamp,'a'.repeat(40)),'rerun_failed');
+ const image=WATCHED.find(x=>x.workflow==='story-chapter1-free-complete-draft-production.yml');
+ assert.equal(decideRecovery(image,first,stamp,'b'.repeat(40)),'escalate',
+  'never automatically rerun image generation on a new commit');
+});
+test('rule repair watchdog can refresh only a tracked-file-clean queued runner',()=>{
+ const script=fs.readFileSync('scripts/batch-rule-self-heal.mjs','utf8');
+ assert.match(script,/stale_checkout_with_changes/);
+ assert.match(script,/\['reset','--hard','origin\/main'\]/);
+ assert.match(script,/\['diff','--cached','--quiet'\]/);
+ assert.match(script,/\['diff','--quiet'\]/);
+});
+
+test('public batch center reads latest recovery audit directly from current main, not the last Pages build',()=>{
+ const html=fs.readFileSync('batch-monitor.html','utf8');
+ assert.match(html,/raw\.githubusercontent\.com/);
+ assert.match(html,/main\/data\/batch-regression-runtime\.json\?ts=/);
+ assert.match(html,/fetchJSON\('\.\/data\/batch-regression-runtime\.json\?ts=/);
+ assert.match(html,/Date\.now\(\)/);
+ assert.match(html,/async function updateRecoverySnapshot\(\)/);
 });

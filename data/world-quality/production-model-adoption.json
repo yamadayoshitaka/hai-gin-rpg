@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "production_factory_connected_visual_qa_pending",
-  "sourceFingerprint": "0384fc6a4b66004ae99d445cf46f1de7af36a09184db36c11c949abd7f065f51",
+  "sourceFingerprint": "9a75e2e31a920eb7095000f30a07103d68306f2dc02115a2802ad21c28722d04",
   "gamePage": "tactics-wireframe.html",
   "runtimeFactory": "src/object-catalog.js#createCatalogObject",
   "rendering": "src/stage-static-instancing.js#batchStaticStageDecorations",

@@ -107,12 +107,23 @@ function fittedScalpSurface(model,bone,headBounds){
   if(index<0)return;
   const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
   if(!joints||!weights)return;
-  // The largest skinned mesh is the actual body; tiny eyebrow/eye meshes
-  // cannot be mistaken for scalp geometry.
-  candidates.push({mesh,index,joints,weights,vertices:mesh.geometry.attributes.position.count});
+  // Rank by vertices actually influenced by the head, not total body size.
+  // Some costumes have more vertices than the face while their head weights
+  // are zero; selecting them produced an empty scalp and a bald sphere fallback.
+  const vertices=mesh.geometry.attributes.position.count;
+  let headInfluenced=0;
+  for(let i=0;i<vertices;i++){
+   let weight=0;
+   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
+   if(weight>=.56)headInfluenced++;
+  }
+  if(headInfluenced>=30)candidates.push({mesh,index,joints,weights,vertices,headInfluenced});
  });
- candidates.sort((a,b)=>b.vertices-a.vertices);
- const candidate=candidates[0];if(!candidate)return null;
+ candidates.sort((a,b)=>b.headInfluenced-a.headInfluenced||b.vertices-a.vertices);
+ // A costume can have many head-weighted vertices below the crown.
+ // Try the next real anatomical candidate if it yields no scalp triangles;
+ // do not fall back to an exposed smooth sphere on that single bad match.
+ for(const candidate of candidates){
  const {mesh,index,joints,weights,vertices}=candidate;
  const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
  const center=headBounds.getCenter(new THREE.Vector3());
@@ -133,19 +144,31 @@ function fittedScalpSurface(model,bone,headBounds){
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
   if(!eligible[a]||!eligible[b]||!eligible[c])continue;
-  for(const v of [a,b,c]){
+  // Cylindrical scalp UV wraps at the rear meridian. Because the output is
+  // non-indexed, unwrap EACH triangle independently: interpolating 0.99 to
+  // 0.01 across a rear triangle otherwise paints a broad bald-looking stripe.
+  const corners=[a,b,c].map(v=>{
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
-   triangles.push(x,y,z);
-   uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
-    Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
+   return {x,y,z,u:.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2)};
+  });
+  const us=corners.map(p=>p.u);
+  if(Math.max(...us)-Math.min(...us)>.5){
+   for(const p of corners)if(p.u<.5)p.u+=1;
+  }
+  for(const p of corners){
+   triangles.push(p.x,p.y,p.z);
+   uv.push(p.u,Math.max(0,Math.min(1,
+    (p.y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
   }
  }
- if(triangles.length<90)return null;
+ if(triangles.length<90)continue;
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geometry.computeVertexNormals();geometry.computeBoundingSphere();
  return geometry;
+ }
+ return null;
 }
 
 // A correct XYZ scalp mesh alone can still look bald: the previous smooth
@@ -340,16 +363,26 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0,
   syntheticHelmetFringe:'disabled',sourceHair:true};
  const fit={position:lod.position.clone(),scale:lod.scale.clone()};
+ // GLB geometries are shared across actors; only headwear clips belong to
+ // this attachment. Dispose temporary clips after restoring their originals.
+ const ownedMasks=new Set();
+ function releaseMasks(){for(const geometry of ownedMasks)geometry.dispose();ownedMasks.clear()}
+ function trackMask(geometry,original){if(geometry!==original)ownedMasks.add(geometry);return geometry}
  let selectedCoverage=null;
  function setHeadwear(value){
   const next=value==='hood'?'hood':value==='helmet'?'helmet':null;
   if(selectedCoverage===next)return;
   selectedCoverage=next;
+  // No live mesh may reference a mask when its GPU buffers are released.
+  for(const item of hairMeshes)item.mesh.geometry=item.original;
+  crown.geometry=crownGeometry;
+  if(scalpFibers)scalpFibers.geometry=scalpFibersGeometry;
+  releaseMasks();
   let sourceTriangles=0,keptTriangles=0;
   for(const item of hairMeshes){
     if(!next){item.mesh.geometry=item.original;continue}
     const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next,foreheadZ);
-    item.mesh.geometry=clipped.geometry;
+    item.mesh.geometry=trackMask(clipped.geometry,item.original);
     sourceTriangles+=clipped.sourceTriangles;keptTriangles+=clipped.keptTriangles;
   }
   // Mask only the portions hidden BY the headpiece, instead of turning off
@@ -358,11 +391,11 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   if(next){
     const cut=maskHairGeometry(crownGeometry,crownMatrix,{
       position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
-    crown.geometry=cut.geometry;crown.visible=cut.keptTriangles>0;
+    crown.geometry=trackMask(cut.geometry,crownGeometry);crown.visible=cut.keptTriangles>0;
     if(scalpFibers){
       const fibers=maskHairGeometry(scalpFibersGeometry,fiberMatrix,{
         position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
-      scalpFibers.geometry=fibers.geometry;scalpFibers.visible=fibers.keptTriangles>0;
+      scalpFibers.geometry=trackMask(fibers.geometry,scalpFibersGeometry);scalpFibers.visible=fibers.keptTriangles>0;
     }
   }else{
     crown.geometry=crownGeometry;crown.visible=true;
@@ -378,7 +411,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
   setHeadwear,
-  dispose(){bone.remove(hairRoot);crownGeometry.dispose();crown.material.dispose();
+  dispose(){bone.remove(hairRoot);releaseMasks();crownGeometry.dispose();crown.material.dispose();
    scalpFibersGeometry?.dispose();scalpFibers?.material.dispose();
    hoodWisps.geometry.dispose();hoodWisps.material.dispose()}};
 }

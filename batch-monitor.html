@@ -51,7 +51,7 @@ small{font-size:11px}strong{font-weight:700}
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜FF15品質バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>FF15級品質バッチ：顔・髪／衣装／オブジェクト／モンスター／召喚獣</h1>
 <p>顔・髪、衣装、モンスター、召喚獣は各6テーマを10分間隔で実行する設定です（実際の実行頻度はGitHubの履歴で確認）。オブジェクトは6担当の毎時並列QAを設定しています。実際のモデル改修数と<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を分けて確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
-<div class="summary" aria-live="polite"><span id="groupCount">6系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
+<div class="summary" aria-live="polite"><span id="groupCount">7系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <div class="select-area panel" aria-label="表示するバッチを選択">
  <label for="batchDisplaySelect">表示するバッチ
   <select id="batchDisplaySelect">
@@ -62,6 +62,7 @@ small{font-size:11px}strong{font-weight:700}
    <option value="creatureMonster">モンスター</option>
    <option value="creatureSummon">召喚獣</option>
    <option value="anime">アニメ・漫画</option>
+   <option value="gameQuality">ゲーム全体・画質/FPS/エラー</option>
   </select>
  </label><span id="selectedBatchCount" class="muted" role="status">表示を準備中</span>
 </div>
@@ -77,6 +78,11 @@ small{font-size:11px}strong{font-weight:700}
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
 <p class="panel"><strong>予算ルール：</strong><span id="storySpendPolicy">追加の有料APIは使用しません</span></p>
 <p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料、毎日09:20に最大1回の制作バッチ）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
+<section class="panel" id="autoDevAudit">
+ <h2>自動開発｜未知障害と実機FPS</h2>
+ <p>未知障害はGitHub Actionsで検出して担当のソース修正Issueに振り分けます。Issue作成は修復完了の意味ではありません。実機FPSは端末上でゲームを動かした場合だけ記録されます。</p>
+ <div class="links"><a href="./android-fps-audit.html">Android実機FPSを測定</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aopen+is%3Aissue+%22%5Bauto-dev%5D%22" target="_blank" rel="noopener noreferrer">未知障害の修正キュー</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/auto-dev-triage.yml" target="_blank" rel="noopener noreferrer">障害収集の実行履歴</a></div>
+</section>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
 <section class="panel" id="faceExpressionPanel" aria-label="顔モデルの表情を選択">
  <h2>顔・髪｜表情を選んで3D確認</h2>
@@ -118,6 +124,7 @@ small{font-size:11px}strong{font-weight:700}
 </footer>
 </main>
 <script src="./src/batch-live-ref-selection.js?v=20261118-live-head"></script>
+<script src="./src/batch-pages-release-gate.js?v=20261118-publish-verified"></script>
 <script>
 'use strict';
 const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO,API='https://api.github.com/repos/'+REPO;
@@ -190,7 +197,7 @@ function statusLabel(result){
 }
 function createCard(data){
  const c=tag('section','card');c.dataset.batchGroup=data.id;const t=tag('div','top');
- const title=tag('span','name',({"faceHair":"👤 ","outfit":"🛡️ ","world":"🏰 ","creatureMonster":"🐉 ","creatureSummon":"✨ ","anime":"🎬 "}[data.id]||'')+data.name);
+ const title=tag('span','name',({"faceHair":"👤 ","outfit":"🛡️ ","world":"🏰 ","creatureMonster":"🐉 ","creatureSummon":"✨ ","gameQuality":"🎮 ","anime":"🎬 "}[data.id]||'')+data.name);
  const badge=tag('span','badge '+(data.autoEnabled?'on':'off'),data.autoEnabled?'毎時設定：有効':'毎時設定：停止');
  t.append(title,badge);c.appendChild(t);c.appendChild(paragraph(data.subtitle,'muted'));
  const schedule=tag('div','panel');
@@ -218,7 +225,10 @@ function createCard(data){
  const progressSummary=paragraph('実際のソース修正とQAを照合中','status');
  const nextAction=paragraph('次回引継ぎ：照合中','note');
  const progressEvidence=tag('div','progress-evidence');
- progressBox.append(head,stageGrid,progressTime,progressSummary,nextAction,progressEvidence);
+ const changesTitle=tag('strong','','実際に何が改善されたか（コミット・計測別）');
+ const changesList=tag('div','batch-real-changes');
+ changesList.appendChild(paragraph('確認できる実改修・計測結果を取得中','muted'));
+ progressBox.append(head,stageGrid,progressTime,progressSummary,nextAction,progressEvidence,changesTitle,changesList);
  c.appendChild(progressBox);
  // Quality improvement throughput is distinct from scheduled runs or static QA.
  let health=null;
@@ -260,6 +270,7 @@ function createCard(data){
  creatureMonster:'例：m002の鼻と毛並みをm001を基準に実メッシュ再造形して',
  creatureSummon:'例：seraph_guardianの羽と人型顔、飛行姿勢を改善して',
  world:'例：選択したオブジェクトの木組みや石材・接合・PBRを写実的に改善して',
+ gameQuality:'例：1000対1000の歩行カクつきとFPS P95、実行時エラーを検証して実コードを修正して',
  anime:'例：第1章の未完成コマを、登場人物とシナリオに忠実に描いて'
  }[data.id];
  title2.appendChild(instruction);box.appendChild(title2);c.appendChild(box);
@@ -345,7 +356,7 @@ function createCard(data){
   // even when opened, causing duplicate redirections and lost form state.
   window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{card:c,detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
+ $('cards').appendChild(c);elements.set(data.id,{card:c,detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence,changesList},health});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -388,7 +399,7 @@ async function updateProgress(){
     const result=Object.hasOwn(STEP_LABELS,entry.steps[step])?entry.steps[step]:'unknown';
     view.stageGrid.appendChild(tag('span','stage '+result,label+'：'+STEP_LABELS[result]));
    }
-   view.progressTime.textContent='最終記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（GitHub保存時点）';
+   view.progressTime.textContent='旧工程台帳の記録：'+TIME(entry.lastRunAt||data.asOf)+' ／ '+(entry.source||'記録元未確認')+'（自走結果ではない）';
    // The scheduling metadata is an old static snapshot; show actual logged execution instead.
    if(g.id!=='world'&&entry.lastRunAt){
     elements.get(g.id).detail.textContent='直近の実行記録：'+TIME(entry.lastRunAt)+'（GitHub工程台帳の時刻・実行中判定ではない）';
@@ -422,6 +433,8 @@ async function updateProgress(){
     view.progressEvidence.appendChild(makeLink(ev.label||'証跡を開く',ev.url,true));
    }
   }
+  await updateSelfDriveEvidence(data);
+  await updateEvolutionResults();
  }catch(e){
   for(const g of groups){
    const health=elements.get(g.id)?.health;
@@ -432,6 +445,319 @@ async function updateProgress(){
    p.progressSummary.textContent='定期タスクONやGitHub QA成功のみでは実改修完了と判定しません。';
    p.nextAction.textContent='次回引継ぎ：記録確認が必要';
    p.stageGrid.replaceChildren();p.progressEvidence.replaceChildren();
+  }
+ }
+}
+/** GitHub self-drive writes a per-category SHA-backed journal, packaged by
+ * Pages on each verified run. The old work-progress file is archival only.
+ * Never infer mesh generation or visual approval from a green Actions job.
+ */
+async function updateSelfDriveEvidence(staticProgress){
+ // release.json and this HTML build stamp must match. Both files are
+ // delivered on the same Pages origin as the autonomous run journal.
+ const pageSha=document.querySelector('meta[name="hai-gin-pages-sha"]')?.content||null;
+ let releaseSha=null;
+ try{
+  const release=await fetchJSON('./release.json?ts='+Date.now());
+  if(/^[0-9a-f]{40}$/.test(String(release?.sha||'')))releaseSha=release.sha;
+ }catch(_error){ /* Never invent a published SHA. */ }
+ const ids=['faceHair','outfit','creatureMonster','creatureSummon','world','anime','gameQuality'];
+ await Promise.all(ids.map(async id=>{
+  const ui=elements.get(id),v=ui?.progress;
+  if(!v)return;
+  let audit;
+  try{audit=await fetchJSON('./data/batch-self-drive/'+encodeURIComponent(id)+'.json?ts='+Date.now())}
+  catch(error){
+   v.progressTime.textContent+=' ／ 最新自走記録：未公開（旧工程台帳の表示）';
+   return;
+  }
+  if(audit?.schemaVersion!==1||audit.category!==id||!audit.latest||
+   !Array.isArray(audit.history))return;
+  const last=audit.latest,verified=audit.latestSourceCommit;
+  if(typeof last.checkedAt!=='string'||!Number.isFinite(Date.parse(last.checkedAt)))return;
+  const old=staticProgress.groups?.[id]||{};
+  // A static manual timestamp must never suppress a verified autonomous
+  // run journal, even when the old ledger was edited more recently.
+  // Keep the archival timestamp only for comparison in the caption.
+  const hasSource=verified&&verified.sourceCommits>0&&
+   /^[0-9a-f]{40}$/.test(verified.mainAfterSha||'');
+  const lastSource=hasSource?verified:null;
+  const realNow=last.sourceCommits>0&&/^[0-9a-f]{40}$/.test(last.mainAfterSha||'');
+  const blocked=last.status==='blocked_candidates'||last.status==='error';
+  const header=realNow?'今回：実ソース修正・mainコミット完了':
+   blocked?'今回：競合・未解決（作業記録あり）':
+   last.status==='no_open_source_pr'?'今回：取り込み対象PRなし':
+   last.status==='art_generation_not_automatable_in_actions'?'今回は画像生成なし':
+   '今回：実ソース変更なし（'+last.status+'）';
+  v.current.textContent=header+(hasSource&&!realNow?' ／ 過去のコミット実績あり':'');
+  const proof=window.HaiGinPagesAudit.evaluate({
+   pageSha,releaseSha,last,verifiedSource:lastSource
+  });
+  if(proof.published&&!realNow)
+   v.current.textContent+=' ／ Pages公開済み（今回ソース改修なし）';
+  v.current.className='progress-status'+(realNow&&proof.published?' ok':'');
+  v.stageGrid.replaceChildren();
+  for(const [key,label] of PROGRESS_STAGES)
+   v.stageGrid.appendChild(tag('span','stage '+proof.steps[key],
+    label+'：'+STEP_LABELS[proof.steps[key]]));
+  v.progressTime.textContent='最新GitHub自走：'+TIME(last.checkedAt)+
+   ' ／ 旧工程台帳：'+TIME(old.lastRunAt||staticProgress.asOf)+
+   '（別記録）';
+  const lastCount=Number.isSafeInteger(last.modifiedSourceFiles)?last.modifiedSourceFiles:0;
+  const glbs=Number.isSafeInteger(last.generatedGLBs)?last.generatedGLBs:0;
+  const staticQa=last.qaStatus==='passed'?'静的QA成功':
+   last.qaStatus==='failed'?'静的QA失敗':'静的QA未実施';
+  v.progressSummary.textContent='最新実行：変更ソースファイル'+lastCount+'件／実ソースコミット'+
+   (last.sourceCommits||0)+'件／新規GLB'+glbs+'件／'+staticQa+
+   '。WebGL・Android FPSは'+
+   (last.webglApproved&&last.androidFpsVerified?'確認記録あり':'未承認')+
+   '。過去の最新実ソースコミット：'+(hasSource?lastSource.mainAfterSha.slice(0,12):'なし')+
+   '。'+proof.message+'。';
+  v.nextAction.textContent=blocked?
+   '次回引継ぎ：競合内容を修正して最新mainへの安全な再適用を続行':
+   hasSource?'次回確認：追加造形、実WebGL四方向、動作とAndroid FPS、公開SHAの照合':
+   '次回引継ぎ：変更可能な実モデルソースと失敗理由を確認し、差分をコミット';
+  v.progressEvidence.replaceChildren();
+  if(typeof last.runUrl==='string'&&last.runUrl.startsWith(GH+'/actions/runs/'))
+   v.progressEvidence.appendChild(makeLink('最新自走バッチの実行ログ',last.runUrl,true));
+  if(proof.published){
+   v.progressEvidence.appendChild(makeLink('公開済みPages SHA '+proof.releaseSha.slice(0,12),
+    GH+'/commit/'+proof.releaseSha,true));
+   v.progressEvidence.appendChild(makeLink('Pagesの公開実行履歴',
+    GH+'/actions/workflows/publish-pages.yml',true));
+  }
+  if(hasSource)
+   v.progressEvidence.appendChild(makeLink('実ソースコミット '+lastSource.mainAfterSha.slice(0,12),
+    GH+'/commit/'+lastSource.mainAfterSha,true));
+  if(typeof last.issueUrl==='string'&&last.issueUrl.startsWith(GH+'/issues/'))
+   v.progressEvidence.appendChild(makeLink('競合の修正Issue',last.issueUrl,true));
+  // Improvement history is derived only from commits with verified main SHA.
+  // Static QA-only runs never become phantom "3D quality improved" entries.
+  v.changesList?.replaceChildren();
+  const recentChanges=[...audit.history].filter(x=>x.sourceCommits>0&&
+   /^[0-9a-f]{40}$/.test(x.mainAfterSha||'')).slice(-4).reverse();
+  if(!recentChanges.length)
+   v.changesList?.appendChild(paragraph('実コードの修正コミット：0件。QA起動だけでは品質改善と判定しません。','note'));
+  else for(const row of recentChanges){
+   const files=(row.sourceFiles||[]).slice(0,5);
+   const value=TIME(row.checkedAt)+'｜'+row.mainAfterSha.slice(0,10)+
+    '｜修正ソース'+(row.modifiedSourceFiles||0)+'件'+
+    (row.pr?'｜元PR #'+row.pr:'')+
+    (files.length?'｜'+files.join('、'):'');
+   const line=tag('div','improvement-row');
+   line.appendChild(paragraph(value,'status'));
+   line.appendChild(makeLink('コミットを確認',GH+'/commit/'+row.mainAfterSha,true));
+   v.changesList?.appendChild(line);
+  }
+  if(id==='gameQuality'){
+   // A scheduled QA pass is not a repair. This separate journal is written
+   // only when the bounded no-API repair engine actually commits source.
+   const fixPanel=tag('div','improvement-row');
+   fixPanel.appendChild(makeLink('無料・既知エラー自己修復バッチの実行履歴',
+    GH+'/actions/workflows/batch-rule-self-heal.yml',true));
+   try{
+    const repair=await fetchJSON('./data/batch-rule-self-heal/latest.json?ts='+Date.now());
+    const applied=repair?.latest;
+    if(repair?.schemaVersion===1&&applied?.status==='source_repaired_main'&&
+      /^[0-9a-f]{40}$/.test(applied.sourceCommitSha||'')){
+     fixPanel.appendChild(paragraph('ルール修復の実ソースコミット：'+
+      applied.sourceCommitSha.slice(0,12)+'／修復'+(applied.improvements?.length||0)+
+      '件。デプロイはPages公開SHAとの照合が別途必要。','status'));
+     for(const improvement of (applied.improvements||[]).slice(0,4))
+      fixPanel.appendChild(paragraph(improvement.rule+'：'+improvement.file+
+       '（'+(improvement.qa==='passed'?'修正後QA合格':'QA未確認')+'）','note'));
+     fixPanel.appendChild(makeLink('修復ソースの差分を見る',
+      GH+'/commit/'+applied.sourceCommitSha,true));
+    }else fixPanel.appendChild(paragraph(
+     '既知ルールによる実コード修復・mainコミットの公開記録は未確認。起動成功だけで改善済みにしません。',
+     'note'));
+   }catch(_error){
+    fixPanel.appendChild(paragraph(
+     'ルール自己修復の本編採用証跡はまだ公開されていません。実行結果はActions履歴で確認。',
+     'note'));
+   }
+   v.changesList?.appendChild(fixPanel);
+   const evolutionPanel=tag('div','improvement-row');
+   evolutionPanel.appendChild(makeLink('継続品質進化：顔・髪・衣装 自動探索／実行履歴',
+    GH+'/actions/workflows/quality-evolution-loop.yml',true));
+   try{
+    const history=await fetchJSON('./data/quality-evolution/history.json?ts='+Date.now());
+    const changes=Array.isArray(history?.acceptedChanges)?history.acceptedChanges:[];
+    const panelIntro=changes.length?
+     '品質探索による実ソース採用：'+changes.length+'件（FPSはCI仮想GPU、FF15外観未承認）':
+     '品質探索による採用：0件。候補テストだけでは品質改善・デプロイと判定しません。';
+    evolutionPanel.appendChild(paragraph(panelIntro,'status'));
+    for(const change of changes.slice(-5).reverse()){
+     if(!/^[0-9a-f]{40}$/.test(change.sourceSha||''))continue;
+     const before=Number(change.proxyBefore),after=Number(change.proxyAfter);
+     const proxy=Number.isFinite(before)&&Number.isFinite(after)?
+      '3D幾何指標 '+before.toFixed(2)+' → '+after.toFixed(2):
+      '幾何指標未検証';
+     const measured=Number.isFinite(change.gameFpsBaseline)&&Number.isFinite(change.gameFpsCandidate)?
+      'CI FPS '+change.gameFpsBaseline+' → '+change.gameFpsCandidate:
+      'FPS前後比較なし';
+     evolutionPanel.appendChild(paragraph(change.domain+'：'+
+      proxy+'／'+measured+'／GLB新規生成なし','note'));
+     evolutionPanel.appendChild(makeLink('採用したソースコミット '+change.sourceSha.slice(0,10),
+      GH+'/commit/'+change.sourceSha,true));
+    }
+   }catch(_e){
+    evolutionPanel.appendChild(paragraph('品質探索の採用履歴は未公開。候補結果はActionsの実行記録を参照。','note'));
+   }
+   v.changesList?.appendChild(evolutionPanel);
+   // Each lane records independent verification; actual Android never inferred.
+   const seen=new Set();
+   for(const row of [...audit.history].reverse()){
+    const q=row.gameQuality;
+    if(!q?.lane||seen.has(q.lane))continue;seen.add(q.lane);
+    const b=q.browser||{},comparison=q.comparison||{};
+    const measured=b.status==='measured_ci_fps'&&Number.isFinite(b.fps);
+    const metric=measured?
+     'CI仮想GPU FPS '+b.fps+'／P95 '+(b.p95Ms??'未計測')+'ms／描画 '+(b.drawCalls??'未計測'):
+     b.status==='boot_verified_no_fps'?'1000対1000の起動を検証（FPS未計測）':
+     b.status==='failed'?'ゲーム実行QA失敗：'+String(b.error||'詳細はActions').slice(0,100):
+     '実ブラウザFPS未計測';
+    const del=comparison.comparable?comparison.delta||{}:null;
+    const delta=del&&Number.isFinite(del.fps)?
+     '｜前回同条件比 FPS '+(del.fps>=0?'+':'')+del.fps+
+     '／P95 '+(Number.isFinite(del.p95Ms)?(del.p95Ms>=0?'+':'')+del.p95Ms:'未計測')+'ms':
+     '｜前後比較：同条件データなし';
+    const line=tag('div','improvement-row');
+    line.appendChild(paragraph('【'+(q.label||q.lane)+'】'+
+      (q.staticPassed?'静的QA合格':'静的QA失敗')+'｜'+metric+delta+
+      '｜実機Android未測定','status'));
+    if(typeof row.runUrl==='string'&&row.runUrl.startsWith(GH+'/actions/runs/'))
+     line.appendChild(makeLink('実行ログ',row.runUrl,true));
+    v.changesList?.appendChild(line);
+   }
+   const lastLane=last.gameQuality;
+   const browser=lastLane?.browser||{};
+   const comparison=lastLane?.comparison||{};
+   const fps=Number.isFinite(browser.fps)?browser.fps+' (CI仮想GPU)':'未測定';
+   const change=comparison.comparable&&Number.isFinite(comparison.delta?.fps)?
+    (comparison.delta.fps>0?'増加 ':comparison.delta.fps<0?'低下 ':'差分なし ')+
+      Math.abs(comparison.delta.fps)+' FPS':'比較データ不足';
+   v.progressSummary.textContent='直近6担当：'+(lastLane?.label||'不明')+
+    '／'+(lastLane?.staticPassed?'静的QA合格':'静的QA未合格')+
+    '／FPS '+fps+'／前後比較 '+change+
+    '／JSエラー '+(Number.isFinite(browser.runtimeErrors)?browser.runtimeErrors:'未測定')+
+    '件。自動ソース変更 '+(last.sourceCommits||0)+
+    '件、GLB '+(last.generatedGLBs||0)+'件。'+proof.message+
+    '。実機FPS・FF15外観合格は未確認。';
+  }
+  const health=ui?.health;
+  if(health){
+   health.metrics.textContent='最新実行：ソース変更'+lastCount+'ファイル／自動コミット'+
+    (last.sourceCommits||0)+'件／GLB '+glbs+'件 ／ 最新の過去コミット '+
+    (hasSource?lastSource.mainAfterSha.slice(0,8):'未確認');
+   const failure=Array.isArray(last.attempts)?last.attempts.filter(x=>
+    ['conflict','error','safety_rejected'].includes(x.status)).slice(0,3):[];
+   health.blocker.textContent='未達：'+(failure.length?
+    failure.map(x=>'PR #'+x.pr+' '+x.status).join(' ／ '):
+    '実描画・Android品質・公開採用の証跡が不足');
+   health.speed.textContent='自走出力：'+last.status+
+    ' ／ 実3Dの品質合格はWebGL・動作・FPSの別検証が必要';
+  }
+ }));
+}
+/** The existing faceHair self-drive journal and the NEW evolutionary
+ * geometry/FPS optimizer are different workflows. Do not show the old
+ * 12:39 self-drive timestamp as if it were the last quality-evolution run.
+ * The optimizer writes raw main JSON after EVERY run, including rejections;
+ * no Pages redeployment is necessary just to show a blocked run.
+ */
+async function updateEvolutionResults(){
+ const docs=await Promise.all(['face','hair','outfit'].map(async domain=>{
+  const url='https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/'+
+   'data/quality-evolution/runs/'+domain+'.json?ts='+Date.now();
+  try{
+   const response=await fetchJSON(url);
+   return {domain,data:response?.schemaVersion===1&&response.domain===domain?
+     response.latest:null};
+  }catch(error){return {domain,data:null,error:String(error.message||error)}}
+ }));
+ const grouped={faceHair:docs.filter(x=>x.domain==='face'||x.domain==='hair'),
+  outfit:docs.filter(x=>x.domain==='outfit'),
+  gameQuality:docs};
+ for(const [group,entries] of Object.entries(grouped)){
+  const progress=elements.get(group)?.progress;
+  if(!progress?.changesList)continue;
+  const title=tag('div','improvement-row');
+  title.appendChild(paragraph('品質進化バッチ：実3D候補の検査・採否（従来の自走バッチとは別）','status'));
+  title.appendChild(makeLink('顔・髪・衣装のGitHub Actions実行履歴',
+   GH+'/actions/workflows/quality-evolution-loop.yml',true));
+  progress.changesList.prepend(title);
+  let freshest=null;
+  for(const {domain,data,error} of entries){
+   const panel=tag('div','improvement-row');
+   const label={face:'顔／眼球の奥行き',hair:'髪／頭皮根元',outfit:'衣装／PBR素材'}[domain];
+   if(data&&typeof data.startedAt==='string'&&
+    Number.isFinite(Date.parse(data.startedAt))){
+    const all=Array.isArray(data.candidates)?data.candidates:[];
+    const accepted=data.sourceCommitSha&&/^[0-9a-f]{40}$/.test(data.sourceCommitSha);
+    const qa=all.filter(x=>x.qaPassed===true).length;
+    const blocked=data.status==='blocked_browser_baseline';
+    const state=accepted?'実ソース採用済み':
+     blocked?'実WebGLのFPS計測失敗・採用保留':
+     data.status==='no_safe_measured_improvement'?'採用できる候補なし':
+     data.status==='baseline_generator_failed'||data.status==='baseline_regression_failed'?
+      'モデル/静的QA失敗':
+      data.status==='disabled_by_batch_center'?'設定OFF':'今回採用0件（'+data.status+'）';
+    panel.appendChild(paragraph(label+'：'+state+' ／ '+TIME(data.startedAt)+
+     ' ／ 候補'+all.length+'件、個別QA通過'+qa+'件','status'));
+    const baselineMeasured=data.baselineBrowserStatus==='measured_ci_fps'&&
+     Number.isFinite(data.baselineBrowserFps)&&data.baselineBrowserFps>0;
+    panel.appendChild(paragraph(baselineMeasured?
+     '50対50・CI仮想GPU基準 FPS '+data.baselineBrowserFps+
+      '／P95 '+(data.baselineBrowserP95Ms??'未計測')+'ms／描画 '+
+      (data.baselineBrowserDrawCalls??'未計測')+'／JSエラー '+
+      (data.baselineBrowserRuntimeErrors??'未計測'):
+     '50対50・CI仮想GPU基準FPS未計測（改善・合格とは判定しません）','note'));
+    const candidates=all.slice(0,3).map(x=>{
+     const v=Number.isFinite(x.value)?x.value:'不明';
+     return String(v)+'→'+({rejected:'不採用',
+      blocked_browser_baseline:'FPS比較不可',blocked_browser_or_fps:'FPS条件未達',
+      accepted_candidate:'採用候補',regression_failed:'テスト失敗',
+      probe_exception:'モデル検査失敗'}[x.status]||x.status)+
+      (Number.isFinite(x.fps)?'／CI FPS '+x.fps+'・P95 '+
+       (x.p95Ms??'未計測')+'ms・描画 '+(x.drawCalls??'未計測'):'');
+    });
+    if(candidates.length)panel.appendChild(paragraph('実測候補：'+candidates.join(' ／ '),'note'));
+    if(blocked){
+     panel.appendChild(paragraph('停止要因：'+
+      String(data.baselineBrowserError||'戦闘画面をCIで起動できず、FPSを取得できませんでした').slice(0,230),
+      'note'));
+    }
+    if(accepted)panel.appendChild(makeLink('実モデル採用のコミット',
+     GH+'/commit/'+data.sourceCommitSha,true));
+    if(typeof data.runUrl==='string'&&data.runUrl.startsWith(GH+'/actions/runs/'))
+     panel.appendChild(makeLink('今回の実行ログ',data.runUrl,true));
+    if(!freshest||Date.parse(data.startedAt)>Date.parse(freshest.startedAt))
+     freshest={...data,domain,label,state};
+   }else{
+    panel.appendChild(paragraph(label+'：本番実行の結果台帳がまだありません。'+
+     (error?'（記録の取得失敗）':''),'note'));
+   }
+   progress.changesList.prepend(panel);
+  }
+  // The old self-drive can still be valuable, but it must not hide newer
+  // executed geometry QA or claim green Pages == successful 3D improvement.
+  if(freshest&&group!=='gameQuality'){
+   progress.current.textContent='品質進化：'+freshest.label+'・'+freshest.state+
+    ' ／ 従来自走：'+progress.current.textContent;
+   progress.progressTime.textContent='品質進化の最新実行：'+
+    TIME(freshest.startedAt)+' ／ '+progress.progressTime.textContent;
+   const inspected=(freshest.candidates||[]).length;
+   const accepted=Number(Boolean(freshest.sourceCommitSha));
+   progress.progressSummary.textContent='品質進化：実3D候補'+inspected+
+    '件／新規採用コミット'+accepted+'件／'+
+    (freshest.baselineBrowserStatus==='measured_ci_fps'&&
+     Number.isFinite(freshest.baselineBrowserFps)?
+     '50対50 CI WebGL FPS '+freshest.baselineBrowserFps+
+      '・P95 '+(freshest.baselineBrowserP95Ms??'未計測')+'ms':
+     'CI WebGL FPS測定不能')+
+    '／実機Android FPS・FF15外観未承認。従来自走：'+
+    progress.progressSummary.textContent;
   }
  }
 }
@@ -623,29 +949,100 @@ async function updateRuns({request=false}={}){
   }
  }
 }
+/** A green Actions job proves that the runner executed; it never proves
+ * a new 3D mesh, game-quality gain or a successful model commit.
+ * Report EVERY watched pipeline for each of the 7 groups; do not let the
+ * older character QA hide failed FPS or evolution-run evidence.
+ */
 async function updateRecoverySnapshot(){
  try{
-  const evidence=await fetchJSON('./data/batch-regression-runtime.json?ts='+Date.now());
-  if(evidence.schemaVersion!==1||!Array.isArray(evidence.workflows))return;
-  for(const g of groups){
-   const view=elements.get(g.id),run=evidence.workflows.find(x=>x.groups?.includes(g.id)&&x.enabled);
-   if(!view||!run)continue;
-   const status=run.status==='success'?'Actions成功（造形未承認）':
-    run.status==='api_error'?'GitHub API障害':run.status==='failure'?'Actions失敗':
-    run.status==='in_progress'?'実行中':run.status==='queued'?'待機中':run.status||'未確認';
-   const recovery='回帰監視：'+status+
-    (run.action&&run.action!=='none'?' ／ 復旧：'+run.action:'')+
-    ' ／ 監視更新 '+TIME(evidence.checkedAt);
-   if(view.activity)view.activity.textContent=recovery;
-   if(view.log&&run.runUrl)view.log.href=run.runUrl;
-   if(view.progress?.progressTime)view.progress.progressTime.textContent+=' ／ '+recovery;
+  // GitHub-token audit commits do not automatically start GitHub Pages.
+  // Prefer the current main's published JSON, and fall back to the bundled
+  // Pages copy only when public raw content cannot be fetched.
+  let evidence;
+  try{
+   evidence=await fetchJSON('https://raw.githubusercontent.com/'+
+    'yamadayoshitaka/hai-gin-rpg/main/data/batch-regression-runtime.json?ts='+Date.now());
+  }catch(_error){
+   evidence=await fetchJSON('./data/batch-regression-runtime.json?ts='+Date.now());
   }
+  if(evidence.schemaVersion!==1||!Array.isArray(evidence.workflows))return;
+  const checkedAt=Date.parse(evidence.checkedAt);
+  const auditOld=!Number.isFinite(checkedAt)||Date.now()-checkedAt>100*60000;
+  const aliases={
+   'character-six-lane.yml':'人物・衣装QA',
+   'creature-six-lane.yml':'敵・召喚QA',
+   'world-six-lane.yml':'ワールドQA',
+   'game-quality-six-lane.yml':'本編FPS・実行QA',
+   'quality-evolution-loop.yml':'顔・髪・衣装の品質探索',
+   'batch-rule-self-heal.yml':'既知エラー自己修復',
+   'batch-self-drive.yml':'旧PR実ソース移植',
+   'story-sequential-missing-batch.yml':'漫画不足画像補完',
+   'story-cloudflare-free-daily.yml':'Cloudflare画像枠',
+   'story-chapter1-free-complete-draft-production.yml':'第1章画像生成'
+  };
+  const summarize=row=>{
+   const age=Date.now()-Date.parse(row.lastStartedAt||'');
+   const overdue=Number.isFinite(age)&&age>Number(row.maxAgeMinutes||120)*60000;
+   const label=aliases[row.workflow]||row.workflow;
+   let state='実行記録なし';
+   if(row.status==='disabled_by_owner')state='ユーザー停止';
+   else if(row.status==='api_error')state='GitHub API障害（起動状況未確認）';
+   else if(['queued','in_progress','waiting','pending'].includes(row.status))state='実行中・待機中';
+   else if(row.status==='failure'||row.status==='timed_out')state='最終実行失敗';
+   else if(row.status==='success')state=overdue?'定期実行が遅延（過去のQA成功）':'QA起動成功（実改修は別判定）';
+   else if(row.status==='cancelled')state='前回キャンセル';
+   if(row.decision==='dispatch')state='定期実行欠落：'+state;
+   if(row.action==='dispatch_missing_schedule')state+='／復旧起動を要求';
+   if(row.action==='dispatch_fixed_latest_main')state+='／旧コミットの再試行を中止、最新mainで再起動を要求';
+   if(row.action==='rerun_failed_jobs_once')state+='／失敗ジョブ再試行を要求';
+   if(row.action==='deferred_bounded_recovery_budget')state+='／次回復旧枠へ繰越';
+   if(row.action?.startsWith('escalated'))state+='／修正Issueへ引継ぎ';
+   if(row.error)state+='／'+String(row.error).slice(0,90);
+   return label+'：'+state+'（最終 '+TIME(row.lastStartedAt)+')';
+  };
+  let healthy=0,delayed=0,failed=0,disabled=0;
+  for(const g of groups){
+   const view=elements.get(g.id);
+   if(!view)continue;
+   const rows=evidence.workflows.filter(x=>Array.isArray(x.groups)&&
+    x.groups.includes(g.id));
+   if(!rows.length){
+    view.activity.textContent='この系統の自動復旧監視が未登録（稼働確認不可）';
+    continue;
+   }
+   const enabled=rows.filter(x=>x.enabled);
+   const troubled=enabled.filter(x=>x.status==='api_error'||
+    ['failure','timed_out'].includes(x.status)||
+    ['dispatch','escalate','stale'].includes(x.decision)||
+    x.action==='deferred_bounded_recovery_budget');
+   if(!enabled.length)disabled++;
+   else if(troubled.length) {
+    delayed++;
+    if(troubled.some(x=>['failure','timed_out','api_error'].includes(x.status)))failed++;
+   }else healthy++;
+   const report=rows.map(summarize).join(' ／ ');
+   const caption=(auditOld?'監視記録が古い。最新実行は未確認。':'回帰監視（最終取得 '+TIME(evidence.checkedAt)+'）')+
+    ' ／ '+report;
+   view.activity.textContent=caption;
+   // The oldest human QA result is not a useful link when the FPS
+   // optimizer is the failing dependency. Prefer a troubled run.
+   const linked=enabled.find(x=>x.status==='failure'||x.status==='api_error')||
+    enabled.find(x=>x.decision==='dispatch')||enabled[0];
+   if(view.log&&linked?.runUrl)view.log.href=linked.runUrl;
+   if(view.progress?.progressTime){
+    const original=view.progress.progressTime.textContent.split(' ／ 回帰監視（')[0]
+     .split(' ／ 監視記録が古い。')[0].split(' ／ 回帰監視：')[0];
+    view.progress.progressTime.textContent=original+' ／ '+caption;
+   }
+  }
+  $('activeCount').textContent=(auditOld?'監視台帳が古い：':'最新の回帰監視：')+
+   healthy+'系統の直近QA実行／'+delayed+'系統の遅延・要対応／'+
+   disabled+'系統OFF（うち失敗・API障害 '+failed+'系統）';
  }catch(_error){
-  // First recovery run may not have published evidence yet.
-  // Do not infer that scheduled Actions or actual model changes failed.
+  $('activeCount').textContent='回帰監視データを取得できません（未起動と断定しません）';
  }
 }
-
 async function updateWorldSix(){
  try{
   const catalog=await fetchJSON('./data/world-quality/catalog-targets.json?ts='+Date.now());
@@ -688,7 +1085,7 @@ async function updateWorldSix(){
 async function start(){
  try{
   const j=await fetchJSON('./data/hourly-batch-dashboard.json');
-  if(!Array.isArray(j.groups)||j.groups.length!==6)throw Error('6系統の設定が不正');
+  if(!Array.isArray(j.groups)||j.groups.length!==7)throw Error('7系統の設定が不正');
   $('cards').replaceChildren();groups.push(...j.groups);$('groupCount').textContent=groups.length+'系統';
   for(const g of groups)createCard(g);
   setupExpressionSelector();setupDisplaySelector();

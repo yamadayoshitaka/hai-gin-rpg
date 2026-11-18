@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "category": "creatureMonster",
+  "source": "GitHub Actions verified autonomous run journal",
+  "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
+  "latest": {
+    "checkedAt": "2026-11-18T09:37:58.220Z",
+    "category": "creatureMonster",
+    "status": "source_committed_main",
+    "mainBeforeSha": "81223cb85b9053a05f1c7dc3d1f4a9d00feee88d",
+    "mainAfterSha": "60492275d39ebafb5c11c6e23c83d2986c5cd495",
+    "pr": 663,
+    "sourceCommits": 1,
+    "modifiedSourceFiles": 1,
+    "sourceFiles": [
+      "src/creature-face-volume.js"
+    ],
+    "qaStatus": "passed",
+    "pagesDispatch": "awaiting_release_dispatch",
+    "generatedGLBs": 0,
+    "webglApproved": false,
+    "androidFpsVerified": false,
+    "error": null,
+    "issueUrl": null,
+    "gameQuality": null,
+    "attempts": [
+      {
+        "pr": 663,
+        "sha": "2d411e1ea02308efee0e9d738354b9066c052e52",
+        "status": "merged_to_main",
+        "reason": ""
+      }
+    ],
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44277678336"
+  },
+  "latestSourceCommit": {
+    "checkedAt": "2026-11-18T09:37:58.220Z",
+    "category": "creatureMonster",
+    "status": "source_committed_main",
+    "mainBeforeSha": "81223cb85b9053a05f1c7dc3d1f4a9d00feee88d",
+    "mainAfterSha": "60492275d39ebafb5c11c6e23c83d2986c5cd495",
+    "pr": 663,
+    "sourceCommits": 1,
+    "modifiedSourceFiles": 1,
+    "sourceFiles": [
+      "src/creature-face-volume.js"
+    ],
+    "qaStatus": "passed",
+    "pagesDispatch": "awaiting_release_dispatch",
+    "generatedGLBs": 0,
+    "webglApproved": false,
+    "androidFpsVerified": false,
+    "error": null,
+    "issueUrl": null,
+    "gameQuality": null,
+    "attempts": [
+      {
+        "pr": 663,
+        "sha": "2d411e1ea02308efee0e9d738354b9066c052e52",
+        "status": "merged_to_main",
+        "reason": ""
+      }
+    ],
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44277678336"
+  },
+  "history": [
+    {
+      "checkedAt": "2026-11-18T09:37:58.220Z",
+      "category": "creatureMonster",
+      "status": "source_committed_main",
+      "mainBeforeSha": "81223cb85b9053a05f1c7dc3d1f4a9d00feee88d",
+      "mainAfterSha": "60492275d39ebafb5c11c6e23c83d2986c5cd495",
+      "pr": 663,
+      "sourceCommits": 1,
+      "modifiedSourceFiles": 1,
+      "sourceFiles": [
+        "src/creature-face-volume.js"
+      ],
+      "qaStatus": "passed",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": null,
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 663,
+          "sha": "2d411e1ea02308efee0e9d738354b9066c052e52",
+          "status": "merged_to_main",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44277678336"
+    }
+  ]
+}

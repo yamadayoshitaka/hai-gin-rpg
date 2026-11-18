@@ -113,8 +113,11 @@ for(const id of ['m001','m004','m006','m032','m033','m034','m035','m043','m045']
      assert.ok(object.parent?.isGroup,'Claw socket not attached to animated parent');
    }
  });
- if(['m001','m004','m006','m043'].includes(id))
+ if(['m001','m004','m043'].includes(id))
   assert.ok(sockets>=2,'No embedded nails for '+id);
+ if(id==='m006')
+  assert.equal(sockets,0,
+   'Protected m006 keeps its current panther donor topology; new claw sockets require a separately approved model');
  if(id==='m034'){
   const find=name=>model.getObjectByName(name);
   for(const side of ['L','R']){

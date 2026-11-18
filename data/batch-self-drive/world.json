@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "category": "world",
+  "source": "GitHub Actions verified autonomous run journal",
+  "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
+  "latest": {
+    "checkedAt": "2026-11-18T08:33:31.954Z",
+    "category": "world",
+    "status": "source_committed_main",
+    "mainBeforeSha": "7f2744c792ec739123bd2dc169c7273cb10cb372",
+    "mainAfterSha": "68daecdbb6497d7ffa996836c36194a17e394fad",
+    "pr": 659,
+    "sourceCommits": 1,
+    "modifiedSourceFiles": 1,
+    "sourceFiles": [
+      "src/object-catalog.js"
+    ],
+    "qaStatus": "passed",
+    "pagesDispatch": "awaiting_release_dispatch",
+    "generatedGLBs": 0,
+    "webglApproved": false,
+    "androidFpsVerified": false,
+    "error": null,
+    "issueUrl": null,
+    "gameQuality": null,
+    "attempts": [
+      {
+        "pr": 659,
+        "sha": "352c4f17d821ca9688eda50d4f2deeb86ad73815",
+        "status": "merged_to_main",
+        "reason": ""
+      }
+    ],
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44267926249"
+  },
+  "latestSourceCommit": {
+    "checkedAt": "2026-11-18T08:33:31.954Z",
+    "category": "world",
+    "status": "source_committed_main",
+    "mainBeforeSha": "7f2744c792ec739123bd2dc169c7273cb10cb372",
+    "mainAfterSha": "68daecdbb6497d7ffa996836c36194a17e394fad",
+    "pr": 659,
+    "sourceCommits": 1,
+    "modifiedSourceFiles": 1,
+    "sourceFiles": [
+      "src/object-catalog.js"
+    ],
+    "qaStatus": "passed",
+    "pagesDispatch": "awaiting_release_dispatch",
+    "generatedGLBs": 0,
+    "webglApproved": false,
+    "androidFpsVerified": false,
+    "error": null,
+    "issueUrl": null,
+    "gameQuality": null,
+    "attempts": [
+      {
+        "pr": 659,
+        "sha": "352c4f17d821ca9688eda50d4f2deeb86ad73815",
+        "status": "merged_to_main",
+        "reason": ""
+      }
+    ],
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44267926249"
+  },
+  "history": [
+    {
+      "checkedAt": "2026-11-18T08:33:31.954Z",
+      "category": "world",
+      "status": "source_committed_main",
+      "mainBeforeSha": "7f2744c792ec739123bd2dc169c7273cb10cb372",
+      "mainAfterSha": "68daecdbb6497d7ffa996836c36194a17e394fad",
+      "pr": 659,
+      "sourceCommits": 1,
+      "modifiedSourceFiles": 1,
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "qaStatus": "passed",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": null,
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 659,
+          "sha": "352c4f17d821ca9688eda50d4f2deeb86ad73815",
+          "status": "merged_to_main",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44267926249"
+    }
+  ]
+}

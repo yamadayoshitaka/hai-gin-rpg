@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
 
@@ -100,7 +101,7 @@ export function v71EyeDepthFromEyeliner({upperZ,lowerZ,corneaZ,eyeRadius,eyeDept
  // establish the optical surface with a small upper-lid preference.
  const eyelinerReferenceZ=upper*.56+lower*.44;
  // Sclera and iris should be just behind eyeliner, never in front of it.
- const targetInsetRatio=.031-.020*clamp(Number(eyeDepth)||0,-.3,.85);
+ const targetInsetRatio=EVOLUTION_PROFILE.face.eyeInsetRatio-.020*clamp(Number(eyeDepth)||0,-.3,.85);
  const targetCorneaZ=eyelinerReferenceZ-radius*targetInsetRatio;
  // The retired ±0.17R cap left markedly sunken real-GLB eyes unrepaired.
  // Permit a full fit within a bounded 0.85R anatomical correction.

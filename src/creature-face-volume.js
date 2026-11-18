@@ -45,6 +45,15 @@ const overrides=Object.freeze({
  // than the shared beast mask. Keep the smooth skull source mesh.
  m001:Object.freeze({browDepth:.014,orbitalDepth:.031,
    cheekDepth:.049,snoutDepth:.022,occipitalDepth:.025}),
+ // Reuse m001's continuous skull/orbit relief for its canine descendants;
+ // vary muzzle and zygomatic projection within the existing vertex budget.
+ // This changes the source loft itself, not a painted eye or floating cheek.
+ m002:Object.freeze({browDepth:.014,orbitalDepth:.031,
+   cheekDepth:.049,snoutDepth:.022,occipitalDepth:.025}),
+ m003:Object.freeze({browDepth:.015,orbitalDepth:.030,
+   cheekDepth:.046,snoutDepth:.025,occipitalDepth:.026}),
+ m004:Object.freeze({browDepth:.016,orbitalDepth:.029,
+   cheekDepth:.047,snoutDepth:.024,occipitalDepth:.027}),
  m032:Object.freeze({orbitalDepth:.049,cheekDepth:.060,occipitalDepth:.035}),
  m034:Object.freeze({orbitalDepth:.029,cheekDepth:.044,snoutDepth:.033}),
  m031:Object.freeze({cheekDepth:.061,jawDepth:.036}),

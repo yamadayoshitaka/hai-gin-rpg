@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "asOf": "2026-11-17T12:01:20.271Z",
   "tz": "Asia/Tokyo",
-  "description": "顔・髪／衣装／オブジェクト／モンスター／召喚獣／漫画の6系統。オブジェクト旧6担当並列QAを再利用。旧人物一括・旧モンスター一括は停止継続。ChatGPT各系統1回/時、GitHub QAは人物/獣6回/時・オブジェクト6担当並列/時。実3Dの改善とQA合格、main/Pages採用を分けて管理。 2026-11-17: ChatGPT予定枠5件のため敵50体・召喚58体の改修タスクを統合（GitHub種族別QA・本編採用判定は分離）。旧召喚専用ChatGPTタスクは停止、実オブジェクト60体の定期タスク再開。",
+  "description": "顔・髪／衣装／オブジェクト／モンスター／召喚獣／漫画の6系統。オブジェクト旧6担当並列QAを再利用。旧人物一括・旧モンスター一括は停止継続。ChatGPT各系統1回/時、GitHub QAは人物/獣6回/時・オブジェクト6担当並列/時。実3Dの改善とQA合格、main/Pages採用を分けて管理。 2026-11-17: ChatGPT予定枠5件のため敵50体・召喚58体の改修タスクを統合（GitHub種族別QA・本編採用判定は分離）。旧召喚専用ChatGPTタスクは停止、実オブジェクト60体の定期タスク再開。 2026-11-18: 全モデル→ゲーム実画質/FPS/エラーの横断回帰バッチをGitHub Actionsの6レーンとして別設置。",
   "groups": [
     {
       "id": "faceHair",
@@ -135,6 +135,31 @@
       "lastResult": "2026-11-15T14:23:18Z ChatGPT回帰実ソース修正PR #415、画像0枚。2026-11-15T14:44:01Z GitHub Free画像生成ジョブ起動。新画像の成功・仮登録は未確認。",
       "blockedReason": "2026-11-14のCloudflare実画像生成は無料枠上限(HTTP 429/4006)で新規0枚。翌日の無料枠の利用可否は次の生成ジョブ結果で判定。ChatGPT回帰定期タスクは現在ON。",
       "automationId": "6af8e09654d881918c86196af8efb312"
+    },
+    {
+      "id": "gameQuality",
+      "name": "ゲーム全体・画質/FPS/エラー 自己回帰",
+      "subtitle": "全モデル→戦闘50対50／1000対1000・画質・LOD・FPS・実行時エラー",
+      "source": "GitHub Actions 毎時6回のゲーム本編横断QA＋安全な差分復旧",
+      "autoEnabled": true,
+      "time": "毎時05/15/25/35/45/55分（計6レーン／GitHub遅延あり）",
+      "last": null,
+      "preview": "tactics-wireframe.html?army=1000",
+      "secondary": "character-quality-pipeline.html",
+      "secondaryName": "モデル→本編の接続確認",
+      "workflow": "game-quality-six-lane.yml",
+      "workflowName": "全ゲーム品質6担当／実FPS・エラー回帰",
+      "previewGroup": "gameQuality",
+      "schedulerEnabled": true,
+      "details": "①モデル本編接続②画質・PBR③動作・騎乗・接地④FPS/P95・描画⑤50/1000大軍戦LOD・メモリ⑥ゲーム起動JS/WebGLエラー。実ゲームの回帰QA、関連する安全なモデルランタイム修正PRの移植、競合Issue引継ぎを行う。 【品質進化パイロット追加】毎時08/28/48分に顔・髪・衣装それぞれ最大3種類の調整候補を実3Dで試し、静的QAと50対50 WebGL FPS・P95の比較を通過した候補だけコミット/公開。採用なしなら0件と表示。",
+      "goal": "改修の前後で同一シナリオのCIソフトウェアWebGL測定値を比較し、ソース変更ファイル・コミットSHA・失敗テスト・WebGL画像証跡を表示。Android実測値と混同しない。品質未改善を成功としない。 幾何指標とCI仮想GPU FPSはFF15美観・Android実機FPSではない。PBR衣装は承認済み画像の客観比較がない間、探索はしても自動採用しない。",
+      "automationSchedule": "GitHub Actions 6回/時（追加のChatGPT定期枠は使用しない）",
+      "qualityEvolutionWorkflow": "quality-evolution-loop.yml",
+      "qualityEvolutionMinutesUtc": [
+        8,
+        28,
+        48
+      ]
     }
   ]
 }

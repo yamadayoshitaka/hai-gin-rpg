@@ -1,4 +1,4 @@
-name: Six-group quality center and owner-approved batch instructions
+name: Seven-group quality center and owner-approved batch instructions
 on:
   issues:
     types: [opened]
@@ -53,7 +53,7 @@ jobs:
           # GitHub schedule runs may be dropped or disabled independently of
           # workflow_dispatch. This probe reports states, not a guarantee of
           # six scheduled runs per hour. Only active user-approved groups.
-          node -e "const g=require('./data/batch-center-switches.json').groups;for(const [name,keys] of [['character-six-lane.yml',['faceHair','outfit']],['creature-six-lane.yml',['creatureMonster','creatureSummon']],['world-six-lane.yml',['world']]])if(keys.some(k=>g[k]?.enabled===true))console.log(name)" >/tmp/enabled-quality-workflows
+          node -e "const g=require('./data/batch-center-switches.json').groups;for(const [name,keys] of [['character-six-lane.yml',['faceHair','outfit']],['creature-six-lane.yml',['creatureMonster','creatureSummon']],['world-six-lane.yml',['world']],['game-quality-six-lane.yml',['gameQuality']]])if(keys.some(k=>g[k]?.enabled===true))console.log(name)" >/tmp/enabled-quality-workflows
           while IFS= read -r workflow; do
             [[ -n "${workflow}" ]] || continue
             endpoint="repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}"

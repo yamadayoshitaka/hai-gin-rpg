@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "project": "灰銀のレゾナンス",
+  "description": "実3D生成器の品質探索・採用履歴。CIソフトウェアWebGLの計測値とモデル骨格指標はFF15実画質やPixel端末FPSの保証ではない。候補0件は実品質改善0件として表示する。",
+  "objective": "FF15級を参考にした独自の写実的JRPG 3D品質と50v50〜1000v1000の安定描画",
+  "parameters": {
+    "face": {
+      "label": "アイライン基準の眼球凹み比率",
+      "initial": 0.031,
+      "range": [
+        0.018,
+        0.04
+      ],
+      "caution": "顔の実モデルと正面横顔画像の検証が必要"
+    },
+    "hair": {
+      "label": "頭皮根元の前髪密度倍率",
+      "initial": 1,
+      "range": [
+        1,
+        1.16
+      ],
+      "caution": "メッシュ密度とWebGLパフォーマンスの同時計測が必要"
+    },
+    "outfit": {
+      "label": "衣装PBR素材バンプ強度倍率",
+      "initial": 1,
+      "range": [
+        0.9,
+        1.1
+      ],
+      "caution": "質感の数値的採点不可。承認画像などの客観基準なしでは候補止まり"
+    }
+  },
+  "status": "pilot_active_not_visual_certified",
+  "acceptedChanges": [],
+  "futureGroups": [
+    "creatureMonster",
+    "creatureSummon",
+    "world"
+  ],
+  "visualApprovalRequired": true,
+  "androidFpsMeasured": false,
+  "lastPublishedBy": null
+}

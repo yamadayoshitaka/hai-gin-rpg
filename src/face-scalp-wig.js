@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=44';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
@@ -622,7 +623,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const baseCount=clamp(Math.round(count),48,2400),segments=11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
- const fringeMultiplier=clamp(Number(fineFringeMultiplier)||1,1,4);
+ const fringeMultiplier=clamp((Number(fineFringeMultiplier)||1)*EVOLUTION_PROFILE.hair.fringeRootScale,1,4);
  const fringeExtra=Math.min(2400-baseCount,
   Math.round(baseCount*.08*(fringeMultiplier-1)));
  // Full-body preview needs 3D volume across the shoulders after the
