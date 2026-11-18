@@ -13,7 +13,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const REPO='yamadayoshitaka/hai-gin-rpg';
-const GROUPS=['faceHair','outfit','creatureMonster','world','anime'];
+const GROUPS=['faceHair','outfit','creatureMonster','world','anime','gameQuality'];
 export const PROTECTED_WORLD_FILES=Object.freeze([
  'object-list.html','src/tree-seasons.js','data/world-quality/catalog-targets.json',
  'data/world-quality/production-model-adoption.json'
@@ -38,6 +38,7 @@ export function isAllowedSource(group,file){
   outfit:/^(src\/(?:outfit-maintenance-model|character-system\/(?:rigged-outfit-runtime|garment-coverage-runtime|outfit-surface-policy))\.js)$/,
   creatureMonster:/^(src\/(?:creature-[\w-]+|avian-guardian-sculpt|monster-summon-renderer|monster-[\w-]+)\.js)$/,
   world:/^src\/object-catalog\.js$/,
+  gameQuality:/^src\/(?:battle-frame-pacing|battle-phase-profiler|frame-performance|crowd-performance-budget|battle-rigid-frustum-optimization|stage-static-instancing|mass-battle-real-army|adaptive-battle-resolution|character-system\/battle-visual-pipeline)\.js$/,
   anime:/^NOT_SAFE_TO_AUTO_WRITE_IMAGES$/
  };
  return !!rules[group]?.test(file);
@@ -51,6 +52,7 @@ export function eligiblePr(pr,group){
   outfit:/outfit|wardrobe|garment|armor|costume|cape|衣装|鎧|マント/i,
   creatureMonster:/creature|monster|summon|avian|wolf|feline|beast|モンスター|召喚/i,
   world:/world|object|joinery|prop|door|furniture|木組み|オブジェクト/i,
+  gameQuality:/fps|frame.pac|draw.call|performance|mass.battle|battle.render|battle.lod|frame.budget|ゲーム品質|戦闘描画|回帰修正|webgl.error/i,
   anime:/anime|manga|story|comic|chapter|漫画|物語/i
  };
  return patterns[group]?.test(value)===true;
@@ -107,7 +109,8 @@ function qualityChecks(group){
   faceHair:['qa/studio-model-route-contract.test.mjs','qa/character-six-lane-contract.test.mjs'],
   outfit:['qa/studio-model-route-contract.test.mjs','qa/garment-coverage-regression.test.mjs'],
   creatureMonster:['qa/creature-six-lane-contract.test.mjs'],
-  world:['qa/object-list-catalog.test.mjs','qa/world-object-physical-quality.test.mjs']
+  world:['qa/object-list-catalog.test.mjs','qa/world-object-physical-quality.test.mjs'],
+  gameQuality:['qa/battle-frame-pacing.test.mjs','qa/crowd-longrun-performance.test.mjs']
  };
  if(!suites[group])return {status:'not_run'};
  const result=tryCommand('node',['--test',...suites[group]],{timeout:240000});
@@ -141,6 +144,36 @@ function resetToMain(){
  * record and must never override this SHA-backed per-category journal.
  * Use Contents API optimistic locking (no rebase, no source-file rewrites).
  */
+function gameQualityFromEvidence(){
+ const pathToReport=process.env.GAME_QUALITY_REPORT||'';
+ if(!pathToReport)return null;
+ const full=path.resolve(ROOT,pathToReport);
+ if(!full.startsWith(path.join(ROOT,'qa-reports','game-quality-six')+path.sep))
+  throw Error('Game quality report must remain inside the six-lane output directory');
+ const raw=JSON.parse(fs.readFileSync(full,'utf8'));
+ if(raw.schemaVersion!==1||!['model','fidelity','motion','frame','scale','runtime'].includes(raw.lane))
+  throw Error('Invalid game quality lane report');
+ return {
+  lane:raw.lane,label:raw.label,sourceFingerprint:raw.sourceFingerprint,
+  staticPassed:raw.staticTestsPassed,staticStatus:raw.status,
+  failedTests:raw.staticTestsPassed?[]:raw.checks,
+  browser:raw.browser||{status:'not_run'},modelSourceModified:raw.modificationsApplied||0,
+  note:'Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.'
+ };
+}
+export function compareGameQualitySamples(previous,current){
+ const a=previous?.gameQuality?.browser,b=current?.gameQuality?.browser;
+ if(!a||!b||a.status!=='measured_ci_fps'||b.status!=='measured_ci_fps'||
+  a.scenario!==b.scenario||a.environment!==b.environment)
+  return {comparable:false,reason:'no matching CI browser before/after sample'};
+ const delta={};
+ for(const key of ['fps','p95Ms','drawCalls','gpuGeometries','gpuTextures','runtimeErrors'])
+  if(Number.isFinite(a[key])&&Number.isFinite(b[key]))
+   delta[key]=Number((b[key]-a[key]).toFixed(2));
+ return {comparable:Object.keys(delta).length>0,delta,
+  fpsImproved:Number.isFinite(delta.fps)?delta.fps>0:null,
+  p95Improved:Number.isFinite(delta.p95Ms)?delta.p95Ms<0:null};
+}
 export function publicRunSummary(report){
  return {
   checkedAt:report.startedAt,category:report.category,
@@ -156,6 +189,7 @@ export function publicRunSummary(report){
   androidFpsVerified:report.androidFpsVerified===true,
   error:report.error||null,
   issueUrl:report.issueUrl||null,
+  gameQuality:report.category==='gameQuality'?gameQualityFromEvidence():null,
   attempts:(report.attempts||[]).map(a=>({
    pr:a.pr,sha:a.sha,status:a.status,reason:a.reason||''
   }))
@@ -184,6 +218,12 @@ async function savePublicRunEvidence(report){
   if(old?.content){
    try{previous=JSON.parse(Buffer.from(old.content.replace(/\s/g,''),'base64').toString('utf8'))}
    catch(error){throw Error('Existing verified audit JSON is malformed: '+error.message)}
+  }
+  if(group==='gameQuality'){
+   const earlier=[...(previous.history||[])].reverse().find(x=>
+    x.gameQuality?.lane===current.gameQuality?.lane&&
+    x.gameQuality?.browser?.status==='measured_ci_fps');
+   current.gameQuality.comparison=compareGameQualitySamples(earlier,current);
   }
   const history=appendVerifiedHistory(previous.history,current);
   const verifiedSource=history.filter(x=>x.sourceCommits>0&&
