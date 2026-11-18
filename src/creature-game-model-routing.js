@@ -43,14 +43,16 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
  })])
 ));
 // Nonhuman wave remains separate from the independent humanoid cosplay
-// workstream. m005/m006 are now in the internal physical donor queue.
+// workstream. m005/m006 are in the internal physical donor queue
+// but remain externally locked. Exclude all manually prioritized IDs from
+// the generic tail so a species is never rebuilt twice in one pass.
 export const MONSTER_REFRESH_PRIORITY=Object.freeze([
  'm002','m003','m004','m005','m006','m007','m008','m009','m010',
  'm011','m012','m013','m014',
  ...MONSTER_CATALOG.map(s=>s.id).filter(id=>
   !humanoids.has(id)&&
   !['m001','m002','m003','m004','m005','m006',
-     'm007','m008','m009','m010'].includes(id))
+     'm007','m008','m009','m010','m011','m012','m013','m014'].includes(id))
 ]);
 export const HUMANOID_MONSTER_REVIEW_QUEUE=Object.freeze(
  HUMAN_MONSTER_IDS.filter(id=>!!GAME_MONSTER_MODEL_REGISTRY[id])
