@@ -951,7 +951,16 @@ async function updateRuns({request=false}={}){
  */
 async function updateRecoverySnapshot(){
  try{
-  const evidence=await fetchJSON('./data/batch-regression-runtime.json?ts='+Date.now());
+  // GitHub-token audit commits do not automatically start GitHub Pages.
+  // Prefer the current main's published JSON, and fall back to the bundled
+  // Pages copy only when public raw content cannot be fetched.
+  let evidence;
+  try{
+   evidence=await fetchJSON('https://raw.githubusercontent.com/'+
+    'yamadayoshitaka/hai-gin-rpg/main/data/batch-regression-runtime.json?ts='+Date.now());
+  }catch(_error){
+   evidence=await fetchJSON('./data/batch-regression-runtime.json?ts='+Date.now());
+  }
   if(evidence.schemaVersion!==1||!Array.isArray(evidence.workflows))return;
   const checkedAt=Date.parse(evidence.checkedAt);
   const auditOld=!Number.isFinite(checkedAt)||Date.now()-checkedAt>100*60000;

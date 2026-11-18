@@ -120,3 +120,12 @@ test('rule repair watchdog can refresh only a tracked-file-clean queued runner',
  assert.match(script,/\['diff','--cached','--quiet'\]/);
  assert.match(script,/\['diff','--quiet'\]/);
 });
+
+test('public batch center reads latest recovery audit directly from current main, not the last Pages build',()=>{
+ const html=fs.readFileSync('batch-monitor.html','utf8');
+ assert.match(html,/raw\.githubusercontent\.com/);
+ assert.match(html,/main\/data\/batch-regression-runtime\.json\?ts=/);
+ assert.match(html,/fetchJSON\('\.\/data\/batch-regression-runtime\.json\?ts=/);
+ assert.match(html,/Date\.now\(\)/);
+ assert.match(html,/async function updateRecoverySnapshot\(\)/);
+});
