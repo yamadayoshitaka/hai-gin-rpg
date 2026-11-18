@@ -649,12 +649,28 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_water_trough_001'){
+   // Realistic stave-built livestock trough: individually beveled horizontal
+   // courses, recessed joints and iron tie straps, while retaining footprint.
    box(2.8*c,.15*c,1.4*c,0,.1*c,0,wood);
+   const staveGeometry=new THREE.BoxGeometry(1,1,1);
+   const jointWood=new THREE.MeshStandardMaterial({color:0x39291d,roughness:.96});
    for(const z of [-.73,.73]){
-    box(2.9*c,.85*c,.13*c,0,.5*c,z*c,wood);
+    for(let course=0;course<3;course++){
+     const y=(.23+course*.28)*c;
+     const plank=new THREE.Mesh(staveGeometry,wood);
+     plank.scale.set(2.9*c,.265*c,.13*c);
+     plank.position.set(0,y,z*c);root.add(plank);
+     if(course<2)box(2.88*c,.014*c,.136*c,0,(.365+course*.28)*c,z*c,jointWood);
+    }
     box(2.96*c,.09*c,.19*c,0,.93*c,z*c,wood);
+    for(const x of [-1.05,1.05]){
+     box(.075*c,.76*c,.155*c,x*c,.53*c,z*c+(z>0?.08:-.08)*c,iron);
+    }
    }
-   for(const x of [-1.4,1.4])box(.14*c,.85*c,1.5*c,x*c,.5*c,0,wood);
+   for(const x of [-1.4,1.4]){
+    for(let course=0;course<3;course++)
+     box(.14*c,.265*c,1.5*c,x*c,(.23+course*.28)*c,0,wood);
+   }
    for(const x of [-1.40,1.40])for(const z of [-.72,.72])
     box(.18*c,1.09*c,.18*c,x*c,.55*c,z*c,wood);
    box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
