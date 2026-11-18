@@ -679,10 +679,22 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const angleB=Math.atan2(b.p.x-crownCenter.x,b.p.z-crownCenter.z);
   return angleA-angleB||a.p.y-b.p.y;
  });
+ // Sort each anatomical zone spatially once. Donor vertex order often
+ // follows triangle strips, so direct low-discrepancy indexing can still
+ // concentrate temple and rear locks into a narrow visible bald patch.
+ // The crown keeps its separate whorl-aware angular ordering.
+ const orderedRoots=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>{
+  if(zone==='crown')return [zone,crownRoots];
+  const pool=pools[zone].slice();
+  const rear=zone.startsWith('back')||zone.startsWith('nape');
+  pool.sort((a,b)=>rear
+   ? a.p.x-b.p.x||a.p.y-b.p.y||a.p.z-b.p.z
+   : a.p.y-b.p.y||a.p.x-b.p.x||a.p.z-b.p.z);
+  return [zone,pool];
+ }));
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=zone==='crown'?crownRoots:
-   rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const pool=rear&&index%3===0?backCenterPools[zone]:orderedRoots[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
