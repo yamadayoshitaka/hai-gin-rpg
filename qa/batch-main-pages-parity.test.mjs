@@ -50,3 +50,12 @@ test('published batch UI exposes fresh main comparison and live journal fallback
   "updateProgress({forceLive:true})"
  ])assert.ok(page.includes(required),'Missing live release feature: '+required);
 });
+
+test('batch monitor inline browser controller has valid JavaScript syntax',()=>{
+ const page=fs.readFileSync('batch-monitor.html','utf8');
+ const start=page.lastIndexOf('<script>'),end=page.lastIndexOf('</script>');
+ assert.ok(start>=0&&end>start,'Batch monitor controller script missing');
+ assert.doesNotThrow(()=>new vm.Script(page.slice(start+'<script>'.length,end),{
+  filename:'batch-monitor.inline.js'
+ }));
+});
