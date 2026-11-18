@@ -673,11 +673,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Sort crown follicles around the whorl before low-discrepancy sampling.
  // Vertex ordering can otherwise bunch all added crown ribbons into one
  // patch, leaving the opposite side bald despite a higher crown budget.
- const crownCenter=center.clone();
+ // Use the style's actual whorl, not the bounding-box centre, as the
+ // follicle distribution origin. An off-centre part otherwise leaves a
+ // sparse crescent around the whorl even when the crown has enough roots.
+ const crownCenter=whorl;
  const crownRoots=pools.crown.slice().sort((a,b)=>{
   const angleA=Math.atan2(a.p.x-crownCenter.x,a.p.z-crownCenter.z);
   const angleB=Math.atan2(b.p.x-crownCenter.x,b.p.z-crownCenter.z);
-  return angleA-angleB||a.p.y-b.p.y;
+  return angleA-angleB||
+   a.p.distanceToSquared(crownCenter)-b.p.distanceToSquared(crownCenter);
  });
  // Sort each anatomical zone spatially once. Donor vertex order often
  // follows triangle strips, so direct low-discrepancy indexing can still
