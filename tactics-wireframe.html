@@ -6037,7 +6037,9 @@ function allyItemStocks(){
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
 }
-function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null}={}){
+function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null,turnEnd=false}={}){
+ // The objective-turn item slot is only available after actions resolve.
+ if(objectiveTurnUI&&(!turnEnd||objectiveTurnUI.engine.status().phase!=='report'))return false;
  const id=String(squadId),commandSquad=String(issuerSquadId??squadId),stocks=allyItemStocks();
  if(!automatic&&(!hasSquadCommander(commandSquad)||!canChangeSquadOrder(commandSquad)))return false;
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
@@ -6082,7 +6084,7 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
  }else{
   battleDialogue.push({key:'ally-auto-item:'+id+':'+Math.floor(elapsed),
    speaker:'伝令',kind:'info',priority:42,
-   text:squadName(id)+'が自動で'+supply.name+'を使用：'+effect});
+   text:squadName(id)+(turnEnd?'がターン終了時に':'が自動で')+supply.name+'を使用：'+effect});
  }
  if(supply.kind==='heal'){
   const squadMarker=squadMarkers.get(squadKey(0,id));
@@ -9803,9 +9805,12 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
   }}finally{selectedSquadId=prior;}
  },
  onItem:(groupId,itemId)=>{
-  const target=turnGroupSquads(groupId).find(id=>squadRoster.some(u=>
+  const candidates=turnGroupSquads(groupId).filter(id=>squadRoster.some(u=>
    u.team===0&&u.hp>0&&u.alive!==false&&String(u.squadId)===String(id)));
-  const used=Boolean(target&&performSquadBattleItem(itemId,target,{automatic:true}));
+  const target=ROOM_ITEM_TYPES[itemId]?.kind==='heal'?candidates.find(id=>
+   squadRoster.some(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.hp<u.maxHp)):
+   candidates[0];
+  const used=Boolean(target&&performSquadBattleItem(itemId,target,{automatic:true,turnEnd:true}));
   if(!used)log('第'+groupId+'隊：道具を使用できません。所持数・対象・効果を確認してください。');
   return used;
  },
