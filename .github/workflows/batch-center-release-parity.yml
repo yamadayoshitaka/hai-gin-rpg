@@ -1,0 +1,33 @@
+name: Batch center main/Pages parity regression
+on:
+  pull_request:
+    paths:
+      - 'batch-monitor.html'
+      - 'src/batch-release-parity.js'
+      - 'src/batch-pages-release-gate.js'
+      - 'qa/batch-main-pages-parity.test.mjs'
+      - 'qa/pages-batch-center-live-parity.test.mjs'
+      - '.github/workflows/batch-center-release-parity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'batch-monitor.html'
+      - 'src/batch-release-parity.js'
+      - 'src/batch-pages-release-gate.js'
+      - 'qa/batch-main-pages-parity.test.mjs'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax and latest-main/public-asset provenance
+        run: |
+          node --check src/batch-release-parity.js
+          node --check src/batch-pages-release-gate.js
+          node --test qa/batch-main-pages-parity.test.mjs
