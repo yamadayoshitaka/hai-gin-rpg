@@ -21,7 +21,7 @@
       "reason": "Owner requested object quality six-lane batch restored; human/monster legacy batches remain off"
     },
     "anime": {
-      "enabled": true,
+      "enabled": false,
       "updatedAt": "2026-11-15T08:50:21.054Z",
       "issueNumber": 394
     },
@@ -31,22 +31,22 @@
       "workflow": "character-six-lane.yml"
     },
     "outfit": {
-      "enabled": true,
+      "enabled": false,
       "registeredAt": "2026-11-17",
       "workflow": "character-six-lane.yml"
     },
     "creatureMonster": {
-      "enabled": true,
+      "enabled": false,
       "registeredAt": "2026-11-17",
       "workflow": "creature-six-lane.yml"
     },
     "creatureSummon": {
-      "enabled": true,
+      "enabled": false,
       "registeredAt": "2026-11-17",
       "workflow": "creature-six-lane.yml"
     },
     "gameQuality": {
-      "enabled": true,
+      "enabled": false,
       "registeredAt": "2026-11-18",
       "workflow": "game-quality-six-lane.yml",
       "reason": "Owner requested a separate six-way game-wide visual quality, FPS and runtime error self-regression batch"
