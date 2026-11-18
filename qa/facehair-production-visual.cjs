@@ -70,11 +70,11 @@ function imageAudit(buffer) {
       '--disable-gpu-sandbox'
     ]});
     const page = await browser.newPage({
-      viewport:{width:940,height:880},deviceScaleFactor:1
+      viewport:{width:480,height:720},deviceScaleFactor:1
     });
     const pageErrors=[];
     page.on('pageerror',error=>pageErrors.push(String(error)));
-    await page.goto(ROOT+'/face-mesh-studio.html?preview=1&gender=female',
+    await page.goto(ROOT+'/face-mesh-studio.html?preview=1&qaCapture=1&gender=female',
       {waitUntil:'domcontentloaded',timeout:90000});
     await page.waitForFunction(()=>window.__faceMasterQA?.()?.loaded===true,
       null,{timeout:120000});
@@ -95,17 +95,12 @@ function imageAudit(buffer) {
         assert.ok(metrics.visiblePartMeshes>=2,
           'Visible face has lost its real eye and lid features');
         assert.ok(metrics.wigReport,'No built 3D scalp-anchored wig report');
-        // The render canvas animates on every frame; element.screenshot()
-        // waits for element stability and times out even when WebGL is healthy.
-        // Capture its bounding rect directly without a stability wait.
-        const canvasBox=await page.locator('#faceCanvas').boundingBox();
-        assert.ok(canvasBox&&canvasBox.width>=160&&canvasBox.height>=160,
-          'Real face WebGL canvas is missing or has zero size');
-        const screenshot=await page.screenshot({
-          clip:{x:Math.max(0,canvasBox.x),y:Math.max(0,canvasBox.y),
-            width:canvasBox.width,height:canvasBox.height},
-          animations:'disabled',timeout:40000
-        });
+        // Capture actual Three.js pixels in read-only QA mode. Do not use
+        // browser screenshots on animated WebGL; SwiftShader may time out.
+        const pngData=await page.evaluate(()=>window.__faceQACapture?.());
+        assert.match(pngData||'',/^data:image\/png;base64,/,
+          'Real WebGL frame readback did not return a PNG');
+        const screenshot=Buffer.from(pngData.slice('data:image/png;base64,'.length),'base64');
         const image=imageAudit(screenshot);
         const filename=sex+'-'+view+'.png';
         fs.writeFileSync(path.join(IMAGE_DIR,filename),screenshot);
