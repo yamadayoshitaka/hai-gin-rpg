@@ -28,6 +28,7 @@ on:
       - '.github/workflows/batch-self-drive.yml'
 permissions:
   contents: write
+  actions: write
   issues: write
   pull-requests: write
 concurrency:
