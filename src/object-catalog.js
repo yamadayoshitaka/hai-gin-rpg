@@ -401,18 +401,35 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
   }
   if(id==='town_well_001'){
-   const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,20,1,true),stone);
-   ring.position.y=.48*c;ring.castShadow=true;root.add(ring);
-   const surface=new THREE.Mesh(new THREE.CircleGeometry(1.07*c,24),water);
-   surface.rotation.x=-Math.PI/2;surface.position.y=.52*c;root.add(surface);
-   for(const y of [.12,.50,.96]){
-    const masonry=new THREE.Mesh(new THREE.TorusGeometry(1.19*c,.07*c,7,24),stone);
-    masonry.rotation.x=Math.PI/2;masonry.position.y=y*c;root.add(masonry);
+   // Staggered coursed stonework: 64 tapered masonry blocks, one draw call.
+   // Keep the original 1.2c radius and 0.95c height for collision parity.
+   const courses=4,stonesPerCourse=16,blockHeight=.95*c/courses;
+   const blockGeo=new THREE.BoxGeometry(.43*c,blockHeight*.91,.19*c);
+   const masonry=new THREE.InstancedMesh(blockGeo,stone,courses*stonesPerCourse);
+   const dummy=new THREE.Object3D();
+   for(let course=0;course<courses;course++)for(let n=0;n<stonesPerCourse;n++){
+    const angle=(n+(course%2)*.5)*Math.PI*2/stonesPerCourse;
+    dummy.position.set(Math.sin(angle)*1.11*c,(course+.5)*blockHeight,Math.cos(angle)*1.11*c);
+    dummy.rotation.set(0,angle,0);
+    dummy.updateMatrix();masonry.setMatrixAt(course*stonesPerCourse+n,dummy.matrix);
    }
+   masonry.instanceMatrix.needsUpdate=true;
+   masonry.castShadow=true;masonry.receiveShadow=true;root.add(masonry);
+   const surface=new THREE.Mesh(new THREE.CircleGeometry(1.01*c,24),water);
+   surface.rotation.x=-Math.PI/2;surface.position.y=.52*c;root.add(surface);
+   // Continuous stone coping covers the masonry seam without extra boxes.
+   const coping=new THREE.Mesh(new THREE.TorusGeometry(1.12*c,.085*c,8,32),stone);
+   coping.rotation.x=Math.PI/2;coping.position.y=.96*c;root.add(coping);
    for(const x of [-1,1])box(.19*c,2.6*c,.19*c,x*c,1.5*c,0,wood);
    box(2.4*c,.19*c,.2*c,0,2.75*c,0,wood);
-   const roof=new THREE.Mesh(new THREE.ConeGeometry(1.8*c,1.1*c,4),wood);
-   roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
+   // Two sloped timber roof planes with a real ridge rather than a solid cone.
+   for(const side of [-1,1]){
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(2.55*c,.095*c,1.53*c),wood);
+    roof.rotation.x=side*.48;
+    roof.position.set(0,3.13*c,side*.62*c);
+    roof.castShadow=true;roof.receiveShadow=true;root.add(roof);
+   }
+   box(2.65*c,.13*c,.15*c,0,3.49*c,0,wood);
    // Windlass, suspension rope and tapered bucket, rather than an empty well shell.
    const spindle=new THREE.Mesh(new THREE.CylinderGeometry(.12*c,.12*c,2.14*c,12),wood);
    spindle.rotation.z=Math.PI/2;spindle.position.y=2.23*c;root.add(spindle);
