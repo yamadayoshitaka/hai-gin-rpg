@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '42 * * * *'
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/batch-regression-recovery.mjs'
+      - 'qa/batch-regression-recovery.test.mjs'
+      - 'batch-monitor.html'
+      - '.github/workflows/batch-regression-recovery.yml'
   push:
     branches: [main]
     paths:
@@ -18,7 +24,23 @@ concurrency:
   group: hai-gin-quality-regression-recovery
   cancel-in-progress: false
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate all seven watcher paths, scripts, and stale-batch UI contract
+        run: |
+          node --check scripts/batch-regression-recovery.mjs
+          node --test qa/batch-regression-recovery.test.mjs
   recover:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
