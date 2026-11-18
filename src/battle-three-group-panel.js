@@ -3,7 +3,7 @@ import {threeGroupOverview,reinforceDivision,mergeDivision} from './battle-three
  * The old job list remains in the DOM for targeting and compatibility, hidden
  * until the player expands enemy selection. */
 export function createBattleThreeGroupPanel({
- alliedNav,enemyNav,actors,groupBySquad,initialUnits=[],enemyInitial=0,
+ alliedNav,enemyNav,actors,groupBySquad,initialUnits=[],enemyInitial=0,allowRecompose=true,
  onSquadSelect=()=>{},onStrategy=()=>{},onInspect=()=>{},onReinforce=()=>{},
  onMerge=()=>{},onLog=()=>{}
 }){
@@ -13,12 +13,15 @@ export function createBattleThreeGroupPanel({
  const enemy=document.createElement('button');enemy.type='button';enemy.id='battleEnemyGroupSummary';
  enemyNav.insertBefore(enemy,enemyNav.querySelector('.ribbonList'));
  document.body.classList.add('story-three-group-ui');
- let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,lastPointerAt=-Infinity,oldMarkup='',oldEnemy='';
+ let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,lastPointerAt=-Infinity,lastRenderAt=-Infinity,oldMarkup='',oldEnemy='';
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits);
  const back=(where,label)=>'<button type="button" data-back="'+where+'">◀ '+label+'</button>';
  const groupTitle=group=>'第'+group.id+'班';
  function render(force=false,targetsActive=false){
+  const stamp=performance.now();
+  if(!force&&stamp-lastRenderAt<450)return;
+  lastRenderAt=stamp;
   const groups=summaries(),selected=groups.find(g=>g.id===groupId)||groups[0];
   let html='';
   if(level==='groups'){
@@ -41,8 +44,8 @@ export function createBattleThreeGroupPanel({
     '<div class="threeGroupActions">'+
     '<button data-action="strategy" '+(!d?'disabled':'')+'>🎯 作戦</button>'+
     '<button data-action="inspect" '+(!d?'disabled':'')+'>📊 詳細</button>'+
-    '<button data-action="reinforce" '+(!d||selected.divisions.length<2?'disabled':'')+'>🛡 同班から援軍</button>'+
-    '<button data-action="merge" '+(!d||selected.divisions.length<2?'disabled':'')+'>⇄ 再統合</button></div>';
+    '<button data-action="reinforce" '+(!allowRecompose||!d||selected.divisions.length<2?'disabled':'')+'>🛡 同班から援軍</button>'+
+    '<button data-action="merge" '+(!allowRecompose||!d||selected.divisions.length<2?'disabled':'')+'>⇄ 再統合</button></div>';
   }
   if((force||html!==oldMarkup)&&!pointerDown&&
    (force||performance.now()-lastPointerAt>400)){ally.innerHTML=html;oldMarkup=html;}

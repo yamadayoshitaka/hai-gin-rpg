@@ -18,15 +18,14 @@ export function createObjectiveTurnEngine({
 }={}){
  const ids=[...new Set(groupIds.map(Number))].filter(x=>Number.isInteger(x)&&x>=1&&x<=10);
  const goals=new Map(ids.map(id=>[id,'attack']));
- let phase='idle',turn=1,remaining=0,previous=[],lastReport=[],lastError='';
+ let phase='idle',turn=1,remaining=0,previous=[],lastReport=[],lastError='',urgent=false,manualHold=false;
  const active=()=>getGroups().filter(g=>ids.includes(Number(g.id))&&Number(g.alive)>0);
- const snapshot=()=>({
-  phase,turn,remaining,goalByGroup:Object.fromEntries(goals),groups:getGroups(),
-  report:lastReport,error:lastError
- });
- const transition=next=>{phase=next;return snapshot();};
+ const status=()=>({phase,turn,remaining,urgent,manualHold});
+ const snapshot=()=>({...status(),goalByGroup:Object.fromEntries(goals),groups:getGroups(),
+  report:lastReport,error:lastError});
+ const transition=next=>{phase=next;return status();};
  return {
-  snapshot,
+  snapshot,status,
   begin(){
    if(phase!=='idle')return snapshot();
    onPause(true);return transition('planning');
@@ -35,13 +34,13 @@ export function createObjectiveTurnEngine({
    const group=Number(id);
    if(!ids.includes(group)||!GOAL_BY_ID.has(goal))return false;
    if(phase!=='planning'&&phase!=='report')return false;
-   goals.set(group,goal);return true;
+   goals.set(group,goal);if(phase==='report'){manualHold=true;remaining=Infinity;}return true;
   },
   start(){
    if(!['planning','report'].includes(phase))return false;
    if(phase==='report')turn++;
    previous=getGroups().map(x=>({...x}));
-   lastError='';lastReport=[];
+   lastError='';lastReport=[];urgent=false;manualHold=false;
    transition('moving');
    remaining=bounded(moveSeconds);
    for(const group of active()){
@@ -51,17 +50,22 @@ export function createObjectiveTurnEngine({
    onPause(false);
    return true;
   },
-  update(dt){
-   if(phase!=='moving'&&phase!=='acting')return snapshot();
+  update(dt,{wallDt=dt}={}){
+   if(phase==='report'){
+    if(!manualHold){remaining=Math.max(0,remaining-bounded(wallDt));
+     if(remaining<=0){this.start();return status();}}
+    return status();
+   }
+   if(phase!=='moving'&&phase!=='acting')return status();
    remaining=Math.max(0,remaining-bounded(dt));
-   if(remaining>0)return snapshot();
+   if(remaining>0)return status();
    if(phase==='moving'){
     transition('acting');remaining=bounded(actionSeconds);
     for(const group of active()){
      try{onAction(group.id,GOAL_BY_ID.get(goals.get(group.id)));}
      catch(error){lastError=String(error?.message||error);}
     }
-    return snapshot();
+    return status();
    }
    const before=new Map(previous.map(g=>[Number(g.id),g]));
    lastReport=getGroups().map(g=>{
@@ -71,9 +75,19 @@ export function createObjectiveTurnEngine({
      hp:Number(g.hp)||0,hpDelta:(Number(g.hp)||0)-(Number(prior.hp)||0),
      danger:Boolean(g.danger)};
    }).filter(g=>g.alive>0||g.losses>0);
+   urgent=lastReport.some(g=>g.danger&&g.losses>0||
+    g.losses>=Math.max(2,Math.ceil((before.get(g.id)?.alive||0)*.25)));
+   remaining=urgent?30:2;manualHold=false;
    transition('report');onPause(true);onReport(lastReport,snapshot());
-   return snapshot();
+   return status();
   },
-  finish(){phase='done';onPause(false);return snapshot();}
+  interrupt(){
+   if(phase==='moving'||phase==='acting'){
+    onPause(true);remaining=0;manualHold=true;transition('planning');return true;
+   }
+   if(phase==='report'){manualHold=true;remaining=Infinity;return true;}
+   return phase==='planning';
+  },
+  finish(){phase='done';onPause(false);return status();}
  };
 }

@@ -18,3 +18,9 @@ body.story-three-group-ui #allySquadRibbon,body.story-three-group-ui #enemySquad
 
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button{min-height:37px}
+
+/* Ten groups in two rows; no five-row scrolling on small phones. */
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button{min-width:0;min-height:41px;padding:3px 1px;font-size:10px;overflow:hidden}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button strong{font-size:10px;white-space:nowrap}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button small{font-size:9px;line-height:1.15;overflow-wrap:anywhere}
