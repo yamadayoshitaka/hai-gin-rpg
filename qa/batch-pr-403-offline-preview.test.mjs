@@ -10,8 +10,8 @@ test('PR preview resolves latest main and active PR heads; old static PR catalog
  assert(script.length>1000);
  assert.doesNotThrow(()=>new vm.Script(script));
  assert.match(init,/await reloadLiveHeads\(\)/);
- assert.match(script,/getJSON\(API\+'\\/commits\\/main'\)/);
- assert.match(script,/getJSON\(API\+'\\/pulls\\?state=open/);
+ assert(script.includes("getJSON(API+'/commits/main')"),'Fetch canonical main SHA');
+ assert(script.includes("getJSON(API+'/pulls?state=open"),'Fetch live open PR head SHAs');
  assert.match(script,/HaiGinBatchRefs\.liveRows/);
  assert.match(init,/getJSON\('\.\/release\.json/);
  assert.match(script,/await setGroup\(\)/);
