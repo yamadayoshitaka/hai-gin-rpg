@@ -31,12 +31,20 @@ test('fifty catalog IDs are registered without inventing visual signoff',()=>{
  assert.equal(registeredMonsterModel('m001').stage,'reference-implementation');
  assert.deepEqual(MONSTER_REFRESH_PRIORITY.slice(0,3),['m002','m003','m004']);
  assert.equal(MONSTER_REFRESH_PRIORITY.length,
-   MONSTER_CATALOG.length-HUMAN_MONSTER_IDS.length-3);
+   MONSTER_CATALOG.length-HUMAN_MONSTER_IDS.length-1,
+   'every nonhuman except m001 must appear exactly once');
+ assert.equal(new Set(MONSTER_REFRESH_PRIORITY).size,MONSTER_REFRESH_PRIORITY.length,
+   'duplicate refresh IDs waste geometry QA and can override a later species');
  assert.ok(MONSTER_REFRESH_PRIORITY.every(id=>
-   !HUMAN_MONSTER_IDS.includes(id)&&!['m005','m006'].includes(id)),
-  'the nonhuman batch must not rewrite protected or humanoid sources');
- assert.equal(registeredMonsterModel('m005').stage,'protected');
- assert.equal(registeredMonsterModel('m006').stage,'protected');
+   !HUMAN_MONSTER_IDS.includes(id)&&id!=='m001'),
+  'the separate humanoid model source and verified m001 donor remain excluded');
+ for(const id of ['m005','m006']){
+  assert(MONSTER_REFRESH_PRIORITY.includes(id),
+   'protected external adoption still permits safe INTERNAL donor review: '+id);
+  assert.equal(registeredMonsterModel(id).stage,'m001-source-derivative-external-locked');
+  assert.equal(resolveRegisteredMonsterModel(id,{storage:storage(),detail:'high',
+   allowExternal:true}).externalSource,null,'unapproved external GLB remains locked: '+id);
+ }
  for(const id of HUMAN_MONSTER_IDS)
   assert.equal(registeredMonsterModel(id).stage,'separate-humanoid-pipeline');
 });
