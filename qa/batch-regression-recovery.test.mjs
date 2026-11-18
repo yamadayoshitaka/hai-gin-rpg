@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {WATCHED,decideRecovery,isAuthorizedRepo,dispatchInputFor,MAX_RECOVERIES_PER_CHECK} from '../scripts/batch-regression-recovery.mjs';
 
 const stamp=Date.parse('2026-11-18T00:00:00Z');
@@ -83,4 +84,19 @@ test('source recovery chooses only enabled categories and never overwrites artif
  assert.equal(dispatchInputFor(spec,'2026-11-18T09:00:00Z',{groups:{}}),null);
  const standard=WATCHED.find(x=>x.workflow==='world-six-lane.yml');
  assert.deepEqual(dispatchInputFor(standard,'2026-11-18T09:00:00Z',cfg),{});
+});
+
+test('public batch center shows all 7 watched domains and stale schedule warnings',()=>{
+ const html=fs.readFileSync('batch-monitor.html','utf8');
+ assert.match(html,/async function updateRecoverySnapshot\(\)/);
+ assert.match(html,/回帰監視（最終取得/);
+ assert.match(html,/定期実行欠落/);
+ assert.match(html,/復旧起動を要求/);
+ assert.match(html,/次回復旧枠へ繰越/);
+ assert.match(html,/監視記録が古い/);
+ assert.match(html,/本編FPS・実行QA/);
+ assert.match(html,/既知エラー自己修復/);
+ assert.match(html,/品質探索/);
+ assert.match(html,/系統の遅延・要対応/);
+ assert.doesNotMatch(html,/run\.status==='success'\?'Actions成功（造形未承認）'/);
 });
