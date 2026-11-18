@@ -413,6 +413,27 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.4*c,.19*c,.2*c,0,2.75*c,0,wood);
    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.8*c,1.1*c,4),wood);
    roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
+   // Radial voussoir courses: individual tapered stones break up the smooth cylinder silhouette.
+   // Alternating joints are offset half a block, like a real dry-stone well curb.
+   for(let course=0;course<4;course++){
+    const segments=16, radius=1.205*c;
+    for(let j=0;j<segments;j++){
+     const angle=(j+(course%2)*.5)*Math.PI*2/segments;
+     const block=new THREE.Mesh(new THREE.BoxGeometry(.47*c,.19*c,.17*c),stone);
+     block.position.set(Math.sin(angle)*radius,(.12+course*.225)*c,Math.cos(angle)*radius);
+     block.rotation.y=angle;
+     block.castShadow=true;block.receiveShadow=true;root.add(block);
+    }
+   }
+   // Roof battens and layered timber shingles follow the four pitched faces.
+   for(let side=0;side<4;side++)for(let tier=0;tier<3;tier++){
+    const angle=(side+.5)*Math.PI/2, radius=(.95-tier*.23)*c;
+    const shingle=new THREE.Mesh(new THREE.BoxGeometry((1.12-tier*.20)*c,.045*c,.44*c),wood);
+    shingle.position.set(Math.sin(angle)*radius,(2.84+tier*.22)*c,Math.cos(angle)*radius);
+    shingle.rotation.y=angle;shingle.rotation.x=-Math.cos(angle)*.38;
+    shingle.rotation.z=Math.sin(angle)*.38;
+    shingle.castShadow=true;root.add(shingle);
+   }
    // Windlass, suspension rope and tapered bucket, rather than an empty well shell.
    const spindle=new THREE.Mesh(new THREE.CylinderGeometry(.12*c,.12*c,2.14*c,12),wood);
    spindle.rotation.z=Math.PI/2;spindle.position.y=2.23*c;root.add(spindle);
