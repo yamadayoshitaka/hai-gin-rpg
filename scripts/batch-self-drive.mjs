@@ -38,7 +38,7 @@ export function isAllowedSource(group,file){
   outfit:/^(src\/(?:outfit-maintenance-model|character-system\/(?:rigged-outfit-runtime|garment-coverage-runtime|outfit-surface-policy))\.js)$/,
   creatureMonster:/^(src\/(?:creature-[\w-]+|avian-guardian-sculpt|monster-summon-renderer|monster-[\w-]+)\.js)$/,
   world:/^src\/object-catalog\.js$/,
-  gameQuality:/^src\/(?:battle-frame-pacing|battle-phase-profiler|frame-performance|crowd-performance-budget|battle-rigid-frustum-optimization|stage-static-instancing|mass-battle-real-army|adaptive-battle-resolution|character-system\/battle-visual-pipeline)\.js$/,
+  gameQuality:/^src\/(?:battle-frame-pacing|battle-phase-profiler|frame-performance|crowd-performance-budget|battle-rigid-frustum-optimization|stage-static-instancing|mass-battle-real-army|creature-game-model-routing|adaptive-battle-resolution|character-system\/battle-visual-pipeline)\.js$/,
   anime:/^NOT_SAFE_TO_AUTO_WRITE_IMAGES$/
  };
  return !!rules[group]?.test(file);
