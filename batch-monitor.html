@@ -700,12 +700,22 @@ async function updateEvolutionResults(){
       data.status==='disabled_by_batch_center'?'設定OFF':'今回採用0件（'+data.status+'）';
     panel.appendChild(paragraph(label+'：'+state+' ／ '+TIME(data.startedAt)+
      ' ／ 候補'+all.length+'件、個別QA通過'+qa+'件','status'));
+    const baselineMeasured=data.baselineBrowserStatus==='measured_ci_fps'&&
+     Number.isFinite(data.baselineBrowserFps)&&data.baselineBrowserFps>0;
+    panel.appendChild(paragraph(baselineMeasured?
+     '50対50・CI仮想GPU基準 FPS '+data.baselineBrowserFps+
+      '／P95 '+(data.baselineBrowserP95Ms??'未計測')+'ms／描画 '+
+      (data.baselineBrowserDrawCalls??'未計測')+'／JSエラー '+
+      (data.baselineBrowserRuntimeErrors??'未計測'):
+     '50対50・CI仮想GPU基準FPS未計測（改善・合格とは判定しません）','note'));
     const candidates=all.slice(0,3).map(x=>{
      const v=Number.isFinite(x.value)?x.value:'不明';
      return String(v)+'→'+({rejected:'不採用',
       blocked_browser_baseline:'FPS比較不可',blocked_browser_or_fps:'FPS条件未達',
       accepted_candidate:'採用候補',regression_failed:'テスト失敗',
-      probe_exception:'モデル検査失敗'}[x.status]||x.status);
+      probe_exception:'モデル検査失敗'}[x.status]||x.status)+
+      (Number.isFinite(x.fps)?'／CI FPS '+x.fps+'・P95 '+
+       (x.p95Ms??'未計測')+'ms・描画 '+(x.drawCalls??'未計測'):'');
     });
     if(candidates.length)panel.appendChild(paragraph('実測候補：'+candidates.join(' ／ '),'note'));
     if(blocked){
@@ -736,8 +746,11 @@ async function updateEvolutionResults(){
    const accepted=Number(Boolean(freshest.sourceCommitSha));
    progress.progressSummary.textContent='品質進化：実3D候補'+inspected+
     '件／新規採用コミット'+accepted+'件／'+
-    (freshest.baselineBrowserStatus==='measured_ci_fps'?
-     'CI WebGL計測あり':'CI WebGL FPS測定不能')+
+    (freshest.baselineBrowserStatus==='measured_ci_fps'&&
+     Number.isFinite(freshest.baselineBrowserFps)?
+     '50対50 CI WebGL FPS '+freshest.baselineBrowserFps+
+      '・P95 '+(freshest.baselineBrowserP95Ms??'未計測')+'ms':
+     'CI WebGL FPS測定不能')+
     '／実機Android FPS・FF15外観未承認。従来自走：'+
     progress.progressSummary.textContent;
   }
