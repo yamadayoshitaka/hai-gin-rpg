@@ -6,19 +6,20 @@ const page=fs.readFileSync('batch-pr-preview.html','utf8');
 const script=page.match(/<script>([\s\S]*?)<\/script>/)?.[1]||'';
 const init=script.slice(script.indexOf('async function init(){'));
 const refresh=script.slice(script.indexOf('async function refresh({live=false}={})'),script.indexOf('async function setGroup(){'));
-test('PR preview loads static Pages data with no anonymous GitHub API by default',()=>{
+test('PR preview resolves latest main and active PR heads; old static PR catalog is not current',()=>{
  assert(script.length>1000);
  assert.doesNotThrow(()=>new vm.Script(script));
- assert.match(init,/getJSON\('\.\/data\/batch-pr-previews\.json'\)/);
+ assert.match(init,/await reloadLiveHeads\(\)/);
+ assert.match(script,/getJSON\(API\+'\\/commits\\/main'\)/);
+ assert.match(script,/getJSON\(API\+'\\/pulls\\?state=open/);
+ assert.match(script,/HaiGinBatchRefs\.liveRows/);
  assert.match(init,/getJSON\('\.\/release\.json/);
- assert.match(init,/await setGroup\(\)/);
- assert.match(script,/await refresh\(\)/);
+ assert.match(script,/await setGroup\(\)/);
  assert.match(refresh,/if\(!live\)/);
  assert.match(refresh,/getPrOnDemand\(row\.pr\)/);
- assert.match(script,/refresh\(\{live:true\}\)/);
- assert.doesNotMatch(init,/getPrOnDemand\(/);
- assert.doesNotMatch(init,/getJSON\(API\+/);
- assert.doesNotMatch(refresh,/getJSON\(API\+'/);
+ assert.match(script,/reloadLiveHeads\(\)/);
+ assert.doesNotMatch(init,/getJSON\('\.\/data\/batch-pr-previews\.json'\)/);
+ assert.match(script,/古い固定PR/);
 });
 test('on-demand one request, rate limit protection and direct PR fallback',()=>{
  assert.match(script,/const url=API\+'\/pulls\/'\+number/);
