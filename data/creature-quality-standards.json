@@ -133,7 +133,12 @@
       "main-merge",
       "Pages-release-sha"
     ],
-    "protectedIds": [],
+    "protectedIds": [
+      "m005",
+      "m006",
+      "summon_m005",
+      "summon_m006"
+    ],
     "noAutoPublishWithoutVisualQA": true,
     "externalReplacementLockIds": [
       "m005",

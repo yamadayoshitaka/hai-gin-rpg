@@ -18,10 +18,12 @@
       53
     ],
     "lanesPerGroup": 6,
-    "modelGeneration": "requires-real-source-or-GLB-commit; static QA alone is not generation"
+    "modelGeneration": "requires-real-source-or-GLB-commit; static QA alone is not generation",
+    "studioCoverage": "Includes all real phone studio face/hair, outfit and battle input sources. Scheduled QA is NOT an automatic 3D generation or commit."
   },
   "gates": {
     "allMustPass": [
+      "studio-preview-source-parity",
       "canonical-id",
       "real-geometry-or-material-diff",
       "source-tests",
@@ -42,6 +44,14 @@
       "gamePipeline": [
         "src/character-face-catalog-v64.js",
         "src/face-expression-animation-v48.js",
+        "src/independent-face-masters.js",
+        "src/face-feature-meshes.js",
+        "src/face-scalp-wig.js",
+        "src/face-wig-styles.js",
+        "src/hero-hair-controls-v43.js",
+        "face-mesh-studio.html",
+        "face-body-studio.html",
+        "male-body-studio.html",
         "src/character-system/hair-attachment-runtime.js",
         "src/character-system/battle-visual-pipeline.js",
         "tactics-wireframe.html"
@@ -108,11 +118,14 @@
             "Pixel/AndroidのFPSと品質を両立"
           ]
         }
-      ]
+      ],
+      "previewStudio": "face-mesh-studio.html"
     },
     "outfit": {
       "title": "衣装｜造形・材質・着用動作",
       "gamePipeline": [
+        "outfit-maintenance.html",
+        "src/outfit-maintenance-model.js",
         "src/character-system/rigged-outfit-runtime.js",
         "src/character-system/outfit-surface-policy.js",
         "src/character-system/garment-coverage-runtime.js",
@@ -180,7 +193,8 @@
             "QA合格後のみGitHub main→Pages公開"
           ]
         }
-      ]
+      ],
+      "previewStudio": "outfit-maintenance.html"
     }
   }
 }

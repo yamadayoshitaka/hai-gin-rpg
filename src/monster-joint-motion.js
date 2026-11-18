@@ -137,8 +137,58 @@ function quadrupedMotion(p,phase,locomotion,run,actionPulse,spine,speciesId){
  apply(p,'tailTip','y',Math.sin(phase*.55-1.1)*.26);
 }
 function wingMotion(p,phase,action,actionPulse,reference){
+ // Dedicated airborne rig for m013; the other birds keep their existing
+ // approved biomechanics. Flap phase is slowed from the walking gait,
+ // while flying actions accelerate it naturally.
+ if(reference?.id==='m013'){
+  const flying=action!=='defeat';
+  const q=phase*.42;
+  const power=!flying?0:action==='idle'?.60:
+    action==='walk'?.53:action==='guard'?.28:
+    action==='run'?.90:action==='attack'?.96:1;
+  for(const side of [-1,1]){
+   const suffix=side<0?'L':'R';
+   const flap=Math.sin(q+(side<0?0:.05));
+   const featherLag=Math.sin(q-.63);
+   // A real downstroke and recovery: shoulder drives, elbow follows,
+   // wrist feathers lag. Flight remains leg-free.
+   apply(p,'wing'+suffix,'z',side*(.13+power*.58*flap));
+   apply(p,'wing'+suffix,'x',-.10+power*.15*Math.cos(q-.18));
+   apply(p,'wingElbow'+suffix,'y',
+      side*(.23+power*.24*Math.sin(q-.43)));
+   apply(p,'wingElbow'+suffix,'x',
+      -.04+power*.22*Math.cos(q-.55));
+   apply(p,'wingWrist'+suffix,'y',
+      side*(.09+power*.26*Math.sin(q-.88)));
+   apply(p,'wingWrist'+suffix,'z',
+      side*power*.20*featherLag);
+   if(p['phoenixArm'+suffix]){
+    apply(p,'phoenixArm'+suffix,'z',side*(.03+power*.09*flap));
+    apply(p,'phoenixArm'+suffix,'x',-.07*actionPulse);
+    apply(p,'phoenixForearm'+suffix,'x',
+      -.06*actionPulse+power*.08*featherLag);
+    apply(p,'phoenixFeatherHand'+suffix,'z',
+      side*(.06+power*.10*featherLag));
+   }
+   // Flight legs retract underneath the belly; grounded standing
+   // is only permitted for the terminal defeat/landing animation.
+   const tuck=flying?1:0;
+   const pedal=power*.06*Math.sin(q+(side<0?0:PI));
+   apply(p,'leg'+suffix,'x',.50*tuck+pedal);
+   apply(p,'birdKnee'+suffix,'x',-.74*tuck+.10*pedal);
+   apply(p,'birdAnkle'+suffix,'x',.40*tuck);
+   apply(p,'avianFoot'+suffix,'x',.22*tuck);
+  }
+  apply(p,'tail','x',flying?-.08+power*.06*Math.sin(q-.30):0);
+  return;
+ }
+
  const hasFlap=action==='special'||action==='leap'||action==='run'||action==='attack';
- const power=hasFlap?1:.25;
+ // The Phoenix idle pose must NOT use a gallop-speed phase (7rad/s).
+ // Previously its whole silhouette shook while the viewer was stationary.
+ const stablePhoenix=reference?.id==='m013'&&action==='idle';
+ if(stablePhoenix)phase*=.14;
+ const power=stablePhoenix?.035:hasFlap?1:.25;
  for(const side of [-1,1]){
   const suffix=side<0?'L':'R';
   const wave=Math.sin(phase*1.18+(side<0?0:.11));

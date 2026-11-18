@@ -8,6 +8,8 @@ test('Six independent themes for each of face+hair and wardrobe, with nontrivial
  for(const cat of ['faceHair','outfit']){
   assert.equal(targets.groups[cat].lanes.length,6);
   assert.equal(CHARACTER_QUALITY_SIX_LANES[cat].lanes.length,6);
+  assert.deepEqual(targets.groups[cat].gamePipeline,CHARACTER_QUALITY_SIX_LANES[cat].gamePipeline,
+   cat+' center targets must track the actual preview and game source fingerprints');
   const names=targets.groups[cat].lanes.map(x=>x.id);
   assert.equal(new Set(names).size,6);
   for(const lane of targets.groups[cat].lanes)assert(lane.criteria.length>=4);

@@ -5,6 +5,14 @@ export const CHARACTER_QUALITY_SIX_LANES = Object.freeze({
     "gamePipeline": [
       "src/character-face-catalog-v64.js",
       "src/face-expression-animation-v48.js",
+      "src/independent-face-masters.js",
+      "src/face-feature-meshes.js",
+      "src/face-scalp-wig.js",
+      "src/face-wig-styles.js",
+      "src/hero-hair-controls-v43.js",
+      "face-mesh-studio.html",
+      "face-body-studio.html",
+      "male-body-studio.html",
       "src/character-system/hair-attachment-runtime.js",
       "src/character-system/battle-visual-pipeline.js",
       "tactics-wireframe.html"
@@ -76,6 +84,8 @@ export const CHARACTER_QUALITY_SIX_LANES = Object.freeze({
   "outfit": {
     "title": "衣装｜造形・材質・着用動作",
     "gamePipeline": [
+      "outfit-maintenance.html",
+      "src/outfit-maintenance-model.js",
       "src/character-system/rigged-outfit-runtime.js",
       "src/character-system/outfit-surface-policy.js",
       "src/character-system/garment-coverage-runtime.js",
