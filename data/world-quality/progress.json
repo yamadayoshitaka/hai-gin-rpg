@@ -206,55 +206,12 @@
       "roughnessProposal": 1,
       "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
       "productionApplied": false,
-      "lastReviewedAt": "2026-11-18T02:37:28.997Z",
+      "lastReviewedAt": "2026-11-18T10:43:18.902Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
-      "captureAttempts": 2
+      "captureAttempts": 3
     }
   },
   "runs": [
-    {
-      "id": "43762653541",
-      "startedAt": "2026-11-15T21:17:00.841Z",
-      "mode": "reference",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 53,
-      "targetIds": [
-        "object:cottage_shelf_001",
-        "object:cottage_fireplace_001",
-        "object:cottage_barrel_001"
-      ],
-      "generated": 0,
-      "failed": [],
-      "providerCalls": 0,
-      "stopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-      "completedAt": "2026-11-15T21:17:00.841Z"
-    },
-    {
-      "id": "43762653541",
-      "startedAt": "2026-11-15T21:17:45.813Z",
-      "mode": "results",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 53,
-      "targetIds": [
-        "object:cottage_shelf_001",
-        "object:cottage_fireplace_001",
-        "object:cottage_barrel_001"
-      ],
-      "generated": 0,
-      "failed": [],
-      "providerCalls": 0,
-      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-      "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-      "completedAt": "2026-11-15T21:17:45.813Z"
-    },
     {
       "id": "43785891351",
       "startedAt": "2026-11-16T01:24:18.645Z",
@@ -633,11 +590,50 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
       "completedAt": "2026-11-18T02:37:28.998Z"
+    },
+    {
+      "id": "44287812420",
+      "startedAt": "2026-11-18T10:43:12.721Z",
+      "mode": "reference",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv3_001"
+      ],
+      "generated": 0,
+      "failed": [],
+      "providerCalls": 0,
+      "stopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+      "completedAt": "2026-11-18T10:43:12.722Z"
+    },
+    {
+      "id": "44287812420",
+      "startedAt": "2026-11-18T10:43:18.901Z",
+      "mode": "results",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv3_001"
+      ],
+      "generated": 0,
+      "failed": [],
+      "providerCalls": 0,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+      "completedAt": "2026-11-18T10:43:18.902Z"
     }
   ],
   "lastRun": {
-    "id": "44224414853",
-    "startedAt": "2026-11-18T02:37:28.997Z",
+    "id": "44287812420",
+    "startedAt": "2026-11-18T10:43:18.901Z",
     "mode": "results",
     "requested": 1,
     "requestedTarget": null,
@@ -653,6 +649,6 @@
     "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
     "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-18T02:37:28.998Z"
+    "completedAt": "2026-11-18T10:43:18.902Z"
   }
 }
