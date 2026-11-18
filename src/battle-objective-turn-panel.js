@@ -3,7 +3,7 @@ import {createObjectiveTurnEngine,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS} from '.
 /**
  * Phone-sized objective turn interface.
  * One army group per page -> tap a real location on the battlefield map ->
- * choose one arrival action, optionally choosing an owned item.
+ * choose one arrival action; owned items are available only when the turn ends.
  */
 export function installObjectiveTurnPanel({
  groupIds,getGroups,getMoveTargets=()=>[],getMapChoices=()=>[],
