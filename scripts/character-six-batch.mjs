@@ -41,13 +41,26 @@ const tests={
   ['qa/battle-lod-pipeline.test.mjs','qa/battle-outfit-integration.test.mjs']
  ]
 };
-const sourceFilenames=entry.gamePipeline.filter(p=>fs.existsSync(new URL(p,root)));
+// The phone studios are FIRST-CLASS targets, not optional spectators. A missing
+// preview model source is a failed batch, not an omitted fingerprint.
+const sourceFilenames=[...entry.gamePipeline];
+const missingSources=sourceFilenames.filter(p=>!fs.existsSync(new URL(p,root)));
+if(missingSources.length)throw Error('Missing studio/game production sources: '+missingSources.join(', '));
 const sha256=p=>crypto.createHash('sha256').update(read(p)).digest('hex');
-const sourceFingerprint=crypto.createHash('sha256').update(sourceFilenames.map(p=>p+':'+sha256(p)).join('\n')).digest('hex');
+const sourceHashes=Object.fromEntries(sourceFilenames.map(p=>[p,sha256(p)]));
+const sourceFingerprint=crypto.createHash('sha256').update(
+ sourceFilenames.map(p=>p+':'+sourceHashes[p]).join('\n')).digest('hex');
+const previewSourcePaths=category==='faceHair'
+ ? ['face-mesh-studio.html','src/face-scalp-wig.js','src/independent-face-masters.js','src/face-feature-meshes.js']
+ : ['outfit-maintenance.html','src/outfit-maintenance-model.js','src/character-system/rigged-outfit-runtime.js'];
+const battleSourcePaths=category==='faceHair'
+ ? ['src/character-system/hair-attachment-runtime.js','src/character-system/battle-visual-pipeline.js','tactics-wireframe.html']
+ : ['src/character-system/rigged-outfit-runtime.js','src/character-system/garment-coverage-runtime.js','src/character-system/battle-visual-pipeline.js','tactics-wireframe.html'];
 const hairCatalog=['female','male'].flatMap(gender=>listWigStyles(gender).map(style=>({...style,gender})));
 const hairGroups=partitionHairStyles(hairCatalog);
 if(hairGroups.flatMap(x=>x.items).length!==hairCatalog.length)throw Error('Hair partition mismatch');
-const testArgs=['--test',...tests[category][slot]];
+// Run source-path parity on EVERY lane, even a scheduled one-slot run.
+const testArgs=['--test','qa/studio-model-route-contract.test.mjs',...tests[category][slot]];
 const run=spawnSync(process.execPath,testArgs,{cwd:new URL('../',import.meta.url),stdio:'inherit',timeout:210000,env:process.env});
 const testPass=run.status===0&&!run.error;
 const report={
@@ -57,7 +70,10 @@ const report={
  hairstylePartitions:category==='faceHair'?hairGroups:undefined,
  tests:tests[category][slot],nodeTestExitCode:run.status,
  status:testPass?'static_qa_passed':'static_qa_failed',
- sourceFingerprint,sourceFilenames,realModelChangesThisRun:0,generatedGLBsThisRun:0,
+ sourceFingerprint,sourceFilenames,sourceHashes,previewSourcePaths,battleSourcePaths,
+ sourceParityContract:'qa/studio-model-route-contract.test.mjs',
+ previewWebglVerified:false,battleWebglVerified:false,
+ realModelChangesThisRun:0,generatedGLBsThisRun:0,
  webglVisualApproved:false,androidFpsVerified:false,gameAdopted:false,
  releaseGate:'not_promoted',
  nextAction:'実ソースの形状/PBR/リグを改善し、WebGL四方向・動作・Android実測で見本と比較。合格した実モデル差分をPR→main→Pagesへ。',
