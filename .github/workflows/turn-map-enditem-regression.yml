@@ -32,5 +32,9 @@ jobs:
         run: |
           node --check src/battle-objective-turns.js
           node --check src/battle-objective-turn-panel.js
+          node --check src/battle-hit-label-layout.js
+          node --check src/confirmed-hit-overlay.js
       - name: Regression for tap, paging, report items and HUD isolation
-        run: node --test qa/turn-map-paging-regression.test.mjs
+        run: |
+          node --test qa/turn-map-paging-regression.test.mjs
+          node qa/confirmed-hit-feedback.test.mjs
