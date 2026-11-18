@@ -76,7 +76,7 @@ test('battle starts directly without opening wizard and shows live ally job powe
  assert.match(battle,/updateUI\(\);animate\(\)/);
  assert.match(battle,/getGroupJobs:groupId=>jobPowerBreakdown/);
  assert.match(battle,/jobs:jobPowerBreakdown\(alive\)/);
- assert.match(panel,/getGroupJobs=()=>\[\]/);
+ assert.match(panel,/getGroupJobs=\(\)=>\[\]/);
  assert.match(panel,/objectiveTurnJobs/);
  assert.match(panel,/objectiveIntelJobs/);
  assert.match(styles,/objectiveTurnJobs/);
