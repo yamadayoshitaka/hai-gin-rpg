@@ -392,6 +392,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(.16*c,.1*c,.18*c,1.15*c,2.25*c,0,iron);
   }
   if(id==='town_planter_001'){
+   // Coursed stone coping wraps the raised soil bed; corner joints remain visible.
+   for(const z of [-.87,.87])box(3.12*c,.12*c,.17*c,0,.53*c,z*c,stone);
+   for(const x of [-1.47,1.47])box(.17*c,.12*c,1.56*c,x*c,.53*c,0,stone);
+   for(const x of [-.73,.73])for(const z of [-.87,.87])
+    box(.035*c,.13*c,.19*c,x*c,.53*c,z*c,iron);
+
    box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
    const soil=new THREE.MeshStandardMaterial({color:0x463827,roughness:1});
    box(2.7*c,.07*c,1.5*c,0,.54*c,0,soil);
@@ -425,6 +431,16 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.35*c,.15*c,.55*c,0,2.58*c,0,stone);
   }
   if(id==='town_trash_bin_001'){
+   // Rolled sheet-metal barrel: stiffening bands and riveted vertical seam.
+   for(const y of [.22,.97]){
+    const band=new THREE.Mesh(new THREE.TorusGeometry(.385*c,.028*c,6,24),iron);
+    band.rotation.x=Math.PI/2;band.position.y=y*c;band.castShadow=true;root.add(band);
+   }
+   for(const y of [.29,.52,.75,.98]){
+    const rivet=new THREE.Mesh(new THREE.SphereGeometry(.035*c,6,4),iron);
+    rivet.position.set(.394*c,y*c,0);root.add(rivet);
+   }
+
    const metalMat=new THREE.MeshStandardMaterial({color:0x55564f,metalness:.68,roughness:.42});
    const body=new THREE.Mesh(new THREE.CylinderGeometry(.4*c,.34*c,1.15*c,12,1,true),metalMat);
    body.position.y=.61*c;body.castShadow=true;root.add(body);
@@ -524,6 +540,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='inn_sign_001'){
+   // Forged eyelets and two independent suspension links carry the hanging sign.
+   for(const x of [-.38,.8])for(const y of [2.59,2.98]){
+    const eye=new THREE.Mesh(new THREE.TorusGeometry(.075*c,.023*c,6,12),iron);
+    eye.position.set(x*c,y*c,.09*c);eye.castShadow=true;root.add(eye);
+   }
+
    box(.18*c,3.4*c,.18*c,-.7*c,1.7*c,0,wood);
    box(1.8*c,.17*c,.17*c,.13*c,3.1*c,0,iron);
    for(const x of [-.38,.8])box(.065*c,.48*c,.06*c,x*c,2.8*c,0,iron);
@@ -568,6 +590,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
   }
   if(id==='town_signpost_001'){
+   // Two triangular knee braces transfer the cantilevered boards to the post.
+   for(const [y,side] of [[2.75,1],[2,-1]]){
+    const brace=new THREE.Mesh(new THREE.BoxGeometry(.72*c,.085*c,.095*c),wood);
+    brace.rotation.z=side*Math.PI/4;
+    brace.position.set(side*.33*c,(y-.3)*c,0);brace.castShadow=true;root.add(brace);
+   }
+
    box(.22*c,3.6*c,.22*c,0,1.8*c,0,wood);
    box(2.55*c,.45*c,.13*c,.45*c,2.75*c,0,wood);
    box(1.9*c,.44*c,.13*c,-.4*c,2*c,0,wood);
@@ -595,6 +624,14 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_brazier_001'){
+   // Crossed lower stretchers keep the four-legged iron brazier rigid.
+   box(1.25*c,.085*c,.11*c,0,.31*c,0,iron);
+   box(.11*c,.085*c,1.25*c,0,.31*c,0,iron);
+   for(const y of [.83,1.15]){
+    const hoop=new THREE.Mesh(new THREE.TorusGeometry(.66*c,.035*c,6,20),iron);
+    hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;root.add(hoop);
+   }
+
    for(const x of [-.58,.58])for(const z of [-.58,.58])box(.13*c,.9*c,.13*c,x*c,.45*c,z*c,iron);
    const cup=new THREE.Mesh(new THREE.CylinderGeometry(.88*c,.6*c,.4*c,16),iron);
    cup.position.y=1*c;root.add(cup);
