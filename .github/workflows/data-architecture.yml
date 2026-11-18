@@ -18,6 +18,8 @@ jobs:
         run: npm install --no-save --package-lock=false three@0.160.1
       - name: Current main head and category PR selection contract
         run: node --test qa/batch-live-ref-selection.test.mjs
+      - name: Autonomous latest-main reconciliation safety contract
+        run: node --check scripts/batch-self-drive.mjs && node --test qa/batch-self-drive.test.mjs
       - name: Full replacement contract
         run: npm run test:full-replacement
       - name: Syntax and imports
