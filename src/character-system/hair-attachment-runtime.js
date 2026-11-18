@@ -363,16 +363,26 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0,
   syntheticHelmetFringe:'disabled',sourceHair:true};
  const fit={position:lod.position.clone(),scale:lod.scale.clone()};
+ // GLB geometries are shared across actors; only headwear clips belong to
+ // this attachment. Dispose temporary clips after restoring their originals.
+ const ownedMasks=new Set();
+ function releaseMasks(){for(const geometry of ownedMasks)geometry.dispose();ownedMasks.clear()}
+ function trackMask(geometry,original){if(geometry!==original)ownedMasks.add(geometry);return geometry}
  let selectedCoverage=null;
  function setHeadwear(value){
   const next=value==='hood'?'hood':value==='helmet'?'helmet':null;
   if(selectedCoverage===next)return;
   selectedCoverage=next;
+  // No live mesh may reference a mask when its GPU buffers are released.
+  for(const item of hairMeshes)item.mesh.geometry=item.original;
+  crown.geometry=crownGeometry;
+  if(scalpFibers)scalpFibers.geometry=scalpFibersGeometry;
+  releaseMasks();
   let sourceTriangles=0,keptTriangles=0;
   for(const item of hairMeshes){
     if(!next){item.mesh.geometry=item.original;continue}
     const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next,foreheadZ);
-    item.mesh.geometry=clipped.geometry;
+    item.mesh.geometry=trackMask(clipped.geometry,item.original);
     sourceTriangles+=clipped.sourceTriangles;keptTriangles+=clipped.keptTriangles;
   }
   // Mask only the portions hidden BY the headpiece, instead of turning off
@@ -381,11 +391,11 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   if(next){
     const cut=maskHairGeometry(crownGeometry,crownMatrix,{
       position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
-    crown.geometry=cut.geometry;crown.visible=cut.keptTriangles>0;
+    crown.geometry=trackMask(cut.geometry,crownGeometry);crown.visible=cut.keptTriangles>0;
     if(scalpFibers){
       const fibers=maskHairGeometry(scalpFibersGeometry,fiberMatrix,{
         position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
-      scalpFibers.geometry=fibers.geometry;scalpFibers.visible=fibers.keptTriangles>0;
+      scalpFibers.geometry=trackMask(fibers.geometry,scalpFibersGeometry);scalpFibers.visible=fibers.keptTriangles>0;
     }
   }else{
     crown.geometry=crownGeometry;crown.visible=true;
@@ -401,7 +411,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
   setHeadwear,
-  dispose(){bone.remove(hairRoot);crownGeometry.dispose();crown.material.dispose();
+  dispose(){bone.remove(hairRoot);releaseMasks();crownGeometry.dispose();crown.material.dispose();
    scalpFibersGeometry?.dispose();scalpFibers?.material.dispose();
    hoodWisps.geometry.dispose();hoodWisps.material.dispose()}};
 }
