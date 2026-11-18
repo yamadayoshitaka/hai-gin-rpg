@@ -481,6 +481,44 @@ test('avian v13 grown-up griffin eagle and owl sculpt is fitted to skull in both
   }
  }
 });
+
+test('avian v14 adult cere, two nostrils and malar bone join to real griffin eagle owl heads',()=>{
+ for(const detail of ['high','low']){
+  for(const id of ['m011','m012','m014']){
+   const m=build(id,detail);
+   try{
+    const head=m.userData.pivots.head;
+    const skull=m.getObjectByName('avian-cranium-'+id);
+    const cere=m.getObjectByName('avian-adult-keratin-cere-'+id);
+    assert.equal(skull.userData.avianAdultCereFitted,true);
+    assert.equal(cere?.parent,head,id+' '+detail+' detached cere');
+    assert.equal(cere.userData.avianSourcePhoenixFace,true);
+    assert.equal(cere.userData.avianContiguousBeakNasalVolume,true);
+    assert.ok(cere.geometry.getAttribute('normal'));
+    for(const side of ['L','R']){
+     const bone=m.getObjectByName('avian-adult-malar-bone-'+id+'-'+side);
+     const nostril=m.getObjectByName('avian-adult-cere-nostril-'+id+'-'+side);
+     assert.equal(bone?.parent,head,'malar contour not head-rigged');
+     assert.equal(bone.userData.avianMalarContinuousIntoCere,true);
+     assert.equal(nostril?.userData.avianKeratinNostril,true);
+     const iris=m.getObjectByName('avian-master-iris-'+side);
+     if(id!=='m014'){
+      assert.equal(iris?.userData.avianIrisRadialMicrotexture,true);
+      const colors=iris.geometry.getAttribute('color');
+      let lowest=1,highest=0;
+      for(let i=0;i<colors.count;i++){
+       lowest=Math.min(lowest,colors.getX(i));
+       highest=Math.max(highest,colors.getX(i));
+      }
+      assert.ok(highest-lowest>.025,'physical iris must not be uniformly coloured');
+     }
+    }
+    assert.ok(triangles(m)<500000,'face enhancement exceeds mobile LOD budget');
+   }finally{disposeMonsterSculpture(m);}
+  }
+ }
+});
+
 test('Tengu takes flight with preserved humanlike face and real flying animations',()=>{
  for(const detail of ['high','low']){
   const m=build('m015',detail);
