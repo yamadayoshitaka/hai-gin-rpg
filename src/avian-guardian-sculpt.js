@@ -300,11 +300,15 @@ function plumageStations(p){
 }
 function phoenixDerivedCranium(p){
  if(p.type==='phoenix')return PHOENIX_HEAD_STATIONS;
+ // Preserve the five-station avian face-volume rig: the facial relief
+ // contract relies on its exact centre ring and normalized u=0.5.
+ // Each station is a resampled Phoenix skull, then species-morphed.
  const factor=p.head/.68;
- return PHOENIX_HEAD_STATIONS.map(s=>({
-  z:s.z*(.62+.18*factor),y:s.y*factor*.97,
-  rx:s.rx*factor*1.12,ry:s.ry*factor*.97
- }));
+ const source=[0,1,3,4,5].map(i=>PHOENIX_HEAD_STATIONS[i]);
+ return source.map((s,i)=>i===2&&p.type==='eagle'
+  ?{z:.06,y:.055,rx:.235*p.head,ry:.235*p.head}
+  :{z:s.z*(.62+.18*factor),y:s.y*factor*.97,
+    rx:s.rx*factor*1.12,ry:s.ry*factor*.97});
 }
 /** Continuous mathematical surface of the actual anatomical cross-section
  * loft, including the same Catmull-Rom interpolation used by axialLoft.
