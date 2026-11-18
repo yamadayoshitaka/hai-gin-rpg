@@ -1,0 +1,39 @@
+name: PR current-main ancestry gate
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  current-main-ancestor:
+    if: ${{ github.event.pull_request.base.ref == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out actual PR head (not GitHub's synthetic merge ref)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reject a stale PR without rewriting main or PR code
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
+          main_sha="$(git rev-parse refs/remotes/origin/main)"
+          pr_sha="$(git rev-parse HEAD)"
+          {
+            echo "### Current-main ancestry check"
+            echo "- main: \`$main_sha\`"
+            echo "- PR: \`$pr_sha\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if ! git merge-base --is-ancestor "$main_sha" "$pr_sha"; then
+            echo "::error::PR is based on an outdated main. Sync by 3-way merge; never overwrite newer production files."
+            echo "- result: **STALE** — do not merge until branch is synchronized" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "- result: **CURRENT** — latest main is an ancestor" >> "$GITHUB_STEP_SUMMARY"
