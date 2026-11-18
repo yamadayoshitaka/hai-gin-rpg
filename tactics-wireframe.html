@@ -9707,7 +9707,7 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
   const alive=all.filter(u=>u.hp>0&&u.alive!==false);
   const center=squadCenter(id,1);
   return {id:i+1,alive:alive.length,hp:alive.reduce((n,u)=>n+(Number(u.hp)||0),0),
-   maxHp:all.reduce((n,u)=>n+(Number(u.maxHp)||0),power:squadPower(alive),x:center?.x,z:center?.z};
+   maxHp:all.reduce((n,u)=>n+(Number(u.maxHp)||0),0),power:squadPower(alive),x:center?.x,z:center?.z};
  }),
  getItems:()=>{
   const stock=new Map();
