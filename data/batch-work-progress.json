@@ -114,59 +114,59 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T08:54:03+09:00",
+      "lastRunAt": "2026-11-18T09:53:09+09:00",
       "status": "work_incomplete",
       "carryover": true,
-      "subject": "PR #624最新head CI再検証：Architecture/6レーン成功、Mobile実行中",
-      "summary": "world.enabled=true。PR #624最新head 464107a3のCIを再照合。RPG architecture #44198313673成功、World six-lane #44198313599全6レーン＋統合成功、world photoreal #44198313704成功。旧head b7e7d922で失敗したArchitecture/Mobileはqa/squad-ribbon-order-access.test.mjsの正規表現構文エラー（Unterminated group）が原因だった。最新headではArchitectureが成功。Mobile Battle #44198313908は確認時点で実行中。今回は新規実3Dソース変更0、GLB0、対象別WebGL新旧比較合格0、Android実測0、main採用0、Pages公開0。過去の5扉改修を新規成果に再計上しない。",
-      "nextAction": "PR #624 head 464107a3のMobile Battle run 44198313908完了を確認し、失敗なら該当job 134445702534のログから同一PRで修正。続いてnode --check・world-quality-contract/object-list-catalog/stage-static-instancing、扉Lv1〜5のWebGL新旧実画像・衝突/配置・1000vs1000 Android FPSを検証。全合格までDraft維持。",
+      "subject": "PR #624 継続：井戸・石造アーチ・階段・見張り塔・水槽の荷重支持実造形",
+      "summary": "world.enabled=trueをmainで確認。world Issue #629を対象。PR #624の既存ブランチで5種の実3D生成器を修正。井戸内壁、アーチ基礎/迫元、階段基礎、見張り塔交差筋交い、水槽地面支持を追加。実ソースSHA c592b35f75a5a6d3d42b6b292fc8cb202abc2a5b、共有石材のside汚染防止SHA c1956f2bb28825ace7069c7807038c4f34f95c48。前回Mobile Battle #44198313908はテスト成功後、実ブラウザ録画工程でcancelled。今回WebGL/Android実測は未検証、main採用/公開0。",
+      "nextAction": "PR #624の最新headでCI確認し、Node3種QA→5対象のWebGL新旧撮影→衝突/LOD/FPS。cancelled Mobile Battle録画の実行制限原因を確認。全ゲート通過までDraft維持。",
       "steps": {
         "launch": "done",
-        "code": "skipped",
+        "code": "done",
         "qa": "pending",
-        "commit": "skipped",
+        "commit": "done",
         "pr": "done",
         "merge": "pending",
         "deploy": "pending"
       },
       "evidence": [
         {
-          "label": "PR #624 最新head",
+          "label": "PR #624",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
         },
         {
-          "label": "Architecture CI成功",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313673"
+          "label": "実ソース修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c592b35f75a5a6d3d42b6b292fc8cb202abc2a5b"
         },
         {
-          "label": "World six-lane成功",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313599"
+          "label": "共有材質副作用修正",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/c1956f2bb28825ace7069c7807038c4f34f95c48"
         },
         {
-          "label": "World photoreal CI成功",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313704"
-        },
-        {
-          "label": "Mobile Battle確認中",
+          "label": "Mobile Battle cancelled",
           "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44198313908"
+        },
+        {
+          "label": "手動world Issue #629",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/629"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 5,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
+        "newSourceCommits": 2,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 Mobile Battle run 44198313908は実行中で合否未確定",
-          "node --checkと3種指定Node QAの独立実行結果未確認",
-          "扉Lv1〜5の対象別WebGL新旧比較・衝突/配置QA未確認",
-          "Android/1000vs1000 FPS未計測、main未採用・Pages未公開"
+          "PR #624 headのNode構文/指定3種QAと6レーン再実行結果は未確認",
+          "井戸/石造アーチ/階段/見張り塔/水槽のWebGL実画像・衝突/配置の新旧比較未実施",
+          "Mobile Battle run 44198313908は実ブラウザ録画工程でcancelled（前段Node QAは成功）",
+          "Android/1000vs1000 FPS未計測、main採用とPages公開は保留"
         ],
-        "speedPlan": "PR #624 Mobile Battle run 44198313908の完了を第一確認。失敗ならjob 134445702534ログを解析して既存PRを修正。成功なら扉5種の実WebGL前後比較とAndroid FPS検証へ進む。",
+        "speedPlan": "PR #624の最新headでCI確認し、Node3種QA→5対象のWebGL新旧撮影→衝突/LOD/FPS。cancelled Mobile Battle録画の実行制限原因を確認。全ゲート通過までDraft維持。",
         "lastRunOutcome": {
           "newSourceChangedIds": 0,
           "newQAPassed": 0,
