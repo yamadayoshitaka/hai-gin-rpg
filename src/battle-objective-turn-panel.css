@@ -41,9 +41,9 @@
 body.objective-turn-running #battleTopDock,body.objective-turn-running #topQuickActions,
 body.objective-turn-running #battleMenuToggle,body.objective-turn-running #battleMenu,
 body.objective-turn-running #menuToggle{display:none!important}
-#battleTeamCameraSwitches,#allySquadRibbon,#enemySquadRibbon{display:none!important}
-body:not(.town-mode) #squadTactics,body:not(.town-mode) #battleOrderConfirm,
-body:not(.town-mode) #battleTargetConfirm,body:not(.town-mode) #dockCommandSlot{display:none!important}
+body.objective-turn-enabled #battleTeamCameraSwitches,body.objective-turn-enabled #allySquadRibbon,body.objective-turn-enabled #enemySquadRibbon{display:none!important}
+body.objective-turn-enabled #squadTactics,body.objective-turn-enabled #battleOrderConfirm,
+body.objective-turn-enabled #battleTargetConfirm,body.objective-turn-enabled #dockCommandSlot{display:none!important}
 @media(max-height:670px){
  #battleObjectiveTurnPanel .objectiveTurnCard{gap:4px;padding:5px}
  #battleObjectiveTurnPanel #objectiveTurnMap{max-height:31dvh}
