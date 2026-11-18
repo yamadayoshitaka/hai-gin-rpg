@@ -7290,8 +7290,8 @@ function positionSquadMenuBelowLabel(id,force=false){
 function openSquadTactics(id){
  if(!TOWN_MODE){
   if(!battleReady||finished||battleCeremony.locked)return false;
-  const group=normalizeArmyGroup(armyGroupBySquad[String(id)]);
-  return targetedStrategyUi.open(group,{groupOnly:true,startAtRecommendations:true});
+  if(objectiveTurnUI){objectiveTurnUI.open();return true;}
+  return false;
  }
  closeSquadCircleInfo();
  if(!battleReady||finished||!squadIds.includes(String(id))||pendingCircleTarget)return false;
@@ -9697,6 +9697,12 @@ const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
  },
  onAction:(groupId,order)=>{
   const ids=turnGroupSquads(groupId);
+  if(order.action==='item'){
+   const target=ids.find(id=>squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)));
+   if(!order.itemId||!target||!performSquadBattleItem(order.itemId,target,{automatic:true}))
+    log('第'+groupId+'班：使用できるアイテムがありません。所持数・状態を確認してください。');
+   return;
+  }
   // Ranged jobs auto-fire from their hold position; other jobs guard the position.
   // Support uses the existing defense/healing AI; do not turn it into a charge.
   const mode=order.action==='ranged'?'hold':order.action==='support'?'defend':order.action;
@@ -11395,16 +11401,9 @@ async function finishBattleLoading(){
       'eliminate');
     }
    }
-   for(const {team,id,orderSelect,buildingPicker} of initialOrderInputs){
-    const representative=team===0?initialOrderInputs.find(e=>e.team===0&&armyGroupBySquad[e.id]===armyGroupBySquad[id]):null;
-    if(representative)orderSelect.value=representative.orderSelect.value;
-    const selected=orderSelect.value==='explore'
-     ?queueSquadExplorations(team,id,(representative?.buildingPicker||buildingPicker).getIds(),{beforeBattle:true})
-     :setStartingSquadOrder(team,id,orderSelect.value);
-    if(!selected){
-     orderSelect.value='charge';setStartingSquadOrder(team,id,'charge');
-    }
-   }
+   // Opening commands retired: first movement belongs to the turn engine.
+   for(const id of squadIds)setStartingSquadOrder(0,id,'hold');
+   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
    followSelectedCommander();
    battleReady=true;loading.hidden=true;
    initialCommanderCinematicPending=squadIds.find(id=>hasSquadCommander(id))??null;
