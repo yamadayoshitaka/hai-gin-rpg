@@ -38,7 +38,7 @@ export function eligiblePr(pr,group){
  if(!/^[0-9a-f]{40}$/.test(pr.head.sha||''))return false;
  const value=(pr.title||'')+' '+(pr.head.ref||'');
  const patterns={
-  faceHair:/face.?hair|scalp|headwear|face.hair|hair|wig|顔|頭皮/i,
+  faceHair:/face.?hair|scalp|headwear|\bhair\b|wig|顔|頭皮/i,
   outfit:/outfit|wardrobe|garment|armor|costume|cape|衣装|鎧|マント/i,
   creatureMonster:/creature|monster|summon|avian|wolf|feline|beast|モンスター|召喚/i,
   world:/world|object|joinery|prop|door|furniture|木組み|オブジェクト/i,
