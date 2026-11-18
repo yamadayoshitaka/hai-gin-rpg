@@ -4,10 +4,10 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-18T11:12:36.960Z",
+    "checkedAt": "2026-11-18T20:01:14.909Z",
     "category": "anime",
-    "status": "art_generation_not_automatable_in_actions",
-    "mainBeforeSha": "f976405ca6ad05fd22105ed1be753b38780a537a",
+    "status": "disabled",
+    "mainBeforeSha": null,
     "mainAfterSha": null,
     "pr": null,
     "sourceCommits": 0,
@@ -22,7 +22,7 @@
     "issueUrl": null,
     "gameQuality": null,
     "attempts": [],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44292516156"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44386439301"
   },
   "latestSourceCommit": null,
   "history": [
@@ -46,6 +46,27 @@
       "gameQuality": null,
       "attempts": [],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44292516156"
+    },
+    {
+      "checkedAt": "2026-11-18T20:01:14.909Z",
+      "category": "anime",
+      "status": "disabled",
+      "mainBeforeSha": null,
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": null,
+      "gameQuality": null,
+      "attempts": [],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44386439301"
     }
   ]
 }
