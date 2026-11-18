@@ -1,0 +1,69 @@
+name: Autonomous latest-main source reconciliation and commit
+on:
+  schedule:
+    # 5 categories rotated; actual model patches are bounded to one PR per run.
+    - cron: '7 * * * *'
+    - cron: '22 * * * *'
+    - cron: '37 * * * *'
+    - cron: '52 * * * *'
+    - cron: '57 * * * *'
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Category to self-reconcile (real image creation stays in ChatGPT)'
+        type: choice
+        required: true
+        default: faceHair
+        options: [faceHair, outfit, creatureMonster, world, anime]
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/batch-self-drive.mjs'
+      - 'qa/batch-self-drive.test.mjs'
+      - '.github/workflows/batch-self-drive.yml'
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+concurrency:
+  group: hai-gin-autonomous-source-reconciliation
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the current main branch and entire source history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install open-source geometry runtime for hard catalog and syntax checks
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Check autonomous merge policy, source allowlist and protection
+        run: |
+          node --check scripts/batch-self-drive.mjs
+          node --test qa/batch-self-drive.test.mjs
+      - name: Attempt latest main + one current source PR and publish real source changes
+        id: reconcile
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_CATEGORY: ${{ inputs.category || '' }}
+        run: node scripts/batch-self-drive.mjs
+      - name: Archive exact outcome, even when model QA is red or no commit was possible
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-self-drive-${{ github.run_id }}
+          path: qa-reports/batch-self-drive/latest.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Explicitly distinguish real code commits from static QA and Pages deployment
+        if: always()
+        run: |
+          echo "This workflow only ports allowed source patches; it cannot create image bytes or promise FF15 visual fidelity." >> "$GITHUB_STEP_SUMMARY"
+          echo "A successful main push triggers the separate Pages workflow. Confirm the Pages release SHA there." >> "$GITHUB_STEP_SUMMARY"
