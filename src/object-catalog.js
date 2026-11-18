@@ -433,7 +433,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    surface.rotation.x=-Math.PI/2;surface.position.y=.52*c;root.add(surface);
    // An inner stone lining gives the well wall real thickness, not a single-sided shell.
    const innerLining=new THREE.Mesh(new THREE.CylinderGeometry(1.04*c,1.04*c,.92*c,20,1,true),stone);
-   innerLining.position.y=.48*c;innerLining.material.side=THREE.DoubleSide;innerLining.name='well_inner_masonry';root.add(innerLining);
+   innerLining.position.y=.48*c;innerLining.material=stone.clone();innerLining.material.side=THREE.BackSide;innerLining.name='well_inner_masonry';root.add(innerLining);
    for(const y of [.12,.50,.96]){
     const masonry=new THREE.Mesh(new THREE.TorusGeometry(1.19*c,.07*c,7,24),stone);
     masonry.rotation.x=Math.PI/2;masonry.position.y=y*c;root.add(masonry);
