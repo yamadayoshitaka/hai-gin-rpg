@@ -20,6 +20,9 @@ on:
       - 'qa/quality-evolution-probe.mjs'
       - 'qa/quality-evolution-loop.test.mjs'
       - 'qa/quality-evolution-reporting.test.mjs'
+      - 'qa/battle-ready-gate.cjs'
+      - 'qa/battle-ready-gate.test.cjs'
+      - 'qa/game-quality-browser.cjs'
       - '.github/workflows/quality-evolution-loop.yml'
   pull_request:
     paths:
@@ -56,7 +59,7 @@ jobs:
         run: |
           node --check scripts/quality-evolution-loop.mjs
           node --check qa/quality-evolution-probe.mjs
-          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs
+          node --test qa/quality-evolution-loop.test.mjs qa/quality-evolution-reporting.test.mjs qa/battle-ready-gate.test.cjs
   evolve:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04

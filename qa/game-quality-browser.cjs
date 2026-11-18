@@ -7,6 +7,7 @@
 const fs=require('node:fs');
 const {chromium}=require('playwright');
 const {launchBattleViaThreeStepWizard}=require('./opening-three-stage.cjs');
+const {classifyBattleStartup}=require('./battle-ready-gate.cjs');
 const args=process.argv.slice(2);
 const lane=(args.find(x=>x.startsWith('--lane='))||'--lane=runtime').split('=')[1];
 const rawWizardTimeout=(args.find(x=>x.startsWith('--wizard-timeout-ms='))||'').split('=')[1];
@@ -35,10 +36,36 @@ const save=()=>fs.writeFileSync(dir+'/browser-'+lane+'.json',JSON.stringify(resu
   await page.goto('http://127.0.0.1:8765/tactics-wireframe.html'+scenario+'&qualityProbe=1',
    {waitUntil:'domcontentloaded',timeout:60000});
   if(lane==='frame'){
-   await launchBattleViaThreeStepWizard(page,{timeout:wizardTimeout});
+   // The current game may already have finished building its 100 actors
+   // without showing the old 3-step wizard. Do NOT wait four minutes for
+   // hidden tabs. If tabs really are visible, use the actual user UI.
+   await page.waitForFunction(()=>{
+    const p=window.getBattleStartupStats?.();
+    const tabs=[...document.querySelectorAll('.openingWizardTabs button')]
+     .some(el=>el.getBoundingClientRect().height>0&&
+      getComputedStyle(el).visibility!=='hidden');
+    const runtimeError=document.querySelector('#runtimeError')?.style.display==='block';
+    return runtimeError||tabs||(p?.ready===true&&p?.actors>=100);
+   },null,{timeout:wizardTimeout,polling:500});
+   const state=await page.evaluate(()=>({
+    ready:window.getBattleStartupStats?.()?.ready===true,
+    actors:window.getBattleStartupStats?.()?.actors||0,
+    visibleWizard:[...document.querySelectorAll('.openingWizardTabs button')]
+     .some(el=>el.getBoundingClientRect().height>0&&
+      getComputedStyle(el).visibility!=='hidden'),
+    errorVisible:document.querySelector('#runtimeError')?.style.display==='block'
+   }));
+   const opening=classifyBattleStartup(state);
+   result.startupMode=opening;
+   if(opening==='runtime_error')
+    throw Error('Production battle boot raised a visible game error');
+   if(opening==='wizard')
+    await launchBattleViaThreeStepWizard(page,{timeout:wizardTimeout});
+   else if(opening!=='running')
+    throw Error('No real opening UI and battleReady never reached 100 actors');
    await page.waitForFunction(()=>window.getBattleStartupStats?.().ready||
     document.querySelector('#runtimeError')?.style.display==='block',
-    null,{timeout:200000,polling:500});
+    null,{timeout:30000,polling:500});
    const readings=[];
    // Warm up first, then read engine's real rolling FPS and frame P95,
    // not requestAnimationFrame callbacks from an empty HTML page.
