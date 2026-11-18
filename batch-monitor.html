@@ -117,6 +117,7 @@ small{font-size:11px}strong{font-weight:700}
  <div class="links"><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions" target="_blank" rel="noopener noreferrer">全GitHub Actionsを見る</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aissue+is%3Aopen+%22hai-gin-batch%22" target="_blank" rel="noopener noreferrer">手動指示の履歴を見る</a></div>
 </footer>
 </main>
+<script src="./src/batch-live-ref-selection.js?v=20261118-live-head"></script>
 <script>
 'use strict';
 const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO,API='https://api.github.com/repos/'+REPO;
@@ -434,30 +435,50 @@ async function updateProgress(){
   }
  }
 }
-/** PR cards use published metadata. Do not fetch unauthenticated GitHub PR API on load. */
-async function updatePreviewStatus(){
- try{
-  const catalog=await fetchJSON('./data/batch-pr-previews.json?ts='+Date.now());
-  if(catalog.schemaVersion!==1||!catalog.groups)throw Error('PR紐付け不正');
-  for(const group of groups){
-   const view=elements.get(group.id),item=catalog.groups[group.previewGroup||group.id]?.[0];
-   if(!view)continue;
-   if(!item){
-    view.previewStatus.textContent='現在の登録済みPRはありません（実改修の完了は未確認）';
-    continue;
+/** Current main is the canonical evaluation baseline; open PRs are candidates.
+ * Old data/batch-pr-previews.json is retained for history only and MUST NOT
+ * choose the active branch or overwrite the current 60-object catalog.
+ * Fetch a bounded live snapshot once per page entry and on manual refresh.
+ */
+let currentMainHead=null,liveReviewHeads=null,liveBranchCheckedAt=null;
+async function updatePreviewStatus({request=false}={}){
+ if(request||!liveBranchCheckedAt){
+  const now=Date.now(),stored=readSessionJson('hg-batch-live-refs-v1');
+  if(!request&&stored&&now-Date.parse(stored.at)<60000){
+   currentMainHead=stored.main;liveReviewHeads=stored.prs;liveBranchCheckedAt=stored.at;
+  }else{
+   try{
+    const [commit,pulls]=await Promise.all([
+     fetchJSON(API+'/commits/main'),fetchJSON(API+'/pulls?state=open&sort=updated&direction=desc&per_page=100')
+    ]);
+    if(!/^[0-9a-f]{40}$/.test(commit.sha)||!Array.isArray(pulls))throw Error('最新main/PR一覧の形式が不正');
+    currentMainHead=commit.sha;liveReviewHeads=pulls;liveBranchCheckedAt=new Date().toISOString();
+    saveSessionJson('hg-batch-live-refs-v1',{at:liveBranchCheckedAt,main:currentMainHead,prs:pulls});
+    $('fresh').textContent='最新main '+currentMainHead.slice(0,12)+' と作業PRを照合：'+TIME(liveBranchCheckedAt)+'。品質合格やデプロイとは別。';
+   }catch(error){
+    // Fail closed: NEVER advertise an old hardcoded PR as "latest".
+    currentMainHead=null;liveReviewHeads=null;liveBranchCheckedAt=null;
+    $('fresh').textContent='GitHub最新ブランチ照会不可：'+error.message+'。古い固定PRは最新版として表示しません。公開済みオブジェクト一覧は維持します。';
    }
-   view.previewLink.href='./batch-pr-preview.html?group='+
-    encodeURIComponent(group.previewGroup||group.id)+'&pr='+item.pr;
+  }
+ }
+ for(const group of groups){
+  const view=elements.get(group.id);
+  if(!view)continue;
+  const category=group.id;
+  const rows=window.HaiGinBatchRefs.recent(liveReviewHeads,category);
+  if(rows.length&&currentMainHead){
+   const best=rows[0];
+   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(category)+'&pr='+best.pr;
    view.previewStatus.replaceChildren();
    view.previewStatus.append(
-    document.createTextNode('比較対象：PR #'+item.pr+' ／ マージ・公開状態はGitHubで確認　'),
-    makeLink('PRを直接確認',GH+'/pull/'+item.pr,true)
-   );
-  }
- }catch(e){
-  for(const group of groups){
-   const view=elements.get(group.id);
-   if(view)view.previewStatus.textContent='PR比較台帳の取得に失敗：'+e.message;
+    document.createTextNode('正本 main '+currentMainHead.slice(0,12)+' ／ 最新更新PR #'+best.pr+' '+best.branch+' ('+best.sha.slice(0,12)+') ／ '),
+    makeLink('PR差分を確認',GH+'/pull/'+best.pr,true));
+  }else{
+   view.previewLink.href='./batch-pr-preview.html?group='+encodeURIComponent(category);
+   view.previewStatus.textContent=currentMainHead
+    ?'正本 main '+currentMainHead.slice(0,12)+' ／ 比較可能な未マージPRなし。公開済みの3Dは保持します。'
+    :'現在のmain/PR SHAは未確認。旧固定PRで品質を判定せず、最新ブランチを取得してから評価します。';
   }
  }
 }
@@ -676,9 +697,9 @@ async function start(){
   const pausedGroups=groups.filter(g=>g.schedulerEnabled===false&&g.source.includes('ChatGPT')).length;
   $('schedulerCount').textContent='ChatGPT定期タスク：'+activeTasks.size+'件有効・'+pausedGroups+'系統停止（共有タスクは1件と計算、記録時点）';
   $('fresh').textContent='ChatGPTタスク最終確認：'+TIME(j.asOf)+' ／ 現在処理中かはGitHub Actionsのみ取得可能';
-  await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateRecoverySnapshot();
+  await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus({request:true});await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns();await updateRecoverySnapshot();
  }catch(e){$('cards').textContent='管理データを読み込めませんでした：'+e.message}
 }
-$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus();await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true});await updateRecoverySnapshot()});
+$('refresh').addEventListener('click',async()=>{await updateWorldSix();await updateSwitches();await updateProgress();await updatePreviewStatus({request:true});await updateChapter4();await updateStoryBudget();await updateRelease();await updateRuns({request:true});await updateRecoverySnapshot()});
 start();setInterval(()=>{if(!document.hidden&&groups.length){updateSwitches();updateProgress().then(updateRecoverySnapshot)}},90000);
 </script></body></html>
