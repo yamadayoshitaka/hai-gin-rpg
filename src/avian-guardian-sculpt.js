@@ -306,7 +306,7 @@ function phoenixDerivedCranium(p){
  // Each station is a resampled Phoenix skull, then species-morphed.
  const factor=p.head/.68;
  const source=[0,1,3,4,5].map(i=>PHOENIX_HEAD_STATIONS[i]);
- return source.map((s,i)=>i===2&&p.type==='eagle'
+ return source.map((s,i)=>i===2
   ?{z:.06,y:.055,rx:.235*p.head,ry:.235*p.head}
   :{z:s.z*(.62+.18*factor),y:s.y*factor*.97,
     rx:s.rx*factor*1.12,ry:s.ry*factor*.97});
