@@ -7,10 +7,14 @@ import {ensureSortiePlan,sortieTeams,sortieTeamCount,SORTIE_TEAM_IDS,
 import {makeCoreBattleRequest} from '../src/core-battle-bridge.js';
 import {armyGroups} from '../src/army-groups.js';
 import {threeGroupOverview} from '../src/battle-three-group-hierarchy.js';
-import {OBJECTIVE_TURN_GOALS,createObjectiveTurnEngine} from '../src/battle-objective-turns.js';
+import {OBJECTIVE_TURN_GOALS,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS,createObjectiveTurnEngine} from '../src/battle-objective-turns.js';
 
 assert.deepEqual(SORTIE_TEAM_IDS,Array.from({length:10},(_,i)=>i+1));
 assert.equal(OBJECTIVE_TURN_GOALS.length,5);
+assert.ok(TURN_MOVE_OPTIONS.some(x=>x.id==='building'));
+assert.ok(TURN_MOVE_OPTIONS.some(x=>x.id==='bridge_front'));
+assert.ok(TURN_MOVE_OPTIONS.some(x=>x.id==='rear'));
+assert.ok(TURN_ACTION_OPTIONS.some(x=>x.id==='ranged'));
 assert.equal(SORTIE_GRID_CELLS,16);
 assert.equal(SORTIE_FORMATION_CELLS.balanced.length,16);
 const game=createNewGame('十部隊・陣形継承');
@@ -32,6 +36,12 @@ const summary=threeGroupOverview(
  {'2':10},[]);
 assert.equal(summary.length,10);
 assert.equal(summary[9].alive,1);
+const hpSummary=threeGroupOverview([
+ {team:0,squadId:'2',armyGroupId:10,hp:40,maxHp:100,alive:true},
+ {team:0,squadId:'2',armyGroupId:10,hp:0,maxHp:100,alive:false}
+],{'2':10},[]);
+assert.equal(hpSummary[9].hp,40);
+assert.equal(hpSummary[9].initialMaxHp,200,'total HP denominator retains the fallen soldiers');
 const groups=Array.from({length:10},(_,i)=>({
  id:i+1,alive:i<3?10:0,hp:i<3?100:0,danger:false
 }));
@@ -68,6 +78,39 @@ assert.equal(engine.snapshot().turn,2);
 assert.deepEqual(calls.filter(x=>x[0]==='move').slice(-3).map(x=>x[2]),
  ['support','attack','defend'],'unchanged objectives persist without re-selecting');
 assert.equal(engine.setGoal(2,'retreat'),false,'cannot edit objectives while units are moving');
+
+
+const arrivalCalls=[],arrived=new Set(['2']);
+const arrivalEngine=createObjectiveTurnEngine({
+ groupIds:[1,2],moveSeconds:10,actionSeconds:3,
+ getGroups:()=>[
+  {id:1,alive:6,hp:600,maxHp:600,initialMaxHp:600,danger:false},
+  {id:2,alive:4,hp:300,maxHp:400,initialMaxHp:400,danger:false}
+ ],
+ onMove:(id,order)=>arrivalCalls.push(['move',id,order.move,order.targetId]),
+ onAction:(id,order)=>arrivalCalls.push(['action',id,order.action]),
+ hasArrived:id=>arrived.has(String(id))
+});
+arrivalEngine.begin();
+assert.equal(arrivalEngine.setMove(1,'bridge_front','1'),true);
+assert.equal(arrivalEngine.setAction(1,'defend'),true);
+assert.equal(arrivalEngine.setMove(2,'rear'),true);
+assert.equal(arrivalEngine.setAction(2,'ranged'),true);
+arrivalEngine.start();
+assert.deepEqual(arrivalCalls.slice(0,2),[['move',1,'bridge_front','1'],['move',2,'rear',null]]);
+arrivalEngine.update(1);
+assert.deepEqual(arrivalCalls.filter(c=>c[0]==='action'),[['action',2,'ranged']],
+ 'rear archers engage while the bridge defenders are still moving');
+assert.equal(arrivalEngine.snapshot().phase,'moving');
+arrived.add('1');arrivalEngine.update(1);
+assert.deepEqual(arrivalCalls.filter(c=>c[0]==='action'),[['action',2,'ranged'],['action',1,'defend']]);
+assert.equal(arrivalEngine.snapshot().phase,'acting');
+arrivalEngine.update(3);
+assert.equal(arrivalEngine.snapshot().phase,'report');
+arrivalEngine.start();
+assert.equal(arrivalEngine.snapshot().ordersByGroup[1].move,'bridge_front');
+assert.equal(arrivalEngine.snapshot().ordersByGroup[2].action,'ranged',
+ 'move/action choices survive into the next turn without user repetition');
 
 for(const path of ['src/battle-objective-turns.js','src/battle-objective-turn-panel.js',
  'src/army-groups.js','src/battle-three-group-hierarchy.js','src/battle-three-group-panel.js',
