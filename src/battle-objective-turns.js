@@ -19,7 +19,8 @@ export const TURN_MOVE_OPTIONS=Object.freeze([
 export const TURN_ACTION_OPTIONS=Object.freeze([
  {id:'charge',label:'近接攻撃'},{id:'ranged',label:'遠距離攻撃（弓・魔法）'},
  {id:'defend',label:'防御・足止め'},{id:'support',label:'支援・回復'},
- {id:'hold',label:'待機・警戒'},{id:'retreat',label:'撤退'}
+ {id:'hold',label:'待機・警戒'},{id:'retreat',label:'撤退'},
+ {id:'item',label:'道具を使う'}
 ]);
 const GOAL_BY_ID=new Map(OBJECTIVE_TURN_GOALS.map(g=>[g.id,g]));
 const MOVE_IDS=new Set(TURN_MOVE_OPTIONS.map(x=>x.id));
@@ -31,7 +32,7 @@ export function createObjectiveTurnEngine({
 }={}){
  const ids=[...new Set(groupIds.map(Number))].filter(x=>Number.isInteger(x)&&x>=1&&x<=10);
  const goals=new Map(ids.map(id=>[id,'attack']));
- const orders=new Map(ids.map(id=>[id,{move:'enemy',action:'charge',targetId:null}]));
+ const orders=new Map(ids.map(id=>[id,{move:'enemy',action:'charge',targetId:null,itemId:null}]));
  const issuedActions=new Set();
  const orderFor=id=>({...GOAL_BY_ID.get(goals.get(id)),...orders.get(id),after:orders.get(id).action});
  let phase='idle',turn=1,remaining=0,previous=[],lastReport=[],lastError='',urgent=false,manualHold=false;
@@ -53,7 +54,7 @@ export function createObjectiveTurnEngine({
    goals.set(group,goal);
    const legacy=GOAL_BY_ID.get(goal);
    orders.set(group,{move:legacy.move==='objective'?'building':legacy.move==='retreat'?'retreat':
-    MOVE_IDS.has(legacy.move)?legacy.move:'hold',action:legacy.after,targetId:null});
+    MOVE_IDS.has(legacy.move)?legacy.move:'hold',action:legacy.after,targetId:null,itemId:null});
    if(phase==='report'){manualHold=true;remaining=Infinity;}return true;
   },
   setMove(id,move,targetId=null){
@@ -70,9 +71,17 @@ export function createObjectiveTurnEngine({
    if(phase==='report'){manualHold=true;remaining=Infinity;}
    return true;
   },
+  setItem(id,itemId){
+   const group=Number(id);
+   if(!ids.includes(group)||!['planning','report'].includes(phase))return false;
+   orders.set(group,{...orders.get(group),action:'item',itemId:itemId==null?null:String(itemId)});
+   if(phase==='report'){manualHold=true;remaining=Infinity;}return true;
+  },
   start(){
    if(!['planning','report'].includes(phase))return false;
    if(phase==='report')turn++;
+   const missing=active().filter(g=>orders.get(Number(g.id))?.action==='item'&&!orders.get(Number(g.id))?.itemId);
+   if(missing.length){lastError=missing.map(g=>'第'+g.id+'班').join('、')+'の使用アイテムを選んでください';return false;}
    previous=getGroups().map(x=>({...x}));
    lastError='';lastReport=[];urgent=false;manualHold=false;issuedActions.clear();
    transition('moving');
