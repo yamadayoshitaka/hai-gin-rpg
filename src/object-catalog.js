@@ -516,6 +516,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const darkStraw=new THREE.MeshStandardMaterial({color:0x88733e,roughness:1,flatShading:true});
    const pile=new THREE.Mesh(new THREE.ConeGeometry(1.45*c,2.6*c,9,3),straw);
    pile.position.y=1.3*c;pile.castShadow=true;root.add(pile);
+   // Layered loose thatch skirts break up the perfect cone silhouette.
+   for(let ring=0;ring<3;ring++)for(let k=0;k<12;k++){
+    const a=k*Math.PI/6+ring*.13,r=(1.18-ring*.28)*c;
+    const tuft=new THREE.Mesh(new THREE.ConeGeometry(.17*c,.74*c,5),k%3?straw:darkStraw);
+    tuft.position.set(Math.cos(a)*r,(.38+ring*.58)*c,Math.sin(a)*r);
+    tuft.rotation.z=Math.sin(a)*.25;tuft.rotation.x=-Math.cos(a)*.25;tuft.castShadow=true;root.add(tuft);
+   }
    for(let i=0;i<12;i++){
     const angle=i*Math.PI/6,r=(.4+(i%4)*.12)*c;
     const strawStem=new THREE.Mesh(new THREE.BoxGeometry(.08*c,.06*c,1.3*c),i%3?straw:darkStraw);
@@ -537,9 +544,28 @@ export function createObjectById(id,{cellSize=2.2}={}){
     m.position.y=y*cellSize;m.castShadow=true;root.add(m);
    }
    for(let i=0;i<8;i++){const a=i*Math.PI/4;box(.42*cellSize,.9*cellSize,.42*cellSize,Math.sin(a)*2.9*cellSize,.85*cellSize,Math.cos(a)*2.9*cellSize,stone)}
+   // Individual curved coping stones and carved water spouts, rather than a bare cylinder rim.
+   for(let i=0;i<16;i++){
+    const a=(i+.5)*Math.PI/8;
+    const coping=new THREE.Mesh(new THREE.BoxGeometry(.65*cellSize,.18*cellSize,.32*cellSize),stone);
+    coping.position.set(Math.sin(a)*3.14*cellSize,.55*cellSize,Math.cos(a)*3.14*cellSize);
+    coping.rotation.y=a;coping.castShadow=true;root.add(coping);
+   }
+   for(let i=0;i<4;i++){
+    const a=i*Math.PI/2;
+    const nozzle=new THREE.Mesh(new THREE.CylinderGeometry(.09*cellSize,.13*cellSize,.42*cellSize,10),stone);
+    nozzle.rotation.z=Math.PI/2;nozzle.rotation.y=a;
+    nozzle.position.set(Math.sin(a)*.72*cellSize,1.9*cellSize,Math.cos(a)*.72*cellSize);root.add(nozzle);
+   }
   }else if(id==='market_stall_001'){
    for(const x of [-2,2])for(const z of [-1.4,1.4])box(.18*cellSize,3*cellSize,.18*cellSize,x*cellSize,1.5*cellSize,z*cellSize,wood);
    box(4.4*cellSize,.2*cellSize,2.7*cellSize,0,1.45*cellSize,0,wood);
+   // Structural front/back aprons and diagonal corner braces support the canopy.
+   for(const z of [-1.4,1.4])box(4.1*cellSize,.18*cellSize,.12*cellSize,0,2.75*cellSize,z*cellSize,wood);
+   for(const x of [-2,2])for(const z of [-1.4,1.4]){
+    const brace=box(.11*cellSize,.78*cellSize,.12*cellSize,(x-Math.sign(x)*.23)*cellSize,2.58*cellSize,z*cellSize,wood);
+    brace.rotation.z=Math.sign(x)*.58;
+   }
    for(let i=0;i<8;i++)box(.54*cellSize,.12*cellSize,3.6*cellSize,(i-3.5)*.56*cellSize,3.1*cellSize,0,i%2?cloth:stone);
    for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*cellSize,6,4),new THREE.MeshStandardMaterial({color:i%2?0xb78a46:0x65944a}));m.position.set(((i%3)-1)*.8*cellSize,1.8*cellSize,(Math.floor(i/3)-1)*.6*cellSize);root.add(m)}
   }else if(id==='street_lamp_001'){
@@ -547,6 +573,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(1.1*cellSize,.18*cellSize,1.1*cellSize,0,4.3*cellSize,0,iron);
    const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.65*cellSize;root.add(lantern);
    box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
+   // Four-sided lantern cage: slender forged corner uprights and ventilated cap.
+   for(const x of [-.43,.43])for(const z of [-.43,.43])
+    box(.055*cellSize,.82*cellSize,.055*cellSize,x*cellSize,4.7*cellSize,z*cellSize,iron);
+   for(const z of [-.43,.43])box(.88*cellSize,.065*cellSize,.07*cellSize,0,4.31*cellSize,z*cellSize,iron);
+   for(const x of [-.43,.43])box(.07*cellSize,.065*cellSize,.88*cellSize,x*cellSize,4.31*cellSize,0,iron);
   }
 
   // New batch-center catalog assets are authored once for both preview and game.
@@ -591,7 +622,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(let i=0;i<12;i++){
     const rock=new THREE.Mesh(new THREE.DodecahedronGeometry((.3+(i%4)*.1)*c),stone);
     rock.scale.set(1.2,.72,.94);rock.rotation.set(i*.11,i*.43,i*.09);
-    rock.position.set(((i*7)%11-5)*.25*c,(.25+Math.floor(i/7)*.45)*c,((i*3)%7-3)*.28*c);root.add(rock);
+    rock.position.set(((i*7)%11-5)*.25*c,(.25+Math.floor(i/7)*.45)*c,((i*3)%7-3)*.28*c);rock.castShadow=true;root.add(rock);
+    // Stratified fracture facets replace uniformly smooth stone silhouettes.
+    if(i%2===0){const chip=new THREE.Mesh(new THREE.TetrahedronGeometry(.12*c,0),stone);
+     chip.position.copy(rock.position).add(new THREE.Vector3(.18*c,.19*c,-.1*c));chip.rotation.set(i*.31,i*.17,.2);chip.castShadow=true;root.add(chip);}
    }
   }
   if(id==='town_brazier_001'){
