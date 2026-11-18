@@ -7,6 +7,7 @@
   outfit:/(?:outfit|wardrobe|garment|armor|costume|cloak|cape|pauldron|衣装|マント|鎧)/i,
   creatureMonster:/(?:creature|monster|summon|avian|canid|feline|beast|wolf|phoenix|モンスター|召喚)/i,
   creatureSummon:/(?:creature|monster|summon|avian|canid|feline|beast|wolf|phoenix|モンスター|召喚)/i,
+  gameQuality:/(?:game.quality|battle.fps|frame.pac|frame.budget|performance|battle.render|battle.lod|runtime.error|戦闘描画|画質.?FPS|ゲーム品質)/i,
   anime:/(?:anime|manga|story|comic|chapter|漫画|物語)/i
  });
  const aliases=Object.freeze({human:'faceHair',monster:'creatureMonster'});
@@ -30,7 +31,7 @@
  function previewPage(category){
   const key=groupOf(category);
   return {world:'object-list.html',faceHair:'face-mesh-studio.html',
-   outfit:'outfit-maintenance.html',creatureMonster:'monster-manager.html',
+   outfit:'outfit-maintenance.html',gameQuality:'tactics-wireframe.html',creatureMonster:'monster-manager.html',
    creatureSummon:'monster-manager.html',anime:'story-chapter1-approval.html'}[key]||'tactics-wireframe.html';
  }
  function mainRow(category,sha){
