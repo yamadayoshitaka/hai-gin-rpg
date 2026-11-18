@@ -104,6 +104,10 @@ jobs:
         run: |
           set -euo pipefail
           git show origin/main:scripts/generate-story-chapter1-free-batch.mjs > scripts/generate-story-chapter1-free-batch.mjs
+          # Historical review branch lacks the compact stage 1-4 audit entrypoint.
+          # Restore it from current main before the audit step (run #44261095029).
+          git show origin/main:scripts/audit-story-c01-s01-s04-compact.mjs > scripts/audit-story-c01-s01-s04-compact.mjs
+          git show origin/main:src/story-compact-comic.js > src/story-compact-comic.js
           git show origin/main:src/story-generation-fallback.js > src/story-generation-fallback.js
           git show origin/main:data/story-generation-spend-policy.json > data/story-generation-spend-policy.json
           git show origin/main:data/batch-center-switches.json > data/batch-center-switches.json
