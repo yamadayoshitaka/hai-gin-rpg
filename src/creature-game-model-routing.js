@@ -12,6 +12,7 @@ import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
+import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js';
 
 const humanoids=new Set(HUMAN_MONSTER_IDS);
 export const MODEL_REFERENCE_REVISION='m001-sweptback-nose-v20-20261117';
@@ -28,11 +29,13 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    spec.id==='m006'?'m001-panther-skull-mini-nose-v14-20261118':
    firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
+   spec.id==='m019'?MAGMA_SALAMANDER_REVISION:
    spec.id==='m015'?'phoenix-master-tengu-feathers-v21-20261118':
    avianWave.has(spec.id)?'phoenix-master-bird-plumage-v21-20261118':
    'catalog-baseline',
   stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
+   spec.id==='m019'?'m001-derived-owner-approved-2d-in-visual-review':
    spec.id==='m001'?'reference-implementation':
    firstWave.has(spec.id)?'copied-wolf-king-geometry-in-review':
    felineWave.has(spec.id)?'copied-m007-feline-geometry-in-review':
