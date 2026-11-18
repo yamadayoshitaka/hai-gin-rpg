@@ -5,6 +5,19 @@
 import * as THREE from 'three';
 import {buildGarmentSurfaceCoverage} from './garment-surface-coverage.js?v=4.4.93';
 const maskCache=new WeakMap();
+// Stable policy identities let simultaneous battle and preview leases reuse one
+// masked geometry without retaining discarded outfit meshes in a strong Map.
+const surfacePolicyKeys=new WeakMap();
+function surfacePolicyKey(coverage,preserved,forced){
+ if(!coverage||typeof coverage!=='object')return 'missing-coverage';
+ if(!preserved.size&&!forced.length)return coverage;
+ let keys=surfacePolicyKeys.get(coverage);
+ if(!keys){keys=new Map();surfacePolicyKeys.set(coverage,keys)}
+ const signature='preserve:'+([...preserved].sort().join(','))+
+  '|force:'+([...forced].sort().join(','));
+ if(!keys.has(signature))keys.set(signature,{coverage,signature});
+ return keys.get(signature);
+}
 // Each live skinned body can be referenced by more than one asynchronous
 // costume build. A disposed old outfit must NOT unmask a newer outfit.
 const activeMasks=new WeakMap();
@@ -193,8 +206,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
   // Each verified closed-tunic policy needs an isolated cached mask.
   // Otherwise a bare source mesh can reuse an incompatible earlier mask.
   const cacheKey=surfaceCheck?
-   (preserved.size||forceCoveredRegions.length?
-     {coverage,preserved:[...preserved],forced:[...forceCoveredRegions]}:coverage):
+   surfacePolicyKey(coverage,preserved,forceCoveredRegions):
    coverage.signature+'|preserve:'+([...preserved].sort().join(','))+
      '|force:'+([...forceCoveredRegions].sort().join(','));
   let record=variants.get(cacheKey);
@@ -226,17 +238,15 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false,pr
    }
    if(surfaceCheck&&displayed!==original)mesh.geometry=displayed;
    const sourceIndices=original.index,kept=[];
-   // Verified opaque panels and fitted pants have no visible internal skin.
-   // Cut majority-covered triangles, but protect neck/hand/exposed seams.
-   // All non-verified outfits keep the previous conservative cut rule.
-   const opaqueEnvelope=surfaceCheck&&enclosed.size>0;
+   // Never remove a triangle whose third vertex is exposed: doing so
+   // creates a literal hole along the back, knee and boot seam. A closed
+   // opaque envelope proves coverage, not permission to cut boundary faces.
+   // Apply the same rule to preview and battle LODs to avoid distance pops.
    for(let i=0;i<sourceIndices.count;i+=3){
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
-    const hiddenCorners=cut[a]+cut[b]+cut[c];
-    const visibleEdge=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
-    const canCut=surfaceCheck?
-      (opaqueEnvelope?hiddenCorners>=2&&!visibleEdge:hiddenCorners===3):hiddenCorners>=2;
-    if(!canCut)kept.push(a,b,c);
+    const fullyCovered=cut[a]===1&&cut[b]===1&&cut[c]===1;
+    const protectedSeam=protectedEdge[a]||protectedEdge[b]||protectedEdge[c];
+    if(!fullyCovered||protectedSeam)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
    const sourceCount=sourceIndices.count/3,keptCount=kept.length/3;
