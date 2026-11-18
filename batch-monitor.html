@@ -51,7 +51,7 @@ small{font-size:11px}strong{font-weight:700}
 <header><a href="./dev-menu.html">← メンテナンス</a><strong>⚙ 灰銀｜FF15品質バッチ管理</strong><a href="./monster-quality-review.html">モンスター品質KPI</a><a href="./creature-reconstruction-plan.html">108体再構成計画</a><button class="refresh" id="refresh" type="button">状況を更新</button></header>
 <main><h1>FF15級品質バッチ：顔・髪／衣装／オブジェクト／モンスター／召喚獣</h1>
 <p>顔・髪、衣装、モンスター、召喚獣は各6テーマを10分間隔で実行する設定です（実際の実行頻度はGitHubの履歴で確認）。オブジェクトは6担当の毎時並列QAを設定しています。実際のモデル改修数と<strong>作業ブランチ・PR・QA・mainマージ・Pages公開</strong>を分けて確認できます。改修中の3Dモデルと本編の表示は、下の「PR版と本編を比較」から切り替えます。</p>
-<div class="summary" aria-live="polite"><span id="groupCount">6系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
+<div class="summary" aria-live="polite"><span id="groupCount">7系統</span><span id="enabledCount">自動実行を確認中</span><span id="activeCount">GitHub実行状況を照合中</span><span id="schedulerCount">ChatGPT実行予約を確認中</span></div>
 <div class="select-area panel" aria-label="表示するバッチを選択">
  <label for="batchDisplaySelect">表示するバッチ
   <select id="batchDisplaySelect">
@@ -190,7 +190,7 @@ function statusLabel(result){
 }
 function createCard(data){
  const c=tag('section','card');c.dataset.batchGroup=data.id;const t=tag('div','top');
- const title=tag('span','name',({"faceHair":"👤 ","outfit":"🛡️ ","world":"🏰 ","creatureMonster":"🐉 ","creatureSummon":"✨ ","anime":"🎬 "}[data.id]||'')+data.name);
+ const title=tag('span','name',({"faceHair":"👤 ","outfit":"🛡️ ","world":"🏰 ","creatureMonster":"🐉 ","creatureSummon":"✨ ","gameQuality":"🎮 ","anime":"🎬 "}[data.id]||'')+data.name);
  const badge=tag('span','badge '+(data.autoEnabled?'on':'off'),data.autoEnabled?'毎時設定：有効':'毎時設定：停止');
  t.append(title,badge);c.appendChild(t);c.appendChild(paragraph(data.subtitle,'muted'));
  const schedule=tag('div','panel');
@@ -218,7 +218,10 @@ function createCard(data){
  const progressSummary=paragraph('実際のソース修正とQAを照合中','status');
  const nextAction=paragraph('次回引継ぎ：照合中','note');
  const progressEvidence=tag('div','progress-evidence');
- progressBox.append(head,stageGrid,progressTime,progressSummary,nextAction,progressEvidence);
+ const changesTitle=tag('strong','','実際に何が改善されたか（コミット・計測別）');
+ const changesList=tag('div','batch-real-changes');
+ changesList.appendChild(paragraph('確認できる実改修・計測結果を取得中','muted'));
+ progressBox.append(head,stageGrid,progressTime,progressSummary,nextAction,progressEvidence,changesTitle,changesList);
  c.appendChild(progressBox);
  // Quality improvement throughput is distinct from scheduled runs or static QA.
  let health=null;
@@ -260,6 +263,7 @@ function createCard(data){
  creatureMonster:'例：m002の鼻と毛並みをm001を基準に実メッシュ再造形して',
  creatureSummon:'例：seraph_guardianの羽と人型顔、飛行姿勢を改善して',
  world:'例：選択したオブジェクトの木組みや石材・接合・PBRを写実的に改善して',
+ gameQuality:'例：1000対1000の歩行カクつきとFPS P95、実行時エラーを検証して実コードを修正して',
  anime:'例：第1章の未完成コマを、登場人物とシナリオに忠実に描いて'
  }[data.id];
  title2.appendChild(instruction);box.appendChild(title2);c.appendChild(box);
@@ -345,7 +349,7 @@ function createCard(data){
   // even when opened, causing duplicate redirections and lost form state.
   window.location.assign(link);
  });
- $('cards').appendChild(c);elements.set(data.id,{card:c,detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence},health});
+ $('cards').appendChild(c);elements.set(data.id,{card:c,detail,activity,log,swText,swBtn,badge,previewStatus,previewLink,targetInput:target.el,progress:{current,stageGrid,progressTime,progressSummary,nextAction,progressEvidence,changesList},health});
 }
 async function fetchJSON(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 
@@ -441,7 +445,7 @@ async function updateProgress(){
  * Never infer mesh generation or visual approval from a green Actions job.
  */
 async function updateSelfDriveEvidence(staticProgress){
- const ids=['faceHair','outfit','creatureMonster','creatureSummon','world','anime'];
+ const ids=['faceHair','outfit','creatureMonster','creatureSummon','world','anime','gameQuality'];
  await Promise.all(ids.map(async id=>{
   const ui=elements.get(id),v=ui?.progress;
   if(!v)return;
@@ -502,6 +506,64 @@ async function updateSelfDriveEvidence(staticProgress){
     GH+'/commit/'+lastSource.mainAfterSha,true));
   if(typeof last.issueUrl==='string'&&last.issueUrl.startsWith(GH+'/issues/'))
    v.progressEvidence.appendChild(makeLink('競合の修正Issue',last.issueUrl,true));
+  // Improvement history is derived only from commits with verified main SHA.
+  // Static QA-only runs never become phantom "3D quality improved" entries.
+  v.changesList?.replaceChildren();
+  const recentChanges=[...audit.history].filter(x=>x.sourceCommits>0&&
+   /^[0-9a-f]{40}$/.test(x.mainAfterSha||'')).slice(-4).reverse();
+  if(!recentChanges.length)
+   v.changesList?.appendChild(paragraph('実コードの修正コミット：0件。QA起動だけでは品質改善と判定しません。','note'));
+  else for(const row of recentChanges){
+   const files=(row.sourceFiles||[]).slice(0,5);
+   const value=TIME(row.checkedAt)+'｜'+row.mainAfterSha.slice(0,10)+
+    '｜修正ソース'+(row.modifiedSourceFiles||0)+'件'+
+    (row.pr?'｜元PR #'+row.pr:'')+
+    (files.length?'｜'+files.join('、'):'');
+   const line=tag('div','improvement-row');
+   line.appendChild(paragraph(value,'status'));
+   line.appendChild(makeLink('コミットを確認',GH+'/commit/'+row.mainAfterSha,true));
+   v.changesList?.appendChild(line);
+  }
+  if(id==='gameQuality'){
+   // Each lane records independent verification; actual Android never inferred.
+   const seen=new Set();
+   for(const row of [...audit.history].reverse()){
+    const q=row.gameQuality;
+    if(!q?.lane||seen.has(q.lane))continue;seen.add(q.lane);
+    const b=q.browser||{},comparison=q.comparison||{};
+    const measured=b.status==='measured_ci_fps'&&Number.isFinite(b.fps);
+    const metric=measured?
+     'CI仮想GPU FPS '+b.fps+'／P95 '+(b.p95Ms??'未計測')+'ms／描画 '+(b.drawCalls??'未計測'):
+     b.status==='boot_verified_no_fps'?'1000対1000の起動を検証（FPS未計測）':
+     b.status==='failed'?'ゲーム実行QA失敗：'+String(b.error||'詳細はActions').slice(0,100):
+     '実ブラウザFPS未計測';
+    const del=comparison.comparable?comparison.delta||{}:null;
+    const delta=del&&Number.isFinite(del.fps)?
+     '｜前回同条件比 FPS '+(del.fps>=0?'+':'')+del.fps+
+     '／P95 '+(Number.isFinite(del.p95Ms)?(del.p95Ms>=0?'+':'')+del.p95Ms:'未計測')+'ms':
+     '｜前後比較：同条件データなし';
+    const line=tag('div','improvement-row');
+    line.appendChild(paragraph('【'+(q.label||q.lane)+'】'+
+      (q.staticPassed?'静的QA合格':'静的QA失敗')+'｜'+metric+delta+
+      '｜実機Android未測定','status'));
+    if(typeof row.runUrl==='string'&&row.runUrl.startsWith(GH+'/actions/runs/'))
+     line.appendChild(makeLink('実行ログ',row.runUrl,true));
+    v.changesList?.appendChild(line);
+   }
+   const lastLane=last.gameQuality;
+   const browser=lastLane?.browser||{};
+   const comparison=lastLane?.comparison||{};
+   const fps=Number.isFinite(browser.fps)?browser.fps+' (CI仮想GPU)':'未測定';
+   const change=comparison.comparable&&Number.isFinite(comparison.delta?.fps)?
+    (comparison.delta.fps>0?'増加 ':comparison.delta.fps<0?'低下 ':'差分なし ')+
+      Math.abs(comparison.delta.fps)+' FPS':'比較データ不足';
+   v.progressSummary.textContent='直近6担当：'+(lastLane?.label||'不明')+
+    '／'+(lastLane?.staticPassed?'静的QA合格':'静的QA未合格')+
+    '／FPS '+fps+'／前後比較 '+change+
+    '／JSエラー '+(Number.isFinite(browser.runtimeErrors)?browser.runtimeErrors:'未測定')+
+    '件。自動ソース変更 '+(last.sourceCommits||0)+
+    '件、GLB '+(last.generatedGLBs||0)+'件。実機FPS・FF15外観合格は未確認。';
+  }
   const health=ui?.health;
   if(health){
    health.metrics.textContent='最新実行：ソース変更'+lastCount+'ファイル／自動コミット'+
@@ -770,7 +832,7 @@ async function updateWorldSix(){
 async function start(){
  try{
   const j=await fetchJSON('./data/hourly-batch-dashboard.json');
-  if(!Array.isArray(j.groups)||j.groups.length!==6)throw Error('6系統の設定が不正');
+  if(!Array.isArray(j.groups)||j.groups.length!==7)throw Error('7系統の設定が不正');
   $('cards').replaceChildren();groups.push(...j.groups);$('groupCount').textContent=groups.length+'系統';
   for(const g of groups)createCard(g);
   setupExpressionSelector();setupDisplaySelector();
