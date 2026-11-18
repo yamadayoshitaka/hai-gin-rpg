@@ -116,6 +116,36 @@ function imageAudit(buffer) {
       assert.notEqual(frames[0].pngSha256,frames[2].pngSha256,
         sex+' front and side geometry must not render identically');
     }
+    // Human-readable side-by-side review against the registered ORIGINAL
+    // Chapter 1 commander illustration. It is a provisional character master,
+    // not a finalized turn-around and not a proprietary FF15 model asset.
+    const reference='assets/story/characters/commander/female-master.webp';
+    const sheet=await browser.newPage({viewport:{width:1200,height:540},deviceScaleFactor:1});
+    const examples=['female-front','female-threeQuarter','female-side'];
+    const tiles=[{name:'Registered original character illustration',src:ROOT+'/'+reference}];
+    for(const name of examples){
+      const bytes=fs.readFileSync(path.join(IMAGE_DIR,name+'.png'));
+      tiles.push({name,src:'data:image/png;base64,'+bytes.toString('base64')});
+    }
+    const esc=v=>String(v).replace(/[&<>"']/g,c=>({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+    await sheet.setContent('<!doctype html><html><meta charset="utf-8">'+
+      '<style>body{margin:0;background:#171a22;color:#e4e7ec;font:15px sans-serif}'+
+      'h1{font-size:17px;padding:12px;margin:0}section{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px}'+
+      'figure{margin:0}img{width:100%;height:400px;object-fit:contain;background:#11151b}'+
+      'figcaption{text-align:center;padding:8px}</style>'+
+      '<h1>Character design / real 3D preview — artistic comparison pending</h1>'+
+      '<section>'+tiles.map(item=>'<figure><img src="'+esc(item.src)+'">'+
+      '<figcaption>'+esc(item.name)+'</figcaption></figure>').join('')+'</section></html>');
+    await sheet.waitForFunction(()=>Array.from(document.images).every(img=>
+      img.complete && img.naturalWidth>0),null,{timeout:20000});
+    const comparison=IMAGE_DIR+'/female-original-art-side-by-side.png';
+    await sheet.screenshot({path:comparison,animations:'disabled',timeout:30000});
+    report.referenceComparisonSheet=comparison;
+    report.referencePath=reference;
+    report.referenceStatus='provisional_original_character_art_no_automatic_similarity_score';
+    await sheet.close();
     report.status='webgl_images_captured_manual_art_review_pending';
   }catch(error){
     report.status='webgl_visual_regression_failed';
