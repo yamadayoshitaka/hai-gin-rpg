@@ -9,13 +9,13 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=phoenix-master-birds-v26-mantle-20261118';
+ from './monster-geometry.js?v=phoenix-predatory-face-v12-20261118';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=phoenix-master-flight-v17-mantle-20261118';
+ from './monster-animation.js?v=phoenix-predatory-motion-v12-20261118';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js?v=phoenix-master-routing-v21-mantle-20261118';

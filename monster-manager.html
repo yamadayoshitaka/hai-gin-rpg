@@ -189,8 +189,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-master-birds-v26-mantle-20261118';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-master-flight-v17-mantle-20261118';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=phoenix-predatory-face-v12-20261118';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=phoenix-predatory-motion-v12-20261118';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=4.6.91';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -365,7 +365,7 @@ function refreshGeometry(){
  const revision=model?.userData?.avianRebuildRevision||'';
  byId('modelRevision').textContent=selected==='m013'?
   (revision?'フェニックス実モデル '+revision+
-     (revision.includes('flight-realism-v9')?' / 飛行造形':' / 旧造形の可能性'):
+     (revision.includes('predatory-face-v12')?' / 猛禽顔リメッシュ':' / モデル版を確認'):
    'フェニックス改修版モデルが読み込まれていません'):
   (revision?'モデル正本 '+revision:'標準モデル / 外部モデル');
  byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+
@@ -895,7 +895,14 @@ window.__avianWingQA=()=>{
    elbow:selected==='m015'||p['wingElbow'+side]?.parent===p['wing'+side],
    wrist:selected==='m015'||p['wingWrist'+side]?.parent===p['wingElbow'+side]}:null;
  });
+ const hardBrow=['L','R'].every(side=>
+  !!model.getObjectByName('avian-predatory-brow-'+selected+'-'+side)?.userData.avianBrowBoneSculpt);
+ const sweptCheeks=!!model.getObjectByName(
+  'avian-predatory-malar-plumage-'+selected)?.userData.avianSweptPredatoryCheeks;
  return {id:selected,revision:model.userData.avianRebuildRevision,
+  hardBrow,sweptCheeks,
+  angularOwl:selected==='m014'?['L','R'].every(side=>
+   !!model.getObjectByName('owl-facial-disc-'+side)?.userData.avianAngularMask):null,
   donor:model.userData.avianGuardianGeometryDonor,
   bodyFeathers:model.userData.avianBodyFeatherCount||0,
    phoenixMaster:!!model.userData.avianPhoenixMasterChassis||

@@ -418,3 +418,43 @@ test('Phoenix v11 physically refreshes all five bird species without losing batt
   }finally{disposeMonsterSculpture(m);}
  }
 });
+
+test('avian v12 replaces juvenile rounded eyes with hooded raptor skull detail',()=>{
+ for(const detail of ['high','low']){
+  for(const id of ['m011','m012','m013','m014']){
+   const m=build(id,detail);
+   try{
+    const head=m.userData.pivots.head;
+    const cheeks=m.getObjectByName('avian-predatory-malar-plumage-'+id);
+    assert.equal(cheeks?.parent,head);
+    assert.equal(cheeks.userData.avianSweptPredatoryCheeks,true);
+    assert.ok(cheeks.userData.curvedAvianFeathers>=6);
+    for(const side of ['L','R']){
+     const brow=m.getObjectByName('avian-predatory-brow-'+id+'-'+side);
+     assert.ok(brow?.isMesh,id+' '+detail+' missing solid brow');
+     assert.equal(brow.userData.avianBrowBoneSculpt,true);
+     assert.ok(brow.userData.avianInnerBrowDecline>.2);
+     assert.ok(brow.geometry.index.count>=30);
+     const eye=id==='m013'?
+       m.getObjectByName('phoenix-amber-eye-'+side):
+       id==='m014'?
+        m.getObjectByName('owl-iris-'+(side==='L'?-1:1)):
+        m.getObjectByName('avian-master-iris-'+side);
+     assert.ok(eye?.isMesh,id+' '+detail+' missing eye');
+     assert.ok(eye.scale.x>eye.scale.y*1.65,
+      id+' eye should be a narrow hunting slit, not round');
+     if(id==='m014'){
+      const mask=m.getObjectByName('owl-facial-disc-'+side);
+      assert.equal(mask?.userData.avianAngularMask,true);
+      assert.ok(mask.geometry.index.count>=24);
+     }
+    }
+    if(id==='m013'){
+     const beak=m.getObjectByName('avian-hooked-beak-m013');
+     assert.ok(beak.userData.phoenixBeakLength>=.68);
+    }
+    assert.ok(triangles(m)<500000,'face geometry must fit mobile LOD');
+   }finally{disposeMonsterSculpture(m);}
+  }
+ }
+});
