@@ -151,9 +151,15 @@
       "workflowName": "全ゲーム品質6担当／実FPS・エラー回帰",
       "previewGroup": "gameQuality",
       "schedulerEnabled": true,
-      "details": "①モデル本編接続②画質・PBR③動作・騎乗・接地④FPS/P95・描画⑤50/1000大軍戦LOD・メモリ⑥ゲーム起動JS/WebGLエラー。実ゲームの回帰QA、関連する安全なモデルランタイム修正PRの移植、競合Issue引継ぎを行う。",
-      "goal": "改修の前後で同一シナリオのCIソフトウェアWebGL測定値を比較し、ソース変更ファイル・コミットSHA・失敗テスト・WebGL画像証跡を表示。Android実測値と混同しない。品質未改善を成功としない。",
-      "automationSchedule": "GitHub Actions 6回/時（追加のChatGPT定期枠は使用しない）"
+      "details": "①モデル本編接続②画質・PBR③動作・騎乗・接地④FPS/P95・描画⑤50/1000大軍戦LOD・メモリ⑥ゲーム起動JS/WebGLエラー。実ゲームの回帰QA、関連する安全なモデルランタイム修正PRの移植、競合Issue引継ぎを行う。 【品質進化パイロット追加】毎時08/28/48分に顔・髪・衣装それぞれ最大3種類の調整候補を実3Dで試し、静的QAと50対50 WebGL FPS・P95の比較を通過した候補だけコミット/公開。採用なしなら0件と表示。",
+      "goal": "改修の前後で同一シナリオのCIソフトウェアWebGL測定値を比較し、ソース変更ファイル・コミットSHA・失敗テスト・WebGL画像証跡を表示。Android実測値と混同しない。品質未改善を成功としない。 幾何指標とCI仮想GPU FPSはFF15美観・Android実機FPSではない。PBR衣装は承認済み画像の客観比較がない間、探索はしても自動採用しない。",
+      "automationSchedule": "GitHub Actions 6回/時（追加のChatGPT定期枠は使用しない）",
+      "qualityEvolutionWorkflow": "quality-evolution-loop.yml",
+      "qualityEvolutionMinutesUtc": [
+        8,
+        28,
+        48
+      ]
     }
   ]
 }

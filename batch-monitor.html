@@ -571,6 +571,34 @@ async function updateSelfDriveEvidence(staticProgress){
      'note'));
    }
    v.changesList?.appendChild(fixPanel);
+   const evolutionPanel=tag('div','improvement-row');
+   evolutionPanel.appendChild(makeLink('継続品質進化：顔・髪・衣装 自動探索／実行履歴',
+    GH+'/actions/workflows/quality-evolution-loop.yml',true));
+   try{
+    const history=await fetchJSON('./data/quality-evolution/history.json?ts='+Date.now());
+    const changes=Array.isArray(history?.acceptedChanges)?history.acceptedChanges:[];
+    const panelIntro=changes.length?
+     '品質探索による実ソース採用：'+changes.length+'件（FPSはCI仮想GPU、FF15外観未承認）':
+     '品質探索による採用：0件。候補テストだけでは品質改善・デプロイと判定しません。';
+    evolutionPanel.appendChild(paragraph(panelIntro,'status'));
+    for(const change of changes.slice(-5).reverse()){
+     if(!/^[0-9a-f]{40}$/.test(change.sourceSha||''))continue;
+     const before=Number(change.proxyBefore),after=Number(change.proxyAfter);
+     const proxy=Number.isFinite(before)&&Number.isFinite(after)?
+      '3D幾何指標 '+before.toFixed(2)+' → '+after.toFixed(2):
+      '幾何指標未検証';
+     const measured=Number.isFinite(change.gameFpsBaseline)&&Number.isFinite(change.gameFpsCandidate)?
+      'CI FPS '+change.gameFpsBaseline+' → '+change.gameFpsCandidate:
+      'FPS前後比較なし';
+     evolutionPanel.appendChild(paragraph(change.domain+'：'+
+      proxy+'／'+measured+'／GLB新規生成なし','note'));
+     evolutionPanel.appendChild(makeLink('採用したソースコミット '+change.sourceSha.slice(0,10),
+      GH+'/commit/'+change.sourceSha,true));
+    }
+   }catch(_e){
+    evolutionPanel.appendChild(paragraph('品質探索の採用履歴は未公開。候補結果はActionsの実行記録を参照。','note'));
+   }
+   v.changesList?.appendChild(evolutionPanel);
    // Each lane records independent verification; actual Android never inferred.
    const seen=new Set();
    for(const row of [...audit.history].reverse()){
