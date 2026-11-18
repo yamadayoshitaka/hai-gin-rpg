@@ -105,11 +105,24 @@ async function selfHeal(){
  requireRun('git',['config','user.email','41898282+github-actions[bot]@users.noreply.github.com']);
  if(requireRun('git',['rev-parse','HEAD']).trim()!==baseline)
   throw Error('Check out latest main before self-repair; no stale merge is permitted');
+ // Respect the existing public batch-center switches; an owner-disabled
+ // category must never be modified just because a scheduled runner started.
+ const switches=JSON.parse(fs.readFileSync(
+  path.join(ROOT,'data/batch-center-switches.json'),'utf8'));
+ const isEnabled=id=>switches?.groups?.[id]?.enabled===true;
+ if(!isEnabled('gameQuality')){
+  report.status='disabled_by_batch_center';return;
+ }
+ const enabledFor={
+  'monster-refresh-duplicates':()=>isEnabled('creatureMonster'),
+  'studio-source-manifest-drift':()=>isEnabled('faceHair')&&isEnabled('outfit'),
+  'invalid-crowd-lod-budget':()=>isEnabled('gameQuality')
+ };
  const patched=new Set();
  for(let pass=1;pass<=3;pass++){
   let appliedThisPass=0;
   for(const rule of REPAIR_RULES){
-   if(patched.has(rule.id))continue;
+   if(patched.has(rule.id)||!enabledFor[rule.id]?.())continue;
    const filepath=path.join(ROOT,rule.file);
    const original=fs.readFileSync(filepath,'utf8');
    const candidate=applyKnownRule(rule.id,original,CHARACTER_QUALITY_SIX_LANES);
@@ -140,6 +153,7 @@ async function selfHeal(){
  }
  // Run every known recipe's regression tests, even if no fix was needed.
  for(const rule of REPAIR_RULES){
+  if(!enabledFor[rule.id]?.())continue;
   const checked=suites(rule.tests);
   if(!checked.ok)report.detected.push({id:rule.id,error:checked.text.slice(-1100)});
  }
