@@ -37,6 +37,9 @@ on:
       - 'data/character-system/quality-six-targets.json'
       - 'scripts/character-six-batch.mjs'
       - 'qa/character-six-lane-contract.test.mjs'
+      - 'qa/facehair-production-visual.cjs'
+      - 'qa/battle-face-lit-visual.cjs'
+      - 'qa/battle-face-lit-visual.html'
       - 'qa/outfit-fps-diagnostic.test.mjs'
       - 'scripts/outfit-fps-diagnostic.mjs'
       - 'qa/studio-model-route-contract.test.mjs'
@@ -58,7 +61,7 @@ jobs:
       matrix:
         category: [faceHair, outfit]
     runs-on: ubuntu-24.04
-    timeout-minutes: 22
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -140,6 +143,43 @@ jobs:
         env:
           GITHUB_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: node scripts/outfit-fps-diagnostic.mjs
+      # Face/hair is not visually certified by a green static unit test.
+      # Capture independent male/female head GLBs from the real studio and
+      # the actual skinned 65-bone donor/battle PBR source once hourly or on PR.
+      - name: Decide whether to run real face and hair WebGL visual regression
+        id: face_probe
+        if: always() && matrix.category == 'faceHair'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule || '' }}
+          INPUT_CATEGORY: ${{ inputs.category || 'all' }}
+          INPUT_SLOT: ${{ inputs.slot || 'auto' }}
+        run: |
+          if [ "$EVENT_NAME" = 'pull_request' ] || [ "$CRON" = '53 * * * *' ] || {
+            [ "$EVENT_NAME" = 'workflow_dispatch' ] &&
+            { [ "$INPUT_CATEGORY" = 'faceHair' ] || [ "$INPUT_CATEGORY" = 'all' ]; } &&
+            { [ "$INPUT_SLOT" = '5' ] || [ "$INPUT_SLOT" = 'auto' ]; }
+          }; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install real face/hair screenshot and geometry inspection runtime
+        if: always() && steps.face_probe.outputs.run == 'true'
+        run: |
+          npm install --no-save --package-lock=false three@0.160.1 playwright@1.56.0 pngjs@7.0.0
+          npx playwright install --with-deps chromium
+      - name: Serve actual face studio, donor GLB and game model source
+        if: always() && steps.face_probe.outputs.run == 'true'
+        run: |
+          python3 -m http.server 4177 --bind 127.0.0.1 >/tmp/facehair-production-qa-server.log 2>&1 &
+          sleep 2
+      - name: Compare female and male face and hair geometry from four live WebGL angles
+        if: always() && steps.face_probe.outputs.run == 'true'
+        timeout-minutes: 8
+        run: node qa/facehair-production-visual.cjs
+      - name: Confirm the actual skinned battle donor face source and PBR pixels
+        if: always() && steps.face_probe.outputs.run == 'true'
+        timeout-minutes: 6
+        run: node qa/battle-face-lit-visual.cjs
       - name: Archive separate source QA, not a false model approval
         if: always()
         uses: actions/upload-artifact@v4
@@ -149,11 +189,14 @@ jobs:
             qa-reports/character-six-lane/${{ matrix.category }}-*.json
             qa-reports/game-quality-six/browser-frame.json
             qa-reports/game-quality-six/frame-webgl.png
+            qa-screenshots/facehair-production/
+            qa-screenshots/battle-face/
           retention-days: 14
           if-no-files-found: warn
       - name: Link production and previews
         if: always()
         run: |
+          echo 'Face/hair renders 8 real studio views and the battle donor UV/PBR view hourly at UTC :53 and on PR. These screenshots require artistic review and do not certify FF15 quality.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Outfit FPS runs once hourly at UTC :53 and on outfit PR QA; CI SwiftShader is NOT Android FPS.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Production path: source/GLB change → source QA → WebGL/action QA → Android FPS gate → PR/CI → main merge → Pages release SHA.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Face studio: https://yamadayoshitaka.github.io/hai-gin-rpg/face-mesh-studio.html' >> "$GITHUB_STEP_SUMMARY"
