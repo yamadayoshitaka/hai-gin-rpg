@@ -700,12 +700,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Angular-only selection can oversample the inner cap and leave a visible
  // outer bald ring even with adequate crown strand budget. Alternate bands
  // without creating additional strands, meshes or draw calls.
- const crownRadius=crownRoots.map(root=>root.p.distanceTo(crownCenter))
+ // Crown coverage is measured in the horizontal scalp footprint. Using 3D
+ // distance incorrectly treats higher scalp vertices as outer-ring roots,
+ // leaving true side/rear rim vertices undersampled on tall head shapes.
+ const crownFootprintRadius=root=>Math.hypot(
+  root.p.x-crownCenter.x,root.p.z-crownCenter.z);
+ const crownRadius=crownRoots.map(crownFootprintRadius)
   .sort((a,b)=>a-b);
  const crownMedian=crownRadius[Math.floor(crownRadius.length/2)];
  const crownBands=[
-  crownRoots.filter(root=>root.p.distanceTo(crownCenter)<=crownMedian),
-  crownRoots.filter(root=>root.p.distanceTo(crownCenter)>crownMedian)
+  crownRoots.filter(root=>crownFootprintRadius(root)<=crownMedian),
+  crownRoots.filter(root=>crownFootprintRadius(root)>crownMedian)
  ];
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
