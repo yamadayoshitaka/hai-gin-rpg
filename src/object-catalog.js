@@ -616,9 +616,36 @@ export function createObjectById(id,{cellSize=2.2}={}){
 
   // New batch-center catalog assets are authored once for both preview and game.
   if(id==='town_firewood_001'){
+   // Split, tapered logs have uneven facets and visible cut end grain; the
+   // shared footprint stays unchanged for town placement and collision.
+   const endGrain=new THREE.MeshStandardMaterial({color:0xb99a6e,roughness:.94,metalness:0});
+   const heartwood=new THREE.MeshStandardMaterial({color:0x765339,roughness:.98,metalness:0});
    for(let row=0;row<3;row++)for(let i=0;i<5-row;i++){
-    const log=new THREE.Mesh(new THREE.CylinderGeometry(.17*c,.18*c,2.25*c,10),wood);
-    log.rotation.z=Math.PI/2;log.position.set(0,(.18+row*.3)*c,(i-(4-row)/2)*.36*c);root.add(log);
+    const n=row*5+i, radius=(.145+(n%3)*.013)*c;
+    const length=(2.08+(n%4)*.045)*c;
+    const geometry=new THREE.CylinderGeometry(radius*.91,radius,length,9,2);
+    const position=geometry.attributes.position;
+    // Shift the middle ring to suggest natural bowing, not a perfect dowel.
+    for(let v=0;v<position.count;v++){
+     const y=position.getY(v);
+     if(Math.abs(y)<length*.15)position.setX(v,position.getX(v)+((n%2)?-.045:.045)*c);
+    }
+    geometry.computeVertexNormals();
+    const log=new THREE.Mesh(geometry,wood);
+    log.rotation.z=Math.PI/2;
+    log.rotation.y=((n%3)-1)*.065;
+    log.position.set(0,(.16+row*.29)*c,(i-(4-row)/2)*.35*c);
+    log.castShadow=true;root.add(log);
+    for(const side of [-1,1]){
+     const cut=new THREE.Mesh(new THREE.CircleGeometry(radius*.90,9),endGrain);
+     cut.rotation.y=side*Math.PI/2;
+     cut.position.set(log.position.x+side*length*.50,log.position.y,log.position.z);
+     root.add(cut);
+     const ring=new THREE.Mesh(new THREE.TorusGeometry(radius*.54,.012*c,4,9),heartwood);
+     ring.rotation.y=Math.PI/2;
+     ring.position.set(log.position.x+side*(length*.50+.003*c),log.position.y,log.position.z);
+     root.add(ring);
+    }
    }
   }
   if(id==='town_water_trough_001'){
