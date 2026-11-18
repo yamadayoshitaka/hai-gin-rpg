@@ -78,6 +78,11 @@ small{font-size:11px}strong{font-weight:700}
 <p class="panel"><strong>第1章漫画（ゲーム本編との照合）：</strong><span id="chapter4status">各ステージの本編原画を照合中</span>　<a href="./story-chapter1-approval.html?stage=c01-s04">漫画確認・差し戻し</a></p>
 <p class="panel"><strong>予算ルール：</strong><span id="storySpendPolicy">追加の有料APIは使用しません</span></p>
 <p class="panel"><strong>画像生成ルート：</strong>Cloudflare既設API（無料、毎日09:20に最大1回の制作バッチ）を優先。上限時は追加課金せずChatGPT Plusの手動生成へ引き継ぎます。<a id="fallbackLink" href="./story-chapter1-approval.html?stage=c01-s04&provider=chatgpt">未生成コマをChatGPTで制作する</a> （自動API呼出しではありません）</p>
+<section class="panel" id="autoDevAudit">
+ <h2>自動開発｜未知障害と実機FPS</h2>
+ <p>未知障害はGitHub Actionsで検出して担当のソース修正Issueに振り分けます。Issue作成は修復完了の意味ではありません。実機FPSは端末上でゲームを動かした場合だけ記録されます。</p>
+ <div class="links"><a href="./android-fps-audit.html">Android実機FPSを測定</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/issues?q=is%3Aopen+is%3Aissue+%22%5Bauto-dev%5D%22" target="_blank" rel="noopener noreferrer">未知障害の修正キュー</a><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/auto-dev-triage.yml" target="_blank" rel="noopener noreferrer">障害収集の実行履歴</a></div>
+</section>
 <p id="releaseStatus" class="muted">公開コミットを照合中…</p>
 <section class="panel" id="faceExpressionPanel" aria-label="顔モデルの表情を選択">
  <h2>顔・髪｜表情を選んで3D確認</h2>

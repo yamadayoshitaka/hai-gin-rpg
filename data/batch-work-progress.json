@@ -125,7 +125,7 @@
         "code": "done",
         "qa": "pending",
         "commit": "done",
-        "pr": "draft_667",
+        "pr": "done",
         "merge": "not_done",
         "deploy": "not_done"
       },

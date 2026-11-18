@@ -24,6 +24,10 @@ on:
       - 'qa/battle-ready-gate.cjs'
       - 'qa/battle-ready-gate.test.cjs'
       - 'qa/game-quality-six.test.mjs'
+      - 'qa/visual-frame-guard.py'
+      - 'qa/visual-frame-guard.test.mjs'
+      - 'qa/android-fps-audit.test.mjs'
+      - 'android-fps-audit.html'
       - 'src/creature-*.js'
       - 'src/monster-*.js'
       - 'src/face-*.js'
@@ -91,7 +95,7 @@ jobs:
         run: |
           node --check scripts/game-quality-six-batch.mjs
           node --check qa/game-quality-browser.cjs
-          node --test qa/game-quality-six.test.mjs qa/battle-ready-gate.test.cjs
+          node --test qa/game-quality-six.test.mjs qa/battle-ready-gate.test.cjs qa/android-fps-audit.test.mjs qa/visual-frame-guard.test.mjs
       - name: Install software WebGL browser only for live FPS or game-error lanes
         if: steps.lane.outputs.lane == 'frame' || steps.lane.outputs.lane == 'scale' || steps.lane.outputs.lane == 'runtime'
         run: |
@@ -108,6 +112,16 @@ jobs:
         id: browser
         continue-on-error: true
         run: node qa/game-quality-browser.cjs --lane=${{ steps.lane.outputs.lane }}
+      - uses: actions/setup-python@v6
+        if: steps.lane.outputs.lane == 'frame'
+        with:
+          python-version: '3.12'
+      - name: Install image analysis only for actual rendered 50v50 game frames
+        if: steps.lane.outputs.lane == 'frame'
+        run: python3 -m pip install --disable-pip-version-check --quiet Pillow==11.3.0
+      - name: Reject blank or missing actual WebGL game frames
+        if: steps.lane.outputs.lane == 'frame'
+        run: python qa/visual-frame-guard.py qa-reports/game-quality-six/frame-webgl.png
       - name: Run six-way source and game-runtime regression for selected lane
         run: node scripts/game-quality-six-batch.mjs --lane ${{ steps.lane.outputs.lane }}
       - name: Safely repair current main using a relevant owner-authored source PR, then record exact outcomes
