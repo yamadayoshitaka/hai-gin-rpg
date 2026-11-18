@@ -7,7 +7,7 @@ import {createObjectiveTurnEngine,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS} from '.
  */
 export function installObjectiveTurnPanel({
  groupIds,getGroups,getMoveTargets=()=>[],getMapChoices=()=>[],
- getGroupPowers=()=>({}),getEnemyGroups=()=>[],getGroupOrigin=()=>null,
+ getGroupPowers=()=>({}),getGroupJobs=()=>[],getEnemyGroups=()=>[],getGroupOrigin=()=>null,
  getItems=()=>[],drawMapBackground=null,worldSize=232,
  hasArrived=null,onPause,onMove,onAction,onReport
 }){
@@ -21,7 +21,7 @@ export function installObjectiveTurnPanel({
   '<div class="objectiveTurnPager"><button type="button" data-pager="-1">◀ 前の班</button><b id="objectiveTurnPage"></b><button type="button" data-pager="1">次の班 ▶</button></div>'+
   '<div id="objectiveTurnGroup" class="objectiveTurnGroup"></div>'+
   '<div class="objectiveTurnSteps"><button type="button" data-step="map">① 地図で移動</button><button type="button" data-step="action">② 到着後の作戦</button><button type="button" data-step="intel">戦力一覧</button></div>'+
-  '<div id="objectiveTurnMapStep"><canvas id="objectiveTurnMap" width="232" height="232" aria-label="戦場地図。目的地の印をタップして移動先を選択"></canvas><div id="objectiveTurnMapHint"></div><div id="objectiveTurnChoices" class="objectiveTurnChoices"></div><div class="objectiveChoicePager"><button type="button" data-choice-page="-1">◀</button><span id="objectiveChoicePage"></span><button type="button" data-choice-page="1">▶</button></div></div>'+
+  '<div id="objectiveTurnMapStep"><div class="objectiveTurnMapTools"><strong>🗺 移動先をタップ</strong><button type="button" data-map-zoom="out" aria-label="地図を縮小">−</button><span id="objectiveTurnZoomLevel">100%</span><button type="button" data-map-zoom="in" aria-label="地図を拡大">＋</button><button type="button" data-map-zoom="reset">全体</button><button type="button" data-map-expand aria-expanded="false">⛶ 大きく</button></div><canvas id="objectiveTurnMap" width="464" height="464" aria-label="戦場地図。二本指で拡大、ドラッグで移動、地点をタップして選択"></canvas><div id="objectiveTurnMapHint"></div><div id="objectiveTurnChoices" class="objectiveTurnChoices"></div><div class="objectiveChoicePager"><button type="button" data-choice-page="-1">◀</button><span id="objectiveChoicePage"></span><button type="button" data-choice-page="1">▶</button></div></div>'+
   '<div id="objectiveTurnActionStep" hidden><div id="objectiveTurnArrival"></div><div id="objectiveTurnActions" class="objectiveTurnActions"></div><div id="objectiveTurnItems" class="objectiveTurnItems"></div></div>'+
   '<div id="objectiveTurnIntel" hidden><div id="objectiveTurnIntelRows"></div><div class="objectiveChoicePager"><button type="button" data-intel-page="-1">◀ 前</button><span id="objectiveIntelPage"></span><button type="button" data-intel-page="1">次 ▶</button></div></div>'+
   '<div id="objectiveTurnReport" class="objectiveTurnReport"></div>'+
@@ -36,6 +36,9 @@ export function installObjectiveTurnPanel({
  const actionLabel=id=>TURN_ACTION_OPTIONS.find(x=>x.id===id)?.label||'作戦未設定';
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  let shown=false,page=0,step='map',choicePage=0,intelPage=0,mapMarkers=[];
+ let zoom=1,mapCenterX=(Number(worldSize)||232)/2,mapCenterZ=mapCenterX,lastTap=0;
+ const pointers=new Map();
+ const zoomBounds=[1,6];
  const activeGroups=state=>{
   const all=state.groups.filter(g=>groupIds.includes(Number(g.id)));
   return all.filter(g=>Number(g.alive)>0||Number(g.initial)>0).length?
@@ -109,9 +112,12 @@ export function installObjectiveTurnPanel({
   nav[0].disabled=page<=0;nav[1].disabled=page>=groups.length-1;
   const max=Math.round(Number(group?.initialMaxHp||group?.maxHp)||0),hp=Math.round(Number(group?.hp)||0);
   const pct=max?clamp(Math.round(hp/max*100),0,100):0;
-  $('objectiveTurnGroup').innerHTML='<strong>🔵 第'+id+'班 · '+Math.round(Number(power[id])||0)+' 戦力P · '+(Number(group?.alive)||0)+'人</strong>'+
+  const jobs=getGroupJobs(id);
+  $('objectiveTurnGroup').innerHTML='<strong>🔵 味方 第'+id+'班 · '+(Math.round((Number(power[id])||0)*10)/10)+' 戦力P · '+(Number(group?.alive)||0)+'人</strong>'+
    '<div class="objectiveTurnHp"><span style="width:'+pct+'%"></span></div>'+
-   '<small>総合HP '+hp+' / '+max+' ('+pct+'%)　現在：'+esc(movingLabel(order.move))+' → '+esc(actionLabel(order.action))+'</small>';
+   '<small>総合HP '+hp+' / '+max+' ('+pct+'%)　現在：'+esc(movingLabel(order.move))+' → '+esc(actionLabel(order.action))+'</small>'+
+   '<div class="objectiveTurnJobs" aria-label="味方のジョブ別戦力">'+
+   (jobs.length?jobs.map(job=>'<span>'+esc(job.name)+' '+Number(job.count||0)+'人 · P'+(Math.round(Number(job.power||0)*10)/10)+'</span>').join(''):'<small>所属する生存兵なし</small>')+'</div>';
   for(const el of root.querySelectorAll('[data-step]'))el.classList.toggle('active',el.dataset.step===step);
   $('objectiveTurnMapStep').hidden=step!=='map';
   $('objectiveTurnActionStep').hidden=step!=='action';
@@ -120,7 +126,7 @@ export function installObjectiveTurnPanel({
    renderMap(id,order);
    const options=mapMarkers;
    const pages=Math.max(1,Math.ceil(options.length/4));choicePage=clamp(choicePage,0,pages-1);
-   $('objectiveTurnMapHint').textContent=options.length?'目的地の印、または下の地点ボタンを選んでください（青＝味方、赤＝敵）':'移動可能な地点がありません。現在地で待機を選択してください。';
+   $('objectiveTurnMapHint').textContent=options.length?'＋／−で拡大・縮小、指でドラッグ／ピンチ操作。地点をタップすると作戦選択へ進みます。':'移動可能な地点がありません。現在地で待機を選択してください。';
    $('objectiveTurnChoices').innerHTML=options.slice(choicePage*4,choicePage*4+4).map((c,i)=>
     '<button type="button" data-map-choice="'+(choicePage*4+i)+'" class="'+
     (c.move===order.move&&String(c.targetId??'')===String(order.targetId??'')?'selected':'')+'">'+
@@ -139,13 +145,14 @@ export function installObjectiveTurnPanel({
      (String(item.id)===String(order.itemId)?'selected':'')+'">'+esc(item.label)+'</button>').join(''):
      '<small>使用可能なアイテムがありません。別の作戦を選んでください。</small>')):'';
   }else{
-   const allies=groups.map(g=>({team:0,id:g.id,alive:g.alive,hp:g.hp,maxHp:g.initialMaxHp||g.maxHp,power:Number(power[g.id])||0}));
+   const allies=groups.map(g=>({team:0,id:g.id,alive:g.alive,hp:g.hp,maxHp:g.initialMaxHp||g.maxHp,power:Number(power[g.id])||0,jobs:getGroupJobs(Number(g.id))}));
    const all=[...allies,...enemies.map(e=>({...e,team:1}))];
    const pages=Math.max(1,Math.ceil(all.length/5));intelPage=clamp(intelPage,0,pages-1);
    $('objectiveTurnIntelRows').innerHTML=all.slice(intelPage*5,intelPage*5+5).map(r=>'<div class="'+(r.team?'enemy':'ally')+'">'+
     (r.team?'🔴 敵 第':'🔵 味方 第')+esc(r.id)+'隊 ｜戦力 <b>'+Math.round(Number(r.power)||0)+
     '</b> ｜'+(Number(r.alive)||0)+'人 ｜HP '+Math.round(Number(r.hp)||0)+' / '+
-    Math.round(Number(r.maxHp)||0)+'</div>').join('');
+    Math.round(Number(r.maxHp)||0)+
+    '<div class="objectiveIntelJobs">'+(r.jobs?.length?r.jobs.map(job=>esc(job.name)+' '+Number(job.count||0)+'人 P'+(Math.round(Number(job.power||0)*10)/10)).join(' ／ '):'ジョブ情報なし')+'</div></div>').join('');
    $('objectiveIntelPage').textContent=(intelPage+1)+' / '+pages;
    for(const el of root.querySelectorAll('[data-intel-page]'))el.disabled=Number(el.dataset.intelPage)<0?intelPage===0:intelPage>=pages-1;
   }
@@ -156,6 +163,8 @@ export function installObjectiveTurnPanel({
   $('objectiveTurnAdvance').textContent=report?'この作戦で次ターンへ':'設定した作戦でターン開始';
   $('objectiveTurnAdvance').disabled=state.groups.every(g=>!g.alive);
   if(state.error)$('objectiveTurnHint').textContent+=' ⚠ '+state.error;
+  $('objectiveTurnZoomLevel').textContent=Math.round(zoom*100)+'%';
+  root.querySelector('[data-map-expand]').setAttribute('aria-expanded',String($('objectiveTurnMapStep').classList.contains('expanded')));
  }
  function chooseChoice(index){
   const g=visibleGroup(engine.snapshot());if(!g||!(g.alive>0))return;
