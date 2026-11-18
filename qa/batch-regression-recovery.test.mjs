@@ -100,3 +100,23 @@ test('public batch center shows all 7 watched domains and stale schedule warning
  assert.match(html,/系統の遅延・要対応/);
  assert.doesNotMatch(html,/run\.status==='success'\?'Actions成功（造形未承認）'/);
 });
+
+test('failed old-SHA QA is dispatched on latest main, not rerun forever on stale code',()=>{
+ const spec=WATCHED.find(x=>x.workflow==='creature-six-lane.yml');
+ const old={...live('failure',180,2),head_sha:'a'.repeat(40)};
+ assert.equal(decideRecovery(spec,old,stamp,'b'.repeat(40)),'dispatch_latest_main');
+ assert.equal(decideRecovery(spec,old,stamp,'a'.repeat(40)),'escalate');
+ const first={...live('failure',180,1),head_sha:'a'.repeat(40)};
+ assert.equal(decideRecovery(spec,first,stamp,'b'.repeat(40)),'dispatch_latest_main');
+ assert.equal(decideRecovery(spec,first,stamp,'a'.repeat(40)),'rerun_failed');
+ const image=WATCHED.find(x=>x.workflow==='story-chapter1-free-complete-draft-production.yml');
+ assert.equal(decideRecovery(image,first,stamp,'b'.repeat(40)),'escalate',
+  'never automatically rerun image generation on a new commit');
+});
+test('rule repair watchdog can refresh only a tracked-file-clean queued runner',()=>{
+ const script=fs.readFileSync('scripts/batch-rule-self-heal.mjs','utf8');
+ assert.match(script,/stale_checkout_with_changes/);
+ assert.match(script,/\['reset','--hard','origin\/main'\]/);
+ assert.match(script,/\['diff','--cached','--quiet'\]/);
+ assert.match(script,/\['diff','--quiet'\]/);
+});

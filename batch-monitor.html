@@ -980,6 +980,7 @@ async function updateRecoverySnapshot(){
    else if(row.status==='cancelled')state='前回キャンセル';
    if(row.decision==='dispatch')state='定期実行欠落：'+state;
    if(row.action==='dispatch_missing_schedule')state+='／復旧起動を要求';
+   if(row.action==='dispatch_fixed_latest_main')state+='／旧コミットの再試行を中止、最新mainで再起動を要求';
    if(row.action==='rerun_failed_jobs_once')state+='／失敗ジョブ再試行を要求';
    if(row.action==='deferred_bounded_recovery_budget')state+='／次回復旧枠へ繰越';
    if(row.action?.startsWith('escalated'))state+='／修正Issueへ引継ぎ';

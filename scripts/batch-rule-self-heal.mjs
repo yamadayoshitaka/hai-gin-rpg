@@ -103,8 +103,20 @@ async function selfHeal(){
  report.baselineSha=baseline;
  requireRun('git',['config','user.name','github-actions[bot]']);
  requireRun('git',['config','user.email','41898282+github-actions[bot]@users.noreply.github.com']);
- if(requireRun('git',['rev-parse','HEAD']).trim()!==baseline)
-  throw Error('Check out latest main before self-repair; no stale merge is permitted');
+ if(requireRun('git',['rev-parse','HEAD']).trim()!==baseline){
+  // A queued Actions job may start after another batch committed a newer
+  // main. Freshen ONLY an untouched runner checkout: never discard actual
+  // candidate edits or reset a developer's worktree.
+  if(!run('git',['diff','--quiet']).ok||
+     !run('git',['diff','--cached','--quiet']).ok){
+   report.status='stale_checkout_with_changes';
+   return;
+  }
+  requireRun('git',['reset','--hard','origin/main']);
+  if(requireRun('git',['rev-parse','HEAD']).trim()!==baseline)
+   throw Error('Could not safely refresh queued runner checkout to latest main');
+  report.initialCheckoutRefreshed=true;
+ }
  // Respect the existing public batch-center switches; an owner-disabled
  // category must never be modified just because a scheduled runner started.
  const switches=JSON.parse(fs.readFileSync(
