@@ -107,12 +107,23 @@ function fittedScalpSurface(model,bone,headBounds){
   if(index<0)return;
   const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
   if(!joints||!weights)return;
-  // The largest skinned mesh is the actual body; tiny eyebrow/eye meshes
-  // cannot be mistaken for scalp geometry.
-  candidates.push({mesh,index,joints,weights,vertices:mesh.geometry.attributes.position.count});
+  // Rank by vertices actually influenced by the head, not total body size.
+  // Some costumes have more vertices than the face while their head weights
+  // are zero; selecting them produced an empty scalp and a bald sphere fallback.
+  const vertices=mesh.geometry.attributes.position.count;
+  let headInfluenced=0;
+  for(let i=0;i<vertices;i++){
+   let weight=0;
+   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
+   if(weight>=.56)headInfluenced++;
+  }
+  if(headInfluenced>=30)candidates.push({mesh,index,joints,weights,vertices,headInfluenced});
  });
- candidates.sort((a,b)=>b.vertices-a.vertices);
- const candidate=candidates[0];if(!candidate)return null;
+ candidates.sort((a,b)=>b.headInfluenced-a.headInfluenced||b.vertices-a.vertices);
+ // A costume can have many head-weighted vertices below the crown.
+ // Try the next real anatomical candidate if it yields no scalp triangles;
+ // do not fall back to an exposed smooth sphere on that single bad match.
+ for(const candidate of candidates){
  const {mesh,index,joints,weights,vertices}=candidate;
  const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
  const center=headBounds.getCenter(new THREE.Vector3());
@@ -140,12 +151,14 @@ function fittedScalpSurface(model,bone,headBounds){
     Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
   }
  }
- if(triangles.length<90)return null;
+ if(triangles.length<90)continue;
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geometry.computeVertexNormals();geometry.computeBoundingSphere();
  return geometry;
+ }
+ return null;
 }
 
 // A correct XYZ scalp mesh alone can still look bald: the previous smooth
