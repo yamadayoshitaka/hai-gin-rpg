@@ -114,69 +114,72 @@
     },
     "world": {
       "source": "ChatGPTオブジェクト即時回帰＋GitHub六担当実WebGL QA",
-      "lastRunAt": "2026-11-18T10:54:50+09:00",
-      "status": "blocked_branch_behind_main",
+      "lastRunAt": "2026-11-18T17:51:25+09:00",
+      "status": "draft_real_geometry_committed_qa_pending",
       "carryover": true,
-      "subject": "PR #624 main追従ブロッカーとWebGL/Android未検証",
-      "summary": "main 6c59dd0015630c32a030afc840f17739702c2081、PR #624 head world/structural-joinery-five-20261118 の比較は diverged（ahead 11 / behind 1、merge-base e3f90dd9de86d637b96a7b3e2110acac06ace09d）。PR #635はmerged。既存PRのCIはArchitecture/photoreal success、Battle visualとsix-lane cancelled。最新mainへの3-way同期が必要だが接続GitHub操作に安全なブランチ同期機能がなく、旧PRへの追記・main上書きは実施しない。今回実3Dソース改修0、QA新規合格0、ゲーム採用0、公開0。",
-      "nextAction": "PR #624を最新main 6c59dd0015630c32a030afc840f17739702c2081 に3-wayマージ（既存造形差分を保護）、behind_by=0とPR #635 ancestry gate確認後、node --checkと指定3種QA、実WebGL正面/側面/背面・LOD・衝突/FPSを検証し、失敗を同じPRで修復。",
+      "subject": "PR #667 家具5種の実接合造形、WebGL/Android未検証",
+      "summary": "main c0e513605110c58791062792209d663c89f50ecf 起点、家具5種に実メッシュ接合ディテールを追加。PR #667 head 1901e1df3de16bf668e9d4c704465f7d56d3f12a、作成時 ahead 1 / behind 0。Node指定3種QA・新旧WebGL・Android FPSは未検証、ゲーム採用・Pages公開なし。旧PR #659はmainより14コミット遅延し未採用。",
+      "nextAction": "PR #667のCIとnode --check/指定3種QAを確認、WebGL正面・側面・背面/LODと1000vs1000 FPS比較、失敗時は同PRを修復。PR #659等との重複差分を整理。",
       "steps": {
         "launch": "done",
-        "code": "blocked",
+        "code": "done",
         "qa": "pending",
-        "commit": "not_done",
-        "pr": "existing_draft",
-        "merge": "blocked",
+        "commit": "done",
+        "pr": "draft_667",
+        "merge": "not_done",
         "deploy": "not_done"
       },
       "evidence": [
         {
-          "label": "PR #624",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/624"
+          "label": "PR #667",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/667"
         },
         {
-          "label": "PR #635 merged ancestry gate",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/pull/635"
-        },
-        {
-          "label": "Architecture success",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44211554942"
-        },
-        {
-          "label": "World six-lane cancelled",
-          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44211554910"
+          "label": "source commit",
+          "url": "https://github.com/yamadayoshitaka/hai-gin-rpg/commit/1901e1df3de16bf668e9d4c704465f7d56d3f12a"
         }
       ],
       "lastRunOutcome": {
-        "newSourceChangedIds": 0,
+        "newSourceChangedIds": 5,
         "newQAPassed": 0,
         "newGameAppliedIds": 0,
-        "newSourceCommits": 0,
+        "newSourceCommits": 1,
         "newGeneratedGLBs": 0,
         "newPublishedIds": 0,
         "webglPassedIds": [],
         "gameAppliedIds": [],
-        "sourceChangedIds": [],
+        "sourceChangedIds": [
+          "cottage_table_001",
+          "cottage_chair_001",
+          "cottage_bed_001",
+          "cottage_shelf_001",
+          "cottage_barrel_001"
+        ],
         "publicVerified": 0
       },
       "operational": {
         "blockers": [
-          "PR #624 diverged from latest main: behind_by=1; safe 3-way merge required before further branch changes",
-          "Connected GitHub tool lacks update-branch/merge-main-into-branch operation; unsafe whole-file replacement prohibited",
-          "Latest PR #624 six-lane and Battle visual workflows cancelled; real WebGL comparison unverified",
-          "Android/1000vs1000 FPS unmeasured"
+          "PR #667 Node QA and real WebGL comparison unverified",
+          "Android/1000vs1000 FPS not measured",
+          "No Pages release SHA confirmed"
         ],
-        "speedPlan": "PR #624を最新main 6c59dd0015630c32a030afc840f17739702c2081 に3-wayマージ（既存造形差分を保護）、behind_by=0とPR #635 ancestry gate確認後、node --checkと指定3種QA、実WebGL正面/側面/背面・LOD・衝突/FPSを検証し、失敗を同じPRで修復。",
+        "speedPlan": "PR #667のCIとnode --check/指定3種QAを確認、WebGL正面・側面・背面/LODと1000vs1000 FPS比較、失敗時は同PRを修復。PR #659等との重複差分を整理。",
         "lastRunOutcome": {
-          "newSourceChangedIds": 0,
+          "newSourceChangedIds": 5,
           "newQAPassed": 0,
           "newGameAppliedIds": 0,
-          "newSourceCommits": 0,
+          "newSourceCommits": 1,
           "newGeneratedGLBs": 0,
           "newPublishedIds": 0,
           "webglPassedIds": [],
           "gameAppliedIds": [],
-          "sourceChangedIds": [],
+          "sourceChangedIds": [
+            "cottage_table_001",
+            "cottage_chair_001",
+            "cottage_bed_001",
+            "cottage_shelf_001",
+            "cottage_barrel_001"
+          ],
           "publicVerified": 0
         }
       },
