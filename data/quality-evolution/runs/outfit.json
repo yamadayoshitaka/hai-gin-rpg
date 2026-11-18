@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "domain": "outfit",
+  "latest": {
+    "schemaVersion": 1,
+    "domain": "outfit",
+    "startedAt": "2026-11-18T07:54:19.067Z",
+    "completedAt": "2026-11-18T07:55:44.707Z",
+    "status": "no_safe_measured_improvement",
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44262419772",
+    "baselineSha": "e5afb6c31986a025d313d6fa3bc37df996fd6a3b",
+    "sourceCommitSha": null,
+    "candidates": [
+      {
+        "value": 1.03,
+        "proxyScore": null,
+        "gain": null,
+        "qaPassed": null,
+        "status": "rejected",
+        "reason": "no objective aesthetic reference for numeric scoring",
+        "browserStatus": null,
+        "browserError": null,
+        "fps": null,
+        "p95Ms": null,
+        "drawCalls": null,
+        "runtimeErrors": null,
+        "screenshotBytes": null
+      },
+      {
+        "value": 0.97,
+        "proxyScore": null,
+        "gain": null,
+        "qaPassed": null,
+        "status": "rejected",
+        "reason": "no objective aesthetic reference for numeric scoring",
+        "browserStatus": null,
+        "browserError": null,
+        "fps": null,
+        "p95Ms": null,
+        "drawCalls": null,
+        "runtimeErrors": null,
+        "screenshotBytes": null
+      },
+      {
+        "value": 1.06,
+        "proxyScore": null,
+        "gain": null,
+        "qaPassed": null,
+        "status": "rejected",
+        "reason": "no objective aesthetic reference for numeric scoring",
+        "browserStatus": null,
+        "browserError": null,
+        "fps": null,
+        "p95Ms": null,
+        "drawCalls": null,
+        "runtimeErrors": null,
+        "screenshotBytes": null
+      }
+    ],
+    "baselineProxy": null,
+    "baselineBrowserStatus": "measured_ci_fps",
+    "baselineBrowserError": null,
+    "baselineBrowserFps": 1,
+    "baselineBrowserP95Ms": 3569.1,
+    "baselineBrowserDrawCalls": 2303,
+    "baselineBrowserRuntimeErrors": 0,
+    "baselineBrowserScreenshotBytes": 457329,
+    "initialProfile": {
+      "fabricBumpScale": 1
+    },
+    "selected": null,
+    "gameFpsApproved": false,
+    "artisticQualityApproved": false,
+    "androidFpsMeasured": false,
+    "note": "No candidate improved the measured 3D geometry while maintaining CI WebGL FPS."
+  },
+  "history": [
+    {
+      "schemaVersion": 1,
+      "domain": "outfit",
+      "startedAt": "2026-11-18T07:54:19.067Z",
+      "completedAt": "2026-11-18T07:55:44.707Z",
+      "status": "no_safe_measured_improvement",
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44262419772",
+      "baselineSha": "e5afb6c31986a025d313d6fa3bc37df996fd6a3b",
+      "sourceCommitSha": null,
+      "candidates": [
+        {
+          "value": 1.03,
+          "proxyScore": null,
+          "gain": null,
+          "qaPassed": null,
+          "status": "rejected",
+          "reason": "no objective aesthetic reference for numeric scoring",
+          "browserStatus": null,
+          "browserError": null,
+          "fps": null,
+          "p95Ms": null,
+          "drawCalls": null,
+          "runtimeErrors": null,
+          "screenshotBytes": null
+        },
+        {
+          "value": 0.97,
+          "proxyScore": null,
+          "gain": null,
+          "qaPassed": null,
+          "status": "rejected",
+          "reason": "no objective aesthetic reference for numeric scoring",
+          "browserStatus": null,
+          "browserError": null,
+          "fps": null,
+          "p95Ms": null,
+          "drawCalls": null,
+          "runtimeErrors": null,
+          "screenshotBytes": null
+        },
+        {
+          "value": 1.06,
+          "proxyScore": null,
+          "gain": null,
+          "qaPassed": null,
+          "status": "rejected",
+          "reason": "no objective aesthetic reference for numeric scoring",
+          "browserStatus": null,
+          "browserError": null,
+          "fps": null,
+          "p95Ms": null,
+          "drawCalls": null,
+          "runtimeErrors": null,
+          "screenshotBytes": null
+        }
+      ],
+      "baselineProxy": null,
+      "baselineBrowserStatus": "measured_ci_fps",
+      "baselineBrowserError": null,
+      "baselineBrowserFps": 1,
+      "baselineBrowserP95Ms": 3569.1,
+      "baselineBrowserDrawCalls": 2303,
+      "baselineBrowserRuntimeErrors": 0,
+      "baselineBrowserScreenshotBytes": 457329,
+      "initialProfile": {
+        "fabricBumpScale": 1
+      },
+      "selected": null,
+      "gameFpsApproved": false,
+      "artisticQualityApproved": false,
+      "androidFpsMeasured": false,
+      "note": "No candidate improved the measured 3D geometry while maintaining CI WebGL FPS."
+    }
+  ]
+}
