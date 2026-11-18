@@ -41,7 +41,7 @@ jobs:
       - name: Check out the current main branch and entire source history
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 0
           persist-credentials: true
       - uses: actions/setup-node@v4
