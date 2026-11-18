@@ -144,11 +144,21 @@ function fittedScalpSurface(model,bone,headBounds){
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
   if(!eligible[a]||!eligible[b]||!eligible[c])continue;
-  for(const v of [a,b,c]){
+  // Cylindrical scalp UV wraps at the rear meridian. Because the output is
+  // non-indexed, unwrap EACH triangle independently: interpolating 0.99 to
+  // 0.01 across a rear triangle otherwise paints a broad bald-looking stripe.
+  const corners=[a,b,c].map(v=>{
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
-   triangles.push(x,y,z);
-   uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
-    Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
+   return {x,y,z,u:.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2)};
+  });
+  const us=corners.map(p=>p.u);
+  if(Math.max(...us)-Math.min(...us)>.5){
+   for(const p of corners)if(p.u<.5)p.u+=1;
+  }
+  for(const p of corners){
+   triangles.push(p.x,p.y,p.z);
+   uv.push(p.u,Math.max(0,Math.min(1,
+    (p.y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
   }
  }
  if(triangles.length<90)continue;
