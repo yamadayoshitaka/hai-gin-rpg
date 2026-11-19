@@ -13,7 +13,9 @@ if(!OBJECT_CATALOG[asset]||!(scale>=0.75&&scale<=1.15))throw Error('Invalid qual
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0xabb8bc);
  const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
- renderer.setPixelRatio(1);renderer.setSize(1024,576,false);
+ renderer.setPixelRatio(1);
+ const viewport=()=>({width:Math.max(1,window.innerWidth),height:Math.max(1,window.innerHeight)});
+ const initialViewport=viewport();renderer.setSize(initialViewport.width,initialViewport.height,false);
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1;renderer.shadowMap.enabled=true;
  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -29,8 +31,10 @@ try{
  if(bbox.isEmpty())throw Error('Object has no geometry');
  const center=bbox.getCenter(new THREE.Vector3()),size=bbox.getSize(new THREE.Vector3());
  if(!Number.isFinite(size.length())||size.length()<=.001)throw Error('Zero/NaN model');
- const radius=Math.max(size.length()*.7,2),cam=new THREE.PerspectiveCamera(35,1024/576,.1,Math.max(500,radius*30));
+ const radius=Math.max(size.length()*.7,2),cam=new THREE.PerspectiveCamera(35,initialViewport.width/initialViewport.height,.1,Math.max(500,radius*30));
  cam.position.copy(center).add(new THREE.Vector3(radius*.95,radius*.65,radius*1.32));cam.lookAt(center);
+ const fitViewport=()=>{const {width,height}=viewport();renderer.setSize(width,height,false);cam.aspect=width/height;cam.updateProjectionMatrix();renderer.render(scene,cam)};
+ window.addEventListener('resize',fitViewport);
  const floor=new THREE.Mesh(new THREE.PlaneGeometry(Math.max(80,radius*12),Math.max(80,radius*12)),
   new THREE.MeshStandardMaterial({color:0x8d9791,roughness:1}));
  floor.rotation.x=-Math.PI/2;floor.position.y=bbox.min.y-.07;floor.receiveShadow=true;scene.add(floor);
@@ -41,7 +45,7 @@ try{
  sun.shadow.camera.right=radius*2;sun.shadow.camera.top=radius*2;sun.shadow.camera.bottom=-radius*2;
  scene.add(sun);
  await new Promise(resolve=>requestAnimationFrame(resolve));
- renderer.render(scene,cam);await new Promise(resolve=>requestAnimationFrame(resolve));renderer.render(scene,cam);
+ fitViewport();await new Promise(resolve=>requestAnimationFrame(resolve));fitViewport();
  document.body.dataset.qaReady='true';document.body.dataset.asset=asset;
  document.body.dataset.materials=String(materials);document.body.dataset.geometry=String(size.length());
  document.body.dataset.drawCalls=String(renderer.info.render.calls);
