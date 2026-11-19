@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-mobile-choice2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-engaged-stable3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-skill-first1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-engaged-stable3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,8 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-mobile-choice2';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-skill-first1';
+import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-shield-front2';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
@@ -10004,7 +10005,8 @@ function realtimeSpecialTargets(id,action){
   .slice(0,60).map((o,index)=>{
    const raw=[o.name,o.structureName,o.buildingKind,o.label]
     .find(v=>typeof v==='string'&&v.trim()&&v!=='building'&&v!=='structure');
-   const name=raw?raw.trim().slice(0,14):kind==='bridge'?'橋':kind==='door'?'敵門':'建物';
+   const name=japaneseBattleObjectName(raw,
+    kind==='bridge'?'橋':kind==='door'?'敵の扉':'建物').slice(0,14);
    const dx=origin?o.x-origin.x:0,dz=origin?o.z-origin.z:0;
    const direction=Math.abs(dx)>=Math.abs(dz)?(dx>=0?'東':'西'):(dz>=0?'南':'北');
    return {id:String(o.id),x:o.x,z:o.z,
@@ -10139,10 +10141,11 @@ function realtimeMoveTargets(kind,selectedSquad){
  const roster=massSim?.units??actors;
  const point=u=>({x:Number.isFinite(u.x)?u.x:u.cell?.x,
   z:Number.isFinite(u.z)?u.z:u.cell?.z});
- if(kind==='people'){
+ if(kind==='people'||kind==='enemies'){
   const nearestBySquad=new Map();
   for(const unit of roster){
-   if(!(unit.hp>0)||unit.alive===false||unit.team>1)continue;
+   if(!(unit.hp>0)||unit.alive===false||unit.team>1||
+    (kind==='enemies'&&unit.team!==1))continue;
    const pos=point(unit);
    if(!Number.isFinite(pos.x)||!Number.isFinite(pos.z))continue;
    const key=String(unit.team)+':'+String(unit.squadId);
@@ -10150,7 +10153,8 @@ function realtimeMoveTargets(kind,selectedSquad){
    const target={id:key+':'+String(unit.id),team:unit.team,squadId:String(unit.squadId),
     x:pos.x,z:pos.z,
     label:(unit.team===0?'🔵 味方 ':'🔴 敵 ')+
-     squadName(unit.squadId,unit.team)+' '+battleUnitJobName(unit)+
+     squadName(unit.squadId,unit.team)+'・'+battleUnitJobName(unit)+
+     '（'+Math.round(distance(pos))+'マス）'+
      (unit.isStrategist?'（軍師）':'')};
    if(!previous||distance(target)<distance(previous))nearestBySquad.set(key,target);
   }
@@ -10160,12 +10164,14 @@ function realtimeMoveTargets(kind,selectedSquad){
   const objects=(massSim?.actions?.objects??skirmishActions?.objects??[])
    .filter(obj=>obj.alive!==false&&Number.isFinite(obj.x)&&Number.isFinite(obj.z))
    .map(obj=>({id:'object:'+String(obj.id),x:obj.x,z:obj.z,
-    label:'🏠 '+String(obj.name||obj.label||obj.type||'設備')+'（'+Math.round(distance(obj))+'マス）'}));
+    label:'🏠 '+japaneseBattleObjectName(obj.name||obj.label||obj.type||'設備')+
+     '（'+Math.round(distance(obj))+'マス）'}));
   const buildings=townInstances.filter(b=>b?.model?.position&&b?.data).map(b=>{
    const x=Math.round(b.model.position.x/CELL+6);
    const z=Math.round(b.model.position.z/CELL+6);
    return {id:'building:'+b.model.uuid,x,z,
-    label:'🏠 '+String(b.data.name||b.data.kind||'建物')};
+    label:'🏠 '+japaneseBattleObjectName(b.data.name||b.data.kind||'建物','建物')+
+     '（'+Math.round(distance({x,z}))+'マス）'};
   }).filter(obj=>Number.isFinite(obj.x)&&Number.isFinite(obj.z));
   return [...objects,...buildings].sort((a,b)=>distance(a)-distance(b)).slice(0,45);
  }
