@@ -66,7 +66,8 @@ function actualScalpCandidates(geo,box){
  // A donor mesh with sparse topology still receives every hair zone.
  for(const [zone,pool] of Object.entries(pools)){
   if(pool.length>3)continue;
-  const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
+  const onSide=q=>zone==='crown'?true:
+   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const frontal=zone.startsWith('fringe');
   const temple=zone.startsWith('temple');
@@ -89,7 +90,8 @@ function actualScalpCandidates(geo,box){
    // Keep explicit QA failure instead of silently growing "rear" locks
    // out of the forehead on unusual incoming face topologies.
    if(rear)throw Error('Missing posterior scalp: '+zone);
-   const sameSide=all.filter(onSide);
+   const sameSide=all.filter(q=>onSide(q)&&
+    (zone==='crown'?(q.p.y-box.min.y)/d.y>.80:true));
    pools[zone]=sameSide.length?sameSide:all;
   }
  }
