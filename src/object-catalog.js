@@ -719,7 +719,16 @@ export function createObjectById(id,{cellSize=2.2}={}){
    // Shared geometry and materials keep the 24 plants inexpensive to batch.
    const stemMat=new THREE.MeshStandardMaterial({color:0x52783b,roughness:.92,metalness:0});
    const stemGeo=new THREE.CylinderGeometry(.018*c,.044*c,.52*c,5,3);
-   const leafGeo=new THREE.SphereGeometry(1,8,5);
+   // Pointed, double-sided leaf blades replace the oval sphere primitives.
+   // Geometry is shared by all 144 leaves; the raised midrib catches grazing light.
+   const leafGeo=new THREE.BufferGeometry();
+   leafGeo.setAttribute('position',new THREE.Float32BufferAttribute([
+    0,0,0, .42,.07,-.30, 1,0,0,
+    0,0,0, 1,0,0, .42,.07,.30,
+    0,0,0, 1,0,0, .42,.07,-.30,
+    0,0,0, .42,.07,.30, 1,0,0
+   ],3));
+   leafGeo.computeVertexNormals();
    for(let x=0;x<6;x++)for(let z=0;z<4;z++){
     const px=(x-2.5)*.58*c,pz=(z-1.5)*.58*c;
     const stem=new THREE.Mesh(stemGeo,stemMat);
@@ -728,7 +737,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
     for(let n=0;n<6;n++){
      const a=n*Math.PI*2/6+(x+z)*.23;
      const leaf=new THREE.Mesh(leafGeo,leaves);
-     leaf.scale.set(.17*c,.035*c,.075*c);
+     leaf.scale.set(.25*c,.25*c,.20*c);
      leaf.position.set(px+Math.cos(a)*.115*c,(.28+n*.055)*c,pz+Math.sin(a)*.115*c);
      leaf.rotation.y=-a;leaf.rotation.z=(n%2?-.20:.20);
      root.add(leaf);
