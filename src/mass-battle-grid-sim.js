@@ -845,6 +845,21 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Explicit summon order for the summoner squad. Real summon objects and MP costs. */
+  summonSquadCreature(squadId,team=0){
+    const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+    for(const caster of casters){
+      const skills=availableCombatSkills('summoner',caster.rarity)
+       .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
+        (!caster._skillNext||(caster._skillNext[skill.id]||0)<=this.actions.time))
+       .sort((a,b)=>b.mp-a.mp);
+      for(const skill of skills){
+       if(this.actions.fireSkill(caster,skill,caster,this.units))return true;
+      }
+    }
+    return false;
+  }
   /** Refill existing fallen unit slots with carried reserve soldiers.
    * No new GPU actor objects and never more than the squad's authored size.
    */
