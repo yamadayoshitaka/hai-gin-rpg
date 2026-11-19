@@ -925,6 +925,7 @@ export function createRealtimeBattleCommands({
  function openMap(next='move'){
   hideActionSheet();mode=next;refreshOptions();
   if(started)enterPlanning();
+  if(started)onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
   $('realtimeBattleMapOverlay').hidden=false;
   $('realtimeMapClose').hidden=next==='deploy';
   $('realtimeStart').hidden=next!=='deploy';
@@ -1023,6 +1024,9 @@ export function createRealtimeBattleCommands({
  onMapOverview({x:Math.round(clamp(point.x*worldSize,0,worldSize-1)),
   z:Math.round(clamp(point.y,0,1)*(worldSize-1))});
 }
+$('realtimeSquadRadar').querySelector('.realtimeRadarHeader strong').onclick=()=>{
+ if(started)onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
+};
 radarCanvas.addEventListener('click',event=>{
  if(!started)return;
  const rect=radarCanvas.getBoundingClientRect();
@@ -1181,9 +1185,15 @@ radarCanvas.addEventListener('keydown',event=>{
  $('realtimeHold').onclick=()=>issueDockOrder('hold');
  $('realtimeStart').onclick=()=>{
   if(started)return;
+  // Do not close deployment while battle has failed to unpause.
+  const accepted=onStart();
+  if(accepted===false){
+   $('realtimeMapMessage').textContent='戦闘を開始できません。作戦停止状態を確認してください。';
+   return;
+  }
   started=true;mode='live';hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;
   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
-  onStart();renderStatus();drawRadar(true);
+  renderStatus();drawRadar(true);
  };
  $('realtimeRoster')?.addEventListener('click',()=>onRoster());
  $('realtimeMenu').onclick=()=>{closeSquadControls();onMenu();};
