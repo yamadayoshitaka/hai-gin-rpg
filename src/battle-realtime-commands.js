@@ -473,6 +473,25 @@ export function createRealtimeBattleCommands({
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
+ function activateRadarPin(px,py){
+  const pin=radarHitPin(radarPins,px,py);
+  if(!pin)return;
+  if(pin.team===0)showSquadControls(pin.id);
+  else onFocus(pin.id,1);
+ }
+ radarCanvas.addEventListener('click',event=>{
+  if(!started)return;
+  const rect=radarCanvas.getBoundingClientRect();
+  if(rect.width>0&&rect.height>0)
+   activateRadarPin((event.clientX-rect.left)/rect.width,(event.clientY-rect.top)/rect.height);
+ });
+ radarCanvas.addEventListener('keydown',event=>{
+  if(event.key!=='Enter'&&event.key!==' ')return;
+  event.preventDefault();
+  const pin=radarPins.find(p=>p.team===0&&p.id===String(selectedId))||
+   radarPins.find(p=>p.team===0);
+  if(pin)showSquadControls(pin.id);
+ });
  for(const [button,offset] of [['realtimeMapPrev',-1],['realtimeMapNext',1],['realtimeDockPrev',-1],['realtimeDockNext',1]])
   $(button).addEventListener('click',()=>{
    const own=squads(),index=own.findIndex(s=>String(s.id)===String(selectedId));
