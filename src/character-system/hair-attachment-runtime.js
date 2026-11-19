@@ -132,7 +132,11 @@ function fittedScalpSurface(model,bone,headBounds){
  for(let i=0;i<vertices;i++){
   let weight=0;
   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
-  if(weight<.56)continue;
+  // The candidate mesh already passed the stricter .56 head-weight ranking.
+  // A .56 per-vertex cutoff discards transition triangles along the crown,
+  // leaving bald wedges. Include moderately head-bound skin vertices only
+  // in this anatomical scalp extraction; keep the candidate selection strict.
+  if(weight<.48)continue;
   mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
   bone.worldToLocal(point);
   if(point.y<threshold)continue;
