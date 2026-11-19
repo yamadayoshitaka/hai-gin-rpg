@@ -704,8 +704,23 @@ export function createObjectById(id,{cellSize=2.2}={}){
   }
   if(id==='town_brazier_001'){
    for(const x of [-.58,.58])for(const z of [-.58,.58])box(.13*c,.9*c,.13*c,x*c,.45*c,z*c,iron);
-   const cup=new THREE.Mesh(new THREE.CylinderGeometry(.88*c,.6*c,.4*c,16),iron);
-   cup.position.y=1*c;root.add(cup);
+   // Open fire bowl: the old solid cylinder hid the fuel and had no inner wall.
+   const bowlProfile=[
+    new THREE.Vector2(.0*c,0),new THREE.Vector2(.56*c,0),
+    new THREE.Vector2(.65*c,.06*c),new THREE.Vector2(.79*c,.29*c),
+    new THREE.Vector2(.88*c,.39*c),new THREE.Vector2(.84*c,.39*c),
+    new THREE.Vector2(.75*c,.30*c),new THREE.Vector2(.60*c,.10*c),
+    new THREE.Vector2(.53*c,.07*c),new THREE.Vector2(0,.07*c)
+   ];
+   const cup=new THREE.Mesh(new THREE.LatheGeometry(bowlProfile,24),iron);
+   cup.position.y=.81*c;cup.castShadow=true;cup.receiveShadow=true;root.add(cup);
+   const coals=new THREE.MeshStandardMaterial({color:0x2b211c,roughness:1,metalness:0});
+   for(let i=0;i<9;i++){
+    const a=i*2.39996,r=(.17+.07*(i%3))*c;
+    const coal=new THREE.Mesh(new THREE.DodecahedronGeometry((.11+.018*(i%3))*c,0),coals);
+    coal.position.set(Math.cos(a)*r,1.02*c,Math.sin(a)*r);
+    coal.scale.set(1.3,.55,.9);coal.rotation.y=a;root.add(coal);
+   }
    const flame=new THREE.Mesh(new THREE.ConeGeometry(.38*c,.6*c,10),light);
    flame.position.y=1.49*c;root.add(flame);
   }
