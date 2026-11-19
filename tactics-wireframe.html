@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-rally-cycle1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-two-meters-and-taps2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-inline-command1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-two-meters-and-taps2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-rally-cycle1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-inline-command1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-priest-support1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
@@ -2377,12 +2377,14 @@ const JOBS=[
 let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
 // Only physically collected treasure enters the battle reward ledger.
 // Consumables spent before victory are removed from the carried amount.
-const battleTreasureLedger=new Map();
+const battleTreasureLedger=new Map(),battleTreasureAcquiredLedger=new Map();
 function recordBattleTreasure(actor,loot){
  if(actor.team!==0)return;
  const id=String(loot.itemId||'');
  if(!id)return;
- battleTreasureLedger.set(id,(battleTreasureLedger.get(id)||0)+Math.max(1,Math.floor(loot.quantity||1)));
+ const amount=Math.max(1,Math.floor(loot.quantity||1));
+ battleTreasureLedger.set(id,(battleTreasureLedger.get(id)||0)+amount);
+ battleTreasureAcquiredLedger.set(id,(battleTreasureAcquiredLedger.get(id)||0)+amount);
 }
 function spendBattleTreasure(itemId){
  const available=battleTreasureLedger.get(itemId)||0;
@@ -10084,6 +10086,54 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   type:action,targetId:String(object.id),x:Math.round(object.x),z:Math.round(object.z)
  });}finally{selectedSquadId=prior;}
 }
+function realtimeMoveTargets(kind,selectedSquad){
+ const origin=squadCenter(selectedSquad,0);
+ const distance=p=>origin?Math.hypot(p.x-origin.x,p.z-origin.z):0;
+ const roster=massSim?.units??actors;
+ const point=u=>({x:Number.isFinite(u.x)?u.x:u.cell?.x,
+  z:Number.isFinite(u.z)?u.z:u.cell?.z});
+ if(kind==='people'){
+  const nearestBySquad=new Map();
+  for(const unit of roster){
+   if(!(unit.hp>0)||unit.alive===false||unit.team>1)continue;
+   const pos=point(unit);
+   if(!Number.isFinite(pos.x)||!Number.isFinite(pos.z))continue;
+   const key=String(unit.team)+':'+String(unit.squadId);
+   const previous=nearestBySquad.get(key);
+   const target={id:key+':'+String(unit.id),x:pos.x,z:pos.z,
+    label:(unit.team===0?'🔵 味方 ':'🔴 敵 ')+
+     squadName(unit.squadId,unit.team)+' '+battleUnitJobName(unit)+
+     (unit.isStrategist?'（軍師）':'')};
+   if(!previous||distance(target)<distance(previous))nearestBySquad.set(key,target);
+  }
+  return [...nearestBySquad.values()].sort((a,b)=>distance(a)-distance(b)).slice(0,40);
+ }
+ if(kind==='objects'){
+  const objects=(massSim?.actions?.objects??skirmishActions?.objects??[])
+   .filter(obj=>obj.alive!==false&&Number.isFinite(obj.x)&&Number.isFinite(obj.z))
+   .map(obj=>({id:'object:'+String(obj.id),x:obj.x,z:obj.z,
+    label:'🏠 '+String(obj.name||obj.label||obj.type||'設備')+'（'+Math.round(distance(obj))+'マス）'}));
+  const buildings=townInstances.filter(b=>b?.model?.position&&b?.data).map(b=>{
+   const x=Math.round(b.model.position.x/CELL+6);
+   const z=Math.round(b.model.position.z/CELL+6);
+   return {id:'building:'+b.model.uuid,x,z,
+    label:'🏠 '+String(b.data.name||b.data.kind||'建物')};
+  }).filter(obj=>Number.isFinite(obj.x)&&Number.isFinite(obj.z));
+  return [...objects,...buildings].sort((a,b)=>distance(a)-distance(b)).slice(0,45);
+ }
+ return [];
+}
+function realtimeSharedItems(){
+ const counts=new Map();
+ for(const stack of allyItemStocks())
+  counts.set(stack.itemId,(counts.get(stack.itemId)||0)+Math.max(0,Number(stack.quantity)||0));
+ return [...counts].map(([id,quantity])=>{
+  const def=ROOM_ITEM_TYPES[id];
+  return {id,name:def?.name||id,quantity,label:def?.name||id,
+   collected:battleTreasureAcquiredLedger.get(id)||0,
+   usable:['heal','squad_buff'].includes(def?.kind)};
+ }).sort((a,b)=>Number(b.usable)-Number(a.usable)||a.name.localeCompare(b.name,'ja'));
+}
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
@@ -10154,8 +10204,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
-   text:'配置完了！各隊を選んで地図で移動先を指示してください。戦闘はリアルタイムで進行します。'});
-  log('戦闘開始：リアルタイム移動・交戦中。各隊の移動先は地図タップで変更できます。');
+   text:'配置完了！部隊を選び、人物・物・位置を対象に作戦を確定してください。戦闘はリアルタイムです。'});
+   log('戦闘開始：部隊ごとの対象（人物・物・地図位置）と作戦を選んで確定できます。');
  },
  onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
  onFocus:id=>{
@@ -10183,6 +10233,9 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  onUseItem:(id,itemId,arrival=false)=>issueCommanderReinforcements(id,itemId,{arrival}),
  onReinforce:(id,itemId)=>issueCommanderReinforcements(id,itemId),
   onManageItems:id=>openBattleItemsForSquad(id),
+  getMoveTargets:(kind,id)=>realtimeMoveTargets(kind,id),
+  getSharedItems:()=>realtimeSharedItems(),
+  onSharedItem:(itemId,id)=>useSquadBattleItem(itemId,id),
  getRallyInfo:id=>({
   ...rallyCycleStatus(),
   level:realtimeCommanderLevel(id),
@@ -10211,6 +10264,12 @@ window.getBattleRealtimeQA=()=>({
  controlsOpen:Boolean(realtimeCommandUI?.controlsOpen),
  planningSeconds:realtimeCommandUI?.planningSeconds??null,
  radarPins:realtimeCommandUI?.radarPins||[]
+});
+window.getBattleSharedItemQA=()=>({
+ items:realtimeSharedItems().map(item=>({id:item.id,name:item.name,
+  quantity:item.quantity,collected:item.collected,usable:item.usable})),
+ acquired:[...battleTreasureAcquiredLedger.entries()],
+ remainingLoot:[...battleTreasureLedger.entries()]
 });
 // Switch from march to combat score on actual first contact.
 let firstBattleEngagement=false,lastBattleContactCheck=-Infinity;
