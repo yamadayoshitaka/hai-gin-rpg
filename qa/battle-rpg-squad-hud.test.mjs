@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import {makeBattleRpgStatusRows} from '../src/battle-rpg-squad-source.js';
+import {battleJobPortrait,JOB_PORTRAIT_FILES} from '../src/battle-job-portraits.js';
 import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon,rpgHudEffectIcon,rpgHudStateIcon} from '../src/battle-rpg-squad-hud.js';
 
 test('actual ally/enemy HP and job IDs survive into RPG panels with matching camera keys',()=>{
@@ -96,4 +97,20 @@ test('all squads use the same compact icon + meter + effect row, with five per p
  assert.match(css,/\.rpgSquadEffects \.debuff/);
  assert.match(realtime,/body\.battle-realtime-clean #battleRpgSquadHud:not\(\[hidden\]\)\{display:block!important\}/);
  assert.match(realtime,/body\.battle-realtime-clean\.battle-roster-open #battleRpgSquadHud:not\(\[hidden\]\)\{display:none!important\}/);
+});
+
+test('approved face atlas uses canonical campaign job rows, stable variants, and ten compact rows',()=>{
+ assert.equal(battleJobPortrait('格闘家',4,0).sheet,'b');
+ assert.equal(battleJobPortrait('格闘家',4,0).y,100);
+ assert.equal(battleJobPortrait('盾騎士',1,0).sheet,'a');
+ assert.equal(battleJobPortrait('魔法使い',2,0).y,100/3);
+ assert.equal(battleJobPortrait('僧侶',9,1).sourceJob,'僧侶');
+ assert.equal(battleJobPortrait('剣士',7,0).fallback,true);
+ assert.ok(JOB_PORTRAIT_FILES.a.endsWith('frontline-v1.webp'));
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ assert.match(js,/setBattleJobPortrait\(job,row\.job,row\.id,team\)/);
+ assert.match(js,/expanded=\[true,true\]/);
+ assert.match(css,/grid-template-columns:26px minmax\(0,1fr\)/);
+ assert.match(css,/background-size:400% 400%/);
 });
