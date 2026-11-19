@@ -65,6 +65,7 @@ export function createMassBattleWorkerHandler(emit){
         case 'reinforceSquad':if(sim)sim.reinforceSquadFromReserve(message.squadId,message.count,message.team||0);break;
         case 'summonSquadCreature':if(sim)sim.summonSquadCreature(message.squadId,message.team||0);break;
         case 'orderSquadHighGround':if(sim)sim.orderSquadHighGround(message.squadId,message.routeIndex,message.team||0);break;
+        case 'shieldCover':if(sim)sim.assignShieldCover(message.squadId,message.targetSquadId,message.team||0);break;
         case 'buffSquadItem':if(sim)sim.applySquadItemBuff(message.squadId,message.itemId,message.buff,message.duration,message.team||0);break;
         case 'squadStrategy':if(sim)sim.setSquadStrategy(message.squadId,message.strategy);break;
         case 'squadFormationTypes':if(sim)sim.setSquadFormationTypes(message.types,message.team||0,message.assignments,message.jobSnapshots);break;
