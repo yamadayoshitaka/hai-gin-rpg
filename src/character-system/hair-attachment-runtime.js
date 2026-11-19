@@ -216,7 +216,10 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
    direction.set(0,-1,-.22);
    direction.addScaledVector(normal,-direction.dot(normal));
    if(direction.lengthSq()<.001){
-    direction.set(0,0,-1).addScaledVector(normal,normal.z);
+    direction.set(0,0,-1);
+    // Remove the normal component (not add it): the old fallback could
+    // point outside the scalp and create a visible vertical hair spike.
+    direction.addScaledVector(normal,-direction.dot(normal));
    }
    // The backup direction may also align with the normal at the crown.
    // Skip that fiber rather than upload invalid vertices to WebGL.
