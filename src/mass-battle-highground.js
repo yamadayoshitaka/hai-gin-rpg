@@ -114,36 +114,39 @@ export function createMassHighGroundRoutes(buildings,{
     let steps;
     try{steps=buildFloorTravelRoute(b.structure,pos,1,2);}
     catch{continue;}
+    // A usable roof does not require a 2F firing window. In particular,
+    // ninja rooftops must survive window-less building catalog variants.
     const windows=buildingWindowFiringPositions(b.structure,pos,2,{cellSize});
-    if(!windows.length)continue;
-    // Choose the outer wall facing the opposing army; the real aperture is
-    // the authoritative source for future shots, not an invisible wall hack.
     const preferredX=team===0?1:-1;
-    windows.sort((a,b)=>
-      (b.normal.x*preferredX-a.normal.x*preferredX)*100+
-      Math.hypot(steps.at(-1).x-a.x,steps.at(-1).z-a.z)-
-      Math.hypot(steps.at(-1).x-b.x,steps.at(-1).z-b.z));
-    const bay=windows[0];
     const access={x:entry.x,z:entry.z};
     const ground={x:(entry.x-offset)*cellSize,z:(entry.z-offset)*cellSize};
     ground.y=terrainY?.(ground.x,ground.z)??pos.y;
     const stage=stairGroundEntryPoint(b.structure,pos,steps,{cellSize});
     const staged=stage?toCell(stage):null;
     const entryRoute=groundPath(access,staged);
-    if(!entryRoute)continue; // no valid door-to-tread corridor
+    if(!entryRoute)continue; // a real door-to-first-tread corridor is mandatory
     const basePoints=[...entryRoute.map(cell=>{
       const x=(cell.x-offset)*cellSize,z=(cell.z-offset)*cellSize;
       return {x,y:terrainY?.(x,z)??pos.y,z};
     }),...steps];
-    const windowPoint={x:bay.x,y:bay.y,z:bay.z};
-    const toGridWindow=(w)=>({
+    const toGridWindow=w=>({
       aperture:{x:w.aperture.x/cellSize+offset,z:w.aperture.z/cellSize+offset},
       normal:w.normal,inset:w.inset/cellSize,halfWidth:w.halfWidth/cellSize
     });
-    const base={id:'battle-highground-'+index,buildingIndex:index,structureId:'world-building-'+index,
-      team,access,doorPosition:floorTravelEntryPoint(b),kind:'window',level:2,
-      points:[...basePoints,windowPoint],window:toGridWindow(bay)};
-    routes.push(base);
+    const base={id:'battle-highground-'+index,buildingIndex:index,
+      structureId:'world-building-'+index,team,access,
+      doorPosition:floorTravelEntryPoint(b)};
+    if(windows.length){
+      // Face the hostile army when several authored apertures exist.
+      windows.sort((a,b)=>
+        (b.normal.x*preferredX-a.normal.x*preferredX)*100+
+        Math.hypot(steps.at(-1).x-a.x,steps.at(-1).z-a.z)-
+        Math.hypot(steps.at(-1).x-b.x,steps.at(-1).z-b.z));
+      const bay=windows[0];
+      routes.push({...base,kind:'window',level:2,
+        points:[...basePoints,{x:bay.x,y:bay.y,z:bay.z}],
+        window:toGridWindow(bay)});
+    }
     const roof=roofAccessPlan(b.structure,{cellSize});
     if(!roof)continue;
     try{
@@ -151,12 +154,12 @@ export function createMassHighGroundRoutes(buildings,{
       for(let level=2;level<b.structure.floors.length;level++)
         roofPoints.push(...buildFloorTravelRoute(b.structure,pos,level,level+1));
       roofPoints.push(...buildRoofTravelRoute(b.structure,pos,b.structure.floors.length));
-      const end=roofPoints.at(-1);
+      const upper=roofPoints.at(-1);
       routes.push({...base,id:base.id+'-roof',kind:'roof',
         level:b.structure.floors.length+1,points:roofPoints,
-        window:{aperture:{x:end.x/cellSize+offset,z:end.z/cellSize+offset},
+        window:{aperture:{x:upper.x/cellSize+offset,z:upper.z/cellSize+offset},
           normal:{x:preferredX,z:0},inset:.2,halfWidth:20}});
-    }catch{/* no physically authored roof route: keep the second-floor window */}
+    }catch{/* Keep available windows when an authored roof route fails. */}
   }
   return routes;
 }
