@@ -9955,7 +9955,7 @@ function realtimeSpecialTargets(id,action){
     !massSim._highGroundClaims?.has(route.buildingIndex+':0')&&
     members.some(unit=>unit.hp>=unit.maxHp*.35&&!unit.mountId&&
      (route.kind==='roof'?unit.jobId==='ninja':['archer','mage'].includes(unit.jobId))&&
-     Math.hypot(unit.x-route.access.x,unit.z-route.access.z)<=65))
+     (massSim._highGroundFlows?.[route.index]?.[unit.z*massSim.width+unit.x]??0x3fffffff)<0x3fffffff))
    .map(route=>({id:String(route.index),x:route.access.x,z:route.access.z,
      label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+route.buildingIndex+
       '｜X'+route.access.x+' Z'+route.access.z}))
