@@ -480,10 +480,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
     hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;
     hoop.castShadow=true;root.add(hoop);
    }
+   // Forged longitudinal ribs are metal, not wooden strips; follow the tapered wall.
    for(let i=0;i<12;i++){const a=i*Math.PI/6;
-    const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
-    slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
-    slot.rotation.y=-a;root.add(slot);
+    const rib=new THREE.Mesh(new THREE.CylinderGeometry(.017*c,.021*c,.8*c,6),metalMat);
+    rib.position.set(Math.cos(a)*.371*c,.62*c,Math.sin(a)*.371*c);
+    rib.rotation.z=-Math.cos(a)*.052;
+    rib.rotation.x=Math.sin(a)*.052;
+    rib.castShadow=true;root.add(rib);
    }
   }
   if(id==='town_handcart_001'){
