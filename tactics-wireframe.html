@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-building-picker1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-job-label1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-rally-cycle1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-ten-teams1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-building-picker1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-rally-cycle1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-priest-support1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
@@ -5993,6 +5993,17 @@ document.body.appendChild(itemPanel);
 let lastBattleItemTarget=null,lastBattleItemSquad=null,lastSelectedBattleItemId=null,battleItemSide='ally';
 const skirmishSquadItemBuffs=new Map();
 const activeSquadBuffVfx=new Map(),commanderRallies=new Map();let lastSquadBuffVfxAt=-Infinity;
+// Rallies have a single battle-wide cadence. No commander can stack a new
+// rally while the previous buff is active or during its recovery interval.
+const RALLY_RECOVERY_SECONDS=10;
+let rallyActiveUntil=-Infinity,rallyNextAllowedAt=-Infinity,rallyCurrentName='';
+function rallyCycleStatus(){
+ const active=Math.max(0,Math.ceil(rallyActiveUntil-elapsed));
+ const interval=active?0:Math.max(0,Math.ceil(rallyNextAllowedAt-elapsed));
+ return {phase:active?'active':interval?'interval':'ready',
+  seconds:active||interval,activeName:rallyCurrentName,
+  activeSeconds:active,intervalSeconds:interval};
+}
 function currentSkirmishSquadBuff(id,team=0){
  const key=team===0?String(id):'enemy:'+id;
  const list=(skirmishSquadItemBuffs.get(key)||[]).filter(b=>b.until>elapsed);
@@ -6118,11 +6129,16 @@ function issueCommanderRally(issuerSquadId,kind,targetIds=[]){
  const issuer=String(issuerSquadId),type=COMMAND_RALLY_EFFECTS[kind];
  const targets=[...new Set(targetIds.map(String))];
  const cap=commanderTargetLimit(realtimeCommanderLevel(issuer));
- if(!battleReady||finished||!type||!targets.length||targets.length>cap||
-   !hasSquadCommander(issuer)||!canChangeSquadOrder(issuer))return false;
+ if(!battleReady||finished||battleCeremony.locked||!type||!targets.length||targets.length>cap||
+   !hasSquadCommander(issuer)||rallyCycleStatus().phase!=='ready')return false;
  const units=massSim?.units??actors;
  if(targets.some(id=>!squadIds.map(String).includes(id)||
    !units.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false)))return false;
+ // Start the global lock before applying any target effects. Its timer uses
+ // combat elapsed seconds, so pausing battle also pauses the interval.
+ rallyActiveUntil=elapsed+type.duration;
+ rallyNextAllowedAt=rallyActiveUntil+RALLY_RECOVERY_SECONDS;
+ rallyCurrentName=type.name;
  for(const id of targets){
   const buff={attack:type.attack,defense:type.defense,speed:type.speed};
   if(massSim){
@@ -6133,7 +6149,7 @@ function issueCommanderRally(issuerSquadId,kind,targetIds=[]){
   list.push({...type,until:elapsed+type.duration});commanderRallies.set(id,list);
   emitSquadBuffEffect(id,type.defense?'earth':type.speed?'arcane':'fire');
  }
- markRibbonOrderIssued(issuer);
+ // The rally cycle is independent of the longer movement/item order cooldown.
  battleCeremony.showOrder(type.name,targets.length+'隊に'+type.duration+'秒の強化号令');
  updateUI();return true;
 }
@@ -10168,6 +10184,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  onReinforce:(id,itemId)=>issueCommanderReinforcements(id,itemId),
   onManageItems:id=>openBattleItemsForSquad(id),
  getRallyInfo:id=>({
+  ...rallyCycleStatus(),
   level:realtimeCommanderLevel(id),
   maxTargets:commanderTargetLimit(realtimeCommanderLevel(id)),
   targets:squadIds.map(sid=>({
@@ -10185,6 +10202,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  getPaused:()=>paused
 }):null;
 window.getBattleObjectiveTurnsQA=()=>null;
+window.getBattleRallyCycleQA=()=>rallyCycleStatus();
 window.getBattleRealtimeQA=()=>({
  enabled:Boolean(realtimeCommandUI),started:Boolean(realtimeCommandUI?.started),
  selectedSquadId:realtimeCommandUI?.selectedId||null,

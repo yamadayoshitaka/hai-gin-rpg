@@ -184,7 +184,9 @@ export function createRealtimeBattleCommands({
   if(choosingActionFor!=null&&String(id)!==String(choosingActionFor))hideActionSheet();
   selectedId=String(id);
   hideContextChoices();
-  refreshOptions();renderActionSelection();onSelect(selectedId);
+  refreshOptions();renderActionSelection();
+  if(dockTab==='rally'&&!$('realtimeBattleDock').hidden)showRallyChoices();
+  onSelect(selectedId);
   if(focus)onFocus(selectedId);
   renderStatus();drawMap();drawRadar(true);return true;
  }
@@ -362,39 +364,61 @@ export function createRealtimeBattleCommands({
   }
   renderActionSelection();
  }
+ function rallyPhaseText(info){
+  if(info.phase==='active')return '📣 '+String(info.activeName||'強化号令')+
+   ' 発動中 · 残り'+Math.max(0,Number(info.seconds)||0)+'秒（発動中は再発令不可）';
+  if(info.phase==='interval')return '⏳ 号令インターバル · 残り'+
+   Math.max(0,Number(info.seconds)||0)+'秒（終了すると再発令可能）';
+  return '✅ 号令発令可能 · 効果22秒 → 終了後10秒のインターバル';
+ }
+ function refreshRallyState(){
+  const node=$('realtimeDockRallyChoices');
+  if(node.hidden)return;
+  const info=getRallyInfo(String(selectedId));
+  const status=node.querySelector('[data-rally-state]');
+  if(status)status.textContent=rallyPhaseText(info);
+  for(const button of node.querySelectorAll('[data-rally-command]')){
+   button.disabled=info.phase==='active'||info.phase==='interval';
+   button.setAttribute('aria-disabled',String(button.disabled));
+   button.title=button.disabled?rallyPhaseText(info):'選択中の対象隊へこの号令を発動';
+  }
+ }
  function showRallyChoices(){
   const node=actionPanel('dock','Rally'),info=getRallyInfo(String(selectedId));
-  const limit=Math.min(3,Math.max(1,Number(info.maxTargets)||1));
-  contextNote(node,'軍師Lv'+Math.max(1,Number(info.level)||1)+
-   '：同時に最大'+limit+'隊へ強化号令（22秒）');
+  const status=doc.createElement('small');status.dataset.rallyState='1';
+  status.setAttribute('role','status');node.append(status);
+  contextNote(node,'① 号令をかける隊を選択（軍師Lv'+
+   Math.max(1,Number(info.level)||1)+'）。選択した隊にだけ発動します。');
   const targets=(info.targets||[]).filter(t=>t.alive);
-  const chosen=new Set([String(selectedId)].filter(id=>targets.some(t=>String(t.id)===id)));
-  const buttons=[];
+  const targetSelect=doc.createElement('select');
+  targetSelect.id='realtimeRallyTarget';
+  targetSelect.setAttribute('aria-label','号令の対象隊');
   for(const target of targets){
-   const button=contextButton(node,'□ '+String(target.label||target.id),()=>{
-    const id=String(target.id);
-    if(chosen.has(id))chosen.delete(id);
-    else if(chosen.size<limit)chosen.add(id);
-    for(const [b,item] of buttons){
-     const checked=chosen.has(String(item.id));
-     b.textContent=(checked?'☑ ':'□ ')+String(item.label||item.id);
-     b.setAttribute('aria-pressed',String(checked));
+   const option=doc.createElement('option');option.value=String(target.id);
+   option.textContent=String(target.label||target.id);targetSelect.append(option);
+  }
+  const defaultId=String(selectedId);
+  if(targets.some(t=>String(t.id)===defaultId))targetSelect.value=defaultId;
+  targetSelect.disabled=!targets.length;
+  node.append(targetSelect);
+  contextNote(node,'② 号令の種類を選択（効果22秒、終了後10秒は再発令不可）');
+  for(const fx of COMMAND_RALLY_TYPES){
+   const button=contextButton(node,fx.name+' · 22秒',()=>{
+    const target=targetSelect.value;
+    if(!target){contextNote(node,'対象の隊を選択してください。');return;}
+    if(getRallyInfo(String(selectedId)).phase!=='ready'){
+     refreshRallyState();return;
+    }
+    if(onRally(String(selectedId),fx.id.replace('command_',''),[target])){
+     closeSquadControls();
+    }else{
+     contextNote(node,'号令できません。軍師・命令制限・インターバルを確認してください。');
+     refreshRallyState();
     }
    });
-   buttons.push([button,target]);
+   button.dataset.rallyCommand=fx.id;
   }
-  for(const [button,target] of buttons){
-   const selected=chosen.has(String(target.id));
-   button.textContent=(selected?'☑ ':'□ ')+String(target.label||target.id);
-   button.setAttribute('aria-pressed',String(selected));
-  }
-  for(const fx of COMMAND_RALLY_TYPES)
-   contextButton(node,fx.name+'　22秒',()=>{
-    if(!chosen.size){contextNote(node,'対象隊を選択してください');return;}
-    if(onRally(String(selectedId),fx.id.replace('command_',''),[...chosen])){
-     closeSquadControls();
-    }else contextNote(node,'現在は号令できません。軍師または命令制限を確認してください。');
-   });
+  refreshRallyState();
  }
  function showSpecialTargets(origin,action,page=0){
   const node=actionPanel(origin,'Special');
@@ -800,6 +824,7 @@ export function createRealtimeBattleCommands({
     }
    }
    renderStatus();
+   if(started&&dockTab==='rally'&&!$('realtimeBattleDock').hidden)refreshRallyState();
    if(started)drawRadar();
    if(planningDeadline)updatePlanningCountdown();
    // No physical positions change while initial deployment is paused.
