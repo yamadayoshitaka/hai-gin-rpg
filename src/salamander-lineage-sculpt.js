@@ -8,7 +8,7 @@
  */
 import {magmaSkullFromWolfKing,magmaTorsoFromWolfKing,
  sculptMagmaSalamanderEye,sculptMagmaSalamanderHorn,
- sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js';
+ sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-hero-salamander-v3-20261119';
 
 export const SALAMANDER_LINEAGE_REVISION='m019-source-salamander-lineage-v2-20261119';
 export const SALAMANDER_LINEAGE=Object.freeze({
@@ -20,7 +20,7 @@ export const SALAMANDER_LINEAGE=Object.freeze({
   bodyDrop:.20,tailLength:1.31,hornHeight:.83,crestHeight:.90}),
  m019:Object.freeze({id:'m019',archetype:'magma-salamander',headWidth:1,
   snoutLength:1,bodyWidth:1,bodyDepth:1,legReach:.72,
-  bodyDrop:.22,tailLength:1.36,hornHeight:1,crestHeight:1})
+  bodyDrop:.315,tailLength:1.66,hornHeight:1,crestHeight:1})
 });
 export const salamanderLineageFor=id=>SALAMANDER_LINEAGE[id]||null;
 
@@ -127,6 +127,33 @@ export function sculptSalamanderSurface(g,torso,head,{
  id='m019',detail='high'
 }={}){
  if(detail==='low')return;
+ // m019 has its own continuous muzzle, deep-set sockets and fine basalt
+ // plates. Never layer generic cheek marbles and black circular freckles
+ // over the owner-approved low and long salamander silhouette.
+ if(id==='m019'){
+  const throat=g.bridge(head,'skin',
+   [0,-.159,-.166],[0,-.286,-.467],.224,.166);
+  throat.name='m019-head-anchored-throat';
+  throat.userData.salamanderHeadFollowingNeck=true;
+  for(const side of [-1,1]){
+   const suffix=side<0?'L':'R';
+   g.tube(head,'shadow',[
+    [side*.219,-.203,.389],
+    [side*.264,-.206,.255],
+    [side*.281,-.179,.085]
+   ],.011,{name:'m019-fitted-labial-seam-'+suffix});
+   // Sparse, shallow anatomical scale plates, not the old scattered
+   // spherical bumps. Retain the existing species QA coverage labels.
+   for(let i=0;i<3;i++){
+    const z=.35-i*.30;
+    const plate=g.rock(torso,'shadow',
+      [side*.460,1.286,z],[.056,.024,.118],
+      {name:'m019-embedded-scale-'+suffix+'-'+i,rough:.93});
+    plate.userData.m019FittedScale=true;
+   }
+  }
+  return;
+ }
  const spec=salamanderLineageFor(id);
  if(!spec)throw Error('Unsupported salamander skin '+id);
  const count=detail==='source'?10:6;

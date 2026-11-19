@@ -6,6 +6,8 @@ import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometr
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {MAGMA_SALAMANDER_REVISION,MAGMA_SALAMANDER_LEG_REACH,
  magmaSkullFromWolfKing,magmaTorsoFromWolfKing} from '../src/magma-salamander-sculpt.js';
+import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
+ m019HeroSkullRings,m019HeroTorsoRings} from '../src/m019-hero-sculpt.js';
 
 test('m019 is an explicitly m001-derived original salamander, not a copied wolf',()=>{
  const donor=[{z:.5,y:0,rx:.1,ry:.1},{z:.4,y:0,rx:.2,ry:.2},
@@ -37,6 +39,14 @@ for(const detail of ['low','high']){
    model.traverse(o=>{if(o.isMesh){meshes.push(o);nameSet.add(o.name)}});
    assert(meshes.length>0,'real triangle meshes are required');
    assert(nameSet.has('m019-m001-sourced-closed-cranium'));
+   assert.equal(model.userData.m019HeroSilhouette,M019_HERO_REVISION);
+   assert(nameSet.has('m019-unbroken-salamander-muzzle'));
+   assert(nameSet.has('m019-articulated-wide-mandible'));
+   assert(nameSet.has('m019-recessed-mouth-slit'));
+   assert(!nameSet.has('quadruped-tongue'),'m019 must never show a floating tongue ball');
+   assert(!nameSet.has('reptile-orbital-socket'),'m019 must use its own narrow eyes');
+   assert(nameSet.has('m019-continuous-tail-tip'));
+
    const skull=meshes.find(m=>m.name==='m019-m001-sourced-closed-cranium');
    assert.equal(skull.geometry.userData.faceVolumeApplied,true,
     'm019 must preserve the existing physically sculpted facial surface');
@@ -49,11 +59,29 @@ for(const detail of ['low','high']){
     'salamander must not grow the m001 fur coat');
    const pivot=model.userData.pivots;
    assert(pivot?.head&&pivot?.torso&&pivot?.tail);
+   assert.equal(pivot.head.parent,pivot.torso,'m019 head must move with rib cage');
+   assert.equal(pivot.torso.position.y,-M019_BODY_DROP);
+   assert.equal(pivot.tail.scale.z,M019_TAIL_LENGTH);
+   assert(pivot.tailTip?.userData!==undefined,'tail tip must be a movable pivot');
+   const body=meshes.find(o=>o.name==='species-shoulder-rib-pelvis-m019');
+   assert.equal(body?.parent,pivot.torso);
+   assert(body.userData.anatomicalStations>=8);
+   const snout=meshes.find(o=>o.name==='m019-unbroken-salamander-muzzle');
+   assert.equal(snout.parent,pivot.head,'snout must not float separately from skull');
+   const mandible=meshes.find(o=>o.name==='m019-articulated-wide-mandible');
+   assert.equal(mandible.parent,pivot.jaw);
+   assert.equal(pivot.jaw.parent,pivot.head);
    for(const legId of ['legfrontL','legfrontR','legrearL','legrearR']){
     const leg=pivot[legId];
     assert(leg?.userData.m019ShortPlantedLeg,legId+' must be short');
     assert.equal(leg.scale.y,MAGMA_SALAMANDER_LEG_REACH);
     assert(leg.position.y<.55,'hip must lower with shortened legs');
+    assert(nameSet.has('m019-scaled-upper-limb-'+legId.slice(3)));
+    assert(nameSet.has('m019-scaled-lower-limb-'+legId.slice(3)));
+    assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-0'));
+    assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-3'));
+    const toe=pivot['toe'+legId.slice(3)];
+    assert(toe?.userData.m019PlantedToeJoint,'m019 toes must follow joint');
     const lowerId=legId.replace('leg','lower');
     assert(pivot[lowerId]?.parent===leg,'lower joint must follow upper leg');
    }
@@ -90,4 +118,49 @@ test('m019 does not change other reptile silhouettes',()=>{
   other.traverse(obj=>{if(obj.isMesh)names.push(obj.name)});
   assert(!names.some(n=>n.startsWith('m019-')));
  }finally{disposeMonsterSculpture(other)}
+});
+
+test('m019 heroic silhouette is genuinely flatter and longer than the wolf donor',()=>{
+ const donor=[
+ {z:.80,y:1.27,rx:.12,ry:.25},{z:.63,y:1.29,rx:.39,ry:.34},
+ {z:.44,y:1.31,rx:.49,ry:.38},{z:.19,y:1.32,rx:.45,ry:.36},
+ {z:-.15,y:1.28,rx:.37,ry:.31},{z:-.42,y:1.27,rx:.34,ry:.28},
+ {z:-.72,y:1.26,rx:.26,ry:.24},{z:-.83,y:1.26,rx:.11,ry:.10}
+ ];
+ const grown=m019HeroTorsoRings(donor);
+ assert.equal(grown.length,donor.length);
+ assert(grown[0].z>donor[0].z&&grown.at(-1).z<donor.at(-1).z,
+  'rib cage must extend forward and backward');
+ assert(grown.every((p,i)=>p.ry<donor[i].ry),
+  'reptilian chest should be flatter than the wolf mother');
+ assert.equal(donor[0].z,.80,'never mutate wolf-donor stations');
+ const head=m019HeroSkullRings([
+  {z:.36,y:-.16,rx:.03,ry:.035},
+  {z:.33,y:-.14,rx:.08,ry:.06},
+  {z:.30,y:-.11,rx:.11,ry:.09},
+  {z:.27,y:-.04,rx:.17,ry:.12},
+  {z:.20,y:-.01,rx:.21,ry:.14},
+  {z:.15,y:.02,rx:.23,ry:.17},
+  {z:.06,y:.05,rx:.27,ry:.19},
+  {z:-.12,y:.06,rx:.29,ry:.2},
+  {z:-.33,y:.02,rx:.24,ry:.17},
+  {z:-.51,y:-.01,rx:.17,ry:.12},
+  {z:-.64,y:-.03,rx:.05,ry:.06}
+ ]);
+ assert(head.every((r,i)=>i===0||r.z<head[i-1].z));
+ assert(head.every(r=>r.rx>0&&r.ry>0));
+ assert(head[6].ry<head[6].rx,'head must be a flattened wedge');
+});
+
+test('m016/m017 retain their separate salamander lineages',()=>{
+ for(const id of ['m016','m017']){
+  const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
+  try{
+   assert.equal(model.userData.m019HeroSilhouette,undefined);
+   assert(model.userData.salamanderLineageRevision);
+   let count=0;
+   model.traverse(obj=>{if(obj.name.startsWith('m019-'))count++});
+   assert.equal(count,0,'m019-exclusive meshes must not leak into '+id);
+  }finally{disposeMonsterSculpture(model)}
+ }
 });
