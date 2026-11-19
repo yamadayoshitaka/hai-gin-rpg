@@ -93,7 +93,8 @@ export function createRealtimeBattleCommands({
   }
   const index=own.findIndex(s=>String(s.id)===String(selectedId));
   $('realtimeMapSquadName').textContent=String(own[index]?.label||'第'+(index+1)+'隊');
-  setBattleJobPortrait($('realtimeMapPortrait'),own[index]?.job,own[index]?.id,0);
+  const face=$('realtimeMapPortrait'),faceKey=String(own[index]?.job)+'|'+String(own[index]?.id);
+  if(face.dataset.signature!==faceKey){setBattleJobPortrait(face,own[index]?.job,own[index]?.id,0);face.dataset.signature=faceKey;}
   $('realtimeMapPage').textContent=(index+1)+'/'+own.length;
   $('realtimeMapPrev').disabled=index<=0;
   $('realtimeMapNext').disabled=index>=own.length-1;
