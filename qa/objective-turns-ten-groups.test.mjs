@@ -42,85 +42,22 @@ const hpSummary=threeGroupOverview([
 ],{'2':10},[]);
 assert.equal(hpSummary[9].hp,40);
 assert.equal(hpSummary[9].initialMaxHp,200,'total HP denominator retains the fallen soldiers');
-const groups=Array.from({length:10},(_,i)=>({
- id:i+1,alive:i<3?10:0,hp:i<3?100:0,danger:false
-}));
-const calls=[],onPause=value=>calls.push(['pause',value]);
-const engine=createObjectiveTurnEngine({
- getGroups:()=>groups,onPause,
- onMove:(id,g)=>calls.push(['move',id,g.id]),
- onAction:(id,g)=>calls.push(['act',id,g.after]),
- onReport:rows=>calls.push(['report',rows.length]),
- moveSeconds:2,actionSeconds:3
-});
-assert.equal(engine.snapshot().phase,'idle');
-engine.begin();assert.equal(engine.snapshot().phase,'planning');
-assert.equal(engine.setGoal(1,'support'),true);
-assert.equal(engine.setGoal(3,'defend'),true);
-assert.equal(engine.setGoal(4,'bad'),false);
-assert.equal(engine.start(),true);
-assert.deepEqual(calls.filter(x=>x[0]==='move'),[
- ['move',1,'support'],['move',2,'attack'],['move',3,'defend']
-]);
-assert.equal(engine.snapshot().phase,'moving');
-engine.update(1);assert.equal(engine.snapshot().phase,'moving');
-engine.update(1);assert.equal(engine.snapshot().phase,'acting');
-assert.deepEqual(calls.filter(x=>x[0]==='act'),[
- ['act',1,'defend'],['act',2,'charge'],['act',3,'defend']
-]);
-groups[0].alive=8;groups[0].hp=65;
-engine.update(3);
-assert.equal(engine.snapshot().phase,'report');
-assert.equal(engine.snapshot().report.find(x=>x.id===1).losses,2);
-assert.equal(engine.snapshot().goalByGroup[1],'support');
-assert.equal(engine.start(),true);
-assert.equal(engine.snapshot().turn,2);
-assert.deepEqual(calls.filter(x=>x[0]==='move').slice(-3).map(x=>x[2]),
- ['support','attack','defend'],'unchanged objectives persist without re-selecting');
-assert.equal(engine.setGoal(2,'retreat'),false,'cannot edit objectives while units are moving');
-
-
-const arrivalCalls=[],arrived=new Set(['2']);
-const arrivalEngine=createObjectiveTurnEngine({
- groupIds:[1,2],moveSeconds:10,actionSeconds:3,
- getGroups:()=>[
-  {id:1,alive:6,hp:600,maxHp:600,initialMaxHp:600,danger:false},
-  {id:2,alive:4,hp:300,maxHp:400,initialMaxHp:400,danger:false}
- ],
- onMove:(id,order)=>arrivalCalls.push(['move',id,order.move,order.targetId]),
- onAction:(id,order)=>arrivalCalls.push(['action',id,order.action]),
- hasArrived:id=>arrived.has(String(id))
-});
-arrivalEngine.begin();
-assert.equal(arrivalEngine.setMove(1,'bridge_front','1'),true);
-assert.equal(arrivalEngine.setAction(1,'defend'),true);
-assert.equal(arrivalEngine.setMove(2,'rear'),true);
-assert.equal(arrivalEngine.setAction(2,'ranged'),true);
-arrivalEngine.start();
-assert.deepEqual(arrivalCalls.slice(0,2),[['move',1,'bridge_front','1'],['move',2,'rear',null]]);
-arrivalEngine.update(1);
-assert.deepEqual(arrivalCalls.filter(c=>c[0]==='action'),[['action',2,'ranged']],
- 'rear archers engage while the bridge defenders are still moving');
-assert.equal(arrivalEngine.snapshot().phase,'moving');
-arrived.add('1');arrivalEngine.update(1);
-assert.deepEqual(arrivalCalls.filter(c=>c[0]==='action'),[['action',2,'ranged'],['action',1,'defend']]);
-assert.equal(arrivalEngine.snapshot().phase,'acting');
-arrivalEngine.update(3);
-assert.equal(arrivalEngine.snapshot().phase,'report');
-arrivalEngine.start();
-assert.equal(arrivalEngine.snapshot().ordersByGroup[1].move,'bridge_front');
-assert.equal(arrivalEngine.snapshot().ordersByGroup[2].action,'ranged',
- 'move/action choices survive into the next turn without user repetition');
-
+// The retired objective-turn model is kept as legacy data, not used by combat.
+const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(battleHtml,/createRealtimeBattleCommands/);
+assert.match(battleHtml,/const objectiveTurnUI=null/);
+assert.match(battleHtml,/realtimeCommandUI\?\.openDeployment\(\)/);
+assert.doesNotMatch(battleHtml,/objectiveTurnUI\.begin\(\)/);
 for(const path of ['src/battle-objective-turns.js','src/battle-objective-turn-panel.js',
  'src/army-groups.js','src/battle-three-group-hierarchy.js','src/battle-three-group-panel.js',
  'src/three-team-sortie.js','src/three-team-core-bridge.js']){
  new SourceTextModule(readFileSync(new URL('../'+path,import.meta.url),'utf8'),{identifier:path});
 }
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(html,/installObjectiveTurnPanel/);
-assert.match(html,/objectiveTurnUI\.begin\(\)/);
-assert.match(html,/objectiveTurnUI\.update\(/);
-assert.match(html,/objectiveTurnUI\?\.finish\(\)/);
-assert.match(html,/src\/battle-objective-turn-panel.css/);
-console.log('PASS ten 4x4 formations, automatic two-phase objective turns, maintained goals, group casualties, real battle integration');
+assert.doesNotMatch(html,/installObjectiveTurnPanel/);
+assert.match(html,/createRealtimeBattleCommands/);
+assert.match(html,/const objectiveTurnUI=null/);
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/);
+assert.match(html,/onMove:\(id,point\)=>/);
+assert.match(html,/getBattleRealtimeQA/);
+console.log('PASS: ten inherited sortie formations preserved; the battle now opens one-time deployment and continuous orders');

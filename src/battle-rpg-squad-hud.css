@@ -1,0 +1,140 @@
+/* Compact party-status HUD: two anchored flanks, never a fullscreen blocker. */
+#battleRpgSquadHud[hidden]{display:none!important}
+#battleRpgSquadHud{position:fixed;inset:0;z-index:24;pointer-events:none;color:#eff7ff;font-family:system-ui}
+#battleRpgSquadHud .rpgSquadSide{position:absolute;top:54px;left:6px;width:min(35vw,195px);
+ background:#081d30e9;border:1px solid #64bde5;border-radius:9px;box-shadow:0 4px 14px #0009;
+ pointer-events:auto;overflow:hidden;padding:5px;box-sizing:border-box}
+#battleRpgSquadHud .rpgSquadSide.enemy{left:auto;right:6px;border-color:#e47e92;background:#30151fe9}
+#battleRpgSquadHud .rpgSquadHead{display:flex;align-items:center;gap:4px;justify-content:space-between;min-width:0}
+#battleRpgSquadHud .rpgSquadHead b{font:bold 11px/1.2 system-ui;white-space:nowrap}
+#battleRpgSquadHud .rpgSquadHead small{font:10px system-ui;white-space:nowrap}
+#battleRpgSquadHud button{color:#f7faff;cursor:pointer}
+#battleRpgSquadHud .rpgSquadExpand{border:1px solid #8199af;background:#274358;padding:4px 3px;
+ border-radius:5px;font:9px/1.1 system-ui;min-height:23px;white-space:nowrap}
+#battleRpgSquadHud .rpgSquadList{display:flex;flex-direction:column;gap:4px;margin-top:5px}
+#battleRpgSquadHud .rpgSquadRow{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;
+ padding:4px 5px;background:#183a54;border:1px solid #476f92;border-radius:6px;font:10px system-ui}
+#battleRpgSquadHud .enemy .rpgSquadRow{background:#472532;border-color:#9d5968}
+#battleRpgSquadHud .rpgSquadRow.selected{outline:2px solid #ffdb69;outline-offset:-2px;background:#526337}
+#battleRpgSquadHud .rpgSquadRow.defeated{filter:grayscale(.6);opacity:.75}
+#battleRpgSquadHud .rpgSquadRow.critical .rpgSquadHp i{background:#ff7869}
+#battleRpgSquadHud .rpgSquadRowTitle{display:flex;flex-wrap:wrap;gap:1px 3px;justify-content:space-between;align-items:center}
+#battleRpgSquadHud .rpgSquadRowTitle strong{font:800 10px/1.15 system-ui;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#battleRpgSquadHud .rpgSquadState{font:800 9px/1.2 system-ui;color:#ffe29a}
+#battleRpgSquadHud .rpgSquadHp{height:5px;width:100%;background:#453847;border-radius:8px;overflow:hidden}
+#battleRpgSquadHud .rpgSquadHp i{display:block;height:100%;background:#64d6a7;transition:width .15s}
+#battleRpgSquadHud .rpgSquadNumbers{white-space:nowrap;font:700 9px/1.25 system-ui;color:#ecf4ff}
+#battleRpgSquadHud .rpgSquadEffects{display:flex;flex-wrap:wrap;gap:2px;min-height:12px;font:9px/1.2 system-ui;color:#a9c6d8}
+#battleRpgSquadHud .rpgSquadEffects span{border-radius:4px;padding:1px 3px;color:#def7df;background:#256044}
+#battleRpgSquadHud .rpgSquadEffects span.debuff{color:#ffe4d7;background:#894044}
+#battleRpgSquadHud .rpgSquadPager{display:flex;justify-content:space-between;align-items:center;gap:2px;margin-top:4px}
+#battleRpgSquadHud .rpgSquadPager button{border:1px solid #658dab;border-radius:5px;
+ background:#19344c;padding:2px 8px;min-height:23px;font-size:11px}
+#battleRpgSquadHud .rpgSquadPager button:disabled{opacity:.3}
+#battleRpgSquadHud .rpgSquadPager small{font:10px system-ui}
+#battleRpgSquadHud .rpgSquadSide.expanded{z-index:4;width:min(45vw,220px);max-height:calc(100dvh - 195px);overflow:auto}
+#squadScreenLabels .squadScreenLabel.rpgHudFocus{border-color:#ffdd70!important;box-shadow:0 0 0 3px #ffe37e90,0 0 19px #f7ce60!important}
+body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSquadHud{display:none!important}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadSide{top:53px;width:39vw;max-width:170px}
+ #battleRpgSquadHud .rpgSquadSide.expanded{width:44vw}
+ #battleRpgSquadHud .rpgSquadHead{flex-wrap:wrap}
+ #battleRpgSquadHud .rpgSquadHead b{font-size:10px}
+ #battleRpgSquadHud .rpgSquadHead small{font-size:9px}
+ #battleRpgSquadHud .rpgSquadRowTitle strong{font-size:9px}
+ #battleRpgSquadHud .rpgSquadRow{padding:4px}
+ #battleRpgSquadHud .rpgSquadState{font-size:8px}
+}
+@media(max-height:500px){
+ #battleRpgSquadHud .rpgSquadSide{top:43px}
+ #battleRpgSquadHud .rpgSquadSide.expanded{max-height:calc(100dvh - 100px)}
+}
+
+/* Realtime RPG roster: five compact, horizontally composed squad cards per page.
+   The wider view is optional; the default retains a clear central 3D viewport. */
+#battleRpgSquadHud .rpgSquadSide{width:min(31vw,184px);max-height:min(43dvh,380px);overflow:auto;top:12px}
+#battleRpgSquadHud .rpgSquadSide.expanded{width:min(37vw,215px);max-height:calc(100dvh - 182px)}
+#battleRpgSquadHud .rpgSquadHead{flex-wrap:nowrap;gap:3px}
+#battleRpgSquadHud .rpgSquadHead b{font-size:10px}
+#battleRpgSquadHud .rpgSquadHead small{font-size:9px}
+#battleRpgSquadHud .rpgSquadExpand{font-size:9px;padding:3px}
+#battleRpgSquadHud .rpgSquadRow{padding:3px 4px;gap:2px;min-height:34px}
+#battleRpgSquadHud .rpgSquadRowTitle{display:flex;flex-wrap:nowrap;gap:3px;align-items:center}
+#battleRpgSquadHud .rpgSquadJobIcon{font-size:12px;flex:0 0 auto;line-height:1}
+#battleRpgSquadHud .rpgSquadRowTitle strong{flex:1;min-width:0;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#battleRpgSquadHud .rpgSquadState{flex:0 0 auto;font-size:11px;line-height:1}
+#battleRpgSquadHud .rpgSquadMetrics{display:flex;gap:3px;align-items:center;min-width:0}
+#battleRpgSquadHud .rpgSquadHp{flex:1 1 28px;width:auto;min-width:17px;height:6px}
+#battleRpgSquadHud .rpgSquadHpValue{font:700 9px/1 system-ui;flex:0 0 auto;font-variant-numeric:tabular-nums}
+#battleRpgSquadHud .rpgSquadNumbers{font:700 9px/1 system-ui;flex:0 0 auto;color:#d9f0ff;font-variant-numeric:tabular-nums}
+#battleRpgSquadHud .rpgSquadEffects{display:flex;align-items:center;flex-wrap:nowrap;gap:1px;min-height:0;flex:0 0 auto;max-width:48px;overflow:hidden}
+#battleRpgSquadHud .rpgSquadEffects:empty{display:none}
+#battleRpgSquadHud .rpgSquadEffects span{display:inline-flex;align-items:center;justify-content:center;min-width:13px;height:15px;padding:0 1px;font:800 9px/1 system-ui;white-space:nowrap;border-radius:3px}
+#battleRpgSquadHud .rpgSquadEffects .buff{background:#236442;color:#c7ffd5}
+#battleRpgSquadHud .rpgSquadEffects .debuff{background:#8a3847;color:#ffe1cf}
+#battleRpgSquadHud .rpgSquadEffects .more{background:#425568;color:#fff}
+#battleRpgSquadHud .rpgSquadPager[hidden]{display:none!important}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadSide{width:31vw;max-width:none;top:10px;padding:4px}
+ #battleRpgSquadHud .rpgSquadSide.expanded{width:39vw}
+ #battleRpgSquadHud .rpgSquadRow{padding:3px;min-height:33px}
+ #battleRpgSquadHud .rpgSquadRowTitle strong{font-size:8px}
+ #battleRpgSquadHud .rpgSquadHpValue,#battleRpgSquadHud .rpgSquadNumbers{font-size:8px}
+ #battleRpgSquadHud .rpgSquadMetrics{gap:2px}
+ #battleRpgSquadHud .rpgSquadEffects{max-width:35px}
+}
+
+
+/* Owner-approved ultra-compact portrait roster: ten rows, both teams visible. */
+#battleRpgSquadHud .rpgSquadSide,
+#battleRpgSquadHud .rpgSquadSide.expanded{
+ width:min(28vw,174px);max-width:none;top:9px;
+ max-height:calc(100dvh - var(--battleReportHeight,118px) - 103px);
+ overflow:auto;padding:3px;scrollbar-width:thin;
+}
+#battleRpgSquadHud .rpgSquadList{gap:2px;margin-top:3px}
+#battleRpgSquadHud .rpgSquadHead{min-height:24px}
+#battleRpgSquadHud .rpgSquadRow{display:grid;grid-template-columns:26px minmax(0,1fr);
+ grid-template-rows:15px 12px;gap:0 3px;min-height:29px;padding:2px 3px;align-items:center;
+ border-radius:5px}
+#battleRpgSquadHud .rpgSquadRowTitle,
+#battleRpgSquadHud .rpgSquadMetrics{display:contents}
+#battleRpgSquadHud .rpgSquadJobIcon{
+ grid-column:1;grid-row:1/3;display:block;width:25px;height:25px;
+ background-color:#355067;background-size:400% 400%;background-repeat:no-repeat;
+ border:1px solid #bca06c;border-radius:4px;flex:none;
+}
+#battleRpgSquadHud .rpgSquadRowTitle strong{
+ grid-column:2;grid-row:1;font:800 9px/1.1 system-ui;min-width:0;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ padding-right:11px}
+#battleRpgSquadHud .rpgSquadState{
+ grid-column:2;grid-row:1;justify-self:end;font:800 10px/1 system-ui;
+ background:#09293b70;border-radius:3px}
+#battleRpgSquadHud .rpgSquadHp{
+ grid-column:2;grid-row:2;width:100%;height:4px;align-self:end;
+ background:#453a49}
+#battleRpgSquadHud .rpgSquadHpValue{
+ grid-column:2;grid-row:2;justify-self:center;align-self:start;
+ background:#092336b8;border-radius:2px;padding:0 2px;
+ font:800 8px/1 system-ui}
+#battleRpgSquadHud .rpgSquadNumbers{
+ grid-column:2;grid-row:2;justify-self:end;align-self:start;
+ font:800 8px/1 system-ui;background:#092336cc;padding-left:2px}
+#battleRpgSquadHud .rpgSquadEffects{
+ grid-column:1/3;grid-row:1;justify-self:end;
+ display:flex;gap:1px;max-width:38px;overflow:hidden;min-height:0;
+ transform:translateY(-3px)}
+#battleRpgSquadHud .rpgSquadEffects span{min-width:10px;height:11px;font:800 8px/1 system-ui;padding:0 1px}
+#battleRpgSquadHud .rpgSquadRowTitle .rpgSquadState{display:none}
+#battleRpgSquadHud .rpgSquadPager{position:sticky;bottom:0;background:#0f293d}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadSide,
+ #battleRpgSquadHud .rpgSquadSide.expanded{width:29vw;top:7px;padding:2px}
+ #battleRpgSquadHud .rpgSquadRow{grid-template-columns:22px minmax(0,1fr);grid-template-rows:13px 12px;min-height:27px;padding:2px;gap:0 2px}
+ #battleRpgSquadHud .rpgSquadJobIcon{width:22px;height:22px}
+ #battleRpgSquadHud .rpgSquadRowTitle strong{font-size:8px;padding-right:0}
+ #battleRpgSquadHud .rpgSquadHpValue,#battleRpgSquadHud .rpgSquadNumbers{font-size:7px}
+ #battleRpgSquadHud .rpgSquadHead b{font-size:9px}
+ #battleRpgSquadHud .rpgSquadHead small{font-size:8px}
+}

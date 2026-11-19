@@ -57,6 +57,7 @@ export function createMassBattleWorkerHandler(emit){
           break;
         }
         case 'strategy':if(sim)sim.setStrategy(message.strategy);break;
+        case 'squadDeployment':if(sim)sim.deploySquadBeforeBattle(message.squadId,message.x,message.z,message.team??0);break;
         case 'squadDestination':if(sim)sim.setSquadDestination(message.squadId,message.x,message.z);break;
         case 'strategistWarp':if(sim)sim.warpStrategist(message.unitId,message.x,message.z);break;
         case 'healItem':if(sim)sim.healFromItem(message.unitId,message.amount);break;

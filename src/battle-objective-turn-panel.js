@@ -9,7 +9,7 @@ export function installObjectiveTurnPanel({
  groupIds,getGroups,getMoveTargets=()=>[],getMapChoices=()=>[],
  getGroupPowers=()=>({}),getGroupJobs=()=>[],getGroupLabel=()=>'',getEnemyGroups=()=>[],getGroupOrigin=()=>null,
  getLegalMapPoint=(x,z)=>({x,z}),
- getItems=()=>[],drawMapBackground=null,worldSize=232,
+ getItems=()=>[],getBattleStatusRows=()=>[],drawMapBackground=null,worldSize=232,
  hasArrived=null,onPause,onMove,onAction,onItem,onReport
 }){
  const engine=createObjectiveTurnEngine({groupIds,getGroups,hasArrived,onPause,onMove,onAction,onItem,onReport});
@@ -18,7 +18,8 @@ export function installObjectiveTurnPanel({
  root.setAttribute('aria-label','ターン制：地図で移動先を決めて作戦を選ぶ');
  root.innerHTML='<div class="objectiveTurnCard">'+
   '<header><strong id="objectiveTurnTitle"></strong><small id="objectiveTurnHint"></small></header>'+
-  '<div id="objectiveTurnForces" class="objectiveTurnForces"></div>'+
+  '<div id="objectiveTurnForces" class="objectiveTurnForces"></div>'+ 
+  '<div id="objectiveTurnRpgMini" class="objectiveTurnRpgMini" aria-label="味方と敵の隊別HPと強化弱体"></div>'+
   '<div class="objectiveTurnPager"><button type="button" data-pager="-1">◀ 前の班</button><b id="objectiveTurnPage"></b><button type="button" data-pager="1">次の班 ▶</button></div>'+
   '<div id="objectiveTurnGroup" class="objectiveTurnGroup"></div>'+
   '<div class="objectiveTurnSteps"><button type="button" data-step="map">① 地図で移動</button><button type="button" data-step="action">② 到着後の作戦</button><button type="button" data-step="intel">戦力一覧</button></div>'+
@@ -156,6 +157,30 @@ export function installObjectiveTurnPanel({
   mapCenterZ=Number.isFinite(Number(origin?.z))?Number(origin.z):(Number(worldSize)||232)/2;
   clampCenter();
  }
+ let rpgStatusSignature='';
+ function renderRpgMini(){
+  const target=$('objectiveTurnRpgMini');
+  const incoming=getBattleStatusRows(),rows=Array.isArray(incoming)?incoming:[];
+  const signature=JSON.stringify(rows.map(r=>[r.team,r.id,r.name,r.alive,r.total,r.hp,r.maxHp,r.effects]));
+  if(signature===rpgStatusSignature)return;
+  rpgStatusSignature=signature;
+  const preservedScroll=[...target.querySelectorAll('.objectiveTurnRpgStrip')].map(node=>node.scrollLeft);
+  target.innerHTML=[0,1].map(team=>{
+   const selected=rows.filter(r=>Number(r.team)===team);
+   return '<div class="objectiveTurnRpgSide '+(team?'enemy':'ally')+'">'+
+    '<b>'+(team?'🔴 敵隊':'🔵 味方隊')+' '+selected.filter(r=>Number(r.alive)>0).length+'/'+selected.length+'</b>'+
+    '<div class="objectiveTurnRpgStrip">'+(selected.length?selected.map(r=>{
+     const pct=Math.max(0,Math.min(100,Math.round((Number(r.hp)||0)/Math.max(1,Number(r.maxHp)||0)*100)));
+     const buff=(r.effects||[]).slice(0,2).map(e=>esc(e.label)).join(' ');
+     return '<span class="objectiveTurnRpgChip"><strong>'+esc(r.name)+'</strong>'+
+      '<i style="width:'+pct+'%"></i><small>HP '+Math.ceil(Number(r.hp)||0)+'/'+Math.ceil(Number(r.maxHp)||0)+
+      ' 残'+(Number(r.alive)||0)+'/'+(Number(r.total)||0)+(buff?' '+buff:'')+'</small></span>';
+    }).join(''):'<small>隊情報を取得中</small>')+'</div></div>';
+  }).join('');
+  [...target.querySelectorAll('.objectiveTurnRpgStrip')].forEach((node,index)=>{
+   node.scrollLeft=preservedScroll[index]||0;
+  });
+ }
  function render(){
   const state=engine.snapshot(),planning=state.phase==='planning',report=state.phase==='report';
   const visible=planning||report;
@@ -166,6 +191,7 @@ export function installObjectiveTurnPanel({
   }[state.phase]||'')+((state.phase==='moving'||state.phase==='acting'||report)&&Number.isFinite(state.remaining)?
    ' · '+Math.ceil(state.remaining)+'秒':'');
   if(!visible)return;
+  renderRpgMini();
   const groups=activeGroups(state),group=visibleGroup(state);
   page=clamp(page,0,Math.max(0,groups.length-1));
   const id=Number(group?.id)||1,order=state.ordersByGroup[id]||{move:'enemy',action:'charge',targetId:null};
@@ -382,8 +408,11 @@ export function installObjectiveTurnPanel({
   zoomMap(zoom*(event.deltaY<0?1.3:1/1.3),xy.x,xy.z);
  },{passive:false});
   $('objectiveTurnAdvance').addEventListener('click',()=>{engine.start();render();});
+ let rpgRefreshAt=0;
  function update(dt,wallDt=dt){
   const before=engine.status();engine.update(dt,{wallDt});const after=engine.status();
+  rpgRefreshAt+=Math.max(0,Number(wallDt)||0);
+  if(rpgRefreshAt>=1){rpgRefreshAt=0;if(!root.hidden)renderRpgMini();}
   if(before.phase!==after.phase||Math.ceil(before.remaining)!==Math.ceil(after.remaining))render();
  }
  return {begin:()=>{if(!shown){shown=true;engine.begin();render();}},update,

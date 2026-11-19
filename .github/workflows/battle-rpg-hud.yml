@@ -1,0 +1,36 @@
+name: RPG squad HUD regression
+on:
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/battle-rpg-squad-*'
+      - 'src/battle-objective-turn-panel.*'
+      - 'qa/battle-rpg-squad-hud.test.mjs'
+      - '.github/workflows/battle-rpg-hud.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/battle-rpg-squad-*'
+      - 'src/battle-objective-turn-panel.*'
+      - 'qa/battle-rpg-squad-hud.test.mjs'
+      - '.github/workflows/battle-rpg-hud.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rpg-party-status:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of RPG HUD and tactical map
+        run: |
+          node --check src/battle-rpg-squad-hud.js
+          node --check src/battle-rpg-squad-source.js
+          node --check src/battle-objective-turn-panel.js
+      - name: Battle effects, status, names and camera link regression
+        run: node --test qa/battle-rpg-squad-hud.test.mjs
