@@ -52,7 +52,7 @@ export function rpgHudCompactText(row){
   ' '+(Number(row.alive)||0)+'/'+(Number(row.total)||0)+'人 '+rpgHudStatus(row)+
   (effects?' '+effects:'');
 }
-export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus=()=>{}}={}){
+export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus=()=>{},onCommand=()=>{}}={}){
  const doc=documentRef;
  if(!doc?.body?.appendChild)return null;
  const root=doc.createElement('section');root.id='battleRpgSquadHud';
@@ -124,6 +124,20 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
    const job=doc.createElement('span');job.className='rpgSquadJobIcon';
    setBattleJobPortrait(job,row.job,row.id,team);
+   job.setAttribute('role','button');
+   job.setAttribute('tabindex','0');
+   job.setAttribute('aria-label',team===0?
+    String(row.name)+'の作戦を開く':String(row.name)+'を確認');
+   const openByIcon=event=>{
+    event.stopPropagation();
+    select(team,row.id);
+    if(team===0)onCommand(team,String(row.id));
+    else onFocus(team,String(row.id));
+   };
+   job.addEventListener('click',openByIcon);
+   job.addEventListener('keydown',event=>{
+    if(event.key==='Enter'||event.key===' '){event.preventDefault();openByIcon(event);}
+   });
    const title=doc.createElement('strong');
    title.textContent=String(row.name||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
