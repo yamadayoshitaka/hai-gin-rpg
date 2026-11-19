@@ -225,52 +225,25 @@
       "lastReviewedAt": "2026-11-19T09:32:33.920Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
       "captureAttempts": 3
+    },
+    "object:entry_door_lv5_001": {
+      "name": "城門扉（鍵Lv.5）",
+      "type": "object",
+      "referenceFile": "assets/world-quality/references/entry_door_lv5_001.webp",
+      "referenceSha256": "eedab3fab9f0ffcf220c209893f20ee767fdc1f190cd37de06bafb51259707d5",
+      "referencePromptHash": "93db41505a933618df7979f99f269c1257b26a880d6a2d813900f2b354e74cea",
+      "referenceCreatedAt": "2026-11-19T18:44:52.945Z",
+      "gameScreenshot": null,
+      "comparisonReport": null,
+      "roughnessProposal": 1,
+      "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
+      "productionApplied": false,
+      "lastReviewedAt": "2026-11-19T18:45:01.496Z",
+      "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
+      "captureAttempts": 1
     }
   },
   "runs": [
-    {
-      "id": "43981327152",
-      "startedAt": "2026-11-16T23:42:39.949Z",
-      "mode": "reference",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 60,
-      "targetIds": [
-        "object:treasure_chest_001",
-        "object:cottage_stairs_001",
-        "object:spiral_stairs_2f_001"
-      ],
-      "generated": 0,
-      "failed": [],
-      "providerCalls": 0,
-      "stopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-      "completedAt": "2026-11-16T23:42:39.949Z"
-    },
-    {
-      "id": "43981327152",
-      "startedAt": "2026-11-16T23:43:07.849Z",
-      "mode": "results",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 60,
-      "targetIds": [
-        "object:treasure_chest_001",
-        "object:cottage_stairs_001",
-        "object:spiral_stairs_2f_001"
-      ],
-      "generated": 0,
-      "failed": [],
-      "providerCalls": 0,
-      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-      "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-      "completedAt": "2026-11-16T23:43:07.849Z"
-    },
     {
       "id": "44004217527",
       "startedAt": "2026-11-17T02:38:52.323Z",
@@ -633,11 +606,50 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
       "completedAt": "2026-11-19T09:32:33.920Z"
+    },
+    {
+      "id": "44590124267",
+      "startedAt": "2026-11-19T18:44:40.891Z",
+      "mode": "reference",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv5_001"
+      ],
+      "generated": 1,
+      "failed": [],
+      "providerCalls": 1,
+      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-19T18:44:52.945Z"
+    },
+    {
+      "id": "44590124267",
+      "startedAt": "2026-11-19T18:45:01.496Z",
+      "mode": "results",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv5_001"
+      ],
+      "generated": 1,
+      "failed": [],
+      "providerCalls": 1,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+      "completedAt": "2026-11-19T18:45:01.496Z"
     }
   ],
   "lastRun": {
-    "id": "44496801970",
-    "startedAt": "2026-11-19T09:32:33.920Z",
+    "id": "44590124267",
+    "startedAt": "2026-11-19T18:45:01.496Z",
     "mode": "results",
     "requested": 1,
     "requestedTarget": null,
@@ -646,13 +658,13 @@
     "stageCount": 200,
     "objectCount": 60,
     "targetIds": [
-      "object:entry_door_lv4_001"
+      "object:entry_door_lv5_001"
     ],
-    "generated": 0,
+    "generated": 1,
     "failed": [],
-    "providerCalls": 0,
+    "providerCalls": 1,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-19T09:32:33.920Z"
+    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
+    "completedAt": "2026-11-19T18:45:01.496Z"
   }
 }

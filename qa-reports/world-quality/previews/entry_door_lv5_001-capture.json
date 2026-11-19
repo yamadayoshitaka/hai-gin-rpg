@@ -1,0 +1,42 @@
+{
+  "assetId": "entry_door_lv5_001",
+  "kind": "REAL_WEBGL_CAPTURE_CANDIDATES_NOT_APPROVED",
+  "captures": [
+    {
+      "roughnessScale": 1,
+      "filename": "qa-reports/world-quality/previews/entry_door_lv5_001-rough-1.png",
+      "bytes": 61113,
+      "materials": 11,
+      "drawCalls": 12,
+      "triangles": 478,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 0.83,
+      "filename": "qa-reports/world-quality/previews/entry_door_lv5_001-rough-0_83.png",
+      "bytes": 60268,
+      "materials": 11,
+      "drawCalls": 12,
+      "triangles": 478,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 0.92,
+      "filename": "qa-reports/world-quality/previews/entry_door_lv5_001-rough-0_92.png",
+      "bytes": 60219,
+      "materials": 11,
+      "drawCalls": 12,
+      "triangles": 478,
+      "status": "CAPTURED_QA_PENDING"
+    },
+    {
+      "roughnessScale": 1.08,
+      "filename": "qa-reports/world-quality/previews/entry_door_lv5_001-rough-1_08.png",
+      "bytes": 67449,
+      "materials": 11,
+      "drawCalls": 12,
+      "triangles": 478,
+      "status": "CAPTURED_QA_PENDING"
+    }
+  ]
+}
