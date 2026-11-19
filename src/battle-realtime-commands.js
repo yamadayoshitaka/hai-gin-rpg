@@ -6,6 +6,7 @@
 import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
+import {battleJobSpecialActions} from './battle-job-special-actions.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
@@ -21,7 +22,8 @@ export function createRealtimeBattleCommands({
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
  onSelect=()=>{},onFocus=()=>{},onRoster=()=>{},onMenu=()=>{},
- onPause=()=>{},getPaused=()=>false
+ onPause=()=>{},getPaused=()=>false,
+ getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false
 }={}){
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
@@ -44,6 +46,8 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeDefend">🛡 守備</button>
    <button type="button" id="realtimeCharge">⚔ 攻撃</button>
    <button type="button" id="realtimeHold">◷ 待機</button>
+   <button type="button" id="realtimeSupport">✚ 支援・道具</button>
+   <button type="button" id="realtimeSpecial">★ 固有作戦</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeDockAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
     <strong>攻撃種別</strong>
@@ -52,6 +56,8 @@ export function createRealtimeBattleCommands({
     <button type="button" data-attack-kind="intercept" data-attack-origin="dock">迎撃</button>
     <button type="button" data-attack-kind="delay" data-attack-origin="dock">延期</button>
    </div>
+   <div id="realtimeDockSupportChoices" class="realtimeContextChoices" hidden role="group" aria-label="支援アイテム"></div>
+   <div id="realtimeDockSpecialChoices" class="realtimeContextChoices" hidden role="group" aria-label="ジョブ固有作戦"></div>
   </div>
   <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="戦場地図で移動先を選択">
    <div class="realtimeMapCard">
@@ -81,7 +87,7 @@ export function createRealtimeBattleCommands({
       <button type="button" data-action-after-move="defend">🛡 守備</button>
       <button type="button" data-action-after-move="charge">⚔ 攻撃</button>
       <button type="button" data-action-after-move="hold">◷ 待機</button>
-      <button type="button" data-action-after-move="support" title="守備効果を使用する支援行動">✚ 支援</button>
+      <button type="button" data-action-after-move="support">🎒 支援・道具</button>
      </div>
      <div id="realtimeMapAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
       <strong>攻撃種別</strong>
@@ -90,6 +96,9 @@ export function createRealtimeBattleCommands({
       <button type="button" data-attack-kind="intercept" data-attack-origin="map">迎撃</button>
       <button type="button" data-attack-kind="delay" data-attack-origin="map">延期</button>
      </div>
+     <button type="button" data-action-after-move="special">★ 固有作戦</button>
+     <div id="realtimeMapSupportChoices" class="realtimeContextChoices" hidden role="group" aria-label="支援アイテム"></div>
+     <div id="realtimeMapSpecialChoices" class="realtimeContextChoices" hidden role="group" aria-label="ジョブ固有作戦"></div>
      <button type="button" class="realtimeActionSkip" id="realtimeActionSkip">行動指定なし（移動のみ）</button>
     </div>
     <button type="button" id="realtimeStart">配置を確定して戦闘開始 ▶</button>
