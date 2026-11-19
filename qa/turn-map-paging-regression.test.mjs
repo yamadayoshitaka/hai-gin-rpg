@@ -4,6 +4,7 @@ import {test} from 'node:test';
 import vm from 'node:vm';
 import {battleMapCell} from '../src/battle-realtime-commands.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
+import {planSkirmishDeployment} from '../src/battle-realtime-deployment.js';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
@@ -65,4 +66,30 @@ test('battle inline module still parses after removing objective-turn controller
  const blocks=[...html.matchAll(/<script[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/g)];
  assert.ok(blocks.length,'Expected a browser ES module in tactical game');
  for(const m of blocks)new vm.SourceTextModule(m[1],{identifier:'tactics-wireframe-inline'});
+});
+
+test('50v50 skirmish and story modes can position squads before combat',()=>{
+ const own=Array.from({length:10},(_,i)=>({id:i,team:0,squadId:'sword',hp:100,alive:true,
+  cell:{x:20+i,z:20}}));
+ const opponents=Array.from({length:10},(_,i)=>({id:i+20,team:1,squadId:'enemy',hp:100,alive:true,
+  cell:{x:54+i,z:20}}));
+ const walkable=(x,z)=>!(x===16&&z===16);
+ const options={squadId:'sword',team:0,x:16,z:20,width:80,height:80,homeRiverX:()=>40,
+  passable:walkable};
+ const placements=planSkirmishDeployment([...own,...opponents],options);
+ assert.equal(placements.length,10);
+ const pos=placements.map(p=>p.x+','+p.z);
+ assert.equal(new Set(pos).size,10);
+ assert.ok(placements.every(p=>p.x<=31&&walkable(p.x,p.z)));
+ assert.equal(planSkirmishDeployment([...own,...opponents],{...options,x:39}),null,
+  'No skirmish prebattle teleport into the enemy front');
+ const obstructed=planSkirmishDeployment([...own,...opponents],{...options,
+  passable:()=>false});
+ assert.equal(obstructed,null,'A fully blocked deployment aborts atomically');
+ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(battle,/planSkirmishDeployment\(actors,/);
+ assert.match(battle,/occupiedCells\.delete\(cellKey\(actor\.cell\.x,actor\.cell\.z\)\)/);
+ assert.match(battle,/actor\.root\.position\.set\(wx,terrainY\(wx,wz\),wz\)/);
+ assert.match(battle,/occupiedCells\.set\(cellKey\(x,z\),actor\)/);
+ assert.match(battle,/const mount=mountedCreatureOf\(actor\)/);
 });
