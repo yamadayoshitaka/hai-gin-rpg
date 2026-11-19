@@ -31,7 +31,7 @@ export function createRealtimeBattleCommands({
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
- onRally=()=>false
+ onRally=()=>false,onMapOverview=()=>false
 }={}){
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
@@ -77,6 +77,8 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeManageItems" hidden>🎁 全軍の共有アイテムを使う</button>
    <button type="button" id="realtimeRally" hidden>📣 バフの種類と対象を選択</button>
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
+   <button type="button" id="realtimeThiefUnlock" title="シーフ固有：鍵開け・盗む" hidden>🔓 鍵開け</button>
+   <button type="button" id="realtimeThiefSteal" hidden>🎒 盗む</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeStrategyTargets" hidden role="group" aria-label="選択した攻撃スキルで指定できる敵隊">
     <strong id="realtimeTargetStep">② 攻撃対象の敵隊を選択</strong>
@@ -382,7 +384,7 @@ export function createRealtimeBattleCommands({
   if(!['strategy','rally','items'].includes(next))return;
   dockTab=next;hideContextChoices();
   const strategy=next==='strategy',rally=next==='rally',items=next==='items';
-  for(const id of ['realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial'])
+  for(const id of ['realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial','realtimeThiefUnlock','realtimeThiefSteal'])
    $(id).hidden=!strategy;
   $('realtimeRally').hidden=true;
   $('realtimeSkillStep').hidden=!strategy;
@@ -541,7 +543,8 @@ export function createRealtimeBattleCommands({
   if(!targets.length){contextNote(node,action.id==='high_ground'?
    '利用できる高所がありません。階段・窓までの経路や高所の占有状況を確認してください。':
    '実行できる対象がありません。');return;}
-  const perPage=4,last=Math.max(0,Math.ceil(targets.length/perPage)-1);
+  const perPage=['height','door','building','bridge'].includes(action.target)?8:4;
+  const last=Math.max(0,Math.ceil(targets.length/perPage)-1);
   page=clamp(page,0,last);contextNote(node,action.label+'：対象を選択');
   const shown=targets.slice(page*perPage,(page+1)*perPage);
   const isStructure=['building','bridge','door','height'].includes(action.target)&&shown.some(t=>Number.isFinite(t.x)&&Number.isFinite(t.z));
@@ -549,7 +552,7 @@ export function createRealtimeBattleCommands({
    contextNote(node,'🟨 地図の番号ピンか対象名を選択してください。確定後は自動で接近して実行します。');
    const preview=doc.createElement('canvas');preview.className='realtimeStructureMap';
    preview.width=260;preview.height=164;
-   preview.setAttribute('aria-label','作戦対象の建物・橋・扉の位置。番号を選択');
+   preview.setAttribute('aria-label','作戦対象の屋根・高所・建物・橋・扉の位置。番号をタップして選択');
    preview.setAttribute('role','img');node.append(preview);
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
@@ -566,13 +569,17 @@ export function createRealtimeBattleCommands({
      const x=clamp(target.x/worldSize*w,6,w-6),y=clamp(target.z/worldSize*h,6,h-6);
      const active=chosen&&String(chosen.id)===String(target.id);
      ctx.beginPath();ctx.arc(x,y,active?12:9,0,Math.PI*2);
-     ctx.fillStyle=active?'#ffe3a0':'#ffb66d';ctx.fill();
+      ctx.fillStyle=target.available===false?'#7b8490':active?'#ffe3a0':'#ffb66d';ctx.fill();
      ctx.lineWidth=active?3:1;ctx.strokeStyle='#152a3a';ctx.stroke();
      ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
      ctx.fillStyle='#183145';ctx.fillText(String(page*perPage+index+1),x,y);
     });
    };
    const choose=target=>{
+    if(target.available===false){
+     status.textContent='選択不可：'+String(target.reason||'現在は実行できません');
+     return;
+    }
     chosen=target;
     status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
     if(origin==='dock'){
@@ -597,7 +604,7 @@ export function createRealtimeBattleCommands({
    });
    for(const target of shown)contextButton(node,String(target.label||target.id),()=>choose(target));
    if(origin==='map'){
-    confirmButton=contextButton(node,'✅ 対象を確定',()=>{
+    confirmButton=contextButton(node,'✅ 選択した対象に作戦を実行',()=>{
      if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
     });
     confirmButton.disabled=true;
@@ -609,6 +616,10 @@ export function createRealtimeBattleCommands({
    status.setAttribute('role','status');node.append(status);
    for(const target of shown){
     const button=contextButton(node,String(target.label||target.id),()=>{
+     if(target.available===false){
+      status.textContent='選択不可：'+String(target.reason||'現在は実行できません');
+      return;
+     }
      chosen=target;
      status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
      if(origin==='dock'){
@@ -740,7 +751,8 @@ export function createRealtimeBattleCommands({
    }
   }
   if(entry?.special){
-   const valid=(getSpecialTargets(id,entry.special)||[]).some(t=>String(t.id)===String(entry.targetId));
+   const valid=(getSpecialTargets(id,entry.special)||[]).some(t=>
+    String(t.id)===String(entry.targetId)&&t.available!==false);
    if(!valid){
     $('realtimeSkillStep').textContent='対象が無効になりました。スキルから選び直してください。';
     pendingStrategy=null;renderActionSelection();return false;
@@ -823,8 +835,12 @@ export function createRealtimeBattleCommands({
   }
   $('realtimeActionSkip').classList.toggle('selected',!chosen);
   const specialJob=String(getSelected()?.job||'');
-  $('realtimeSpecial').textContent=specialJob.includes('シーフ')?'🔓 鍵開け・盗む':
+   const isThief=specialJob.includes('シーフ');
+  $('realtimeSpecial').textContent=
    ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有':'★ 固有作戦';
+  $('realtimeSpecial').hidden=dockTab!=='strategy'||isThief;
+  $('realtimeThiefUnlock').hidden=dockTab!=='strategy'||!isThief;
+  $('realtimeThiefSteal').hidden=dockTab!=='strategy'||!isThief;
   $('realtimeSpecial').disabled=!battleJobSpecialActions(specialJob).length;
   const mustPickEnemy=battleAttackNeedsEnemy(pendingStrategy?.attackKind);
   $('realtimeStrategyTargets').hidden=dockTab!=='strategy'||!mustPickEnemy;
@@ -994,25 +1010,34 @@ export function createRealtimeBattleCommands({
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
- function activateRadarPin(px,py){
-  const pin=radarHitPin(radarPins,px,py);
-  if(!pin)return;
+ function activateRadarPin(px,py,{strategy=false}={}){
+ const pin=radarHitPin(radarPins,px,py);
+ if(strategy&&pin){
   if(pin.team===0)showSquadControls(pin.id);
   else onEnemySelect(pin.id);
+  return;
  }
- radarCanvas.addEventListener('click',event=>{
-  if(!started)return;
-  const rect=radarCanvas.getBoundingClientRect();
-  if(rect.width>0&&rect.height>0)
-   activateRadarPin((event.clientX-rect.left)/rect.width,(event.clientY-rect.top)/rect.height);
- });
- radarCanvas.addEventListener('keydown',event=>{
-  if(event.key!=='Enter'&&event.key!==' ')return;
-  event.preventDefault();
-  const pin=radarPins.find(p=>p.team===0&&p.id===String(selectedId))||
-   radarPins.find(p=>p.team===0);
-  if(pin)showSquadControls(pin.id);
- });
+ // Single tap => live 3D overhead camera; double tap => squad strategy.
+ if(pin?.team===0)setSelected(pin.id);
+ const point=pin||{x:px,y:py};
+ onMapOverview({x:Math.round(clamp(point.x*worldSize,0,worldSize-1)),
+  z:Math.round(clamp(point.y,0,1)*(worldSize-1))});
+}
+radarCanvas.addEventListener('click',event=>{
+ if(!started)return;
+ const rect=radarCanvas.getBoundingClientRect();
+ if(rect.width>0&&rect.height>0)
+  activateRadarPin((event.clientX-rect.left)/rect.width,
+   (event.clientY-rect.top)/rect.height,{strategy:event.detail>=2});
+});
+radarCanvas.addEventListener('keydown',event=>{
+ if(event.key!=='Enter'&&event.key!==' ')return;
+ event.preventDefault();
+ const pin=radarPins.find(p=>p.team===0&&p.id===String(selectedId))||
+  radarPins.find(p=>p.team===0);
+ if(pin)activateRadarPin(pin.x,pin.y,{strategy:event.shiftKey});
+ else onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
+});
  for(const [button,offset] of [['realtimeMapPrev',-1],['realtimeMapNext',1],['realtimeDockPrev',-1],['realtimeDockNext',1]])
   $(button).addEventListener('click',()=>{
    const own=squads(),index=own.findIndex(s=>String(s.id)===String(selectedId));
@@ -1141,6 +1166,14 @@ export function createRealtimeBattleCommands({
  $('realtimeTabItems').onclick=()=>setDockTab('items');
  $('realtimeRally').onclick=()=>showRallyChoices();
  $('realtimeSpecial').onclick=()=>showSpecialChoices('dock');
+ $('realtimeThiefUnlock').onclick=()=>{
+  const action=battleJobSpecialActions(getSelected()?.job).find(entry=>entry.id==='unlock_door');
+  if(action)showSpecialTargets('dock',action);
+ };
+ $('realtimeThiefSteal').onclick=()=>{
+  const action=battleJobSpecialActions(getSelected()?.job).find(entry=>entry.id==='steal_item');
+  if(action)showSpecialTargets('dock',action);
+ };
  $('realtimeDefend').onclick=()=>{
   if(String(getSelected()?.job||'').includes('僧侶'))showGuardChoices();
   else issueDockOrder('defend');
