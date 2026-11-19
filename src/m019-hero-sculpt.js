@@ -6,7 +6,7 @@
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-low-trunk-arched-horns-v7-20261120';
+export const M019_HERO_REVISION='m019-rounded-volcanic-muscles-v8-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -109,8 +109,8 @@ export function sculptM019Jaw(g,jaw){
  * the last upper ring overlaps the shin first rings at the joint.
  *
  * Coordinates are LOCAL to leg and distal pivots, respectively.
- * Root and upper-limb sections overlap the torso skin; shortened shins
- * keep the feet planted after lowering the rib cage. No per-frame shifts.
+ * True circular rings now face the limb direction rather than Y, avoiding
+ * flat sideways plates. Short planted shins and original joints are retained.
  */
 // Sideways elbow remains wide, while the vertical shin is now short.
 export const M019_SPRAWL_KNEE_X=.68;
@@ -123,17 +123,42 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  const z=fore?-.012:.022;
  // The root is at the limb pivot, buried in the torso sidewall.
  // The round socket stays covered even during leg swing.
- const upper=g.limbLoft(leg,'skin',[
-  {x:0,y:.043,z,rx:.180,rz:.180},
-  {x:sign*.105,y:.016,z,rx:.150,rz:.156},
-  {x:sign*.310,y:-.011,z,rx:.110,rz:.107},
-  {x:sign*.520,y:-.046,z,rx:.079,rz:.084},
-  {x:sign*M019_SPRAWL_KNEE_X,y:M019_SPRAWL_KNEE_Y,z,
-   rx:.075,rz:.078}
- ],{name:'m019-scaled-upper-limb-'+name});
+ // A true round tubular muscle follows the lateral bone axis. The old
+ // limbLoft builds rings in horizontal XZ planes (vertical-leg topology),
+ // collapsing the sideways limb into a visually flat sheet.
+ const muscleRadius=fore?.163:.190;
+ const upper=g.tube(leg,'skin',[
+  [0,.040,z],
+  [sign*.095,.030,z+.012],
+  [sign*.245,-.004,z+.024],
+  [sign*.435,-.038,z+.016],
+  [sign*M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,z]
+ ],muscleRadius,{
+  name:'m019-scaled-upper-limb-'+name,capEnds:true,
+  taper:fore?.48:.43
+ });
+ upper.userData.m019TrueRoundLimb=true;
+ upper.userData.m019MuscleRadius=muscleRadius;
+ upper.userData.m019CrossSectionsPerpendicularToAxis=true;
  upper.userData.m019ContinuousLimb=true;
  upper.userData.m019HorizontalThigh=true;
  upper.userData.m019SprawledOutward=true;
+ // Crack tracks cling to the upper surface of the rounded moving muscle.
+ // Only two emissive seams on near LOD; one on mobile low LOD.
+ const branchCount=detail==='low'?1:2;
+ for(let vein=0;vein<branchCount;vein++){
+  const rootX=vein===0?.12:.25;
+  const surface=g.tube(leg,'accent',[
+   [sign*rootX,.142-(vein*.035),z+.024],
+   [sign*(rootX+.11),.114-(vein*.027),z+.038],
+   [sign*(rootX+.205),.078-(vein*.024),z+.005],
+   [sign*(rootX+.286),.048-(vein*.019),z+.032]
+  ],detail==='low'?.007:.010,{
+   name:'m019-limb-molten-crack-'+name+'-'+vein,
+   glow:detail!=='low'
+  });
+  surface.userData.m019MoltenFissure=true;
+ }
  // Knee joint is exactly the upper tip; overlapping first and last rings
  // make the seam tolerant of a small walk / run rotation.
  const lower=g.limbLoft(distal,'skin',[
