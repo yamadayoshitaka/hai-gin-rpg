@@ -716,8 +716,16 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const x of [-1.9,1.9])box(.15*c,.25*c,2.95*c,x*c,.2*c,0,wood);
    for(const z of [-1.43,1.43])box(3.95*c,.25*c,.15*c,0,.2*c,z*c,wood);
    for(let x=0;x<6;x++)for(let z=0;z<4;z++){
-    const herb=new THREE.Mesh(new THREE.ConeGeometry(.13*c,.54*c,6),leaves);
-    herb.position.set((x-2.5)*.58*c,.46*c,(z-1.5)*.58*c);root.add(herb);
+    const hx=(x-2.5)*.58*c,hz=(z-1.5)*.58*c;
+    // Tapered, bent stem and opposing leaves replace the single rigid cone.
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.018*c,.033*c,.48*c,5),leaves);
+    stem.position.set(hx,.43*c,hz);stem.rotation.z=(x%2?-.13:.13);root.add(stem);
+    for(let tier=0;tier<3;tier++)for(const side of [-1,1]){
+     const leaf=new THREE.Mesh(new THREE.SphereGeometry(.12*c,6,4),leaves);
+     leaf.scale.set(1,.24,.46);
+     leaf.position.set(hx+side*(.095+.015*tier)*c,(.31+.115*tier)*c,hz);
+     leaf.rotation.z=side*(.22+.09*tier);root.add(leaf);
+    }
    }
    root.userData.passable=true;
   }
