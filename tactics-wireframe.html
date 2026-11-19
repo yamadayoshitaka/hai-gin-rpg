@@ -835,6 +835,11 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
 #squadScreenLabels .squadScreenLabel.defeated:not([hidden]){border:5px dashed #abb1bd!important;background:#242b34ed!important;color:#d5d8df!important;box-shadow:0 0 0 3px #1a1d21!important;filter:grayscale(.7)}
 #squadScreenLabels .squadScreenLabel.defeated .squadStrength{color:#e6c5c5!important}
 #squadScreenLabels .squadScreenLabel.defeated .squadMarkerIcon{display:block!important;font-size:16px!important;line-height:1!important}
+/* The modern left/right squad HUD and radar replace the old large circular
+   battlefield icons. They obstruct the controls and must not capture taps. */
+body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
+ display:none!important;visibility:hidden!important;pointer-events:none!important
+}
 #battleSituationPause{position:fixed;z-index:87;top:calc(100px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(410px,calc(100vw - 16px));padding:10px;border:2px solid #ffd177;border-radius:13px;background:#101f32f5;color:#fff;box-shadow:0 10px 35px #000e;text-align:left;font:13px/1.4 system-ui}
 #battleSituationPause[hidden]{display:none!important}
 .battleSituationHeading{display:flex;align-items:center;justify-content:space-between;gap:6px}
@@ -887,10 +892,10 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-start-height-shield3';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-specialjob-confirm4';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
-import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-shield-cover3';
+import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-engaged-stable3';
@@ -10292,7 +10297,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }
   return squadIds.map(id=>{
    const stat=groups.get(String(id)),leader=leaders.get(String(id));
-   const job=[...stat.jobs].sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊';
+   // Resolve the engine's 盾戦士/盗賊 aliases before checking special skills.
+   const job=squadPrimaryJob(id);
    return {team:0,id,label:squadName(id),job,
     x:leader?.x??NaN,z:leader?.z??NaN,leaderId:leader?.leaderId??null,
     alive:stat.alive,total:stat.total,hp:stat.hp,maxHp:stat.maxHp};
