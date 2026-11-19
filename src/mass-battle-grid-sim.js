@@ -845,6 +845,41 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Refill existing fallen unit slots with carried reserve soldiers.
+   * No new GPU actor objects and never more than the squad's authored size.
+   */
+  reinforceSquadFromReserve(squadId,count,team=0){
+    const missing=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      !u.isStrategist&&(!u.alive||!(u.hp>0)));
+    const leader=this.units.find(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0);
+    if(!leader||!missing.length)return {added:0};
+    const occupancy=new Set(this.units.filter(u=>u.alive&&u.hp>0)
+      .map(u=>u.x+':'+u.z));
+    let added=0;
+    const limit=Math.min(missing.length,Math.max(0,Math.floor(Number(count)||0)));
+    for(const u of missing){
+      if(added>=limit)break;
+      let cell=null;
+      for(let radius=1;radius<=6&&!cell;radius++)
+       for(let dz=-radius;dz<=radius&&!cell;dz++)
+        for(let dx=-radius;dx<=radius&&!cell;dx++){
+         const x=leader.x+dx,z=leader.z+dz;
+         if(Math.max(Math.abs(dx),Math.abs(dz))!==radius||
+           !Number.isInteger(x)||!Number.isInteger(z)||
+           !this._walkable(x,z)||occupancy.has(x+':'+z))continue;
+         cell={x,z};
+        }
+      if(!cell)break;
+      occupancy.add(cell.x+':'+cell.z);
+      Object.assign(u,{x:cell.x,z:cell.z,fromX:cell.x,fromZ:cell.z,
+       hp:u.maxHp,alive:true,deathAt:-1,deathX:cell.x,deathZ:cell.z,
+       cooldown:1,action:'idle',hitFlash:0,moveElapsed:0,moveDuration:0,
+       tacticalOrder:null,tacticalOrderUntil:0,highGroundRouteIndex:-1});
+      added++;
+    }
+    return {added};
+  }
   /** Same capped healing budget in the Worker and main-thread mirrors. */
   healSquadFromItem(squadId,totalHp,team=0){
     if(this._squadDebuff({team,squadId},'heal_block')>=1)return false;
