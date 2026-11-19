@@ -42,3 +42,19 @@ test('central radar tap switches the actual three-dimensional camera into overhe
  assert.match(tactics,/setBattleCamera\(new THREE\.Vector3\(x,terrainY\(x,z\),z\),cameraOverviewOffset\);/);
  assert.match(css,/#realtimeBattleDock #realtimeThiefUnlock/);
 });
+
+
+test('high-ground target picker paints immediately, disables unavailable locations and focuses the actual 3D camera',()=>{
+ const start=controls.indexOf('function showSpecialTargets(');
+ const end=controls.indexOf('function showSpecialChoices(',start);
+ assert.ok(start>=0&&end>start);
+ const picker=controls.slice(start,end);
+ assert.match(picker,/const focusHighGround=target=>/);
+ assert.match(picker,/onMapOverview\(\{x:Math\.round\(target\.x\),z:Math\.round\(target\.z\)\}\)/);
+ assert.match(picker,/focusHighGround\(shown\.find\(/);
+ assert.match(picker,/focusHighGround\(target\)/);
+ assert.match(picker,/button\.disabled=target\.available===false/);
+ const mapEnd=picker.indexOf('  }else{',picker.indexOf('const isStructure='));
+ const initialPaint=picker.indexOf('   paint();',picker.indexOf('const isStructure='));
+ assert.ok(initialPaint>0&&initialPaint<mapEnd,'first render must paint the canvas before a click');
+});

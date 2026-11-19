@@ -548,7 +548,13 @@ export function createRealtimeBattleCommands({
   page=clamp(page,0,last);contextNote(node,action.label+'：対象を選択');
   const shown=targets.slice(page*perPage,(page+1)*perPage);
   const isStructure=['building','bridge','door','height'].includes(action.target)&&shown.some(t=>Number.isFinite(t.x)&&Number.isFinite(t.z));
+  const focusHighGround=target=>{
+   if(action.id!=='high_ground'||!started||!Number.isFinite(target?.x)||!Number.isFinite(target?.z))return;
+   onMapOverview({x:Math.round(target.x),z:Math.round(target.z)});
+  };
   if(isStructure){
+   // Open the real 3D camera overhead, not only an inline two-dimensional map.
+   focusHighGround(shown.find(t=>t.available!==false&&Number.isFinite(t.x)&&Number.isFinite(t.z))||shown[0]);
    contextNote(node,'🟨 地図の番号ピンか対象名を選択してください。確定後は自動で接近して実行します。');
    const preview=doc.createElement('canvas');preview.className='realtimeStructureMap';
    preview.width=260;preview.height=164;
@@ -581,6 +587,7 @@ export function createRealtimeBattleCommands({
      return;
     }
     chosen=target;
+    focusHighGround(target);
     status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
     if(origin==='dock'){
      pendingStrategy={special:action.id,targetId:String(target.id)};
@@ -602,7 +609,11 @@ export function createRealtimeBattleCommands({
     }
     if(nearest&&best<26)choose(nearest);
    });
-   for(const target of shown)contextButton(node,String(target.label||target.id),()=>choose(target));
+   for(const target of shown){
+    const button=contextButton(node,String(target.label||target.id),()=>choose(target));
+    button.disabled=target.available===false;
+    if(button.disabled)button.title=String(target.reason||'現在は実行できません');
+   }
    if(origin==='map'){
     confirmButton=contextButton(node,'✅ 選択した対象に作戦を実行',()=>{
      if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
@@ -610,6 +621,8 @@ export function createRealtimeBattleCommands({
     confirmButton.disabled=true;
    }
    status.textContent='対象を選ぶまで作戦は発令されません。';
+   // The target-map canvas must be painted on first open, before any tap.
+   paint();
   }else{
    let chosen=null;
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
