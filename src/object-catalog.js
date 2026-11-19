@@ -676,14 +676,27 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
   }
   if(id==='town_signpost_001'){
-   box(.22*c,3.6*c,.22*c,0,1.8*c,0,wood);
-   box(2.55*c,.45*c,.13*c,.45*c,2.75*c,0,wood);
-   box(1.9*c,.44*c,.13*c,-.4*c,2*c,0,wood);
-   for(const [x,y,direction] of [[1.72,2.75,1],[-1.38,2,-1]]){
-    const tip=new THREE.Mesh(new THREE.ConeGeometry(.25*c,.46*c,3),wood);
-    tip.rotation.z=direction*-Math.PI/2;tip.position.set(x*c,y*c,0);root.add(tip);
-   }
-   for(const y of [2,2.75]){
+   // Eight-sided tapered timber with a grounded foot and integral arrow boards.
+   const timber=new THREE.MeshStandardMaterial({color:0x765334,roughness:.92,metalness:0});
+   const cutWood=new THREE.MeshStandardMaterial({color:0xa98758,roughness:.96,metalness:0});
+   const post=new THREE.Mesh(new THREE.CylinderGeometry(.155*c,.19*c,3.6*c,8),timber);
+   post.position.y=1.8*c;post.castShadow=true;root.add(post);
+   const cap=new THREE.Mesh(new THREE.ConeGeometry(.165*c,.20*c,8),cutWood);
+   cap.position.y=3.7*c;cap.castShadow=true;root.add(cap);
+   // The pointed silhouettes are extruded in one piece, not detached cones.
+   for(const [y,dir,reach] of [[2.75,1,2.02],[2,-1,1.58]]){
+    const shape=new THREE.Shape();
+    const tip=dir*reach,shoulder=dir*(reach-.36),base=-dir*.70;
+    shape.moveTo(base,-.22);shape.lineTo(shoulder,-.22);
+    shape.lineTo(shoulder,-.34);shape.lineTo(tip,0);
+    shape.lineTo(shoulder,.34);shape.lineTo(shoulder,.22);
+    shape.lineTo(base,.22);shape.closePath();
+    const board=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{
+     depth:.13*c,bevelEnabled:true,bevelThickness:.012*c,
+     bevelSize:.014*c,bevelSegments:1,steps:1
+    }),timber);
+    board.scale.set(c,c,1);board.position.set(0,y*c,-.065*c);
+    board.castShadow=true;board.receiveShadow=true;root.add(board);
     const peg=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.15*c,8),iron);
     peg.rotation.x=Math.PI/2;peg.position.set(0,y*c,.10*c);root.add(peg);
    }
