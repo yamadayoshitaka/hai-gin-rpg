@@ -1,12 +1,27 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
+import {BATTLE_JOB_SQUADS} from '../src/battle-job-squads.js';
 import {SQUAD_TYPES,SQUAD_TYPE_NAMES,createSquadFormationPlan,squadTypeOf} from '../src/mass-battle-formations.js';
 
 assert.deepEqual(SQUAD_TYPES,['attack','balanced','support']);
 assert.deepEqual(Object.values(SQUAD_TYPE_NAMES),['攻撃','バランス','支援']);
 const plans=createSquadFormationPlan(1000,3);
 assert.equal(plans.length,10,'千人を10個の隊列にまとめる');
+assert.equal(BATTLE_JOB_SQUADS.length,10,'10ジョブ＝最大10隊');
+assert.equal(new Set(BATTLE_JOB_SQUADS.map(j=>j.id)).size,10);
+for(const count of [50,100,1000]){
+ for(const team of [0,1]){
+  const groups=createSquadFormationPlan(count,3,team);
+  assert.equal(groups.length,10,count+'人を常に10職種に割り当てる');
+  for(const [squadIndex,group] of groups.entries()){
+   assert.equal(group.count,count/10);
+   assert.ok(group.slots.every(s=>s.jobIndex===BATTLE_JOB_SQUADS[squadIndex].index),
+    '1ジョブ＝1隊：'+count+'人 '+team+'軍 第'+(squadIndex+1)+'隊');
+  }
+ }
+}
+
 assert.deepEqual(plans.slice(0,3).map(p=>p.type),SQUAD_TYPES);
 assert.ok(plans[2].advanceDepth>plans[1].advanceDepth&&plans[1].advanceDepth>plans[0].advanceDepth,
   '支援は最後方、バランスは中衛、攻撃は前衛に配置');
@@ -21,6 +36,14 @@ const sim=new MassBattleGridSimulation(1000,4223,{
   width:size,height:size,walkable,bridges,riverXAt:()=>116
 });
 const allies=sim.units.filter(u=>u.team===0);
+assert.equal(sim.squadCount,10);
+for(const team of [0,1])for(let id=0;id<10;id++){
+ const members=sim.units.filter(u=>u.team===team&&u.squadId===id&&!u.isStrategist);
+ assert.ok(members.length>=1);
+ assert.ok(members.every(u=>u.jobId===BATTLE_JOB_SQUADS[id].id),
+  '出現兵士は単一のジョブ：'+team+':'+id);
+}
+
 assert.equal(new Set(sim.units.map(u=>u.x+','+u.z)).size,2000,'両軍の隊列が衝突していない');
 const byType=type=>allies.filter(u=>u.formationType===type);
 assert.equal(byType('attack').length,400);
