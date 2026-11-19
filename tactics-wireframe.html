@@ -6250,7 +6250,7 @@ const battleJobNameById=new Map(MASS_JOBS.map(job=>[job.id,job.name]));
 function battleUnitJobName(unit){
  return battleUnitDisplayName(unit,{fallback:battleJobNameById.get(unit.jobId)||'兵士'});
 }
-function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
+function squadPrimaryJob(id,team=0,sums=null){
  if(!storyRequest&&!TOWN_MODE){
   const fixed=battleSquadJob(Number(id));
   if(fixed)return fixed.job;
