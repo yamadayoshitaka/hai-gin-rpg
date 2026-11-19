@@ -152,8 +152,7 @@ export function createRealtimeBattleCommands({
   if(!squads().some(s=>String(s.id)===String(id)))return false;
   if(choosingActionFor!=null&&String(id)!==String(choosingActionFor))hideActionSheet();
   selectedId=String(id);
-  $('realtimeDockAttackChoices').hidden=true;
-  $('realtimeMapAttackChoices').hidden=true;
+  hideContextChoices();
   refreshOptions();renderActionSelection();onSelect(selectedId);
   if(focus)onFocus(selectedId);
   renderStatus();drawMap();return true;
@@ -282,6 +281,11 @@ export function createRealtimeBattleCommands({
    button.setAttribute('aria-pressed',String(active));
   }
   $('realtimeActionSkip').classList.toggle('selected',!chosen);
+  $('realtimeSpecial').disabled=!battleJobSpecialActions(getSelected()?.job).length;
+  for(const button of root.querySelectorAll('[data-action-after-move="special"]'))
+   button.disabled=!battleJobSpecialActions(getSelected()?.job).length;
+  for(const button of root.querySelectorAll('[data-attack-kind="far"]'))
+   button.textContent=String(getSelected()?.job||'').includes('忍者')?'手裏剣（遠距離）':'遠距離';
   for(const button of root.querySelectorAll('[data-attack-kind]')){
    const active=chosen==='attack_'+button.dataset.attackKind;
    button.classList.toggle('selected',active);
@@ -308,13 +312,12 @@ export function createRealtimeBattleCommands({
  }
  function closeSquadControls(){
   $('realtimeBattleDock').hidden=true;
-  $('realtimeDockAttackChoices').hidden=true;
-  $('realtimeMapAttackChoices').hidden=true;
+  hideContextChoices();
   if($('realtimeBattleMapOverlay').hidden)exitPlanning();
  }
  function hideActionSheet(){
   choosingActionFor=null;actionDestination=null;
-  renderActionSelection();
+  hideContextChoices();renderActionSelection();
  }
  function showActionSheet(id,point){
   choosingActionFor=String(id);actionDestination={x:point.x,z:point.z};
@@ -374,8 +377,7 @@ export function createRealtimeBattleCommands({
    showActionSheet(selectedId,point);
    const preferred=preferredActions.get(String(selectedId));
    const queuedCommand=String(preferred||'').startsWith('attack_')?
-    battleAttackCommand(preferred.slice(7),squad.job):
-    preferred==='support'?'defend':preferred;
+    battleAttackCommand(preferred.slice(7),squad.job):preferred;
    if(queuedCommand)arrivalActions.set(String(selectedId),{
     command:queuedCommand,point:{...point}});
   }
@@ -417,12 +419,14 @@ export function createRealtimeBattleCommands({
   button.addEventListener('click',()=>{
    const id=String(selectedId||'');if(!id)return;
    const chosen=button.dataset.actionAfterMove;
+   if(chosen==='support'){showSupportChoices('map');return;}
+   if(chosen==='special'){showSpecialChoices('map');return;}
    if(chosen==='charge'){
     $('realtimeMapAttackChoices').hidden=false;
     return;
    }
    $('realtimeMapAttackChoices').hidden=true;
-   const command=chosen==='support'?'defend':chosen;
+   const command=chosen;
    preferredActions.set(id,chosen);renderActionSelection();
    if(mode==='deploy'){
     deploymentActions.set(id,command);
@@ -441,7 +445,7 @@ export function createRealtimeBattleCommands({
    const kind=button.dataset.attackKind,command=battleAttackCommand(kind,own.job);
    const status=button.dataset.attackOrigin==='map'?'realtimeMapMessage':'realtimeSelectedState';
    if(!command){
-    $(status).textContent='遠距離攻撃は弓・魔法・僧侶・召喚士の隊のみ選択できます。';
+    $(status).textContent='このジョブに遠距離攻撃はありません。';
     return;
    }
    preferredActions.set(id,'attack_'+kind);
@@ -475,7 +479,9 @@ export function createRealtimeBattleCommands({
  $('realtimeMove').onclick=()=>openMap('move');
  $('realtimeMapClose').onclick=closeMap;
  $('realtimeDockClose').onclick=closeSquadControls;
- $('realtimeCharge').onclick=()=>{$('realtimeDockAttackChoices').hidden=false;};
+ $('realtimeCharge').onclick=()=>{hideContextChoices();$('realtimeDockAttackChoices').hidden=false;};
+ $('realtimeSupport').onclick=()=>showSupportChoices('dock');
+ $('realtimeSpecial').onclick=()=>showSpecialChoices('dock');
  for(const [button,command] of [['realtimeDefend','defend'],['realtimeHold','hold']])
   $(button).onclick=()=>{
    if(!started)return;
@@ -509,7 +515,9 @@ export function createRealtimeBattleCommands({
      if(!own||Number(own.alive)<=0){arrivalActions.delete(id);continue;}
      if(!Number.isFinite(own.x)||!Number.isFinite(own.z))continue;
      if(Math.hypot(own.x-entry.point.x,own.z-entry.point.z)>3.5)continue;
-     if(onOrder(id,entry.command))arrivalActions.delete(id);
+     const accepted=entry.itemId?onUseItem(id,entry.itemId):
+      entry.special?onSpecial(id,entry.special,entry.targetId):onOrder(id,entry.command);
+     if(accepted)arrivalActions.delete(id);
     }
    }
    renderStatus();
