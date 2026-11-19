@@ -7,7 +7,9 @@ import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.j
 import {MAGMA_SALAMANDER_REVISION,MAGMA_SALAMANDER_LEG_REACH,
  magmaSkullFromWolfKing,magmaTorsoFromWolfKing} from '../src/magma-salamander-sculpt.js';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
- m019HeroSkullRings,m019HeroTorsoRings} from '../src/m019-hero-sculpt.js';
+ M019_BODY_STRETCH,M019_LIMB_REACH,M019_LIMB_WIDTH,
+ M019_APPROVED_SILHOUETTE,m019HeroSkullRings,m019HeroTorsoRings}
+ from '../src/m019-hero-sculpt.js';
 
 test('m019 is an explicitly m001-derived original salamander, not a copied wolf',()=>{
  const donor=[{z:.5,y:0,rx:.1,ry:.1},{z:.4,y:0,rx:.2,ry:.2},
@@ -40,12 +42,24 @@ for(const detail of ['low','high']){
    assert(meshes.length>0,'real triangle meshes are required');
    assert(nameSet.has('m019-m001-sourced-closed-cranium'));
    assert.equal(model.userData.m019HeroSilhouette,M019_HERO_REVISION);
+   assert.equal(model.userData.gameModelRevision,M019_HERO_REVISION);
+   assert.equal(model.userData.m019ModelFollowsFourView,true);
+   assert.deepEqual(model.userData.m019ApprovedTurnaround,
+     M019_APPROVED_SILHOUETTE);
+   assert.equal(model.userData.m019ApprovedTurnaround.legs,4);
    assert(nameSet.has('m019-unbroken-salamander-muzzle'));
    assert(nameSet.has('m019-articulated-wide-mandible'));
    assert(nameSet.has('m019-recessed-mouth-slit'));
    assert(!nameSet.has('quadruped-tongue'),'m019 must never show a floating tongue ball');
    assert(!nameSet.has('reptile-orbital-socket'),'m019 must use its own narrow eyes');
    assert(nameSet.has('m019-continuous-tail-tip'));
+   assert.equal(nameSet.has('m019-cheek-horn-L'),false,
+    'concept has only two major cranial horns, not extra tusks');
+   const tailTipMesh=meshes.find(m=>m.name==='m019-continuous-tail-tip');
+   assert.equal(tailTipMesh.userData.m019ClosedTaperedTail,true);
+   assert.equal(tailTipMesh.userData.m019UpcurledTip,true);
+   assert(tailTipMesh.geometry.getAttribute('position').array.some((v,i)=>
+     i%3===1&&v>.47),'tail tip must actually rise in 3D');
 
    const skull=meshes.find(m=>m.name==='m019-m001-sourced-closed-cranium');
    assert.equal(skull.geometry.userData.faceVolumeApplied,true,
@@ -66,6 +80,15 @@ for(const detail of ['low','high']){
    const body=meshes.find(o=>o.name==='species-shoulder-rib-pelvis-m019');
    assert.equal(body?.parent,pivot.torso);
    assert(body.userData.anatomicalStations>=8);
+   assert.equal(body.userData.closedAnatomicalHull,true,
+     'thin torso needs end caps to prevent neck/tail holes');
+   model.updateMatrixWorld(true);
+   const bodySize=new THREE.Box3().setFromObject(body)
+     .getSize(new THREE.Vector3());
+   assert(bodySize.z>bodySize.x*3.8,
+     'approved side silhouette is a very long narrow lizard');
+   assert(bodySize.z>bodySize.y*3.5,
+     'approved body is long and dorsoventrally flattened');
    const snout=meshes.find(o=>o.name==='m019-unbroken-salamander-muzzle');
    assert.equal(snout.parent,pivot.head,'snout must not float separately from skull');
    const mandible=meshes.find(o=>o.name==='m019-articulated-wide-mandible');
@@ -75,13 +98,25 @@ for(const detail of ['low','high']){
     const leg=pivot[legId];
     assert(leg?.userData.m019ShortPlantedLeg,legId+' must be short');
     assert.equal(leg.scale.y,MAGMA_SALAMANDER_LEG_REACH);
-    assert(leg.position.y<.55,'hip must lower with shortened legs');
+    assert.equal(leg.parent,pivot.torso,
+      'hips must follow body motion without drifting');
+    assert.equal(leg.scale.x,M019_LIMB_WIDTH);
+    assert.equal(leg.scale.z,M019_LIMB_WIDTH);
+    assert.equal(leg.scale.y,M019_LIMB_REACH);
+    assert(Math.abs(leg.position.z)>1,
+      'fore and hind legs must be separated across elongated body');
     assert(nameSet.has('m019-scaled-upper-limb-'+legId.slice(3)));
     assert(nameSet.has('m019-scaled-lower-limb-'+legId.slice(3)));
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-0'));
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-3'));
     const toe=pivot['toe'+legId.slice(3)];
     assert(toe?.userData.m019PlantedToeJoint,'m019 toes must follow joint');
+    model.updateMatrixWorld(true);
+    const groundBox=new THREE.Box3().setFromObject(toe);
+    assert(groundBox.min.y>-.18&&groundBox.min.y<.16,
+      'four small feet must remain grounded at bind pose, '+legId);
+    assert.equal(toe.parent,pivot[legId.replace('leg','lower')],
+      'toes follow the hock after leg animation');
     const lowerId=legId.replace('leg','lower');
     assert(pivot[lowerId]?.parent===leg,'lower joint must follow upper leg');
    }
@@ -131,6 +166,10 @@ test('m019 heroic silhouette is genuinely flatter and longer than the wolf donor
  assert.equal(grown.length,donor.length);
  assert(grown[0].z>donor[0].z&&grown.at(-1).z<donor.at(-1).z,
   'rib cage must extend forward and backward');
+ assert(grown.every((p,i)=>p.rx<donor[i].rx*.7),
+  'approved narrow silhouette requires a small cross-sectional width');
+ assert(grown.every((p,i)=>Math.abs(p.z-donor[i].z*M019_BODY_STRETCH)<1e-10),
+  'all torso source stations must stretch in the long axis');
  assert(grown.every((p,i)=>p.ry<donor[i].ry),
   'reptilian chest should be flatter than the wolf mother');
  assert.equal(donor[0].z,.80,'never mutate wolf-donor stations');
