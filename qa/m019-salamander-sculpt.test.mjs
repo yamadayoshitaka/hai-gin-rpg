@@ -154,8 +154,10 @@ for(const detail of ['low','high']){
     assert.equal(leg.scale.y,M019_LIMB_REACH);
     assert(Math.abs(leg.position.z)>1,
       'fore and hind legs must be separated across elongated body');
-    assert(nameSet.has('m019-scaled-upper-limb-'+legId.slice(3)));
-    assert(nameSet.has('m019-scaled-lower-limb-'+legId.slice(3)));
+    assert(nameSet.has('m019-seamless-skin-'+legId.slice(3)));
+    assert(!nameSet.has('m019-scaled-upper-limb-'+legId.slice(3)));
+    assert(!nameSet.has('m019-scaled-lower-limb-'+legId.slice(3)),
+      'a detached shin post must not survive alongside the new skin');
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-0'));
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-3'));
     const toe=pivot['toe'+legId.slice(3)];
@@ -175,10 +177,16 @@ for(const detail of ['low','high']){
     const root=meshes.find(o=>o.name==='m019-shoulder-hip-fascia-'+suffix);
     assert.equal(root?.parent,pivot.torso,'shoulder skin follows body');
     assert.equal(root?.userData.m019TorsoAnchoredSocket,true);
-    const upper=meshes.find(o=>o.name==='m019-scaled-upper-limb-'+suffix);
-    const lower=meshes.find(o=>o.name==='m019-scaled-lower-limb-'+suffix);
-    assert.equal(upper?.parent,leg,'upper thigh follows hip');
-    assert.equal(lower?.parent,knee,'shin follows knee');
+    const upper=meshes.find(o=>o.name==='m019-seamless-skin-'+suffix);
+    assert.equal(upper?.parent,leg,'whole muscle skin follows shoulder');
+    assert.equal(upper.isSkinnedMesh,true,'one deformable skin is mandatory');
+    assert.equal(upper.skeleton.bones.length,2);
+    assert.equal(upper.skeleton.bones[0].parent,leg);
+    assert.equal(upper.skeleton.bones[1].parent,knee);
+    assert.equal(upper.userData.m019WholeLegClosedSurface,true);
+    assert.equal(upper.userData.m019SkinningBones,2);
+    assert(upper.geometry.getAttribute('skinIndex')?.count>0);
+    assert(upper.geometry.getAttribute('skinWeight')?.count>0);
     assert.equal(upper?.userData.m019HorizontalThigh,true);
     // A vertical-oriented limbLoft turns lateral muscles into flat sheets.
     // TubeGeometry cross sections face the sideways bone and stay round.
@@ -204,7 +212,16 @@ for(const detail of ['low','high']){
       'heat channel must follow the rounded moving limb');
     if(detail==='high')assert(nameSet.has('m019-limb-molten-crack-'+suffix+'-1'),
       'near LOD preserves branching molten limb markings');
-    assert.equal(lower?.userData.m019VerticalShin,true);
+    assert.equal(upper.userData.m019VerticalShin,true);
+    // Validate the ACTUAL deforming mesh, not only its joint coordinates.
+    model.updateMatrixWorld(true);
+    const geoPos=upper.geometry.getAttribute('position');
+    const capIndex=geoPos.count-1;
+    const capPosition=new THREE.Vector3().fromBufferAttribute(geoPos,capIndex);
+    const skinnedEnd=upper.localToWorld(upper.applyBoneTransform(capIndex,capPosition));
+    const toeWorldPosition=toe.getWorldPosition(new THREE.Vector3());
+    assert(skinnedEnd.distanceTo(toeWorldPosition)<.045,
+      'real skinned ankle cap must meet the planted toes');
     const hipWorld=leg.getWorldPosition(new THREE.Vector3());
     const footWorld=toe.getWorldPosition(new THREE.Vector3());
     assert(side*(footWorld.x-hipWorld.x)>.38,
@@ -264,6 +281,14 @@ for(const detail of ['low','high']){
         id.startsWith('front')?-.012:.022));
        assert(end.distanceTo(joint.getWorldPosition(new THREE.Vector3()))<1e-5,
         action+' '+time+' must never split the elbow/knee');
+       const mesh=model.getObjectByName('m019-seamless-skin-'+id);
+       const toes=pivot['toe'+id];
+       const verts=mesh.geometry.getAttribute('position');
+       const capIndex=verts.count-1;
+       const cap=new THREE.Vector3().fromBufferAttribute(verts,capIndex);
+       const skinFoot=mesh.localToWorld(mesh.applyBoneTransform(capIndex,cap));
+       assert(skinFoot.distanceTo(toes.getWorldPosition(new THREE.Vector3()))<.055,
+        action+' '+time+' real skin must stay welded to animated foot');
       }
      }
     }
