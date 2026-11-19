@@ -210,6 +210,69 @@ export function createRealtimeBattleCommands({
   $('realtimeMapScale').textContent=Math.round(zoom*100)+'%';
   lastMapRedrawAt=nowMs();
  }
+
+ function hideContextChoices(){
+  for(const id of ['realtimeDockAttackChoices','realtimeMapAttackChoices','realtimeDockSupportChoices',
+   'realtimeMapSupportChoices','realtimeDockSpecialChoices','realtimeMapSpecialChoices'])$(id).hidden=true;
+ }
+ function actionPanel(origin,kind){
+  const node=$(origin==='map'?'realtimeMap'+kind+'Choices':'realtimeDock'+kind+'Choices');
+  hideContextChoices();node.hidden=false;node.replaceChildren();return node;
+ }
+ function contextButton(parent,label,fn){
+  const button=doc.createElement('button');button.type='button';
+  button.textContent=label;button.onclick=fn;parent.append(button);return button;
+ }
+ function contextNote(parent,message){
+  const note=doc.createElement('small');note.textContent=message;parent.append(note);
+ }
+ function confirmContextAction(origin,entry){
+  const id=String(selectedId||'');
+  if(origin==='map'&&mode==='deploy'){
+   $('realtimeMapMessage').textContent='固有作戦・道具は開戦後に使用できます。';return;
+  }
+  if(origin==='map'&&mode==='move'&&actionDestination){
+   arrivalActions.set(id,{...entry,point:{...actionDestination}});
+   closeMap();closeSquadControls();return;
+  }
+  const accepted=entry.itemId?onUseItem(id,entry.itemId):onSpecial(id,entry.special,entry.targetId);
+  if(accepted){hideContextChoices();closeSquadControls();return;}
+  $(origin==='map'?'realtimeMapMessage':'realtimeSelectedState').textContent=
+   '実行できません。対象との距離、所持数、軍師、命令制限を確認してください。';
+ }
+ function showSupportChoices(origin){
+  const node=actionPanel(origin,'Support'),items=getAvailableItems(String(selectedId))||[];
+  if(!items.length){contextNote(node,'使える道具がありません。');return;}
+  contextNote(node,'使用する道具を選択（所持品から1個消費）');
+  for(const item of items)
+   contextButton(node,'🎒 '+String(item.label||item.id)+' ×'+(item.quantity||0),
+    ()=>confirmContextAction(origin,{itemId:String(item.id)}));
+ }
+ function showSpecialTargets(origin,action,page=0){
+  const node=actionPanel(origin,'Special');
+  contextButton(node,'◀ 戻る',()=>showSpecialChoices(origin));
+  const targets=getSpecialTargets(String(selectedId),action.id)||[];
+  if(!targets.length){contextNote(node,'実行できる対象がありません。');return;}
+  const perPage=4,last=Math.max(0,Math.ceil(targets.length/perPage)-1);
+  page=clamp(page,0,last);contextNote(node,action.label+'：対象を選択');
+  for(const target of targets.slice(page*perPage,(page+1)*perPage))
+   contextButton(node,String(target.label||target.id),
+    ()=>confirmContextAction(origin,{special:action.id,targetId:String(target.id)}));
+  if(last>0){
+   const nav=doc.createElement('div');nav.className='realtimeContextPager';node.append(nav);
+   const prev=contextButton(nav,'◀',()=>showSpecialTargets(origin,action,page-1));
+   prev.disabled=page===0;contextNote(nav,(page+1)+'/'+(last+1));
+   const next=contextButton(nav,'▶',()=>showSpecialTargets(origin,action,page+1));
+   next.disabled=page===last;
+  }
+ }
+ function showSpecialChoices(origin){
+  const node=actionPanel(origin,'Special'),actions=battleJobSpecialActions(getSelected()?.job);
+  if(!actions.length){contextNote(node,'このジョブの固有作戦はありません。');return;}
+  contextNote(node,String(getSelected()?.job||'')+'隊の固有作戦');
+  for(const action of actions)
+   contextButton(node,action.label,()=>showSpecialTargets(origin,action));
+ }
  function renderActionSelection(){
   const chosen=preferredActions.get(String(selectedId));
   for(const button of root.querySelectorAll('[data-action-after-move]')){
