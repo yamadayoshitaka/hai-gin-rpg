@@ -73,6 +73,7 @@ export function createRealtimeBattleCommands({
   <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="戦場地図で移動先を選択">
    <div class="realtimeMapCard">
     <header><strong id="realtimeMapTitle">開戦前の隊列配置</strong>
+     <span id="realtimeMapPlanningClock" hidden>作戦 残り30秒</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
     <div class="realtimeMapSquadPager" role="group" aria-label="配置・移動する味方隊をページ切替">
@@ -339,6 +340,7 @@ export function createRealtimeBattleCommands({
   $('realtimePlanSeconds').textContent='作戦選択 残り'+remain+'秒';
   $('realtimeRadarClock').hidden=false;
   $('realtimeRadarClock').textContent='作戦 '+remain+'秒';
+  $('realtimeMapPlanningClock').textContent='残り'+remain+'秒';
   if(remain===0){
    // Do not silently overwrite a team's existing order when the time expires.
    if(!$('realtimeBattleMapOverlay').hidden)closeMap();
@@ -396,6 +398,7 @@ export function createRealtimeBattleCommands({
   $('realtimeMapClose').hidden=next==='deploy';
   $('realtimeStart').hidden=next!=='deploy';
   $('realtimeMapTitle').textContent=next==='deploy'?'開戦前の初期配置':'移動先を選択';
+  $('realtimeMapPlanningClock').hidden=next==='deploy';
   $('realtimeMapHelp').textContent=next==='deploy'?
    '◀ ▶で隊を切替え、隊長の番号ピンを目印に味方陣地へ配置。敵隊は開戦後に表示します。':
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
