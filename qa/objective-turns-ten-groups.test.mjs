@@ -118,9 +118,10 @@ for(const path of ['src/battle-objective-turns.js','src/battle-objective-turn-pa
  new SourceTextModule(readFileSync(new URL('../'+path,import.meta.url),'utf8'),{identifier:path});
 }
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(html,/installObjectiveTurnPanel/);
-assert.match(html,/objectiveTurnUI\.begin\(\)/);
-assert.match(html,/objectiveTurnUI\.update\(/);
-assert.match(html,/objectiveTurnUI\?\.finish\(\)/);
-assert.match(html,/src\/battle-objective-turn-panel.css/);
-console.log('PASS ten 4x4 formations, automatic two-phase objective turns, maintained goals, group casualties, real battle integration');
+assert.doesNotMatch(html,/installObjectiveTurnPanel/);
+assert.match(html,/createRealtimeBattleCommands/);
+assert.match(html,/const objectiveTurnUI=null/);
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/);
+assert.match(html,/onMove:\(id,point\)=>/);
+assert.match(html,/getBattleRealtimeQA/);
+console.log('PASS: ten inherited sortie formations preserved; the battle now opens one-time deployment and continuous orders');
