@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-command-tabs1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-squad-four-meters2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-building-picker1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-ultraslim-first1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,12 +887,12 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-command-tabs1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-building-picker1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-priest-support1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-squad-four-meters2';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-ultraslim-first1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=20261119-rally-reserve2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -6222,7 +6222,7 @@ function renderBattleItemManagement(){
  itemPanel.replaceChildren();
  const heading=document.createElement('div');
  heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
- const title=document.createElement('strong');title.textContent='🎒 全軍共通アイテム（軍師が使用）';
+ const title=document.createElement('strong');title.textContent='🎒 全軍共通アイテム（距離制限なし）';
  const close=document.createElement('button');close.type='button';close.textContent='✕ 閉じる';
  close.onclick=()=>itemPanel.hidden=true;
  heading.append(title,close);itemPanel.append(heading);
@@ -6297,7 +6297,7 @@ function renderBattleItemManagement(){
  itemPanel.append(choice,preview,squadHeading,itemSquadSelect,use);
  const secondary=document.createElement('small');
  secondary.style.cssText='display:block;margin:12px 0 0;color:#a7bacb;font:11px/1.6 system-ui';
- secondary.textContent='戦闘中にどの味方が拾ったアイテムも軍全体の共有在庫に合算します。軍師が任意の生存味方隊へ支給します。鍵・素材・クエスト品は戦闘中に直接使用できません。';
+ secondary.textContent='戦闘中の取得品も全軍共有。軍師から生存中のどの味方隊へも距離に関係なく使用できます。兵符・回復・強化品は移動・到着を待たずに発動します。鍵・素材・クエスト品は使用不可。';
  itemPanel.append(secondary);
  updatePreview();
 }
@@ -9964,9 +9964,17 @@ function realtimeSpecialTargets(id,action){
   (kind!=='door'||(o.team===1&&o.locked))&&
   Number.isInteger(o.x)&&Number.isInteger(o.z))
   .sort((a,b)=>distance(a)-distance(b))
-  .slice(0,60).map((o,index)=>({id:String(o.id),
-   label:(kind==='bridge'?'🌉 橋':kind==='door'?'🔓 敵門':'🏠 建物')+
-    ' '+(index+1)+'（距離'+Math.round(distance(o))+'）'}));
+  .slice(0,60).map((o,index)=>{
+   const raw=[o.name,o.structureName,o.buildingKind,o.label]
+    .find(v=>typeof v==='string'&&v.trim()&&v!=='building'&&v!=='structure');
+   const name=raw?raw.trim().slice(0,14):kind==='bridge'?'橋':kind==='door'?'敵門':'建物';
+   const dx=origin?o.x-origin.x:0,dz=origin?o.z-origin.z:0;
+   const direction=Math.abs(dx)>=Math.abs(dz)?(dx>=0?'東':'西'):(dz>=0?'南':'北');
+   return {id:String(o.id),x:o.x,z:o.z,
+    label:(kind==='bridge'?'🌉 ':kind==='door'?'🔓 ':'🏠 ')+
+     (index+1)+'. '+name+'｜'+direction+Math.round(distance(o))+
+     'マス｜X'+o.x+' Z'+o.z};
+  });
 }
 function issueRealtimeSpecial(id,action,targetId,arrival=false){
  if(!battleReady||finished||battleCeremony.locked||
@@ -10126,6 +10134,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
   battleAudio.setPhase('march');
   setBattlePaused(false);
+  // First battle camera is deliberately above friendly squad 1.
+  if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
    text:'配置完了！各隊を選んで地図で移動先を指示してください。戦闘はリアルタイムで進行します。'});
@@ -11542,7 +11552,8 @@ async function finishBattleLoading(){
   // Each allied squad can be positioned once, before the first AI tick.
   for(const id of squadIds)setStartingSquadOrder(0,id,'hold');
   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
-  followSelectedCommander();
+  // Initialize the camera at squad 1, matching the highlighted first HUD row.
+  if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleReady=true;
   setBattlePaused(true);
   loading.hidden=true;
