@@ -434,3 +434,105 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 #realtimeBattleDock #realtimeDockRallyChoices button[data-rally-command]:disabled{
  opacity:.45;filter:grayscale(.65);cursor:not-allowed;
 }
+
+/* 2026-11-19: ONE main command dock. No rally/item child windows.
+   Orders are staged; only a category's explicit confirmation executes. */
+#battleRealtimeControls #realtimeBattleDock{
+ max-height:min(66dvh,580px);overflow-y:auto;overflow-x:hidden;
+ overscroll-behavior:contain;scrollbar-width:thin;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ align-content:start;
+}
+#realtimeBattleDock #realtimeCommandTabs{grid-column:1/-1;grid-row:3}
+#realtimeBattleDock #realtimeSelectedState{grid-column:1/4;grid-row:2}
+#realtimeBattleDock #realtimeDockClose{grid-column:4;grid-row:1}
+#realtimeBattleDock .realtimeDockSquadPager{grid-column:1/4;grid-row:1}
+#realtimeBattleDock #realtimeMenu{grid-column:4;grid-row:2}
+#realtimeBattleDock #realtimeMove,
+#realtimeBattleDock #realtimeSupport,
+#realtimeBattleDock #realtimeManageItems,
+#realtimeBattleDock #realtimeRally{display:none!important}
+#realtimeBattleDock #realtimeStrategyTargets{
+ grid-column:1/-1;grid-row:4;
+ display:flex;flex-wrap:wrap;align-items:center;gap:4px;
+ padding:5px 2px;border-top:1px solid #547a8e;
+}
+#realtimeBattleDock #realtimeStrategyTargets>label{font:800 11px/1.2 system-ui;color:#ffe6b3}
+#realtimeBattleDock #realtimeStrategyTargets select{
+ flex:1;max-width:none;min-width:92px;min-height:33px;
+ background:#153b52;color:#f6f8fb;font:700 11px/1.2 system-ui;
+}
+#realtimeBattleDock #realtimeTargetChoice{flex:2;min-width:150px}
+#realtimeBattleDock #realtimeTargetMessage{
+ flex:1 0 100%;font:700 10px/1.3 system-ui;color:#e4e1b2;
+}
+#realtimeBattleDock #realtimeInlineMapArea{
+ display:grid;grid-template-columns:minmax(0,1fr) 32px;
+ gap:5px;max-width:100%;width:100%;min-width:0;
+}
+#realtimeBattleDock #realtimeInlineTargetMap{
+ display:block;width:100%;height:auto;max-height:160px;
+ aspect-ratio:280/160;touch-action:manipulation;
+ border:1px solid #d7b46f;border-radius:6px;
+ background:#163642;cursor:crosshair;
+}
+#realtimeBattleDock .realtimeInlineZoom{display:flex;flex-direction:column;gap:5px}
+#battleRealtimeControls #realtimeBattleDock .realtimeInlineZoom button{
+ min-height:34px;padding:3px;font-size:15px;
+}
+#realtimeBattleDock #realtimeDefend{grid-column:1;grid-row:5}
+#realtimeBattleDock #realtimeCharge{grid-column:2;grid-row:5}
+#realtimeBattleDock #realtimeHold{grid-column:3;grid-row:5}
+#realtimeBattleDock #realtimeSpecial{grid-column:4;grid-row:5}
+#realtimeBattleDock .realtimeAttackChoices,
+#realtimeBattleDock .realtimeContextChoices{
+ grid-column:1/-1;grid-row:6;
+ border:0;border-top:1px solid #506c81;
+ background:transparent;border-radius:0;
+ box-shadow:none;max-height:22dvh;padding:4px 0;
+}
+#realtimeBattleDock .realtimeContextChoices .realtimeStructureMap{max-height:155px}
+#realtimeBattleDock #realtimeConfirmStrategy{
+ grid-column:1/-1;grid-row:7;
+}
+#realtimeBattleDock #realtimeRallyInline,
+#realtimeBattleDock #realtimeItemInline{
+ grid-column:1/-1;grid-row:4/7;
+ display:grid;grid-template-columns:1fr 1fr;
+ align-items:center;gap:6px;padding:5px 2px;
+ border-top:1px solid #527f94;
+}
+#realtimeBattleDock #realtimeRallyInline label,
+#realtimeBattleDock #realtimeItemInline label{
+ color:#ffe3ad;font:800 11px/1.2 system-ui;
+}
+#realtimeBattleDock #realtimeRallyInline select,
+#realtimeBattleDock #realtimeItemInline select{
+ grid-column:1/-1;min-width:0;width:100%;max-width:none;
+ padding:5px 8px;min-height:36px;
+ color:#f6f7f9;background:#15384f;
+ border:1px solid #89b1c7;border-radius:6px;font:700 12px/1.2 system-ui;
+}
+#realtimeBattleDock #realtimeRallyInline small,
+#realtimeBattleDock #realtimeItemInline small{
+ grid-column:1/-1;font:700 11px/1.4 system-ui;color:#dbe6ba;
+}
+#realtimeBattleDock .realtimeMainConfirm,
+#realtimeBattleDock #realtimeRallyInline .realtimeMainConfirm,
+#realtimeBattleDock #realtimeItemInline .realtimeMainConfirm{
+ grid-column:1/-1;min-height:41px;
+ background:#357351;color:#fff6d4;
+ border:2px solid #d9c985;border-radius:7px;
+ font:900 12px/1.2 system-ui;
+}
+#realtimeBattleDock .realtimeMainConfirm:disabled{opacity:.45;filter:grayscale(.7)}
+#battleRealtimeControls #realtimeBattleDock .realtimeContextChoices button,
+#battleRealtimeControls #realtimeBattleDock .realtimeAttackChoices button{
+ min-height:32px;font-size:10px;
+}
+@media(max-width:600px){
+ #battleRealtimeControls #realtimeBattleDock{max-height:min(65dvh,560px);gap:3px;padding:4px}
+ #realtimeBattleDock .realtimeDockSquadPager{grid-template-columns:28px 24px minmax(0,1fr) 28px 28px}
+ #battleRealtimeControls #realtimeBattleDock>button{font-size:10px;min-height:32px;padding:3px}
+ #realtimeBattleDock #realtimeStrategyTargets select{font-size:11px}
+}

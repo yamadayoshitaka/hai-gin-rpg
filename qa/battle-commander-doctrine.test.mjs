@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,strengthFromHp,
  squadCombatMeters,reinforcementSlots,REINFORCEMENT_ITEMS} from '../src/battle-command-doctrine.js';
 import {makeBattleRpgStatusRows} from '../src/battle-rpg-squad-source.js';
-import {ROOM_ITEM_TYPES} from '../src/room-item-registry.js';
+import {ROOM_ITEM_TYPES,RoomItemRegistry} from '../src/room-item-registry.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 import {battleJobSpecialActions} from '../src/battle-job-special-actions.js';
 
@@ -137,4 +137,43 @@ test('commander consumables never await movement and buildings have confirmable 
  assert.match(html,/label:.*kind==='bridge'/);
  assert.match(html,/全軍共通アイテム（距離制限なし）/);
  assert.match(html,/performSquadBattleItem\(itemId,squadId/);
+});
+
+test('actual battlefield pickup increments friendly shared stock and spending decrements it',()=>{
+ const reg=new RoomItemRegistry();
+ const loot=reg.registerBuilding('fort-A',[
+  {id:'banner-A',roomId:'hall',floor:1,x:1,z:1,itemId:'war_banner',quantity:1},
+  {id:'banner-B',roomId:'hall',floor:1,x:3,z:3,itemId:'war_banner',quantity:1}
+ ]);
+ assert.equal(reg.pickup(loot[0].id,'ally-1'),true);
+ assert.equal(reg.pickup(loot[0].id,'ally-2'),false,'one chest cannot be collected twice');
+ assert.equal(reg.pickup(loot[1].id,'ally-2'),true);
+ const count=()=>reg.owned().filter(s=>['ally-1','ally-2'].includes(s.ownerId))
+  .reduce((n,s)=>n+s.quantity,0);
+ assert.equal(count(),2,'two different allied owners aggregate to army inventory');
+ assert.equal(reg.consumeSquad('ally-1','war_banner').id,'war_banner');
+ assert.equal(count(),1,'spending reduces shared stock without affecting other owner');
+ assert.equal(reg.consumeSquad('ally-2','war_banner').id,'war_banner');
+ assert.equal(count(),0,'once depleted the inventory cannot be reused');
+});
+test('no standalone move or rally popup; tactics, buffs and inventory all need Confirm',()=>{
+ const command=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
+ assert.doesNotMatch(command,/id="realtimeMove"/);
+ for(const id of ['realtimeStrategyTargets','realtimeTargetKind','realtimeTargetChoice',
+  'realtimeInlineTargetMap','realtimeConfirmStrategy','realtimeRallyInline',
+  'realtimeConfirmRally','realtimeItemInline','realtimeConfirmItem'])
+  assert.match(command,new RegExp('id="'+id+'"'));
+ assert.match(command,/function confirmDockStrategy\(\)/);
+ assert.match(command,/function confirmInlineRally\(\)/);
+ assert.match(command,/function confirmInlineItem\(\)/);
+ assert.match(command,/getMoveTargets\(kind,String\(selectedId\)\)/);
+ assert.match(command,/onSharedItem\(itemId,squadId\)/);
+ assert.match(css,/No rally\/item child windows/);
+ assert.match(game,/getMoveTargets:\(kind,id\)=>realtimeMoveTargets\(kind,id\)/);
+ assert.match(game,/getSharedItems:\(\)=>realtimeSharedItems\(\)/);
+ assert.match(game,/onSharedItem:\(itemId,id\)=>useSquadBattleItem\(itemId,id\)/);
+ assert.match(game,/battleTreasureAcquiredLedger\.set\(id/);
+ assert.match(game,/window\.getBattleSharedItemQA/);
 });

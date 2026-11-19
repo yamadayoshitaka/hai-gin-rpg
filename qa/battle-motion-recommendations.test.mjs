@@ -7,7 +7,10 @@ const selection=readFileSync(new URL('../src/targeted-strategy-runtime.js',impor
 assert.match(game,/battle-situation-monitor\.js|battle-situation-pause\.js/);
 assert.match(game,/const validConfigured=\(Array\.isArray\(configured\)\?configured:\[\]\)\.filter/);
 assert.match(game,/targetedStrategyUi\.open\(group,\{startAtRecommendations:true,groupOnly:true\}\)/);
-assert.match(game,/return targetedStrategyUi\.open\(group,\{groupOnly:true,startAtRecommendations:true\}\)/);
+// Current live battle commands use the inline dock with an explicit confirm.
+const realtime=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+assert.match(realtime,/function confirmDockStrategy\(\)/);
+assert.match(realtime,/id="realtimeConfirmStrategy"/);
 assert.match(game,/createBattleUpperBodyAccent/);
 assert.match(game,/a\._upperBodyAccent\?\.restore\(\)/);
 assert.match(game,/a\._upperBodyAccent\.apply/);

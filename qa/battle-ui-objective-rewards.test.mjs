@@ -41,8 +41,11 @@ assert.match(battle,/const visibleRibbonPageSize=Math\.max\(3,/);
 assert.match(battle,/squadPrimaryJob\(row\.id,team,sums\)/);
 assert.match(battle,/function confirmCircleActionTarget\(\)/);
 assert.match(battle,/action\.selectedTargetId=String\(id\)/);
-assert.match(battle,/getObjective:/);
-assert.match(battle,/getStrategies:/);
+// Legacy turn-based getObjective/getStrategies hooks were removed when real-time
+// commander-target commands replaced the objective-turn overlay.
+assert.match(battle,/const objectiveTurnUI=null/);
+assert.match(battle,/realtimeCommandUI=!TOWN_MODE\?createRealtimeBattleCommands/);
+assert.match(battle,/getMoveTargets:\(kind,id\)=>realtimeMoveTargets/);
 assert.match(inn,/renderInnPages\(\)/);
 assert.match(inn,/次の戦場/);
 assert.match(css,/body\.battle-finished #allySquadRibbon/);
