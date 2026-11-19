@@ -1146,6 +1146,20 @@ export class MassBattleGridSimulation {
     const exposed=1+this._squadDebuff(defender,'defense');
     return Math.max(1,Math.round(damage*reduced*exposed));
   }
+  /** Shield squad intercepts attacks against a nominated allied squad.
+   * Persist this order in the simulation (including Worker), not just in UI. */
+  assignShieldCover(squadId,targetSquadId,team=0){
+    const guards=this.units.filter(u=>u.team===team&&u.alive&&u.hp>0&&
+      String(u.squadId)===String(squadId)&&u.jobId==='shield');
+    const protectedAlive=this.units.some(u=>u.team===team&&u.alive&&u.hp>0&&
+      String(u.squadId)===String(targetSquadId));
+    if(!guards.length||!protectedAlive)return false;
+    for(const guard of guards){
+      guard.guardCoverTargetSquadId=String(targetSquadId);
+      guard.guardCoverUntil=this.actions.time+60;
+    }
+    return true;
+  }
   setSquadCommand(squadId,command,team=0){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;

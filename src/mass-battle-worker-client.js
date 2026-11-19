@@ -4,7 +4,7 @@ import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js?v=
 export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null,mountForbidden=null,highGroundRoutes=[]},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=20261117-mount-interior1',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=20261120-shield-cover3',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0,paused=false;
   let backend='initializing',gpuFallbackReason='';
@@ -71,6 +71,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     reinforceSquad(squadId,count,team=0){if(!failed)worker.postMessage({type:'reinforceSquad',squadId,count,team});},
     summonSquadCreature(squadId,team=0){if(!failed)worker.postMessage({type:'summonSquadCreature',squadId,team});},
     orderSquadHighGround(squadId,routeIndex,team=0){if(!failed)worker.postMessage({type:'orderSquadHighGround',squadId,routeIndex,team});},
+    assignShieldCover(squadId,targetSquadId,team=0){if(!failed)worker.postMessage({type:'shieldCover',squadId,targetSquadId,team});},
     buffSquadItem(squadId,itemId,buff,duration,team=0){if(!failed)worker.postMessage({type:'buffSquadItem',squadId,itemId,buff,duration,team});},
     setSquadStrategy(squadId,strategy){if(!failed)worker.postMessage({type:'squadStrategy',squadId,strategy});},
     setSquadFormationTypes(types,team=0,assignments=null,jobSnapshots=null){if(!failed)worker.postMessage({type:'squadFormationTypes',types,team,assignments,jobSnapshots});},
