@@ -120,7 +120,11 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    if(rpgHudHealth(row.hp,row.maxHp)<=25&&Number(row.alive)>0)button.classList.add('critical');
    button.setAttribute('aria-label',rpgHudCompactText(row)+'。タップで戦場の隊に移動');
    button.title=button.getAttribute('aria-label');
-   button.onclick=()=>select(team,row.id,{focus:true});
+   button.onclick=()=>{
+    select(team,row.id);
+    if(team===0)onCommand(team,String(row.id));
+    else onFocus(team,String(row.id));
+   };
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
    const job=doc.createElement('span');job.className='rpgSquadJobIcon';
    setBattleJobPortrait(job,row.job,row.id,team);
