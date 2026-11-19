@@ -689,10 +689,26 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Tailored burlap profile: flat load-bearing base, filled belly, gathered neck.
+   // Lathe geometry gives a continuous silhouette instead of intersecting spheres.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.96,metalness:0});
+   const cord=new THREE.MeshStandardMaterial({color:0x695239,roughness:.91,metalness:0});
+   const profile=[
+    [0,0],[.28,.015],[.39,.075],[.44,.22],[.46,.42],
+    [.42,.60],[.33,.70],[.20,.76],[.14,.80],[.12,.89],[.075,.94],[0,.94]
+   ].map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const sackGeometry=new THREE.LatheGeometry(profile,12);
+   const tieGeometry=new THREE.TorusGeometry(.125*c,.023*c,5,12);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const sack=new THREE.Mesh(sackGeometry,burlap);
+    sack.scale.set(1,.82,.86);
+    sack.rotation.y=i*1.17;
+    sack.position.set(((i%2)*.86-.43)*c,Math.floor(i/2)*.60*c,((i%3)-1)*.2*c);
+    sack.castShadow=true;sack.receiveShadow=true;root.add(sack);
+    const tie=new THREE.Mesh(tieGeometry,cord);
+    tie.rotation.x=Math.PI/2;
+    tie.position.set(sack.position.x,sack.position.y+.80*.82*c,sack.position.z);
+    root.add(tie);
    }
   }
   if(id==='town_stone_pile_001'){
