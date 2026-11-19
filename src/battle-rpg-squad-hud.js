@@ -3,6 +3,7 @@
  * Source rows are authored by the live battle roster, never simulated by the UI.
  * Only the selected page is rendered; no per-frame worker/GPU work.
  */
+import {setBattleJobPortrait} from './battle-job-portraits.js';
 export const RPG_HUD_JOB_ICON=Object.freeze({
  '剣士':'⚔','魔法使い':'✦','僧侶':'✚','弓使い':'🏹','弓兵':'🏹','盾騎士':'🛡',
  '騎士':'♞','忍者':'◆','シーフ':'◇','格闘家':'✊','召喚士':'◈'
@@ -58,16 +59,16 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  root.setAttribute('aria-label','戦場の味方隊と敵隊のRPGステータス');
  root.hidden=true;
  const panels=[];
- let rows=[],selected='',expanded=[false,false],pages=[0,0],visible=false;
+ let rows=[],selected='',expanded=[true,true],pages=[0,0],visible=false;
  for(let team=0;team<=1;team++){
   const panel=doc.createElement('div');
-  panel.className='rpgSquadSide '+(team===0?'ally':'enemy');
+  panel.className='rpgSquadSide expanded '+(team===0?'ally':'enemy');
   panel.dataset.team=String(team);
   const header=doc.createElement('div');header.className='rpgSquadHead';
   const name=doc.createElement('b');name.textContent=team===0?'🔵 味方隊':'🔴 敵隊';
   const count=doc.createElement('small');count.textContent='0隊';
   const toggle=doc.createElement('button');toggle.type='button';
-  toggle.className='rpgSquadExpand';toggle.textContent='全隊 ▾';
+  toggle.className='rpgSquadExpand';toggle.textContent='縮小 ▴';
   toggle.setAttribute('aria-label',(team===0?'味方':'敵')+'隊一覧を展開');
   toggle.onclick=()=>{expanded[team]=!expanded[team];panel.classList.toggle('expanded',expanded[team]);toggle.textContent=expanded[team]?'縮小 ▴':'全隊 ▾';renderSide(team);};
   header.append(name,count,toggle);
@@ -122,7 +123,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    button.onclick=()=>select(team,row.id,{focus:true});
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
    const job=doc.createElement('span');job.className='rpgSquadJobIcon';
-   job.textContent=rpgHudIcon(row.job);job.title=String(row.job||'兵士');
+   setBattleJobPortrait(job,row.job,row.id,team);
    const title=doc.createElement('strong');
    title.textContent=String(row.name||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
