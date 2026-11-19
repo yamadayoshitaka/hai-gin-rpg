@@ -34,14 +34,14 @@ test('Game runtime uses same source-level hair and wardrobe constructors as mode
  assert.match(hair,/garment-coverage-runtime\.js/);
  assert.match(game,/buildRiggedJobOutfit/);
 });
-test('Legacy human/monster stopped; restored world and new split groups enabled',()=>{
+test('Legacy human/monster remain stopped and split groups honor owner switches',()=>{
  const s=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
  assert.equal(s.groups.human.enabled,false);
  assert.equal(s.groups.world.enabled,true);
  assert.equal(s.groups.faceHair.enabled,true);
- assert.equal(s.groups.outfit.enabled,true);
+ assert.equal(s.groups.outfit.enabled,false);
  assert.equal(s.groups.monster.enabled,false);
- assert.equal(s.groups.anime.enabled,true);
+ assert.equal(s.groups.anime.enabled,false);
 });
 
 test('PR must run ALL six character acceptance lanes instead of the minute-only scheduled slot',()=>{

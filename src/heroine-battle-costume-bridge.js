@@ -664,7 +664,7 @@ export function refineHeroineCostumeSilhouette(wardrobeRoot,{gender='female',job
     (slot==='chest'?.93:slot==='shoulder'?1:
      ['thigh','knee','shin','boot-upper'].includes(slot)?.87:
      slot==='boot-foot'?.95:1):
-    (slot==='chest'?.83:slot==='shoulder'?1:
+    (slot==='chest'?.83:slot==='shoulder'?.77:
      ['thigh','knee','shin','boot-upper'].includes(slot)?.88:
      slot==='boot-foot'?.92:1);
    if(factor!==1){

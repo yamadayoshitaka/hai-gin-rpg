@@ -43,7 +43,9 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.54||yn>.998)continue;
+  // Include the actual apex in crown root sampling: excluding the top 0.2%
+  // leaves a root-free crown on meshes whose highest ring is at box.max.y.
+  if(yn<.54||yn>1.000001)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -66,7 +68,8 @@ function actualScalpCandidates(geo,box){
  // A donor mesh with sparse topology still receives every hair zone.
  for(const [zone,pool] of Object.entries(pools)){
   if(pool.length>3)continue;
-  const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
+  const onSide=q=>zone==='crown'?true:
+   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const frontal=zone.startsWith('fringe');
   const temple=zone.startsWith('temple');
@@ -82,15 +85,19 @@ function actualScalpCandidates(geo,box){
    if(zone.startsWith('back'))return depth<-.04&&height>=.61;
    if(frontal)return depth>.025&&height>.87&&height<.995;
    if(temple)return Math.abs((q.p.x-center.x)/d.x)>.15&&height>.80&&height<.96;
-   return height>.80;
+   // Crown fallback must remain on the actual upper rear scalp;
+   // forehead vertices produce forward-pointing roots and a bare apex.
+   return height>.825&&depth<.21;
   });
   if(candidates.length) pools[zone]=candidates;
   else{
    // Keep explicit QA failure instead of silently growing "rear" locks
    // out of the forehead on unusual incoming face topologies.
    if(rear)throw Error('Missing posterior scalp: '+zone);
-   const sameSide=all.filter(onSide);
-   pools[zone]=sameSide.length?sameSide:all;
+   // Sparse topology must not redirect temple/fringe follicles to cheek,
+   // jaw or the opposite side: that produces floating ribbons and bald gaps.
+   // A genuine anatomical root is mandatory for every zone.
+   throw Error('Missing anatomical scalp roots: '+zone);
   }
  }
  return {pools,all};
@@ -333,18 +340,27 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  if(!attr)throw Error('True 3D source head required');
  const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const minHeight=box.min.y+d.y*.82;
+ // Extend the anatomical underlay into the crown-to-temple seam. The
+ // previous 82%-height / 27%-width window left a visible bare ring when
+ // parted locks exposed the lateral crown. Keep the frontal hairline high.
+ const minHeight=box.min.y+d.y*.77;
  let triangles=0;
  for(let t=0;t+2<n;t+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
   const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
-  if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*.27||
-   Math.abs(mid.z-c.z)>d.z*.25)continue;
-  // Never extend this cover over the forehead or brows. Intact donor
-  // triangles entirely above the upper hairline are the only source.
-  if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
+  const front=(mid.z-c.z)/Math.max(d.z,1e-6);
+  const hairline=front>.12?box.min.y+d.y*.85:minHeight;
+  if(mid.y<hairline||
+   Math.abs(mid.x-c.x)>d.x*.335||
+   Math.abs(mid.z-c.z)>d.z*.32)continue;
+  // Guard every vertex: a passing centroid must not paint a wedge
+  // across the forehead. Posterior scalp retains the lower coverage.
+  if(points.some(p=>p.y<((p.z-c.z)/Math.max(d.z,1e-6)>.12?
+   box.min.y+d.y*.85:box.min.y+d.y*.74)))continue;
+  const area=points[1].clone().sub(points[0]).cross(
+   points[2].clone().sub(points[0])).lengthSq();
+  if(!Number.isFinite(area)||area<Math.pow(d.x,4)*1e-12)continue;
   // Source head triangles can have reversed winding after clipping or
   // donor retargeting. Keep the underlay front-facing with its scalp normals.
   const sourceFace=points[1].clone().sub(points[0]).cross(
@@ -665,9 +681,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ // Reserve some crown follicles for the true apex: vertex order on imported
+ // heads can otherwise concentrate low-discrepancy samples on the rear ring.
+ // Use only existing scalp vertices, never a synthetic floating root.
+ const apexCrownRoots=pools.crown.filter(q=>
+  (q.p.y-box.min.y)/d.y>.955);
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const pool=zone==='crown'&&index%4===0&&apexCrownRoots.length?
+   apexCrownRoots:rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
@@ -1199,7 +1221,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // Shared clump direction, varied fibre cross sections. The 10x lanes
    // remain static, preserving the Android physics and triangle budget.
    const clump=Math.floor(i/9),clumpPhase=clump*2.39996323;
-   const radius=(half*fine)*(fiberMultiplier>=10?1.24:1.8)*
+   const radius=(half*fine)*(fiberMultiplier>=10?.68:1.8)*
     (.93+.07*Math.sin(clumpPhase));
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
@@ -1207,16 +1229,25 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     for(const j of fineSteps){
      const p=strand.points[j],prev=strand.points[Math.max(0,j-1)],
       next=strand.points[Math.min(segments,j+1)];
-     const tangent=next.clone().sub(prev).normalize();
-     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z).normalize();
+     // Keep a stable local fibre frame at coincident guide stations and
+     // crown-centre roots. Arbitrary world-X ribbons create visible spikes.
+     const tangent=next.clone().sub(prev);
+     if(tangent.lengthSq()<1e-12)tangent.set(0,-1,0);
+     tangent.normalize();
+     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z);
+     if(normal.lengthSq()<1e-12)normal.set(0,0,1);
+     normal.normalize();
      let across=new THREE.Vector3().crossVectors(tangent,normal);
-     if(across.lengthSq()<1e-9)across.set(1,0,0);
+     if(across.lengthSq()<1e-9){
+      across.crossVectors(tangent,new THREE.Vector3(0,1,0));
+      if(across.lengthSq()<1e-9)across.crossVectors(tangent,new THREE.Vector3(1,0,0));
+     }
      across.normalize();
      const t=j/segments;
      const rootFade=Math.min(1,t*7);
      // Additional static fibre curl follows the existing scalp-rooted guides.
-     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00065:.0012)+
-      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00020:.00033))*d.x*rootFade;
+     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00024:.0012)+
+      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00009:.00033))*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
      // Stagger fine strand tips; avoid nine blunt, coplanar endings.
      const stagger=.94-.09*fract((i+1)*.75487766+(lane+1)*.61803398);
