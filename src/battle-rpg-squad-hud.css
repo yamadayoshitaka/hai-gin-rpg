@@ -166,3 +166,10 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  #battleRpgSquadHud .rpgSquadRow{grid-template-rows:12px 12px 5px 5px;min-height:39px}
  #battleRpgSquadHud .rpgSquadJobIcon{align-self:start}
 }
+
+/* Half-length HP, attack and MP tracks; preserve numerical values. */
+#battleRpgSquadHud .rpgSquadHp,
+#battleRpgSquadHud .rpgSquadAttackMeter,
+#battleRpgSquadHud .rpgSquadMpMeter{width:50%;max-width:50%;justify-self:start}
+#battleRpgSquadHud .rpgSquadHpValue{justify-self:end;align-self:start}
+#battleRpgSquadHud .rpgSquadNumbers{grid-row:1;grid-column:2;justify-self:end;align-self:start;padding:0 2px;background:#092336e8}
