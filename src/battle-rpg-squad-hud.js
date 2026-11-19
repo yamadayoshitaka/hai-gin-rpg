@@ -135,9 +135,61 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   side.prev.disabled=pages[team]===0;
   side.next.disabled=pages[team]>=totalPages-1;
   side.nav.hidden=expanded[team]||totalPages===1;
-  side.list.replaceChildren();
+  // Reuse portraits and row nodes instead of recreating them on every HP tick.
+  const oldRows=new Map([...side.list.querySelectorAll('button.rpgSquadRow')]
+   .map(node=>[node.dataset.squadKey,node]));
   const fragment=doc.createDocumentFragment();
   for(const row of own.slice(start,start+pageSize)){
+   const key=selectionKey(team,row.id),previous=oldRows.get(key);
+   if(previous){
+    previous.classList.toggle('selected',selected===key);
+    previous.classList.toggle('defeated',!(Number(row.alive)>0));
+    previous.classList.toggle('critical',rpgHudHealth(row.hp,row.maxHp)<=25&&Number(row.alive)>0);
+    const summary=rpgHudCompactText(row)+'。1回タップでカメラ移動、2回タップで'+
+     (team===0?'作戦':'隊を確認');
+    if(previous.getAttribute('aria-label')!==summary){
+     previous.setAttribute('aria-label',summary);previous.title=summary;
+    }
+    const state=previous.querySelector('.rpgSquadState');
+    const value=rpgHudStateIcon(row);
+    if(state.textContent!==value)state.textContent=value;
+    state.title=rpgHudStatus(row);
+    const engaged=previous.querySelector('.rpgSquadEngaged');
+    if(engaged)engaged.hidden=!row.inContact;
+    for(const [type,current,max] of [['hp',row.hp,row.maxHp],['mp',row.mp,row.maxMp]]){
+     const meter=previous.querySelector('.rpgSquadMeter-'+type);
+     if(!meter)continue;
+     const pct=String(rpgHudHealth(current,max));
+     if(meter.getAttribute('aria-valuenow')!==pct){
+      meter.setAttribute('aria-valuenow',pct);meter.querySelector('i').style.width=pct+'%';
+     }
+     const title=type.toUpperCase()+' '+Math.max(0,Math.ceil(Number(current)||0))+
+      '/'+Math.max(0,Math.ceil(Number(max)||0));
+     if(meter.title!==title){meter.title=title;meter.setAttribute('aria-label',title);}
+    }
+    const effects=previous.querySelector('.rpgSquadEffects');
+    const signature=JSON.stringify(row.effects||[]);
+    if(effects&&effects.dataset.signature!==signature){
+     effects.replaceChildren();effects.dataset.signature=signature;
+     effects.dataset.signature=JSON.stringify(row.effects||[]);
+   const valid=Array.isArray(row.effects)?row.effects:[];
+     for(const fx of valid.slice(0,7)){
+      const tag=doc.createElement('span');
+      tag.className=fx.kind==='debuff'?'debuff':'buff';
+      tag.textContent=rpgHudEffectIcon(fx);
+      const remain=Number.isFinite(fx.seconds)?' · 残り'+Math.max(0,Math.ceil(fx.seconds))+'秒':'';
+      tag.title=String(fx.description||fx.label||'効果')+remain;
+      tag.setAttribute('aria-label',tag.title);effects.append(tag);
+     }
+     if(valid.length>7){
+      const more=doc.createElement('span');more.className='more';
+      more.textContent='+'+(valid.length-7);
+      more.title=valid.slice(7).map(fx=>String(fx.label||'効果')).join(' / ');
+      effects.append(more);
+     }
+    }
+    fragment.append(previous);continue;
+   }
    const button=doc.createElement('button');button.type='button';
    button.className='rpgSquadRow';
    button.dataset.squadKey=selectionKey(team,row.id);
@@ -174,7 +226,10 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    jobName.title=String(row.name||'部隊')+'｜'+String(row.job||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
    status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
-   heading.append(job,title,jobName,status);
+   const engaged=doc.createElement('span');engaged.className='rpgSquadEngaged';
+   engaged.textContent='⚔';engaged.title='現在交戦中';
+   engaged.setAttribute('aria-label','交戦中');engaged.hidden=!row.inContact;
+   heading.append(job,title,jobName,status,engaged);
    const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';
    effects.setAttribute('aria-label','現在の強化・弱体効果');
@@ -221,7 +276,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(!own.length){
    const empty=doc.createElement('small');empty.textContent='対象の隊はありません';fragment.append(empty);
   }
-  side.list.append(fragment);
+  side.list.replaceChildren(fragment);
  }
  function update(nextRows,{show=true}={}){
   visible=Boolean(show);root.hidden=!visible;
