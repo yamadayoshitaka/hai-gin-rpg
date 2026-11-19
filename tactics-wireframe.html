@@ -1094,6 +1094,7 @@ import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.36';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=20261117-three-seats-v3';
 import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-body-accent.js?v=20261117-realaction1';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
+import {battleSquadJob,engineBattleJobNameForSquad,displayBattleJobName} from './src/battle-job-squads.js?v=20261119-job-teams';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261117-mount-interior1';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
@@ -3481,8 +3482,14 @@ const spawnOutside=(x,z,team)=>{
  }
  return freeCellNear(base.x,base.z,null);
 };
-// Each side gets five of every job, shuffled independently on every new game.
-const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_SIZE)];
+// Standard battles always assign one job to exactly one of ten squads.
+ // Story imports and town NPCs keep their authored data/roles.
+const randomRosters=[0,1].map(()=>{
+ if(TOWN_MODE||MASS_SIZE||storyRequest)return randomJobRoster(JOBS,TEAM_SIZE);
+ const squadSize=Math.max(1,Math.ceil(TEAM_SIZE/10));
+ return Array.from({length:TEAM_SIZE},(_,i)=>
+  JOBS.find(job=>job.name===engineBattleJobNameForSquad(Math.floor(i/squadSize)))||JOBS[0]);
+});
 // Shopkeepers and townsfolk stand at authored positions beside functional facilities.
 const townNpcSites=[
  [166,117,'剣士','軍師'],
@@ -6244,6 +6251,10 @@ function battleUnitJobName(unit){
  return battleUnitDisplayName(unit,{fallback:battleJobNameById.get(unit.jobId)||'兵士'});
 }
 function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
+ if(!storyRequest&&!TOWN_MODE){
+  const fixed=battleSquadJob(Number(id));
+  if(fixed)return fixed.job;
+ }
  const liveJobs=sums?.get(squadKey(team,String(id)))?.jobs;
  const jobs=liveJobs&&Object.keys(liveJobs).length?liveJobs:{};
  if(!Object.keys(jobs).length)for(const unit of squadRoster){
@@ -6252,7 +6263,7 @@ function squadPrimaryJob(id,team=0,sums=lastRibbonSums){
   const job=battleUnitJobName(unit);
   jobs[job]=(jobs[job]||0)+1;
  }
- return Object.entries(jobs).sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊';
+ return displayBattleJobName(Object.entries(jobs).sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊');
 }
 function currentSkirmishDirective(a){
  const id=String(a.squadId),key=(a.team===0?'0:':'1:')+id;
@@ -6740,7 +6751,11 @@ function updateSkirmishSquadStrategies(){
   squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,x:target.x,z:target.z,autoStrategy:true});
  }
 }
-const squadName=(id,team=0)=>(team===0?commandGroupName(id)+'・第':'敵第')+((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊';
+const squadName=(id,team=0)=>{
+ const index=(team===0?squadIds:enemySquadIds).indexOf(String(id));
+ const job=squadPrimaryJob(id,team);
+ return '第'+(index+1)+'隊｜'+displayBattleJobName(job);
+};
 let dialogueCameraReturn=null,commanderCinematic=null;
 const cinematicFocusQueue=[];
 let lastAutomaticFocusAt=-Infinity,lastUltimateFocusAt=-Infinity;
@@ -9774,7 +9789,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   const all=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
   const alive=all.filter(u=>u.hp>0&&u.alive!==false);
   const center=squadCenter(id,0);
-  return {team:0,id,label:squadPrimaryJob(id)+'隊・'+squadName(id),job:squadPrimaryJob(id),
+  return {team:0,id,label:squadName(id),job:squadPrimaryJob(id),
    x:center?.x??0,z:center?.z??0,alive:alive.length,total:all.length,
    hp:alive.reduce((n,u)=>n+(u.hp||0),0),
    maxHp:all.reduce((n,u)=>n+(u.maxHp||0),0)};
