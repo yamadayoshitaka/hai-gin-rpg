@@ -138,3 +138,31 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  #battleRpgSquadHud .rpgSquadHead b{font-size:9px}
  #battleRpgSquadHud .rpgSquadHead small{font-size:8px}
 }
+
+/* One job per squad: show three useful gauges without shrinking the battlefield. */
+#battleRpgSquadHud .rpgSquadRow{
+ grid-template-rows:14px 12px 6px 6px;min-height:42px;row-gap:1px
+}
+#battleRpgSquadHud .rpgSquadJobIcon{grid-row:1/5}
+#battleRpgSquadHud .rpgSquadAttackMeter,
+#battleRpgSquadHud .rpgSquadMpMeter{
+ grid-column:2;position:relative;width:100%;height:5px;
+ border-radius:4px;background:#283b4a;overflow:hidden;
+}
+#battleRpgSquadHud .rpgSquadAttackMeter{grid-row:3}
+#battleRpgSquadHud .rpgSquadMpMeter{grid-row:4}
+#battleRpgSquadHud .rpgSquadAttackMeter i,
+#battleRpgSquadHud .rpgSquadMpMeter i{
+ display:block;height:100%;border-radius:4px;transition:width .12s
+}
+#battleRpgSquadHud .rpgSquadAttackMeter i{background:#f1b65c}
+#battleRpgSquadHud .rpgSquadMpMeter i{background:#73a9f9}
+#battleRpgSquadHud .rpgSquadAttackMeter span,
+#battleRpgSquadHud .rpgSquadMpMeter span{
+ position:absolute;right:2px;top:0;line-height:5px;
+ font-size:5px;font-weight:900;color:#fff;text-shadow:0 0 2px #001
+}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadRow{grid-template-rows:12px 12px 5px 5px;min-height:39px}
+ #battleRpgSquadHud .rpgSquadJobIcon{align-self:start}
+}
