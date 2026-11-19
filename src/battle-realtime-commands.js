@@ -77,6 +77,7 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeManageItems" hidden>🎁 全軍の共有アイテムを使う</button>
    <button type="button" id="realtimeRally" hidden>📣 バフの種類と対象を選択</button>
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
+   <div id="realtimeJobSkills" hidden role="group" aria-label="ジョブ固有スキルを選択"></div>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeStrategyTargets" hidden role="group" aria-label="選択した攻撃スキルで指定できる敵隊">
     <strong id="realtimeTargetStep">② 攻撃対象の敵隊を選択</strong>
@@ -340,7 +341,8 @@ export function createRealtimeBattleCommands({
  }
  function actionPanel(origin,kind){
   const node=$(origin==='map'?'realtimeMap'+kind+'Choices':'realtimeDock'+kind+'Choices');
-  hideContextChoices();node.hidden=false;node.replaceChildren();return node;
+  hideContextChoices();$('realtimeJobSkills').hidden=true;
+  node.hidden=false;node.replaceChildren();return node;
  }
  function contextButton(parent,label,fn){
   const button=doc.createElement('button');button.type='button';
@@ -539,17 +541,20 @@ export function createRealtimeBattleCommands({
   contextButton(node,'◀ 戻る',()=>showSpecialChoices(origin));
   const targets=getSpecialTargets(String(selectedId),action.id)||[];
   if(!targets.length){contextNote(node,action.id==='high_ground'?
-   '利用できる高所がありません。階段・窓までの経路や高所の占有状況を確認してください。':
+   '移動できる屋根・高所窓がありません。地形・階段・占有状況を確認してください。':
+   action.id==='unlock_door'?'現在の敵側に、このシーフが解錠できる施錠扉がありません（鍵レベル・敵味方の所有を確認）。':
    '実行できる対象がありません。');return;}
-  const perPage=4,last=Math.max(0,Math.ceil(targets.length/perPage)-1);
+  const perPage=action.id==='high_ground'?8:4,last=Math.max(0,Math.ceil(targets.length/perPage)-1);
   page=clamp(page,0,last);contextNote(node,action.label+'：対象を選択');
   const shown=targets.slice(page*perPage,(page+1)*perPage);
   const isStructure=['building','bridge','door','height'].includes(action.target)&&shown.some(t=>Number.isFinite(t.x)&&Number.isFinite(t.z));
   if(isStructure){
-   contextNote(node,'🟨 地図の番号ピンか対象名を選択してください。確定後は自動で接近して実行します。');
+   contextNote(node,action.id==='high_ground'?
+    '🟨 番号ピンは実際の屋根・高所窓です。地点を選んで確定すると自動移動して攻撃します。':
+    '🟨 地図の番号ピンか対象名を選択してください。確定後は自動で接近して実行します。');
    const preview=doc.createElement('canvas');preview.className='realtimeStructureMap';
    preview.width=260;preview.height=164;
-   preview.setAttribute('aria-label','作戦対象の建物・橋・扉の位置。番号を選択');
+   preview.setAttribute('aria-label',action.id==='high_ground'?'攻撃する屋根・高所窓を地図から選択':'作戦対象の建物・橋・扉の位置。番号を選択');
    preview.setAttribute('role','img');node.append(preview);
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
@@ -596,12 +601,12 @@ export function createRealtimeBattleCommands({
     if(nearest&&best<26)choose(nearest);
    });
    for(const target of shown)contextButton(node,String(target.label||target.id),()=>choose(target));
-   if(origin==='map'){
-    confirmButton=contextButton(node,'✅ 対象を確定',()=>{
-     if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
-    });
-    confirmButton.disabled=true;
-   }
+   confirmButton=contextButton(node,action.id==='high_ground'?'✅ この高所で作戦を確定':'✅ この対象で作戦を確定',()=>{
+    if(!chosen)return;
+    if(origin==='dock')confirmDockStrategy();
+    else confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+   });
+   confirmButton.classList.add('realtimeMainConfirm');confirmButton.disabled=true;
    status.textContent='対象を選ぶまで作戦は発令されません。';
   }else{
    let chosen=null;
@@ -823,6 +828,21 @@ export function createRealtimeBattleCommands({
   }
   $('realtimeActionSkip').classList.toggle('selected',!chosen);
   const specialJob=String(getSelected()?.job||'');
+  const jobActions=battleJobSpecialActions(specialJob),shortcuts=$('realtimeJobSkills');
+  if(shortcuts.dataset.job!==specialJob){
+   shortcuts.dataset.job=specialJob;shortcuts.replaceChildren();
+   for(const action of jobActions){
+    const button=contextButton(shortcuts,action.label,()=>showSpecialTargets('dock',action));
+    button.dataset.specialId=action.id;
+   }
+  }
+  shortcuts.hidden=dockTab!=='strategy'||!jobActions.length||
+   !$('realtimeDockSpecialChoices').hidden;
+  $('realtimeSpecial').hidden=dockTab!=='strategy'||Boolean(jobActions.length);
+  for(const button of shortcuts.querySelectorAll('button[data-special-id]')){
+   const active=pendingStrategy?.special===button.dataset.specialId;
+   button.classList.toggle('selected',active);button.setAttribute('aria-pressed',String(active));
+  }
   $('realtimeSpecial').textContent=specialJob.includes('シーフ')?'🔓 鍵開け・盗む':
    ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有':'★ 固有作戦';
   $('realtimeSpecial').disabled=!battleJobSpecialActions(specialJob).length;
