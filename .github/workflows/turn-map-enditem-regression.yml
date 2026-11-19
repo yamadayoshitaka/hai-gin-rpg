@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-deployment.js'
       - 'src/battle-realtime-commands.css'
       - 'src/mass-battle-grid-sim.js'
       - 'src/mass-battle-worker-client.js'
@@ -14,6 +15,7 @@ on:
   pull_request:
     paths:
       - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-deployment.js'
       - 'src/battle-realtime-commands.css'
       - 'src/mass-battle-grid-sim.js'
       - 'src/mass-battle-worker-client.js'
@@ -35,6 +37,7 @@ jobs:
       - name: Check realtime deployment and Worker syntax
         run: |
           node --check src/battle-realtime-commands.js
+          node --check src/battle-realtime-deployment.js
           node --check src/mass-battle-grid-sim.js
           node --check src/mass-battle-worker-client.js
           node --check src/mass-battle-worker-runtime.js
