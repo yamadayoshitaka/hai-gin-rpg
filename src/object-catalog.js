@@ -1445,12 +1445,30 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const mound=new THREE.Mesh(new THREE.DodecahedronGeometry(.2+(i%5)*.13,0),mud);
    mound.scale.set(1.6,.28,1.1);mound.position.set(x,-.01,z);root.add(mound);
   }
+  // Reeds share a tapered, slightly bowed stalk mesh: 65 instances, one draw call.
+  // The cattail heads are a second instanced draw call rather than 65 meshes.
+  const reedStalk=new THREE.CylinderGeometry(.009,.032,1,5,4);
+  const stalkPositions=reedStalk.attributes.position;
+  for(let v=0;v<stalkPositions.count;v++){
+   const y=stalkPositions.getY(v);
+   stalkPositions.setX(v,stalkPositions.getX(v)+.095*(y+.5)*(y+.5));
+  }
+  reedStalk.computeVertexNormals();
+  const stems=new THREE.InstancedMesh(reedStalk,reed,65);
+  const heads=new THREE.InstancedMesh(new THREE.CapsuleGeometry(.042,.15,3,6),mud,65);
+  const dummy=new THREE.Object3D();
   for(let i=0;i<65;i++){
    const angle=i*2.399963,r=(.65+.35*((i*13)%17)/17)*size*.48;
    const x=Math.cos(angle)*r,z=Math.sin(angle)*r,h=.45+(i%7)*.12;
-   const stem=new THREE.Mesh(new THREE.CylinderGeometry(.015,.028,h,4),reed);
-   stem.position.set(x,h/2,z);stem.rotation.z=Math.sin(i*4)*.16;root.add(stem);
+   const lean=Math.sin(i*4)*.16;
+   dummy.position.set(x,h/2,z);dummy.rotation.set(0,angle,lean);
+   dummy.scale.set(1,h,1);dummy.updateMatrix();stems.setMatrixAt(i,dummy.matrix);
+   dummy.position.set(x+Math.sin(lean)*h*.35,h+.12,z);
+   dummy.rotation.set(0,angle,lean);dummy.scale.set(.85,.75,.85);
+   dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);
   }
+  stems.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
+  stems.castShadow=true;heads.castShadow=true;root.add(stems,heads);
   for(let i=0;i<14;i++){
    const a=i*1.91,r=(.2+(i%6)*.1)*size*.43;
    const bubble=new THREE.Mesh(new THREE.SphereGeometry(.07+(i%3)*.025,8,5),water);
