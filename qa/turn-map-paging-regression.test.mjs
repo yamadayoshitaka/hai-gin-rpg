@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import vm from 'node:vm';
 import {battleMapCell} from '../src/battle-realtime-commands.js';
+import {buildBattleSquadLeaderPins,visibleBattleSquadPins} from '../src/battle-squad-leader-pins.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 import {planSkirmishDeployment} from '../src/battle-realtime-deployment.js';
 
@@ -123,4 +124,54 @@ test('accepted map move reveals an action picker and defers command until arriva
  assert.match(source,/deploymentActions\.set\(id,command\)/);
  assert.match(source,/setBattleJobPortrait\(face,own\[index\]\?\.job,own\[index\]\?\.id,0\)/);
  assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapActionButtons/);
+});
+
+test('deployment map shows exactly one living commander/leader pin for each squad',()=>{
+ const ids=Array.from({length:10},(_,i)=>String(i));
+ const units=[];
+ for(let team=0;team<=1;team++)for(let squad=0;squad<10;squad++){
+  for(let member=0;member<5;member++)units.push({
+   id:team*1000+squad*10+member,team,squadId:squad,alive:true,hp:100,
+   x:team?175+squad:50+squad,z:50+member*4,
+   isStrategist:member===4
+  });
+ }
+ const own=buildBattleSquadLeaderPins(units,{team:0,ids});
+ const enemy=buildBattleSquadLeaderPins(units,{team:1,ids});
+ assert.equal(own.size,10,'50 soldiers must produce only ten friendly dots');
+ assert.equal(enemy.size,10,'50 enemy soldiers must produce only ten enemy dots');
+ assert.equal(own.get('0').z,66,'Use actual strategist location, never mean of five soldiers');
+ assert.equal(own.get('0').leaderId,4);
+ assert.equal(enemy.get('7').leaderId,1074);
+ assert.equal(visibleBattleSquadPins([...own.values()],[...enemy.values()],'deploy').length,10,
+  'Hide enemy dots on the opening deployment screen');
+ assert.equal(visibleBattleSquadPins([...own.values()],[...enemy.values()],'move').length,20,
+  'Live map shows one leader dot per squad for both armies');
+ units.find(u=>u.team===0&&u.squadId===0&&u.isStrategist).hp=0;
+ const recovered=buildBattleSquadLeaderPins(units,{team:0,ids});
+ assert.equal(recovered.size,10);
+ assert.equal(recovered.get('0').leaderId,0,'Fallback to living soldier after leader loss');
+});
+test('designated skirmish leaders use the real cell coordinate',()=>{
+ const squad=[
+  {id:1,team:0,squadId:'7',cell:{x:44,z:34},hp:50,alive:true},
+  {id:2,team:0,squadId:'7',cell:{x:46,z:45},hp:75,alive:true,isSquadLeader:true},
+  {id:3,team:0,squadId:'7',cell:{x:48,z:43},hp:25,alive:true}
+ ];
+ const result=buildBattleSquadLeaderPins(squad,{team:0,ids:['7']});
+ assert.deepEqual([result.get('7').x,result.get('7').z],[46,45]);
+ assert.equal(result.get('7').leaderId,2);
+ squad[1].alive=false;
+ assert.equal(buildBattleSquadLeaderPins(squad,{team:0,ids:['7']}).get('7').leaderId,1);
+});
+test('tactical deployment uses only leader coordinates, never soldier dot clouds',()=>{
+ const view=read('../src/battle-realtime-commands.js');
+ const battle=read('../tactics-wireframe.html');
+ assert.match(view,/visibleBattleSquadPins\(allies,enemies,mode\)/);
+ assert.match(view,/mode==='deploy'\?\[\]:getEnemies\(\)/);
+ assert.match(view,/ctx\.fillText\(String\(number\),x,z\)/);
+ assert.match(battle,/buildBattleSquadLeaderPins\(squadRoster,\{team:0,ids:squadIds\}\)/);
+ assert.match(battle,/buildBattleSquadLeaderPins\(squadRoster,\{team:1,ids:enemySquadIds\}\)/);
+ assert.match(battle,/leader\?\.x\?\?NaN,z:leader\?\.z\?\?NaN/);
+ assert.match(battle,/isSquadLeader:!storyRequest&&!TOWN_MODE/);
 });

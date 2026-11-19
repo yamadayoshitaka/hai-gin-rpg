@@ -887,7 +887,8 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-realtime1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-leader-pins1';
+import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=rpg-status1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
@@ -3553,6 +3554,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(5,Math.ceil(TEAM_SIZE/10))),sourceSquadId:storyUnit?.sourceSquadId??storyUnit?.squadId,
   commanderId:storyUnit?.commanderId??'provisional',armyGroupId:storyUnit?.armyGroupId??null,
   formationBaseStats:withoutFormation,isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero),
+  isSquadLeader:!storyRequest&&!TOWN_MODE&&i%Math.max(5,Math.ceil(TEAM_SIZE/10))===0,
   appearanceOptions:storyUnit?{gender:storyUnit.gender,ageBand:storyUnit.ageBand,
    bodyType:storyUnit.bodyType,faceId:storyUnit.faceId,hairStyle:storyUnit.hairStyle,
    hairColor:storyUnit.hairColor}:null};
@@ -9785,16 +9787,23 @@ let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  worldSize:WORLD_SIZE,
  getMapBackground:()=>miniBase,
- getSquads:()=>squadIds.map(id=>{
-  const all=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
-  const alive=all.filter(u=>u.hp>0&&u.alive!==false);
-  const center=squadCenter(id,0);
-  return {team:0,id,label:squadName(id),job:squadPrimaryJob(id),
-   x:center?.x??0,z:center?.z??0,alive:alive.length,total:all.length,
-   hp:alive.reduce((n,u)=>n+(u.hp||0),0),
-   maxHp:all.reduce((n,u)=>n+(u.maxHp||0),0)};
- }),
- getEnemies:()=>enemySquadIds.map(id=>({team:1,id,...(squadCenter(id,1)||{})})),
+ getSquads:()=>{
+  const leaders=buildBattleSquadLeaderPins(squadRoster,{team:0,ids:squadIds});
+  return squadIds.map(id=>{
+   const all=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
+   const alive=all.filter(u=>u.hp>0&&u.alive!==false);
+   const leader=leaders.get(String(id));
+   return {team:0,id,label:squadName(id),job:squadPrimaryJob(id),
+    x:leader?.x??NaN,z:leader?.z??NaN,leaderId:leader?.leaderId??null,
+    alive:alive.length,total:all.length,
+    hp:alive.reduce((n,u)=>n+(u.hp||0),0),
+    maxHp:all.reduce((n,u)=>n+(u.maxHp||0),0)};
+  });
+ },
+ getEnemies:()=>{
+  const leaders=buildBattleSquadLeaderPins(squadRoster,{team:1,ids:enemySquadIds});
+  return enemySquadIds.map(id=>({team:1,id,...(leaders.get(String(id))||{})}));
+ },
  getLegalPoint:(x,z)=>turnLegalPoint(x,z),
  canDeploy:(x,z)=>x<=(massSim?.riverXAt(z)??riverAt(z))-9,
  onDeploy:(id,point)=>{
