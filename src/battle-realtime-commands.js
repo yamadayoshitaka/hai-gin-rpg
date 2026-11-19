@@ -515,8 +515,10 @@ export function createRealtimeBattleCommands({
      if(!own||Number(own.alive)<=0){arrivalActions.delete(id);continue;}
      if(!Number.isFinite(own.x)||!Number.isFinite(own.z))continue;
      if(Math.hypot(own.x-entry.point.x,own.z-entry.point.z)>3.5)continue;
-     const accepted=entry.itemId?onUseItem(id,entry.itemId):
-      entry.special?onSpecial(id,entry.special,entry.targetId):onOrder(id,entry.command);
+     // Arrival executes the action already authorized with this movement order.
+     const accepted=entry.itemId?onUseItem(id,entry.itemId,true):
+      entry.special?onSpecial(id,entry.special,entry.targetId,true):
+      onOrder(id,entry.command,true);
      if(accepted)arrivalActions.delete(id);
     }
    }
