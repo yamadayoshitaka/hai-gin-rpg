@@ -87,7 +87,7 @@ export class MassBattleGridSimulation {
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
     this.strategy='eliminate';this.autoStrategySquads=new Set();
-    this.squadSize=Math.max(10,Math.ceil(sideCount/10));
+    this.squadSize=Math.max(1,Math.ceil(sideCount/10));
     this.squadCount=Math.ceil(sideCount/this.squadSize);
     this.formations=[
       createSquadFormationPlan(sideCount,deploymentLanes.length,0),
