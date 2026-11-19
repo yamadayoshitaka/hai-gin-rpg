@@ -91,3 +91,39 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleMapOverlay #realtimeMapSquadName{font-size:12px}
  #realtimeBattleMapOverlay .realtimeMapSquadPager button{min-height:40px}
 }
+
+
+/* Approved move -> action flow and one-screen job portrait selector. */
+#realtimeBattleMapOverlay .realtimeMapSquadPager{
+ grid-template-columns:38px 29px minmax(0,1fr) 38px 35px;gap:3px}
+#realtimeBattleMapOverlay .realtimeMapPortrait{
+ display:block;width:29px;height:29px;
+ background-color:#27475b;background-size:400% 400%;background-repeat:no-repeat;
+ border:1px solid #f0d28d;border-radius:4px}
+#realtimeBattleMapOverlay .realtimeMapActionSheet[hidden]{display:none!important}
+#realtimeBattleMapOverlay .realtimeMapActionSheet{
+ display:flex;flex-direction:column;gap:4px;
+ background:#132f45;border:1px solid #bda472;border-radius:8px;padding:6px}
+#realtimeBattleMapOverlay .realtimeMapActionSheet>strong{
+ color:#ffe0a2;font:800 12px system-ui;text-align:center}
+#realtimeBattleMapOverlay .realtimeMapActionButtons{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+#realtimeBattleMapOverlay .realtimeMapActionButtons button{
+ min-height:38px;min-width:0;font:800 11px system-ui;
+ background:#28506b;border-color:#a0c1d6;padding:3px 0}
+#realtimeBattleMapOverlay .realtimeMapActionButtons button:active{
+ background:#3a7459}
+#realtimeBattleMapOverlay .realtimeMapActionSheet .realtimeActionSkip{
+ background:transparent;border:0;min-height:19px;
+ color:#c7dceb;font:10px system-ui}
+#realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+ max-height:31dvh;width:min(100%,31dvh,300px)}
+#realtimeBattleDock{padding:3px 5px}
+@media(max-width:600px){
+ #realtimeBattleMapOverlay .realtimeMapSquadPager{
+  grid-template-columns:36px 25px minmax(0,1fr) 36px 32px}
+ #realtimeBattleMapOverlay .realtimeMapPortrait{width:25px;height:25px}
+ #realtimeBattleMapOverlay .realtimeMapActionButtons button{min-height:35px;font-size:10px}
+ #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+  max-height:27dvh;width:min(100%,27dvh,270px)}
+}
