@@ -28,7 +28,8 @@ export const BATTLE_JOB_SPECIAL_ACTIONS=Object.freeze({
  ])
 });
 export function battleJobSpecialActions(job){
- const label=String(job||'');
+ // Runtime combat IDs use 盾戦士/盗賊 while the HUD names are 盾騎士/シーフ.
+ const label=String(job||'').replace(/盾戦士/g,'盾騎士').replace(/盗賊/g,'シーフ');
  const key=Object.keys(BATTLE_JOB_SPECIAL_ACTIONS).find(name=>label.includes(name));
  return key?BATTLE_JOB_SPECIAL_ACTIONS[key]:[];
 }
