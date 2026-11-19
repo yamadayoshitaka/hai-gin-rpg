@@ -6050,11 +6050,11 @@ function allyItemStocks(){
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
 }
-function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null,turnEnd=false}={}){
+function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null,turnEnd=false,arrival=false}={}){
  // The objective-turn item slot is only available after actions resolve.
  if(objectiveTurnUI&&(!turnEnd||objectiveTurnUI.engine.status().phase!=='report'))return false;
  const id=String(squadId),commandSquad=String(issuerSquadId??squadId),stocks=allyItemStocks();
- if(!automatic&&(!hasSquadCommander(commandSquad)||!canChangeSquadOrder(commandSquad)))return false;
+ if(!automatic&&(!hasSquadCommander(commandSquad)||(!arrival&&!canChangeSquadOrder(commandSquad))))return false;
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
  const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
  if(!battleReady||finished||!stack||!type||!['heal','squad_buff'].includes(type.kind)||!members.length)return false;
@@ -9839,9 +9839,9 @@ function realtimeSpecialTargets(id,action){
    label:(kind==='bridge'?'🌉 橋':kind==='door'?'🔓 敵門':'🏠 建物')+
     ' '+(index+1)+'（距離'+Math.round(distance(o))+'）'}));
 }
-function issueRealtimeSpecial(id,action,targetId){
+function issueRealtimeSpecial(id,action,targetId,arrival=false){
  if(!battleReady||finished||battleCeremony.locked||
-  !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
+  !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
  const members=realtimeJobMembers(id);
  const jobName=squadPrimaryJob(id);
  if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
@@ -9958,17 +9958,17 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   try{return issueIndividualSquadOrder('move',point);}
   finally{selectedSquadId=prior;}
  },
- onOrder:(id,mode)=>{
+ onOrder:(id,mode,arrival=false)=>{
   if(!battleReady||finished||battleCeremony.locked||
-    !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
+    !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
   try{return issueIndividualSquadOrder(mode);}
   finally{selectedSquadId=prior;}
  },
  getAvailableItems:()=>realtimeItemStocks(),
- onUseItem:(id,itemId)=>useSquadBattleItem(itemId,id),
+ onUseItem:(id,itemId,arrival=false)=>performSquadBattleItem(itemId,id,{arrival}),
  getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
- onSpecial:(id,action,targetId)=>issueRealtimeSpecial(id,action,targetId),
+ onSpecial:(id,action,targetId,arrival=false)=>issueRealtimeSpecial(id,action,targetId,arrival),
  onRoster:()=>document.body.classList.toggle('battle-roster-open'),
  onMenu:()=>$('battleMenuToggle').click(),
  onPause:()=>setBattlePaused(!paused),
