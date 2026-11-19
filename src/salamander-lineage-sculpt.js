@@ -20,7 +20,7 @@ export const SALAMANDER_LINEAGE=Object.freeze({
   bodyDrop:.20,tailLength:1.31,hornHeight:.83,crestHeight:.90}),
  m019:Object.freeze({id:'m019',archetype:'magma-salamander',headWidth:1,
   snoutLength:1,bodyWidth:1,bodyDepth:1,legReach:.72,
-  bodyDrop:.22,tailLength:1.36,hornHeight:1,crestHeight:1})
+  bodyDrop:.315,tailLength:1.66,hornHeight:1,crestHeight:1})
 });
 export const salamanderLineageFor=id=>SALAMANDER_LINEAGE[id]||null;
 
