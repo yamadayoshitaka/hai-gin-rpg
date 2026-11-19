@@ -190,9 +190,9 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     track.append(fill);line.append(symbol,track);metrics.append(line);
    };
    metrics.append(effects);
-   addMeter('hp','♥','HP',row.hp,row.maxHp,rpgHudHealth(row.hp,row.maxHp));
+   addMeter('hp','HP','HP',row.hp,row.maxHp,rpgHudHealth(row.hp,row.maxHp));
    addMeter('attack','⚔','攻撃効率',row.attackPercent,100,row.attackPercent);
-   addMeter('mp','✦','MP',row.mp,row.maxMp,rpgHudHealth(row.mp,row.maxMp));
+   addMeter('mp','MP','MP',row.mp,row.maxMp,rpgHudHealth(row.mp,row.maxMp));
    addMeter('troops','人','生存人数',row.alive,row.total,rpgHudTroopPercent(row.alive,row.total));
    button.append(heading,metrics);
    fragment.append(button);
