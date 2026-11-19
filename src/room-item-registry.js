@@ -3,15 +3,15 @@
  * and who collected it. Never mutate a shared town-building model template.
  */
 export const ROOM_ITEM_TYPES=Object.freeze({
-  healing_potion:Object.freeze({id:'healing_potion',name:'回復薬',kind:'heal',healHp:50,squadHealHp:200,maxStack:99,category:'回復'}),
-  high_potion:Object.freeze({id:'high_potion',name:'上級回復薬',kind:'heal',healHp:150,squadHealHp:600,maxStack:99,category:'回復'}),
-  elixir:Object.freeze({id:'elixir',name:'特級回復薬',kind:'heal',healHp:300,squadHealHp:1500,maxStack:20,category:'回復'}),
+  healing_potion:Object.freeze({id:'healing_potion',name:'援軍の兵符',kind:'heal',healHp:50,squadHealHp:200,maxStack:99,category:'援軍'}),
+  high_potion:Object.freeze({id:'high_potion',name:'精鋭援軍の兵符',kind:'heal',healHp:150,squadHealHp:600,maxStack:99,category:'援軍'}),
+  elixir:Object.freeze({id:'elixir',name:'大援軍の兵符',kind:'heal',healHp:300,squadHealHp:1500,maxStack:20,category:'援軍'}),
   war_banner:Object.freeze({id:'war_banner',name:'勇猛の軍旗',kind:'squad_buff',attack:.20,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の攻撃力+20%／25秒'}),
   aegis_seal:Object.freeze({id:'aegis_seal',name:'守護の護符',kind:'squad_buff',defense:.18,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の被ダメージ-18%／25秒'}),
   wind_scroll:Object.freeze({id:'wind_scroll',name:'疾風の巻物',kind:'squad_buff',speed:.25,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の移動速度+25%／25秒'}),
-  field_bandage:Object.freeze({id:'field_bandage',name:'応急包帯',kind:'heal',healHp:35,squadHealHp:120,maxStack:99,category:'回復'}),
-  medical_kit:Object.freeze({id:'medical_kit',name:'救急箱',kind:'heal',healHp:110,squadHealHp:450,maxStack:60,category:'回復'}),
-  royal_elixir:Object.freeze({id:'royal_elixir',name:'王家の秘薬',kind:'heal',healHp:500,squadHealHp:2300,maxStack:10,category:'回復'}),
+  field_bandage:Object.freeze({id:'field_bandage',name:'予備兵の召集書',kind:'heal',healHp:35,squadHealHp:120,maxStack:99,category:'援軍'}),
+  medical_kit:Object.freeze({id:'medical_kit',name:'援軍の召集書',kind:'heal',healHp:110,squadHealHp:450,maxStack:60,category:'援軍'}),
+  royal_elixir:Object.freeze({id:'royal_elixir',name:'王国援軍令',kind:'heal',healHp:500,squadHealHp:2300,maxStack:10,category:'援軍'}),
   berserk_draught:Object.freeze({id:'berserk_draught',name:'戦鬼の霊薬',kind:'squad_buff',attack:.35,duration:15,maxStack:20,category:'部隊強化',description:'部隊攻撃力+35%／15秒'}),
   steel_wall_scroll:Object.freeze({id:'steel_wall_scroll',name:'鉄壁の巻物',kind:'squad_buff',defense:.28,duration:18,maxStack:20,category:'部隊強化',description:'部隊被ダメージ-28%／18秒'}),
   haste_tonic:Object.freeze({id:'haste_tonic',name:'加速の秘薬',kind:'squad_buff',speed:.40,duration:15,maxStack:20,category:'部隊強化',description:'部隊移動速度+40%／15秒'}),
@@ -59,7 +59,7 @@ export function createRoomItemPlan(structure,roomPlans=[]){
         id:structure.id+':'+room.id+':healing_potion',
         buildingId:structure.id,roomId:room.id,roomName:room.label??room.name??'部屋',
         floor:floor.index,x,y:floor.baseY,z,
-        itemId:'healing_potion',item:'回復薬',quantity:1
+        itemId:'healing_potion',item:'援軍の兵符',quantity:1
       });
       const lootId=treasure[(roomIndex++ + floor.index*3+structure.id.length)%treasure.length];
       const type=ROOM_ITEM_TYPES[lootId];
