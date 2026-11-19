@@ -18,6 +18,8 @@ export function rpgHudIcon(job=''){
 export function rpgHudHealth(hp,maxHp){
  return clamp(Math.round(100*Math.max(0,Number(hp)||0)/Math.max(1,Number(maxHp)||0)),0,100);
 }
+/** Actual live members / original squad capacity, never fabricated UI data. */
+export const rpgHudTroopPercent=(alive,total)=>rpgHudHealth(alive,total);
 export function rpgHudStatus(row){
  if(!(Number(row.alive)>0))return '☠ 全滅';
  if(Number(row.alive)/Math.max(1,Number(row.total)||1)<=.25 ||
@@ -36,7 +38,9 @@ export function rpgHudEffectIcon(effect={}){
  const label=String(effect.label||'');
  const symbol=label.includes('攻')?'⚔':label.includes('防')?'🛡':
   label.includes('速')?'⚡':label.includes('魔')?'✦':
-  label.includes('回')?'✚':label.includes('毒')?'☣':'✧';
+  label.includes('回')?'✚':label.includes('毒')?'☣':
+  label.includes('火')||label.includes('燃')?'🔥':label.includes('凍')?'❄':
+  label.includes('軍')||label.includes('号令')?'📯':'✧';
  return symbol+(effect.kind==='debuff'?'↓':'↑');
 }
 export function rpgHudStateIcon(row){
@@ -149,47 +153,47 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
    heading.append(job,title,status);
    const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
-   const hp=doc.createElement('div');hp.className='rpgSquadHp';
-   const hpBar=doc.createElement('i');hpBar.style.width=rpgHudHealth(row.hp,row.maxHp)+'%';
-   hp.title='HP '+Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0));
-   hp.append(hpBar);
-   const hpValue=doc.createElement('span');hpValue.className='rpgSquadHpValue';
-   hpValue.textContent=Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0));
-   hpValue.title=hp.title;
-   const count=doc.createElement('span');count.className='rpgSquadNumbers';
-   count.textContent=Math.max(0,Number(row.alive)||0)+'/'+Math.max(0,Number(row.total)||0);
-   count.title='残存 '+count.textContent+'人';
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';
-   effects.setAttribute('aria-label','強化・弱体');
+   effects.setAttribute('aria-label','現在の強化・弱体効果');
    const valid=Array.isArray(row.effects)?row.effects:[];
-   for(const fx of valid.slice(0,3)){
+   for(const fx of valid.slice(0,4)){
     const tag=doc.createElement('span');
     tag.className=fx.kind==='debuff'?'debuff':'buff';
     tag.textContent=rpgHudEffectIcon(fx);
-    tag.title=String(fx.description||fx.label||'効果')+
-     (Number.isFinite(fx.seconds)?' '+Math.max(0,Math.ceil(fx.seconds))+'秒':'');
+    const remain=Number.isFinite(fx.seconds)?' · 残り'+Math.max(0,Math.ceil(fx.seconds))+'秒':'';
+    tag.title=String(fx.description||fx.label||'効果')+remain;
     tag.setAttribute('aria-label',tag.title);
     effects.append(tag);
    }
-   if(valid.length>3){
+   if(valid.length>4){
     const more=doc.createElement('span');more.className='more';
-    more.textContent='+'+(valid.length-3);
-    more.title=valid.slice(3).map(fx=>String(fx.label||'効果')).join(' / ');
+    more.textContent='+'+(valid.length-4);
+    more.title=valid.slice(4).map(fx=>String(fx.label||'効果')).join(' / ');
     effects.append(more);
    }
-   const attack=doc.createElement('div');attack.className='rpgSquadAttackMeter';
-   const attackBar=doc.createElement('i');
-   attackBar.style.width=clamp(Number(row.attackPercent)||0,0,100)+'%';
-   attack.title='攻撃力 '+Math.round(Number(row.attackPercent)||0)+'%（HP低下に連動、防御・移動は変化なし）';
-   const attackLabel=doc.createElement('span');attackLabel.textContent='⚔';
-   attack.append(attackBar,attackLabel);
-   const mana=doc.createElement('div');mana.className='rpgSquadMpMeter';
-   const manaBar=doc.createElement('i');
-   manaBar.style.width=rpgHudHealth(row.mp,row.maxMp)+'%';
-   mana.title='MP '+Math.round(Number(row.mp)||0)+'/'+Math.round(Number(row.maxMp)||0);
-   const manaLabel=doc.createElement('span');manaLabel.textContent='MP';
-   mana.append(manaBar,manaLabel);
-   metrics.append(hp,hpValue,count,effects,attack,mana);
+   // Read-only visual meters: all four values are drawn from the same actual
+   // combat row. Exact values remain accessible on the card/ARIA tooltip.
+   const addMeter=(kind,glyph,label,current,max,percentage)=>{
+    const value=clamp(Math.round(Number(percentage)||0),0,100);
+    const line=doc.createElement('div');line.className='rpgSquadMeterLine rpgSquadMeter-'+kind;
+    line.dataset.metric=kind;
+    line.setAttribute('role','meter');line.setAttribute('aria-valuemin','0');
+    line.setAttribute('aria-valuemax','100');line.setAttribute('aria-valuenow',String(value));
+    const actual=Math.max(0,Math.ceil(Number(current)||0));
+    const capacity=Math.max(0,Math.ceil(Number(max)||0));
+    line.title=label+' '+actual+'/'+capacity;
+    line.setAttribute('aria-label',line.title);
+    const symbol=doc.createElement('span');symbol.className='rpgSquadMeterGlyph';
+    symbol.textContent=glyph;symbol.setAttribute('aria-hidden','true');
+    const track=doc.createElement('span');track.className='rpgSquadMeterTrack';
+    const fill=doc.createElement('i');fill.style.width=value+'%';
+    track.append(fill);line.append(symbol,track);metrics.append(line);
+   };
+   metrics.append(effects);
+   addMeter('hp','♥','HP',row.hp,row.maxHp,rpgHudHealth(row.hp,row.maxHp));
+   addMeter('attack','⚔','攻撃効率',row.attackPercent,100,row.attackPercent);
+   addMeter('mp','✦','MP',row.mp,row.maxMp,rpgHudHealth(row.mp,row.maxMp));
+   addMeter('troops','人','生存人数',row.alive,row.total,rpgHudTroopPercent(row.alive,row.total));
    button.append(heading,metrics);
    fragment.append(button);
   }
