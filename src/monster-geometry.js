@@ -23,18 +23,18 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js?v=m019-sprawl-tail-v5-20261120';
+ from './magma-salamander-sculpt.js?v=m019-lateral-elbow90-v6-20261120';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
- M019_SPRAWL_KNEE_X,
+ M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,M019_SHOULDER_LOCAL_Y,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
- from './m019-hero-sculpt.js?v=m019-sprawl-tail-v5-20261120';
+ from './m019-hero-sculpt.js?v=m019-lateral-elbow90-v6-20261120';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-sprawl-tail-v5-20261120';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-lateral-elbow90-v6-20261120';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -1458,8 +1458,10 @@ if(salamanderLineage){
      // and shoulder axes; never shorten a leg by dropping its foot only.
      leg.position.y*=salamanderLineage.legReach;
      if(magmaSalamander){
-       // Reparent to lowered torso, but preserve the foot on world Y=0.
-       leg.position.y+=M019_BODY_DROP;
+       // Shoulder joint is INSIDE the side wall; upper skin starts right
+       // at this hinge and therefore follows it during swing.
+       leg.position.y=M019_SHOULDER_LOCAL_Y;
+       leg.userData.m019AnatomicalSocket=true;
      }
      leg.scale.set(magmaSalamander?M019_LIMB_WIDTH:1.16,
        salamanderLineage.legReach,
@@ -1469,6 +1471,14 @@ if(salamanderLineage){
      if(magmaSalamander){
        leg.userData.m019ShortPlantedLeg=true;
        leg.userData.m019LegReach=salamanderLineage.legReach;
+       leg.userData.m019RightAngleUpperArm=true;
+       // A torso-owned, embedded fascia joins each shoulder and hip
+       // to the upper limb; it cannot float away with an animated knee.
+       const fascia=g.bridge(torso,'skin',
+         [side*.141,1.256,fore>0?1.035:-1.025],
+         [side*.257,1.260,fore>0?1.035:-1.025],.118,.092);
+       fascia.name='m019-shoulder-hip-fascia-'+name;
+       fascia.userData.m019TorsoAnchoredSocket=true;
      }
    }
    if(felineMaster){
@@ -1553,7 +1563,8 @@ if(salamanderLineage){
    // Counter-translate hock so the planted paw bind height is unchanged.
    const distal=g.group('lower'+name,
      s.id==='m001'?[0,fore>0?-.180:-.200,fore>0?-.038:.065]:
-     magmaSalamander?[side*M019_SPRAWL_KNEE_X,-.065,.015]:
+     magmaSalamander?[side*M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,
+       fore>0?-.012:.022]:
        [0,-.065,.015],leg);
    if(magmaSalamander){
      distal.userData.m019SprawledKnee=true;
