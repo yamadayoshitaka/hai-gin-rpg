@@ -196,7 +196,7 @@ export function createRealtimeBattleCommands({
   }
   const applied=onMove(selectedId,point);
   $('realtimeMapMessage').textContent=applied?'移動命令を発令しました。':'現在は移動を指示できません。';
-  if(applied){arrivalActions.delete(String(selectedId));showActionSheet(selectedId,point);}
+  if(applied){deploymentActions.delete(String(selectedId));arrivalActions.delete(String(selectedId));showActionSheet(selectedId,point);}
   return applied;
  }
  let pointer=null;
