@@ -22,7 +22,7 @@ export function createRealtimeBattleCommands({
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
- onSelect=()=>{},onFocus=()=>{},onRoster=()=>{},onMenu=()=>{},
+ onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false
 }={}){
@@ -480,7 +480,7 @@ export function createRealtimeBattleCommands({
   const pin=radarHitPin(radarPins,px,py);
   if(!pin)return;
   if(pin.team===0)showSquadControls(pin.id);
-  else onFocus(pin.id,1);
+  else onEnemySelect(pin.id);
  }
  radarCanvas.addEventListener('click',event=>{
   if(!started)return;
