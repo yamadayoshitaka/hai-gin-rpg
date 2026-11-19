@@ -90,6 +90,18 @@ small{font-size:11px}strong{font-weight:700}
  <p id="releaseParityChecked" class="muted">照合時刻を確認中…</p>
  <div class="links"><a id="releaseParityDiff" href="https://github.com/yamadayoshitaka/hai-gin-rpg/commits/main" target="_blank" rel="noopener noreferrer" hidden>mainと公開Pagesの差分コミットを確認</a></div>
 </section>
+<section class="panel" id="qualityQuickPreview" aria-label="人物・オブジェクトの3D確認リンク">
+ <h2>人物・オブジェクトを今すぐ確認</h2>
+ <p>GitHub APIが403でも3D表示画面へ直接移動できます。公開版はmainへ採用済みのモデル、PR版は未承認の試作品です。比較画面ではPRを選んでください。</p>
+ <div class="links">
+  <a href="./face-mesh-studio.html?gender=female&amp;view=crown">女性・頭頂部3D</a>
+  <a href="./face-mesh-studio.html?gender=male&amp;view=crown">男性・頭頂部3D</a>
+  <a href="./world-quality-preview.html?object=castle_001">オブジェクト3D</a>
+  <a href="./batch-pr-preview.html?group=faceHair&amp;pr=714">顔髪PR #714と本編を比較</a>
+  <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/pull/714" target="_blank" rel="noopener noreferrer">PR #714の変更と検査</a>
+ </div>
+ <p class="muted">画面が表示されない場合はブラウザのエラーを確認してください。プレビュー表示だけでは品質合格・本編反映を意味しません。</p>
+</section>
 <section class="panel" id="faceExpressionPanel" aria-label="顔モデルの表情を選択">
  <h2>顔・髪｜表情を選んで3D確認</h2>
  <p class="muted">実際のモデル画面に用意された22種類の表情を切り替えます。表情を選ぶだけではゲームの配役・表情設定は変更されません。</p>
