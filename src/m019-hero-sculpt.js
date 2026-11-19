@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /**
  * m019 — actual game mesh of the approved 2026-11-19 four-view concept:
  * long narrow lava lizard, tiny widely spaced planted limbs, whip-like
@@ -6,7 +8,7 @@
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-rounded-volcanic-muscles-v8-20261120';
+export const M019_HERO_REVISION='m019-seamless-two-bone-limb-v9-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -118,67 +120,114 @@ export const M019_SPRAWL_KNEE_Y=-.085;
 export const M019_SPRAWL_FOOT_X=.007;
 export const M019_SPRAWL_FOOT_Y=-.650;
 export const M019_SHOULDER_LOCAL_Y=1.26;
+/**
+ * One real continuous skin covers shoulder -> elbow -> shin -> ankle.
+ * Two bones (one bound to shoulder and one to knee) deform the SAME mesh,
+ * so no disconnected black shin-post can exist at any gait frame.
+ * Unlike v8, the glowing fissure is inset at the shoulder and cannot extend
+ * past the solid muscle as a detached thin orange arm.
+ */
 export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'}={}){
  const sign=side<0?-1:1;
  const z=fore?-.012:.022;
- // The root is at the limb pivot, buried in the torso sidewall.
- // The round socket stays covered even during leg swing.
- // A true round tubular muscle follows the lateral bone axis. The old
- // limbLoft builds rings in horizontal XZ planes (vertical-leg topology),
- // collapsing the sideways limb into a visually flat sheet.
- const muscleRadius=fore?.163:.190;
- const upper=g.tube(leg,'skin',[
-  [0,.040,z],
-  [sign*.095,.030,z+.012],
-  [sign*.245,-.004,z+.024],
-  [sign*.435,-.038,z+.016],
-  [sign*M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,z]
- ],muscleRadius,{
-  name:'m019-scaled-upper-limb-'+name,capEnds:true,
-  taper:fore?.48:.43
+ const kneeX=sign*M019_SPRAWL_KNEE_X;
+ const kneeY=M019_SPRAWL_KNEE_Y;
+ const footY=kneeY+M019_SPRAWL_FOOT_Y;
+ const points=[
+  [0,.035,z], [sign*.090,.038,z+.012],
+  [sign*.215,.028,z+.023], [sign*.370,-.004,z+.020],
+  [sign*.535,-.050,z+.010], [kneeX,kneeY,z],
+  [kneeX,kneeY-.120,z], [kneeX,kneeY-.270,z+.008],
+  [kneeX,kneeY-.440,z+.032], [kneeX,footY,z+.095]
+ ];
+ const path=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const baseRadius=fore?.194:.210;
+ const raw=g.tube(leg,'skin',points,baseRadius,{
+  name:'m019-seamless-skin-'+name,capEnds:true
  });
- upper.userData.m019TrueRoundLimb=true;
- upper.userData.m019MuscleRadius=muscleRadius;
- upper.userData.m019CrossSectionsPerpendicularToAxis=true;
- upper.userData.m019ContinuousLimb=true;
- upper.userData.m019HorizontalThigh=true;
- upper.userData.m019SprawledOutward=true;
- // Crack tracks cling to the upper surface of the rounded moving muscle.
- // Only two emissive seams on near LOD; one on mobile low LOD.
- const branchCount=detail==='low'?1:2;
- for(let vein=0;vein<branchCount;vein++){
-  const rootX=vein===0?.12:.25;
-  const surface=g.tube(leg,'accent',[
-   [sign*rootX,.142-(vein*.035),z+.024],
-   [sign*(rootX+.11),.114-(vein*.027),z+.038],
-   [sign*(rootX+.205),.078-(vein*.024),z+.005],
-   [sign*(rootX+.286),.048-(vein*.019),z+.032]
-  ],detail==='low'?.007:.010,{
+ const geometry=raw.geometry;
+ const attr=geometry.getAttribute('position');
+ const tubularSegments=geometry.parameters.tubularSegments;
+ const radialSegments=geometry.parameters.radialSegments;
+ const stride=radialSegments+1;
+ const ringCount=tubularSegments+1;
+ const regularVertices=ringCount*stride;
+ if(attr.count!==regularVertices+2)throw Error('m019 limb requires closed tube rings');
+ // Gradual anatomical radius changes, never a cylinder or disconnected post.
+ const radiusScale=t=>{
+  if(t<.16)return 1.08+.05*Math.sin(t/.16*Math.PI);
+  if(t<.45)return 1.08-(t-.16)*1.15;
+  if(t<.63)return .7465-(t-.45)*1.14;
+  if(t<.85)return .5413-(t-.63)*.33;
+  return .4687-(t-.85)*.16;
+ };
+ const skinIndices=[],skinWeights=[];
+ const smooth=t=>{
+  const v=Math.max(0,Math.min(1,t));return v*v*(3-2*v);
+ };
+ for(let row=0;row<ringCount;row++){
+  const t=row/tubularSegments,center=path.getPointAt(t);
+  const radius=radiusScale(t);
+  // Smooth skin weights cross the elbow. Both bones influence its rings,
+  // rather than rigidly splitting upper muscle from the lower shin.
+  const kneeWeight=smooth((t-.365)/.20);
+  for(let j=0;j<stride;j++){
+   const i=row*stride+j;
+   attr.setXYZ(i,
+    center.x+(attr.getX(i)-center.x)*radius,
+    center.y+(attr.getY(i)-center.y)*radius,
+    center.z+(attr.getZ(i)-center.z)*radius);
+   skinIndices.push(0,1,0,0);
+   skinWeights.push(1-kneeWeight,kneeWeight,0,0);
+  }
+ }
+ // Cap centres are part of the very same mesh and follow the right bones.
+ for(const w of [0,1]){
+  skinIndices.push(0,1,0,0);
+  skinWeights.push(1-w,w,0,0);
+ }
+ geometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(skinIndices,4));
+ geometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(skinWeights,4));
+ attr.needsUpdate=true;
+ geometry.computeVertexNormals();
+ geometry.computeBoundingSphere();
+ const shoulderBone=new THREE.Bone();
+ shoulderBone.name='m019-skin-shoulder-'+name;
+ const elbowBone=new THREE.Bone();
+ elbowBone.name='m019-skin-knee-'+name;
+ leg.add(shoulderBone);
+ distal.add(elbowBone);
+ leg.remove(raw);
+ const skin=new THREE.SkinnedMesh(geometry,raw.material);
+ skin.name='m019-seamless-skin-'+name;
+ skin.castShadow=true;skin.receiveShadow=true;skin.frustumCulled=false;
+ skin.userData={...raw.userData,
+  m019ContinuousLimb:true,m019TrueRoundLimb:true,
+  m019CrossSectionsPerpendicularToAxis:true,
+  m019WholeLegClosedSurface:true,m019SkinningBones:2,
+  m019MuscleRadius:baseRadius,m019HorizontalThigh:true,
+  m019VerticalShin:true,m019SprawledOutward:true};
+ leg.add(skin);
+ g.root.updateMatrixWorld(true);
+ skin.bind(new THREE.Skeleton([shoulderBone,elbowBone]));
+ // Heat stays on the proximal muscle, not a naked glowing stick from the
+ // torso to a disconnected shin. Low LOD keeps one very short fissure.
+ const veins=detail==='low'?1:2;
+ for(let vein=0;vein<veins;vein++){
+  const offset=vein*.024;
+  const fissure=g.tube(leg,'accent',[
+   [sign*.045,.235-offset,z+.017],
+   [sign*.107,.232-offset,z+.043],
+   [sign*.169,.217-offset,z+.020],
+   [sign*.225,.189-offset,z+.035]
+  ],detail==='low'?.0045:.0065,{
    name:'m019-limb-molten-crack-'+name+'-'+vein,
    glow:detail!=='low'
   });
-  surface.userData.m019MoltenFissure=true;
+  fissure.userData.m019MoltenFissure=true;
+  fissure.userData.m019InsetHeatVein=true;
  }
- // Knee joint is exactly the upper tip; overlapping first and last rings
- // make the seam tolerant of a small walk / run rotation.
- const lower=g.limbLoft(distal,'skin',[
-  {x:0,y:.058,z,rx:.074,rz:.078},
-  {x:0,y:-.070,z,rx:.076,rz:.081},
-  {x:sign*.006,y:-.30,z,rx:.067,rz:.070},
-  {x:sign*.010,y:-.50,z,rx:.056,rz:.062},
-  {x:sign*M019_SPRAWL_FOOT_X,y:M019_SPRAWL_FOOT_Y,z,
-   rx:.046,rz:.052}
- ],{name:'m019-scaled-lower-limb-'+name});
- lower.userData.m019ContinuousLimb=true;
- lower.userData.m019VerticalShin=true;
- lower.userData.m019SprawledOutward=true;
- // A physical skin overlap at the hinge rotates with the distal bone.
- if(detail!=='low'){
-  const fascia=g.bridge(distal,'skin',
-   [0,.065,z],[0,-.105,z],.081,.075);
-  fascia.name='m019-elbow-fascia-'+name;
- }
- return {upper,lower};
+ return {upper:skin,lower:skin};
 }
 
 /** Four narrow toes at the END of the vertical shin, not a free ankle. */
