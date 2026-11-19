@@ -681,9 +681,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ // Reserve some crown follicles for the true apex: vertex order on imported
+ // heads can otherwise concentrate low-discrepancy samples on the rear ring.
+ // Use only existing scalp vertices, never a synthetic floating root.
+ const apexCrownRoots=pools.crown.filter(q=>
+  (q.p.y-box.min.y)/d.y>.955);
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const pool=zone==='crown'&&index%4===0&&apexCrownRoots.length?
+   apexCrownRoots:rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
