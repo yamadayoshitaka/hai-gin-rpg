@@ -16,4 +16,9 @@ export const BATTLE_JOB_SQUADS=Object.freeze([
 const ENGINE_NAMES=Object.freeze({'盾戦士':'盾騎士','盗賊':'シーフ','槍兵':'騎士'});
 export const displayBattleJobName=name=>ENGINE_NAMES[String(name||'')]||String(name||'兵士');
 export const battleSquadJob=(id)=>BATTLE_JOB_SQUADS[Number(id)]||null;
+export const engineBattleJobNameForSquad=id=>{
+ const job=battleSquadJob(id);
+ return job?.id==='shield'?'盾戦士':job?.id==='thief'?'盗賊':
+  job?.id==='lancer'?'槍兵':job?.job;
+};
 export const battleSquadLabel=(id,job)=>'第'+(Number(id)+1)+'隊｜'+displayBattleJobName(job||battleSquadJob(id)?.job);
