@@ -177,3 +177,24 @@ test('no standalone move or rally popup; tactics, buffs and inventory all need C
  assert.match(game,/battleTreasureAcquiredLedger\.set\(id/);
  assert.match(game,/window\.getBattleSharedItemQA/);
 });
+
+test('movement uses person/object/position target and items/specials stay in the main command dock',()=>{
+ const ui=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(ui,/<label for="realtimeTargetKind">向かう対象<\/label>/);
+ assert.match(ui,/<option value="people">👤 人物へ<\/option>/);
+ assert.match(ui,/<option value="objects">🏠 物・建物へ<\/option>/);
+ assert.match(ui,/<option value="point">📍 指定位置へ<\/option>/);
+ assert.match(ui,/const destination=selectedMovementTarget\(\)/);
+ assert.match(ui,/if\(point\)success=onMove\(id,point\)/);
+ assert.match(ui,/if\(chosen==='support'\)\{\s*closeMap\(\);showSquadControls\(id\);setDockTab\('items'\)/);
+ assert.match(ui,/if\(chosen==='special'\)\{\s*closeMap\(\);showSquadControls\(id\);setDockTab\('strategy'\)/);
+ assert.match(ui,/\$\('realtimeMapManageItems'\)\.onclick=\(\)=>\{[\s\S]*?setDockTab\('items'\)/);
+ assert.match(ui,/\$\('realtimeConfirmStrategy'\)\.onclick=confirmDockStrategy/);
+ assert.match(ui,/\$\('realtimeConfirmItem'\)\.onclick=confirmInlineItem/);
+ assert.match(ui,/\$\('realtimeConfirmRally'\)\.onclick=confirmInlineRally/);
+ assert.match(game,/roomItemRegistry\.pickup\(loot\.id,a\.id\)/);
+ assert.match(game,/recordBattleTreasure\(a,loot\)/);
+ assert.match(game,/collected:battleTreasureAcquiredLedger\.get\(id\)\|\|0/);
+ assert.match(game,/getSharedItems:\(\)=>realtimeSharedItems\(\)/);
+});

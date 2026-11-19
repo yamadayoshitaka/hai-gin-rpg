@@ -75,10 +75,10 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeStrategyTargets" role="group" aria-label="作戦対象：人物・物・位置">
-    <label for="realtimeTargetKind">対象</label>
+    <label for="realtimeTargetKind">向かう対象</label>
     <select id="realtimeTargetKind" aria-label="対象の種類">
-     <option value="">対象なし</option><option value="people">👤 人物</option>
-     <option value="objects">🏠 物・建物</option><option value="point">📍 地図の位置</option>
+     <option value="">対象なし</option><option value="people">👤 人物へ</option>
+     <option value="objects">🏠 物・建物へ</option><option value="point">📍 指定位置へ</option>
     </select>
     <select id="realtimeTargetChoice" hidden aria-label="向かう人物・物を選択"></select>
     <div id="realtimeInlineMapArea" hidden>
@@ -494,7 +494,7 @@ export function createRealtimeBattleCommands({
   const all=items.reduce((sum,item)=>sum+Math.max(0,Number(item.quantity)||0),0);
   const acquired=items.reduce((sum,item)=>sum+Math.max(0,Number(item.collected)||0),0);
   $('realtimeInlineItemStatus').textContent='全軍共有 '+all+'個／戦闘取得累計 '+acquired+
-   '個。所持品を選び「アイテム使用を確定」で消費します（距離制限なし）。';
+   '個。取得品は所持数に加算済みです。対象を選び「アイテム使用を確定」で消費します（距離制限なし）。';
  }
   function showSpecialTargets(origin,action,page=0){
   const node=actionPanel(origin,'Special');
@@ -673,7 +673,7 @@ export function createRealtimeBattleCommands({
   if(success){
    if(entry?.command)preferredActions.set(id,entry.attackKind?'attack_'+entry.attackKind:entry.command);
    if(entry?.special)preferredActions.set(id,'special_'+entry.special);
-   const label=entry?.special?'固有作戦':entry?.command?'選択作戦':'対象への移動';
+   const label=entry?.special?'固有作戦':entry?.command?'選択作戦':'対象への進軍';
    $('realtimeTargetMessage').textContent='✅ '+label+'を確定';
    pendingStrategy=null;closeSquadControls();
   }else $('realtimeTargetMessage').textContent=
@@ -696,7 +696,7 @@ export function createRealtimeBattleCommands({
    String(item.id)===itemId&&item.usable!==false&&Number(item.quantity)>0);
   if(!valid){refreshInlineItems(true);return false;}
   const success=onSharedItem(itemId,squadId);
-  if(success){closeSquadControls();return true;}
+  if(success){refreshInlineItems(true);closeSquadControls();return true;}
   $('realtimeInlineItemStatus').textContent='使用できません。対象のHP／人数、軍師の命令制限を確認してください。';
   return false;
  }
@@ -804,7 +804,7 @@ export function createRealtimeBattleCommands({
   $('realtimeBattleMapOverlay').hidden=false;
   $('realtimeMapClose').hidden=next==='deploy';
   $('realtimeStart').hidden=next!=='deploy';
-  $('realtimeMapTitle').textContent=next==='deploy'?'開戦前の初期配置':'移動先を選択';
+  $('realtimeMapTitle').textContent=next==='deploy'?'開戦前の初期配置':'向かう人物・物・位置を選択';
   $('realtimeMapPlanningClock').hidden=next==='deploy';
   $('realtimeMapHelp').textContent=next==='deploy'?
    '◀ ▶で隊を切替え、隊長の番号ピンを目印に味方陣地へ配置。敵隊は開戦後に表示します。':
@@ -915,8 +915,12 @@ export function createRealtimeBattleCommands({
   button.addEventListener('click',()=>{
    const id=String(selectedId||'');if(!id)return;
    const chosen=button.dataset.actionAfterMove;
-   if(chosen==='support'){showSupportChoices('map');return;}
-   if(chosen==='special'){showSpecialChoices('map');return;}
+   if(chosen==='support'){
+    closeMap();showSquadControls(id);setDockTab('items');return;
+   }
+   if(chosen==='special'){
+    closeMap();showSquadControls(id);setDockTab('strategy');showSpecialChoices('dock');return;
+   }
    if(chosen==='charge'){
     hideContextChoices();$('realtimeMapAttackChoices').hidden=false;
     renderActionSelection();
@@ -984,7 +988,7 @@ export function createRealtimeBattleCommands({
  $('realtimeMapManageItems').onclick=()=>{
   const targetId=String(selectedId||'');
   if(mode==='deploy')return;
-  closeMap();closeSquadControls();onManageItems(targetId);
+  closeMap();showSquadControls(targetId);setDockTab('items');
  };
  $('realtimeManageItems').onclick=()=>{
   const targetId=String(selectedId||'');
