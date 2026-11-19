@@ -83,7 +83,9 @@ function actualScalpCandidates(geo,box){
    if(zone.startsWith('back'))return depth<-.04&&height>=.61;
    if(frontal)return depth>.025&&height>.87&&height<.995;
    if(temple)return Math.abs((q.p.x-center.x)/d.x)>.15&&height>.80&&height<.96;
-   return height>.80;
+   // Crown fallback must remain on the actual upper rear scalp;
+   // forehead vertices produce forward-pointing roots and a bare apex.
+   return height>.825&&depth<.21;
   });
   if(candidates.length) pools[zone]=candidates;
   else{
