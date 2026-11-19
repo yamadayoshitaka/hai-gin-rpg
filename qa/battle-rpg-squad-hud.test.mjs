@@ -91,7 +91,7 @@ test('all squads use the same compact icon + meter + effect row, with five per p
  assert.equal(rpgHudStateIcon({alive:1,total:10,hp:10,maxHp:100}),'🆘');
  assert.equal(rpgHudStateIcon({alive:10,total:10,hp:100,maxHp:100,mode:'move'}),'➤');
  assert.match(js,/const pageSize=expanded\[team\]\?Math\.max\(1,own\.length\):5/);
- assert.match(js,/metrics\.append\(hp,hpValue,count,effects\)/);
+ assert.match(js,/metrics\.append\(hp,hpValue,count,effects,attack,mana\)/);
  assert.match(js,/for\(const fx of valid\.slice\(0,3\)\)/);
  assert.match(css,/\.rpgSquadMetrics\{display:flex/);
  assert.match(css,/\.rpgSquadEffects \.debuff/);
