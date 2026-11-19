@@ -317,3 +317,17 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeSquadRadar .realtimeRadarLegend{font-size:7px}
  #realtimeBattleDock #realtimePlanSeconds{font-size:9px}
 }
+
+/* Commander commands are not soldier inventory actions. All three fit on row 4. */
+#realtimeBattleDock #realtimeSupport{grid-column:1;grid-row:4}
+#realtimeBattleDock #realtimeRally{grid-column:2/4;grid-row:4;
+ background:#3b5664;border-color:#e3c77d}
+#realtimeBattleDock #realtimeSpecial{grid-column:4;grid-row:4}
+#realtimeBattleDock #realtimeDockRallyChoices{grid-column:1/-1;grid-row:5}
+#realtimeBattleDock #realtimeDockRallyChoices button[aria-pressed="true"]{
+ background:#335f52;border-color:#f4df92}
+@media(max-width:600px){
+ #realtimeBattleDock #realtimeSupport,
+ #realtimeBattleDock #realtimeRally,
+ #realtimeBattleDock #realtimeSpecial{font-size:10px;min-height:35px;padding:2px}
+}
