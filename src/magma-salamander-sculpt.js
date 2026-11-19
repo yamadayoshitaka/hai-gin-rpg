@@ -8,7 +8,7 @@
  * All pieces attach to existing movable parents. No floating decoration,
  * no replacement of another species, no expensive effect sprites at LOD low.
  */
-export const MAGMA_SALAMANDER_REVISION='m019-wolf-donor-salamander-v3-hero-20261119';
+export const MAGMA_SALAMANDER_REVISION='m019-long-low-molten-salamander-v3-20261119';
 export const MAGMA_SALAMANDER_LEG_REACH=.72;
 export const MAGMA_SALAMANDER_BODY_DROP=.22;
 
