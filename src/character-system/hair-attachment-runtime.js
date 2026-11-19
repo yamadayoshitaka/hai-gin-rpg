@@ -195,7 +195,11 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
   a.fromBufferAttribute(positions,tri);
   b.fromBufferAttribute(positions,tri+1);
   c.fromBufferAttribute(positions,tri+2);
-  normal.subVectors(b,a).cross(tmp.subVectors(c,a)).normalize();
+  normal.subVectors(b,a).cross(tmp.subVectors(c,a));
+  // Degenerate scalp triangles have no reliable normal or tangent: emitting
+  // ribbons from them creates NaN coordinates and visible crown spikes.
+  if(normal.lengthSq()<1e-12)continue;
+  normal.normalize();
   // The geometry can have both clockwise and counterclockwise source faces.
   p.copy(a).add(b).add(c).multiplyScalar(1/3);
   if(normal.dot(tmp.copy(p).sub(center))<0)normal.negate();
@@ -214,8 +218,13 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
    if(direction.lengthSq()<.001){
     direction.set(0,0,-1).addScaledVector(normal,normal.z);
    }
+   // The backup direction may also align with the normal at the crown.
+   // Skip that fiber rather than upload invalid vertices to WebGL.
+   if(direction.lengthSq()<1e-8)continue;
    direction.normalize();
-   widthAxis.crossVectors(normal,direction).normalize();
+   widthAxis.crossVectors(normal,direction);
+   if(widthAxis.lengthSq()<1e-8)continue;
+   widthAxis.normalize();
    // A sparse, almost-flat scalp was perceived as a bald head in the
    // 1000v1000 crowd. Keep the same triangle count but give each genuine
    // root fiber a readable swept silhouette at mid distance.
