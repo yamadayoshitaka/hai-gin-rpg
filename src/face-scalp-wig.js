@@ -92,7 +92,11 @@ function actualScalpCandidates(geo,box){
    if(rear)throw Error('Missing posterior scalp: '+zone);
    const sameSide=all.filter(q=>onSide(q)&&
     (zone==='crown'?(q.p.y-box.min.y)/d.y>.80:true));
-   // Never grow crown fibres from cheek, jaw or nape vertices: those roots\n   // create a visible bald wedge and floating locks when the source topology\n   // lacks a dedicated apex strip. Fail QA rather than emit corrupt geometry.\n   if(zone==='crown'&&!sameSide.length)throw Error('Missing superior crown scalp roots');\n   pools[zone]=sameSide.length?sameSide:all;
+   // Never grow crown fibres from cheek, jaw or nape vertices: those roots
+   // create a visible bald wedge and floating locks when the source topology
+   // lacks a dedicated apex strip. Fail QA rather than emit corrupt geometry.
+   if(zone==='crown'&&!sameSide.length)throw Error('Missing superior crown scalp roots');
+   pools[zone]=sameSide.length?sameSide:all;
   }
  }
  return {pools,all};
