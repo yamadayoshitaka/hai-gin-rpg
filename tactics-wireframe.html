@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-inline-command1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-two-meters-and-taps2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-mobile-choice2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-two-meters-and-taps2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,9 +887,9 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-target-action1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-mobile-choice2';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
-import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-priest-support1';
+import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-shield-front2';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-two-meters-and-taps2';
@@ -9929,6 +9929,17 @@ function realtimeItemStocks(){
 }
 function realtimeSpecialTargets(id,action){
  const members=realtimeJobMembers(id),jobs=new Set(members.map(u=>u.jobId));
+ if(action==='frontline_guard'){
+  if(!jobs.has('shield'))return [];
+  const origin=squadCenter(id,0);
+  const distance=p=>origin?Math.hypot(p.x-origin.x,p.z-origin.z):Infinity;
+  return squadIds.map(String).map(sid=>{
+   const center=squadCenter(sid,0);
+   const alive=(massSim?.units??actors).some(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0);
+   return center&&alive?{id:sid,x:center.x,z:center.z,
+    label:'🛡 '+squadName(sid)+'の前衛を防御（'+Math.round(distance(center))+'マス）'}:null;
+  }).filter(Boolean).sort((a,b)=>distance(a)-distance(b));
+ }
  if(action==='heal_ally'||action==='revive_ally'){
   const priests=members.filter(u=>u.jobId==='priest');
   if(!priests.length)return [];
@@ -9952,10 +9963,12 @@ function realtimeSpecialTargets(id,action){
    .filter(route=>route.team===0&&['window','roof'].includes(route.kind)&&
     (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage'))&&
     Number.isInteger(route.access?.x)&&Number.isInteger(route.access?.z)&&
-    !massSim._highGroundClaims?.has(route.buildingIndex+':0')&&
+    (!massSim._highGroundClaims?.has(route.buildingIndex+':0')||
+      members.some(unit=>unit.highGroundRouteIndex===route.index))&&
     members.some(unit=>unit.hp>=unit.maxHp*.35&&!unit.mountId&&
      (route.kind==='roof'?unit.jobId==='ninja':['archer','mage'].includes(unit.jobId))&&
-     (massSim._highGroundFlows?.[route.index]?.[unit.z*massSim.width+unit.x]??0x3fffffff)<0x3fffffff))
+     (unit.highGroundRouteIndex===route.index||
+      (massSim._highGroundFlows?.[route.index]?.[unit.z*massSim.width+unit.x]??0x3fffffff)<0x3fffffff)))
    .map(route=>({id:String(route.index),x:route.access.x,z:route.access.z,
      label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+route.buildingIndex+
       '｜X'+route.access.x+' Z'+route.access.z}))
@@ -10007,6 +10020,32 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
  const jobName=squadPrimaryJob(id);
  if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
  if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)))return false;
+ if(action==='frontline_guard'){
+  if(!members.some(u=>u.jobId==='shield'))return false;
+  const anchor=squadCenter(targetId,0);
+  if(!anchor)return false;
+  const enemies=(massSim?.units??actors).filter(u=>u.team===1&&u.hp>0&&u.alive!==false&&
+   Number.isFinite(u.x)&&Number.isFinite(u.z));
+  enemies.sort((a,b)=>Math.hypot(a.x-anchor.x,a.z-anchor.z)-
+   Math.hypot(b.x-anchor.x,b.z-anchor.z));
+  const enemy=enemies[0];
+  const dx=enemy?enemy.x-anchor.x:(anchor.x<WORLD_SIZE/2?1:-1);
+  const dz=enemy?enemy.z-anchor.z:0;
+  const length=Math.hypot(dx,dz)||1;
+  // Step forward toward the incoming enemy, rather than wait behind the allies.
+  const point=turnLegalPoint(Math.round(anchor.x+dx/length*4),
+   Math.round(anchor.z+dz/length*4))||
+   turnLegalPoint(Math.round(anchor.x),Math.round(anchor.z));
+  if(!point)return false;
+  const before=selectedSquadId;selectedSquadId=String(id);
+  let moved=false;
+  try{moved=issueIndividualSquadOrder('move',point);}
+  finally{selectedSquadId=before;}
+  if(!moved)return false;
+  battleCeremony.showOrder('🛡 '+squadName(id)+'：前衛防御',
+   squadName(targetId)+'の前方に展開、到着後に防御陣形で攻撃を受け止める');
+  return {followup:'defend',point};
+ }
  if(action==='heal_ally'||action==='revive_ally'){
   const group=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(targetId)&&!u.isStrategist);
   const candidates=action==='heal_ally'?group.filter(u=>u.hp>0&&u.alive!==false&&u.hp<u.maxHp):
@@ -10059,9 +10098,11 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
  }
  if(action==='high_ground'){
   const routeIndex=Number(targetId);
-  const success=massSim?.orderSquadHighGround(id,routeIndex,0)===true;
+  const already=massSim?.units?.some(u=>u.team===0&&String(u.squadId)===String(id)&&
+   u.hp>0&&u.highGroundRouteIndex===routeIndex);
+  const success=Boolean(already)||massSim?.orderSquadHighGround(id,routeIndex,0)===true;
   if(!success)return false;
-  if(massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
+  if(!already&&massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
   markRibbonOrderIssued(id);
   battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃','既存の階段と窓を使用');
   return true;
