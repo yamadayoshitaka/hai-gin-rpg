@@ -9788,16 +9788,27 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  worldSize:WORLD_SIZE,
  getMapBackground:()=>miniBase,
  getSquads:()=>{
+  // Group the real roster in one pass, rather than scanning all soldiers
+  // separately for each of ten squads on every UI refresh.
   const leaders=buildBattleSquadLeaderPins(squadRoster,{team:0,ids:squadIds});
+  const groups=new Map(squadIds.map(id=>[String(id),
+   {alive:0,total:0,hp:0,maxHp:0,jobs:new Map()}]));
+  for(const unit of squadRoster){
+   if(unit.team!==0)continue;
+   const stat=groups.get(String(unit.squadId));if(!stat)continue;
+   stat.total++;stat.maxHp+=Number(unit.maxHp)||0;
+   if(!(unit.hp>0)||unit.alive===false)continue;
+   stat.alive++;stat.hp+=Number(unit.hp)||0;
+   if(unit.isStrategist)continue;
+   const name=battleUnitJobName(unit);
+   stat.jobs.set(name,(stat.jobs.get(name)||0)+1);
+  }
   return squadIds.map(id=>{
-   const all=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
-   const alive=all.filter(u=>u.hp>0&&u.alive!==false);
-   const leader=leaders.get(String(id));
-   return {team:0,id,label:squadName(id),job:squadPrimaryJob(id),
+   const stat=groups.get(String(id)),leader=leaders.get(String(id));
+   const job=[...stat.jobs].sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊';
+   return {team:0,id,label:squadName(id),job,
     x:leader?.x??NaN,z:leader?.z??NaN,leaderId:leader?.leaderId??null,
-    alive:alive.length,total:all.length,
-    hp:alive.reduce((n,u)=>n+(u.hp||0),0),
-    maxHp:all.reduce((n,u)=>n+(u.maxHp||0),0)};
+    alive:stat.alive,total:stat.total,hp:stat.hp,maxHp:stat.maxHp};
   });
  },
  getEnemies:()=>{
