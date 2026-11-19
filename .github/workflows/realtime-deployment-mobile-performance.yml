@@ -1,0 +1,33 @@
+name: Realtime deployment mobile performance
+on:
+  pull_request:
+    paths:
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-commands.css'
+      - 'tactics-wireframe.html'
+      - 'qa/realtime-deployment-mobile-performance.test.mjs'
+      - '.github/workflows/realtime-deployment-mobile-performance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-commands.css'
+      - 'tactics-wireframe.html'
+      - 'qa/realtime-deployment-mobile-performance.test.mjs'
+      - '.github/workflows/realtime-deployment-mobile-performance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deployment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Realtime deployment syntax and UI
+        run: |
+          node --check src/battle-realtime-commands.js
+          node --test qa/realtime-deployment-mobile-performance.test.mjs
