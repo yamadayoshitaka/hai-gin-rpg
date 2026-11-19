@@ -148,7 +148,10 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     if(event.key==='Enter'||event.key===' '){event.preventDefault();openByIcon(event);}
    });
    const title=doc.createElement('strong');
-   title.textContent=String(row.name||'部隊');
+   // The narrow rail shows only the squad number; portrait shows its job.
+   // Full names remain in the accessible label and browser tooltip.
+   title.textContent=String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1');
+   title.title=String(row.name||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
    status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
    heading.append(job,title,status);
@@ -211,7 +214,11 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(nextSig===root.dataset.signature)return;
   root.dataset.signature=nextSig;
   rows=next;
+  const firstAlly=rows.find(r=>Number(r.team)===0);
+  const firstRender=!selected&&firstAlly;
+  if(firstRender){selected=selectionKey(0,firstAlly.id);pages=[0,0];}
   renderSide(0);renderSide(1);
+  if(firstRender)for(const side of panels)side.panel.scrollTop=0;
  }
  return {root,update,select,
   get rows(){return rows},
