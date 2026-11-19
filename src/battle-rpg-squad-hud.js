@@ -65,6 +65,8 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  root.hidden=true;
  const panels=[];
  let rows=[],selected='',expanded=[true,true],pages=[0,0],visible=false;
+ let pendingTapTimer=null,lastTap=null;
+ // Roster refreshes replace DOM elements: distinguish taps using stable squad keys.
  for(let team=0;team<=1;team++){
   const panel=doc.createElement('div');
   panel.className='rpgSquadSide expanded '+(team===0?'ally':'enemy');
@@ -102,6 +104,25 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   renderSide(0);renderSide(1);
   if(focus)onFocus(Number(team),String(id));
  }
+ function handleSquadTap(team,id){
+  const key=selectionKey(team,id),now=Date.now();
+  if(lastTap?.key===key&&now-lastTap.at<=380){
+   if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);
+   pendingTapTimer=null;lastTap=null;
+   select(team,id);
+   if(team===0)onCommand(team,String(id));
+   else onFocus(team,String(id));
+   return;
+  }
+  if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);
+  lastTap={key,at:now};
+  select(team,id);
+  pendingTapTimer=setTimeout(()=>{
+   if(lastTap?.key!==key)return;
+   pendingTapTimer=null;lastTap=null;
+   onFocus(team,String(id));
+  },380);
+ }
  function renderSide(team){
   const side=panels[team];
   const own=rows.filter(r=>Number(r.team)===team);
@@ -123,13 +144,9 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    if(selected===button.dataset.squadKey)button.classList.add('selected');
    if(!(Number(row.alive)>0))button.classList.add('defeated');
    if(rpgHudHealth(row.hp,row.maxHp)<=25&&Number(row.alive)>0)button.classList.add('critical');
-   button.setAttribute('aria-label',rpgHudCompactText(row)+'。タップで戦場の隊に移動');
+   button.setAttribute('aria-label',rpgHudCompactText(row)+'。1回タップでカメラ移動、2回タップで'+(team===0?'作戦':'隊を確認'));
    button.title=button.getAttribute('aria-label');
-   button.onclick=()=>{
-    select(team,row.id);
-    if(team===0)onCommand(team,String(row.id));
-    else onFocus(team,String(row.id));
-   };
+   button.onclick=()=>handleSquadTap(team,row.id);
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
    const job=doc.createElement('span');job.className='rpgSquadJobIcon';
    setBattleJobPortrait(job,row.job,row.id,team);
@@ -138,19 +155,17 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    job.setAttribute('aria-label',team===0?
     String(row.name)+'の作戦を開く':String(row.name)+'を確認');
    const openByIcon=event=>{
-    event.stopPropagation();
-    select(team,row.id);
-    if(team===0)onCommand(team,String(row.id));
-    else onFocus(team,String(row.id));
-   };
+     event.stopPropagation();
+     handleSquadTap(team,row.id);
+    };
    job.addEventListener('click',openByIcon);
    job.addEventListener('keydown',event=>{
     if(event.key==='Enter'||event.key===' '){event.preventDefault();openByIcon(event);}
    });
    const title=doc.createElement('strong');
-   // The narrow rail shows only the squad number; portrait shows its job.
+   // Keep the squad unit (1隊 ... 10隊) visible on both narrow rails.
    // Full names remain in the accessible label and browser tooltip.
-   title.textContent=String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1');
+   title.textContent=String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1隊');
    title.title=String(row.name||'部隊');
    // Keep the actual job visible even in the half-width side rails.
    // The number remains beside the portrait; the job owns its own full-width row.
@@ -179,7 +194,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     more.title=valid.slice(7).map(fx=>String(fx.label||'効果')).join(' / ');
     effects.append(more);
    }
-   // Read-only visual meters: all four values are drawn from the same actual
+   // Read-only visual meters: HP and MP are drawn from the same actual
    // combat row. Exact values remain accessible on the card/ARIA tooltip.
    const addMeter=(kind,glyph,label,current,max,percentage)=>{
     const value=clamp(Math.round(Number(percentage)||0),0,100);
@@ -199,9 +214,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    };
    metrics.append(effects);
    addMeter('hp','HP','HP',row.hp,row.maxHp,rpgHudHealth(row.hp,row.maxHp));
-   addMeter('attack','⚔','攻撃効率',row.attackPercent,100,row.attackPercent);
    addMeter('mp','MP','MP',row.mp,row.maxMp,rpgHudHealth(row.mp,row.maxMp));
-   addMeter('troops','人','生存人数',row.alive,row.total,rpgHudTroopPercent(row.alive,row.total));
    button.append(heading,metrics);
    fragment.append(button);
   }
@@ -230,6 +243,6 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   get selected(){return selected},
   get expanded(){return [...expanded]},
   get visible(){return visible},
-  dispose(){root.remove();}
+  dispose(){if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);root.remove();}
  };
 }
