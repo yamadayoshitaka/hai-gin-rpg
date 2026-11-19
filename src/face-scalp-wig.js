@@ -333,15 +333,20 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  if(!attr)throw Error('True 3D source head required');
  const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const minHeight=box.min.y+d.y*.82;
+ // Extend the anatomical underlay into the crown-to-temple seam. The
+ // previous 82%-height / 27%-width window left a visible bare ring when
+ // parted locks exposed the lateral crown. Keep the frontal hairline high.
+ const minHeight=box.min.y+d.y*.77;
  let triangles=0;
  for(let t=0;t+2<n;t+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
   const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
-  if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*.27||
-   Math.abs(mid.z-c.z)>d.z*.25)continue;
+  const front=(mid.z-c.z)/Math.max(d.z,1e-6);
+  const hairline=front>.12?box.min.y+d.y*.85:minHeight;
+  if(mid.y<hairline||
+   Math.abs(mid.x-c.x)>d.x*.335||
+   Math.abs(mid.z-c.z)>d.z*.32)continue;
   // Never extend this cover over the forehead or brows. Intact donor
   // triangles entirely above the upper hairline are the only source.
   if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
