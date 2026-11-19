@@ -46,7 +46,7 @@ export function createRealtimeBattleCommands({
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
   <div id="realtimeSquadRadar" hidden role="group" aria-label="中央部隊レーダー">
-   <div class="realtimeRadarHeader"><strong>◎ 部隊レーダー</strong>
+   <div class="realtimeRadarHeader"><strong id="realtimeRadarTitle">◎ 部隊レーダー</strong>
     <span id="realtimeRadarClock" hidden aria-label="作戦選択の残り時間"></span></div>
    <canvas id="realtimeRadarCanvas" width="224" height="178"
     aria-label="味方と敵の隊長位置。青が味方、赤が敵。番号は隊番号" tabindex="0"></canvas>
@@ -1024,7 +1024,7 @@ export function createRealtimeBattleCommands({
  onMapOverview({x:Math.round(clamp(point.x*worldSize,0,worldSize-1)),
   z:Math.round(clamp(point.y,0,1)*(worldSize-1))});
 }
-$('realtimeSquadRadar').querySelector('.realtimeRadarHeader strong').onclick=()=>{
+$('realtimeRadarTitle').onclick=()=>{
  if(started)onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
 };
 radarCanvas.addEventListener('click',event=>{
