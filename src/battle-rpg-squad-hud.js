@@ -152,9 +152,14 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    // Full names remain in the accessible label and browser tooltip.
    title.textContent=String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1');
    title.title=String(row.name||'部隊');
+   // Keep the actual job visible even in the half-width side rails.
+   // The number remains beside the portrait; the job owns its own full-width row.
+   const jobName=doc.createElement('span');jobName.className='rpgSquadJobName';
+   jobName.textContent=String(row.job||'部隊');
+   jobName.title=String(row.name||'部隊')+'｜'+String(row.job||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
    status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
-   heading.append(job,title,status);
+   heading.append(job,title,jobName,status);
    const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';
    effects.setAttribute('aria-label','現在の強化・弱体効果');
