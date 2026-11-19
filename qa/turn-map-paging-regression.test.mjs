@@ -116,7 +116,7 @@ test('accepted map move reveals an action picker and defers command until arriva
  for(const action of ['defend','charge','hold','support']){
   assert.ok(source.includes('data-action-after-move="'+action+'"'));
  }
- assert.match(source,/if\(applied\)\{arrivalActions\.delete\(String\(selectedId\)\);showActionSheet\(selectedId,point\);\}/);
+ assert.match(source,/if\(applied\)\{deploymentActions\.delete\(String\(selectedId\)\);arrivalActions\.delete\(String\(selectedId\)\);showActionSheet\(selectedId,point\);\}/);
  assert.match(source,/arrivalActions\.set\(id,\{command,point:\{\.\.\.actionDestination\}\}\)/);
  assert.match(source,/Math\.hypot\(own\.x-entry\.point\.x,own\.z-entry\.point\.z\)>3\.5/);
  assert.match(source,/if\(onOrder\(id,entry\.command\)\)arrivalActions\.delete\(id\)/);
