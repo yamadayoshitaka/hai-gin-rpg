@@ -25,7 +25,7 @@ export function createRealtimeBattleCommands({
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
  let started=false,mode='deploy',selectedId=null,zoom=1,centerX=worldSize/2,centerZ=worldSize/2;
- const deploymentActions=new Map(),arrivalActions=new Map();
+ const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  let choosingActionFor=null,actionDestination=null;
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
@@ -106,7 +106,7 @@ export function createRealtimeBattleCommands({
  function setSelected(id,{focus=false}={}){
   if(!squads().some(s=>String(s.id)===String(id)))return false;
   if(choosingActionFor!=null&&String(id)!==String(choosingActionFor))hideActionSheet();
-  selectedId=String(id);refreshOptions();onSelect(selectedId);
+  selectedId=String(id);refreshOptions();renderActionSelection();onSelect(selectedId);
   if(focus)onFocus(selectedId);
   renderStatus();drawMap();return true;
  }
@@ -161,15 +161,24 @@ export function createRealtimeBattleCommands({
   }
   $('realtimeMapScale').textContent=Math.round(zoom*100)+'%';
  }
+ function renderActionSelection(){
+  const chosen=preferredActions.get(String(selectedId));
+  for(const button of root.querySelectorAll('[data-action-after-move]')){
+   const active=button.dataset.actionAfterMove===chosen;
+   button.classList.toggle('selected',active);
+   button.setAttribute('aria-pressed',String(active));
+  }
+  $('realtimeActionSkip').classList.toggle('selected',!chosen);
+ }
  function hideActionSheet(){
   choosingActionFor=null;actionDestination=null;
-  $('realtimeMapActionSheet').hidden=true;
+  renderActionSelection();
  }
  function showActionSheet(id,point){
   choosingActionFor=String(id);actionDestination={x:point.x,z:point.z};
-  $('realtimeMapActionSheet').hidden=false;
-  $('realtimeMapMessage').textContent=mode==='deploy'?'① 配置完了。② 移動後の行動を選択してください。':
-   '① 移動先を設定しました。② 到着後の行動を選択してください。';
+  renderActionSelection();
+  $('realtimeMapMessage').textContent=mode==='deploy'?'配置を保存しました。行動を変更できます。':
+   '移動先を指定しました。到着後の行動を選択できます。';
  }
  function openMap(next='move'){
   hideActionSheet();mode=next;refreshOptions();
@@ -181,6 +190,7 @@ export function createRealtimeBattleCommands({
    '◀ ▶で隊を切替え、隊長の番号ピンを目印に味方陣地へ配置。敵隊は開戦後に表示します。':
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
   $('realtimeMapMessage').textContent='';
+  renderActionSelection();
   if(next==='move'){zoom=1.6;const own=getSelected();
    centerX=Number.isFinite(own?.x)?own.x:worldSize/2;
    centerZ=Number.isFinite(own?.z)?own.z:worldSize/2;}
@@ -212,7 +222,13 @@ export function createRealtimeBattleCommands({
   }
   const applied=onMove(selectedId,point);
   $('realtimeMapMessage').textContent=applied?'移動命令を発令しました。':'現在は移動を指示できません。';
-  if(applied){deploymentActions.delete(String(selectedId));arrivalActions.delete(String(selectedId));showActionSheet(selectedId,point);}
+  if(applied){
+   deploymentActions.delete(String(selectedId));arrivalActions.delete(String(selectedId));
+   showActionSheet(selectedId,point);
+   const preferred=preferredActions.get(String(selectedId));
+   if(preferred)arrivalActions.set(String(selectedId),{
+    command:preferred==='support'?'defend':preferred,point:{...point}});
+  }
   return applied;
  }
  let pointer=null;
@@ -250,23 +266,28 @@ export function createRealtimeBattleCommands({
   });
  for(const button of root.querySelectorAll('[data-action-after-move]'))
   button.addEventListener('click',()=>{
-   if(choosingActionFor==null)return;
-   const id=String(choosingActionFor),chosen=button.dataset.actionAfterMove;
-   // The simulator exposes charge/defend/hold. Support uses the defensive healing stance.
+   const id=String(selectedId||'');if(!id)return;
+   const chosen=button.dataset.actionAfterMove;
    const command=chosen==='support'?'defend':chosen;
+   preferredActions.set(id,chosen);renderActionSelection();
    if(mode==='deploy'){
     deploymentActions.set(id,command);
-    hideActionSheet();
-    $('realtimeMapMessage').textContent='移動後の行動を保存しました。別の隊も設定できます。';
-   }else{
+    $('realtimeMapMessage').textContent='行動を保存しました。地図での配置前でも有効です。';
+   }else if(choosingActionFor===id&&actionDestination){
     arrivalActions.set(id,{command,point:{...actionDestination}});
-    closeMap();
-    renderStatus();
+    closeMap();renderStatus();
+   }else{
+    $('realtimeMapMessage').textContent='行動を選びました。地図で移動先を指定してください。';
    }
   });
  $('realtimeActionSkip').onclick=()=>{
-  if(mode==='deploy'&&choosingActionFor!=null)deploymentActions.delete(String(choosingActionFor));
-  if(mode==='move')closeMap();else hideActionSheet();
+  const id=String(selectedId||'');
+  preferredActions.delete(id);
+  if(mode==='deploy')deploymentActions.delete(id);
+  else arrivalActions.delete(id);
+  renderActionSelection();
+  if(mode==='move'&&actionDestination)closeMap();
+  else $('realtimeMapMessage').textContent='行動指定を解除しました。移動のみ設定できます。';
  };
  for(const button of root.querySelectorAll('[data-realtime-zoom]'))
   button.onclick=()=>{zoom=clamp(zoom*(button.dataset.realtimeZoom==='1'?1.6:1/1.6),1,6);drawMap();};
@@ -284,7 +305,7 @@ export function createRealtimeBattleCommands({
  $('realtimeMenu').onclick=()=>onMenu();
  $('realtimePause').onclick=()=>{onPause();renderStatus();};
  return {
-  openDeployment(){started=false;mode='deploy';deploymentActions.clear();arrivalActions.clear();$('realtimeBattleDock').hidden=true;openMap('deploy');},
+  openDeployment(){started=false;mode='deploy';deploymentActions.clear();arrivalActions.clear();preferredActions.clear();$('realtimeBattleDock').hidden=true;openMap('deploy');},
   selectSquad:setSelected,
   openMove(){if(started)openMap('move');},
   update(rows=[]){
@@ -309,6 +330,7 @@ export function createRealtimeBattleCommands({
   get mode(){return mode;},
   get queuedArrivalActions(){return [...arrivalActions.keys()]},
   get deploymentActions(){return [...deploymentActions.keys()]},
+  get preferredActions(){return [...preferredActions.entries()]},
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
   root,dispose(){root.remove();}
  };
