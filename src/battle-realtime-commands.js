@@ -50,17 +50,19 @@ export function createRealtimeBattleCommands({
      <button type="button" id="realtimeMapNext" aria-label="次の味方隊">▶</button>
      <span id="realtimeMapPage" aria-label="選択中の隊番号">1/1</span>
     </div>
-    <div class="realtimeMapZoom">
-     <button type="button" data-realtime-zoom="-1">－ 縮小</button>
-     <button type="button" data-realtime-zoom="1">＋ 拡大</button>
-     <button type="button" id="realtimeMapReset">全域</button>
-     <span id="realtimeMapScale">100%</span>
+    <div class="realtimeMapViewport">
+     <div class="realtimeMapZoom" aria-label="地図の拡大縮小">
+      <button type="button" data-realtime-zoom="1" aria-label="地図を拡大">＋ 拡大</button>
+      <button type="button" data-realtime-zoom="-1" aria-label="地図を縮小">－ 縮小</button>
+      <button type="button" id="realtimeMapReset">全域</button>
+      <span id="realtimeMapScale">100%</span>
+     </div>
+     <canvas id="realtimeBattleCanvas" width="464" height="464"
+      aria-label="味方隊を選択して、移動先の地図をタップ" tabindex="0"></canvas>
     </div>
-    <canvas id="realtimeBattleCanvas" width="464" height="464"
-     aria-label="味方隊を選択して、移動先の地図をタップ" tabindex="0"></canvas>
     <div class="realtimeMapMessage" id="realtimeMapMessage" role="status"></div>
-    <div class="realtimeMapActionSheet" id="realtimeMapActionSheet" hidden role="group" aria-label="移動後の行動を選択">
-     <strong>② 移動後の行動を選択</strong>
+    <div class="realtimeMapActionSheet" id="realtimeMapActionSheet" role="group" aria-label="移動後の行動を選択">
+     <strong>② 行動を選択（移動前でも設定可能）</strong>
      <div class="realtimeMapActionButtons">
       <button type="button" data-action-after-move="defend">🛡 守備</button>
       <button type="button" data-action-after-move="charge">⚔ 突撃</button>
