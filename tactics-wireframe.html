@@ -6055,8 +6055,9 @@ function allyItemStocks(){
 }
 function sharedInventoryCommanderId(preferredId=null){
  const ids=squadIds.map(String),preferred=String(preferredId??'');
- if(ids.includes(preferred)&&hasSquadCommander(preferred))return preferred;
- return ids.find(id=>hasSquadCommander(id))||null;
+ const eligible=ids.filter(id=>hasSquadCommander(id));
+ if(eligible.includes(preferred)&&squadOrderCooldownSeconds(preferred)<=0)return preferred;
+ return eligible.find(id=>squadOrderCooldownSeconds(id)<=0)||eligible[0]||null;
 }
 function realtimeCommanderLevel(id){
  const idText=String(id);
@@ -6278,7 +6279,7 @@ function renderBattleItemManagement(){
   const reserve=REINFORCEMENT_ITEMS.includes(choice.value);
   const missingTroops=units.filter(u=>u.team===0&&String(u.squadId)===itemSquadSelect.value&&
    !u.isStrategist&&(u.alive===false||!(u.hp>0))).length;
-  const content=reserve?'軍師が兵符を消費して'+Math.min(missingTroops,reinforcementSlots(choice.value,realtimeCommanderLevel(itemSquadSelect.value)))+
+  const content=reserve?'軍師が兵符を消費して'+Math.min(missingTroops,reinforcementSlots(choice.value,realtimeCommanderLevel(sharedInventoryCommanderId(itemSquadSelect.value))))+
    '人を補充（戦闘不能 '+missingTroops+'人）':
    def?.kind==='heal'?'部隊全体で最大'+def.squadHealHp+'HP回復'+(missing?'／負傷HP合計 '+Math.round(missing):'／負傷者なし'):
    def?.kind==='squad_buff'?def.description||'部隊強化':'使用できる所持品がありません';
