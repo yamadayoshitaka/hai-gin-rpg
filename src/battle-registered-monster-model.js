@@ -6,11 +6,11 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
+ from './monster-geometry.js?v=m019-turnaround-lizard-v4-20261119';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
+ from './creature-game-model-routing.js?v=m019-turnaround-lizard-v4-20261119';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';

@@ -83,12 +83,10 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.ok(rosterCalls<=3,'roster snapshots are reused between map taps and UI updates');
  dom.root.querySelector('#realtimeStart').onclick();
  assert.ok(seen.some(x=>x[0]==='start'));
- command.openMove();
- assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
- canvas.tap('pointerdown',{pointerId:2,clientX:120,clientY:120});
- canvas.tap('pointerup',{pointerId:2,clientX:120,clientY:120});
- assert.ok(seen.some(x=>x[0]==='move'));
- assert.ok(command.queuedArrivalActions.includes('1'),'previously selected hold queues on arrival');
+ assert.equal(command.openMove(),false,'standalone movement stays retired');
+ assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,true);
+ assert.equal(seen.some(x=>x[0]==='move'),false,
+  'deployment does not dispatch a live move without a confirmed action and target');
 });
 test('map controls and roster aggregation retain real 3D movement and squad identities',()=>{
  const js=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
@@ -125,4 +123,53 @@ test('job-based tactics expose ninja ranged and real mission / inventory integra
  assert.match(realtime,/showSpecialChoices\('dock'\)/);
  assert.match(realtime,/showSupportChoices\('map'\)/);
  assert.match(realtime,/onSpecial\(id,entry.special,entry.targetId,true\)/);
+});
+
+test('live panel rejects movement-only and confirms action-target approach or shared-item use',()=>{
+ const dom=mockDocument(),seen=[];
+ let paused=false;
+ const ui=createRealtimeBattleCommands({
+  documentRef:dom.document,worldSize:232,
+  getSquads:()=>[{id:'1',label:'第1隊 忍者',job:'忍者',
+   alive:5,total:5,hp:500,maxHp:500,x:80,z:110}],
+  getEnemies:()=>[],
+  getMapBackground:()=>null,
+  getLegalPoint:(x,z)=>({x,z}),
+  getMoveTargets:kind=>kind==='people'?[{id:'npc1',label:'旅人',x:85,z:111}]:[],
+  onMove:(id,point)=>{seen.push(['move',id,point]);return true;},
+  onOrder:(id,order)=>{seen.push(['order',id,order]);return true;},
+  getSharedItems:()=>[{id:'war_banner',name:'勇猛の軍旗',label:'勇猛の軍旗',
+   quantity:3,collected:2,usable:true}],
+  onSharedItem:(itemId,id)=>{seen.push(['item',itemId,id]);return true;},
+  getRallyInfo:()=>({phase:'ready',level:1,targets:[{id:'1',label:'第1隊 忍者',alive:true}]}),
+  onRally:(id,kind,targets)=>{seen.push(['rally',id,kind,targets]);return true;},
+  onPause:()=>{paused=!paused;},getPaused:()=>paused
+ });
+ ui.openDeployment();
+ dom.root.querySelector('#realtimeStart').onclick();
+ ui.showSquadControls('1');
+ assert.doesNotMatch(dom.root.innerHTML,/id="realtimeMove"/);
+ const kind=dom.root.querySelector('#realtimeTargetKind');
+ kind.value='point';kind.onchange();
+ const map=dom.root.querySelector('#realtimeInlineTargetMap');
+ map.tap('click',{clientX:120,clientY:110});
+ assert.equal(seen.length,0,'selecting a map point cannot issue the move early');
+ dom.root.querySelector('#realtimeConfirmStrategy').onclick();
+ assert.equal(seen.length,0,'a map point alone never issues an order');
+ dom.root.querySelector('#realtimeHold').onclick();
+ dom.root.querySelector('#realtimeConfirmStrategy').onclick();
+ assert.equal(seen[0][0],'move','the chosen action authorizes approach on confirmation');
+ ui.showSquadControls('1');
+ dom.root.querySelector('#realtimeTabItems').onclick();
+ assert.match(dom.root.querySelector('#realtimeInlineItemStatus').textContent,/戦闘取得累計 2/);
+ assert.equal(seen.filter(row=>row[0]==='item').length,0);
+ dom.root.querySelector('#realtimeConfirmItem').onclick();
+ assert.deepEqual(seen[1],['item','war_banner','1']);
+ ui.showSquadControls('1');
+ dom.root.querySelector('#realtimeTabRally').onclick();
+ dom.root.querySelector('#realtimeRallyTarget').value='1';
+ dom.root.querySelector('#realtimeRallyKind').value='attack';
+ assert.equal(seen.filter(row=>row[0]==='rally').length,0);
+ dom.root.querySelector('#realtimeConfirmRally').onclick();
+ assert.deepEqual(seen[2],['rally','1','attack',['1']]);
 });

@@ -8,9 +8,9 @@
  * All pieces attach to existing movable parents. No floating decoration,
  * no replacement of another species, no expensive effect sprites at LOD low.
  */
-export const MAGMA_SALAMANDER_REVISION='m019-wolf-donor-salamander-v2-lineage-20261119';
-export const MAGMA_SALAMANDER_LEG_REACH=.72;
-export const MAGMA_SALAMANDER_BODY_DROP=.22;
+export const MAGMA_SALAMANDER_REVISION='m019-approved-four-view-slender-lizard-v4-20261119';
+export const MAGMA_SALAMANDER_LEG_REACH=.54;
+export const MAGMA_SALAMANDER_BODY_DROP=.38;
 
 export function magmaSkullFromWolfKing(m001Rings){
  if(!Array.isArray(m001Rings)||m001Rings.length<8)
@@ -34,75 +34,85 @@ export function magmaTorsoFromWolfKing(referenceStations){
 
 export function sculptMagmaSalamanderEye(g,head,side,{detail='high'}={}){
  const suffix=side<0?'L':'R';
- // The orbit opens into the side-facing muzzle and remains coherent when
- // the entire animated head pitches. The amber lens is forward of its socket.
- g.sphere(head,'shadow',[side*.300,.091,.312],[.079,.053,.088],
-  {name:'m019-inset-orbit-'+suffix,rough:.81});
- g.sphere(head,'eye',[side*.326,.095,.332],[.037,.042,.054],
-  {name:'m019-amber-iris-'+suffix,rough:.30});
- g.sphere(head,'accent',[side*.354,.097,.348],[.013,.033,.029],
-  {name:'m019-glowing-iris-'+suffix,rough:.28,glow:detail!=='low'});
- g.sphere(head,'shadow',[side*.366,.097,.362],[.0055,.030,.015],
-  {name:'m019-vertical-pupil-'+suffix,rough:.25});
- // Inset orbital fascia is above the iris, not a bar crossing the pupil.
- g.sphere(head,'skin',[side*.291,.159,.303],[.099,.029,.113],
-  {name:'m019-predator-brow-'+suffix});
- g.sphere(head,'skin',[side*.295,.034,.311],[.083,.022,.091],
-  {name:'m019-lower-lid-'+suffix});
- const lid=g.group('eyelid'+suffix,[side*.319,.180,.325],head);
+ // Reference front/side: small eye tucked into a narrow angular socket,
+ // not a big glowing marble hovering outside the thin skull.
+ const orbit=g.sphere(head,'shadow',[side*.261,.047,.271],
+   [.044,.034,.082],{name:'m019-inset-orbit-'+suffix,rough:.91});
+ orbit.userData.m019EyeRecessed=true;
+ const iris=g.sphere(head,'eye',[side*.282,.053,.290],
+   [.011,.027,.042],{name:'m019-amber-iris-'+suffix,rough:.22});
+ iris.userData.m019PredatorSlit=true;
+ g.sphere(head,'accent',[side*.291,.055,.295],
+   [.004,.019,.020],{name:'m019-glowing-iris-'+suffix,
+    glow:detail==='source'});
+ g.sphere(head,'shadow',[side*.297,.051,.299],
+   [.0035,.021,.012],{name:'m019-vertical-pupil-'+suffix});
+ g.sphere(head,'bone',[side*.298,.069,.299],
+   [.002,.004,.004],{name:'m019-eye-glint-'+suffix});
+ const brow=g.tube(head,'skin',[
+   [side*.205,.115,.394],[side*.265,.122,.317],
+   [side*.291,.095,.239],[side*.262,.082,.159]
+ ],.016,{name:'m019-predator-brow-'+suffix});
+ brow.userData.m019BoneBrow=true;
+ g.tube(head,'shadow',[
+   [side*.239,.011,.360],[side*.280,.017,.299],
+   [side*.282,.028,.233]
+ ],.0075,{name:'m019-lower-lid-'+suffix});
+ const lid=g.group('eyelid'+suffix,[side*.280,.123,.288],head);
  lid.userData.restY=lid.position.y;
- lid.userData.blinkTravel=.073;
- g.sphere(lid,'skin',[0,0,0],[.065,.018,.063],
-  {name:'m019-nictitating-lid-'+suffix,rough:.77});
+ lid.userData.blinkTravel=.058;
+ g.sphere(lid,'skin',[0,0,0],[.029,.010,.039],
+   {name:'m019-nictitating-lid-'+suffix,rough:.85});
 }
 
 export function sculptMagmaSalamanderHorn(g,head,side,{detail='high'}={}){
  const suffix=side<0?'L':'R';
- // Massive swept-back paired horns. Radius tapers inside ONE rooted
- // physical horn mesh; the submerged socket follows the skull pivot.
- const base=[side*.232,.222,-.187];
- g.sphere(head,'skin',[side*.237,.213,-.170],[.154,.142,.182],
-  {name:'m019-horn-cartilage-'+suffix});
- const horn=g.curvedHorn(head,'bone',base,
-  [side*.334,.574,-.255],
-  [side*.468,.986,-.388],.125,
-  {name:'m019-grand-horn-'+suffix});
+ // Two long slender swept-back crescents from the approved turnaround.
+ // The tip points over the neck, not vertically up like buffalo horns.
+ const socket=g.bridge(head,'skin',
+   [side*.147,.090,-.167],[side*.207,.192,-.297],.070,.044);
+ socket.name='m019-horn-cartilage-'+suffix;
+ const horn=g.curvedHorn(head,'bone',
+   [side*.193,.176,-.233],
+   [side*.273,.365,-.610],
+   [side*.385,.586,-1.260],.071,
+   {name:'m019-grand-horn-'+suffix});
  horn.userData.m019PrimaryHorn=true;
+ horn.userData.m019SweptBackward=true;
+ horn.userData.m019ApprovedTurnaroundReference=true;
  if(detail==='low')return;
- // Smaller tusk is attached to the cheek and swept backward.
- g.curvedHorn(head,'bone',[side*.315,-.095,.130],
-  [side*.435,-.044,.188],[side*.529,.023,.104],.058,
-  {name:'m019-cheek-horn-'+suffix});
- // Keratin annulus is close to the base, not a hovering metal band.
- g.sphere(head,'shadow',[side*.249,.312,-.187],[.081,.030,.088],
-  {name:'m019-horn-growth-ridge-'+suffix});
+ g.curvedHorn(head,'accent',
+   [side*.202,.184,-.255],[side*.260,.332,-.615],
+   [side*.378,.565,-1.225],.018,
+   {name:'m019-horn-magma-seam-'+suffix});
 }
 
 export function sculptMagmaSalamanderBack(g,torso,{detail='high'}={}){
- const low=detail==='low';
- const ridgeCount=low?5:detail==='source'?14:9;
- for(let i=0;i<ridgeCount;i++){
-  const t=(i+.45)/ridgeCount,z=.59-1.18*t;
-  const hump=Math.sin(Math.PI*t),rootY=1.565-.07*t;
-  const root=[0,rootY,z];
-  const tip=[.022*(i%2?1:-1),1.84+.19*hump-.06*t,z-.158];
-  const horn=g.curvedHorn(torso,i%4===0?'bone':'accent',root,
-    [0,1.68+.065*hump,z-.052],tip,.064+.027*hump,
-    {name:'m019-lava-ridge-'+i});
+ const count=detail==='low'?6:detail==='source'?17:11;
+ // Thin shallow spikes across the elongated spine; never a thick
+ // dinosaur's armored hump. Roots stay within the dorsal loft.
+ for(let i=0;i<count;i++){
+  const t=(i+.4)/count,z=1.25-2.55*t;
+  const rootY=1.485-.040*t;
+  const height=.080+.085*Math.pow(Math.sin(Math.PI*t),1.5);
+  const horn=g.curvedHorn(torso,'shadow',
+   [0,rootY,z],[.006,rootY+height*.55,z-.048],
+   [.015,rootY+height,z-.145],.024,
+   {name:'m019-lava-ridge-'+i});
   horn.userData.m019RootedDorsalCrest=true;
  }
- if(low)return;
- // Near-LOD armour follows the rib cage; the glowing fissures are shallow
- // overlays on the same torso pivot, never independent floating plates.
- for(const side of [-1,1])for(let i=0;i<5;i++){
-  const z=.41-i*.214;
-  g.sphere(torso,'shadow',[side*.475,1.312,z],
-   [.082,.149,.166],{name:'m019-basalt-scute-'+(side<0?'L':'R')+'-'+i});
-  g.tube(torso,'accent',[
-   [side*.525,1.388,z-.093],
-   [side*.541,1.327,z-.013],
-   [side*.522,1.245,z+.083]],.013,
-   {name:'m019-lava-fissure-'+(side<0?'L':'R')+'-'+i});
+ if(detail==='low')return;
+ for(const side of [-1,1])for(let i=0;i<7;i++){
+  const s=side<0?'L':'R',z=1.08-i*.346;
+  const plate=g.rock(torso,'shadow',
+   [side*.254,1.290,z],[.039,.021,.107],
+   {name:'m019-basalt-scute-'+s+'-'+i,rough:.91});
+  plate.userData.m019EmbeddedScale=true;
+  if(i%2===0)g.tube(torso,'accent',[
+    [side*.278,1.317,z-.077],
+    [side*.280,1.281,z-.004],
+    [side*.270,1.257,z+.075]
+  ],.0065,{name:'m019-lava-fissure-'+s+'-'+i});
  }
 }
 
@@ -110,10 +120,10 @@ export function markMagmaSalamander(root){
  root.userData.m019SculptRevision=MAGMA_SALAMANDER_REVISION;
  root.userData.clonedFromSpecies='m001';
  root.userData.cloneMethod='physical-m001-cranium-and-ribcage-to-salamander-morph';
- root.userData.m019Reference2D='approved-magma-salamander-2026-11-18';
+ root.userData.m019Reference2D='approved-four-view-slender-lizard-2026-11-19';
  root.userData.m019DistinctiveFeatures=[
-  'beast-derived-wedge-head','paired-massive-swept-horns',
-  'amber-slit-eyes','short-plantigrade-legs','basalt-armour'
+  'elongated-narrow-wedge-head','paired-long-swept-horns',
+  'amber-slit-eyes','four-short-thin-lizard-legs','whip-tail','thin-basalt-spines'
  ];
  root.userData.m019ShortLegReach=MAGMA_SALAMANDER_LEG_REACH;
  root.userData.m019DorsalPlatesFollowTorso=true;

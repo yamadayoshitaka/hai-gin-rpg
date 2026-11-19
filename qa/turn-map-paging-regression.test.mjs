@@ -196,7 +196,7 @@ test('one-job squads use a portrait-triggered command dock, not a select box',()
  assert.match(src,/showSquadControls,/);
  assert.match(hud,/job\.addEventListener\('click',openByIcon\)/);
  assert.match(hud,/event\.stopPropagation\(\)/);
- assert.match(hud,/if\(team===0\)onCommand\(team,String\(row\.id\)\)/);
+ assert.match(hud,/if\(team===0\)onCommand\(team,String\(id\)\)/);
  assert.match(page,/onCommand:\(team,id\)=>/);
  assert.match(page,/realtimeCommandUI\?\.showSquadControls\(id\)/);
  assert.match(css,/#realtimeBattleDock \.realtimeDockSquadPager/);
@@ -214,7 +214,9 @@ test('planning pauses the combat clock and only releases its own pause on exit',
  assert.match(src,/if\(!planningOwnsPause\)return/);
  assert.match(src,/if\(getPaused\(\)\)onPause\(\)/);
  assert.match(src,/if\(started\)enterPlanning\(\)/);
- assert.match(src,/if\(onOrder\(id,command\)\)closeSquadControls\(\)/);
+ assert.match(src,/function confirmDockStrategy\(\)/);
+ assert.match(src,/else if\(entry\?\.command\)success=onOrder\(id,entry\.command\)/);
+ assert.match(src,/if\(success\)\{[\s\S]*?closeSquadControls\(\)/);
  assert.match(page,/onPause:\(\)=>setBattlePaused\(!paused\)/);
 });
 test('initial and live maps share real attack variants with valid simulation commands',()=>{

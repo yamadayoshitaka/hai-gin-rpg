@@ -26,6 +26,7 @@ on:
     paths:
       - 'src/avian-guardian-sculpt.js'
       - 'src/magma-salamander-sculpt.js'
+      - 'src/m019-hero-sculpt.js'
       - 'src/salamander-lineage-sculpt.js'
       - 'qa/salamander-lineage-remesh.test.mjs'
       - 'src/monster-geometry.js'
@@ -39,6 +40,7 @@ on:
       - 'src/creature-*.js'
       - 'src/avian-guardian-sculpt.js'
       - 'src/magma-salamander-sculpt.js'
+      - 'src/m019-hero-sculpt.js'
       - 'src/salamander-lineage-sculpt.js'
       - 'qa/salamander-lineage-remesh.test.mjs'
       - 'src/monster-geometry.js'

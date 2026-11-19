@@ -1,0 +1,52 @@
+{
+  "speciesId": "m019",
+  "reference": "user-selected-2026-11-19-four-view-slim-lizard-2d",
+  "sourceType": "approved-2d-four-view",
+  "note": "Reference was provided in conversation; the PNG is not claimed to be in the repository.",
+  "views": [
+    "three-quarter",
+    "side",
+    "front",
+    "back"
+  ],
+  "model": "procedural-mesh-physical-threejs",
+  "facing": "+Z",
+  "constraints": {
+    "bodySilhouette": "very long, very slim, low to the ground, flattened reptile trunk",
+    "head": "thin tapered pointed lizard snout, angular and narrow",
+    "eyes": "two narrow luminous amber predator eyes, slit pupils",
+    "horns": "exactly two long slender swept-back cranial horns",
+    "legs": "exactly four short thin articulated lizard limbs (two front, two rear)",
+    "digitsPerPaw": 4,
+    "tail": "extremely long smooth taper with upward-curled tip, animated with torso",
+    "spines": "small low-profile backward jagged basalt spines",
+    "surface": "black obsidian plates and narrow molten orange seams",
+    "exclude": [
+      "bulky dinosaur torso",
+      "thick cylinder legs",
+      "oversized paw pads",
+      "round frog face",
+      "fat canine muzzle",
+      "extra cheek horns",
+      "floating decorations",
+      "detached heads",
+      "billboard images"
+    ]
+  },
+  "ratios": {
+    "bodyAxialStretch": 1.76,
+    "bodyToWidthMin": 3.8,
+    "limbReach": 0.54,
+    "limbWidth": 0.66,
+    "tailLocalStretch": 2.2
+  },
+  "qualityGate": [
+    "all moving parts are physical mesh",
+    "high and low LOD",
+    "four foot grounding",
+    "body/head/tail remain connected",
+    "no changes to m001,m016,m017",
+    "game registered route updated"
+  ],
+  "visualApprovalStatus": "pending-user-3d-review"
+}

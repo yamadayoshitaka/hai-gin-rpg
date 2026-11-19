@@ -51,7 +51,9 @@ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'
 assert.match(battle,/battleTacticalUi\.onSquadSums\(sums\)/);
 assert.match(battle,/battleTacticalUi\.renderFor\(id\)/);
 assert.match(battle,/commanderOrderInterval\(sid\)-elapsed/);
-assert.match(battle,/openingTacticalSummary\.refresh\(\)/);
+// Legacy opening-order summary was retired with the no-turn real-time dock.
+assert.match(battle,/realtimeCommandUI=!TOWN_MODE\?createRealtimeBattleCommands/);
+assert.match(battle,/getMoveTargets:\(kind,id\)=>realtimeMoveTargets/);
 const inn=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 assert.match(inn,/innSpecialtySelect/);
 assert.match(inn,/autoFormArmy\(game\.campaign,innCommanderId,armyPriority\)/);

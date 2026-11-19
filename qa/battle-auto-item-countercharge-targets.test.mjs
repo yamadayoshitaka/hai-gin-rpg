@@ -43,8 +43,8 @@ assert.equal(recommendBattleTactics(healthyRanged).order,'charge',
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 for(const code of [
  'const squadItemPolicies=new Map',
- "['manual','手動アイテム'],['auto','オートアイテム']",
- "itemMode.onchange=()=>{if(!battleReady)squadItemPolicies.set(id,itemMode.value);}",
+ "Player is the commander: never auto-spend army stocks",
+ "onSharedItem:(itemId,id)=>useSquadBattleItem(itemId,id)",
  "if(squadItemPolicies.get(id)!=='auto')continue",
  "chooseAutoSquadItem(members,stocks,ROOM_ITEM_TYPES,activeIds)",
  "if(itemId&&performSquadBattleItem(itemId,id,{automatic:true}))",
@@ -66,4 +66,4 @@ assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItemForSource\(ac
  'Circle item targeting must validate the initiating commander and cooldown');
 assert.doesNotMatch(html,/useSquadBattleItem\(action\.itemId,id,action\.source\)/,
  'Do not reintroduce the incompatible third argument on the manual API');
-console.log('PASS target-pulse, defensive countercharge, auto/manual finite items and combat UI wiring');
+console.log('PASS target-pulse, defensive countercharge, manual commander-only item spending and combat UI wiring');

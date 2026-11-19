@@ -23,12 +23,17 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
+ from './magma-salamander-sculpt.js?v=m019-turnaround-lizard-v4-20261119';
+import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
+ M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
+ m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
+ sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
+ from './m019-hero-sculpt.js?v=m019-turnaround-lizard-v4-20261119';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-turnaround-lizard-v4-20261119';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -373,7 +378,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    }
  };
  const torso=g.group('torso');
- if(salamanderLineage)torso.position.y=-salamanderLineage.bodyDrop;
+ if(salamanderLineage)torso.position.y=-(magmaSalamander?M019_BODY_DROP:salamanderLineage.bodyDrop);
  if(s.id==='m004'){
    // Grey wolf gallop: independent lumbar and pelvic segments allow hind
    // limbs and tail to flex with the axial spine. Keep only this animal's
@@ -452,7 +457,11 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // Nose is +Z. Reference-matched wolf: broad dropped forequarter,
  // narrow lifted waist and tapered croup instead of a cylindrical trunk.
  // Both torso source geometry and the coat below use these SAME sections.
- const bodyStations=salamanderLineage?salamanderTorsoFromMagma(
+ const bodyStations=magmaSalamander?m019HeroTorsoRings(
+   salamanderTorsoFromMagma(referenceBeastTorsoStations({
+    width:.52,length:.83,centerY:1.30,shape:'wolf'
+   }),s.id)):
+  salamanderLineage?salamanderTorsoFromMagma(
    referenceBeastTorsoStations({
     width:.52,length:.83,centerY:1.30,shape:'wolf'
    }),s.id):
@@ -471,7 +480,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
     const body=g.axialLoft(torso,'skin',bodyStations,
       {name:'species-shoulder-rib-pelvis-'+s.id,
        rough:reptile?.64:.85,ribbing:reptile?.025:.012,
-       capEnds:!!felineMaster});
+       capEnds:!!felineMaster||magmaSalamander});
     if(felineMaster&&coatDetail!=='low'){
       const p=body.geometry.getAttribute('position');
       for(let i=0;i<p.count;i++){
@@ -512,7 +521,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   }
  }else if(felineMaster){
     g.root.userData.felineJointFillersRemoved=true;
-  }else g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
+  }else if(!magmaSalamander)g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
  // Preserve the original m001 neck seam and subtract its thick wolf
  // throat for cats, instead of welding a spherical lion muzzle on top.
  if(beastRemesh)
@@ -520,12 +529,16 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  else if(felineMaster){
   g.bridge(torso,'skin',[0,1.29,.32],[0,1.55,.74+v*.055],.246,.158);
  }
- else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
+ else if(magmaSalamander){
+  const collar=g.bridge(torso,'skin',[0,1.232,.74],[0,1.290,1.28],.162,.114);
+  collar.name='m019-embedded-shoulder-neck';
+ }else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',
+   magmaSalamander?[0,1.265,1.235]:
    [0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)],
    // m002 and felines need the same moving frame as the rib cage.
-   (s.id==='m002'||felineMaster)?torso:g.root);
- if(salamanderLineage)head.position.y-=salamanderLineage.bodyDrop;
+   (s.id==='m002'||felineMaster||magmaSalamander)?torso:g.root);
+ if(salamanderLineage&&!magmaSalamander)head.position.y-=salamanderLineage.bodyDrop;
  if(s.id==='m002'){
    // The donor m001's tiny face is already compressed in DISPLAY space.
    // Undo m002's enlarged morph on the complete head pivot, ensuring
@@ -575,7 +588,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const skullWidth=reptile?.905:feline?.95:1;
  const skullDepth=reptile?1.065:feline?.965:1;
  const cranium=salamanderLineage?
-   g.axialLoft(head,'skin',salamanderSkullFromMagma(M001_CRANIUM_RINGS,s.id),
+   g.axialLoft(head,'skin',magmaSalamander?m019HeroSkullRings(M001_CRANIUM_RINGS):salamanderSkullFromMagma(M001_CRANIUM_RINGS,s.id),
      {name:magmaSalamander?'m019-m001-sourced-closed-cranium':
        s.id+'-m019-derived-closed-cranium',rough:.77,
       ribbing:.019,faceSculpt:true,capEnds:true}):
@@ -666,7 +679,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      {z:-.78,y:-.215,rx:.115,ry:.135},
    ],{name:'m001-low-mane-silhouette',rough:.97,ribbing:.036});
  }
- if(reptile){
+ if(reptile&&!magmaSalamander){
    g.bridge(head,'skin',[0,.045,-.19],[0,-.085,.55],.257,.128);
  }else if(felineMaster){
    g.bridge(head,'skin',[0,-.035,.082],
@@ -681,7 +694,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  const muzzle=s.id==='m001'?.16:s.id==='m002'?.20:beastRemesh?.34:reptile?.57:
    felineMaster?felineMaster.muzzleFront:feline?.32:.43;
- if(reptile){
+ if(magmaSalamander){
+   sculptM019Muzzle(g,head);
+ }else if(reptile){
    g.bridge(head,'skin',[0,-.115,.245],[0,-.152,.82],.203,.116);
    g.sphere(head,'light',[0,-.162,.684],[.145,.064,.226]);
  }else if(beastRemesh){
@@ -1279,6 +1294,8 @@ cloneCanine?
      {z:-.112,y:.003,rx:.069,ry:.052}
    ].map(p=>({...p,rx:p.rx*felineMaster.cheekTaper})),
    {name:'feline-master-mandible-'+s.id,rough:.82,ribbing:.003});
+ }else if(magmaSalamander){
+   sculptM019Jaw(g,jaw);
  }else{
    g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
    if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
@@ -1347,9 +1364,17 @@ cloneCanine?
      {z:-.062,y:-.024,rx:.033,ry:.006}
    ],{name:'quadruped-oral-cavity',rough:.92,ribbing:0});
    cavity.userData.felineMouthSocket=true;
+ }else if(magmaSalamander){
+   const cavity=g.axialLoft(jaw,'shadow',[
+     {z:.485,y:-.044,rx:.027,ry:.006},
+     {z:.393,y:-.040,rx:.105,ry:.011},
+     {z:.243,y:-.032,rx:.144,ry:.012},
+     {z:.032,y:-.025,rx:.066,ry:.007}
+   ],{name:'m019-recessed-mouth-slit',rough:.93,ribbing:0});
+   cavity.userData.m019JawFollowingOralSlit=true;
  }else g.sphere(jaw,'shadow',[0,-.035,muzzle-.18+v*.06],
    [.136,.018,.145],{name:'quadruped-oral-cavity'});
- g.sphere(jaw,'light',[0,-.044,wolfSibling?.116:muzzle-.12+v*.06],
+ if(!magmaSalamander)g.sphere(jaw,'light',[0,-.044,wolfSibling?.116:muzzle-.12+v*.06],
    (s.id==='m001'||cloneCanine)?[.060,.010,.058]:[.084,.014,.098],
    {name:'quadruped-tongue'});
  if(s.id==='m001'||cloneCanine){
@@ -1395,6 +1420,11 @@ cloneCanine?
        {name:'feline-lower-canine-'+s.id+'-'+(side<0?'L':'R')});
      lower.tooth.userData.felineDentalRoot='mandible';
    }
+ }else if(magmaSalamander){
+   for(const side of [-1,1])
+     g.rootedSpike(head,'bone','skin',
+      [side*.134,-.175,.552],[side*.137,-.253,.586],.029,
+      {name:'m019-upper-fang-'+(side<0?'L':'R')});
  }else for(let i=0;i<4;i++)g.spike(jaw,'bone',
    [(i-1.5)*.12,.01,.27],
    [(i-1.5)*.12,-.10,.29],.025);
@@ -1408,7 +1438,8 @@ cloneCanine?
    // Wolf king: shoulder limbs originate laterally from the scapula, not
    // under the midline of the chest; hips follow the narrower rear flanks.
    // Both toe and hock stay on the SAME lateral axis, no toe-out rotation.
-   const lateralX=s.id==='m001'?
+   const lateralX=magmaSalamander?(fore>0?.220:.198):
+     s.id==='m001'?
      (fore>0?.402:.317):
      // Move the shoulder and hip sockets INSIDE the trunk instead
      // of leaving a circular exposed root on the body silhouette.
@@ -1417,14 +1448,21 @@ cloneCanine?
    const leg=g.group('leg'+name,
      pelvisMounted?
        [side*lateralX,beastRemesh?-.540:-.42,.03]:
-       [side*lateralX,beastRemesh?.550:.67,fore*.49],
+       [side*lateralX,beastRemesh?.550:.67,
+        magmaSalamander?(fore>0?1.035:-1.025):fore*.49],
      pelvisMounted?g.pivots.pelvis:
-       (s.id==='m001'||s.id==='m002'||felineMaster?torso:g.root));
+       (s.id==='m001'||s.id==='m002'||felineMaster||magmaSalamander?torso:g.root));
 if(salamanderLineage){
      // Derive short planted limbs with the SAME articulated knee, paw
      // and shoulder axes; never shorten a leg by dropping its foot only.
      leg.position.y*=salamanderLineage.legReach;
-     leg.scale.set(1.16,salamanderLineage.legReach,1.16);
+     if(magmaSalamander){
+       // Reparent to lowered torso, but preserve the foot on world Y=0.
+       leg.position.y+=M019_BODY_DROP;
+     }
+     leg.scale.set(magmaSalamander?M019_LIMB_WIDTH:1.16,
+       salamanderLineage.legReach,
+       magmaSalamander?M019_LIMB_WIDTH:1.16);
      leg.userData.salamanderShortPlantedLeg=true;
      leg.userData.salamanderLegReach=salamanderLineage.legReach;
      if(magmaSalamander){
@@ -1504,7 +1542,7 @@ if(salamanderLineage){
        {x:0,y:-.52,z:.13,rx:.093,rz:.105}
      ],{name:'feline-low-onepiece-leg-'+name});
    }
-   else if(!felineMaster)g.sphere(leg,'skin',[0,.17,0],
+   else if(!felineMaster&&!magmaSalamander)g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
    // m001 hind "lower" is the true stifle/knee pivot, not a hinge
    // beneath the whole thigh. Preserve the initial foot position by
@@ -1517,6 +1555,8 @@ if(salamanderLineage){
        [0,-.065,.015],leg);
    if(s.id==='m001')distal.userData.anatomicalJoint=
      fore>0?'elbow':'stifle';
+   if(magmaSalamander)sculptM019Limb(g,leg,distal,name,
+    {fore:fore>0,detail:coatDetail});
    if(beastRemesh){
     g.limbLoft(distal,'skin',(s.id==='m001'?(fore>0?[
       // Forearm starts over elbow and tapers into elevated carpus.
@@ -1579,7 +1619,7 @@ if(salamanderLineage){
        jointCapsule.userData.attachedKneeCapsule=true;
       }
     }
-   }else if(!felineMaster){
+   }else if(!felineMaster&&!magmaSalamander){
     g.sphere(distal,'skin',[0,-.16,0],[reptile?.13:.15,.27,reptile?.13:.15]);
     g.sphere(distal,'shadow',[0,0,0],[.144,.125,.14],{name:'joint-'+name});
    }
@@ -1652,11 +1692,12 @@ if(salamanderLineage){
          [x*1.08,-.077,.213],.016,
          {name:'feline-master-retractile-claw-'+digit});
      }
-   }else if(s.id!=='m003'){
+   }else if(s.id!=='m003'&&!magmaSalamander){
      // Fenrir owns a separate articulated toe assembly below. Rendering
      // the legacy fixed paw as well made duplicate feet and floating claws.
      feet(g,distal,0,0,0,true,reptile?.75:1);
    }
+   if(magmaSalamander)sculptM019Paw(g,distal,name,{detail:coatDetail});
    if(s.id==='m003'){
      // Four articulated digit pads and their curved keratin claws follow
      // an independent metacarpophalangeal/toe flexion group on each paw.
@@ -1673,7 +1714,7 @@ if(salamanderLineage){
    }
    // Old fallback ball was incorrectly added on top of EVERY feline
    // anatomy-loft limb, producing detached circular shoulder/hip joints.
-   if(!beastRemesh&&!felineMaster)
+   if(!beastRemesh&&!felineMaster&&!magmaSalamander)
      g.sphere(leg,'skin',[0,-.04,.015],[.18,.18,.18]);
    if(canine&&coatDetail!=='low'){
      // Each fur region belongs to its own anatomical joint. Previously
@@ -2146,12 +2187,13 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    s.id==='m004'?[0,.11,-.03]:
    felineMaster?[0,felineMaster.torsoHeight-.025,-bodyLength*.94]:
    forestWolf?[0,1.28,-bodyLength*.86]:
+   magmaSalamander?[0,1.310,-1.445]:
    [0,beastRemesh?1.176:1.35,beastRemesh?-.68:-.55],
    s.id==='m004'?g.pivots.pelvis:
 (salamanderLineage||felineMaster||cloneCanine||forestWolf?torso:g.root));
  if(salamanderLineage){
    // Tail is a torso child; y=1.35 local to the dropped torso.
-   tail.scale.z=salamanderLineage.tailLength;
+   tail.scale.z=magmaSalamander?M019_TAIL_LENGTH:salamanderLineage.tailLength;
    tail.userData.salamanderTorsoParented=true;
    if(magmaSalamander)tail.userData.m019ExtendedSalamanderTail=true;
  }
@@ -2195,7 +2237,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
  const tailMid=g.group('tailMid',
    felineMaster?[0,.320,-.790]:
-   forestWolf?[0,.174,-.610]:[0,.08,-.50],tail);
+   forestWolf?[0,.174,-.610]:magmaSalamander?[0,.066,-.535]:[0,.08,-.50],tail);
  if(felineMaster){
    const caudalMid=g.axialLoft(tailMid,'skin',[
      {z:.100,y:.002,rx:.067,ry:.067},
@@ -2230,11 +2272,12 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',
    felineMaster?[0,-.145,-.750]:
-   forestWolf?[0,.005,-.620]:[.09,-.11,-.49-v*.10],tailMid);
+   forestWolf?[0,.005,-.620]:magmaSalamander?[0,.164,-.645]:[.09,-.11,-.49-v*.10],tailMid);
  if(felineMaster)g.sphere(tailTip,'skin',[0,-.007,-.012],
    [.038,.040,.047],{name:'feline-connected-tail-tip-'+s.id});
  else if(forestWolf)g.sphere(tailTip,'skin',[0,0,-.006],
    [.052,.057,.066],{name:'m005-embedded-tail-tip'});
+ else if(magmaSalamander)sculptM019TailTip(g,tailTip);
  else g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
@@ -2986,7 +3029,12 @@ if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
  if(['m011','m012','m013','m014'].includes(spec.id))
    g.root.userData.avianGameSourceRevision=AVIAN_REALISM_REVISION;
  if(spec.id==='m001')g.root.m001FxThree=THREE;
-if(spec.id==='m019')g.root.userData.gameModelRevision=MAGMA_SALAMANDER_REVISION;
+if(spec.id==='m019'){
+   g.root.userData.gameModelRevision=M019_HERO_REVISION;
+   g.root.userData.m019HeroSilhouette=M019_HERO_REVISION;
+   g.root.userData.m019ApprovedTurnaround=M019_APPROVED_SILHOUETTE;
+   g.root.userData.m019ModelFollowsFourView=true;
+ }
  else if(salamanderLineageFor(spec.id))
    g.root.userData.gameModelRevision=SALAMANDER_LINEAGE_REVISION;
  if(['m002','m007','m008','m009','m010'].includes(spec.id))
