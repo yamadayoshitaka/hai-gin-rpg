@@ -715,9 +715,22 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(3.8*c,.15*c,2.8*c,0,.09*c,0,earth);
    for(const x of [-1.9,1.9])box(.15*c,.25*c,2.95*c,x*c,.2*c,0,wood);
    for(const z of [-1.43,1.43])box(3.95*c,.25*c,.15*c,0,.2*c,z*c,wood);
+   // Each herb has a tapered stem and six overlapping, angled leaves.
+   // The leaves intersect the stem so baked material batches have no floating tips.
+   const stemGeometry=new THREE.CylinderGeometry(.022*c,.045*c,.52*c,6,3);
+   const leafGeometry=new THREE.SphereGeometry(.17*c,8,6);
    for(let x=0;x<6;x++)for(let z=0;z<4;z++){
-    const herb=new THREE.Mesh(new THREE.ConeGeometry(.13*c,.54*c,6),leaves);
-    herb.position.set((x-2.5)*.58*c,.46*c,(z-1.5)*.58*c);root.add(herb);
+    const px=(x-2.5)*.58*c,pz=(z-1.5)*.58*c;
+    const stem=new THREE.Mesh(stemGeometry,leaves);
+    stem.position.set(px,.43*c,pz);root.add(stem);
+    for(let j=0;j<6;j++){
+     const angle=j*Math.PI/3+(x+z)*.19;
+     const leaf=new THREE.Mesh(leafGeometry,leaves);
+     leaf.scale.set(.95,.20,.42);
+     leaf.rotation.set(Math.sin(angle)*.38,-angle,Math.cos(angle)*.38);
+     leaf.position.set(px+Math.cos(angle)*.11*c,(.34+(j%3)*.105)*c,pz+Math.sin(angle)*.11*c);
+     root.add(leaf);
+    }
    }
    root.userData.passable=true;
   }
