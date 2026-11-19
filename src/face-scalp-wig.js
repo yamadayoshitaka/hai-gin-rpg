@@ -347,9 +347,13 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
   if(mid.y<hairline||
    Math.abs(mid.x-c.x)>d.x*.335||
    Math.abs(mid.z-c.z)>d.z*.32)continue;
-  // Never extend this cover over the forehead or brows. Intact donor
-  // triangles entirely above the upper hairline are the only source.
-  if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
+  // Guard every vertex: a passing centroid must not paint a wedge
+  // across the forehead. Posterior scalp retains the lower coverage.
+  if(points.some(p=>p.y<((p.z-c.z)/Math.max(d.z,1e-6)>.12?
+   box.min.y+d.y*.85:box.min.y+d.y*.74)))continue;
+  const area=points[1].clone().sub(points[0]).cross(
+   points[2].clone().sub(points[0])).lengthSq();
+  if(!Number.isFinite(area)||area<Math.pow(d.x,4)*1e-12)continue;
   // Source head triangles can have reversed winding after clipping or
   // donor retargeting. Keep the underlay front-facing with its scalp normals.
   const sourceFace=points[1].clone().sub(points[0]).cross(
