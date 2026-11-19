@@ -13,7 +13,11 @@ export const BATTLE_JOB_SPECIAL_ACTIONS=Object.freeze({
   {id:'break_structure',label:'🐉 召喚獣で建物を破壊',target:'building'}
  ]),
  '弓使い':Object.freeze([{id:'high_ground',label:'🏹 高所から射撃',target:'height'}]),
- 'シーフ':Object.freeze([
+ '僧侶':Object.freeze([
+   {id:'heal_ally',label:'✚ 味方を回復（MP）',target:'ally'},
+   {id:'revive_ally',label:'✧ 戦闘不能者を蘇生（UR／MP）',target:'ally'}
+  ]),
+  'シーフ':Object.freeze([
   {id:'unlock_door',label:'🔓 敵の鍵を開ける',target:'door'},
   {id:'steal_item',label:'🎒 アイテムを盗む',target:'enemy'}
  ]),

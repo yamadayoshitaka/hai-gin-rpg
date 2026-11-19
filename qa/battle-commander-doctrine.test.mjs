@@ -86,3 +86,19 @@ test('summoner, thief and ranged job menu connects to real game functions',()=>{
  assert.match(worker,/case 'summonSquadCreature'/);
  assert.match(worker,/case 'orderSquadHighGround'/);
 });
+
+test('commander-owned inventory, priest defense options and persistent action focus',()=>{
+ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ const styles=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ assert.deepEqual(battleJobSpecialActions('僧侶').map(action=>action.id),['heal_ally','revive_ally']);
+ assert.match(ui,/showGuardChoices\(\)/);
+ assert.match(ui,/realtimeDockGuardChoices/);
+ assert.match(ui,/actionDescription\(/);
+ assert.match(ui,/aria-pressed/);
+ assert.match(ui,/軍師が兵符/);
+ assert.match(game,/action==='revive_ally'/);
+ assert.match(game,/massSim\.requestSquadHealing/);
+ assert.match(game,/Player is the commander: never auto-spend/);
+ assert.match(styles,/rpgSquadMpMeter\{width:50%;max-width:50%/);
+});

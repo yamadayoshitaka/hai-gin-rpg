@@ -331,3 +331,17 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleDock #realtimeRally,
  #realtimeBattleDock #realtimeSpecial{font-size:10px;min-height:35px;padding:2px}
 }
+
+/* Persistent player-command selection; touch and keyboard states are visible. */
+#battleRealtimeControls #realtimeBattleDock>button.selected,
+#battleRealtimeControls .realtimeMapActionButtons button.selected,
+#battleRealtimeControls .realtimeMapActionButtons button[aria-pressed="true"]{
+ background:#356c57!important;border:2px solid #ffe28d!important;
+ box-shadow:inset 0 0 0 1px #fff5c766,0 0 0 1px #e7ca7f!important;color:#fff6c9!important
+}
+#battleRealtimeControls #realtimeBattleDock>button.selected:focus-visible,
+#battleRealtimeControls .realtimeAttackChoices button.selected:focus-visible{outline:3px solid #fff5ab;outline-offset:1px}
+#realtimeBattleDock #realtimeDockGuardChoices{grid-column:1/-1;grid-row:5}
+#realtimeMapChosenAction{display:block;color:#fff0ad;font:800 11px/1.3 system-ui;
+ padding:3px 5px;margin:2px 0;background:#193e50;border:1px solid #708f92;border-radius:5px}
+#realtimeBattleDock #realtimeSelectedState{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
