@@ -498,3 +498,16 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
   grid-template-rows:16px 10px 8px 8px repeat(2,5px);min-height:0;
  }
 }
+
+
+/* Engagement badge is independent of HP warning state and always legible. */
+#battleRpgSquadHud .rpgSquadRowTitle .rpgSquadEngaged{
+ display:inline-flex!important;grid-column:3;grid-row:1;
+ align-items:center;justify-content:center;flex:none;
+ min-width:17px;height:17px;padding:1px 3px;border-radius:5px;
+ border:1px solid #ffdb85;background:#64341e;color:#ffe9b5;
+ font:900 11px/1 system-ui;box-shadow:none;
+}
+#battleRpgSquadHud .rpgSquadRowTitle .rpgSquadEngaged[hidden]{
+ display:none!important;
+}
