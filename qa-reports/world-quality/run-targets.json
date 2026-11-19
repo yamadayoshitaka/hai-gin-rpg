@@ -3,8 +3,8 @@
     "object:entry_door_lv4_001"
   ],
   "run": {
-    "id": "44437141063",
-    "startedAt": "2026-11-19T01:29:41.734Z",
+    "id": "44496801970",
+    "startedAt": "2026-11-19T09:32:33.920Z",
     "mode": "results",
     "requested": 1,
     "requestedTarget": null,
@@ -20,6 +20,6 @@
     "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
     "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
-    "completedAt": "2026-11-19T01:29:41.735Z"
+    "completedAt": "2026-11-19T09:32:33.920Z"
   }
 }
