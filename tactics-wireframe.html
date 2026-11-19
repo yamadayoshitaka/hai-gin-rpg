@@ -5600,7 +5600,8 @@ function tickAI(dt){
   // Automatic upstairs scouting is lower priority than a hostile soldier
   // within striking distance. The old unconditional floorTravel 'continue'
   // made both sides walk past adjacent living enemies without fighting.
-  if(a.floorTravel&&['approach','toStair'].includes(a.floorTravel.phase)){
+  if(a.floorTravel&&!a.floorTravel.manualHighGroundTarget&&
+     ['approach','toStair'].includes(a.floorTravel.phase)){
    const near=nearestEnemy(a,CELL*3.3),p=a.root.position,q=near?.root?.position;
    if(near&&q&&hutShotClear(p,q)&&hutShotClear(q,p)){
     const old=a.floorTravel;
@@ -9959,6 +9960,37 @@ function realtimeSpecialTargets(id,action){
   return members.some(u=>u.jobId==='summoner'&&u.mp>=15)?
    [{id:'self',label:'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
  if(action==='high_ground'){
+  if(!massSim){
+   // Detailed 50v50 battles use actor floorTravel instead of massSim routes.
+   const result=[];
+   for(const [index,building] of townInstances.entries()){
+    const structure=building.structure;
+    if(destroyedTownBuildings.has(building.data)||!(structure?.floors?.length>1))continue;
+    const gate=[...battleDoorDefinitions.values()].find(info=>info.building===building)?.object;
+    for(const kind of ['window','roof']){
+     const windows=kind==='window'?buildingWindowFiringPositions(
+      structure,building.model.position,2,{cellSize:CELL}):[];
+     if(kind==='roof'&&!roofAccessPlan(structure,{cellSize:CELL}))continue;
+     if(kind==='window'&&!windows.length)continue;
+     const capable=members.filter(u=>u.hp>0&&u.alive!==false&&u.hp>=u.maxHp*.35&&
+      (kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId)));
+     if(!capable.length)continue;
+     const passDoor=!gate||gate.team===0||!gate.locked||kind==='roof';
+     const free=capable.some(u=>!u.floorTravel||
+      (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase)));
+     const available=passDoor&&free;
+     const location=kind==='roof'?building.model.position:windows[0];
+     const x=Math.round(location.x/CELL+6),z=Math.round(location.z/CELL+6);
+     const reason=!passDoor?'敵の扉が施錠されています（シーフで解錠）':
+      !free?'現在ほかの高所へ移動中です':'';
+     result.push({id:'skirmish:'+index+':'+kind,x,z,available,reason,
+      label:(kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+(index+1)+
+       '｜'+(kind==='roof'?'屋上':'2階')+'｜X'+x+' Z'+z+
+       (available?'':'［'+reason+'］')});
+    }
+   }
+   return result;
+  }
   if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
   return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
    .filter(route=>['window','roof'].includes(route.kind)&&
@@ -10062,8 +10094,19 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   try{moved=issueIndividualSquadOrder('move',point);}
   finally{selectedSquadId=before;}
   if(!moved)return false;
-  battleCeremony.showOrder('🛡 '+squadName(id)+'：前衛防御',
-   squadName(targetId)+'の前方に展開、到着後に防御陣形で攻撃を受け止める');
+  // Guard changes the authoritative damage calculation, not just formation.
+  if(massSim){
+   if(!massSim.assignShieldCover(id,targetId,0))return false;
+   if(massWorker?.active)massWorker.assignShieldCover(id,targetId,0);
+  }else{
+   const until=(skirmishActions?.time??elapsed)+60;
+   for(const shield of members.filter(u=>u.jobId==='shield')){
+    shield.guardCoverTargetSquadId=String(targetId);
+    shield.guardCoverUntil=until;
+   }
+  }
+  battleCeremony.showOrder('🛡 '+squadName(id)+'：身代わり防御',
+   squadName(targetId)+'の前衛へ移動し、8マス以内の攻撃の65%を引き受ける（60秒）');
   return {followup:'defend',point};
  }
  if(action==='heal_ally'||action==='revive_ally'){
@@ -10117,6 +10160,26 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   finally{selectedSquadId=prior;}
  }
  if(action==='high_ground'){
+  if(!massSim){
+   const match=/^skirmish:([0-9]+):(window|roof)$/.exec(String(targetId));
+   if(!match)return false;
+   const building=townInstances[Number(match[1])],kind=match[2];
+   if(!building)return false;
+   const eligible=members.filter(u=>u.hp>0&&u.alive!==false&&
+    (kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId))&&
+    u.hp>=u.maxHp*.35&&(!u.floorTravel||
+     (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase))));
+   eligible.sort((a,b)=>a.root.position.distanceToSquared(building.model.position)-
+    b.root.position.distanceToSquared(building.model.position));
+   const selected=eligible[0];
+   if(!selected||!requestUnitFloor(selected,1,building))return false;
+   selected.floorTravel.manualHighGroundTarget=true;
+   selected._manualHighGroundBuilding=building;
+   markRibbonOrderIssued(id);
+   battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃',
+    kind==='roof'?'忍者が鉤縄で指定した屋根へ登攀':'指定した建物の階段を登り2階窓から攻撃');
+   return true;
+  }
   const routeIndex=Number(targetId);
   const already=massSim?.units?.some(u=>u.team===0&&String(u.squadId)===String(id)&&
    u.hp>0&&u.highGroundRouteIndex===routeIndex);
@@ -10269,15 +10332,19 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   return true;
  },
  onStart:()=>{
+  commandOverviewLocked=false;document.body.classList.remove('battle-command-active');
+  controls.enabled=true;
   battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
   battleAudio.setPhase('march');
   setBattlePaused(false);
+  if(paused){log('戦闘開始を保留：別の戦況停止が有効です');return false;}
   // First battle camera is deliberately above friendly squad 1.
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
    text:'配置完了！部隊の作戦と対象を選んでください。接近や登攀は自動で行います。'});
    log('戦闘開始：部隊の作戦と対象を確定すると移動と実行が連続します。');
+   return true;
  },
  onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
  onFocus:id=>{
