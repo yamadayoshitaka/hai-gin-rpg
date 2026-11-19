@@ -45,7 +45,8 @@ test('turn control is never mounted and realtime squad picker is wired',()=>{
  assert.match(battle,/setBattlePaused\(false\)/);
  assert.match(battle,/deploySquadBeforeBattle\(id,point\.x,point\.z,0\)/);
  assert.match(battle,/onMove:\(id,point\)=>/);
- assert.match(battle,/issueSquadOrder\('move',point\)/);
+ assert.match(battle,/issueIndividualSquadOrder\('move',point\)/);
+ assert.match(battle,/!hasSquadCommander\(id\)\|\|!canChangeSquadOrder\(id\)/);
  assert.match(battle,/onOrder:\(id,mode\)=>/);
  assert.match(battle,/document\.body\.classList\.add\('battle-realtime-clean'\)/);
  assert.doesNotMatch(battle,/'TURN開始：/);
