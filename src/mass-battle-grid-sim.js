@@ -289,6 +289,31 @@ export class MassBattleGridSimulation {
     return !structure||structure.alive;
   }
 
+  /** Explicit range-job high-ground order uses the actual authored stair route. */
+  orderSquadHighGround(squadId,routeIndex,team=0){
+    const index=Number(routeIndex),route=this.highGroundRoutes[index];
+    if(!route||route.team!==team||!this._highGroundRouteAlive(route)||
+      !['window','roof'].includes(route.kind))return false;
+    const key=route.buildingIndex+':'+team;
+    if(this._highGroundClaims.has(key))return false;
+    const flow=this._highGroundFlows[index];
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.highGroundRouteIndex<0&&
+      (route.kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId))&&
+      !u.mountId&&u.hp>=u.maxHp*.35);
+    members.sort((a,b)=>
+      Math.hypot(a.x-route.access.x,a.z-route.access.z)-
+      Math.hypot(b.x-route.access.x,b.z-route.access.z));
+    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff&&
+      Math.hypot(u.x-route.access.x,u.z-route.access.z)<=65);
+    if(!unit)return false;
+    this.squadDestinations.delete(String(squadId));
+    this.squadFlows.delete(String(squadId));
+    unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
+    unit.highGroundT=0;unit.highGroundFloor=1;
+    this._highGroundClaims.set(key,unit.id);
+    return true;
+  }
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
     // Allocate inside-room patrol, second-floor archer and rooftop ninja
