@@ -187,6 +187,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-sprawl-tail-fit';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m019-turnaround-lizard-v4-20261119';
@@ -297,6 +298,10 @@ controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
 const HUMAN_INSPECT_MIN_POLAR=Math.PI*.30;
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
+let m019CameraUserAdjusted=false;
+controls.addEventListener('start',()=>{
+ if(selected==='m019')m019CameraUserAdjusted=true;
+});
 let nextActionReplay=Infinity;
 let costumeHandle=null;
 let externalRegistry={entries:{...REAL_CREATURE_MESH_SOURCES}},externalHandle=null,requestSerial=0;
@@ -389,6 +394,30 @@ function focusCamera(full=false){
  }
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
+ if(selected==='m019'&&model?.userData?.m019ModelFollowsFourView){
+  // The previous portrait camera fitted only vertical FOV, clipping the
+  // long tail off-screen. Fit the real X/Z bounds in the viewport H-FOV.
+  const aspect=Math.max(.20,view.clientWidth/Math.max(1,view.clientHeight));
+  camera.aspect=aspect;camera.updateProjectionMatrix();
+  const fit=m019FullBodyFit({
+    width:size.x,height:size.y,depth:size.z,
+    aspect,fovDegrees:camera.fov
+  });
+  const target=new THREE.Vector3(center.x,Math.max(.55,center.y),center.z);
+  controls.target.copy(target);
+  camera.position.set(target.x+fit.direction.x*fit.distance,
+    target.y+fit.direction.y*fit.distance,
+    target.z+fit.direction.z*fit.distance);
+  controls.maxDistance=90;
+  model.userData.m019LastFit={
+    distance:fit.distance,aspect,
+    horizontalFovRadians:fit.horizontalFovRadians,
+    modelBox:[size.x,size.y,size.z],fullBody:true
+  };
+  controls.update();
+  return;
+ }
+ controls.maxDistance=45;
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
  // Favor the real +Z-facing actor's face and torso.
  if(HUMAN_MONSTER_IDS.includes(selected)||model?.userData?.beastfolkSource)
@@ -404,6 +433,7 @@ function focusCamera(full=false){
  controls.update();
 }
 function zoomModel(factor){
+ if(selected==='m019')m019CameraUserAdjusted=true;
  const delta=camera.position.clone().sub(controls.target);
  const distance=Math.max(controls.minDistance,Math.min(controls.maxDistance,
   delta.length()*factor));
@@ -413,7 +443,7 @@ function zoomModel(factor){
 }
 byId('zoomIn').onclick=()=>zoomModel(.76);
 byId('zoomOut').onclick=()=>zoomModel(1.30);
-byId('resetCamera').onclick=()=>{if(model)focusCamera(true);};
+byId('resetCamera').onclick=()=>{if(model){m019CameraUserAdjusted=false;focusCamera(true)}};
 byId('portraitCamera').onclick=()=>{
  if(!model)return;
  if(selected==='m013'&&model.userData.avianRebuildRevision){
@@ -440,6 +470,7 @@ function selectSpecies(id){
  const ticket=++requestSerial;
  const changed=id!==selected;
  selected=id;
+ m019CameraUserAdjusted=false;
  if(changed){
    const approved=adoptedCreatureMesh(id);
    const remembered=modelAssignments[id];
@@ -746,6 +777,8 @@ const resize=()=>{
  if(width<=0||height<=0)return;
  camera.aspect=width/height;camera.updateProjectionMatrix();
  renderer.setSize(width,height,false);
+ // Initial selection often precedes the first ResizeObserver callback.
+ if(model&&selected==='m019'&&!m019CameraUserAdjusted)focusCamera(true);
 };
 new ResizeObserver(resize).observe(view);
 function frame(){
@@ -837,6 +870,9 @@ window.__monsterViewerLayoutQA=()=>({
 });
 // Test-only inspection keeps the same real game sculpture/materials,
  // but renders the eye/cheek seams from frontal AND lateral cameras.
+window.__m019FullBodyCameraQA=()=>selected==='m019'&&model?
+ {...model.userData.m019LastFit,manualView:m019CameraUserAdjusted,
+  viewport:[view.clientWidth,view.clientHeight]}:null;
 window.__beastFaceCameraQA=angle=>{
  if(!['front','side','back','underbody'].includes(angle))
   throw Error('Unknown quality camera');
