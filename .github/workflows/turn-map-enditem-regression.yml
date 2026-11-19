@@ -43,4 +43,7 @@ jobs:
       - name: Regression for one-time deployment, map tap and HUD isolation
         run: |
           node --experimental-vm-modules --test qa/turn-map-paging-regression.test.mjs
+          node --experimental-vm-modules qa/objective-turns-all-battles.test.mjs
+          node --experimental-vm-modules qa/objective-turns-ten-groups.test.mjs
+          node --test qa/battle-rpg-squad-hud.test.mjs
           node qa/confirmed-hit-feedback.test.mjs
