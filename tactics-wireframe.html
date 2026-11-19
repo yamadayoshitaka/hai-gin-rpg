@@ -9981,7 +9981,7 @@ function realtimeSpecialTargets(id,action){
     const top=route.points.at(-1);
     const x=Math.round((top?.x??((route.access.x-6)*CELL))/CELL+6);
     const z=Math.round((top?.z??((route.access.z-6)*CELL))/CELL+6);
-    return {id:String(route.index),x,z,available,reason,
+    return {id:String(route.index),x,z,entryPoint:{x:route.access.x,z:route.access.z},available,reason,
      label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+(route.buildingIndex+1)+
       '｜'+(route.kind==='roof'?'屋上':'2階')+'｜X'+x+' Z'+z+
       (available?'':'［'+reason+'］')};
@@ -10023,7 +10023,7 @@ function realtimeSpecialTargets(id,action){
    const direction=Math.abs(dx)>=Math.abs(dz)?(dx>=0?'東':'西'):(dz>=0?'南':'北');
    const maxLock=members.filter(u=>u.jobId==='thief').reduce((best,u)=>
     Math.max(best,u.rarity==='UR'?5:u.rarity==='R'?3:1),0);
-   const available=kind!=='door'||(o.locked&&Number(o.lockLevel)<=maxLock);
+   const available=kind!=='door'||(o.team===1&&o.locked&&Number(o.lockLevel)<=maxLock);
    const reason=kind==='door'?(o.locked?
     (available?'鍵Lv.'+o.lockLevel+'／解錠可能':'鍵Lv.'+o.lockLevel+'／技能Lv.'+maxLock+'では開錠不可'):
     '開錠済み'):'';
