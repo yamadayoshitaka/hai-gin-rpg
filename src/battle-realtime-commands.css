@@ -234,3 +234,14 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleDock>button{min-height:31px}
  #realtimeBattleDock .realtimeAttackChoices{grid-column:1/-1;grid-row:4}
 }
+
+/* Keep the opening map and its action subchoices inside a portrait handset. */
+#realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapAttackChoices:not([hidden])) #realtimeBattleCanvas{
+ width:min(calc(100% - 70px),32dvh,310px);max-height:32dvh;
+}
+@media(max-height:760px){
+ #realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapAttackChoices:not([hidden])) #realtimeBattleCanvas{
+  width:min(calc(100% - 70px),27dvh,260px);max-height:27dvh;
+ }
+ #realtimeBattleMapOverlay .realtimeAttackChoices{padding:2px;gap:2px}
+}
