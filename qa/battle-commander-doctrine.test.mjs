@@ -120,3 +120,21 @@ test('tabs separate tactics, buffs and army-shared battle pickups',()=>{
  assert.match(game,/sharedInventoryCommanderId\(issuerSquadId\?\?squadId\)/);
  assert.match(game,/戦闘中にどの味方が拾ったアイテムも軍全体の共有在庫/);
 });
+
+test('commander consumables never await movement and buildings have confirmable numbered map pins',()=>{
+ const ui=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(ui,/mode==='move'&&actionDestination&&!entry\.itemId/);
+ assert.match(ui,/const accepted=entry\.itemId\?onReinforce\(id,entry\.itemId\)/);
+ assert.match(ui,/id="realtimeMapManageItems"/);
+ assert.match(ui,/onManageItems\(targetId\)/);
+ assert.match(ui,/className='realtimeStructureMap'/);
+ assert.match(ui,/\['building','bridge','door'\]\.includes\(action\.target\)/);
+ assert.match(ui,/✅ 選択した対象に作戦を実行/);
+ assert.match(css,/realtimeContextChoices:has\(\.realtimeStructureMap\)/);
+ assert.match(html,/return \{id:String\(o\.id\),x:o\.x,z:o\.z/);
+ assert.match(html,/label:.*kind==='bridge'/);
+ assert.match(html,/全軍共通アイテム（距離制限なし）/);
+ assert.match(html,/performSquadBattleItem\(itemId,squadId/);
+});
