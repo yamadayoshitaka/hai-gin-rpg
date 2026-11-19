@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import vm from 'node:vm';
 import {battleMapCell} from '../src/battle-realtime-commands.js';
+import {BATTLE_ATTACK_CHOICES,battleAttackCommand,isRangedBattleJob} from '../src/battle-attack-choices.js';
 import {buildBattleSquadLeaderPins,visibleBattleSquadPins} from '../src/battle-squad-leader-pins.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 import {planSkirmishDeployment} from '../src/battle-realtime-deployment.js';
@@ -177,4 +178,58 @@ test('tactical deployment uses only leader coordinates, never soldier dot clouds
  assert.match(battle,/buildBattleSquadLeaderPins\(squadRoster,\{team:1,ids:enemySquadIds\}\)/);
  assert.match(battle,/leader\?\.x\?\?NaN,z:leader\?\.z\?\?NaN/);
  assert.match(battle,/isSquadLeader:!storyRequest&&!TOWN_MODE/);
+});
+
+test('one-job squads use a portrait-triggered command dock, not a select box',()=>{
+ const src=read('../src/battle-realtime-commands.js');
+ const hud=read('../src/battle-rpg-squad-hud.js');
+ const page=read('../tactics-wireframe.html');
+ const css=read('../src/battle-realtime-commands.css');
+ assert.doesNotMatch(src,/<select id="realtimeSquadSelect"/);
+ assert.match(src,/id="realtimeBattleDock" hidden/);
+ assert.match(src,/id="realtimeDockPrev"/);
+ assert.match(src,/id="realtimeDockNext"/);
+ assert.match(src,/id="realtimeDockPortrait"/);
+ assert.match(src,/id="realtimeDockClose"/);
+ assert.match(src,/showSquadControls,/);
+ assert.match(hud,/job\.addEventListener\('click',openByIcon\)/);
+ assert.match(hud,/event\.stopPropagation\(\)/);
+ assert.match(hud,/if\(team===0\)onCommand\(team,String\(row\.id\)\)/);
+ assert.match(page,/onCommand:\(team,id\)=>/);
+ assert.match(page,/realtimeCommandUI\?\.showSquadControls\(id\)/);
+ assert.match(css,/#realtimeBattleDock \.realtimeDockSquadPager/);
+});
+test('planning pauses the combat clock and only releases its own pause on exit',()=>{
+ const src=read('../src/battle-realtime-commands.js');
+ const page=read('../tactics-wireframe.html');
+ assert.match(src,/function enterPlanning\(\)/);
+ assert.match(src,/if\(!started\|\|getPaused\(\)\)return/);
+ assert.match(src,/onPause\(\);planningOwnsPause=Boolean\(getPaused\(\)\)/);
+ assert.match(src,/function exitPlanning\(\)/);
+ assert.match(src,/if\(!planningOwnsPause\)return/);
+ assert.match(src,/if\(getPaused\(\)\)onPause\(\)/);
+ assert.match(src,/if\(started\)enterPlanning\(\)/);
+ assert.match(src,/if\(onOrder\(id,command\)\)closeSquadControls\(\)/);
+ assert.match(page,/onPause:\(\)=>setBattlePaused\(!paused\)/);
+});
+test('initial and live maps share real attack variants with valid simulation commands',()=>{
+ assert.deepEqual(BATTLE_ATTACK_CHOICES.map(x=>x.id),['near','far','intercept','delay']);
+ assert.deepEqual(BATTLE_ATTACK_CHOICES.map(x=>x.command),['charge','hold','defend','hold']);
+ assert.equal(battleAttackCommand('near','盾騎士'),'charge');
+ assert.equal(battleAttackCommand('far','剣士'),null);
+ assert.equal(battleAttackCommand('far','魔法使い'),'hold');
+ assert.equal(battleAttackCommand('far','弓使い'),'hold');
+ assert.equal(battleAttackCommand('intercept','忍者'),'defend');
+ assert.equal(battleAttackCommand('delay','僧侶'),'hold');
+ assert.equal(battleAttackCommand('bad','剣士'),null);
+ assert.equal(isRangedBattleJob('格闘家'),false);
+ const src=read('../src/battle-realtime-commands.js');
+ assert.match(src,/id="realtimeMapAttackChoices"/);
+ assert.match(src,/id="realtimeDockAttackChoices"/);
+ for(const kind of BATTLE_ATTACK_CHOICES.map(x=>x.id)){
+  assert.ok(src.includes('data-attack-kind="'+kind+'" data-attack-origin="dock"'));
+  assert.ok(src.includes('data-attack-kind="'+kind+'" data-attack-origin="map"'));
+ }
+ assert.match(src,/battleAttackCommand\(preferred\.slice\(7\),squad\.job\)/);
+ assert.match(src,/if\(queuedCommand\)arrivalActions\.set/);
 });

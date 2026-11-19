@@ -9010,6 +9010,11 @@ const ribbonPages=[0,0],ribbonPageSize=5;
 let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
 let trackedAllySquadId=squadIds[0]??null;
 battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
+ onCommand:(team,id)=>{
+  if(team!==0||!battleReady||finished||battleCeremony.locked)return;
+  trackedAllySquadId=String(id);
+  realtimeCommandUI?.showSquadControls(id);
+ },
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
   if(team===0){trackedAllySquadId=String(id);realtimeCommandUI?.selectSquad(id);}
