@@ -6,7 +6,7 @@
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-approved-four-view-slender-lizard-v4-20261119';
+export const M019_HERO_REVISION='m019-approved-lizard-sprawled-legs-v5-20261120';
 export const M019_BODY_DROP=.38;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
