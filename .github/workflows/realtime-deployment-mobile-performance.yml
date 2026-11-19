@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/battle-realtime-commands.js'
       - 'src/battle-realtime-commands.css'
+      - 'src/battle-target-japanese-flow.js'
+      - 'qa/battle-skill-first-japanese-targets.test.mjs'
       - 'tactics-wireframe.html'
       - 'qa/realtime-deployment-mobile-performance.test.mjs'
       - '.github/workflows/realtime-deployment-mobile-performance.yml'
@@ -12,6 +14,8 @@ on:
     paths:
       - 'src/battle-realtime-commands.js'
       - 'src/battle-realtime-commands.css'
+      - 'src/battle-target-japanese-flow.js'
+      - 'qa/battle-skill-first-japanese-targets.test.mjs'
       - 'tactics-wireframe.html'
       - 'qa/realtime-deployment-mobile-performance.test.mjs'
       - '.github/workflows/realtime-deployment-mobile-performance.yml'
@@ -30,4 +34,5 @@ jobs:
       - name: Realtime deployment syntax and UI
         run: |
           node --check src/battle-realtime-commands.js
-          node --test qa/realtime-deployment-mobile-performance.test.mjs
+          node --check src/battle-target-japanese-flow.js
+          node --test qa/realtime-deployment-mobile-performance.test.mjs qa/battle-skill-first-japanese-targets.test.mjs

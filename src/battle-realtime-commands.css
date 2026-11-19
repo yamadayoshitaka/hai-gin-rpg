@@ -578,3 +578,33 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  }
  #realtimeBattleDock #realtimeStrategyTargets{gap:3px}
 }
+
+
+/* Skill-first battle commands: skill -> eligible target -> one final confirm.
+   The target picker is never shown beside unselected skills. */
+#battleRealtimeControls #realtimeBattleDock #realtimeSkillStep{
+ grid-column:1/-1;grid-row:4;
+ display:block;min-width:0;
+ padding:4px 6px;border:1px solid #597990;border-radius:6px;
+ background:#102b3e;color:#ffe3a9;
+ font:800 11px/1.35 system-ui;
+}
+#battleRealtimeControls #realtimeBattleDock #realtimeSkillStep[hidden]{display:none!important}
+#battleRealtimeControls #realtimeBattleDock #realtimeStrategyTargets{
+ grid-column:1/-1;grid-row:6;gap:4px;
+ padding:6px 4px;max-height:27dvh;overflow-y:auto;overscroll-behavior:contain;
+}
+#battleRealtimeControls #realtimeBattleDock #realtimeTargetStep{
+ flex:1 0 100%;color:#ffe5ac;font:900 11px/1.35 system-ui;
+}
+#battleRealtimeControls #realtimeBattleDock #realtimeStrategyTargets #realtimeTargetChoice,
+#battleRealtimeControls #realtimeBattleDock #realtimeStrategyTargets #realtimeTargetKind{display:none!important}
+#battleRealtimeControls #realtimeBattleDock #realtimeStrategyTargets .realtimeTapChoices{
+ grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#battleRealtimeControls #realtimeBattleDock #realtimeStrategyTargets .realtimeTapChoice{
+ white-space:normal;text-align:left;
+}
+#battleRealtimeControls #realtimeBattleDock #realtimeConfirmStrategy{
+ grid-column:1/-1;grid-row:7;
+}
