@@ -63,6 +63,15 @@ export class CombatActionRuntime {
     this._unitHitSlots = [];
     this._occupancy = occupancy;
     this._units = units;
+    // One O(n) cover index per tick rather than scanning 2000 soldiers per hit.
+    this._guardCoverIndex=new Map();
+    for(const u of units){
+      if(!isAlive(u)||u.jobId!=='shield'||!(Number(u.guardCoverUntil)>this.time)||
+         u.guardCoverTargetSquadId==null)continue;
+      const key=u.team+':'+String(u.guardCoverTargetSquadId);
+      const guards=this._guardCoverIndex.get(key)??[];
+      guards.push(u);this._guardCoverIndex.set(key,guards);
+    }
     this._sectors = sectors ?? new Map();
     if (walkable) this.walkable = walkable;
     for (const u of units) {
@@ -185,6 +194,29 @@ export class CombatActionRuntime {
     if ((target.guardUntil || 0) > this.time) damage *= .45;
     if ((target.absorbUntil || 0) > this.time) { target.hp = Math.min(target.maxHp, target.hp + damage * .25); damage *= .5; }
     damage = Math.max(0, Math.round(damage));
+    // Shield knights protect one nominated allied squad by physically absorbing
+    // most incoming hostile damage while within eight battle cells. A redirected
+    // hit is linked, so it cannot trigger another shield or recurse.
+    if(!linked&&damage>0&&attacker&&attacker.team!==target.team&&
+       target.squadId!=null&&this._guardCoverIndex?.size){
+      const pos=u=>({x:Number(u?.x??u?.cell?.x),z:Number(u?.z??u?.cell?.z)});
+      const victim=pos(target);
+      const guards=this._guardCoverIndex.get(target.team+':'+String(target.squadId))??[];
+      let cover=null,nearest=Infinity;
+      for(const u of guards){
+        if(u===target||!isAlive(u)||!(Number(u.guardCoverUntil)>this.time))continue;
+        const spot=pos(u),distance=Math.hypot(spot.x-victim.x,spot.z-victim.z);
+        if(distance<=8&&distance<nearest){cover=u;nearest=distance;}
+      }
+      if(cover){
+        const redirected=Math.max(1,Math.round(damage*.65));
+        damage-=redirected;
+        this.damageUnit(cover,redirected,null,element,true);
+        this.event('shieldCover',{guardId:cover.id,targetId:target.id,
+          protectedSquadId:String(target.squadId),absorbed:redirected,
+          x:victim.x,z:victim.z});
+      }
+    }
     const lostHp=Math.min(target.hp,damage);
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;

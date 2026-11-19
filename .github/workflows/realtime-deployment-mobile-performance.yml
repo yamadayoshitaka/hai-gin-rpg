@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'src/battle-realtime-commands.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-client.js'
+      - 'src/mass-battle-worker-runtime.js'
+      - 'src/battle-job-special-actions.js'
+      - 'qa/battle-start-highground-shield-cover.test.mjs'
       - 'src/battle-realtime-commands.css'
       - 'src/battle-target-japanese-flow.js'
       - 'qa/battle-skill-first-japanese-targets.test.mjs'
@@ -13,6 +19,12 @@ on:
     branches: [main]
     paths:
       - 'src/battle-realtime-commands.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-client.js'
+      - 'src/mass-battle-worker-runtime.js'
+      - 'src/battle-job-special-actions.js'
+      - 'qa/battle-start-highground-shield-cover.test.mjs'
       - 'src/battle-realtime-commands.css'
       - 'src/battle-target-japanese-flow.js'
       - 'qa/battle-skill-first-japanese-targets.test.mjs'
@@ -35,4 +47,7 @@ jobs:
         run: |
           node --check src/battle-realtime-commands.js
           node --check src/battle-target-japanese-flow.js
-          node --test qa/realtime-deployment-mobile-performance.test.mjs qa/battle-skill-first-japanese-targets.test.mjs
+          node --check src/combat-action-runtime.js
+          node --check src/mass-battle-grid-sim.js
+          node --check src/mass-battle-worker-runtime.js
+          node --test qa/realtime-deployment-mobile-performance.test.mjs qa/battle-skill-first-japanese-targets.test.mjs qa/battle-start-highground-shield-cover.test.mjs
