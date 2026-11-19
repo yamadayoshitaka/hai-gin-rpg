@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "5164202c7df0386af81dfac53611613524374e328a6aa5b00ffd3ae7c370286d",
+  "sourceFingerprint": "f1968852a742e328f44774ea07139da9ca36beb04df14439a1e28b91be580faa",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for haystack_001 (visual review still required)"
+        "Real WebGL screenshots available for town_water_trough_001 (visual review still required)"
       ]
     }
   },
