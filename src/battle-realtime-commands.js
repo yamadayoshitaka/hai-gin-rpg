@@ -77,7 +77,7 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeManageItems" hidden>🎁 全軍の共有アイテムを使う</button>
    <button type="button" id="realtimeRally" hidden>📣 バフの種類と対象を選択</button>
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
-   <button type="button" id="realtimeThiefUnlock" hidden>🔓 鍵開け</button>
+   <button type="button" id="realtimeThiefUnlock" title="シーフ固有：鍵開け・盗む" hidden>🔓 鍵開け</button>
    <button type="button" id="realtimeThiefSteal" hidden>🎒 盗む</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeStrategyTargets" hidden role="group" aria-label="選択した攻撃スキルで指定できる敵隊">
@@ -604,7 +604,7 @@ export function createRealtimeBattleCommands({
    });
    for(const target of shown)contextButton(node,String(target.label||target.id),()=>choose(target));
    if(origin==='map'){
-    confirmButton=contextButton(node,'✅ 対象を確定',()=>{
+    confirmButton=contextButton(node,'✅ 選択した対象に作戦を実行',()=>{
      if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
     });
     confirmButton.disabled=true;
