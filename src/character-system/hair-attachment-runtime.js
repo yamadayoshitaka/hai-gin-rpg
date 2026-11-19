@@ -136,10 +136,14 @@ function fittedScalpSurface(model,bone,headBounds){
   // A .56 per-vertex cutoff discards transition triangles along the crown,
   // leaving bald wedges. Include moderately head-bound skin vertices only
   // in this anatomical scalp extraction; keep the candidate selection strict.
-  if(weight<.48)continue;
+  // Allow weaker head-bone weights only near the apex: transition vertices
+  // close crown gaps without admitting lower-face/neck triangles into the wig.
+  if(weight<.42)continue;
   mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
   bone.worldToLocal(point);
   if(point.y<threshold)continue;
+  const crownHeight=(point.y-threshold)/Math.max(.001,headBounds.max.y-threshold);
+  if(weight<.48&&crownHeight<.65)continue;
   radial.copy(point).sub(center).normalize().multiplyScalar(.0045);
   point.add(radial);
   local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
