@@ -9805,15 +9805,17 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   manualCameraFocusUntil=performance.now()+4500;setCameraActive(null);
  },
  onMove:(id,point)=>{
-  if(!battleReady||finished||battleCeremony.locked)return false;
+  if(!battleReady||finished||battleCeremony.locked||
+    !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
-  try{return issueSquadOrder('move',point);}
+  try{return issueIndividualSquadOrder('move',point);}
   finally{selectedSquadId=prior;}
  },
  onOrder:(id,mode)=>{
-  if(!battleReady||finished||battleCeremony.locked)return false;
+  if(!battleReady||finished||battleCeremony.locked||
+    !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
-  try{return issueSquadOrder(mode);}
+  try{return issueIndividualSquadOrder(mode);}
   finally{selectedSquadId=prior;}
  },
  onRoster:()=>document.body.classList.toggle('battle-roster-open'),
