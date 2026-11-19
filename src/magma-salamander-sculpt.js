@@ -8,7 +8,7 @@
  * All pieces attach to existing movable parents. No floating decoration,
  * no replacement of another species, no expensive effect sprites at LOD low.
  */
-export const MAGMA_SALAMANDER_REVISION='m019-approved-lizard-sprawled-legs-v5-20261120';
+export const MAGMA_SALAMANDER_REVISION='m019-lateral-lizard-elbow90-narrowhead-v6-20261120';
 export const MAGMA_SALAMANDER_LEG_REACH=.54;
 export const MAGMA_SALAMANDER_BODY_DROP=.38;
 
@@ -36,29 +36,29 @@ export function sculptMagmaSalamanderEye(g,head,side,{detail='high'}={}){
  const suffix=side<0?'L':'R';
  // Reference front/side: small eye tucked into a narrow angular socket,
  // not a big glowing marble hovering outside the thin skull.
- const orbit=g.sphere(head,'shadow',[side*.261,.047,.271],
+ const orbit=g.sphere(head,'shadow',[side*.210,.047,.271],
    [.044,.034,.082],{name:'m019-inset-orbit-'+suffix,rough:.91});
  orbit.userData.m019EyeRecessed=true;
- const iris=g.sphere(head,'eye',[side*.282,.053,.290],
+ const iris=g.sphere(head,'eye',[side*.230,.053,.290],
    [.011,.027,.042],{name:'m019-amber-iris-'+suffix,rough:.22});
  iris.userData.m019PredatorSlit=true;
- g.sphere(head,'accent',[side*.291,.055,.295],
+ g.sphere(head,'accent',[side*.238,.055,.295],
    [.004,.019,.020],{name:'m019-glowing-iris-'+suffix,
     glow:detail==='source'});
- g.sphere(head,'shadow',[side*.297,.051,.299],
+ g.sphere(head,'shadow',[side*.244,.051,.299],
    [.0035,.021,.012],{name:'m019-vertical-pupil-'+suffix});
- g.sphere(head,'bone',[side*.298,.069,.299],
+ g.sphere(head,'bone',[side*.246,.069,.299],
    [.002,.004,.004],{name:'m019-eye-glint-'+suffix});
  const brow=g.tube(head,'skin',[
-   [side*.205,.115,.394],[side*.265,.122,.317],
-   [side*.291,.095,.239],[side*.262,.082,.159]
+   [side*.165,.115,.394],[side*.215,.122,.317],
+   [side*.235,.095,.239],[side*.213,.082,.159]
  ],.016,{name:'m019-predator-brow-'+suffix});
  brow.userData.m019BoneBrow=true;
  g.tube(head,'shadow',[
-   [side*.239,.011,.360],[side*.280,.017,.299],
-   [side*.282,.028,.233]
+   [side*.192,.011,.360],[side*.226,.017,.299],
+   [side*.229,.028,.233]
  ],.0075,{name:'m019-lower-lid-'+suffix});
- const lid=g.group('eyelid'+suffix,[side*.280,.123,.288],head);
+ const lid=g.group('eyelid'+suffix,[side*.226,.123,.288],head);
  lid.userData.restY=lid.position.y;
  lid.userData.blinkTravel=.058;
  g.sphere(lid,'skin',[0,0,0],[.029,.010,.039],
@@ -70,20 +70,20 @@ export function sculptMagmaSalamanderHorn(g,head,side,{detail='high'}={}){
  // Two long slender swept-back crescents from the approved turnaround.
  // The tip points over the neck, not vertically up like buffalo horns.
  const socket=g.bridge(head,'skin',
-   [side*.147,.090,-.167],[side*.207,.192,-.297],.070,.044);
+   [side*.118,.090,-.167],[side*.168,.192,-.297],.070,.044);
  socket.name='m019-horn-cartilage-'+suffix;
  const horn=g.curvedHorn(head,'bone',
-   [side*.193,.176,-.233],
-   [side*.273,.365,-.610],
-   [side*.385,.586,-1.260],.071,
+   [side*.155,.176,-.233],
+   [side*.221,.365,-.610],
+   [side*.313,.586,-1.260],.071,
    {name:'m019-grand-horn-'+suffix});
  horn.userData.m019PrimaryHorn=true;
  horn.userData.m019SweptBackward=true;
  horn.userData.m019ApprovedTurnaroundReference=true;
  if(detail==='low')return;
  g.curvedHorn(head,'accent',
-   [side*.202,.184,-.255],[side*.260,.332,-.615],
-   [side*.378,.565,-1.225],.018,
+   [side*.163,.184,-.255],[side*.210,.332,-.615],
+   [side*.307,.565,-1.225],.018,
    {name:'m019-horn-magma-seam-'+suffix});
 }
 
