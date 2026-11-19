@@ -202,11 +202,15 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
    const u=((tri*17+j*37)%97+1)/100,v=((tri*31+j*19)%83+1)/100;
    const x=Math.min(.94,u*.73),y=Math.min(.94-x,v*(.95-x));
    p.copy(a).multiplyScalar(1-x-y).addScaledVector(b,x).addScaledVector(c,y);
-   direction.set(p.x-center.x,0,p.z-center.z);
-   if(direction.lengthSq()<.00001)direction.set(.5,0,-.5);
-   direction.addScaledVector(normal,-direction.dot(normal)).normalize();
-   if(direction.lengthSq()<.001){direction.set(0,0,-1);
-    direction.addScaledVector(normal,-direction.dot(normal)).normalize()}
+   // Grow from crown toward the nape instead of radiating horizontally:
+   // the latter produces porcupine-like spikes on the top of the head.
+   // Project the gravity/backward groom direction into the actual scalp tangent.
+   direction.set(0,-1,-.22);
+   direction.addScaledVector(normal,-direction.dot(normal));
+   if(direction.lengthSq()<.001){
+    direction.set(0,0,-1).addScaledVector(normal,normal.z);
+   }
+   direction.normalize();
    widthAxis.crossVectors(normal,direction).normalize();
    // A sparse, almost-flat scalp was perceived as a bald head in the
    // 1000v1000 crowd. Keep the same triangle count but give each genuine
