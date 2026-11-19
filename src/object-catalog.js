@@ -471,8 +471,14 @@ export function createObjectById(id,{cellSize=2.2}={}){
    body.position.y=.61*c;body.castShadow=true;root.add(body);
    const bottom=new THREE.Mesh(new THREE.CylinderGeometry(.35*c,.35*c,.07*c,12),metalMat);
    bottom.position.y=.06*c;root.add(bottom);
-   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
-   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
+   // Rolled rim and three reinforcing hoops follow the tapered bin wall.
+   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.055*c,8,24),metalMat);
+   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;rim.castShadow=true;root.add(rim);
+   for(const y of [.23,.59,.96]){
+    const radius=(.34+(.4-.34)*(y-.035)/1.15)*c;
+    const hoop=new THREE.Mesh(new THREE.TorusGeometry(radius,.025*c,5,24),metalMat);
+    hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;hoop.castShadow=true;root.add(hoop);
+   }
    for(let i=0;i<12;i++){const a=i*Math.PI/6;
     const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
     slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
