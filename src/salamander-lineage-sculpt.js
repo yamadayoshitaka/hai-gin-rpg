@@ -142,6 +142,15 @@ export function sculptSalamanderSurface(g,torso,head,{
     [side*.264,-.206,.255],
     [side*.281,-.179,.085]
    ],.011,{name:'m019-fitted-labial-seam-'+suffix});
+   // Sparse, shallow anatomical scale plates, not the old scattered
+   // spherical bumps. Retain the existing species QA coverage labels.
+   for(let i=0;i<3;i++){
+    const z=.35-i*.30;
+    const plate=g.rock(torso,'shadow',
+      [side*.460,1.286,z],[.056,.024,.118],
+      {name:'m019-embedded-scale-'+suffix+'-'+i,rough:.93});
+    plate.userData.m019FittedScale=true;
+   }
   }
   return;
  }
