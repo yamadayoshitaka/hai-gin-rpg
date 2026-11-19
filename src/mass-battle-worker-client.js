@@ -71,6 +71,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     reinforceSquad(squadId,count,team=0){if(!failed)worker.postMessage({type:'reinforceSquad',squadId,count,team});},
     summonSquadCreature(squadId,team=0){if(!failed)worker.postMessage({type:'summonSquadCreature',squadId,team});},
     orderSquadHighGround(squadId,routeIndex,team=0){if(!failed)worker.postMessage({type:'orderSquadHighGround',squadId,routeIndex,team});},
+    assignShieldCover(squadId,targetSquadId,team=0){if(!failed)worker.postMessage({type:'shieldCover',squadId,targetSquadId,team});},
     buffSquadItem(squadId,itemId,buff,duration,team=0){if(!failed)worker.postMessage({type:'buffSquadItem',squadId,itemId,buff,duration,team});},
     setSquadStrategy(squadId,strategy){if(!failed)worker.postMessage({type:'squadStrategy',squadId,strategy});},
     setSquadFormationTypes(types,team=0,assignments=null,jobSnapshots=null){if(!failed)worker.postMessage({type:'squadFormationTypes',types,team,assignments,jobSnapshots});},
