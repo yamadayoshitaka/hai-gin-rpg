@@ -193,7 +193,7 @@ test('slim rails show 1隊, job name, and two usable gauges',()=>{
  assert.match(css,/\.rpgSquadMeter-hp\{grid-row:5\}/);
  assert.match(css,/\.rpgSquadMeter-mp\{grid-row:6\}/);
  assert.match(css,/width:clamp\(52px,13\.5vw,78px\)/);
- assert.match(html,/battle-rpg-squad-hud\.js\?v=20261119-two-meters-and-taps2/);
+ assert.match(html,/battle-rpg-squad-hud\.js\?v=20261119-engaged-stable3/);
 });
 
 test('single tap focuses camera; double tap opens allied orders; overview camera is overhead',()=>{
