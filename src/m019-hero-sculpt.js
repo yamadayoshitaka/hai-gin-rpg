@@ -66,7 +66,7 @@ export function sculptM019Muzzle(g,head){
   cheek.userData.m019CheekRooted=true;
   // Root of each nostril sits in the same muzzle. No dark dog nose.
   g.sphere(head,'shadow',[side*.095,-.132,.793],[.022,.013,.026],
-    {name:'m019-nostril-vent-'+s,rough:.91});
+    {name:'m019-nostril-'+s,rough:.91});
  }
  return snout;
 }
