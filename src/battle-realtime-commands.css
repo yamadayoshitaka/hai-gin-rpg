@@ -14,7 +14,7 @@ body.battle-realtime-clean #commands,
 body.battle-realtime-clean #menuToggle{display:none!important}
 body.battle-realtime-clean #battleRpgSquadHud:not([hidden]){display:block!important}
 body.battle-realtime-clean.battle-roster-closed #battleRpgSquadHud:not([hidden]){display:none!important}
-body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud:not([hidden]){display:block!important}
+body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud:not([hidden]){display:none!important}
 body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud .rpgSquadSide{top:12px}
 body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud .rpgSquadSide:not(.expanded){max-height:min(42dvh,330px)}
 body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
