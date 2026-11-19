@@ -12,7 +12,8 @@ body.battle-realtime-clean #battleTeamCameraSwitches,
 body.battle-realtime-clean #cameraTools,
 body.battle-realtime-clean #commands,
 body.battle-realtime-clean #menuToggle{display:none!important}
-body.battle-realtime-clean #battleRpgSquadHud:not([hidden]){display:none!important}
+body.battle-realtime-clean #battleRpgSquadHud:not([hidden]){display:block!important}
+body.battle-realtime-clean.battle-roster-closed #battleRpgSquadHud:not([hidden]){display:none!important}
 body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud:not([hidden]){display:block!important}
 body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud .rpgSquadSide{top:12px}
 body.battle-realtime-clean.battle-roster-open #battleRpgSquadHud .rpgSquadSide:not(.expanded){max-height:min(42dvh,330px)}
@@ -66,4 +67,27 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleCanvas{max-height:36dvh;width:min(100%,36dvh,300px)}
  #realtimeBattleMapOverlay .realtimeMapCard{gap:3px;padding:5px}
  #realtimeBattleMapOverlay .realtimeMapHelp{font-size:10px}
+}
+
+/* Single-row squad paging replaces the initial deployment select box. */
+#realtimeBattleMapOverlay .realtimeMapSquadPager{
+ display:grid;grid-template-columns:42px minmax(0,1fr) 42px 43px;
+ align-items:center;gap:5px;min-width:0;
+}
+#realtimeBattleMapOverlay .realtimeMapSquadPager button{
+ font-size:16px;min-height:40px;padding:3px;
+}
+#realtimeBattleMapOverlay .realtimeMapSquadPager button:disabled{opacity:.35}
+#realtimeBattleMapOverlay #realtimeMapSquadName{
+ min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ border:1px solid #6d9cbb;border-radius:6px;background:#264e66;
+ font:800 13px/1.3 system-ui;text-align:center;padding:10px 5px;
+}
+#realtimeBattleMapOverlay #realtimeMapPage{
+ color:#f8e7b8;font:750 12px/1 system-ui;text-align:center;
+}
+@media(max-width:600px){
+ #realtimeBattleMapOverlay .realtimeMapSquadPager{grid-template-columns:38px minmax(0,1fr) 38px 37px;gap:3px}
+ #realtimeBattleMapOverlay #realtimeMapSquadName{font-size:12px}
+ #realtimeBattleMapOverlay .realtimeMapSquadPager button{min-height:40px}
 }
