@@ -398,3 +398,40 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  #battleRpgSquadHud .rpgSquadRowTitle strong{font-size:8px}
  #battleRpgSquadHud .rpgSquadEffects{grid-column:1/3;grid-row:2/4;max-width:100%}
 }
+
+/* Even on 52px side rails keep real job names (忍者・剣士・魔法使い…)
+   on their own full-width row instead of making players guess from portraits. */
+#battleRpgSquadHud .rpgSquadRow{
+ grid-template-rows:18px 11px 9px 9px repeat(4,5px);
+ min-height:78px;
+}
+#battleRpgSquadHud .rpgSquadJobIcon{grid-column:1;grid-row:1;width:17px;height:17px}
+#battleRpgSquadHud .rpgSquadRowTitle strong{grid-column:2;grid-row:1;align-self:center;font-size:9px}
+#battleRpgSquadHud .rpgSquadJobName{
+ grid-column:1/-1;grid-row:2;
+ display:block;width:100%;min-width:0;
+ text-align:center;align-self:center;
+ font:800 8px/1.2 system-ui;
+ letter-spacing:-.25px;color:#e4effc;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ text-shadow:0 1px 2px #000a;
+}
+#battleRpgSquadHud .rpgSquadEffects{
+ grid-column:1/-1;grid-row:3/5;justify-self:end;
+}
+#battleRpgSquadHud .rpgSquadMeter-hp{grid-row:5}
+#battleRpgSquadHud .rpgSquadMeter-attack{grid-row:6}
+#battleRpgSquadHud .rpgSquadMeter-mp{grid-row:7}
+#battleRpgSquadHud .rpgSquadMeter-troops{grid-row:8}
+#battleRpgSquadHud .rpgSquadRow.defeated .rpgSquadState{
+ grid-column:1;grid-row:1;justify-self:end;align-self:end;z-index:2;
+}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadRow{
+  grid-template-rows:18px 11px 9px 9px repeat(4,5px);
+  min-height:78px;
+ }
+ #battleRpgSquadHud .rpgSquadJobIcon{grid-column:1;grid-row:1;width:17px;height:17px}
+ #battleRpgSquadHud .rpgSquadJobName{grid-column:1/-1;grid-row:2;font-size:8px}
+ #battleRpgSquadHud .rpgSquadEffects{grid-column:1/-1;grid-row:3/5}
+}

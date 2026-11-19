@@ -184,3 +184,17 @@ test('half-width flank panels and squad-one initial selection retain real status
  assert.match(js,/button\.title=button\.getAttribute\('aria-label'\)/);
  assert.match(html,/followSelectedCommander\(squadIds\[0\]\)/);
 });
+
+test('slim squad rails show full job names alongside squad number and keep four meters',()=>{
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(js,/jobName\.className='rpgSquadJobName'/);
+ assert.match(js,/jobName\.textContent=String\(row\.job\|\|'部隊'\)/);
+ assert.match(js,/heading\.append\(job,title,jobName,status\)/);
+ assert.match(css,/\.rpgSquadJobName\{\s*grid-column:1\/-1;grid-row:2/);
+ assert.match(css,/grid-template-rows:18px 11px 9px 9px repeat\(4,5px\)/);
+ assert.match(css,/\.rpgSquadMeter-troops\{grid-row:8\}/);
+ assert.match(css,/width:clamp\(52px,13\.5vw,78px\)/);
+ assert.match(html,/battle-rpg-squad-hud\.js\?v=20261119-job-label1/);
+});
