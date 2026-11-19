@@ -385,6 +385,7 @@ export function createRealtimeBattleCommands({
   for(const id of ['realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial'])
    $(id).hidden=!strategy;
   $('realtimeRally').hidden=true;
+  $('realtimeSkillStep').hidden=!strategy;
   $('realtimeSupport').hidden=true;
   $('realtimeManageItems').hidden=true;
   $('realtimeStrategyTargets').hidden=!strategy||!battleAttackNeedsEnemy(pendingStrategy?.attackKind);
@@ -531,6 +532,9 @@ export function createRealtimeBattleCommands({
   tapChoices.renderAll();
  }
   function showSpecialTargets(origin,action,page=0){
+  pendingStrategy=null;
+  $('realtimeSkillStep').textContent='② '+action.label+'：実行できる対象を選んでください';
+  refreshMoveTargetChoices();
   const node=actionPanel(origin,'Special');
   contextButton(node,'◀ 戻る',()=>showSpecialChoices(origin));
   const targets=getSpecialTargets(String(selectedId),action.id)||[];
@@ -549,7 +553,7 @@ export function createRealtimeBattleCommands({
    preview.setAttribute('role','img');node.append(preview);
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
-   const ctx=preview.getContext?.('2d');let chosen=shown[0];
+   const ctx=preview.getContext?.('2d');let chosen=null,confirmButton=null;
    const paint=()=>{
     if(!ctx)return;
     const w=preview.width,h=preview.height;
@@ -560,7 +564,7 @@ export function createRealtimeBattleCommands({
     shown.forEach((target,index)=>{
      if(!Number.isFinite(target.x)||!Number.isFinite(target.z))return;
      const x=clamp(target.x/worldSize*w,6,w-6),y=clamp(target.z/worldSize*h,6,h-6);
-     const active=String(chosen.id)===String(target.id);
+     const active=chosen&&String(chosen.id)===String(target.id);
      ctx.beginPath();ctx.arc(x,y,active?12:9,0,Math.PI*2);
      ctx.fillStyle=active?'#ffe3a0':'#ffb66d';ctx.fill();
      ctx.lineWidth=active?3:1;ctx.strokeStyle='#152a3a';ctx.stroke();
@@ -568,7 +572,16 @@ export function createRealtimeBattleCommands({
      ctx.fillStyle='#183145';ctx.fillText(String(page*perPage+index+1),x,y);
     });
    };
-   const choose=target=>{chosen=target;status.textContent='選択中：'+String(target.label||target.id);paint();};
+   const choose=target=>{
+    chosen=target;
+    status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
+    if(origin==='dock'){
+     pendingStrategy={special:action.id,targetId:String(target.id)};
+     renderActionSelection();
+    }
+    if(confirmButton)confirmButton.disabled=false;
+    paint();
+   };
    preview.addEventListener('click',event=>{
     const box=preview.getBoundingClientRect();
     if(!box.width||!box.height)return;
@@ -583,16 +596,25 @@ export function createRealtimeBattleCommands({
     if(nearest&&best<26)choose(nearest);
    });
    for(const target of shown)contextButton(node,String(target.label||target.id),()=>choose(target));
-   contextButton(node,origin==='dock'?'対象を作戦に設定':'✅ 選択した対象に作戦を実行',()=>
-    confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)}));
-   choose(shown[0]);
+   if(origin==='map'){
+    confirmButton=contextButton(node,'✅ 対象を確定',()=>{
+     if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+    });
+    confirmButton.disabled=true;
+   }
+   status.textContent='対象を選ぶまで作戦は発令されません。';
   }else{
    let chosen=null;
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
    for(const target of shown){
     const button=contextButton(node,String(target.label||target.id),()=>{
-     chosen=target;status.textContent='選択中：'+String(target.label||target.id);
+     chosen=target;
+     status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
+     if(origin==='dock'){
+      pendingStrategy={special:action.id,targetId:String(target.id)};
+      renderActionSelection();
+     }
      for(const child of node.querySelectorAll('button.realtimeContextTarget')){
       const active=child===button;child.classList.toggle('selected',active);
       child.setAttribute('aria-pressed',String(active));
@@ -600,11 +622,13 @@ export function createRealtimeBattleCommands({
     });
     button.classList.add('realtimeContextTarget');button.setAttribute('aria-pressed','false');
    }
-   const confirm=contextButton(node,'✅ この対象で作戦を確定',()=>{
-    if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
-   });
-   confirm.classList.add('realtimeMainConfirm');
-   status.textContent='対象をタップしてから確定してください。';
+   if(origin==='map'){
+    const confirm=contextButton(node,'✅ この対象で作戦を確定',()=>{
+     if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+    });
+    confirm.classList.add('realtimeMainConfirm');
+   }
+   status.textContent='対象を選ぶまで作戦は発令されません。';
   }
   if(last>0){
    const nav=doc.createElement('div');nav.className='realtimeContextPager';node.append(nav);
@@ -615,11 +639,15 @@ export function createRealtimeBattleCommands({
   }
  }
  function showSpecialChoices(origin){
+  pendingStrategy=null;
+  $('realtimeSkillStep').textContent='① 使用する固有スキルを選択してください';
+  refreshMoveTargetChoices();
   const node=actionPanel(origin,'Special'),actions=battleJobSpecialActions(getSelected()?.job);
   if(!actions.length){contextNote(node,'このジョブの固有作戦はありません。');return;}
   contextNote(node,String(getSelected()?.job||'')+'隊の固有作戦');
   for(const action of actions)
    contextButton(node,action.label,()=>showSpecialTargets(origin,action));
+  renderActionSelection();
  }
 
  let listedMoveTargets=[];
