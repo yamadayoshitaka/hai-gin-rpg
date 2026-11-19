@@ -50,6 +50,7 @@ export function rpgHudCompactText(row){
  const effects=(row.effects||[]).map(e=>e.label).slice(0,2).join(' ');
  return String(row.name||'部隊')+' HP '+Math.round(row.hp||0)+'/'+Math.round(row.maxHp||0)+
   ' '+(Number(row.alive)||0)+'/'+(Number(row.total)||0)+'人 '+rpgHudStatus(row)+
+  ' 攻'+Math.round(Number(row.attackPercent)||0)+'% MP'+Math.round(Number(row.mp)||0)+'/'+Math.round(Number(row.maxMp)||0)+
   (effects?' '+effects:'');
 }
 export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus=()=>{},onCommand=()=>{}}={}){
@@ -176,7 +177,19 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     more.title=valid.slice(3).map(fx=>String(fx.label||'効果')).join(' / ');
     effects.append(more);
    }
-   metrics.append(hp,hpValue,count,effects);
+   const attack=doc.createElement('div');attack.className='rpgSquadAttackMeter';
+   const attackBar=doc.createElement('i');
+   attackBar.style.width=clamp(Number(row.attackPercent)||0,0,100)+'%';
+   attack.title='攻撃力 '+Math.round(Number(row.attackPercent)||0)+'%（HP低下に連動、防御・移動は変化なし）';
+   const attackLabel=doc.createElement('span');attackLabel.textContent='⚔';
+   attack.append(attackBar,attackLabel);
+   const mana=doc.createElement('div');mana.className='rpgSquadMpMeter';
+   const manaBar=doc.createElement('i');
+   manaBar.style.width=rpgHudHealth(row.mp,row.maxMp)+'%';
+   mana.title='MP '+Math.round(Number(row.mp)||0)+'/'+Math.round(Number(row.maxMp)||0);
+   const manaLabel=doc.createElement('span');manaLabel.textContent='MP';
+   mana.append(manaBar,manaLabel);
+   metrics.append(hp,hpValue,count,effects,attack,mana);
    button.append(heading,metrics);
    fragment.append(button);
   }
@@ -190,7 +203,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(!visible)return;
   const next=Array.isArray(nextRows)?nextRows:[];
   const nextSig=JSON.stringify(next.map(r=>[r.team,r.id,r.alive,r.total,r.hp,r.maxHp,r.name,r.job,
-   r.mode,r.inContact,r.effects]));
+   r.mode,r.inContact,r.effects,r.attackPercent,r.mp,r.maxMp]));
   if(nextSig===root.dataset.signature)return;
   root.dataset.signature=nextSig;
   rows=next;

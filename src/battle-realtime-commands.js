@@ -7,6 +7,7 @@ import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js';
+import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
@@ -24,7 +25,9 @@ export function createRealtimeBattleCommands({
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
  onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},
  onPause=()=>{},getPaused=()=>false,
- getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false
+ getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
+ onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
+ onRally=()=>false
 }={}){
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
@@ -57,7 +60,8 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeDefend">🛡 守備</button>
    <button type="button" id="realtimeCharge">⚔ 攻撃</button>
    <button type="button" id="realtimeHold">◷ 待機</button>
-   <button type="button" id="realtimeSupport">✚ 支援・道具</button>
+   <button type="button" id="realtimeSupport">📯 援軍・補充</button>
+   <button type="button" id="realtimeRally">📣 号令・バフ</button>
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeDockAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
@@ -67,7 +71,8 @@ export function createRealtimeBattleCommands({
     <button type="button" data-attack-kind="intercept" data-attack-origin="dock">迎撃</button>
     <button type="button" data-attack-kind="delay" data-attack-origin="dock">延期</button>
    </div>
-   <div id="realtimeDockSupportChoices" class="realtimeContextChoices" hidden role="group" aria-label="支援アイテム"></div>
+   <div id="realtimeDockSupportChoices" class="realtimeContextChoices" hidden role="group" aria-label="軍師の援軍補充"></div>
+   <div id="realtimeDockRallyChoices" class="realtimeContextChoices" hidden role="group" aria-label="軍師の号令"></div>
    <div id="realtimeDockSpecialChoices" class="realtimeContextChoices" hidden role="group" aria-label="ジョブ固有作戦"></div>
   </div>
   <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="戦場地図で移動先を選択">
@@ -99,7 +104,7 @@ export function createRealtimeBattleCommands({
       <button type="button" data-action-after-move="defend">🛡 守備</button>
       <button type="button" data-action-after-move="charge">⚔ 攻撃</button>
       <button type="button" data-action-after-move="hold">◷ 待機</button>
-      <button type="button" data-action-after-move="support">🎒 支援・道具</button>
+      <button type="button" data-action-after-move="support">📯 援軍補充</button>
      </div>
      <div id="realtimeMapAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
       <strong>攻撃種別</strong>
@@ -109,7 +114,7 @@ export function createRealtimeBattleCommands({
       <button type="button" data-attack-kind="delay" data-attack-origin="map">延期</button>
      </div>
      <button type="button" data-action-after-move="special">★ 固有作戦</button>
-     <div id="realtimeMapSupportChoices" class="realtimeContextChoices" hidden role="group" aria-label="支援アイテム"></div>
+     <div id="realtimeMapSupportChoices" class="realtimeContextChoices" hidden role="group" aria-label="援軍の召集"></div>
      <div id="realtimeMapSpecialChoices" class="realtimeContextChoices" hidden role="group" aria-label="ジョブ固有作戦"></div>
      <button type="button" class="realtimeActionSkip" id="realtimeActionSkip">行動指定なし（移動のみ）</button>
     </div>
@@ -251,7 +256,7 @@ export function createRealtimeBattleCommands({
  }
 
  function hideContextChoices(){
-  for(const id of ['realtimeDockAttackChoices','realtimeMapAttackChoices','realtimeDockSupportChoices',
+  for(const id of ['realtimeDockAttackChoices','realtimeMapAttackChoices','realtimeDockRallyChoices','realtimeDockSupportChoices',
    'realtimeMapSupportChoices','realtimeDockSpecialChoices','realtimeMapSpecialChoices'])$(id).hidden=true;
  }
  function actionPanel(origin,kind){
@@ -274,18 +279,54 @@ export function createRealtimeBattleCommands({
    arrivalActions.set(id,{...entry,point:{...actionDestination}});
    closeMap();closeSquadControls();return;
   }
-  const accepted=entry.itemId?onUseItem(id,entry.itemId):onSpecial(id,entry.special,entry.targetId);
+  const accepted=entry.itemId?onReinforce(id,entry.itemId):
+   onSpecial(id,entry.special,entry.targetId);
+  if(accepted?.openMove){openMap('move');return;}
   if(accepted){hideContextChoices();closeSquadControls();return;}
   $(origin==='map'?'realtimeMapMessage':'realtimeSelectedState').textContent=
    '実行できません。対象との距離、所持数、軍師、命令制限を確認してください。';
  }
  function showSupportChoices(origin){
   const node=actionPanel(origin,'Support'),items=getAvailableItems(String(selectedId))||[];
-  if(!items.length){contextNote(node,'使える道具がありません。');return;}
-  contextNote(node,'使用する道具を選択（所持品から1個消費）');
+  if(!items.length){contextNote(node,'援軍の兵符を所持していません。');return;}
+  contextNote(node,'軍師が予備兵を隊へ補充（1回につき兵符を1枚消費）');
   for(const item of items)
-   contextButton(node,'🎒 '+String(item.label||item.id)+' ×'+(item.quantity||0),
+   contextButton(node,'📯 '+String(item.label||item.id)+' ×'+(item.quantity||0),
     ()=>confirmContextAction(origin,{itemId:String(item.id)}));
+ }
+ function showRallyChoices(){
+  const node=actionPanel('dock','Rally'),info=getRallyInfo(String(selectedId));
+  const limit=Math.min(3,Math.max(1,Number(info.maxTargets)||1));
+  contextNote(node,'軍師Lv'+Math.max(1,Number(info.level)||1)+
+   '：同時に最大'+limit+'隊へ強化号令（22秒）');
+  const targets=(info.targets||[]).filter(t=>t.alive);
+  const chosen=new Set([String(selectedId)].filter(id=>targets.some(t=>String(t.id)===id)));
+  const buttons=[];
+  for(const target of targets){
+   const button=contextButton(node,'□ '+String(target.label||target.id),()=>{
+    const id=String(target.id);
+    if(chosen.has(id))chosen.delete(id);
+    else if(chosen.size<limit)chosen.add(id);
+    for(const [b,item] of buttons){
+     const checked=chosen.has(String(item.id));
+     b.textContent=(checked?'☑ ':'□ ')+String(item.label||item.id);
+     b.setAttribute('aria-pressed',String(checked));
+    }
+   });
+   buttons.push([button,target]);
+  }
+  for(const [button,target] of buttons){
+   const selected=chosen.has(String(target.id));
+   button.textContent=(selected?'☑ ':'□ ')+String(target.label||target.id);
+   button.setAttribute('aria-pressed',String(selected));
+  }
+  for(const fx of COMMAND_RALLY_TYPES)
+   contextButton(node,fx.name+'　22秒',()=>{
+    if(!chosen.size){contextNote(node,'対象隊を選択してください');return;}
+    if(onRally(String(selectedId),fx.id.replace('command_',''),[...chosen])){
+     closeSquadControls();
+    }else contextNote(node,'現在は号令できません。軍師または命令制限を確認してください。');
+   });
  }
  function showSpecialTargets(origin,action,page=0){
   const node=actionPanel(origin,'Special');
@@ -569,6 +610,7 @@ export function createRealtimeBattleCommands({
  $('realtimeDockClose').onclick=closeSquadControls;
  $('realtimeCharge').onclick=()=>{hideContextChoices();$('realtimeDockAttackChoices').hidden=false;};
  $('realtimeSupport').onclick=()=>showSupportChoices('dock');
+ $('realtimeRally').onclick=()=>showRallyChoices();
  $('realtimeSpecial').onclick=()=>showSpecialChoices('dock');
  for(const [button,command] of [['realtimeDefend','defend'],['realtimeHold','hold']])
   $(button).onclick=()=>{

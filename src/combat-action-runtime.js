@@ -1,3 +1,4 @@
+import {strengthFromHp} from './battle-command-doctrine.js';
 /** Deterministic, renderer-independent job actions and battlefield objects. */
 import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.51';
 import { elevatedRangedStats } from './elevation-combat.js';
@@ -174,6 +175,7 @@ export class CombatActionRuntime {
     let damage = amount > 0 ? Math.max(1, Math.round(amount*(linked&&element!=='fall'?1:.5)*mountPower *
       (1 + (attacker?.attackBonus || 0)) * (1 + (attacker?.strategistAttackBonus || 0)) *
       (1 + (attacker?.itemAttackBonus || 0)) *
+      (attacker?strengthFromHp(attacker.hp,attacker.maxHp):1) *
       (1 - (target.defenseBonus || 0)) * (1 - (target.itemDefenseBonus || 0)) *
       (target.strategistDefenseMultiplier ?? 1))) : 0;
     if ((target.fireWardUntil || 0) > this.time && element === 'fire') damage = 0;

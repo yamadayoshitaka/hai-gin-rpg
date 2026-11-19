@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-radar30s1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-portrait-icon-plan3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-rally-reserve2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-rally-reserve2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,12 +887,13 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-radar30s1';
-import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-job-special1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-rally-reserve2';
+import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
+import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-rally-reserve2';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-radar30s1';
-import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-rally-reserve2';
+import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=20261119-rally-reserve2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -1081,7 +1082,7 @@ import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/bat
 import {zoomedSquadMember} from './src/battle-zoom-squad-badge.js?v=20261116-zoom1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=20261117-stable-hair2';
 import {OBJECT_CATALOG,createCatalogObject} from './src/object-catalog.js?v=world60-physical-20261117';
-import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=4.6.44';
+import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=20261119-rally-reserve2';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
 import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.44';
 import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.36';
@@ -1098,7 +1099,7 @@ import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-b
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {battleSquadJob,engineBattleJobNameForSquad,displayBattleJobName} from './src/battle-job-squads.js?v=20261119-job-teams';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261117-mount-interior1';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261119-rally-reserve2';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
@@ -1109,12 +1110,12 @@ import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=2026
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261117-mount-interior1';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261119-rally-reserve2';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=20261119-overlap1';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261117-mount-interior1';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261119-rally-reserve2';
 import {createMountInteriorMask,isMountInteriorCell} from './src/mount-interior-policy.js?v=20261117-mount-interior1';
 import {selectActiveBattleEngagement} from './src/battle-engagement-camera.js?v=20261117-focus1';
 import {installBattleSituationPause} from './src/battle-situation-pause.js?v=20261117-interrupt1';
@@ -5991,7 +5992,7 @@ itemPanel.style.cssText='position:fixed;z-index:42;left:50%;top:50%;transform:tr
 document.body.appendChild(itemPanel);
 let lastBattleItemTarget=null,lastBattleItemSquad=null,lastSelectedBattleItemId=null,battleItemSide='ally';
 const skirmishSquadItemBuffs=new Map();
-const activeSquadBuffVfx=new Map();let lastSquadBuffVfxAt=-Infinity;
+const activeSquadBuffVfx=new Map(),commanderRallies=new Map();let lastSquadBuffVfxAt=-Infinity;
 function currentSkirmishSquadBuff(id,team=0){
  const key=team===0?String(id):'enemy:'+id;
  const list=(skirmishSquadItemBuffs.get(key)||[]).filter(b=>b.until>elapsed);
@@ -6050,7 +6051,88 @@ function allyItemStocks(){
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
 }
+function realtimeCommanderLevel(id){
+ const idText=String(id);
+ const cId=storyRequest?.units?.find(u=>String(u.squadId)===idText)?.commanderId;
+ const officer=storyRequest?.commanders?.find(c=>String(c.id)===String(cId));
+ const general=(massSim?.units??actors).find(u=>u.team===0&&u.isStrategist&&
+  String(u.squadId)===idText&&u.hp>0&&u.alive!==false);
+ return Math.max(1,Number(officer?.level??general?.level??1)||1);
+}
+function issueCommanderReinforcements(squadId,itemId,{issuerSquadId=null,arrival=false,automatic=false}={}){
+ const id=String(squadId),issuer=String(issuerSquadId??squadId);
+ if(!battleReady||finished||!REINFORCEMENT_ITEMS.includes(itemId)||
+   !hasSquadCommander(issuer)||(!automatic&&!arrival&&!canChangeSquadOrder(issuer)))return false;
+ const units=massSim?.units??actors;
+ const lost=units.filter(u=>u.team===0&&String(u.squadId)===id&&!u.isStrategist&&
+  (u.alive===false||!(u.hp>0)));
+ const leader=units.find(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
+ const stock=allyItemStocks().find(stack=>stack.itemId===itemId);
+ const count=Math.min(lost.length,reinforcementSlots(itemId,realtimeCommanderLevel(issuer)));
+ if(!leader||!stock||!count)return false;
+ const type=roomItemRegistry.consumeSquad(stock.ownerId,itemId);
+ if(!type)return false;
+ spendBattleTreasure(itemId);
+ let added=0;
+ if(massSim){
+  added=massSim.reinforceSquadFromReserve(id,count)?.added||0;
+  if(added>0&&massWorker?.active)massWorker.reinforceSquad(id,added);
+ }else{
+  const occupied=new Set(actors.filter(u=>u.hp>0&&u.alive!==false)
+   .map(u=>u.cell?.x+':'+u.cell?.z));
+  for(const u of lost){
+   if(added>=count)break;
+   let spot=null;
+   for(let r=1;r<=5&&!spot;r++)for(let dz=-r;dz<=r&&!spot;dz++)
+    for(let dx=-r;dx<=r&&!spot;dx++){
+     const x=leader.cell.x+dx,z=leader.cell.z+dz;
+     if(Math.max(Math.abs(dx),Math.abs(dz))!==r||
+      !traversableCell(x,z)||occupied.has(x+':'+z))continue;
+     spot={x,z};
+    }
+   if(!spot)break;
+   occupied.add(spot.x+':'+spot.z);
+   u.cell=spot;u.nextCell=null;u.hp=u.maxHp;u.alive=true;u.defeated=false;
+   u.root.visible=true;u.velocity?.set(0,0,0);
+   const wx=(spot.x-6)*CELL,wz=(spot.z-6)*CELL;
+   u.root.position.set(wx,terrainY(wx,wz),wz);
+   occupiedCells.set(cellKey(spot.x,spot.z),u);added++;
+  }
+ }
+ // Never spend a finite reserve token when no actual reinforcement is possible.
+ if(!added){roomItemRegistry.grant(stock.ownerId,itemId,1);return false;}
+ if(!automatic)markRibbonOrderIssued(issuer);
+ battleCeremony.showOrder('📯 援軍到着：'+squadName(id),added+'人の予備兵を補充');
+ log(squadName(id)+'が予備兵'+added+'人を補充。攻撃戦力を再編成');
+ updateUI();return true;
+}
+function issueCommanderRally(issuerSquadId,kind,targetIds=[]){
+ const issuer=String(issuerSquadId),type=COMMAND_RALLY_EFFECTS[kind];
+ const targets=[...new Set(targetIds.map(String))];
+ const cap=commanderTargetLimit(realtimeCommanderLevel(issuer));
+ if(!battleReady||finished||!type||!targets.length||targets.length>cap||
+   !hasSquadCommander(issuer)||!canChangeSquadOrder(issuer))return false;
+ const units=massSim?.units??actors;
+ if(targets.some(id=>!squadIds.map(String).includes(id)||
+   !units.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false)))return false;
+ for(const id of targets){
+  const buff={attack:type.attack,defense:type.defense,speed:type.speed};
+  if(massSim){
+   massSim.applySquadItemBuff(id,type.id,buff,type.duration);
+   if(massWorker?.active)massWorker.buffSquadItem(id,type.id,buff,type.duration);
+  }else activateSkirmishSquadItemBuff(id,{...type});
+  const list=(commanderRallies.get(id)||[]).filter(fx=>fx.until>elapsed&&fx.id!==type.id);
+  list.push({...type,until:elapsed+type.duration});commanderRallies.set(id,list);
+  emitSquadBuffEffect(id,type.defense?'earth':type.speed?'arcane':'fire');
+ }
+ markRibbonOrderIssued(issuer);
+ battleCeremony.showOrder(type.name,targets.length+'隊に'+type.duration+'秒の強化号令');
+ updateUI();return true;
+}
 function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null,turnEnd=false,arrival=false}={}){
+ // Healing item IDs are migration-safe reserve tokens, not personal potions.
+ if(REINFORCEMENT_ITEMS.includes(itemId))
+  return issueCommanderReinforcements(squadId,itemId,{issuerSquadId,arrival,automatic});
  // The objective-turn item slot is only available after actions resolve.
  if(objectiveTurnUI&&(!turnEnd||objectiveTurnUI.engine.status().phase!=='report'))return false;
  const id=String(squadId),commandSquad=String(issuerSquadId??squadId),stocks=allyItemStocks();
@@ -9037,7 +9119,8 @@ function refreshBattleRpgSquadHud(sums){
   getMode:(id,team)=>squadEffectiveOrder(id,team).mode,
   mass:Boolean(massSim),now:elapsed,simTime:massSim?.time??elapsed,
   itemTypes:ROOM_ITEM_TYPES,auras:activeSquadBuffVfx,skirmishBuffs:skirmishSquadItemBuffs,
-  massDebuffs:massSim?.squadDebuffs,skirmishDebuffs:skirmishStrategicDebuffs
+  massDebuffs:massSim?.squadDebuffs,skirmishDebuffs:skirmishStrategicDebuffs,
+  commanderRallies
  });
  battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked});
  realtimeCommandUI?.update(rows);
@@ -9803,13 +9886,25 @@ function realtimeJobMembers(squadId){
 function realtimeItemStocks(){
  const counts=new Map();
  for(const stock of allyItemStocks()){
-  if(!['heal','squad_buff'].includes(ROOM_ITEM_TYPES[stock.itemId]?.kind))continue;
+  if(!REINFORCEMENT_ITEMS.includes(stock.itemId))continue;
   counts.set(stock.itemId,(counts.get(stock.itemId)||0)+stock.quantity);
  }
  return [...counts].map(([id,quantity])=>({id,label:ROOM_ITEM_TYPES[id].name,quantity}));
 }
 function realtimeSpecialTargets(id,action){
- const jobs=new Set(realtimeJobMembers(id).map(u=>u.jobId));
+ const members=realtimeJobMembers(id),jobs=new Set(members.map(u=>u.jobId));
+ if(action==='summon_and_move'||action==='summon_and_attack')
+  return members.some(u=>u.jobId==='summoner'&&u.mp>=15)?
+   [{id:'self',label:'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
+ if(action==='high_ground'){
+  if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
+  return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
+   .filter(route=>route.team===0&&['window','roof'].includes(route.kind)&&
+    (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage')))
+   .map(route=>({id:String(route.index),
+     label:route.kind==='roof'?'🏯 屋根 '+route.buildingIndex:'🏹 高所窓 '+route.buildingIndex}))
+   .slice(0,24);
+ }
  const allowed=action==='destroy_bridge'?['mage','summoner','ninja']:
   action==='break_structure'?['mage','summoner']:
   action==='burn_building'?['mage']:['thief'];
@@ -9848,6 +9943,38 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
  const jobName=squadPrimaryJob(id);
  if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
  if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)))return false;
+ if(action==='summon_and_attack'||action==='summon_and_move'){
+  let success=false;
+  if(massSim){
+   success=massSim.summonSquadCreature(id);
+   if(success&&massWorker?.active)massWorker.summonSquadCreature(id);
+  }else{
+   for(const member of members.filter(u=>u.jobId==='summoner'&&u.hp>0)){
+    const spells=availableCombatSkills('summoner',member.rarity)
+     .filter(skill=>skill.kind==='summon'&&member.mp>=skill.mp)
+     .sort((a,b)=>b.mp-a.mp);
+    for(const spell of spells)if(skirmishActions.fireSkill(member,spell,member,actors)){
+     success=true;break;
+    }
+    if(success)break;
+   }
+  }
+  if(!success)return false;
+  battleCeremony.showOrder('🐉 '+squadName(id)+'：召喚成功','MPを消費して召喚獣が出現');
+  if(action==='summon_and_move')return {openMove:true};
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueIndividualSquadOrder('charge');}
+  finally{selectedSquadId=prior;}
+ }
+ if(action==='high_ground'){
+  const routeIndex=Number(targetId);
+  const success=massSim?.orderSquadHighGround(id,routeIndex,0)===true;
+  if(!success)return false;
+  if(massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
+  markRibbonOrderIssued(id);
+  battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃','既存の階段と窓を使用');
+  return true;
+ }
  if(action==='steal_item'){
   const thief=members.find(u=>u.jobId==='thief');
   const enemy=(massSim?.units??actors).find(u=>u.team===1&&
@@ -9968,7 +10095,17 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   finally{selectedSquadId=prior;}
  },
  getAvailableItems:()=>realtimeItemStocks(),
- onUseItem:(id,itemId,arrival=false)=>performSquadBattleItem(itemId,id,{arrival}),
+ onUseItem:(id,itemId,arrival=false)=>issueCommanderReinforcements(id,itemId,{arrival}),
+ onReinforce:(id,itemId)=>issueCommanderReinforcements(id,itemId),
+ getRallyInfo:id=>({
+  level:realtimeCommanderLevel(id),
+  maxTargets:commanderTargetLimit(realtimeCommanderLevel(id)),
+  targets:squadIds.map(sid=>({
+   id:String(sid),label:squadName(sid),
+   alive:(massSim?.units??actors).some(u=>u.team===0&&String(u.squadId)===String(sid)&&u.hp>0)
+  }))
+ }),
+ onRally:(id,type,targets)=>issueCommanderRally(id,type,targets),
  getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
  onSpecial:(id,action,targetId,arrival=false)=>issueRealtimeSpecial(id,action,targetId,arrival),
  onEnemySelect:id=>battleRpgHud?.select(1,id,{focus:true}),

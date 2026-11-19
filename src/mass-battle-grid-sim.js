@@ -1,9 +1,9 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=20261117-mount-interior1';
-import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.51';
-import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=20261119-rally-reserve2';
+import { COMBAT_RULES,availableCombatSkills } from './combat-action-spec.js?v=4.6.51';
+import {applySquadHeal} from './room-item-registry.js?v=20261119-rally-reserve2';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.49';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
@@ -289,6 +289,31 @@ export class MassBattleGridSimulation {
     return !structure||structure.alive;
   }
 
+  /** Explicit range-job high-ground order uses the actual authored stair route. */
+  orderSquadHighGround(squadId,routeIndex,team=0){
+    const index=Number(routeIndex),route=this.highGroundRoutes[index];
+    if(!route||route.team!==team||!this._highGroundRouteAlive(route)||
+      !['window','roof'].includes(route.kind))return false;
+    const key=route.buildingIndex+':'+team;
+    if(this._highGroundClaims.has(key))return false;
+    const flow=this._highGroundFlows[index];
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.highGroundRouteIndex<0&&
+      (route.kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId))&&
+      !u.mountId&&u.hp>=u.maxHp*.35);
+    members.sort((a,b)=>
+      Math.hypot(a.x-route.access.x,a.z-route.access.z)-
+      Math.hypot(b.x-route.access.x,b.z-route.access.z));
+    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff&&
+      Math.hypot(u.x-route.access.x,u.z-route.access.z)<=65);
+    if(!unit)return false;
+    this.squadDestinations.delete(String(squadId));
+    this.squadFlows.delete(String(squadId));
+    unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
+    unit.highGroundT=0;unit.highGroundFloor=1;
+    this._highGroundClaims.set(key,unit.id);
+    return true;
+  }
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
     // Allocate inside-room patrol, second-floor archer and rooftop ninja
@@ -845,6 +870,56 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Explicit summon order for the summoner squad. Real summon objects and MP costs. */
+  summonSquadCreature(squadId,team=0){
+    const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+    for(const caster of casters){
+      const skills=availableCombatSkills('summoner',caster.rarity)
+       .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
+        (!caster._skillNext||(caster._skillNext[skill.id]||0)<=this.actions.time))
+       .sort((a,b)=>b.mp-a.mp);
+      for(const skill of skills){
+       if(this.actions.fireSkill(caster,skill,caster,this.units))return true;
+      }
+    }
+    return false;
+  }
+  /** Refill existing fallen unit slots with carried reserve soldiers.
+   * No new GPU actor objects and never more than the squad's authored size.
+   */
+  reinforceSquadFromReserve(squadId,count,team=0){
+    const missing=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      !u.isStrategist&&(!u.alive||!(u.hp>0)));
+    const leader=this.units.find(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0);
+    if(!leader||!missing.length)return {added:0};
+    const occupancy=new Set(this.units.filter(u=>u.alive&&u.hp>0)
+      .map(u=>u.x+':'+u.z));
+    let added=0;
+    const limit=Math.min(missing.length,Math.max(0,Math.floor(Number(count)||0)));
+    for(const u of missing){
+      if(added>=limit)break;
+      let cell=null;
+      for(let radius=1;radius<=6&&!cell;radius++)
+       for(let dz=-radius;dz<=radius&&!cell;dz++)
+        for(let dx=-radius;dx<=radius&&!cell;dx++){
+         const x=leader.x+dx,z=leader.z+dz;
+         if(Math.max(Math.abs(dx),Math.abs(dz))!==radius||
+           !Number.isInteger(x)||!Number.isInteger(z)||
+           !this._walkable(x,z)||occupancy.has(x+':'+z))continue;
+         cell={x,z};
+        }
+      if(!cell)break;
+      occupancy.add(cell.x+':'+cell.z);
+      Object.assign(u,{x:cell.x,z:cell.z,fromX:cell.x,fromZ:cell.z,
+       hp:u.maxHp,alive:true,deathAt:-1,deathX:cell.x,deathZ:cell.z,
+       cooldown:1,action:'idle',hitFlash:0,moveElapsed:0,moveDuration:0,
+       tacticalOrder:null,tacticalOrderUntil:0,highGroundRouteIndex:-1});
+      added++;
+    }
+    return {added};
+  }
   /** Same capped healing budget in the Worker and main-thread mirrors. */
   healSquadFromItem(squadId,totalHp,team=0){
     if(this._squadDebuff({team,squadId},'heal_block')>=1)return false;
