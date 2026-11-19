@@ -76,7 +76,7 @@ test('summoner, thief and ranged job menu connects to real game functions',()=>{
  const worker=readFileSync(new URL('../src/mass-battle-worker-runtime.js',import.meta.url),'utf8');
  assert.match(game,/issueCommanderReinforcements/);
  assert.match(game,/issueCommanderRally/);
- assert.match(game,/massSim\.orderSquadHighGround/);
+ assert.match(game,/massSim\?\.orderSquadHighGround/);
  assert.match(game,/massSim\.summonSquadCreature/);
  assert.match(menu,/id="realtimeRally"/);
  assert.match(menu,/onReinforce\(id,entry\.itemId\)/);
