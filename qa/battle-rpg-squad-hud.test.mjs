@@ -172,3 +172,15 @@ test('user requested half-width tracks and two-row real effect badges',()=>{
  assert.match(js,/valid\.slice\(0,7\)/);
  assert.match(js,/more\.textContent='\+'\+\(valid\.length-7\)/);
 });
+
+test('half-width flank panels and squad-one initial selection retain real status tooltips',()=>{
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(css,/width:clamp\(52px,13\.5vw,78px\)/);
+ assert.match(css,/rpgSquadMeterLine \.rpgSquadMeterTrack\{\s*width:100%;max-width:100%/);
+ assert.match(js,/if\(firstRender\)for\(const side of panels\)side\.panel\.scrollTop=0/);
+ assert.match(js,/selected=selectionKey\(0,firstAlly\.id\)/);
+ assert.match(js,/button\.title=button\.getAttribute\('aria-label'\)/);
+ assert.match(html,/followSelectedCommander\(squadIds\[0\]\)/);
+});
