@@ -4,6 +4,7 @@
  * its real destination while the combat simulation continues uninterrupted.
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
+import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
@@ -136,14 +137,25 @@ export function createRealtimeBattleCommands({
   else{ctx.fillStyle='#24433e';ctx.fillRect(0,0,w,h);}
   ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
   for(let i=0;i<=8;i++){const v=i*w/8;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,h);ctx.stroke();}
-  for(const s of [...getEnemies(),...squads()]){
+  // Before battle, only the ten friendly squad leader markers are useful.
+  // Enemy squads enter the map only after combat begins.
+  const allies=squads(),enemies=mode==='deploy'?[]:getEnemies();
+  const markers=visibleBattleSquadPins(allies,enemies,mode);
+  for(const s of markers){
    if(!Number.isFinite(s.x)||!Number.isFinite(s.z))continue;
    const x=(s.x-minX)/span*w,z=(s.z-minZ)/span*h;
    if(x<0||x>w||z<0||z>h)continue;
-   const own=s.team!==1;
-   ctx.beginPath();ctx.arc(x,z,own?8:6,0,Math.PI*2);
+   const own=s.team!==1,number=(own?allies:enemies)
+    .findIndex(pin=>String(pin.id)===String(s.id))+1;
+   const highlighted=own&&String(s.id)===String(selectedId);
+   // One numbered dot per squad. Never render individual soldier positions.
+   ctx.beginPath();ctx.arc(x,z,number>=10?10:9,0,Math.PI*2);
    ctx.fillStyle=own?'#5bc8ef':'#ff858a';ctx.fill();
-   if(own&&String(s.id)===String(selectedId)){ctx.strokeStyle='#ffe39d';ctx.lineWidth=3;ctx.stroke();}
+   ctx.strokeStyle=highlighted?'#ffe39d':'#183647';
+   ctx.lineWidth=highlighted?3:1.5;ctx.stroke();
+   ctx.fillStyle='#0c2a3b';ctx.font='bold 10px system-ui';
+   ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.fillText(String(number),x,z);
   }
   $('realtimeMapScale').textContent=Math.round(zoom*100)+'%';
  }
@@ -164,10 +176,12 @@ export function createRealtimeBattleCommands({
   $('realtimeStart').hidden=next!=='deploy';
   $('realtimeMapTitle').textContent=next==='deploy'?'開戦前の初期配置':'移動先を選択';
   $('realtimeMapHelp').textContent=next==='deploy'?
-   '◀ ▶で隊を切替え、味方陣地をタップして配置。何も変えずに開始も可能です。':
+   '◀ ▶で隊を切替え、隊長の番号ピンを目印に味方陣地へ配置。敵隊は開戦後に表示します。':
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
   $('realtimeMapMessage').textContent='';
-  if(next==='move'){zoom=1.6;const own=getSelected();centerX=own?.x??worldSize/2;centerZ=own?.z??worldSize/2;}
+  if(next==='move'){zoom=1.6;const own=getSelected();
+   centerX=Number.isFinite(own?.x)?own.x:worldSize/2;
+   centerZ=Number.isFinite(own?.z)?own.z:worldSize/2;}
   else {zoom=1;centerX=centerZ=worldSize/2;}
   drawMap();
  }
