@@ -6,8 +6,8 @@
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-lateral-lizard-elbow90-narrowhead-v6-20261120';
-export const M019_BODY_DROP=.38;
+export const M019_HERO_REVISION='m019-low-trunk-arched-horns-v7-20261120';
+export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
 export const M019_LIMB_WIDTH=.66;
@@ -31,7 +31,7 @@ export function m019HeroSkullRings(m001Rings){
   return {
    z:r.z*(r.z>=0?1.87:1.46)+.048,
    y:r.y*.68-.047-.009*brow,
-   rx:r.rx*(.70+.105*brow)+.003*Math.sin(Math.PI*t),
+   rx:r.rx*(.62+.090*brow)+.003*Math.sin(Math.PI*t),
    ry:r.ry*(.59+.045*brow)
   };
  });
@@ -56,13 +56,13 @@ export function m019HeroTorsoRings(referenceStations){
 /** A closed continuous wedge snout, not a wolf nose or a second face ball. */
 export function sculptM019Muzzle(g,head){
  const snout=g.axialLoft(head,'skin',[
-  {z:1.000,y:-.176,rx:.019,ry:.024},
-  {z:.969,y:-.171,rx:.053,ry:.043},
-  {z:.890,y:-.162,rx:.081,ry:.056},
-  {z:.766,y:-.139,rx:.104,ry:.072},
-  {z:.610,y:-.111,rx:.132,ry:.083},
-  {z:.432,y:-.065,rx:.153,ry:.111},
-  {z:.195,y:-.013,rx:.169,ry:.122}
+  {z:1.000,y:-.176,rx:.017,ry:.022},
+  {z:.969,y:-.171,rx:.046,ry:.040},
+  {z:.890,y:-.162,rx:.069,ry:.051},
+  {z:.766,y:-.139,rx:.090,ry:.067},
+  {z:.610,y:-.111,rx:.112,ry:.078},
+  {z:.432,y:-.065,rx:.133,ry:.101},
+  {z:.195,y:-.013,rx:.147,ry:.112}
  ],{name:'m019-unbroken-salamander-muzzle',rough:.82,
    ribbing:.004,capEnds:true});
  snout.userData.m019ContinuousMuzzle=true;
@@ -70,7 +70,7 @@ export function sculptM019Muzzle(g,head){
  for(const side of [-1,1]){
   const s=side<0?'L':'R';
   const cheek=g.bridge(head,'skin',
-    [side*.138,-.052,.202],[side*.166,-.126,.518],.055,.023);
+    [side*.113,-.052,.202],[side*.146,-.126,.518],.052,.022);
   cheek.name='m019-continuous-cheek-'+s;
   cheek.userData.m019CheekRooted=true;
   g.sphere(head,'shadow',[side*.059,-.154,.967],
@@ -84,9 +84,9 @@ export function sculptM019Jaw(g,jaw){
  const mandible=g.axialLoft(jaw,'skin',[
   {z:.660,y:-.079,rx:.020,ry:.016},
   {z:.615,y:-.073,rx:.072,ry:.027},
-  {z:.465,y:-.061,rx:.105,ry:.036},
-  {z:.280,y:-.041,rx:.122,ry:.043},
-  {z:.075,y:-.027,rx:.110,ry:.051},
+  {z:.465,y:-.061,rx:.092,ry:.036},
+  {z:.280,y:-.041,rx:.109,ry:.043},
+  {z:.075,y:-.027,rx:.098,ry:.051},
   {z:-.125,y:-.003,rx:.060,ry:.040}
  ],{name:'m019-articulated-wide-mandible',rough:.84,
    ribbing:.002,capEnds:true});
@@ -109,12 +109,14 @@ export function sculptM019Jaw(g,jaw){
  * the last upper ring overlaps the shin first rings at the joint.
  *
  * Coordinates are LOCAL to leg and distal pivots, respectively.
- * leg scale remains (0.66, 0.54, 0.66); nothing is repositioned per frame.
+ * Root and upper-limb sections overlap the torso skin; shortened shins
+ * keep the feet planted after lowering the rib cage. No per-frame shifts.
  */
+// Sideways elbow remains wide, while the vertical shin is now short.
 export const M019_SPRAWL_KNEE_X=.68;
 export const M019_SPRAWL_KNEE_Y=-.085;
 export const M019_SPRAWL_FOOT_X=.007;
-export const M019_SPRAWL_FOOT_Y=-1.515;
+export const M019_SPRAWL_FOOT_Y=-.650;
 export const M019_SHOULDER_LOCAL_Y=1.26;
 export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'}={}){
  const sign=side<0?-1:1;
@@ -122,10 +124,10 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  // The root is at the limb pivot, buried in the torso sidewall.
  // The round socket stays covered even during leg swing.
  const upper=g.limbLoft(leg,'skin',[
-  {x:0,y:.043,z,rx:.118,rz:.131},
-  {x:sign*.105,y:.016,z,rx:.110,rz:.116},
-  {x:sign*.310,y:-.011,z,rx:.086,rz:.093},
-  {x:sign*.520,y:-.046,z,rx:.065,rz:.073},
+  {x:0,y:.043,z,rx:.180,rz:.180},
+  {x:sign*.105,y:.016,z,rx:.150,rz:.156},
+  {x:sign*.310,y:-.011,z,rx:.110,rz:.107},
+  {x:sign*.520,y:-.046,z,rx:.079,rz:.084},
   {x:sign*M019_SPRAWL_KNEE_X,y:M019_SPRAWL_KNEE_Y,z,
    rx:.075,rz:.078}
  ],{name:'m019-scaled-upper-limb-'+name});
