@@ -435,3 +435,37 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  #battleRpgSquadHud .rpgSquadJobName{grid-column:1/-1;grid-row:2;font-size:8px}
  #battleRpgSquadHud .rpgSquadEffects{grid-column:1/-1;grid-row:3/5}
 }
+
+/* Ten squads stay on both flanks in portrait mode, above the dialogue strip.
+   Compress vertical whitespace rather than hiding squads 9 and 10. */
+#battleRpgSquadHud .rpgSquadSide.expanded{
+ max-height:calc(100dvh - var(--battleReportHeight,90px) - 10px);
+ overflow-y:auto;
+}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadList{gap:1px;margin-top:1px}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadHead{min-height:20px}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadRow{
+ height:clamp(52px,calc((100dvh - var(--battleReportHeight,90px) - 56px)/10),64px);
+ min-height:0;
+ grid-template-rows:13px 10px 8px 8px repeat(4,minmax(2px,1fr));
+ row-gap:0;column-gap:1px;padding:1px;
+}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadJobName{
+ font-size:8px;line-height:1;align-self:center;
+}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadEffects{height:16px}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadMeterLine,
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadMeterTrack{
+ height:3px;
+}
+#battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadMeterGlyph{
+ font-size:7px;line-height:1;
+}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadSide.expanded .rpgSquadRow{
+  min-height:0;
+  height:clamp(52px,calc((100dvh - var(--battleReportHeight,90px) - 56px)/10),64px);
+  grid-template-rows:13px 10px 8px 8px repeat(4,minmax(2px,1fr));
+  padding:1px;row-gap:0;
+ }
+}
