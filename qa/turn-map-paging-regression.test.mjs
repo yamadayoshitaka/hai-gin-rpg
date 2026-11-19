@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import vm from 'node:vm';
 import {battleMapCell} from '../src/battle-realtime-commands.js';
+import {squadRadarPins,radarHitPin} from '../src/battle-center-radar.js';
 import {BATTLE_ATTACK_CHOICES,battleAttackCommand,isRangedBattleJob} from '../src/battle-attack-choices.js';
 import {buildBattleSquadLeaderPins,visibleBattleSquadPins} from '../src/battle-squad-leader-pins.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
@@ -50,7 +51,7 @@ test('turn control is never mounted and realtime squad picker is wired',()=>{
  assert.match(battle,/onMove:\(id,point\)=>/);
  assert.match(battle,/issueIndividualSquadOrder\('move',point\)/);
  assert.match(battle,/!hasSquadCommander\(id\)\|\|!canChangeSquadOrder\(id\)/);
- assert.match(battle,/onOrder:\(id,mode\)=>/);
+ assert.match(battle,/onOrder:\(id,mode,arrival=false\)=>/);
  assert.match(battle,/document\.body\.classList\.add\('battle-realtime-clean'\)/);
  assert.doesNotMatch(battle,/'TURN開始：/);
  assert.match(style,/body\.battle-realtime-clean #battleTopDock/);
@@ -124,7 +125,8 @@ test('accepted map move reveals an action picker and defers command until arriva
  assert.doesNotMatch(source,/id="realtimeMapActionSheet" hidden/,'action controls remain visible before a move');
  assert.match(source,/arrivalActions\.set\(id,\{command,point:\{\.\.\.actionDestination\}\}\)/);
  assert.match(source,/Math\.hypot\(own\.x-entry\.point\.x,own\.z-entry\.point\.z\)>3\.5/);
- assert.match(source,/if\(onOrder\(id,entry\.command\)\)arrivalActions\.delete\(id\)/);
+ assert.match(source,/onOrder\(id,entry\.command,true\)/);
+ assert.match(source,/if\(accepted\)arrivalActions\.delete\(id\)/);
  assert.match(source,/deploymentActions\.set\(id,command\)/);
  assert.match(source,/setBattleJobPortrait\(face,own\[index\]\?\.job,own\[index\]\?\.id,0\)/);
  assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapActionButtons/);
@@ -203,7 +205,10 @@ test('planning pauses the combat clock and only releases its own pause on exit',
  const src=read('../src/battle-realtime-commands.js');
  const page=read('../tactics-wireframe.html');
  assert.match(src,/function enterPlanning\(\)/);
- assert.match(src,/if\(!started\|\|getPaused\(\)\)return/);
+ assert.match(src,/if\(!started\)return/);
+ assert.match(src,/if\(!getPaused\(\)\)\{/);
+ assert.match(src,/planningDeadline=nowMs\(\)\+PLAN_LIMIT_MS/);
+ assert.match(src,/globalThis\.setInterval\?\.\(updatePlanningCountdown,200\)/);
  assert.match(src,/onPause\(\);planningOwnsPause=Boolean\(getPaused\(\)\)/);
  assert.match(src,/function exitPlanning\(\)/);
  assert.match(src,/if\(!planningOwnsPause\)return/);
@@ -232,4 +237,43 @@ test('initial and live maps share real attack variants with valid simulation com
  }
  assert.match(src,/battleAttackCommand\(preferred\.slice\(7\),squad\.job\)/);
  assert.match(src,/if\(queuedCommand\)arrivalActions\.set/);
+});
+
+test('central radar shows only commander positions for 10+10 and highlights selection',()=>{
+ const own=Array.from({length:10},(_,i)=>({id:String(i),team:0,x:10+i*5,z:20+i}));
+ const enemy=Array.from({length:10},(_,i)=>({id:String(i),team:1,x:190+i,z:120+i*3}));
+ const rows=[{team:0,id:'7',alive:0}];
+ const radar=squadRadarPins(own,enemy,232,rows);
+ assert.equal(radar.length,19);
+ assert.equal(radar.filter(p=>p.team===0).length,9);
+ assert.equal(radar.filter(p=>p.team===1).length,10);
+ assert.equal(radarHitPin(radar,radar[0].x,radar[0].y).id,'0');
+ assert.equal(radarHitPin(radar,.50,.50,.02),null);
+ assert.ok(radar.every(p=>p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1));
+ const view=read('../src/battle-realtime-commands.js');
+ const css=read('../src/battle-realtime-commands.css');
+ const page=read('../tactics-wireframe.html');
+ assert.match(view,/id="realtimeSquadRadar" hidden/);
+ assert.match(view,/id="realtimeRadarCanvas"/);
+ assert.match(view,/squadRadarPins\(own,enemies,worldSize,currentRows\)/);
+ assert.match(view,/radarHitPin\(radarPins,px,py\)/);
+ assert.match(view,/if\(pin\.team===0\)showSquadControls\(pin\.id\)/);
+ assert.match(css,/#realtimeSquadRadar\{/);
+ assert.match(page,/onEnemySelect:id=>battleRpgHud\?\.select\(1,id,\{focus:true\}\)/);
+});
+test('30-second strategy selection timer keeps previous orders and releases its own pause',()=>{
+ const view=read('../src/battle-realtime-commands.js');
+ const html=read('../tactics-wireframe.html');
+ assert.match(view,/const PLAN_LIMIT_MS=30000/);
+ assert.match(view,/id="realtimePlanSeconds"/);
+ assert.match(view,/id="realtimeMapPlanningClock"/);
+ assert.match(view,/id="realtimeRadarClock"/);
+ assert.match(view,/planningTicker=globalThis\.setInterval\?\.\(updatePlanningCountdown,200\)/);
+ assert.match(view,/if\(remain===0\)\{/);
+ assert.match(view,/if\(!\$\('realtimeBattleMapOverlay'\)\.hidden\)closeMap\(\)/);
+ assert.match(view,/closeSquadControls\(\)/);
+ assert.match(view,/if\(!planningOwnsPause\)return/);
+ assert.match(view,/if\(getPaused\(\)\)onPause\(\)/);
+ assert.match(html,/if\(team!==0\|\|!battleReady\|\|finished\)return/);
+ assert.doesNotMatch(html,/if\(team!==0\|\|!battleReady\|\|finished\|\|battleCeremony\.locked\)return/);
 });

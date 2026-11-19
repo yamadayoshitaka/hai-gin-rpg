@@ -7,6 +7,7 @@ import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js';
+import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
@@ -21,7 +22,7 @@ export function createRealtimeBattleCommands({
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
- onSelect=()=>{},onFocus=()=>{},onRoster=()=>{},onMenu=()=>{},
+ onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false
 }={}){
@@ -30,10 +31,20 @@ export function createRealtimeBattleCommands({
  let started=false,mode='deploy',selectedId=null,zoom=1,centerX=worldSize/2,centerZ=worldSize/2;
  const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
+ const PLAN_LIMIT_MS=30000;
+ let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
+  <div id="realtimeSquadRadar" hidden role="group" aria-label="中央部隊レーダー">
+   <div class="realtimeRadarHeader"><strong>◎ 部隊レーダー</strong>
+    <span id="realtimeRadarClock" hidden aria-label="作戦選択の残り時間"></span></div>
+   <canvas id="realtimeRadarCanvas" width="224" height="178"
+    aria-label="味方と敵の隊長位置。青が味方、赤が敵。番号は隊番号" tabindex="0"></canvas>
+   <div class="realtimeRadarLegend">●味方 <span>●敵</span>　数字＝隊</div>
+  </div>
   <div id="realtimeBattleDock" hidden role="group" aria-label="選択中の隊の作戦">
    <button type="button" id="realtimeDockClose" aria-label="作戦を閉じて戦闘に戻る">✕ 戻る</button>
+   <span id="realtimePlanSeconds" aria-live="off">作戦選択 残り30秒</span>
    <div class="realtimeDockSquadPager" role="group" aria-label="作戦を選ぶ隊をページ切替">
     <button type="button" id="realtimeDockPrev" aria-label="前の隊">◀</button>
     <span class="realtimeDockPortrait" id="realtimeDockPortrait" aria-hidden="true"></span>
@@ -62,6 +73,7 @@ export function createRealtimeBattleCommands({
   <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="戦場地図で移動先を選択">
    <div class="realtimeMapCard">
     <header><strong id="realtimeMapTitle">開戦前の隊列配置</strong>
+     <span id="realtimeMapPlanningClock" hidden>作戦 残り30秒</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
     <div class="realtimeMapSquadPager" role="group" aria-label="配置・移動する味方隊をページ切替">
@@ -107,6 +119,7 @@ export function createRealtimeBattleCommands({
  doc.body.append(root);
  const $=id=>root.querySelector('#'+id);
  const canvas=$('realtimeBattleCanvas'),ctx=canvas.getContext('2d');
+ const radarCanvas=$('realtimeRadarCanvas'),radarCtx=radarCanvas.getContext('2d');
  let currentRows=[];
  let squadSnapshot=[],squadSnapshotAt=-Infinity,lastMapRedrawAt=-Infinity;
  let mapDrawPending=false;
@@ -155,7 +168,34 @@ export function createRealtimeBattleCommands({
   hideContextChoices();
   refreshOptions();renderActionSelection();onSelect(selectedId);
   if(focus)onFocus(selectedId);
-  renderStatus();drawMap();return true;
+  renderStatus();drawMap();drawRadar(true);return true;
+ }
+ function drawRadar(force=false){
+  if(!started||!radarCtx||$('realtimeSquadRadar').hidden)return;
+  const now=nowMs();if(!force&&now-lastRadarRenderAt<350)return;
+  lastRadarRenderAt=now;
+  const w=radarCanvas.width,h=radarCanvas.height,ctx=radarCtx;
+  const own=squads(),enemies=getEnemies();
+  radarPins=squadRadarPins(own,enemies,worldSize,currentRows);
+  ctx.clearRect(0,0,w,h);
+  const background=getMapBackground();
+  if(background)try{ctx.drawImage(background,0,0,w,h);}catch{}
+  ctx.fillStyle='rgba(7,27,45,.36)';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(194,222,239,.17)';ctx.lineWidth=1;
+  for(let k=1;k<4;k++){
+   ctx.beginPath();ctx.moveTo(k*w/4,0);ctx.lineTo(k*w/4,h);ctx.stroke();
+   ctx.beginPath();ctx.moveTo(0,k*h/4);ctx.lineTo(w,k*h/4);ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(232,239,229,.38)';ctx.lineWidth=1.4;
+  ctx.strokeRect?.(.8,.8,w-1.6,h-1.6);
+  for(const pin of radarPins){
+   const x=pin.x*w,y=pin.y*h,focus=pin.team===0&&pin.id===String(selectedId);
+   ctx.beginPath();ctx.arc(x,y,focus?10:8,0,Math.PI*2);
+   ctx.fillStyle=pin.team===0?'#5aceff':'#ff7884';ctx.fill();
+   ctx.strokeStyle=focus?'#ffea92':'#132c40';ctx.lineWidth=focus?3.2:1.6;ctx.stroke();
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 10px system-ui';
+   ctx.fillStyle='#071625';ctx.fillText(String(pin.number),x,y);
+  }
  }
  function renderStatus(){
   const own=getSelected();
@@ -294,11 +334,37 @@ export function createRealtimeBattleCommands({
     battleAttackCommand('far',getSelected()?.job)==null;
   }
  }
+ function updatePlanningCountdown(){
+  if(!planningDeadline)return;
+  const remain=Math.max(0,Math.ceil((planningDeadline-nowMs())/1000));
+  $('realtimePlanSeconds').textContent='作戦選択 残り'+remain+'秒';
+  $('realtimeRadarClock').hidden=false;
+  $('realtimeRadarClock').textContent='作戦 '+remain+'秒';
+  $('realtimeMapPlanningClock').textContent='残り'+remain+'秒';
+  if(remain===0){
+   // Do not silently overwrite a team's existing order when the time expires.
+   if(!$('realtimeBattleMapOverlay').hidden)closeMap();
+   closeSquadControls();
+  }
+ }
  function enterPlanning(){
-  if(!started||getPaused())return;
-  onPause();planningOwnsPause=Boolean(getPaused());
+  if(!started)return;
+  if(!getPaused()){
+   onPause();planningOwnsPause=Boolean(getPaused());
+  }
+  // Never start a countdown while simulation is still advancing.
+  if(!getPaused())return;
+  if(!planningDeadline){
+   planningDeadline=nowMs()+PLAN_LIMIT_MS;
+   planningTicker=globalThis.setInterval?.(updatePlanningCountdown,200)??null;
+  }
+  updatePlanningCountdown();
  }
  function exitPlanning(){
+  planningDeadline=0;
+  if(planningTicker!=null)globalThis.clearInterval?.(planningTicker);
+  planningTicker=null;
+  $('realtimeRadarClock').hidden=true;
   if(!planningOwnsPause)return;
   planningOwnsPause=false;
   if(getPaused())onPause();
@@ -308,6 +374,8 @@ export function createRealtimeBattleCommands({
   if(!setSelected(id))return false;
   enterPlanning();
   $('realtimeBattleDock').hidden=false;
+  updatePlanningCountdown();
+  drawRadar(true);
   return true;
  }
  function closeSquadControls(){
@@ -332,6 +400,7 @@ export function createRealtimeBattleCommands({
   $('realtimeMapClose').hidden=next==='deploy';
   $('realtimeStart').hidden=next!=='deploy';
   $('realtimeMapTitle').textContent=next==='deploy'?'開戦前の初期配置':'移動先を選択';
+  $('realtimeMapPlanningClock').hidden=next==='deploy';
   $('realtimeMapHelp').textContent=next==='deploy'?
    '◀ ▶で隊を切替え、隊長の番号ピンを目印に味方陣地へ配置。敵隊は開戦後に表示します。':
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
@@ -409,6 +478,25 @@ export function createRealtimeBattleCommands({
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
+ function activateRadarPin(px,py){
+  const pin=radarHitPin(radarPins,px,py);
+  if(!pin)return;
+  if(pin.team===0)showSquadControls(pin.id);
+  else onEnemySelect(pin.id);
+ }
+ radarCanvas.addEventListener('click',event=>{
+  if(!started)return;
+  const rect=radarCanvas.getBoundingClientRect();
+  if(rect.width>0&&rect.height>0)
+   activateRadarPin((event.clientX-rect.left)/rect.width,(event.clientY-rect.top)/rect.height);
+ });
+ radarCanvas.addEventListener('keydown',event=>{
+  if(event.key!=='Enter'&&event.key!==' ')return;
+  event.preventDefault();
+  const pin=radarPins.find(p=>p.team===0&&p.id===String(selectedId))||
+   radarPins.find(p=>p.team===0);
+  if(pin)showSquadControls(pin.id);
+ });
  for(const [button,offset] of [['realtimeMapPrev',-1],['realtimeMapNext',1],['realtimeDockPrev',-1],['realtimeDockNext',1]])
   $(button).addEventListener('click',()=>{
    const own=squads(),index=own.findIndex(s=>String(s.id)===String(selectedId));
@@ -491,13 +579,15 @@ export function createRealtimeBattleCommands({
  $('realtimeStart').onclick=()=>{
   if(started)return;
   started=true;mode='live';hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;
-  $('realtimeBattleDock').hidden=true;onStart();renderStatus();
+  $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
+  onStart();renderStatus();drawRadar(true);
  };
  $('realtimeRoster')?.addEventListener('click',()=>onRoster());
  $('realtimeMenu').onclick=()=>onMenu();
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
-  openDeployment(){started=false;mode='deploy';planningOwnsPause=false;deploymentActions.clear();arrivalActions.clear();preferredActions.clear();invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;openMap('deploy');},
+  openDeployment(){started=false;mode='deploy';exitPlanning();planningOwnsPause=false;
+   $('realtimeSquadRadar').hidden=true;deploymentActions.clear();arrivalActions.clear();preferredActions.clear();invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;openMap('deploy');},
   selectSquad:setSelected,
   showSquadControls,
   closeSquadControls,
@@ -523,6 +613,8 @@ export function createRealtimeBattleCommands({
     }
    }
    renderStatus();
+   if(started)drawRadar();
+   if(planningDeadline)updatePlanningCountdown();
    // No physical positions change while initial deployment is paused.
    // Live map pins need only about 3 updates/sec, never every UI tick.
    if(mode==='move'&&!$('realtimeBattleMapOverlay').hidden&&
@@ -535,6 +627,8 @@ export function createRealtimeBattleCommands({
   get deploymentActions(){return [...deploymentActions.keys()]},
   get preferredActions(){return [...preferredActions.entries()]},
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
-  root,dispose(){root.remove();}
+  get planningSeconds(){return planningDeadline?Math.max(0,Math.ceil((planningDeadline-nowMs())/1000)):null;},
+  get radarPins(){return [...radarPins];},
+  root,dispose(){exitPlanning();root.remove();}
  };
 }
