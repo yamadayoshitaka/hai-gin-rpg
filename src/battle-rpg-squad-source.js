@@ -2,6 +2,7 @@
  * Read-only adapter from live battle squad summaries to the mobile RPG HUD.
  * All effects are sourced from combat state; no invented ailments or buffs.
  */
+import {displayBattleJobName} from './battle-job-squads.js';
 export function makeBattleRpgStatusRows({
  sums,units=[],allyIds=[],enemyIds=[],getJob=()=>'',getMode=()=>null,
  mass=false,now=0,simTime=now,itemTypes={},auras=new Map(),
@@ -50,7 +51,7 @@ export function makeBattleRpgStatusRows({
  const rows=[];
  for(let team=0;team<2;team++)for(const [index,id] of safeIds[team].entries()){
   const key=team+':'+String(id),stat=sums?.get(key),alive=Number(stat?.n)||0;
-  const job=String(getJob(id,team)||'部隊');
+  const job=displayBattleJobName(getJob(id,team)||'部隊');
   rows.push({team,id:String(id),name:'第'+(index+1)+'隊 '+job,job,
    alive,total:Number(stat?.total)||0,hp:Number(stat?.hp)||0,
    maxHp:maxHpBySquad.get(key)||Number(stat?.maxHp)||0,
