@@ -16,9 +16,9 @@
     "head": "thin tapered pointed lizard snout, angular and narrow",
     "eyes": "two narrow luminous amber predator eyes, slit pupils",
     "horns": "exactly two long slender swept-back cranial horns",
-    "legs": "exactly four short thin articulated lizard limbs (two front, two rear)",
+    "legs": "exactly four short, thin laterally sprawling reptile limbs; elbow/knee displaced out from shoulder/hip, not straight downward",
     "digitsPerPaw": 4,
-    "tail": "extremely long smooth taper with upward-curled tip, animated with torso",
+    "tail": "long attached whip tail, seamless joins and curled tip, fully visible in full-body camera on portrait phones",
     "spines": "small low-profile backward jagged basalt spines",
     "surface": "black obsidian plates and narrow molten orange seams",
     "exclude": [
@@ -38,7 +38,9 @@
     "bodyToWidthMin": 3.8,
     "limbReach": 0.54,
     "limbWidth": 0.66,
-    "tailLocalStretch": 2.2
+    "tailLocalStretch": 2.2,
+    "lateralKneeOffset": 0.265,
+    "lateralPawOffsetFromKnee": 0.185
   },
   "qualityGate": [
     "all moving parts are physical mesh",
@@ -46,7 +48,11 @@
     "four foot grounding",
     "body/head/tail remain connected",
     "no changes to m001,m016,m017",
-    "game registered route updated"
+    "game registered route updated",
+    "toeX further outward than kneeX, knees outward from hipX on both sides",
+    "tailMid and tailTip physically overlap; no visual gap",
+    "all four limbs rooted to torso and grounded at idle and walk",
+    "portrait viewport full-body fit based on horizontal camera FOV"
   ],
   "visualApprovalStatus": "pending-user-3d-review"
 }
