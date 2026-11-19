@@ -301,8 +301,11 @@ export function createRealtimeBattleCommands({
    deploymentActions.delete(String(selectedId));arrivalActions.delete(String(selectedId));
    showActionSheet(selectedId,point);
    const preferred=preferredActions.get(String(selectedId));
-   if(preferred)arrivalActions.set(String(selectedId),{
-    command:preferred==='support'?'defend':preferred,point:{...point}});
+   const queuedCommand=String(preferred||'').startsWith('attack_')?
+    battleAttackCommand(preferred.slice(7),squad.job):
+    preferred==='support'?'defend':preferred;
+   if(queuedCommand)arrivalActions.set(String(selectedId),{
+    command:queuedCommand,point:{...point}});
   }
   return applied;
  }
