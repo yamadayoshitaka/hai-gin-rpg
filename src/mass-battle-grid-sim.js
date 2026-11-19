@@ -304,8 +304,9 @@ export class MassBattleGridSimulation {
     members.sort((a,b)=>
       Math.hypot(a.x-route.access.x,a.z-route.access.z)-
       Math.hypot(b.x-route.access.x,b.z-route.access.z));
-    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff&&
-      Math.hypot(u.x-route.access.x,u.z-route.access.z)<=65);
+    // A target order authorizes the full walkable route, even if the stairway
+    // is farther than the previous arbitrary 65-cell cutoff.
+    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff);
     if(!unit)return false;
     this.squadDestinations.delete(String(squadId));
     this.squadFlows.delete(String(squadId));
