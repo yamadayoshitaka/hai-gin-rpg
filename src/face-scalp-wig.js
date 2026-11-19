@@ -90,13 +90,10 @@ function actualScalpCandidates(geo,box){
    // Keep explicit QA failure instead of silently growing "rear" locks
    // out of the forehead on unusual incoming face topologies.
    if(rear)throw Error('Missing posterior scalp: '+zone);
-   const sameSide=all.filter(q=>onSide(q)&&
-    (zone==='crown'?(q.p.y-box.min.y)/d.y>.80:true));
-   // Never grow crown fibres from cheek, jaw or nape vertices: those roots
-   // create a visible bald wedge and floating locks when the source topology
-   // lacks a dedicated apex strip. Fail QA rather than emit corrupt geometry.
-   if(zone==='crown'&&!sameSide.length)throw Error('Missing superior crown scalp roots');
-   pools[zone]=sameSide.length?sameSide:all;
+   // Sparse topology must not redirect temple/fringe follicles to cheek,
+   // jaw or the opposite side: that produces floating ribbons and bald gaps.
+   // A genuine anatomical root is mandatory for every zone.
+   throw Error('Missing anatomical scalp roots: '+zone);
   }
  }
  return {pools,all};
