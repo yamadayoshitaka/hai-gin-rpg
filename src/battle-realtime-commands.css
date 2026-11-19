@@ -414,3 +414,23 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 @media(max-width:600px){
  #battleRealtimeControls .realtimeContextChoices:has(.realtimeStructureMap){max-height:42dvh}
 }
+
+/* Rally is a two-step commander interaction: choose the target squad, then
+   choose one of the three buff orders. State is enforced by the simulation. */
+#realtimeBattleDock #realtimeDockRallyChoices select{
+ display:block;box-sizing:border-box;width:100%;max-width:100%;
+ min-height:40px;padding:7px;
+ background:#12364c;border:1px solid #b7d4e5;border-radius:6px;color:#fff3d5;
+ font:700 13px system-ui;
+}
+#realtimeBattleDock #realtimeDockRallyChoices [data-rally-state]{
+ display:block;width:100%;padding:7px;
+ border:1px solid #c9ad7b;border-radius:6px;color:#ffe4a5;
+ background:#2a3342;font:700 12px/1.4 system-ui;
+}
+#realtimeBattleDock #realtimeDockRallyChoices button[data-rally-command]{
+ font-size:12px;min-height:38px;
+}
+#realtimeBattleDock #realtimeDockRallyChoices button[data-rally-command]:disabled{
+ opacity:.45;filter:grayscale(.65);cursor:not-allowed;
+}
