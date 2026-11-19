@@ -63,6 +63,15 @@ export class CombatActionRuntime {
     this._unitHitSlots = [];
     this._occupancy = occupancy;
     this._units = units;
+    // One O(n) cover index per tick rather than scanning 2000 soldiers per hit.
+    this._guardCoverIndex=new Map();
+    for(const u of units){
+      if(!isAlive(u)||u.jobId!=='shield'||!(Number(u.guardCoverUntil)>this.time)||
+         u.guardCoverTargetSquadId==null)continue;
+      const key=u.team+':'+String(u.guardCoverTargetSquadId);
+      const guards=this._guardCoverIndex.get(key)??[];
+      guards.push(u);this._guardCoverIndex.set(key,guards);
+    }
     this._sectors = sectors ?? new Map();
     if (walkable) this.walkable = walkable;
     for (const u of units) {
@@ -189,16 +198,16 @@ export class CombatActionRuntime {
     // most incoming hostile damage while within eight battle cells. A redirected
     // hit is linked, so it cannot trigger another shield or recurse.
     if(!linked&&damage>0&&attacker&&attacker.team!==target.team&&
-       target.squadId!=null&&Array.isArray(this._units)){
+       target.squadId!=null&&this._guardCoverIndex?.size){
       const pos=u=>({x:Number(u?.x??u?.cell?.x),z:Number(u?.z??u?.cell?.z)});
       const victim=pos(target);
-      const cover=this._units.filter(u=>
-        u!==target&&isAlive(u)&&u.team===target.team&&u.jobId==='shield'&&
-        String(u.guardCoverTargetSquadId)===String(target.squadId)&&
-        Number(u.guardCoverUntil)>this.time&&Number.isFinite(victim.x)&&
-        Math.hypot(pos(u).x-victim.x,pos(u).z-victim.z)<=8)
-       .sort((a,b)=>Math.hypot(pos(a).x-victim.x,pos(a).z-victim.z)-
-         Math.hypot(pos(b).x-victim.x,pos(b).z-victim.z))[0];
+      const guards=this._guardCoverIndex.get(target.team+':'+String(target.squadId))??[];
+      let cover=null,nearest=Infinity;
+      for(const u of guards){
+        if(u===target||!isAlive(u)||!(Number(u.guardCoverUntil)>this.time))continue;
+        const spot=pos(u),distance=Math.hypot(spot.x-victim.x,spot.z-victim.z);
+        if(distance<=8&&distance<nearest){cover=u;nearest=distance;}
+      }
       if(cover){
         const redirected=Math.max(1,Math.round(damage*.65));
         damage-=redirected;
