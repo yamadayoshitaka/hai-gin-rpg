@@ -101,7 +101,7 @@ export function createRealtimeBattleCommands({
     <div class="realtimeMapMessage" id="realtimeMapMessage" role="status"></div>
     <div class="realtimeMapActionSheet" id="realtimeMapActionSheet" role="group" aria-label="移動後の行動を選択">
      <strong>② 隊の行動（兵符・物資の使用は軍師の指示）</strong>
-     <small id="realtimeMapChosenAction" role="status">選択中：移動のみ</small><strong hidden></strong>
+     <small id="realtimeMapChosenAction" role="status">選択中：移動のみ</small>
      <div class="realtimeMapActionButtons">
       <button type="button" data-action-after-move="defend">🛡 守備</button>
       <button type="button" data-action-after-move="charge">⚔ 攻撃</button>
@@ -496,8 +496,8 @@ export function createRealtimeBattleCommands({
    '◀ ▶で隊を切替え、隊長の番号ピンを目印に味方陣地へ配置。敵隊は開戦後に表示します。':
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
   $('realtimeMapMessage').textContent='';
-  $('realtimeMapActionSheet').querySelector('[data-action-after-move="support"]').hidden=next==='deploy';
-  $('realtimeMapActionSheet').querySelector('[data-action-after-move="special"]').hidden=next==='deploy';
+  root.querySelector('[data-action-after-move="support"]').hidden=next==='deploy';
+  root.querySelector('[data-action-after-move="special"]').hidden=next==='deploy';
   renderActionSelection();
   if(next==='move'){zoom=1.6;const own=getSelected();
    centerX=Number.isFinite(own?.x)?own.x:worldSize/2;
