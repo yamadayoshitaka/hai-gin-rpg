@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import {makeBattleRpgStatusRows} from '../src/battle-rpg-squad-source.js';
-import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon} from '../src/battle-rpg-squad-hud.js';
+import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon,rpgHudEffectIcon,rpgHudStateIcon} from '../src/battle-rpg-squad-hud.js';
 
 test('actual ally/enemy HP and job IDs survive into RPG panels with matching camera keys',()=>{
  const units=[
@@ -78,4 +78,22 @@ test('RPG status is sourced from real squads but collapsed by default to reveal 
  assert.match(clean,/body\.battle-realtime-clean #battleRpgSquadHud/);
  assert.match(css,/#battleRpgSquadHud .rpgSquadSide\.enemy/);
  assert.match(css,/rpgSquadEffects/);
+});
+
+test('all squads use the same compact icon + meter + effect row, with five per page',()=>{
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ const realtime=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
+ assert.equal(rpgHudEffectIcon({kind:'debuff',label:'防↓18%'}),'🛡↓');
+ assert.equal(rpgHudEffectIcon({kind:'buff',label:'攻↑20%'}),'⚔↑');
+ assert.equal(rpgHudEffectIcon({kind:'debuff',label:'速↓25%'}),'⚡↓');
+ assert.equal(rpgHudStateIcon({alive:1,total:10,hp:10,maxHp:100}),'🆘');
+ assert.equal(rpgHudStateIcon({alive:10,total:10,hp:100,maxHp:100,mode:'move'}),'➤');
+ assert.match(js,/const pageSize=expanded\[team\]\?Math\.max\(1,own\.length\):5/);
+ assert.match(js,/metrics\.append\(hp,hpValue,count,effects\)/);
+ assert.match(js,/for\(const fx of valid\.slice\(0,3\)\)/);
+ assert.match(css,/\.rpgSquadMetrics\{display:flex/);
+ assert.match(css,/\.rpgSquadEffects \.debuff/);
+ assert.match(realtime,/body\.battle-realtime-clean #battleRpgSquadHud:not\(\[hidden\]\)\{display:block!important\}/);
+ assert.match(realtime,/body\.battle-realtime-clean\.battle-roster-open #battleRpgSquadHud:not\(\[hidden\]\)\{display:none!important\}/);
 });
