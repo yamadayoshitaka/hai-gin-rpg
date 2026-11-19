@@ -696,10 +696,23 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_stone_pile_001'){
+   // Uneven quarry stones: shared faceted mesh with per-stone silhouette and bedding.
+   const quarryGeometry=new THREE.IcosahedronGeometry(c,1);
+   const positions=quarryGeometry.attributes.position;
+   for(let v=0;v<positions.count;v++){
+    const x=positions.getX(v)/c,y=positions.getY(v)/c,z=positions.getZ(v)/c;
+    const strata=1+.075*Math.sin(5*x+3*z)+.045*Math.cos(7*y-2*x);
+    positions.setXYZ(v,x*c*strata,y*c*(.92+.07*Math.sin(4*z)),z*c*strata);
+   }
+   positions.needsUpdate=true;quarryGeometry.computeVertexNormals();
+   const quarryStone=new THREE.MeshStandardMaterial({color:0x898780,roughness:.96,metalness:0,flatShading:true});
    for(let i=0;i<12;i++){
-    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry((.3+(i%4)*.1)*c),stone);
-    rock.scale.set(1.2,.72,.94);rock.rotation.set(i*.11,i*.43,i*.09);
-    rock.position.set(((i*7)%11-5)*.25*c,(.25+Math.floor(i/7)*.45)*c,((i*3)%7-3)*.28*c);root.add(rock);
+    const rock=new THREE.Mesh(quarryGeometry,quarryStone);
+    const radius=.3+(i%4)*.1;
+    rock.scale.set(radius*1.2,radius*.72,radius*.94);
+    rock.rotation.set(i*.11,i*.43,i*.09);
+    rock.position.set(((i*7)%11-5)*.25*c,(.25+Math.floor(i/7)*.45)*c,((i*3)%7-3)*.28*c);
+    rock.castShadow=true;rock.receiveShadow=true;root.add(rock);
    }
   }
   if(id==='town_brazier_001'){
