@@ -85,6 +85,19 @@ for(const detail of ['low','high']){
    assert(nameSet.has('m019-vertical-pupil-L')&&nameSet.has('m019-vertical-pupil-R'));
    assert(nameSet.has('m019-amber-iris-L')&&nameSet.has('m019-amber-iris-R'));
    assert([...nameSet].some(n=>n.startsWith('m019-lava-ridge-')));
+   for(const suffix of ['L','R']){
+    const channel=meshes.find(o=>o.name==='m019-molten-dorsal-channel-'+suffix);
+    assert(channel?.parent,'both real dorsal heat channels must exist');
+    assert.equal(channel.userData.m019SurfaceHeatChannel,true);
+    if(detail!=='low')assert(channel.material.emissiveIntensity>.3,
+      'molten fissure must emit light in near LOD');
+   }
+   assert(nameSet.has('m019-molten-tail-tip'),
+     'the hot tail seam must follow the animated caudal tip');
+   assert.equal(model.userData.m019VolcanicSurface,
+     'dry-basalt-with-emissive-lava-fissures');
+   assert(![...nameSet].some(n=>n.includes('billboard-lava')),
+     'lava appearance must come from actual sculpted 3D mesh');
    assert(![...nameSet].some(n=>n.includes('wolf-mane')||n.includes('canine-fur')),
     'salamander must not grow the m001 fur coat');
    const pivot=model.userData.pivots;
@@ -167,9 +180,30 @@ for(const detail of ['low','high']){
     assert.equal(upper?.parent,leg,'upper thigh follows hip');
     assert.equal(lower?.parent,knee,'shin follows knee');
     assert.equal(upper?.userData.m019HorizontalThigh,true);
+    // A vertical-oriented limbLoft turns lateral muscles into flat sheets.
+    // TubeGeometry cross sections face the sideways bone and stay round.
+    assert.equal(upper.userData.m019TrueRoundLimb,true);
+    assert.equal(upper.userData.m019CrossSectionsPerpendicularToAxis,true);
+    assert.equal(upper.userData.cappedTubularSkin,true);
+    assert.equal(upper.material.userData.m019DryObsidian,true);
     const upperRoot=upper.geometry.getAttribute('position');
-    assert(Math.abs(upperRoot.getX(0))>.14,
-      'upper-limb root needs muscle volume buried in the rib cage');
+    const radial=detail==='low'?5:8,ring=radial+1;
+    let minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(let j=0;j<ring;j++){
+     minY=Math.min(minY,upperRoot.getY(j));
+     maxY=Math.max(maxY,upperRoot.getY(j));
+     minZ=Math.min(minZ,upperRoot.getZ(j));
+     maxZ=Math.max(maxZ,upperRoot.getZ(j));
+    }
+    assert(maxY-minY>.21&&maxZ-minZ>.21,
+      'round shoulder/thigh needs substantial muscle depth in both axes');
+    assert((maxY-minY)/(maxZ-minZ)>.58 &&
+           (maxY-minY)/(maxZ-minZ)<1.72,
+      'lateral upper leg must not be an extremely flat oval');
+    assert(nameSet.has('m019-limb-molten-crack-'+suffix+'-0'),
+      'heat channel must follow the rounded moving limb');
+    if(detail==='high')assert(nameSet.has('m019-limb-molten-crack-'+suffix+'-1'),
+      'near LOD preserves branching molten limb markings');
     assert.equal(lower?.userData.m019VerticalShin,true);
     const hipWorld=leg.getWorldPosition(new THREE.Vector3());
     const footWorld=toe.getWorldPosition(new THREE.Vector3());

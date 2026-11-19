@@ -16,11 +16,11 @@
     "head": "thin pointed wedge: reduced cranium, cheek, eyelid and snout width as one anatomy",
     "eyes": "two narrow luminous amber predator eyes, slit pupils",
     "horns": "exactly two large backward-swept horns with visibly arched quadratic centerline",
-    "legs": "four shoulder/hip muscles buried inside ribcage, strongly lateral upper arms/thighs, 90-degree knees, short vertically dropping lower arms/shins, four small planted paws; no gaps",
+    "legs": "four short splayed reptile limbs with truly round, curved upper-arm and thigh sections oriented perpendicular to the lateral axis; torso-rooted muscle and mobile 90-degree knee/ankle",
     "digitsPerPaw": 4,
     "tail": "long attached whip tail, seamless joins and curled tip, fully visible in full-body camera on portrait phones",
     "spines": "small low-profile backward jagged basalt spines",
-    "surface": "black obsidian plates and narrow molten orange seams",
+    "surface": "charcoal-black vitrified basalt plates, localized rough PBR, emissive branching orange magma fissures along upper limbs, back and moving curled tail; no flat overlays or bright full-body red skin",
     "exclude": [
       "bulky dinosaur torso",
       "thick cylinder legs",
@@ -54,7 +54,11 @@
     "shinWorldDropRange": [
       0.24,
       0.47
-    ]
+    ],
+    "upperArmMuscleRadius": 0.163,
+    "thighMuscleRadius": 0.19,
+    "moltenDorsalChannels": 2,
+    "moltenLimbChannelsNearPerLimb": 2
   },
   "qualityGate": [
     "all moving parts are physical mesh",
@@ -72,7 +76,11 @@
     "each upper segment extends laterally almost horizontally and lower shin is almost vertical",
     "physically measured belly-to-ground clearance, not just foot contact",
     "both horn meshes have measurable arc deviation above a straight centerline",
-    "upper limb roots have muscle cross-section and overlap torso skin"
+    "upper limb roots have muscle cross-section and overlap torso skin",
+    "upper-arm and thigh circular sections have measurable Y and Z diameter at low and high LOD",
+    "m019 heat channels are real parented meshes with near-LOD emissive material",
+    "m001, m016 and m017 anatomy and textures unaffected",
+    "no WebGL screenshot claimed without render inspection"
   ],
   "visualApprovalStatus": "pending-user-3d-review"
 }

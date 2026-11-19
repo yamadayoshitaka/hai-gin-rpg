@@ -8,7 +8,7 @@
  * All pieces attach to existing movable parents. No floating decoration,
  * no replacement of another species, no expensive effect sprites at LOD low.
  */
-export const MAGMA_SALAMANDER_REVISION='m019-low-trunk-arched-horns-v7-20261120';
+export const MAGMA_SALAMANDER_REVISION='m019-rounded-volcanic-muscles-v8-20261120';
 export const MAGMA_SALAMANDER_LEG_REACH=.54;
 export const MAGMA_SALAMANDER_BODY_DROP=.86;
 
@@ -44,7 +44,7 @@ export function sculptMagmaSalamanderEye(g,head,side,{detail='high'}={}){
  iris.userData.m019PredatorSlit=true;
  g.sphere(head,'accent',[side*.198,.055,.295],
    [.004,.019,.020],{name:'m019-glowing-iris-'+suffix,
-    glow:detail==='source'});
+    glow:detail!=='low'});
  g.sphere(head,'shadow',[side*.202,.051,.299],
    [.0035,.021,.012],{name:'m019-vertical-pupil-'+suffix});
  g.sphere(head,'bone',[side*.205,.069,.299],
@@ -101,7 +101,38 @@ export function sculptMagmaSalamanderBack(g,torso,{detail='high'}={}){
    {name:'m019-lava-ridge-'+i});
   horn.userData.m019RootedDorsalCrest=true;
  }
+ // Two glowing heat channels wind between dark basalt plates. Height samples
+ // follow the actual m019 flattened ribcage, avoiding floating neon stripes.
+ // Keep one pair even on mobile LOD so the animal still reads as molten.
+ for(const side of [-1,1]){
+  const suffix=side<0?'L':'R';
+  const track=g.tube(torso,'accent',[
+   [side*.080,1.555,1.02],
+   [side*.128,1.579,.72],
+   [side*.105,1.537,.27],
+   [side*.145,1.503,-.10],
+   [side*.108,1.450,-.57],
+   [side*.078,1.430,-.98]
+  ],detail==='low'?.009:.014,{
+   name:'m019-molten-dorsal-channel-'+suffix,glow:detail!=='low'
+  });
+  track.userData.m019SurfaceHeatChannel=true;
+ }
  if(detail==='low')return;
+ // Sporadic branching cracks, rather than a uniform red reptilian skin.
+ for(const side of [-1,1]){
+  const suffix=side<0?'L':'R';
+  for(let i=0;i<3;i++){
+   const z=.82-i*.67;
+   const y=1.555-i*.060;
+   const vein=g.tube(torso,'accent',[
+    [side*.12,y,z+.065],
+    [side*.18,y-.025,z+.015],
+    [side*.22,y-.075,z-.075]
+   ],.008,{name:'m019-molten-branch-'+suffix+'-'+i,glow:true});
+   vein.userData.m019SurfaceHeatChannel=true;
+  }
+ }
  for(const side of [-1,1])for(let i=0;i<7;i++){
   const s=side<0?'L':'R',z=1.08-i*.346;
   const plate=g.rock(torso,'shadow',
@@ -127,4 +158,5 @@ export function markMagmaSalamander(root){
  ];
  root.userData.m019ShortLegReach=MAGMA_SALAMANDER_LEG_REACH;
  root.userData.m019DorsalPlatesFollowTorso=true;
+ root.userData.m019VolcanicSurface='dry-basalt-with-emissive-lava-fissures';
 }
