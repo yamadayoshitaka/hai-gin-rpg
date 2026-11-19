@@ -69,13 +69,14 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  command.selectSquad('2');
  assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
  dom.actions.get('support').tap();
- assert.deepEqual(command.preferredActions,[['1','charge'],['2','support']]);
+ assert.deepEqual(command.preferredActions,[['1','charge']]);
+ assert.equal(dom.root.querySelector('#realtimeMapSupportChoices').hidden,false);
  command.selectSquad('1');
  const canvas=dom.root.querySelector('#realtimeBattleCanvas');
  canvas.tap('pointerdown',{pointerId:1,clientX:50,clientY:110});
  canvas.tap('pointerup',{pointerId:1,clientX:50,clientY:110});
  assert.equal(deploys,1);
- assert.deepEqual(command.preferredActions,[['1','charge'],['2','support']]);
+ assert.deepEqual(command.preferredActions,[['1','charge']]);
  const redraws=dom.ctxCalls.draw;
  for(let i=0;i<30;i++)command.update([]);
  assert.equal(dom.ctxCalls.draw,redraws,'paused deployment must not repaint map on every squad status update');
@@ -101,4 +102,25 @@ test('map controls and roster aggregation retain real 3D movement and squad iden
  assert.match(js,/mode==='move'&&!\$\('realtimeBattleMapOverlay'\)\.hidden/);
  assert.match(battle,/const groups=new Map\(squadIds\.map\(id=>/);
  assert.match(battle,/buildBattleSquadLeaderPins\(squadRoster/);
+});
+
+test('job-based tactics expose ninja ranged and real mission / inventory integration',async()=>{
+ const {battleAttackCommand,isRangedBattleJob}=await import('../src/battle-attack-choices.js');
+ const {battleJobSpecialActions}=await import('../src/battle-job-special-actions.js');
+ assert.equal(isRangedBattleJob('忍者'),true);
+ assert.equal(battleAttackCommand('far','忍者'),'hold');
+ assert.equal(battleAttackCommand('far','剣士'),null);
+ assert.ok(battleJobSpecialActions('魔法使い').some(x=>x.id==='destroy_bridge'));
+ assert.ok(battleJobSpecialActions('召喚士').some(x=>x.id==='break_structure'));
+ assert.ok(battleJobSpecialActions('シーフ').some(x=>x.id==='unlock_door'));
+ assert.ok(battleJobSpecialActions('シーフ').some(x=>x.id==='steal_item'));
+ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const realtime=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ const mass=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
+ assert.match(game,/onSpecial:\(id,action,targetId\)=>issueRealtimeSpecial/);
+ assert.match(game,/roomItemRegistry\.transfer\(enemy\.id,thief\.id,stack\.itemId,1\)/);
+ assert.match(game,/onUseItem:\(id,itemId\)=>useSquadBattleItem/);
+ assert.match(mass,/type==='break_structure'/);
+ assert.match(realtime,/showSpecialChoices\('dock'\)/);
+ assert.match(realtime,/showSupportChoices\('map'\)/);
 });
