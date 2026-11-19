@@ -292,7 +292,7 @@ export class MassBattleGridSimulation {
   /** Explicit range-job high-ground order uses the actual authored stair route. */
   orderSquadHighGround(squadId,routeIndex,team=0){
     const index=Number(routeIndex),route=this.highGroundRoutes[index];
-    if(!route||route.team!==team||!this._highGroundRouteAlive(route)||
+    if(!route||!this._highGroundRouteAlive(route)||
       !['window','roof'].includes(route.kind))return false;
     const key=route.buildingIndex+':'+team;
     if(this._highGroundClaims.has(key))return false;
