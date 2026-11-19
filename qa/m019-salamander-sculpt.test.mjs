@@ -8,7 +8,8 @@ import {MAGMA_SALAMANDER_REVISION,MAGMA_SALAMANDER_LEG_REACH,
  magmaSkullFromWolfKing,magmaTorsoFromWolfKing} from '../src/magma-salamander-sculpt.js';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_BODY_STRETCH,M019_LIMB_REACH,M019_LIMB_WIDTH,
- M019_APPROVED_SILHOUETTE,M019_SPRAWL_KNEE_X,M019_SPRAWL_FOOT_X,
+ M019_APPROVED_SILHOUETTE,M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,
+ M019_SPRAWL_FOOT_X,M019_SPRAWL_FOOT_Y,M019_SHOULDER_LOCAL_Y,
  m019HeroSkullRings,m019HeroTorsoRings}
  from '../src/m019-hero-sculpt.js';
 import {m019FullBodyFit} from '../src/m019-full-body-camera.js';
@@ -99,7 +100,13 @@ for(const detail of ['low','high']){
    assert(bodySize.z>bodySize.y*3.5,
      'approved body is long and dorsoventrally flattened');
    const snout=meshes.find(o=>o.name==='m019-unbroken-salamander-muzzle');
-   assert.equal(snout.parent,pivot.head,'snout must not float separately from skull');
+   assert.equal(snout.parent,pivot.head,'snout follows skull');
+    const snoutPosition=snout.geometry.getAttribute('position');
+    let snoutMaxWidth=0;
+    for(let q=0;q<snoutPosition.count;q++)
+      snoutMaxWidth=Math.max(snoutMaxWidth,Math.abs(snoutPosition.getX(q)));
+    assert(snoutMaxWidth<.19,
+      'm019 snout must be thinner than the previous rounded v5 muzzle');
    const mandible=meshes.find(o=>o.name==='m019-articulated-wide-mandible');
    assert.equal(mandible.parent,pivot.jaw);
    assert.equal(pivot.jaw.parent,pivot.head);
@@ -125,11 +132,43 @@ for(const detail of ['low','high']){
     assert.equal(knee.userData.m019SprawledKnee,true,
       'true knee bones must spread laterally, not just drawn decorations');
     assert.equal(knee.position.x,side*M019_SPRAWL_KNEE_X);
+    assert.equal(knee.position.y,M019_SPRAWL_KNEE_Y);
     assert.equal(toe.position.x,side*M019_SPRAWL_FOOT_X);
+    assert.equal(toe.position.y,M019_SPRAWL_FOOT_Y);
+    assert.equal(leg.position.y,M019_SHOULDER_LOCAL_Y);
+    assert.equal(leg.userData.m019AnatomicalSocket,true);
+    assert.equal(leg.userData.m019RightAngleUpperArm,true);
+    const suffix=legId.slice(3);
+    const root=meshes.find(o=>o.name==='m019-shoulder-hip-fascia-'+suffix);
+    assert.equal(root?.parent,pivot.torso,'shoulder skin follows body');
+    assert.equal(root?.userData.m019TorsoAnchoredSocket,true);
+    const upper=meshes.find(o=>o.name==='m019-scaled-upper-limb-'+suffix);
+    const lower=meshes.find(o=>o.name==='m019-scaled-lower-limb-'+suffix);
+    assert.equal(upper?.parent,leg,'upper thigh follows hip');
+    assert.equal(lower?.parent,knee,'shin follows knee');
+    assert.equal(upper?.userData.m019HorizontalThigh,true);
+    assert.equal(lower?.userData.m019VerticalShin,true);
     const hipWorld=leg.getWorldPosition(new THREE.Vector3());
     const footWorld=toe.getWorldPosition(new THREE.Vector3());
-    assert(side*(footWorld.x-hipWorld.x)>.23,
-      'each of four feet must be displaced laterally away from the torso');
+    assert(side*(footWorld.x-hipWorld.x)>.38,
+      'each foot must be wider than the narrow ribcage');
+    const kneeWorld=knee.getWorldPosition(new THREE.Vector3());
+    const upperVector=kneeWorld.clone().sub(hipWorld);
+    const lowerVector=footWorld.clone().sub(kneeWorld);
+    assert(side*upperVector.x>.38,'upper thigh extends sideways');
+    assert(Math.abs(upperVector.y)<Math.abs(upperVector.x)*.20,
+      'upper arm nearly horizontal, not a dangling dog leg');
+    assert(Math.abs(lowerVector.x)<.035,
+      'lower forearm must descend vertically');
+    assert(lowerVector.y<-.7,'shin reaches the ground');
+    const cosAngle=Math.abs(upperVector.dot(lowerVector)/
+      (upperVector.length()*lowerVector.length()));
+    assert(cosAngle<.19,'upper and lower segments must meet near 90 degrees');
+    const upperEnd=leg.localToWorld(new THREE.Vector3(
+      side*M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,
+      legId.includes('front')?-.012:.022));
+    assert(upperEnd.distanceTo(kneeWorld)<1e-5,
+      'upper and lower shells share precisely the same world-space elbow');
     assert.equal(toe.userData.m019SprawledOutward,true);
     model.updateMatrixWorld(true);
     const groundBox=new THREE.Box3().setFromObject(toe);
@@ -154,8 +193,22 @@ for(const detail of ['low','high']){
     }
    }
    assert.doesNotThrow(()=>{
-    startMonsterAction(model,'walk',0);
-    for(const time of [0,.15,.4,.85,1.1])animateMonsterModel(model,time);
+    for(const action of ['idle','walk','run']){
+     startMonsterAction(model,action,0);
+     for(const time of [0,.15,.4,.85,1.1]){
+      animateMonsterModel(model,time);
+      model.updateMatrixWorld(true);
+      for(const id of ['frontL','frontR','rearL','rearR']){
+       const joint=pivot['lower'+id],arm=pivot['leg'+id];
+       const side=id.endsWith('L')?-1:1;
+       const end=arm.localToWorld(new THREE.Vector3(
+        side*M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,
+        id.startsWith('front')?-.012:.022));
+       assert(end.distanceTo(joint.getWorldPosition(new THREE.Vector3()))<1e-5,
+        action+' '+time+' must never split the elbow/knee');
+      }
+     }
+    }
    });
    model.updateMatrixWorld(true);
    const bounds=new THREE.Box3().setFromObject(model);
