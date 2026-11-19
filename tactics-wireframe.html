@@ -9886,7 +9886,7 @@ function realtimeJobMembers(squadId){
 function realtimeItemStocks(){
  const counts=new Map();
  for(const stock of allyItemStocks()){
-  if(!['heal','squad_buff'].includes(ROOM_ITEM_TYPES[stock.itemId]?.kind))continue;
+  if(!REINFORCEMENT_ITEMS.includes(stock.itemId))continue;
   counts.set(stock.itemId,(counts.get(stock.itemId)||0)+stock.quantity);
  }
  return [...counts].map(([id,quantity])=>({id,label:ROOM_ITEM_TYPES[id].name,quantity}));
@@ -10095,7 +10095,17 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   finally{selectedSquadId=prior;}
  },
  getAvailableItems:()=>realtimeItemStocks(),
- onUseItem:(id,itemId,arrival=false)=>performSquadBattleItem(itemId,id,{arrival}),
+ onUseItem:(id,itemId,arrival=false)=>issueCommanderReinforcements(id,itemId,{arrival}),
+ onReinforce:(id,itemId)=>issueCommanderReinforcements(id,itemId),
+ getRallyInfo:id=>({
+  level:realtimeCommanderLevel(id),
+  maxTargets:commanderTargetLimit(realtimeCommanderLevel(id)),
+  targets:squadIds.map(sid=>({
+   id:String(sid),label:squadName(sid),
+   alive:(massSim?.units??actors).some(u=>u.team===0&&String(u.squadId)===String(sid)&&u.hp>0)
+  }))
+ }),
+ onRally:(id,type,targets)=>issueCommanderRally(id,type,targets),
  getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
  onSpecial:(id,action,targetId,arrival=false)=>issueRealtimeSpecial(id,action,targetId,arrival),
  onEnemySelect:id=>battleRpgHud?.select(1,id,{focus:true}),
