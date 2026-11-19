@@ -6,7 +6,7 @@
 import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
-import {battleJobSpecialActions} from './battle-job-special-actions.js';
+import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261119-target-action1';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
