@@ -703,11 +703,25 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_brazier_001'){
-   for(const x of [-.58,.58])for(const z of [-.58,.58])box(.13*c,.9*c,.13*c,x*c,.45*c,z*c,iron);
-   const cup=new THREE.Mesh(new THREE.CylinderGeometry(.88*c,.6*c,.4*c,16),iron);
-   cup.position.y=1*c;root.add(cup);
-   const flame=new THREE.Mesh(new THREE.ConeGeometry(.38*c,.6*c,10),light);
-   flame.position.y=1.49*c;root.add(flame);
+   // Four short supports keep the coal bowl visibly above ground without a tall pedestal.
+   for(const x of [-.55,.55])for(const z of [-.55,.55])box(.13*c,.55*c,.13*c,x*c,.275*c,z*c,iron);
+   // Closed-bottom, hollow lathed iron bowl: outside, rolled lip and visible inner wall.
+   const profile=[[0,.51],[.50,.51],[.62,.55],[.82,.83],[.86,.89],[.76,.89],[.72,.82],[.54,.66],[0,.66]]
+    .map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const cup=new THREE.Mesh(new THREE.LatheGeometry(profile,24),iron);
+   cup.castShadow=true;cup.receiveShadow=true;root.add(cup);
+   const coalMat=new THREE.MeshStandardMaterial({color:0x272521,roughness:1,metalness:0,flatShading:true});
+   const emberMat=new THREE.MeshStandardMaterial({color:0x74351d,roughness:.91,metalness:0,emissive:0x6d2108,emissiveIntensity:.35,flatShading:true});
+   const coalGeo=new THREE.DodecahedronGeometry(.115*c,0);
+   for(let i=0;i<9;i++){
+    const a=i*2.399963,r=(.11+.10*Math.sqrt(i))*c;
+    const coal=new THREE.Mesh(coalGeo,i%3===0?emberMat:coalMat);
+    coal.scale.set(1+(i%3)*.12,.58+(i%2)*.12,.85);
+    coal.position.set(Math.cos(a)*r,.71*c,Math.sin(a)*r);
+    coal.rotation.set(i*.21,i*.53,i*.17);coal.castShadow=true;root.add(coal);
+   }
+   const flame=new THREE.Mesh(new THREE.ConeGeometry(.25*c,.36*c,10),light);
+   flame.position.y=.97*c;root.add(flame);
   }
   if(id==='town_herb_garden_001'){
    const earth=new THREE.MeshStandardMaterial({color:0x58432e,roughness:1});
