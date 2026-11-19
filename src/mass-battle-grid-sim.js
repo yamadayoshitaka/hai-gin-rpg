@@ -1126,13 +1126,14 @@ export class MassBattleGridSimulation {
   setSquadMission(squadId,type,target){
     const id=String(squadId);
     if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander','unlock_door','fortify_lock',
-      'repair_structure','extinguish_fire','demolish_structure'].includes(type)||
+      'repair_structure','extinguish_fire','demolish_structure','break_structure'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
     const qualified=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id);
     if((type.startsWith('burn_')||type==='extinguish_fire')&&!qualified.some(u=>u.jobId==='mage'))return false;
     if(type==='repair_structure'&&!qualified.some(u=>['mage','ninja'].includes(u.jobId)))return false;
     if(type==='demolish_structure'&&!qualified.some(u=>u.jobId==='ninja'))return false;
+    if(type==='break_structure'&&!qualified.some(u=>['mage','summoner'].includes(u.jobId)))return false;
     if(['unlock_door','fortify_lock'].includes(type)&&!qualified.some(u=>u.jobId==='thief'))return false;
     let point=null;
     if(type==='eliminate_squad'||type==='eliminate_commander'){
