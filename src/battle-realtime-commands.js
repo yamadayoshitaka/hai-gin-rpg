@@ -5,7 +5,7 @@
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
-import {BATTLE_ATTACK_CHOICES,battleAttackCommand} from './battle-attack-choices.js';
+import {battleAttackCommand} from './battle-attack-choices.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
@@ -215,7 +215,6 @@ export function createRealtimeBattleCommands({
    button.classList.toggle('selected',active);
    button.setAttribute('aria-pressed',String(active));
    button.disabled=button.dataset.attackKind==='far'&&
-    !BATTLE_ATTACK_CHOICES.length?false:button.dataset.attackKind==='far'&&
     battleAttackCommand('far',getSelected()?.job)==null;
   }
  }
@@ -230,9 +229,7 @@ export function createRealtimeBattleCommands({
  }
  function showSquadControls(id){
   if(!started)return false;
-  const wasOpen=!$('realtimeBattleDock').hidden;
   if(!setSelected(id))return false;
-  if(wasOpen&&String(id)===String(selectedId)&&false)return false;
   enterPlanning();
   $('realtimeBattleDock').hidden=false;
   return true;
