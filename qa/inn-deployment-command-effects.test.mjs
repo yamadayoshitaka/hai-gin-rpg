@@ -65,7 +65,7 @@ assert.match(battle,/function returnToWholeBattlefield\(\)/);
 assert.match(battle,/closeSquadTactics\(true\)/);
 assert.match(battle,/closeSquadTactics\(Boolean\(accepted\)\)/);
 assert.match(battle,/const stageRank=Math.max\(0,Math.min\(3,/);
-assert.match(battle,/effectLabel.textContent=orderEffect\(orderSelect.value\)/);
+assert.match(battle,/onSharedItem:\(itemId,id\)=>useSquadBattleItem\(itemId,id\)/);
 assert.match(inn,/placeCommander\(game.campaign,innDeploymentSelected,slot\)/);
 assert.match(inn,/renderInnDeploymentBoard\(\)/);
 assert.match(inn,/renderInnStrategies\(\)/);
