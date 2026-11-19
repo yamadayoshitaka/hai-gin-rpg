@@ -710,6 +710,18 @@ export function createObjectById(id,{cellSize=2.2}={}){
     .map(([r,y])=>new THREE.Vector2(r*c,y*c));
    const cup=new THREE.Mesh(new THREE.LatheGeometry(profile,24),iron);
    cup.castShadow=true;cup.receiveShadow=true;root.add(cup);
+   // Raised forged rim and eight fasteners provide a readable silhouette at oblique angles.
+   const rim=new THREE.Mesh(new THREE.TorusGeometry(.81*c,.045*c,8,32),iron);
+   rim.rotation.x=Math.PI/2;rim.position.y=.89*c;rim.castShadow=true;root.add(rim);
+   const rivetGeo=new THREE.SphereGeometry(.038*c,8,6);
+   const rivets=new THREE.InstancedMesh(rivetGeo,iron,8);
+   const rivetMatrix=new THREE.Matrix4();
+   for(let i=0;i<8;i++){
+    const a=i*Math.PI/4;
+    rivetMatrix.makeTranslation(Math.cos(a)*.83*c,.845*c,Math.sin(a)*.83*c);
+    rivets.setMatrixAt(i,rivetMatrix);
+   }
+   rivets.instanceMatrix.needsUpdate=true;rivets.castShadow=true;root.add(rivets);
    const coalMat=new THREE.MeshStandardMaterial({color:0x272521,roughness:1,metalness:0,flatShading:true});
    const emberMat=new THREE.MeshStandardMaterial({color:0x74351d,roughness:.91,metalness:0,emissive:0x6d2108,emissiveIntensity:.35,flatShading:true});
    const coalGeo=new THREE.DodecahedronGeometry(.115*c,0);
