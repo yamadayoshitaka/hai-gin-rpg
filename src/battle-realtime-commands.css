@@ -274,3 +274,46 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #battleRealtimeControls .realtimeContextChoices{padding:3px;gap:3px;max-height:24dvh}
  #battleRealtimeControls .realtimeContextChoices button{min-height:34px;font-size:10px}
 }
+
+/* 2026-11-19: centered leader radar – one pin per job squad, never per soldier. */
+#realtimeSquadRadar{
+ position:absolute;top:10px;left:50%;transform:translateX(-50%);
+ width:clamp(128px,35vw,210px);max-width:calc(100vw - 16px);
+ z-index:1;pointer-events:auto;
+ background:#091e31ec;border:1px solid #7fa5bc;border-radius:9px;
+ box-shadow:0 4px 15px #0009;padding:4px 5px 3px;
+}
+#realtimeSquadRadar .realtimeRadarHeader{
+ display:flex;gap:3px;align-items:center;justify-content:space-between;
+ font:800 10px/1.2 system-ui;color:#f0e4bc;white-space:nowrap;
+}
+#realtimeRadarClock{
+ font:800 9px/1.2 system-ui;color:#ffdf9b;
+ padding:2px 3px;border:1px solid #d7b678;border-radius:4px;
+}
+#realtimeRadarCanvas{
+ display:block;width:100%;height:auto;aspect-ratio:224/178;
+ margin-top:3px;border:1px solid #5a8daa;border-radius:4px;
+ touch-action:manipulation;cursor:pointer;
+}
+#realtimeRadarCanvas:focus-visible{outline:3px solid #f9db76;outline-offset:2px}
+#realtimeSquadRadar .realtimeRadarLegend{
+ font:800 8px/1.3 system-ui;white-space:nowrap;text-align:center;color:#7bd9ff;
+}
+#realtimeSquadRadar .realtimeRadarLegend span{color:#ff8998}
+#realtimeBattleDock #realtimePlanSeconds{
+ grid-row:2;grid-column:3;justify-self:end;
+ padding:2px 3px;border-radius:4px;border:1px solid #cdb574;
+ color:#ffdd96;background:#1e3448;
+ font:800 10px/1.1 system-ui;white-space:nowrap;
+}
+#realtimeBattleMapOverlay #realtimeMapPlanningClock{
+ font:800 12px/1.2 system-ui;color:#ffe19b;
+ padding:4px;border:1px solid #b99d62;border-radius:5px;
+}
+@media(max-width:600px){
+ #realtimeSquadRadar{top:7px;width:clamp(116px,35vw,160px);padding:3px}
+ #realtimeSquadRadar .realtimeRadarHeader{font-size:9px}
+ #realtimeSquadRadar .realtimeRadarLegend{font-size:7px}
+ #realtimeBattleDock #realtimePlanSeconds{font-size:9px}
+}
