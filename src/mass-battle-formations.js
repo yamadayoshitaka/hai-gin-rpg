@@ -1,3 +1,4 @@
+import {battleSquadJob} from './battle-job-squads.js';
 // A small, serializable formation plan shared by the main thread and Worker.
 // The three selectable squad types determine jobs and marching depth, without
 // changing individual soldiers into proxy meshes or adding per-soldier paths.
@@ -25,17 +26,16 @@ export const squadRearDistance=type=>TYPE_DEPTH[type]??0;
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 
 export function createSquadFormationPlan(sideCount,bridgeCount,team=0){
-  const squadSize=Math.max(10,Math.ceil(sideCount/10));
+  const squadSize=Math.max(1,Math.ceil(sideCount/10));
   const squadCount=Math.ceil(sideCount/squadSize);
   const plans=[];
   for(let squadId=0;squadId<squadCount;squadId++){
     const type=squadTypeOf(squadId);
     const bridgeIndex=(squadId+Math.floor(squadId/SQUAD_TYPES.length))%bridgeCount;
     const start=squadId*squadSize,count=Math.min(squadSize,sideCount-start);
-    const pool=JOB_POOLS[type];
-    const members=Array.from({length:count},(_,localIndex)=>({
-      localIndex,jobIndex:pool[(localIndex*7+team*3)%pool.length]
-    }));
+    // A squad's job never changes between allies/enemies, battle sizes or slots.
+    const jobIndex=battleSquadJob(squadId)?.index??0;
+    const members=Array.from({length:count},(_,localIndex)=>({localIndex,jobIndex}));
     members.sort((a,b)=>{
       const aJob=['sword','shield','fighter','ninja','thief','archer','mage','priest','summoner','lancer'][a.jobIndex];
       const bJob=['sword','shield','fighter','ninja','thief','archer','mage','priest','summoner','lancer'][b.jobIndex];
