@@ -1216,10 +1216,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     for(const j of fineSteps){
      const p=strand.points[j],prev=strand.points[Math.max(0,j-1)],
       next=strand.points[Math.min(segments,j+1)];
-     const tangent=next.clone().sub(prev).normalize();
-     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z).normalize();
+     // Keep a stable local fibre frame at coincident guide stations and
+     // crown-centre roots. Arbitrary world-X ribbons create visible spikes.
+     const tangent=next.clone().sub(prev);
+     if(tangent.lengthSq()<1e-12)tangent.set(0,-1,0);
+     tangent.normalize();
+     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z);
+     if(normal.lengthSq()<1e-12)normal.set(0,0,1);
+     normal.normalize();
      let across=new THREE.Vector3().crossVectors(tangent,normal);
-     if(across.lengthSq()<1e-9)across.set(1,0,0);
+     if(across.lengthSq()<1e-9){
+      across.crossVectors(tangent,new THREE.Vector3(0,1,0));
+      if(across.lengthSq()<1e-9)across.crossVectors(tangent,new THREE.Vector3(1,0,0));
+     }
      across.normalize();
      const t=j/segments;
      const rootFade=Math.min(1,t*7);
