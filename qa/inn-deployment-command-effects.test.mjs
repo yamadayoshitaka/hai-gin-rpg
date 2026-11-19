@@ -59,7 +59,7 @@ assert.equal(Object.keys(TACTICAL_STRATEGIES).length,4);
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const inn=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 const style=readFileSync(new URL('../src/battle-ui-refinement.css',import.meta.url),'utf8');
-assert.match(battle,/const cameraOverviewOffset=new THREE.Vector3\(310,310,310\)/);
+assert.match(battle,/const cameraOverviewOffset=new THREE.Vector3\(110,510,110\)/);
 assert.match(battle,/const commandFocus=squadCommandFocus\(id\)/);
 assert.match(battle,/function returnToWholeBattlefield\(\)/);
 assert.match(battle,/closeSquadTactics\(true\)/);
