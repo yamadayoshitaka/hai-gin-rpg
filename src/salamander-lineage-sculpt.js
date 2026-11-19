@@ -127,6 +127,24 @@ export function sculptSalamanderSurface(g,torso,head,{
  id='m019',detail='high'
 }={}){
  if(detail==='low')return;
+ // m019 has its own continuous muzzle, deep-set sockets and fine basalt
+ // plates. Never layer generic cheek marbles and black circular freckles
+ // over the owner-approved low and long salamander silhouette.
+ if(id==='m019'){
+  const throat=g.bridge(head,'skin',
+   [0,-.159,-.166],[0,-.286,-.467],.224,.166);
+  throat.name='m019-head-anchored-throat';
+  throat.userData.salamanderHeadFollowingNeck=true;
+  for(const side of [-1,1]){
+   const suffix=side<0?'L':'R';
+   g.tube(head,'shadow',[
+    [side*.219,-.203,.389],
+    [side*.264,-.206,.255],
+    [side*.281,-.179,.085]
+   ],.011,{name:'m019-fitted-labial-seam-'+suffix});
+  }
+  return;
+ }
  const spec=salamanderLineageFor(id);
  if(!spec)throw Error('Unsupported salamander skin '+id);
  const count=detail==='source'?10:6;
