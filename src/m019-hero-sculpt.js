@@ -204,7 +204,7 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  return toe;
 }
 
-export function sculptM019TailTip(g,tailTip){
+export function sculptM019TailTip(g,tailTip,{detail='high'}={}){
  const tip=g.axialLoft(tailTip,'skin',[
   {z:.180,y:-.016,rx:.040,ry:.037},
   {z:.080,y:-.012,rx:.039,ry:.036},
@@ -216,5 +216,13 @@ export function sculptM019TailTip(g,tailTip){
     ribbing:.004,capEnds:true});
  tip.userData.m019ClosedTaperedTail=true;
  tip.userData.m019UpcurledTip=true;
+ // A fine molten seam grows with the curved tail tip; no screen-space VFX.
+ const seam=g.tube(tailTip,'accent',[
+  [.014,.025,.080],[.010,.061,-.100],
+  [.009,.137,-.280],[.007,.329,-.475],[.002,.532,-.610]
+ ],detail==='low'?.005:.009,{
+  name:'m019-molten-tail-tip',glow:detail!=='low'
+ });
+ seam.userData.m019SurfaceHeatChannel=true;
  return tip;
 }
