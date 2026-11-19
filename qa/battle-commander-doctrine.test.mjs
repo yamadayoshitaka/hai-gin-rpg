@@ -118,7 +118,7 @@ test('tabs separate tactics, buffs and army-shared battle pickups',()=>{
  assert.match(game,/for\(const stack of stocks\)amounts\.set\(stack\.itemId/);
  assert.match(game,/roomItemRegistry\.owned\(\)\.filter\(stack=>stack\.quantity>0&&alliedIds\.has/);
  assert.match(game,/sharedInventoryCommanderId\(issuerSquadId\?\?squadId\)/);
- assert.match(game,/戦闘中にどの味方が拾ったアイテムも軍全体の共有在庫/);
+ assert.match(game,/戦闘中の取得品も全軍共有/);
 });
 
 test('commander consumables never await movement and buildings have confirmable numbered map pins',()=>{
