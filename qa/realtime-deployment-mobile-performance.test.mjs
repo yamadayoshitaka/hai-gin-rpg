@@ -64,19 +64,19 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.ok(dom.root.innerHTML.indexOf('data-realtime-zoom="1"')<
   dom.root.innerHTML.indexOf('id="realtimeBattleCanvas"'));
  assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
- dom.actions.get('charge').tap();
- assert.deepEqual(command.preferredActions,[['1','charge']]);
+ dom.actions.get('hold').tap();
+ assert.deepEqual(command.preferredActions,[['1','hold']]);
  command.selectSquad('2');
  assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
  dom.actions.get('support').tap();
- assert.deepEqual(command.preferredActions,[['1','charge']]);
+ assert.deepEqual(command.preferredActions,[['1','hold']]);
  assert.equal(dom.root.querySelector('#realtimeMapSupportChoices').hidden,false);
  command.selectSquad('1');
  const canvas=dom.root.querySelector('#realtimeBattleCanvas');
  canvas.tap('pointerdown',{pointerId:1,clientX:50,clientY:110});
  canvas.tap('pointerup',{pointerId:1,clientX:50,clientY:110});
  assert.equal(deploys,1);
- assert.deepEqual(command.preferredActions,[['1','charge']]);
+ assert.deepEqual(command.preferredActions,[['1','hold']]);
  const redraws=dom.ctxCalls.draw;
  for(let i=0;i<30;i++)command.update([]);
  assert.equal(dom.ctxCalls.draw,redraws,'paused deployment must not repaint map on every squad status update');
@@ -88,7 +88,7 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  canvas.tap('pointerdown',{pointerId:2,clientX:120,clientY:120});
  canvas.tap('pointerup',{pointerId:2,clientX:120,clientY:120});
  assert.ok(seen.some(x=>x[0]==='move'));
- assert.ok(command.queuedArrivalActions.includes('1'),'previously selected charge queues on arrival');
+ assert.ok(command.queuedArrivalActions.includes('1'),'previously selected hold queues on arrival');
 });
 test('map controls and roster aggregation retain real 3D movement and squad identities',()=>{
  const js=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
