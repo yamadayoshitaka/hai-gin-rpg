@@ -676,15 +676,25 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(2.67*c,.035*c,1.3*c,0,.61*c,0,water);
   }
   if(id==='town_signpost_001'){
-   box(.22*c,3.6*c,.22*c,0,1.8*c,0,wood);
-   box(2.55*c,.45*c,.13*c,.45*c,2.75*c,0,wood);
-   box(1.9*c,.44*c,.13*c,-.4*c,2*c,0,wood);
-   for(const [x,y,direction] of [[1.72,2.75,1],[-1.38,2,-1]]){
-    const tip=new THREE.Mesh(new THREE.ConeGeometry(.25*c,.46*c,3),wood);
-    tip.rotation.z=direction*-Math.PI/2;tip.position.set(x*c,y*c,0);root.add(tip);
-   }
-   for(const y of [2,2.75]){
-    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.15*c,8),iron);
+   // Carved timber pole and directional planks: faceted grain catches side light.
+   const timber=new THREE.MeshStandardMaterial({color:0x765338,roughness:.92,metalness:0,flatShading:true});
+   const cutWood=new THREE.MeshStandardMaterial({color:0xb48a59,roughness:.96,metalness:0});
+   const post=new THREE.Mesh(new THREE.CylinderGeometry(.155*c,.19*c,3.6*c,8),timber);
+   post.position.y=1.8*c;post.castShadow=true;root.add(post);
+   const cap=new THREE.Mesh(new THREE.ConeGeometry(.19*c,.30*c,8),cutWood);
+   cap.position.y=3.75*c;cap.castShadow=true;root.add(cap);
+   for(const [y,length,offset,direction] of [[2.75,2.55,.45,1],[2,1.9,-.4,-1]]){
+    const plank=new THREE.Mesh(new THREE.BoxGeometry(length*c,.38*c,.15*c),timber);
+    plank.position.set(offset*c,y*c,0);plank.castShadow=true;root.add(plank);
+    // Pointed cut follows the direction of the sign, not an unconnected cone.
+    const tipShape=new THREE.Shape();
+    tipShape.moveTo(0,-.19*c);tipShape.lineTo(.37*c,0);tipShape.lineTo(0,.19*c);tipShape.closePath();
+    const tipGeo=new THREE.ExtrudeGeometry(tipShape,{depth:.15*c,bevelEnabled:false});
+    const tip=new THREE.Mesh(tipGeo,cutWood);
+    tip.position.set((offset+direction*length*.5)*c,y*c,-.075*c);
+    if(direction<0)tip.rotation.y=Math.PI;
+    tip.castShadow=true;root.add(tip);
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(.065*c,.065*c,.18*c,8),iron);
     peg.rotation.x=Math.PI/2;peg.position.set(0,y*c,.10*c);root.add(peg);
    }
   }
