@@ -888,6 +888,7 @@ import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
 import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-realtime1';
+import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=rpg-status1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
 import * as THREE from 'three';
@@ -9782,10 +9783,31 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  getLegalPoint:(x,z)=>turnLegalPoint(x,z),
  canDeploy:(x,z)=>x<=(massSim?.riverXAt(z)??riverAt(z))-9,
  onDeploy:(id,point)=>{
-  if(!massSim)return false; // Do not move detached skirmish actors with no authoritative grid.
-  const applied=massSim.deploySquadBeforeBattle(id,point.x,point.z,0);
-  if(applied&&massWorker?.active)massWorker.deploySquadBeforeBattle(id,point.x,point.z,0);
-  return applied;
+  if(massSim){
+   const applied=massSim.deploySquadBeforeBattle(id,point.x,point.z,0);
+   if(applied&&massWorker?.active)massWorker.deploySquadBeforeBattle(id,point.x,point.z,0);
+   return applied;
+  }
+  // Ordinary 50v50 and story battles use real actors, not the mass grid.
+  // Move their physics occupancy, render root and mounted object together.
+  const slots=planSkirmishDeployment(actors,{
+   squadId:id,team:0,x:point.x,z:point.z,
+   width:WORLD_SIZE,height:WORLD_SIZE,passable:(x,z)=>traversableCell(x,z),
+   homeRiverX:z=>riverAt(z)
+  });
+  if(!slots)return false;
+  for(const {actor} of slots)occupiedCells.delete(cellKey(actor.cell.x,actor.cell.z));
+  for(const {actor,x,z} of slots){
+   actor.cell={x,z};actor.nextCell=null;
+   actor.velocity?.set(0,0,0);
+   const wx=(x-6)*CELL,wz=(z-6)*CELL;
+   actor.root.position.set(wx,terrainY(wx,wz),wz);
+   actor.home?.copy(actor.root.position);
+   const mount=mountedCreatureOf(actor);
+   if(mount){mount.x=x;mount.z=z;}
+   occupiedCells.set(cellKey(x,z),actor);
+  }
+  return true;
  },
  onStart:()=>{
   battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
