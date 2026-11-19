@@ -394,7 +394,7 @@ export function createRealtimeBattleCommands({
   if(mode==='deploy')deploymentActions.delete(id);
   else arrivalActions.delete(id);
   renderActionSelection();
-  if(mode==='move'&&actionDestination)closeMap();
+  if(mode==='move'&&actionDestination){closeMap();closeSquadControls();}
   else $('realtimeMapMessage').textContent='行動指定を解除しました。移動のみ設定できます。';
  };
  for(const button of root.querySelectorAll('[data-realtime-zoom]'))
