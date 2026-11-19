@@ -706,6 +706,54 @@ export class MassBattleGridSimulation {
     }
   }
 
+  /**
+   * Place a squad ONLY before the first simulation tick. Applies to both
+   * main thread and Worker with the same deterministic free-cell search.
+   * No teleporting after combat begins; the rear bank and existing terrain
+   * collision map remain authoritative.
+   */
+  deploySquadBeforeBattle(squadId,x,z,team=0){
+    if(this.battleStarted||![0,1].includes(team)||!Number.isInteger(x)||
+      !Number.isInteger(z)||!this._inside(x,z))return false;
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&u.alive);
+    if(!members.length||members.length>this.width*this.height)return false;
+    const midX=this.riverXAt(z),side=team===0?-1:1;
+    if((x-midX)*side<9)return false;
+    const occupied=new Set(this.units.filter(u=>u.alive&&!members.includes(u))
+      .map(u=>u.z*this.width+u.x));
+    const objects=this.objects.filter(o=>o.alive&&o.blocking&&o.mountedBy==null);
+    const blocked=(cx,cz)=>{
+      if(!this._inside(cx,cz)||!this._walkable(cx,cz)||occupied.has(cz*this.width+cx)||
+         (cx-this.riverXAt(cz))*side<9)return true;
+      return objects.some(o=>o.bounds?cx>=o.bounds.minX&&cx<=o.bounds.maxX&&
+        cz>=o.bounds.minZ&&cz<=o.bounds.maxZ:
+        Math.round(o.x)===cx&&Math.round(o.z)===cz);
+    };
+    const slots=[];
+    // Keep every unit on a distinct legal cell in a bounded formation ring.
+    // The centre click is the formation anchor, not a 100-soldier stack.
+    for(let radius=0;radius<=Math.max(24,Math.ceil(Math.sqrt(members.length))*3)&&
+      slots.length<members.length;radius++){
+      for(let dz=-radius;dz<=radius&&slots.length<members.length;dz++)
+        for(let dx=-radius;dx<=radius&&slots.length<members.length;dx++){
+          if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+          const cx=x+dx,cz=z+dz;
+          if(blocked(cx,cz))continue;
+          slots.push({x:cx,z:cz});occupied.add(cz*this.width+cx);
+        }
+    }
+    if(slots.length!==members.length)return false;
+    members.forEach((u,i)=>{
+      const cell=slots[i];u.x=cell.x;u.z=cell.z;
+      u.fromX=cell.x;u.fromZ=cell.z;
+      u.vx=u.vz=0;u.moveElapsed=u.moveDuration=0;u.blockedTicks=0;
+      const mount=this.objects.find(o=>o.alive&&o.mountedBy===u.id);
+      if(mount){mount.x=cell.x;mount.z=cell.z;}
+    });
+    this._occupiedTouched.length=0;this._occupancy.fill(-1);
+    return true;
+  }
+
   setSquadDestination(squadId,x,z){
     const id=String(squadId);
     if(!this.units?.some(u=>u.team===0&&String(u.squadId)===id))return false;
