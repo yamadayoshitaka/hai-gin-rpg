@@ -134,7 +134,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    hp.title='HP '+Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0));
    hp.append(hpBar);
    const hpValue=doc.createElement('span');hpValue.className='rpgSquadHpValue';
-   hpValue.textContent=String(Math.ceil(Math.max(0,row.hp||0)));
+   hpValue.textContent=Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0));
    hpValue.title=hp.title;
    const count=doc.createElement('span');count.className='rpgSquadNumbers';
    count.textContent=Math.max(0,Number(row.alive)||0)+'/'+Math.max(0,Number(row.total)||0);
