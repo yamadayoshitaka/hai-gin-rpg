@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "f1968852a742e328f44774ea07139da9ca36beb04df14439a1e28b91be580faa",
+  "sourceFingerprint": "815e24975eaae1087e4c128168fd4f3364905164318bc786980e07412f2df973",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for town_water_trough_001 (visual review still required)"
+        "Real WebGL screenshots available for town_herb_garden_001 (visual review still required)"
       ]
     }
   },
