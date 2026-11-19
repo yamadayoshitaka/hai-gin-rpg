@@ -108,3 +108,19 @@ test('prebattle squad selection uses back/next paging, not an obstructive select
  assert.match(source,/realtimeMapNext'\)\.disabled=index>=own\.length-1/);
  assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapSquadPager/);
 });
+
+test('accepted map move reveals an action picker and defers command until arrival',()=>{
+ const source=read('../src/battle-realtime-commands.js');
+ const css=read('../src/battle-realtime-commands.css');
+ assert.match(source,/id="realtimeMapActionSheet"/);
+ for(const action of ['defend','charge','hold','support']){
+  assert.ok(source.includes('data-action-after-move="'+action+'"'));
+ }
+ assert.match(source,/if\(applied\)\{arrivalActions\.delete\(String\(selectedId\)\);showActionSheet\(selectedId,point\);\}/);
+ assert.match(source,/arrivalActions\.set\(id,\{command,point:\{\.\.\.actionDestination\}\}\)/);
+ assert.match(source,/Math\.hypot\(own\.x-entry\.point\.x,own\.z-entry\.point\.z\)>3\.5/);
+ assert.match(source,/if\(onOrder\(id,entry\.command\)\)arrivalActions\.delete\(id\)/);
+ assert.match(source,/deploymentActions\.set\(id,command\)/);
+ assert.match(source,/setBattleJobPortrait\(\$\('realtimeMapPortrait'\)/);
+ assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapActionButtons/);
+});
