@@ -473,11 +473,18 @@ export function createObjectById(id,{cellSize=2.2}={}){
    bottom.position.y=.06*c;root.add(bottom);
    const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
    rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
-   for(let i=0;i<12;i++){const a=i*Math.PI/6;
-    const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
-    slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
-    slot.rotation.y=-a;root.add(slot);
+   // Twelve raised, radial steel ribs are instanced: one draw call, no floating wood slats.
+   const ribGeometry=new THREE.BoxGeometry(.045*c,.82*c,.035*c);
+   const ribs=new THREE.InstancedMesh(ribGeometry,metalMat,12);
+   const dummy=new THREE.Object3D();
+   for(let i=0;i<12;i++){
+    const a=i*Math.PI/6;
+    dummy.position.set(Math.cos(a)*.393*c,.62*c,Math.sin(a)*.393*c);
+    dummy.rotation.set(0,-a,0);dummy.updateMatrix();
+    ribs.setMatrixAt(i,dummy.matrix);
    }
+   ribs.instanceMatrix.needsUpdate=true;
+   ribs.castShadow=true;root.add(ribs);
   }
   if(id==='town_handcart_001'){
    // Load-bearing longitudinal chassis rails and axle sleeves, not floating trim.
