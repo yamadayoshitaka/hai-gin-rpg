@@ -81,7 +81,7 @@ test('RPG status is sourced from real squads but collapsed by default to reveal 
  assert.match(css,/rpgSquadEffects/);
 });
 
-test('all squads use the same compact icon + meter + effect row, with five per page',()=>{
+test('all squads use the same compact icon, HP/MP meters and effects',()=>{
  const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
  const realtime=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
@@ -92,9 +92,9 @@ test('all squads use the same compact icon + meter + effect row, with five per p
  assert.equal(rpgHudStateIcon({alive:10,total:10,hp:100,maxHp:100,mode:'move'}),'➤');
  assert.match(js,/const pageSize=expanded\[team\]\?Math\.max\(1,own\.length\):5/);
  assert.match(js,/addMeter\('hp','HP'/);
- assert.match(js,/addMeter\('attack','⚔'/);
+ assert.doesNotMatch(js,/addMeter\('attack'/);
  assert.match(js,/addMeter\('mp','MP'/);
- assert.match(js,/addMeter\('troops','人'/);
+ assert.doesNotMatch(js,/addMeter\('troops'/);
  assert.match(js,/for\(const fx of valid\.slice\(0,7\)\)/);
  assert.match(css,/\.rpgSquadMetrics\{display:flex/);
  assert.match(css,/\.rpgSquadEffects \.debuff/);
@@ -142,24 +142,19 @@ test('live squad MP, HP-linked attack, reinforcement and rally wiring stay synch
  assert.equal(next[0].mp,3,'MP meter must use current combat unit values');
 });
 
-test('four real meters, icon effects and a slim portrait layout replace inline numbers',()=>{
+test('only real HP and MP gauges remain, while buff/debuff badges stay visible',()=>{
  const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
- assert.equal(rpgHudTroopPercent(5,5),100);
- assert.equal(rpgHudTroopPercent(2,5),40);
- assert.equal(rpgHudTroopPercent(0,5),0);
- assert.equal(rpgHudTroopPercent(0,0),0);
- assert.match(js,/addMeter\('troops','人','生存人数',row\.alive,row\.total/);
+ assert.equal(rpgHudTroopPercent(2,5),40,'squad population remains available for accessible status');
+ assert.match(js,/addMeter\('hp','HP'/);
+ assert.match(js,/addMeter\('mp','MP'/);
+ assert.doesNotMatch(js,/addMeter\('attack'/);
+ assert.doesNotMatch(js,/addMeter\('troops'/);
  assert.match(js,/setAttribute\('role','meter'\)/);
- assert.match(js,/aria-valuenow/);
  assert.match(js,/metrics\.append\(effects\)/);
- assert.doesNotMatch(js,/rpgSquadHpValue/,'do not render overlapping numeric HP over the track');
- assert.doesNotMatch(js,/rpgSquadNumbers/,'troop counts are a track instead of text');
- assert.match(css,/rpgSquadMeter-troops\{grid-row:6\}/);
- assert.match(css,/rpgSquadMeter-troops i\{background:/);
- assert.match(css,/grid-template-rows:12px 10px repeat\(4,5px\)/);
- assert.match(css,/width:clamp\(94px,27vw,156px\)/);
- assert.match(css,/background-size:400% 400%/,'preserve original portrait sprite sheet alignment');
+ assert.match(css,/2026-11-19: two-meter squad display/);
+ assert.match(css,/\.rpgSquadMeter-mp\{grid-row:6\}/);
+ assert.match(css,/background-size:400% 400%/);
  assert.equal(rpgHudEffectIcon({kind:'debuff',label:'回復阻害'}),'✚↓');
 });
 
@@ -168,7 +163,7 @@ test('user requested half-width tracks and two-row real effect badges',()=>{
  const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
  assert.match(css,/rpgSquadMeterLine \.rpgSquadMeterTrack\{\s*width:50%;max-width:50%/);
  assert.match(css,/grid-template-columns:repeat\(4,14px\);grid-template-rows:repeat\(2,10px\)/);
- assert.match(css,/rpgSquadMeter-troops\{grid-row:7\}/);
+ assert.match(css,/rpgSquadMeter-mp\{grid-row:6\}/);
  assert.match(js,/valid\.slice\(0,7\)/);
  assert.match(js,/more\.textContent='\+'\+\(valid\.length-7\)/);
 });
@@ -185,16 +180,30 @@ test('half-width flank panels and squad-one initial selection retain real status
  assert.match(html,/followSelectedCommander\(squadIds\[0\]\)/);
 });
 
-test('slim squad rails show full job names alongside squad number and keep four meters',()=>{
+test('slim rails show 1隊, job name, and two usable gauges',()=>{
  const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.match(js,/jobName\.className='rpgSquadJobName'/);
  assert.match(js,/jobName\.textContent=String\(row\.job\|\|'部隊'\)/);
  assert.match(js,/heading\.append\(job,title,jobName,status\)/);
+ assert.match(js,/title\.textContent=.*\$1隊/);
  assert.match(css,/\.rpgSquadJobName\{\s*grid-column:1\/-1;grid-row:2/);
- assert.match(css,/grid-template-rows:18px 11px 9px 9px repeat\(4,5px\)/);
- assert.match(css,/\.rpgSquadMeter-troops\{grid-row:8\}/);
+ assert.match(css,/grid-template-rows:16px 10px 8px 8px repeat\(2,5px\)/);
+ assert.match(css,/\.rpgSquadMeter-hp\{grid-row:5\}/);
+ assert.match(css,/\.rpgSquadMeter-mp\{grid-row:6\}/);
  assert.match(css,/width:clamp\(52px,13\.5vw,78px\)/);
- assert.match(html,/battle-rpg-squad-hud\.js\?v=20261119-job-label1/);
+ assert.match(html,/battle-rpg-squad-hud\.js\?v=20261119-two-meters-and-taps2/);
+});
+
+test('single tap focuses camera; double tap opens allied orders; overview camera is overhead',()=>{
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(js,/function handleSquadTap\(team,id\)/);
+ assert.match(js,/lastTap\?\.key===key&&now-lastTap\.at<=380/);
+ assert.match(js,/if\(team===0\)onCommand\(team,String\(id\)\)/);
+ assert.match(js,/onFocus\(team,String\(id\)\)/);
+ assert.match(js,/pendingTapTimer=setTimeout/);
+ assert.match(js,/if\(pendingTapTimer!==null\)clearTimeout\(pendingTapTimer\)/);
+ assert.match(html,/cameraOverviewOffset=new THREE\.Vector3\(110,510,110\)/);
 });
