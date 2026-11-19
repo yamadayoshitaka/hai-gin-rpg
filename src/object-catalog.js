@@ -1517,8 +1517,19 @@ export function createObjectById(id,{cellSize=2.2}={}){
    mesh.rotation.y=i*.61;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
   }
   const scree=new THREE.MeshStandardMaterial({color:0x77736c,roughness:1,flatShading:true});
-  for(let i=0;i<48;i++){const a=i*2.399963,r=Math.sqrt((i+.5)/48)*4.4*cellSize;const size=.22+(i%6)*.13;
-   const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(size*cellSize,0),scree);stone.position.set(Math.cos(a)*r,size*cellSize*.35,Math.sin(a)*r);stone.rotation.set(i*.17,i*.71,i*.24);stone.castShadow=true;root.add(stone)}
+  // Share one rock geometry and draw all 48 scree stones in one instanced call.
+  const screeGeometry=new THREE.DodecahedronGeometry(1,0);
+  const screeStones=new THREE.InstancedMesh(screeGeometry,scree,48);
+  const screeDummy=new THREE.Object3D();
+  for(let i=0;i<48;i++){
+   const a=i*2.399963,r=Math.sqrt((i+.5)/48)*4.4*cellSize,size=(.22+(i%6)*.13)*cellSize;
+   screeDummy.position.set(Math.cos(a)*r,size*.35,Math.sin(a)*r);
+   screeDummy.rotation.set(i*.17,i*.71,i*.24);
+   screeDummy.scale.setScalar(size);
+   screeDummy.updateMatrix();screeStones.setMatrixAt(i,screeDummy.matrix);
+  }
+  screeStones.instanceMatrix.needsUpdate=true;
+  screeStones.castShadow=true;screeStones.receiveShadow=true;root.add(screeStones);
   root.userData.catalogId=id;root.userData.footprint={lengthCells:9,widthCells:9};root.userData.passable=false;return root;
  }
  const root=new THREE.Group();root.name=id;
