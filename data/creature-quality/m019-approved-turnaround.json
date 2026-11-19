@@ -12,11 +12,11 @@
   "model": "procedural-mesh-physical-threejs",
   "facing": "+Z",
   "constraints": {
-    "bodySilhouette": "very long, very slim, low to the ground, flattened reptile trunk",
-    "head": "distinctly narrower than prior m019 v5: forehead and cranial rings, long narrow snout, slim cheeks and jaw",
+    "bodySilhouette": "very long, narrow, flat, ground-skimming trunk; belly near ground without intersection",
+    "head": "thin pointed wedge: reduced cranium, cheek, eyelid and snout width as one anatomy",
     "eyes": "two narrow luminous amber predator eyes, slit pupils",
-    "horns": "exactly two long slender swept-back cranial horns",
-    "legs": "four laterally projecting upper arms/thighs from torso wall; real elbow/knee at outermost end, where the thin forearm/shin turns approximately 90 degrees vertically down to its planted foot; no exposed skin gaps",
+    "horns": "exactly two large backward-swept horns with visibly arched quadratic centerline",
+    "legs": "four shoulder/hip muscles buried inside ribcage, strongly lateral upper arms/thighs, 90-degree knees, short vertically dropping lower arms/shins, four small planted paws; no gaps",
     "digitsPerPaw": 4,
     "tail": "long attached whip tail, seamless joins and curled tip, fully visible in full-body camera on portrait phones",
     "spines": "small low-profile backward jagged basalt spines",
@@ -42,9 +42,19 @@
     "lateralKneeOffset": 0.68,
     "lateralPawOffsetFromKnee": 0.007,
     "kneeLocalY": -0.085,
-    "pawLocalY": -1.515,
+    "pawLocalY": -0.65,
     "shoulderLocalY": 1.26,
-    "upperToLowerAngleDegrees": 90
+    "upperToLowerAngleDegrees": 90,
+    "bodyDrop": 0.86,
+    "hornQuadraticControlY": 0.92,
+    "bellyHeightRange": [
+      0.06,
+      0.28
+    ],
+    "shinWorldDropRange": [
+      0.24,
+      0.47
+    ]
   },
   "qualityGate": [
     "all moving parts are physical mesh",
@@ -59,7 +69,10 @@
     "upper and lower meshes exactly meet at shared animated elbow/knee pivot in world space, including running",
     "hip/shoulder socket is inside ribcage and fascia is torso-attached",
     "head silhouette, muzzle, jaw, eye and horn sockets all narrow together",
-    "each upper segment extends laterally almost horizontally and lower shin is almost vertical"
+    "each upper segment extends laterally almost horizontally and lower shin is almost vertical",
+    "physically measured belly-to-ground clearance, not just foot contact",
+    "both horn meshes have measurable arc deviation above a straight centerline",
+    "upper limb roots have muscle cross-section and overlap torso skin"
   ],
   "visualApprovalStatus": "pending-user-3d-review"
 }

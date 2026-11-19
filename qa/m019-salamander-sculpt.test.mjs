@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
-import {MAGMA_SALAMANDER_REVISION,MAGMA_SALAMANDER_LEG_REACH,
+import {MAGMA_SALAMANDER_REVISION,MAGMA_SALAMANDER_BODY_DROP,MAGMA_SALAMANDER_LEG_REACH,
  magmaSkullFromWolfKing,magmaTorsoFromWolfKing} from '../src/magma-salamander-sculpt.js';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_BODY_STRETCH,M019_LIMB_REACH,M019_LIMB_WIDTH,
@@ -69,6 +69,19 @@ for(const detail of ['low','high']){
     'm019 must preserve the existing physically sculpted facial surface');
    assert(nameSet.has('m019-grand-horn-L')&&nameSet.has('m019-grand-horn-R'),
     'both large horns must follow the head pivot');
+   for(const suffix of ['L','R']){
+    const horn=meshes.find(m=>m.name==='m019-grand-horn-'+suffix);
+    const pos=horn.geometry.getAttribute('position');
+    const rings=detail==='low'?7:11,around=pos.count/rings;
+    assert(Number.isInteger(around),'horn rows must be complete rings');
+    const meanY=row=>{
+     let sum=0;
+     for(let i=0;i<around;i++)sum+=pos.getY(row*around+i);
+     return sum/around;
+    };
+    const arc=meanY((rings-1)/2)-(meanY(0)+meanY(rings-1))/2;
+    assert(arc>.20,'major horn needs a clearly arched crescent, not a straight rod');
+   }
    assert(nameSet.has('m019-vertical-pupil-L')&&nameSet.has('m019-vertical-pupil-R'));
    assert(nameSet.has('m019-amber-iris-L')&&nameSet.has('m019-amber-iris-R'));
    assert([...nameSet].some(n=>n.startsWith('m019-lava-ridge-')));
@@ -78,6 +91,8 @@ for(const detail of ['low','high']){
    assert(pivot?.head&&pivot?.torso&&pivot?.tail);
    assert.equal(pivot.head.parent,pivot.torso,'m019 head must move with rib cage');
    assert.equal(pivot.torso.position.y,-M019_BODY_DROP);
+   assert.equal(MAGMA_SALAMANDER_BODY_DROP,M019_BODY_DROP);
+   assert(M019_BODY_DROP>=.80,'the entire ribcage must stay low, not only the legs');
    assert.equal(pivot.tail.scale.z,M019_TAIL_LENGTH);
    assert(pivot.tailTip?.userData!==undefined,'tail tip must be a movable pivot');
    assert.equal(pivot.tailMid.parent,pivot.tail);
@@ -99,14 +114,19 @@ for(const detail of ['low','high']){
      'approved side silhouette is a very long narrow lizard');
    assert(bodySize.z>bodySize.y*3.5,
      'approved body is long and dorsoventrally flattened');
+   const bodyBox=new THREE.Box3().setFromObject(body);
+   assert(bodyBox.min.y>.06&&bodyBox.min.y<.28,
+     'belly must skim above ground without clipping the floor');
+   assert(bodyBox.getCenter(new THREE.Vector3()).y<.60,
+     'torso center must not float above the short sideways legs');
    const snout=meshes.find(o=>o.name==='m019-unbroken-salamander-muzzle');
    assert.equal(snout.parent,pivot.head,'snout follows skull');
     const snoutPosition=snout.geometry.getAttribute('position');
     let snoutMaxWidth=0;
     for(let q=0;q<snoutPosition.count;q++)
       snoutMaxWidth=Math.max(snoutMaxWidth,Math.abs(snoutPosition.getX(q)));
-    assert(snoutMaxWidth<.19,
-      'm019 snout must be thinner than the previous rounded v5 muzzle');
+    assert(snoutMaxWidth<.16,
+      'm019 pointed snout must be visibly narrower than the previous face');
    const mandible=meshes.find(o=>o.name==='m019-articulated-wide-mandible');
    assert.equal(mandible.parent,pivot.jaw);
    assert.equal(pivot.jaw.parent,pivot.head);
@@ -147,6 +167,9 @@ for(const detail of ['low','high']){
     assert.equal(upper?.parent,leg,'upper thigh follows hip');
     assert.equal(lower?.parent,knee,'shin follows knee');
     assert.equal(upper?.userData.m019HorizontalThigh,true);
+    const upperRoot=upper.geometry.getAttribute('position');
+    assert(Math.abs(upperRoot.getX(0))>.14,
+      'upper-limb root needs muscle volume buried in the rib cage');
     assert.equal(lower?.userData.m019VerticalShin,true);
     const hipWorld=leg.getWorldPosition(new THREE.Vector3());
     const footWorld=toe.getWorldPosition(new THREE.Vector3());
@@ -160,7 +183,8 @@ for(const detail of ['low','high']){
       'upper arm nearly horizontal, not a dangling dog leg');
     assert(Math.abs(lowerVector.x)<.035,
       'lower forearm must descend vertically');
-    assert(lowerVector.y<-.7,'shin reaches the ground');
+    assert(lowerVector.y>-.47&&lowerVector.y<-.24,
+      'shin is short and vertical, not a long hanging stilt');
     const cosAngle=Math.abs(upperVector.dot(lowerVector)/
       (upperVector.length()*lowerVector.length()));
     assert(cosAngle<.19,'upper and lower segments must meet near 90 degrees');
@@ -172,7 +196,7 @@ for(const detail of ['low','high']){
     assert.equal(toe.userData.m019SprawledOutward,true);
     model.updateMatrixWorld(true);
     const groundBox=new THREE.Box3().setFromObject(toe);
-    assert(groundBox.min.y>-.18&&groundBox.min.y<.16,
+    assert(groundBox.min.y>-.09&&groundBox.min.y<.10,
       'four small feet must remain grounded at bind pose, '+legId);
     assert.equal(toe.parent,pivot[legId.replace('leg','lower')],
       'toes follow the hock after leg animation');

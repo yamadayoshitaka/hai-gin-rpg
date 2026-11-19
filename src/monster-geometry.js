@@ -23,18 +23,18 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js?v=m019-lateral-elbow90-v6-20261120';
+ from './magma-salamander-sculpt.js?v=m019-low-trunk-horn-arc-v7-20261120';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
  M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,M019_SHOULDER_LOCAL_Y,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
- from './m019-hero-sculpt.js?v=m019-lateral-elbow90-v6-20261120';
+ from './m019-hero-sculpt.js?v=m019-low-trunk-horn-arc-v7-20261120';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-lateral-elbow90-v6-20261120';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-low-trunk-horn-arc-v7-20261120';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -531,7 +531,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   g.bridge(torso,'skin',[0,1.29,.32],[0,1.55,.74+v*.055],.246,.158);
  }
  else if(magmaSalamander){
-  const collar=g.bridge(torso,'skin',[0,1.232,.74],[0,1.290,1.28],.162,.114);
+  const collar=g.bridge(torso,'skin',[0,1.232,.74],[0,1.290,1.28],.144,.110);
   collar.name='m019-embedded-shoulder-neck';
  }else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',
@@ -1475,8 +1475,8 @@ if(salamanderLineage){
        // A torso-owned, embedded fascia joins each shoulder and hip
        // to the upper limb; it cannot float away with an animated knee.
        const fascia=g.bridge(torso,'skin',
-         [side*.141,1.256,fore>0?1.035:-1.025],
-         [side*.257,1.260,fore>0?1.035:-1.025],.118,.092);
+         [side*.133,1.256,fore>0?1.035:-1.025],
+         [side*.274,1.260,fore>0?1.035:-1.025],.148,.112);
        fascia.name='m019-shoulder-hip-fascia-'+name;
        fascia.userData.m019TorsoAnchoredSocket=true;
      }
