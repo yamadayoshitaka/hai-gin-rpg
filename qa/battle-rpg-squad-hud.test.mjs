@@ -95,7 +95,7 @@ test('all squads use the same compact icon + meter + effect row, with five per p
  assert.match(js,/addMeter\('attack','⚔'/);
  assert.match(js,/addMeter\('mp','MP'/);
  assert.match(js,/addMeter\('troops','人'/);
- assert.match(js,/for\(const fx of valid\.slice\(0,4\)\)/);
+ assert.match(js,/for\(const fx of valid\.slice\(0,7\)\)/);
  assert.match(css,/\.rpgSquadMetrics\{display:flex/);
  assert.match(css,/\.rpgSquadEffects \.debuff/);
  assert.match(realtime,/body\.battle-realtime-clean #battleRpgSquadHud:not\(\[hidden\]\)\{display:block!important\}/);
@@ -161,4 +161,14 @@ test('four real meters, icon effects and a slim portrait layout replace inline n
  assert.match(css,/width:clamp\(94px,27vw,156px\)/);
  assert.match(css,/background-size:400% 400%/,'preserve original portrait sprite sheet alignment');
  assert.equal(rpgHudEffectIcon({kind:'debuff',label:'回復阻害'}),'✚↓');
+});
+
+test('user requested half-width tracks and two-row real effect badges',()=>{
+ const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ assert.match(css,/rpgSquadMeterLine \.rpgSquadMeterTrack\{\s*width:50%;max-width:50%/);
+ assert.match(css,/grid-template-columns:repeat\(4,14px\);grid-template-rows:repeat\(2,10px\)/);
+ assert.match(css,/rpgSquadMeter-troops\{grid-row:7\}/);
+ assert.match(js,/valid\.slice\(0,7\)/);
+ assert.match(js,/more\.textContent='\+'\+\(valid\.length-7\)/);
 });

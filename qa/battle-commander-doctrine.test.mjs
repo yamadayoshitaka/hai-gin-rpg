@@ -102,3 +102,21 @@ test('commander-owned inventory, priest defense options and persistent action fo
  assert.match(game,/Player is the commander: never auto-spend/);
  assert.match(styles,/rpgSquadMpMeter\{width:50%;max-width:50%/);
 });
+
+test('tabs separate tactics, buffs and army-shared battle pickups',()=>{
+ const command=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
+ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ for(const id of ['realtimeTabStrategy','realtimeTabRally','realtimeTabItems','realtimeManageItems'])
+  assert.match(command,new RegExp('id="'+id+'"'));
+ assert.match(command,/function setDockTab\(next='strategy'\)/);
+ assert.match(command,/if\(rally\)showRallyChoices\(\)/);
+ assert.match(command,/closeSquadControls\(\);onManageItems\(targetId\)/);
+ assert.match(css,/realtimeCommandTabs button\[aria-selected="true"\]/);
+ assert.match(game,/onManageItems:id=>openBattleItemsForSquad\(id\)/);
+ assert.match(game,/function sharedInventoryCommanderId\(/);
+ assert.match(game,/for\(const stack of stocks\)amounts\.set\(stack\.itemId/);
+ assert.match(game,/roomItemRegistry\.owned\(\)\.filter\(stack=>stack\.quantity>0&&alliedIds\.has/);
+ assert.match(game,/sharedInventoryCommanderId\(issuerSquadId\?\?squadId\)/);
+ assert.match(game,/戦闘中にどの味方が拾ったアイテムも軍全体の共有在庫/);
+});

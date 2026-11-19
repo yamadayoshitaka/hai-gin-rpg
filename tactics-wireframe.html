@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-commander-ux1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-squad-four-meters1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-command-tabs1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-squad-four-meters2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,12 +887,12 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-commander-ux1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-command-tabs1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-priest-support1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-squad-four-meters1';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-squad-four-meters2';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=20261119-rally-reserve2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -6048,8 +6048,16 @@ $('allyItemToggle').onclick=()=>toggleBattleItems('ally');
 $('enemyItemToggle').onclick=()=>toggleBattleItems('enemy');
 /** Shared army inventory: show only items that friendly units actually own. */
 function allyItemStocks(){
+ // Every friendly pickup and stolen consumable remains available to all
+ // squads via the commander inventory, regardless of the collecting soldier.
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
  return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
+}
+function sharedInventoryCommanderId(preferredId=null){
+ const ids=squadIds.map(String),preferred=String(preferredId??'');
+ const eligible=ids.filter(id=>hasSquadCommander(id));
+ if(eligible.includes(preferred)&&squadOrderCooldownSeconds(preferred)<=0)return preferred;
+ return eligible.find(id=>squadOrderCooldownSeconds(id)<=0)||eligible[0]||null;
 }
 function realtimeCommanderLevel(id){
  const idText=String(id);
@@ -6060,7 +6068,7 @@ function realtimeCommanderLevel(id){
  return Math.max(1,Number(officer?.level??general?.level??1)||1);
 }
 function issueCommanderReinforcements(squadId,itemId,{issuerSquadId=null,arrival=false,automatic=false}={}){
- const id=String(squadId),issuer=String(issuerSquadId??squadId);
+ const id=String(squadId),issuer=sharedInventoryCommanderId(issuerSquadId??squadId);
  if(!battleReady||finished||!REINFORCEMENT_ITEMS.includes(itemId)||
    !hasSquadCommander(issuer)||(!automatic&&!arrival&&!canChangeSquadOrder(issuer)))return false;
  const units=massSim?.units??actors;
@@ -6135,8 +6143,8 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
   return issueCommanderReinforcements(squadId,itemId,{issuerSquadId,arrival,automatic});
  // The objective-turn item slot is only available after actions resolve.
  if(objectiveTurnUI&&(!turnEnd||objectiveTurnUI.engine.status().phase!=='report'))return false;
- const id=String(squadId),commandSquad=String(issuerSquadId??squadId),stocks=allyItemStocks();
- if(!automatic&&(!hasSquadCommander(commandSquad)||(!arrival&&!canChangeSquadOrder(commandSquad))))return false;
+ const id=String(squadId),commandSquad=sharedInventoryCommanderId(issuerSquadId??squadId),stocks=allyItemStocks();
+ if(!automatic&&(!commandSquad||(!arrival&&!canChangeSquadOrder(commandSquad))))return false;
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
  const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
  if(!battleReady||finished||!stack||!type||!['heal','squad_buff'].includes(type.kind)||!members.length)return false;
@@ -6214,7 +6222,7 @@ function renderBattleItemManagement(){
  itemPanel.replaceChildren();
  const heading=document.createElement('div');
  heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
- const title=document.createElement('strong');title.textContent='🎒 軍師（プレイヤー）の物資指示';
+ const title=document.createElement('strong');title.textContent='🎒 全軍共通アイテム（軍師が使用）';
  const close=document.createElement('button');close.type='button';close.textContent='✕ 閉じる';
  close.onclick=()=>itemPanel.hidden=true;
  heading.append(title,close);itemPanel.append(heading);
@@ -6223,7 +6231,7 @@ function renderBattleItemManagement(){
  for(const stack of stocks)amounts.set(stack.itemId,(amounts.get(stack.itemId)||0)+stack.quantity);
  const chosenStocks=stocks.filter(stack=>ROOM_ITEM_TYPES[stack.itemId]?.kind==='heal'||
   ROOM_ITEM_TYPES[stack.itemId]?.kind==='squad_buff');
- const catalogHeading=document.createElement('h3');catalogHeading.textContent='① 軍師が使用する兵符・物資を選択';
+ const catalogHeading=document.createElement('h3');catalogHeading.textContent='① 全軍共有の所持品・戦闘取得品を選択';
  catalogHeading.style.cssText='font:700 13px system-ui;margin:14px 0 6px';
  itemPanel.append(catalogHeading);
  const choice=document.createElement('select');choice.id='battleItemsChoice';
@@ -6256,7 +6264,7 @@ function renderBattleItemManagement(){
   const survivors=squad.filter(u=>u.hp>0&&u.alive!==false);
   const opt=document.createElement('option');opt.value=id;
   opt.textContent=squadName(id)+'（'+survivors.length+'/'+squad.length+'人）';
-  opt.disabled=!survivors.length||squadOrderCooldownSeconds(id)>0;
+  opt.disabled=!survivors.length||!sharedInventoryCommanderId(id);
   itemSquadSelect.append(opt);
  }
  const id=[existingSquad,lastBattleItemSquad,selectedSquadId].map(String)
@@ -6268,12 +6276,19 @@ function renderBattleItemManagement(){
  const updatePreview=()=>{
   const def=ROOM_ITEM_TYPES[choice.value],target=units.filter(u=>u.team===0&&String(u.squadId)===itemSquadSelect.value&&u.hp>0&&u.alive!==false);
   const missing=target.reduce((n,u)=>n+Math.max(0,u.maxHp-u.hp),0);
-  const content=def?.kind==='heal'?'部隊全体で最大'+def.squadHealHp+'HP回復'+(missing?'／負傷HP合計 '+Math.round(missing):'／負傷者なし'):
+  const reserve=REINFORCEMENT_ITEMS.includes(choice.value);
+  const missingTroops=units.filter(u=>u.team===0&&String(u.squadId)===itemSquadSelect.value&&
+   !u.isStrategist&&(u.alive===false||!(u.hp>0))).length;
+  const content=reserve?'軍師が兵符を消費して'+Math.min(missingTroops,reinforcementSlots(choice.value,realtimeCommanderLevel(sharedInventoryCommanderId(itemSquadSelect.value))))+
+   '人を補充（戦闘不能 '+missingTroops+'人）':
+   def?.kind==='heal'?'部隊全体で最大'+def.squadHealHp+'HP回復'+(missing?'／負傷HP合計 '+Math.round(missing):'／負傷者なし'):
    def?.kind==='squad_buff'?def.description||'部隊強化':'使用できる所持品がありません';
   preview.textContent=content;
-  const cooldown=squadOrderCooldownSeconds(itemSquadSelect.value);
-  use.disabled=!def||!['heal','squad_buff'].includes(def.kind)||!target.length||
-   cooldown>0||(def.kind==='heal'&&!missing)||!stocks.some(x=>x.itemId===choice.value);
+  const issuer=sharedInventoryCommanderId(itemSquadSelect.value);
+  const cooldown=issuer?squadOrderCooldownSeconds(issuer):0;
+  use.disabled=!def||!['heal','squad_buff'].includes(def.kind)||!target.length||!issuer||
+   cooldown>0||(reserve?!missingTroops:def.kind==='heal'&&!missing)||
+   !stocks.some(x=>x.itemId===choice.value);
   use.textContent=cooldown?'⏳ 指示まで '+cooldown+'秒':'✨ ③ 軍師がこの隊へ支給';
  };
  choice.onchange=()=>{lastSelectedBattleItemId=choice.value;updatePreview()};
@@ -6282,7 +6297,7 @@ function renderBattleItemManagement(){
  itemPanel.append(choice,preview,squadHeading,itemSquadSelect,use);
  const secondary=document.createElement('small');
  secondary.style.cssText='display:block;margin:12px 0 0;color:#a7bacb;font:11px/1.6 system-ui';
- secondary.textContent='所持数は軍全体の実数です。道具を消費・支給するのはプレイヤー（軍師）で、部隊自身はアイテムを使いません。';
+ secondary.textContent='戦闘中にどの味方が拾ったアイテムも軍全体の共有在庫に合算します。軍師が任意の生存味方隊へ支給します。鍵・素材・クエスト品は戦闘中に直接使用できません。';
  itemPanel.append(secondary);
  updatePreview();
 }
@@ -10141,6 +10156,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  getAvailableItems:()=>realtimeItemStocks(),
  onUseItem:(id,itemId,arrival=false)=>issueCommanderReinforcements(id,itemId,{arrival}),
  onReinforce:(id,itemId)=>issueCommanderReinforcements(id,itemId),
+  onManageItems:id=>openBattleItemsForSquad(id),
  getRallyInfo:id=>({
   level:realtimeCommanderLevel(id),
   maxTargets:commanderTargetLimit(realtimeCommanderLevel(id)),

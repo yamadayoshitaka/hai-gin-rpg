@@ -23,7 +23,7 @@ export function createRealtimeBattleCommands({
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
- onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},
+ onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},onManageItems=()=>{},
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
@@ -32,6 +32,7 @@ export function createRealtimeBattleCommands({
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
  let started=false,mode='deploy',selectedId=null,zoom=1,centerX=worldSize/2,centerZ=worldSize/2;
+ let dockTab='strategy';
  const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  const PLAN_LIMIT_MS=30000;
@@ -56,12 +57,18 @@ export function createRealtimeBattleCommands({
     <small id="realtimeDockPage">1/10</small>
    </div>
    <span id="realtimeSelectedState" role="status">軍師：部隊を選択</span>
+   <div id="realtimeCommandTabs" role="tablist" aria-label="軍師の指示を選ぶ">
+    <button type="button" id="realtimeTabStrategy" role="tab" aria-selected="true">⚔ 作戦</button>
+    <button type="button" id="realtimeTabRally" role="tab" aria-selected="false">📣 号令（バフ）</button>
+    <button type="button" id="realtimeTabItems" role="tab" aria-selected="false">🎒 アイテム</button>
+   </div>
    <button type="button" id="realtimeMove">📍 移動先</button>
    <button type="button" id="realtimeDefend">🛡 守備</button>
    <button type="button" id="realtimeCharge">⚔ 攻撃</button>
    <button type="button" id="realtimeHold">◷ 待機</button>
-   <button type="button" id="realtimeSupport">🎒 軍師補充</button>
-   <button type="button" id="realtimeRally">📣 号令・バフ</button>
+   <button type="button" id="realtimeSupport">🎒 兵符で補充</button>
+   <button type="button" id="realtimeManageItems">🎁 全軍の共有アイテムを使う</button>
+   <button type="button" id="realtimeRally">📣 バフの種類と対象を選択</button>
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
    <div id="realtimeDockAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
@@ -106,7 +113,10 @@ export function createRealtimeBattleCommands({
       <button type="button" data-action-after-move="defend">🛡 守備</button>
       <button type="button" data-action-after-move="charge">⚔ 攻撃</button>
       <button type="button" data-action-after-move="hold">◷ 待機</button>
-      <button type="button" data-action-after-move="support">🎒 軍師から補充</button>
+     </div>
+     <div id="realtimeMapItemCategory" class="realtimeMapItemCategory" role="group" aria-label="軍師のアイテム">
+      <strong>🎒 アイテム（軍師が使用）</strong>
+      <button type="button" data-action-after-move="support">兵符で援軍を補充</button>
      </div>
      <div id="realtimeMapAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
       <strong>攻撃種別</strong>
@@ -304,6 +314,22 @@ export function createRealtimeBattleCommands({
   $(origin==='map'?'realtimeMapMessage':'realtimeSelectedState').textContent=
    '実行できません。対象との距離、所持数、軍師、命令制限を確認してください。';
  }
+ function setDockTab(next='strategy'){
+  if(!['strategy','rally','items'].includes(next))return;
+  dockTab=next;hideContextChoices();
+  const strategy=next==='strategy',rally=next==='rally',items=next==='items';
+  for(const id of ['realtimeMove','realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial'])
+   $(id).hidden=!strategy;
+  $('realtimeRally').hidden=!rally;
+  $('realtimeSupport').hidden=!items;
+  $('realtimeManageItems').hidden=!items;
+  for(const [id,selected] of [['realtimeTabStrategy',strategy],['realtimeTabRally',rally],['realtimeTabItems',items]]){
+   const button=$(id);button.classList.toggle('selected',selected);
+   button.setAttribute('aria-selected',String(selected));
+  }
+  if(rally)showRallyChoices();
+  renderActionSelection();
+ }
  function showSupportChoices(origin){
   const node=actionPanel(origin,'Support'),items=getAvailableItems(String(selectedId))||[];
   if(!items.length){contextNote(node,'援軍の兵符を所持していません。');return;}
@@ -465,6 +491,7 @@ export function createRealtimeBattleCommands({
   if(!setSelected(id))return false;
   enterPlanning();
   $('realtimeBattleDock').hidden=false;
+  setDockTab('strategy');
   updatePlanningCountdown();
   drawRadar(true);
   return true;
@@ -497,6 +524,7 @@ export function createRealtimeBattleCommands({
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
   $('realtimeMapMessage').textContent='';
   root.querySelector('[data-action-after-move="support"]').hidden=next==='deploy';
+  $('realtimeMapItemCategory').hidden=next==='deploy';
   root.querySelector('[data-action-after-move="special"]').hidden=next==='deploy';
   renderActionSelection();
   if(next==='move'){zoom=1.6;const own=getSelected();
@@ -664,6 +692,13 @@ export function createRealtimeBattleCommands({
  $('realtimeDockClose').onclick=closeSquadControls;
  $('realtimeCharge').onclick=()=>{hideContextChoices();$('realtimeDockAttackChoices').hidden=false;renderActionSelection();};
  $('realtimeSupport').onclick=()=>showSupportChoices('dock');
+ $('realtimeManageItems').onclick=()=>{
+  const targetId=String(selectedId||'');
+  closeSquadControls();onManageItems(targetId);
+ };
+ $('realtimeTabStrategy').onclick=()=>setDockTab('strategy');
+ $('realtimeTabRally').onclick=()=>setDockTab('rally');
+ $('realtimeTabItems').onclick=()=>setDockTab('items');
  $('realtimeRally').onclick=()=>showRallyChoices();
  $('realtimeSpecial').onclick=()=>showSpecialChoices('dock');
  $('realtimeDefend').onclick=()=>{
@@ -687,6 +722,7 @@ export function createRealtimeBattleCommands({
   showSquadControls,
   closeSquadControls,
   get controlsOpen(){return !$('realtimeBattleDock').hidden;},
+  get commandCategory(){return dockTab;},
   openMove(){if(started)openMap('move');},
   update(rows=[]){
    currentRows=rows;refreshOptions();

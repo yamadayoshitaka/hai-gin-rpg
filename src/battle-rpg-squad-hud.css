@@ -290,3 +290,38 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  #battleRpgSquadHud .rpgSquadSide,
  #battleRpgSquadHud .rpgSquadSide.expanded{max-height:calc(100dvh - var(--battleReportHeight,118px) - 14px)}
 }
+
+/* 2026-11-19 follow-up: only the four meter TRACKS are half the previous width;
+   preserve the portrait, label, clickable card and full-percentage scaling. */
+#battleRpgSquadHud .rpgSquadMeterLine .rpgSquadMeterTrack{
+ width:50%;max-width:50%;justify-self:start;
+}
+/* Two dedicated effect rows, never covered by HP or the job name. */
+#battleRpgSquadHud .rpgSquadRow{
+ grid-template-rows:12px 10px 10px repeat(4,5px);
+ min-height:64px;
+}
+#battleRpgSquadHud .rpgSquadJobIcon{grid-row:1/5}
+#battleRpgSquadHud .rpgSquadEffects{
+ grid-column:2;grid-row:2/4;
+ display:grid;grid-template-columns:repeat(4,14px);grid-template-rows:repeat(2,10px);
+ justify-content:start;align-content:start;gap:1px;
+ max-width:100%;height:21px;transform:none;overflow:hidden;
+}
+#battleRpgSquadHud .rpgSquadEffects span{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-width:12px;width:14px;max-width:14px;
+ min-height:10px;height:10px;box-sizing:border-box;
+ padding:0;font:800 8px/1 system-ui;
+}
+#battleRpgSquadHud .rpgSquadMeter-hp{grid-row:4}
+#battleRpgSquadHud .rpgSquadMeter-attack{grid-row:5}
+#battleRpgSquadHud .rpgSquadMeter-mp{grid-row:6}
+#battleRpgSquadHud .rpgSquadMeter-troops{grid-row:7}
+@media(max-width:600px){
+ #battleRpgSquadHud .rpgSquadRow{
+  grid-template-rows:12px 10px 10px repeat(4,5px);min-height:64px;
+ }
+ #battleRpgSquadHud .rpgSquadJobIcon{grid-row:1/5}
+ #battleRpgSquadHud .rpgSquadEffects{grid-row:2/4;max-width:100%}
+}

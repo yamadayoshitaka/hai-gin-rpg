@@ -345,3 +345,47 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 #realtimeMapChosenAction{display:block;color:#fff0ad;font:800 11px/1.3 system-ui;
  padding:3px 5px;margin:2px 0;background:#193e50;border:1px solid #708f92;border-radius:5px}
 #realtimeBattleDock #realtimeSelectedState{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Player command categories: orders, buff-only rally, shared consumables. */
+#realtimeBattleDock #realtimeCommandTabs{
+ grid-column:1/-1;grid-row:3;
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:4px;align-items:stretch;
+}
+#realtimeBattleDock #realtimeCommandTabs button{
+ min-height:35px;padding:5px 2px;font:800 11px/1.2 system-ui;
+ border:1px solid #6f9bb7;background:#173b52;
+}
+#realtimeBattleDock #realtimeCommandTabs button[aria-selected="true"]{
+ background:#356a5b!important;color:#fff6cf!important;
+ border:2px solid #f5d98b!important;box-shadow:inset 0 0 0 1px #fff3b44d;
+}
+#realtimeBattleDock #realtimeMove{grid-row:4;grid-column:1}
+#realtimeBattleDock #realtimeDefend{grid-row:4;grid-column:2}
+#realtimeBattleDock #realtimeCharge{grid-row:4;grid-column:3}
+#realtimeBattleDock #realtimeHold{grid-row:4;grid-column:4}
+#realtimeBattleDock #realtimeSpecial{grid-row:5;grid-column:1/-1}
+#realtimeBattleDock #realtimeRally{grid-row:4;grid-column:1/-1}
+#realtimeBattleDock #realtimeSupport{grid-row:4;grid-column:1/3}
+#realtimeBattleDock #realtimeManageItems{grid-row:4;grid-column:3/5}
+#realtimeBattleDock .realtimeAttackChoices,
+#realtimeBattleDock #realtimeDockGuardChoices,
+#realtimeBattleDock #realtimeDockSpecialChoices{grid-row:6;grid-column:1/-1}
+#realtimeBattleDock #realtimeDockRallyChoices,
+#realtimeBattleDock #realtimeDockSupportChoices{grid-row:5;grid-column:1/-1}
+#realtimeBattleDock #realtimeManageItems{font-size:10px;min-height:36px}
+#realtimeBattleMapOverlay .realtimeMapActionButtons{
+ grid-template-columns:repeat(3,minmax(0,1fr));
+}
+#realtimeBattleMapOverlay .realtimeMapItemCategory{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ gap:5px;align-items:center;border-top:1px solid #4d7389;
+ padding-top:4px;color:#e5d5aa;font:800 10px system-ui;
+}
+#realtimeBattleMapOverlay .realtimeMapItemCategory button{
+ min-height:32px;font:800 10px system-ui;
+}
+@media(max-width:600px){
+ #realtimeBattleDock #realtimeCommandTabs button{font-size:10px;min-height:31px}
+ #realtimeBattleDock #realtimeManageItems{font-size:9px}
+}
