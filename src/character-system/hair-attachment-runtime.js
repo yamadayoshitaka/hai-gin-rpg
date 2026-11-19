@@ -125,14 +125,17 @@ function fittedScalpSurface(model,bone,headBounds){
  // do not fall back to an exposed smooth sphere on that single bad match.
  for(const candidate of candidates){
  const {mesh,index,joints,weights,vertices}=candidate;
- const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
+ // Extend the anatomical underlay into the rear crown: the old upper 46%
+ // excluded low rear scalp triangles and left a visible bald band under hair.
+ const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.52;
  const center=headBounds.getCenter(new THREE.Vector3());
  const eligible=new Uint8Array(vertices),local=new Float32Array(vertices*3);
  const point=new THREE.Vector3(),radial=new THREE.Vector3();
  for(let i=0;i<vertices;i++){
   let weight=0;
   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
-  if(weight<.56)continue;
+  // Match the head-bone eligibility gate used for head measurements.
+  if(weight<.52)continue;
   mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
   bone.worldToLocal(point);
   if(point.y<threshold)continue;
