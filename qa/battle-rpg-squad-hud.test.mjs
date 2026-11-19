@@ -114,3 +114,27 @@ test('approved face atlas uses canonical campaign job rows, stable variants, and
  assert.match(css,/grid-template-columns:26px minmax\(0,1fr\)/);
  assert.match(css,/background-size:400% 400%/);
 });
+
+test('live squad MP, HP-linked attack, reinforcement and rally wiring stay synchronized',()=>{
+ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const commands=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ assert.match(battle,/sums,units:massSim\?\.units\?\?actors,allyIds:squadIds/);
+ assert.match(battle,/onReinforce:\(id,itemId\)=>issueCommanderReinforcements/);
+ assert.match(battle,/onRally:\(id,type,targets\)=>issueCommanderRally/);
+ assert.match(commands,/id="realtimeRally"/);
+ assert.match(commands,/function showRallyChoices\(\)/);
+ assert.match(commands,/function showSupportChoices\(origin\)/);
+ const units=[
+  {team:0,squadId:'m',hp:50,maxHp:100,mp:8,maxMp:20,alive:true},
+  {team:0,squadId:'m',hp:0,maxHp:100,mp:0,maxMp:20,alive:false}
+ ];
+ const sums=new Map([['0:m',{n:1,total:2,hp:50,maxHp:200,x:20,z:20}]]);
+ const rows=makeBattleRpgStatusRows({sums,units,allyIds:['m'],
+  commanderRallies:new Map([['m',[{attack:.2,until:32}]]]),now:10});
+ assert.equal(rows[0].mp,8);
+ assert.equal(rows[0].maxMp,40);
+ assert.equal(rows[0].attackPercent,25);
+ assert.equal(rows[0].effects[0].label,'攻↑20%');
+ const next=makeBattleRpgStatusRows({sums,units:[{...units[0],mp:3},units[1]],allyIds:['m']});
+ assert.equal(next[0].mp,3,'MP meter must use current combat unit values');
+});
