@@ -715,9 +715,24 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(3.8*c,.15*c,2.8*c,0,.09*c,0,earth);
    for(const x of [-1.9,1.9])box(.15*c,.25*c,2.95*c,x*c,.2*c,0,wood);
    for(const z of [-1.43,1.43])box(3.95*c,.25*c,.15*c,0,.2*c,z*c,wood);
+   // Each herb has a tapering stem and six paired leaves, rooted above the soil.
+   // Shared geometry and materials keep the 24 plants inexpensive to batch.
+   const stemMat=new THREE.MeshStandardMaterial({color:0x52783b,roughness:.92,metalness:0});
+   const stemGeo=new THREE.CylinderGeometry(.018*c,.044*c,.52*c,5,3);
+   const leafGeo=new THREE.SphereGeometry(1,8,5);
    for(let x=0;x<6;x++)for(let z=0;z<4;z++){
-    const herb=new THREE.Mesh(new THREE.ConeGeometry(.13*c,.54*c,6),leaves);
-    herb.position.set((x-2.5)*.58*c,.46*c,(z-1.5)*.58*c);root.add(herb);
+    const px=(x-2.5)*.58*c,pz=(z-1.5)*.58*c;
+    const stem=new THREE.Mesh(stemGeo,stemMat);
+    stem.position.set(px,.41*c,pz);stem.rotation.z=((x+z)%3-1)*.10;
+    root.add(stem);
+    for(let n=0;n<6;n++){
+     const a=n*Math.PI*2/6+(x+z)*.23;
+     const leaf=new THREE.Mesh(leafGeo,leaves);
+     leaf.scale.set(.17*c,.035*c,.075*c);
+     leaf.position.set(px+Math.cos(a)*.115*c,(.28+n*.055)*c,pz+Math.sin(a)*.115*c);
+     leaf.rotation.y=-a;leaf.rotation.z=(n%2?-.20:.20);
+     root.add(leaf);
+    }
    }
    root.userData.passable=true;
   }
