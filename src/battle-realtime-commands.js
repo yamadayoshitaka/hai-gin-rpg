@@ -78,7 +78,24 @@ export function createRealtimeBattleCommands({
  const $=id=>root.querySelector('#'+id);
  const canvas=$('realtimeBattleCanvas'),ctx=canvas.getContext('2d');
  let currentRows=[];
- function squads(){return getSquads().filter(x=>x&&x.id!=null);}
+ let squadSnapshot=[],squadSnapshotAt=-Infinity,lastMapRedrawAt=-Infinity;
+ let mapDrawPending=false;
+ const nowMs=()=>globalThis.performance?.now?.()??Date.now();
+ const invalidateSquadSnapshot=()=>{squadSnapshotAt=-Infinity;};
+ function squads(){
+  const now=nowMs();
+  if(squadSnapshotAt<0||now-squadSnapshotAt>=300){
+   squadSnapshot=getSquads().filter(x=>x&&x.id!=null);
+   squadSnapshotAt=now;
+  }
+  return squadSnapshot;
+ }
+ function scheduleMapDraw(){
+  if(mapDrawPending)return;
+  if(typeof globalThis.requestAnimationFrame!=='function'){drawMap();return;}
+  mapDrawPending=true;
+  globalThis.requestAnimationFrame(()=>{mapDrawPending=false;drawMap();});
+ }
  function refreshOptions(){
   const own=squads();
   if(!own.length)return;
@@ -160,6 +177,7 @@ export function createRealtimeBattleCommands({
    ctx.fillText(String(number),x,z);
   }
   $('realtimeMapScale').textContent=Math.round(zoom*100)+'%';
+  lastMapRedrawAt=nowMs();
  }
  function renderActionSelection(){
   const chosen=preferredActions.get(String(selectedId));
@@ -217,7 +235,7 @@ export function createRealtimeBattleCommands({
    }
    const applied=onDeploy(selectedId,point);
    $('realtimeMapMessage').textContent=applied?'配置を保存しました。別の隊も配置できます。':'配置場所が不足するか、建物・他隊に重なっています。';
-   if(applied){refreshOptions();drawMap();showActionSheet(selectedId,point);}
+   if(applied){invalidateSquadSnapshot();refreshOptions();drawMap();showActionSheet(selectedId,point);}
    return applied;
   }
   const applied=onMove(selectedId,point);
@@ -244,13 +262,13 @@ export function createRealtimeBattleCommands({
    const rect=canvas.getBoundingClientRect(),span=worldSize/zoom;
    centerX=pointer.baseX-dx/Math.max(1,rect.width)*span;
    centerZ=pointer.baseZ-dy/Math.max(1,rect.height)*span;
-   drawMap();
+   scheduleMapDraw();
   }
  });
  canvas.addEventListener('pointerup',e=>{
   if(!pointer||pointer.id!==e.pointerId)return;
   const dragged=pointer.pan;pointer=null;
-  if(dragged)return;
+  if(dragged){drawMap();return;}
   const rect=canvas.getBoundingClientRect();
   const px=(e.clientX-rect.left)/rect.width,pz=(e.clientY-rect.top)/rect.height;
   if(px<0||px>1||pz<0||pz>1)return;
@@ -305,7 +323,7 @@ export function createRealtimeBattleCommands({
  $('realtimeMenu').onclick=()=>onMenu();
  $('realtimePause').onclick=()=>{onPause();renderStatus();};
  return {
-  openDeployment(){started=false;mode='deploy';deploymentActions.clear();arrivalActions.clear();preferredActions.clear();$('realtimeBattleDock').hidden=true;openMap('deploy');},
+  openDeployment(){started=false;mode='deploy';deploymentActions.clear();arrivalActions.clear();preferredActions.clear();invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;openMap('deploy');},
   selectSquad:setSelected,
   openMove(){if(started)openMap('move');},
   update(rows=[]){
@@ -323,7 +341,11 @@ export function createRealtimeBattleCommands({
      if(onOrder(id,entry.command))arrivalActions.delete(id);
     }
    }
-   renderStatus();if(!$('realtimeBattleMapOverlay').hidden)drawMap();
+   renderStatus();
+   // No physical positions change while initial deployment is paused.
+   // Live map pins need only about 3 updates/sec, never every UI tick.
+   if(mode==='move'&&!$('realtimeBattleMapOverlay').hidden&&
+      nowMs()-lastMapRedrawAt>=330)scheduleMapDraw();
   },
   get started(){return started;},
   get selectedId(){return selectedId;},
