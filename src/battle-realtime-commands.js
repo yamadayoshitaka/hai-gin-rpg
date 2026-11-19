@@ -114,7 +114,7 @@ export function createRealtimeBattleCommands({
       <button type="button" data-action-after-move="charge">⚔ 攻撃</button>
       <button type="button" data-action-after-move="hold">◷ 待機</button>
      </div>
-     <div class="realtimeMapItemCategory" role="group" aria-label="軍師のアイテム">
+     <div id="realtimeMapItemCategory" class="realtimeMapItemCategory" role="group" aria-label="軍師のアイテム">
       <strong>🎒 アイテム（軍師が使用）</strong>
       <button type="button" data-action-after-move="support">兵符で援軍を補充</button>
      </div>
@@ -524,6 +524,7 @@ export function createRealtimeBattleCommands({
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
   $('realtimeMapMessage').textContent='';
   root.querySelector('[data-action-after-move="support"]').hidden=next==='deploy';
+  $('realtimeMapItemCategory').hidden=next==='deploy';
   root.querySelector('[data-action-after-move="special"]').hidden=next==='deploy';
   renderActionSelection();
   if(next==='move'){zoom=1.6;const own=getSelected();
