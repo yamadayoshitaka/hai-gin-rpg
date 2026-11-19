@@ -9,7 +9,7 @@ export function createBattleTapChoices(root,{pageSize=5}={}){
  const entries=new Map();
  for(const id of ids){
   const select=root.querySelector('#'+id);
-  if(!select)continue;
+  if(!select||typeof select.after!=='function')continue;
   select.classList.add('realtimeSourceSelect');
   select.tabIndex=-1;select.setAttribute('aria-hidden','true');
   const list=select.ownerDocument.createElement('div');
@@ -25,7 +25,7 @@ export function createBattleTapChoices(root,{pageSize=5}={}){
   const {select,list}=state;
   list.hidden=select.hidden;
   if(list.hidden)return;
-  const options=Array.from(select.options).filter(o=>o.value!==''&&!o.hidden);
+  const options=Array.from(select.options||[]).filter(o=>o.value!==''&&!o.hidden);
   const selected=String(select.value);
   const signature=options.map(o=>[o.value,o.textContent,o.disabled].join(':')).join('|');
   const totalPages=Math.max(1,Math.ceil(options.length/pageSize));
