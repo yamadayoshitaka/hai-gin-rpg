@@ -2,7 +2,7 @@
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
 import { CombatActionRuntime } from './combat-action-runtime.js?v=20261117-mount-interior1';
-import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.51';
+import { COMBAT_RULES,availableCombatSkills } from './combat-action-spec.js?v=4.6.51';
 import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.49';
