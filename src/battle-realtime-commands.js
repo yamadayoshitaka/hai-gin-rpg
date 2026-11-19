@@ -8,7 +8,7 @@ import {createBattleTapChoices} from './battle-tap-choices.js?v=20261119-mobile-
 import {eligibleEnemyBattleTargets,battleAttackNeedsEnemy} from './battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
-import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261119-shield-front2';
+import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -614,17 +614,18 @@ export function createRealtimeBattleCommands({
     button.disabled=target.available===false;
     if(button.disabled)button.title=String(target.reason||'現在は実行できません');
    }
-   if(origin==='map'){
-    confirmButton=contextButton(node,'✅ 選択した対象に作戦を実行',()=>{
-     if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
-    });
-    confirmButton.disabled=true;
-   }
+   confirmButton=contextButton(node,'✅ この高所・対象で固有技を確定',()=>{
+    if(!chosen)return;
+    if(origin==='dock')confirmDockStrategy();
+    else confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+   });
+   confirmButton.classList.add('realtimeMainConfirm');
+   confirmButton.disabled=true;
    status.textContent='対象を選ぶまで作戦は発令されません。';
    // The target-map canvas must be painted on first open, before any tap.
    paint();
   }else{
-   let chosen=null;
+   let chosen=null,confirmButton=null;
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
    for(const target of shown){
@@ -634,7 +635,8 @@ export function createRealtimeBattleCommands({
       return;
      }
      chosen=target;
-     status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
+     if(confirmButton)confirmButton.disabled=false;
+     status.textContent='選択中：'+String(target.label||target.id)+'。下の「固有技を確定」で実行します。';
      if(origin==='dock'){
       pendingStrategy={special:action.id,targetId:String(target.id)};
       renderActionSelection();
@@ -645,13 +647,16 @@ export function createRealtimeBattleCommands({
      }
     });
     button.classList.add('realtimeContextTarget');button.setAttribute('aria-pressed','false');
+    button.disabled=target.available===false;
+    if(button.disabled)button.title=String(target.reason||'現在は実行できません');
    }
-   if(origin==='map'){
-    const confirm=contextButton(node,'✅ この対象で作戦を確定',()=>{
-     if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
-    });
-    confirm.classList.add('realtimeMainConfirm');
-   }
+   confirmButton=contextButton(node,'✅ この対象で固有技を確定',()=>{
+    if(!chosen)return;
+    if(origin==='dock')confirmDockStrategy();
+    else confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+   });
+   confirmButton.classList.add('realtimeMainConfirm');
+   confirmButton.disabled=true;
    status.textContent='対象を選ぶまで作戦は発令されません。';
   }
   if(last>0){
@@ -850,7 +855,9 @@ export function createRealtimeBattleCommands({
   const specialJob=String(getSelected()?.job||'');
    const isThief=specialJob.includes('シーフ');
   $('realtimeSpecial').textContent=
-   ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有':'★ 固有作戦';
+   specialJob.includes('召喚士')?'🐉 召喚獣・固有技':
+   ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有技':
+   specialJob.includes('盾騎士')||specialJob.includes('盾戦士')?'🛡 かばう・固有技':'★ 固有技';
   $('realtimeSpecial').hidden=dockTab!=='strategy'||isThief;
   $('realtimeThiefUnlock').hidden=dockTab!=='strategy'||!isThief;
   $('realtimeThiefSteal').hidden=dockTab!=='strategy'||!isThief;

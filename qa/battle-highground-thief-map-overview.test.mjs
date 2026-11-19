@@ -58,3 +58,37 @@ test('high-ground target picker paints immediately, disables unavailable locatio
  const initialPaint=picker.indexOf('   paint();',picker.indexOf('const isStructure='));
  assert.ok(initialPaint>0&&initialPaint<mapEnd,'first render must paint the canvas before a click');
 });
+
+
+test('shield knight and thief engine aliases expose real special abilities in the live squad HUD',()=>{
+ assert.deepEqual(battleJobSpecialActions('盗賊').map(action=>action.id),
+  ['unlock_door','steal_item']);
+ assert.deepEqual(battleJobSpecialActions('盾戦士').map(action=>action.id),
+  ['frontline_guard']);
+ assert.ok(battleJobSpecialActions('召喚士').some(action=>action.id==='summon_and_attack'));
+ assert.ok(battleJobSpecialActions('弓使い').some(action=>action.id==='high_ground'));
+ assert.match(tactics,/const job=squadPrimaryJob\(id\);/);
+ assert.match(controls,/const isThief=specialJob\.includes\('シーフ'\)/);
+ assert.match(controls,/\$\('realtimeThiefUnlock'\)\.hidden=dockTab!=='strategy'\|\|!isThief/);
+});
+
+test('every special target picker provides a dedicated enabled-after-selection confirmation',()=>{
+ const begin=controls.indexOf('function showSpecialTargets(');
+ const end=controls.indexOf('function showSpecialChoices(',begin);
+ const picker=controls.slice(begin,end);
+ assert.ok(begin>0&&end>begin);
+ assert.match(picker,/この高所・対象で固有技を確定/);
+ assert.match(picker,/この対象で固有技を確定/);
+ assert.match(picker,/if\(origin==='dock'\)confirmDockStrategy\(\)/);
+ assert.match(picker,/confirmButton\.disabled=true/);
+ assert.match(picker,/confirmButton\.disabled=false/);
+ assert.match(picker,/button\.disabled=target\.available===false/);
+ const css=read('src/battle-realtime-commands.css');
+ assert.match(css,/\.realtimeContextChoices \.realtimeMainConfirm\{\s*position:sticky;bottom:0/);
+});
+
+test('retired battle circle icons remain hidden behind the new two-sided squad HUD',()=>{
+ assert.match(tactics,/body\.battle-realtime-clean #squadScreenLabels \.squadScreenLabel:not\(\[hidden\]\)/);
+ assert.match(tactics,/display:none!important;visibility:hidden!important;pointer-events:none!important/);
+ assert.match(tactics,/const job=squadPrimaryJob\(id\);/);
+});

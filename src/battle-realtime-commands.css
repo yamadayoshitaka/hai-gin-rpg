@@ -613,3 +613,16 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 #battleRealtimeControls #realtimeBattleDock #realtimeConfirmStrategy{
  grid-column:1/-1;grid-row:7;
 }
+
+
+/* Visible and reachable confirmation for summon, high-ground, thief and shield specials.
+   The long target list scrolls, but the final action must stay in view on mobile. */
+#battleRealtimeControls #realtimeBattleDock .realtimeContextChoices .realtimeMainConfirm{
+ position:sticky;bottom:0;z-index:4;width:100%;min-height:44px;
+ background:#357351;border:2px solid #f3d28a;color:#fff9dc;
+ box-shadow:0 -3px 9px #071b2acc;
+ font:900 12px/1.25 system-ui;
+}
+#battleRealtimeControls #realtimeBattleDock .realtimeContextChoices .realtimeMainConfirm:disabled{
+ opacity:.60;filter:grayscale(.6);
+}
