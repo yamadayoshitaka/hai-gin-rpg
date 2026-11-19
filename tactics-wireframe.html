@@ -9892,7 +9892,19 @@ function realtimeItemStocks(){
  return [...counts].map(([id,quantity])=>({id,label:ROOM_ITEM_TYPES[id].name,quantity}));
 }
 function realtimeSpecialTargets(id,action){
- const jobs=new Set(realtimeJobMembers(id).map(u=>u.jobId));
+ const members=realtimeJobMembers(id),jobs=new Set(members.map(u=>u.jobId));
+ if(action==='summon_and_move'||action==='summon_and_attack')
+  return members.some(u=>u.jobId==='summoner'&&u.mp>=15)?
+   [{id:'self',label:'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
+ if(action==='high_ground'){
+  if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
+  return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
+   .filter(route=>route.team===0&&['window','roof'].includes(route.kind)&&
+    (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage')))
+   .map(route=>({id:String(route.index),
+     label:route.kind==='roof'?'🏯 屋根 '+route.buildingIndex:'🏹 高所窓 '+route.buildingIndex}))
+   .slice(0,24);
+ }
  const allowed=action==='destroy_bridge'?['mage','summoner','ninja']:
   action==='break_structure'?['mage','summoner']:
   action==='burn_building'?['mage']:['thief'];
@@ -9931,6 +9943,38 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
  const jobName=squadPrimaryJob(id);
  if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
  if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)))return false;
+ if(action==='summon_and_attack'||action==='summon_and_move'){
+  let success=false;
+  if(massSim){
+   success=massSim.summonSquadCreature(id);
+   if(success&&massWorker?.active)massWorker.summonSquadCreature(id);
+  }else{
+   for(const member of members.filter(u=>u.jobId==='summoner'&&u.hp>0)){
+    const spells=availableCombatSkills('summoner',member.rarity)
+     .filter(skill=>skill.kind==='summon'&&member.mp>=skill.mp)
+     .sort((a,b)=>b.mp-a.mp);
+    for(const spell of spells)if(skirmishActions.fireSkill(member,spell,member,actors)){
+     success=true;break;
+    }
+    if(success)break;
+   }
+  }
+  if(!success)return false;
+  battleCeremony.showOrder('🐉 '+squadName(id)+'：召喚成功','MPを消費して召喚獣が出現');
+  if(action==='summon_and_move')return {openMove:true};
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueIndividualSquadOrder('charge');}
+  finally{selectedSquadId=prior;}
+ }
+ if(action==='high_ground'){
+  const routeIndex=Number(targetId);
+  const success=massSim?.orderSquadHighGround(id,routeIndex,0)===true;
+  if(!success)return false;
+  if(massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
+  markRibbonOrderIssued(id);
+  battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃','既存の階段と窓を使用');
+  return true;
+ }
  if(action==='steal_item'){
   const thief=members.find(u=>u.jobId==='thief');
   const enemy=(massSim?.units??actors).find(u=>u.team===1&&
