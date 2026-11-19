@@ -331,7 +331,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  // sphere because root fibers were only generated for a sampled skin mesh.
  // Bake its anatomical fit into geometry so the SAME root-fiber generator
  // covers the fallback without adding an extra draw call for the cap.
- const fallbackSurface=!scalpSurface?new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56):null;
+ const fallbackSurface=!scalpSurface?new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56).toNonIndexed():null;
  if(fallbackSurface){
   fallbackSurface.scale(bodySize.x*.53,crownHeight,bodySize.z*.53);
   fallbackSurface.translate(headCenter.x,size.bounds.max.y-crownHeight+.004,
