@@ -471,8 +471,20 @@ export function createObjectById(id,{cellSize=2.2}={}){
    body.position.y=.61*c;body.castShadow=true;root.add(body);
    const bottom=new THREE.Mesh(new THREE.CylinderGeometry(.35*c,.35*c,.07*c,12),metalMat);
    bottom.position.y=.06*c;root.add(bottom);
-   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
-   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
+   // Rolled lip is a closed forged-metal torus; 24 circumferential segments
+   // avoid the faceted silhouette of the original 16-sided ring.
+   const rimMat=new THREE.MeshStandardMaterial({color:0x777a73,metalness:.72,roughness:.36});
+   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,8,24),rimMat);
+   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;
+   rim.castShadow=true;rim.receiveShadow=true;root.add(rim);
+   // Three structural pressed-metal hoops connect the side wall without
+   // altering the 60-ID catalog or the ground-contact geometry.
+   const hoopGeo=new THREE.TorusGeometry(.373*c,.019*c,5,24);
+   for(const y of [.23,.59,.96]){
+    const hoop=new THREE.Mesh(hoopGeo,rimMat);
+    hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;
+    hoop.castShadow=true;root.add(hoop);
+   }
    for(let i=0;i<12;i++){const a=i*Math.PI/6;
     const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
     slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
