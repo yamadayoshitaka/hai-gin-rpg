@@ -1,17 +1,12 @@
 import {battleSquadJob} from './battle-job-squads.js';
 // A small, serializable formation plan shared by the main thread and Worker.
-// The three selectable squad types determine jobs and marching depth, without
-// changing individual soldiers into proxy meshes or adding per-soldier paths.
+// Each squad owns exactly one job. Formation types only affect depth/speed,
+// never the job composition or per-soldier pathing.
 export const SQUAD_TYPES=Object.freeze(['attack','balanced','support']);
 export const SQUAD_TYPE_NAMES=Object.freeze({
   attack:'攻撃',balanced:'バランス',support:'支援'
 });
 
-const JOB_POOLS=Object.freeze({
-  attack:[0,1,2,3,4,9],
-  balanced:[0,1,2,3,4,5,6,7,8,9],
-  support:[7,7,8,6,5,1]
-});
 const JOB_FRONT_RANK=Object.freeze({
   shield:0,sword:1,lancer:1,fighter:1,thief:2,ninja:2,
   archer:3,mage:3,summoner:3,priest:4
