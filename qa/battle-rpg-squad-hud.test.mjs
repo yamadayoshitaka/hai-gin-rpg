@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import {makeBattleRpgStatusRows} from '../src/battle-rpg-squad-source.js';
 import {battleJobPortrait,JOB_PORTRAIT_FILES} from '../src/battle-job-portraits.js';
-import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon,rpgHudEffectIcon,rpgHudStateIcon} from '../src/battle-rpg-squad-hud.js';
+import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon,rpgHudEffectIcon,rpgHudStateIcon,rpgHudTroopPercent} from '../src/battle-rpg-squad-hud.js';
 
 test('actual ally/enemy HP and job IDs survive into RPG panels with matching camera keys',()=>{
  const units=[
@@ -91,8 +91,11 @@ test('all squads use the same compact icon + meter + effect row, with five per p
  assert.equal(rpgHudStateIcon({alive:1,total:10,hp:10,maxHp:100}),'🆘');
  assert.equal(rpgHudStateIcon({alive:10,total:10,hp:100,maxHp:100,mode:'move'}),'➤');
  assert.match(js,/const pageSize=expanded\[team\]\?Math\.max\(1,own\.length\):5/);
- assert.match(js,/metrics\.append\(hp,hpValue,count,effects,attack,mana\)/);
- assert.match(js,/for\(const fx of valid\.slice\(0,3\)\)/);
+ assert.match(js,/addMeter\('hp','HP'/);
+ assert.match(js,/addMeter\('attack','⚔'/);
+ assert.match(js,/addMeter\('mp','MP'/);
+ assert.match(js,/addMeter\('troops','人'/);
+ assert.match(js,/for\(const fx of valid\.slice\(0,4\)\)/);
  assert.match(css,/\.rpgSquadMetrics\{display:flex/);
  assert.match(css,/\.rpgSquadEffects \.debuff/);
  assert.match(realtime,/body\.battle-realtime-clean #battleRpgSquadHud:not\(\[hidden\]\)\{display:block!important\}/);
@@ -137,4 +140,25 @@ test('live squad MP, HP-linked attack, reinforcement and rally wiring stay synch
  assert.equal(rows[0].effects[0].label,'攻↑20%');
  const next=makeBattleRpgStatusRows({sums,units:[{...units[0],mp:3},units[1]],allyIds:['m']});
  assert.equal(next[0].mp,3,'MP meter must use current combat unit values');
+});
+
+test('four real meters, icon effects and a slim portrait layout replace inline numbers',()=>{
+ const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ assert.equal(rpgHudTroopPercent(5,5),100);
+ assert.equal(rpgHudTroopPercent(2,5),40);
+ assert.equal(rpgHudTroopPercent(0,5),0);
+ assert.equal(rpgHudTroopPercent(0,0),0);
+ assert.match(js,/addMeter\('troops','人','生存人数',row\.alive,row\.total/);
+ assert.match(js,/setAttribute\('role','meter'\)/);
+ assert.match(js,/aria-valuenow/);
+ assert.match(js,/metrics\.append\(effects\)/);
+ assert.doesNotMatch(js,/rpgSquadHpValue/,'do not render overlapping numeric HP over the track');
+ assert.doesNotMatch(js,/rpgSquadNumbers/,'troop counts are a track instead of text');
+ assert.match(css,/rpgSquadMeter-troops\{grid-row:6\}/);
+ assert.match(css,/rpgSquadMeter-troops i\{background:/);
+ assert.match(css,/grid-template-rows:12px 10px repeat\(4,5px\)/);
+ assert.match(css,/width:clamp\(94px,27vw,156px\)/);
+ assert.match(css,/background-size:400% 400%/,'preserve original portrait sprite sheet alignment');
+ assert.equal(rpgHudEffectIcon({kind:'debuff',label:'回復阻害'}),'✚↓');
 });
