@@ -156,7 +156,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';
    effects.setAttribute('aria-label','現在の強化・弱体効果');
    const valid=Array.isArray(row.effects)?row.effects:[];
-   for(const fx of valid.slice(0,4)){
+   for(const fx of valid.slice(0,7)){
     const tag=doc.createElement('span');
     tag.className=fx.kind==='debuff'?'debuff':'buff';
     tag.textContent=rpgHudEffectIcon(fx);
@@ -165,10 +165,10 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     tag.setAttribute('aria-label',tag.title);
     effects.append(tag);
    }
-   if(valid.length>4){
+   if(valid.length>7){
     const more=doc.createElement('span');more.className='more';
-    more.textContent='+'+(valid.length-4);
-    more.title=valid.slice(4).map(fx=>String(fx.label||'効果')).join(' / ');
+    more.textContent='+'+(valid.length-7);
+    more.title=valid.slice(7).map(fx=>String(fx.label||'効果')).join(' / ');
     effects.append(more);
    }
    // Read-only visual meters: all four values are drawn from the same actual
