@@ -312,7 +312,9 @@ export function createRealtimeBattleCommands({
    onSpecial(id,entry.special,entry.targetId);
   if(accepted?.openMove){openMap('move');return;}
   if(accepted){if(entry.special){preferredActions.set(id,'special_'+entry.special);renderActionSelection();}
-   hideContextChoices();closeSquadControls();return;}
+   hideContextChoices();
+   if(origin==='map'&&!$('realtimeBattleMapOverlay').hidden)closeMap();
+   closeSquadControls();return;}
   $(origin==='map'?'realtimeMapMessage':'realtimeSelectedState').textContent=
    '実行できません。所持数・対象状態・軍師・命令制限を確認してください（アイテムに射程制限なし）。';
  }
