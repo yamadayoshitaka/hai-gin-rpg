@@ -61,18 +61,21 @@ test('skirmish item buff and strategic enemy debuff expiry use real elapsed time
  assert.equal(rows[1].effects[0].label,'攻↓15%');
  assert.equal(makeBattleRpgStatusRows({...input,now:70}).flatMap(r=>r.effects).length,0);
 });
-test('the battle and map panels both include live RPG UI, not fake health or status labels',()=>{
+test('RPG status is sourced from real squads but collapsed by default to reveal the battlefield',()=>{
  const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
- const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
+ const map=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
+ const clean=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
  assert.match(battle,/createBattleRpgSquadHud/);
  assert.match(battle,/makeBattleRpgStatusRows/);
- assert.match(battle,/getBattleStatusRows:\(\)=>battleRpgHud\?\.rows\|\|\[\]/);
  assert.match(battle,/refreshBattleRpgSquadHud\(sums\)/);
  assert.match(battle,/battleRpgHud\?\.select\(team,id\)/);
  assert.match(battle,/label\.userDataSquadTitle\.textContent/);
- assert.match(panel,/objectiveTurnRpgMini/);
- assert.match(panel,/renderRpgMini/);
+ assert.match(battle,/realtimeCommandUI\?\.update\(rows\)/);
+ assert.match(map,/realtimeRoster/);
+ assert.match(map,/onRoster\(\)/);
+ assert.match(clean,/battle-realtime-clean\.battle-roster-open/);
+ assert.match(clean,/body\.battle-realtime-clean #battleRpgSquadHud/);
  assert.match(css,/#battleRpgSquadHud .rpgSquadSide\.enemy/);
  assert.match(css,/rpgSquadEffects/);
 });

@@ -1,107 +1,68 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
-import {
- createObjectiveTurnEngine,TURN_MOVE_OPTIONS,TURN_ACTION_OPTIONS
-} from '../src/battle-objective-turns.js';
+import vm from 'node:vm';
+import {battleMapCell} from '../src/battle-realtime-commands.js';
+import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 
-test('items are consumed only after a completed turn and at most once per group',()=>{
- const moves=[],actions=[],used=[];
- const groups=[{id:1,initial:8,alive:8,hp:80},{id:2,initial:5,alive:5,hp:50}];
- const engine=createObjectiveTurnEngine({
-  groupIds:[1,2],getGroups:()=>groups,moveSeconds:1,actionSeconds:1,
-  hasArrived:()=>true,onMove:(id,order)=>moves.push([id,order]),
-  onAction:(id,order)=>actions.push([id,order]),
-  onItem:(id,item)=>{used.push([id,item]);return true}
- });
- assert.equal(engine.begin().phase,'planning');
- assert.equal(engine.setMove(2,'bridge_front','bridge-1'),true);
- assert.equal(engine.useEndTurnItem(2,'healing_potion'),false,'no item during planning');
- assert.equal(engine.start(),true);
- engine.update(.1);engine.update(1.1);
- assert.equal(engine.status().phase,'report');
- assert.equal(engine.useEndTurnItem(2,'healing_potion'),true);
- assert.equal(engine.useEndTurnItem(2,'healing_potion'),false,'only one item per group per turn');
- assert.deepEqual(used,[[2,'healing_potion']]);
- assert.equal(actions.find(([id])=>id===2)[1].action,'charge');
- assert.equal(moves.find(([id])=>id===2)[1].targetId,'bridge-1');
- engine.update(500,{wallDt:500});
- assert.equal(engine.status().phase,'report','report remains until confirmed');
- assert.equal(engine.start(),true);
- assert.equal(engine.status().phase,'moving');
- assert.deepEqual(engine.snapshot().ordersByGroup[2],
-  {move:'bridge_front',action:'charge',targetId:'bridge-1',itemId:null});
- assert.deepEqual(engine.snapshot().endItemsByGroup,{});
+const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
+
+test('deployment occurs once, on legal separate cells, preserving live mount positions',()=>{
+ const width=96,height=96,walkable=new Uint8Array(width*height).fill(1);
+ const sim=new MassBattleGridSimulation(50,20261119,{width,height,walkable,bridges:[],riverXAt:()=>48});
+ const group=sim.units.filter(u=>u.team===0&&String(u.squadId)==='0');
+ const before=group.map(u=>u.x+','+u.z);
+ assert.equal(sim.deploySquadBeforeBattle('0',18,22,0),true);
+ const positions=group.map(u=>u.x+','+u.z);
+ assert.notDeepEqual(positions,before);
+ assert.equal(new Set(sim.units.map(u=>u.x+','+u.z)).size,sim.units.length);
+ assert.ok(group.every(u=>u.x<=39&&walkable[u.z*width+u.x]===1));
+ for(const rider of group.filter(u=>u.mountId!=null)){
+  const mount=sim.objects.find(o=>o.mountedBy===rider.id&&o.alive);
+  if(mount)assert.deepEqual([mount.x,mount.z],[rider.x,rider.z]);
+ }
+ assert.equal(sim.deploySquadBeforeBattle('0',47,47),false,'enemy/river-facing cells cannot host a friendly start');
+ assert.equal(sim.deploySquadBeforeBattle('99',18,22),false);
+ assert.equal(sim.deploySquadBeforeBattle('0',-2,22),false);
+ sim.step(.1);
+ assert.equal(sim.deploySquadBeforeBattle('0',18,22),false,
+  'A squad cannot teleport when the real-time battle has started');
 });
-test('free map cell selection, faster turn tempo, and job-based groups stay wired',()=>{
- const engine=createObjectiveTurnEngine({groupIds:[1],getGroups:()=>[{id:1,alive:5,initial:5,hp:100}]});
- assert.equal(engine.begin().phase,'planning');
- assert.equal(engine.setMove(1,'point','105,118'),true);
- assert.equal(engine.snapshot().ordersByGroup[1].targetId,'105,118');
- assert.equal(engine.start(),true);
- assert.equal(engine.status().remaining,20);
- engine.update(20);
- assert.equal(engine.status().phase,'acting');
- assert.equal(engine.status().remaining,4);
- const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
- const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
- assert.match(panel,/getLegalMapPoint/);
- assert.match(panel,/engine.setMove\(g.id,'point'/);
- assert.match(battle,/order.move==='point'/);
- assert.match(battle,/getGroupLabel:groupId=>turnGroupLabels/);
- assert.match(battle,/battleAudio.setPhase\('battle'\)/);
- assert.match(battle,/announceBattleLoot/);
+test('mobile map keeps coordinate mapping stable across viewport aspect',()=>{
+ assert.deepEqual(battleMapCell(200,200,{left:0,top:0,width:400,height:400},{
+  worldSize:232,zoom:1,centerX:116,centerZ:116}),{x:116,z:116});
+ assert.deepEqual(battleMapCell(0,0,{left:0,top:0,width:400,height:400},{
+  worldSize:232,zoom:2,centerX:116,centerZ:116}),{x:58,z:58});
+ assert.equal(battleMapCell(700,0,{left:0,top:0,width:400,height:400}),null);
 });
-test('all movement and strategy choices are button and map based, without select dropdowns',()=>{
- const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
- assert.ok(TURN_MOVE_OPTIONS.some(option=>option.id==='building'));
- assert.ok(TURN_MOVE_OPTIONS.some(option=>option.id==='bridge_front'));
- assert.ok(!TURN_ACTION_OPTIONS.some(option=>option.id==='item'));
- assert.match(panel,/objectiveTurnMap/);
- assert.match(panel,/data-pager/);
- assert.match(panel,/data-action-id/);
- assert.match(panel,/data-end-item-id/);
- assert.match(panel,/useEndTurnItem/);
- assert.match(panel,/objectiveTurnIntelRows/);
- assert.doesNotMatch(panel,/<select(?:\s|>)/i);
+test('turn control is never mounted and realtime squad picker is wired',()=>{
+ const battle=read('../tactics-wireframe.html');
+ const source=read('../src/battle-realtime-commands.js');
+ const style=read('../src/battle-realtime-commands.css');
+ assert.doesNotMatch(battle,/import \{installObjectiveTurnPanel\}/);
+ assert.match(battle,/const objectiveTurnUI=null/);
+ assert.match(battle,/realtimeCommandUI\?\.openDeployment\(\)/);
+ assert.match(battle,/setBattlePaused\(false\)/);
+ assert.match(battle,/deploySquadBeforeBattle\(id,point\.x,point\.z,0\)/);
+ assert.match(battle,/onMove:\(id,point\)=>/);
+ assert.match(battle,/issueIndividualSquadOrder\('move',point\)/);
+ assert.match(battle,/!hasSquadCommander\(id\)\|\|!canChangeSquadOrder\(id\)/);
+ assert.match(battle,/onOrder:\(id,mode\)=>/);
+ assert.match(battle,/document\.body\.classList\.add\('battle-realtime-clean'\)/);
+ assert.doesNotMatch(battle,/'TURN開始：/);
+ assert.match(style,/body\.battle-realtime-clean #battleTopDock/);
+ assert.match(style,/body\.battle-realtime-clean #battleRpgSquadHud/);
+ assert.match(source,/realtimeBattleDock/);
+ assert.match(source,/realtimeBattleCanvas/);
+ assert.match(source,/mapPoint\(px,pz\)/);
+ assert.match(source,/pointermove/);
+ assert.match(source,/realtimeStart/);
+ assert.match(source,/onStart\(\)/);
+ assert.doesNotMatch(source,/<select[^>]*data-turn/);
 });
-test('battle starts directly without opening wizard and shows live ally job power',()=>{
- const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
- const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
- const styles=readFileSync(new URL('../src/battle-objective-turn-panel.css',import.meta.url),'utf8');
- assert.doesNotMatch(battle,/setOpeningWizardPage\('formation'\)/);
- assert.doesNotMatch(battle,/const openingPlan=document\.createElement/);
- assert.match(battle,/setBattlePaused\(true\)/);
- assert.match(battle,/loading\.hidden=true/);
- assert.match(battle,/updateUI\(\);animate\(\)/);
- assert.match(battle,/getGroupJobs:groupId=>jobPowerBreakdown/);
- assert.match(battle,/jobs:jobPowerBreakdown\(alive\)/);
- assert.match(panel,/getGroupJobs=\(\)=>\[\]/);
- assert.match(panel,/objectiveTurnJobs/);
- assert.match(panel,/objectiveIntelJobs/);
- assert.match(styles,/objectiveTurnJobs/);
- assert.match(styles,/body\.objective-turn-enabled #battleTeamCameraSwitches/);
- assert.match(styles,/body\.objective-turn-enabled #battleTopDock/);
- assert.match(battle,/const turnBottom=document\.body\.classList\.contains\('objective-turn-enabled'\)/,
-  'Focused squad badge follows the actual visible turn HUD instead of the hidden dock');
- assert.match(styles,/body\.objective-turn-enabled #battleZoomSquadBadge/,
-  'Narrow mobile turn HUD keeps the focused squad identity legible');
-});
-test('the tactical map supports enlarge, zoom, pinch and pan without losing target selection',()=>{
- const panel=readFileSync(new URL('../src/battle-objective-turn-panel.js',import.meta.url),'utf8');
- const styles=readFileSync(new URL('../src/battle-objective-turn-panel.css',import.meta.url),'utf8');
- assert.match(panel,/data-map-zoom="in"/);
- assert.match(panel,/data-map-zoom="out"/);
- assert.match(panel,/data-map-zoom="reset"/);
- assert.match(panel,/data-map-expand/);
- assert.match(panel,/setPointerCapture/);
- assert.match(panel,/pointermove/);
- assert.match(panel,/pointerDist/);
- assert.match(panel,/pointerup/);
- assert.match(panel,/addEventListener\('click',event=>/);
- assert.match(panel,/current.type==='touch'\?18:8/);
- assert.match(panel,/wheel/);
- assert.match(panel,/zoomMap/);
- assert.match(panel,/chooseChoice\(index\)/);
- assert.match(styles,/#objectiveTurnMapStep\.expanded/);
+test('battle inline module still parses after removing objective-turn controller',()=>{
+ const html=read('../tactics-wireframe.html');
+ const blocks=[...html.matchAll(/<script[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/g)];
+ assert.ok(blocks.length,'Expected a browser ES module in tactical game');
+ for(const m of blocks)new vm.SourceTextModule(m[1],{identifier:'tactics-wireframe-inline'});
 });

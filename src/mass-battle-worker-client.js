@@ -63,6 +63,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     step(){if(!failed&&!paused){pending=Math.min(3,pending+1);sendNext();return true;}return false;},
     setPaused(value){paused=Boolean(value);if(paused)pending=0;else sendNext();},
     setStrategy(strategy){if(!failed)worker.postMessage({type:'strategy',strategy});},
+    deploySquadBeforeBattle(squadId,x,z,team=0){if(!failed)worker.postMessage({type:'squadDeployment',squadId,x,z,team});},
     setSquadDestination(squadId,x,z){if(!failed)worker.postMessage({type:'squadDestination',squadId,x,z});},
     warpStrategist(unitId,x,z){if(!failed)worker.postMessage({type:'strategistWarp',unitId,x,z});},
     healItem(unitId,amount){if(!failed)worker.postMessage({type:'healItem',unitId,amount});},

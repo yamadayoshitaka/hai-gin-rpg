@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>灰銀戦記 ― 沈黙の星鐘 | 目的ターン軍団戦 TURN10</title>
+<title>灰銀戦記 ― 沈黙の星鐘 | リアルタイム軍団戦</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
@@ -13,7 +13,7 @@ body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:1
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
 </style><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"></head>
-<body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>TURN10目的制・最大10班 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.69</b><small>リアルタイム戦闘・最大10班 / タップで移動指示</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=rpg-status1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-realtime1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=rpg-status1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {installObjectiveTurnPanel} from './src/battle-objective-turn-panel.js?v=20261119-touch-enditems';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-realtime1';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=rpg-status1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
 import * as THREE from 'three';
@@ -7315,8 +7315,7 @@ function positionSquadMenuBelowLabel(id,force=false){
 function openSquadTactics(id){
  if(!TOWN_MODE){
   if(!battleReady||finished||battleCeremony.locked)return false;
-  if(objectiveTurnUI){objectiveTurnUI.open();return true;}
-  return false;
+  return realtimeCommandUI?.selectSquad(id)??false;
  }
  closeSquadCircleInfo();
  if(!battleReady||finished||!squadIds.includes(String(id))||pendingCircleTarget)return false;
@@ -8995,7 +8994,7 @@ let trackedAllySquadId=squadIds[0]??null;
 battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
-  if(team===0)trackedAllySquadId=String(id);
+  if(team===0){trackedAllySquadId=String(id);realtimeCommandUI?.selectSquad(id);}
   else selectedEnemySquadId=String(id);
   for(const [key,marker] of squadMarkers)
    marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
@@ -9013,8 +9012,8 @@ function refreshBattleRpgSquadHud(sums){
   itemTypes:ROOM_ITEM_TYPES,auras:activeSquadBuffVfx,skirmishBuffs:skirmishSquadItemBuffs,
   massDebuffs:massSim?.squadDebuffs,skirmishDebuffs:skirmishStrategicDebuffs
  });
- battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked&&
-  document.getElementById('battleObjectiveTurnPanel')?.hidden!==false});
+ battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked});
+ realtimeCommandUI?.update(rows);
 }
 window.getBattleRpgSquadHudQA=()=>({
  rows:battleRpgHud?.rows||[],selected:battleRpgHud?.selected||'',visible:battleRpgHud?.visible||false
@@ -9099,7 +9098,7 @@ const threeGroupPanel=!TOWN_MODE?createBattleThreeGroupPanel({
  enemyInitial:storyRequest?.enemyCount??(massSim?.sideCount??actors.filter(a=>a.team===1).length),
  allowRecompose:!massSim,
  onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
- onStrategy:groupId=>{if(battleReady&&!finished)objectiveTurnUI?.open();},
+ onStrategy:(groupId,id)=>{if(battleReady&&!finished){const squad=id||squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[String(sid)])===groupId);if(squad){realtimeCommandUI?.selectSquad(squad);realtimeCommandUI?.openMove();}}},
  onInspect:id=>openVitals(id),
  onReinforce:result=>{
   const point=squadCenter(result.toId,0);
@@ -9765,107 +9764,72 @@ const jobPowerBreakdown=units=>{
  return [...groups.values()].map(({name,count,members})=>({name,count,power:squadPower(members)}))
   .sort((a,b)=>b.power-a.power||b.count-a.count||a.name.localeCompare(b.name,'ja'));
 };
-const objectiveTurnUI=!TOWN_MODE?installObjectiveTurnPanel({
- groupIds:Array.from({length:10},(_,i)=>i+1),
- getGroups:turnGroupOverview,
- getMoveTargets:getObjectiveMoveTargets,
- getGroupOrigin:turnGroupOrigin,
- getGroupLabel:groupId=>turnGroupLabels.get(Number(groupId))||'混成隊',
- getBattleStatusRows:()=>battleRpgHud?.rows||[],
- getLegalMapPoint:turnLegalPoint,
+const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
+let realtimeCommandUI=null;
+realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  worldSize:WORLD_SIZE,
- drawMapBackground:(ctx,w,h)=>ctx.drawImage(miniBase,0,0,w,h),
- getMapChoices:groupId=>{
-  const origin=turnGroupOrigin(groupId);
-  if(!origin)return [];
-  const choices=[];
-  for(const move of TURN_MOVE_OPTIONS){
-   if(move.id==='point')continue; // Arbitrary map cells are picked on the canvas.
-   if(move.id==='building'||move.id==='bridge_front'){
-    for(const target of getObjectiveMoveTargets(groupId,move.id))
-     choices.push({move:move.id,targetId:target.id,label:move.label+'：'+target.label,x:target.x,z:target.z});
-    continue;
-   }
-   const point=move.id==='hold'?origin:
-    move.id==='retreat'?turnLegalPoint(origin.x+(origin.x<WORLD_SIZE/2?-14:14),origin.z):
-    turnDestination(groupId,{move:move.id,targetId:null});
-   if(point)choices.push({move:move.id,targetId:null,label:move.label,x:point.x,z:point.z});
-  }
-  return choices;
- },
- getGroupJobs:groupId=>jobPowerBreakdown(squadRoster.filter(u=>
-  u.team===0&&turnGroupBySquad.get(String(u.squadId))===Number(groupId))),
- getGroupPowers:()=>{
-  const power={};
-  for(let group=1;group<=10;group++)
-   power[group]=squadPower(squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.hp>0&&u.alive!==false&&
-    turnGroupBySquad.get(String(u.squadId))===group));
-  return power;
- },
- getEnemyGroups:()=>enemySquadIds.map((id,i)=>{
-  const all=squadRoster.filter(u=>u.team===1&&!u.isStrategist&&String(u.squadId)===String(id));
+ getMapBackground:()=>miniBase,
+ getSquads:()=>squadIds.map(id=>{
+  const all=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
   const alive=all.filter(u=>u.hp>0&&u.alive!==false);
-  const center=squadCenter(id,1);
-  return {id:i+1,alive:alive.length,hp:alive.reduce((n,u)=>n+(Number(u.hp)||0),0),
-   maxHp:all.reduce((n,u)=>n+(Number(u.maxHp)||0),0),power:squadPower(alive),jobs:jobPowerBreakdown(alive),x:center?.x,z:center?.z};
+  const center=squadCenter(id,0);
+  return {team:0,id,label:squadPrimaryJob(id)+'隊・'+squadName(id),job:squadPrimaryJob(id),
+   x:center?.x??0,z:center?.z??0,alive:alive.length,total:all.length,
+   hp:alive.reduce((n,u)=>n+(u.hp||0),0),
+   maxHp:all.reduce((n,u)=>n+(u.maxHp||0),0)};
  }),
- getItems:()=>{
-  const stock=new Map();
-  for(const item of allyItemStocks()){
-   const type=ROOM_ITEM_TYPES[item.itemId];
-   if(!type||!['heal','squad_buff'].includes(type.kind))continue;
-   const entry=stock.get(item.itemId)||{id:item.itemId,name:type.name,count:0};
-   entry.count+=(Number(item.quantity)||0);stock.set(item.itemId,entry);
-  }
-  return [...stock.values()].map(item=>({id:item.id,label:item.name+' ×'+item.count}));
+ getEnemies:()=>enemySquadIds.map(id=>({team:1,id,...(squadCenter(id,1)||{})})),
+ getLegalPoint:(x,z)=>turnLegalPoint(x,z),
+ canDeploy:(x,z)=>x<=(massSim?.riverXAt(z)??riverAt(z))-9,
+ onDeploy:(id,point)=>{
+  if(!massSim)return false; // Do not move detached skirmish actors with no authoritative grid.
+  const applied=massSim.deploySquadBeforeBattle(id,point.x,point.z,0);
+  if(applied&&massWorker?.active)massWorker.deploySquadBeforeBattle(id,point.x,point.z,0);
+  return applied;
  },
- hasArrived:(groupId,order)=>{
-  const destination=objectiveTurnDestinations.get(Number(groupId));
-  if(!destination)return true;
-  const centers=turnGroupSquads(groupId).map(id=>squadCenter(id,0)).filter(Boolean);
-  if(!centers.length)return true;
-  return centers.filter(center=>Math.hypot(center.x-destination.x,center.z-destination.z)<=8).length>=Math.max(1,Math.ceil(centers.length*.6));
+ onStart:()=>{
+  battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
+  battleAudio.setPhase('march');
+  setBattlePaused(false);
+  battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
+  battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
+   text:'配置完了！各隊を選んで地図で移動先を指示してください。戦闘はリアルタイムで進行します。'});
+  log('戦闘開始：リアルタイム移動・交戦中。各隊の移動先は地図タップで変更できます。');
  },
- onPause:value=>setBattlePaused(value),
- onMove:(groupId,order)=>{
-  const ids=turnGroupSquads(groupId);
-  const destination=turnDestination(groupId,order);
-  objectiveTurnDestinations.set(Number(groupId),destination);
-  const mode=order.move==='retreat'?'retreat':destination?'move':'hold';
-  const prior=selectedSquadId;
-  try{for(const id of ids){
-   if(!squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)))continue;
-   selectedSquadId=String(id);
-   issueIndividualSquadOrder(mode,mode==='move'?destination:null,true);
-  }}finally{selectedSquadId=prior;}
+ onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
+ onFocus:id=>{
+  const center=squadCenter(id,0);if(!center)return;
+  const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
+  followCamera=false;battleViewMode='commander';focusedHumanUnitId=null;
+  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.2,z),new THREE.Vector3(-12,13,18));
+  manualCameraFocusUntil=performance.now()+4500;setCameraActive(null);
  },
- onAction:(groupId,order)=>{
-  const ids=turnGroupSquads(groupId);
-  // Ranged jobs auto-fire from their hold position; other jobs guard the position.
-  // Support uses the existing defense/healing AI; do not turn it into a charge.
-  const mode=order.action==='ranged'?'hold':order.action==='support'?'defend':order.action;
-  const prior=selectedSquadId;
-  try{for(const id of ids){
-   if(!squadRoster.some(u=>u.team===0&&u.hp>0&&String(u.squadId)===String(id)))continue;
-   selectedSquadId=String(id);issueIndividualSquadOrder(mode,null,true);
-  }}finally{selectedSquadId=prior;}
+ onMove:(id,point)=>{
+  if(!battleReady||finished||battleCeremony.locked||
+    !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueIndividualSquadOrder('move',point);}
+  finally{selectedSquadId=prior;}
  },
- onItem:(groupId,itemId)=>{
-  const candidates=turnGroupSquads(groupId).filter(id=>squadRoster.some(u=>
-   u.team===0&&u.hp>0&&u.alive!==false&&String(u.squadId)===String(id)));
-  const target=ROOM_ITEM_TYPES[itemId]?.kind==='heal'?candidates.find(id=>
-   squadRoster.some(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.hp<u.maxHp)):
-   candidates[0];
-  const used=Boolean(target&&performSquadBattleItem(itemId,target,{automatic:true,turnEnd:true}));
-  if(!used)log('第'+groupId+'隊：道具を使用できません。所持数・対象・効果を確認してください。');
-  return used;
+ onOrder:(id,mode)=>{
+  if(!battleReady||finished||battleCeremony.locked||
+    !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueIndividualSquadOrder(mode);}
+  finally{selectedSquadId=prior;}
  },
- onReport:rows=>{
-  const casualties=rows.reduce((n,x)=>n+x.losses,0);
-  log('TURN 終了：戦死 '+casualties+'人。次ターンも移動先→行動を引き継ぎます。');
- }
+ onRoster:()=>document.body.classList.toggle('battle-roster-open'),
+ onMenu:()=>$('battleMenuToggle').click(),
+ onPause:()=>setBattlePaused(!paused),
+ getPaused:()=>paused
 }):null;
-window.getBattleObjectiveTurnsQA=()=>objectiveTurnUI?.snapshot()??null;
+window.getBattleObjectiveTurnsQA=()=>null;
+window.getBattleRealtimeQA=()=>({
+ enabled:Boolean(realtimeCommandUI),started:Boolean(realtimeCommandUI?.started),
+ selectedSquadId:realtimeCommandUI?.selectedId||null,
+ mapOpen:Boolean(realtimeCommandUI?.isMapOpen),mode:realtimeCommandUI?.mode||null,
+ paused,battleReady
+});
 // Switch from march to combat score on actual first contact.
 let firstBattleEngagement=false,lastBattleContactCheck=-Infinity;
 function updateBattleEngagement(){
@@ -10613,8 +10577,7 @@ function animate(){
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
  const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
  battleSituationPause.update(bankDelta);
- if(objectiveTurnUI&&battleReady&&!finished&&battleCeremony.state!=='intro'&&battleCeremony.state!=='outro')objectiveTurnUI.begin();
- if(objectiveTurnUI&&battleReady&&!finished)objectiveTurnUI.update(paused?0:dt,bankDelta);
+ // Real-time combat: no turn engine, turn timer or automatic pause.
  updateBattleEngagement();
  if(tacticalPlanningActive&&!finished){
   tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
@@ -11219,27 +11182,21 @@ async function finishBattleLoading(){
   loadingProgress('ステージBGMを読み込み中…',99);
   const recordingLoaded=await stageBgmReady;
   loadingProgress((recordingLoaded?'音楽・描画準備完了':'内蔵BGMで再生準備完了')+
-   '：ターン準備完了',100);
+   '：初期配置の準備完了',100);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   refreshCommanderOrderOptions();
-  // Skip the opening formation wizard. Preserve the inn/campaign deployment.
+  // Each allied squad can be positioned once, before the first AI tick.
   for(const id of squadIds)setStartingSquadOrder(0,id,'hold');
   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
   followSelectedCommander();
   battleReady=true;
-  setBattlePaused(true); // Hold all squads until the first turn is committed.
+  setBattlePaused(true);
   loading.hidden=true;
   initialCommanderCinematicPending=null;
-  battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
-  battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
-   text:'戦闘準備完了。地図で移動先を選び、その後に作戦を設定してください。'});
-  // Browser audio can require a user gesture; the turn map is the new first interaction.
-  document.getElementById('battleObjectiveTurnPanel')?.addEventListener('pointerdown',()=>{
-   battleAudio.unlock().catch(()=>{});
-   reportSpeech.unlock();
-  },{once:true});
+  document.body.classList.add('battle-realtime-clean');
+  realtimeCommandUI?.openDeployment();
   clock.getDelta();
-  log('TURN開始：開戦前画面を省略し、隊列を維持して地図→作戦へ進みます');
+  log('開戦前：初期配置を決めてからリアルタイム戦闘を開始します');
   updateUI();animate();
  }catch(error){
   loadingFailure=error;
