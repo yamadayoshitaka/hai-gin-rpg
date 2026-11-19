@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-job-special1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-portrait-icon-plan3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-radar30s1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-portrait-icon-plan3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,11 +887,11 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-job-special1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-radar30s1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-job-special1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-job-special1';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-radar30s1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -9013,7 +9013,9 @@ let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infin
 let trackedAllySquadId=squadIds[0]??null;
 battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  onCommand:(team,id)=>{
-  if(team!==0||!battleReady||finished||battleCeremony.locked)return;
+  // The HUD may still receive a click while a short non-blocking cut-in is fading.
+  // Do not silently discard the requested strategy menu.
+  if(team!==0||!battleReady||finished)return;
   trackedAllySquadId=String(id);
   realtimeCommandUI?.showSquadControls(id);
  },
@@ -9969,6 +9971,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  onUseItem:(id,itemId,arrival=false)=>performSquadBattleItem(itemId,id,{arrival}),
  getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
  onSpecial:(id,action,targetId,arrival=false)=>issueRealtimeSpecial(id,action,targetId,arrival),
+ onEnemySelect:id=>battleRpgHud?.select(1,id,{focus:true}),
  onRoster:()=>document.body.classList.toggle('battle-roster-open'),
  onMenu:()=>$('battleMenuToggle').click(),
  onPause:()=>setBattlePaused(!paused),
@@ -9979,7 +9982,10 @@ window.getBattleRealtimeQA=()=>({
  enabled:Boolean(realtimeCommandUI),started:Boolean(realtimeCommandUI?.started),
  selectedSquadId:realtimeCommandUI?.selectedId||null,
  mapOpen:Boolean(realtimeCommandUI?.isMapOpen),mode:realtimeCommandUI?.mode||null,
- paused,battleReady
+ paused,battleReady,
+ controlsOpen:Boolean(realtimeCommandUI?.controlsOpen),
+ planningSeconds:realtimeCommandUI?.planningSeconds??null,
+ radarPins:realtimeCommandUI?.radarPins||[]
 });
 // Switch from march to combat score on actual first contact.
 let firstBattleEngagement=false,lastBattleContactCheck=-Infinity;
