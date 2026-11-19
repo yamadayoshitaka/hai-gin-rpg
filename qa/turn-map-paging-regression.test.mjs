@@ -51,7 +51,7 @@ test('turn control is never mounted and realtime squad picker is wired',()=>{
  assert.match(battle,/onMove:\(id,point\)=>/);
  assert.match(battle,/issueIndividualSquadOrder\('move',point\)/);
  assert.match(battle,/!hasSquadCommander\(id\)\|\|!canChangeSquadOrder\(id\)/);
- assert.match(battle,/onOrder:\(id,mode\)=>/);
+ assert.match(battle,/onOrder:\(id,mode,arrival=false\)=>/);
  assert.match(battle,/document\.body\.classList\.add\('battle-realtime-clean'\)/);
  assert.doesNotMatch(battle,/'TURN開始：/);
  assert.match(style,/body\.battle-realtime-clean #battleTopDock/);
@@ -125,7 +125,8 @@ test('accepted map move reveals an action picker and defers command until arriva
  assert.doesNotMatch(source,/id="realtimeMapActionSheet" hidden/,'action controls remain visible before a move');
  assert.match(source,/arrivalActions\.set\(id,\{command,point:\{\.\.\.actionDestination\}\}\)/);
  assert.match(source,/Math\.hypot\(own\.x-entry\.point\.x,own\.z-entry\.point\.z\)>3\.5/);
- assert.match(source,/if\(onOrder\(id,entry\.command\)\)arrivalActions\.delete\(id\)/);
+ assert.match(source,/onOrder\(id,entry\.command,true\)/);
+ assert.match(source,/if\(accepted\)arrivalActions\.delete\(id\)/);
  assert.match(source,/deploymentActions\.set\(id,command\)/);
  assert.match(source,/setBattleJobPortrait\(face,own\[index\]\?\.job,own\[index\]\?\.id,0\)/);
  assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapActionButtons/);
