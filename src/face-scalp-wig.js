@@ -333,18 +333,27 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  if(!attr)throw Error('True 3D source head required');
  const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const minHeight=box.min.y+d.y*.82;
+ // Extend the anatomical underlay into the crown-to-temple seam. The
+ // previous 82%-height / 27%-width window left a visible bare ring when
+ // parted locks exposed the lateral crown. Keep the frontal hairline high.
+ const minHeight=box.min.y+d.y*.77;
  let triangles=0;
  for(let t=0;t+2<n;t+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
   const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
-  if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*.27||
-   Math.abs(mid.z-c.z)>d.z*.25)continue;
-  // Never extend this cover over the forehead or brows. Intact donor
-  // triangles entirely above the upper hairline are the only source.
-  if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
+  const front=(mid.z-c.z)/Math.max(d.z,1e-6);
+  const hairline=front>.12?box.min.y+d.y*.85:minHeight;
+  if(mid.y<hairline||
+   Math.abs(mid.x-c.x)>d.x*.335||
+   Math.abs(mid.z-c.z)>d.z*.32)continue;
+  // Guard every vertex: a passing centroid must not paint a wedge
+  // across the forehead. Posterior scalp retains the lower coverage.
+  if(points.some(p=>p.y<((p.z-c.z)/Math.max(d.z,1e-6)>.12?
+   box.min.y+d.y*.85:box.min.y+d.y*.74)))continue;
+  const area=points[1].clone().sub(points[0]).cross(
+   points[2].clone().sub(points[0])).lengthSq();
+  if(!Number.isFinite(area)||area<Math.pow(d.x,4)*1e-12)continue;
   // Source head triangles can have reversed winding after clipping or
   // donor retargeting. Keep the underlay front-facing with its scalp normals.
   const sourceFace=points[1].clone().sub(points[0]).cross(
@@ -1199,7 +1208,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // Shared clump direction, varied fibre cross sections. The 10x lanes
    // remain static, preserving the Android physics and triangle budget.
    const clump=Math.floor(i/9),clumpPhase=clump*2.39996323;
-   const radius=(half*fine)*(fiberMultiplier>=10?1.24:1.8)*
+   const radius=(half*fine)*(fiberMultiplier>=10?.68:1.8)*
     (.93+.07*Math.sin(clumpPhase));
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
@@ -1207,16 +1216,25 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     for(const j of fineSteps){
      const p=strand.points[j],prev=strand.points[Math.max(0,j-1)],
       next=strand.points[Math.min(segments,j+1)];
-     const tangent=next.clone().sub(prev).normalize();
-     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z).normalize();
+     // Keep a stable local fibre frame at coincident guide stations and
+     // crown-centre roots. Arbitrary world-X ribbons create visible spikes.
+     const tangent=next.clone().sub(prev);
+     if(tangent.lengthSq()<1e-12)tangent.set(0,-1,0);
+     tangent.normalize();
+     const normal=new THREE.Vector3(p.x-center.x,0,p.z-center.z);
+     if(normal.lengthSq()<1e-12)normal.set(0,0,1);
+     normal.normalize();
      let across=new THREE.Vector3().crossVectors(tangent,normal);
-     if(across.lengthSq()<1e-9)across.set(1,0,0);
+     if(across.lengthSq()<1e-9){
+      across.crossVectors(tangent,new THREE.Vector3(0,1,0));
+      if(across.lengthSq()<1e-9)across.crossVectors(tangent,new THREE.Vector3(1,0,0));
+     }
      across.normalize();
      const t=j/segments;
      const rootFade=Math.min(1,t*7);
      // Additional static fibre curl follows the existing scalp-rooted guides.
-     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00065:.0012)+
-      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00020:.00033))*d.x*rootFade;
+     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00024:.0012)+
+      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00009:.00033))*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
      // Stagger fine strand tips; avoid nine blunt, coplanar endings.
      const stagger=.94-.09*fract((i+1)*.75487766+(lane+1)*.61803398);
