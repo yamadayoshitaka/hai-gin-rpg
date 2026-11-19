@@ -182,7 +182,7 @@ export function createSculpture(spec,detail='high'){
    }));
  };
  const tube=(parent,shade,points,radius=.04,{
-   name=null,capEnds=false,taper=1
+   name=null,capEnds=false,taper=1,glow=false
  }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
    const [segments,radial]=resolution.tube;
@@ -218,7 +218,7 @@ export function createSculpture(spec,detail='high'){
      geo.computeVertexNormals();
      geo.computeBoundingSphere();
    }
-   const mesh=own(attach(parent,geo,shade,{name:name||shade}));
+   const mesh=own(attach(parent,geo,shade,{name:name||shade,glow}));
    if(capEnds){
      mesh.userData.cappedTubularSkin=true;
      mesh.userData.endCapTriangles=radial*2;
