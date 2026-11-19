@@ -127,3 +127,40 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
   max-height:27dvh;width:min(100%,27dvh,270px)}
 }
+
+/* 2026-11-19: keep map action selection visible, while zoom stays on its left. */
+#realtimeBattleMapOverlay .realtimeMapViewport{
+ display:flex;align-items:center;justify-content:center;gap:6px;
+ width:100%;min-width:0;flex:0 1 auto}
+#realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom{
+ display:flex;flex-direction:column;flex:0 0 64px;align-self:flex-start;
+ align-items:stretch;gap:5px;min-width:0;margin:0}
+#realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom button{
+ min-height:41px;padding:4px 2px;font:800 11px/1.2 system-ui}
+#realtimeBattleMapOverlay .realtimeMapViewport #realtimeMapScale{
+ margin:1px 0 0;text-align:center;white-space:nowrap}
+#realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas,
+#realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+ width:min(calc(100% - 70px),43dvh,420px);max-width:calc(100% - 70px);
+ max-height:43dvh;flex:0 1 auto}
+#realtimeBattleMapOverlay .realtimeMapActionSheet{
+ display:flex;flex:0 0 auto;gap:4px}
+#realtimeBattleMapOverlay .realtimeMapActionSheet .realtimeMapActionButtons button.selected,
+#realtimeBattleMapOverlay .realtimeMapActionSheet .realtimeMapActionButtons button[aria-pressed="true"]{
+ background:#396f50!important;border-color:#f2d184!important;
+ box-shadow:inset 0 0 0 1px #ffe3a4}
+#realtimeBattleMapOverlay .realtimeActionSkip.selected{color:#ffdfa1!important}
+@media(max-width:600px){
+ #realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom{flex-basis:59px}
+ #realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom button{min-height:39px;font-size:10px}
+ #realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas,
+ #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+  width:min(calc(100% - 65px),39dvh,360px);max-width:calc(100% - 65px);
+  max-height:39dvh}
+}
+@media(max-height:560px){
+ #realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas,
+ #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+  width:min(calc(100% - 65px),34dvh,310px);max-height:34dvh}
+ #realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom button{min-height:34px}
+}
