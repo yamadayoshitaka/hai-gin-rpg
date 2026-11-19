@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-icon-plan-pager3"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-portrait-icon-plan2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-job-special1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-portrait-icon-plan3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -887,10 +887,11 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-icon-plan-pager3';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-job-special1';
+import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-job-special1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-portrait-icon-plan2';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-job-special1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=rpg-status1';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -6867,7 +6868,7 @@ function squadCommanderUnavailableReason(id){
  return commandGroupIds(id).some(sid=>!individualCommanderUnavailableReason(sid))?'':'班に指揮可能な軍師がいません';
 }
 function hasSquadCommander(id){return squadCommanderUnavailableReason(id)==='';}
-const MISSION_LABELS={unlock_door:'敵門の解錠',roof_unlock:'屋上からの解錠',fortify_lock:'味方門の施錠強化',destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
+const MISSION_LABELS={unlock_door:'敵門の解錠',roof_unlock:'屋上からの解錠',fortify_lock:'味方門の施錠強化',destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',break_structure:'建物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
 function clearMissionPreview(){
  pendingSquadMission=null;$('missionTargetConfirm').hidden=true;
  if(missionPreviewBox){scene.remove(missionPreviewBox);missionPreviewBox.geometry.dispose();missionPreviewBox.material.dispose();missionPreviewBox=null;}
@@ -7267,6 +7268,7 @@ function issueIndividualSquadOrder(mode,point=null,silent=false){
   if((point.type.startsWith('burn_')||point.type==='extinguish_fire')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
   if(point.type==='repair_structure'&&!squadMembers.some(a=>['mage','ninja'].includes(a.jobId)))accepted=false;
   if(point.type==='demolish_structure'&&!squadMembers.some(a=>a.jobId==='ninja'))accepted=false;
+  if(point.type==='break_structure'&&!squadMembers.some(a=>['mage','summoner'].includes(a.jobId)))accepted=false;
   if(accepted&&point.type==='burn_tree'&&!skirmishActions.objects.some(o=>o.id===point.targetId))
    skirmishActions.registerStructure({id:point.targetId,type:'tree',x:point.x,z:point.z,hp:85,
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
@@ -9787,6 +9789,89 @@ const jobPowerBreakdown=units=>{
  return [...groups.values()].map(({name,count,members})=>({name,count,power:squadPower(members)}))
   .sort((a,b)=>b.power-a.power||b.count-a.count||a.name.localeCompare(b.name,'ja'));
 };
+
+/** Real squad context actions, all resolved from authoritative battle objects and inventory. */
+function realtimeMemberLocation(unit){
+ return {x:Number(unit?.x??unit?.cell?.x),z:Number(unit?.z??unit?.cell?.z)};
+}
+function realtimeJobMembers(squadId){
+ return (massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(squadId)&&
+  u.hp>0&&u.alive!==false&&!u.isStrategist);
+}
+function realtimeItemStocks(){
+ const counts=new Map();
+ for(const stock of allyItemStocks()){
+  if(!['heal','squad_buff'].includes(ROOM_ITEM_TYPES[stock.itemId]?.kind))continue;
+  counts.set(stock.itemId,(counts.get(stock.itemId)||0)+stock.quantity);
+ }
+ return [...counts].map(([id,quantity])=>({id,label:ROOM_ITEM_TYPES[id].name,quantity}));
+}
+function realtimeSpecialTargets(id,action){
+ const jobs=new Set(realtimeJobMembers(id).map(u=>u.jobId));
+ const allowed=action==='destroy_bridge'?['mage','summoner','ninja']:
+  action==='break_structure'?['mage','summoner']:
+  action==='burn_building'?['mage']:['thief'];
+ if(!allowed.some(job=>jobs.has(job)))return [];
+ if(action==='steal_item'){
+  const thieves=realtimeJobMembers(id).filter(u=>u.jobId==='thief');
+  const stocks=roomItemRegistry.owned().filter(s=>s.quantity>0);
+  const enemy=(massSim?.units??actors).filter(u=>u.team===1&&u.hp>0&&u.alive!==false);
+  return enemy.filter(u=>stocks.some(s=>String(s.ownerId)===String(u.id))&&
+   thieves.some(thief=>{
+    const from=realtimeMemberLocation(thief),target=realtimeMemberLocation(u);
+    return Number.isFinite(from.x)&&Number.isFinite(target.x)&&
+     Math.hypot(from.x-target.x,from.z-target.z)<=8;
+   })).slice(0,40).map(u=>{
+    const stock=stocks.find(s=>String(s.ownerId)===String(u.id));
+    return {id:String(u.id),label:'敵 '+String(u.job?.name||u.jobId||u.id)+'：'+
+     (ROOM_ITEM_TYPES[stock.itemId]?.name||stock.name||stock.itemId)};
+   });
+ }
+ const kind=action==='destroy_bridge'?'bridge':action==='unlock_door'?'door':'building';
+ const objects=(massSim?.actions?.objects??skirmishActions?.objects??[]);
+ const origin=squadCenter(id,0);
+ const distance=o=>origin?Math.hypot(o.x-origin.x,o.z-origin.z):Infinity;
+ return objects.filter(o=>o.alive&&o.category==='structure'&&o.type===kind&&
+  (kind!=='door'||(o.team===1&&o.locked))&&
+  Number.isInteger(o.x)&&Number.isInteger(o.z))
+  .sort((a,b)=>distance(a)-distance(b))
+  .slice(0,60).map((o,index)=>({id:String(o.id),
+   label:(kind==='bridge'?'🌉 橋':kind==='door'?'🔓 敵門':'🏠 建物')+
+    ' '+(index+1)+'（距離'+Math.round(distance(o))+'）'}));
+}
+function issueRealtimeSpecial(id,action,targetId){
+ if(!battleReady||finished||battleCeremony.locked||
+  !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
+ const members=realtimeJobMembers(id);
+ const jobName=squadPrimaryJob(id);
+ if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
+ if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)))return false;
+ if(action==='steal_item'){
+  const thief=members.find(u=>u.jobId==='thief');
+  const enemy=(massSim?.units??actors).find(u=>u.team===1&&
+   String(u.id)===String(targetId)&&u.hp>0&&u.alive!==false);
+  const stack=roomItemRegistry.owned(enemy?.id).find(item=>item.quantity>0);
+  if(!thief||!enemy||!stack||!roomItemRegistry.transfer(enemy.id,thief.id,stack.itemId,1))return false;
+  for(const owner of [thief,enemy]){
+   owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
+    id:item.itemId,name:item.name,quantity:item.quantity
+   }));
+  }
+  recordBattleTreasure(thief,{itemId:stack.itemId,quantity:1});
+  markRibbonOrderIssued(id);
+  const itemName=ROOM_ITEM_TYPES[stack.itemId]?.name||stack.name||'アイテム';
+  battleCeremony.showOrder('🎒 '+squadName(id)+'：盗み成功',itemName+'を1個獲得');
+  log(squadName(id)+'が敵から'+itemName+'を盗んだ');
+  updateUI();return true;
+ }
+ const object=(massSim?.actions?.objects??skirmishActions?.objects??[])
+  .find(o=>o.alive&&o.category==='structure'&&String(o.id)===String(targetId));
+ if(!object)return false;
+ const prior=selectedSquadId;selectedSquadId=String(id);
+ try{return issueIndividualSquadOrder('mission',{
+  type:action,targetId:String(object.id),x:Math.round(object.x),z:Math.round(object.z)
+ });}finally{selectedSquadId=prior;}
+}
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
@@ -9880,6 +9965,10 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   try{return issueIndividualSquadOrder(mode);}
   finally{selectedSquadId=prior;}
  },
+ getAvailableItems:()=>realtimeItemStocks(),
+ onUseItem:(id,itemId)=>useSquadBattleItem(itemId,id),
+ getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
+ onSpecial:(id,action,targetId)=>issueRealtimeSpecial(id,action,targetId),
  onRoster:()=>document.body.classList.toggle('battle-roster-open'),
  onMenu:()=>$('battleMenuToggle').click(),
  onPause:()=>setBattlePaused(!paused),
