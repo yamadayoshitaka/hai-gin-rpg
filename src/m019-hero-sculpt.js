@@ -140,7 +140,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   {x:0,y:.058,z,rx:.074,rz:.078},
   {x:0,y:-.070,z,rx:.076,rz:.081},
   {x:sign*.006,y:-.30,z,rx:.067,rz:.070},
-  {x:sign*.010,y:-.80,z,rx:.056,rz:.062},
+  {x:sign*.010,y:-.50,z,rx:.056,rz:.062},
   {x:sign*M019_SPRAWL_FOOT_X,y:M019_SPRAWL_FOOT_Y,z,
    rx:.046,rz:.052}
  ],{name:'m019-scaled-lower-limb-'+name});
