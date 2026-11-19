@@ -159,6 +159,14 @@ function fittedScalpSurface(model,bone,headBounds){
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
    return {x,y,z,u:.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2)};
   });
+  // Reject collapsed or numerically invalid triangles before uploading the
+  // anatomical scalp. Fiber generation already guards degenerate faces, but
+  // the scalp underlay itself must not contain them (normal/UV artifacts).
+  if(corners.some(p=>!Number.isFinite(p.x+p.y+p.z+p.u)))continue;
+  const abx=corners[1].x-corners[0].x,aby=corners[1].y-corners[0].y,abz=corners[1].z-corners[0].z;
+  const acx=corners[2].x-corners[0].x,acy=corners[2].y-corners[0].y,acz=corners[2].z-corners[0].z;
+  const nx=aby*acz-abz*acy,ny=abz*acx-abx*acz,nz=abx*acy-aby*acx;
+  if(nx*nx+ny*ny+nz*nz<1e-12)continue;
   const us=corners.map(p=>p.u);
   if(Math.max(...us)-Math.min(...us)>.5){
    for(const p of corners)if(p.u<.5)p.u+=1;
