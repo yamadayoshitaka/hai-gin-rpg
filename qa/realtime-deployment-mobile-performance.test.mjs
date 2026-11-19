@@ -83,12 +83,10 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.ok(rosterCalls<=3,'roster snapshots are reused between map taps and UI updates');
  dom.root.querySelector('#realtimeStart').onclick();
  assert.ok(seen.some(x=>x[0]==='start'));
- command.openMove();
- assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
- canvas.tap('pointerdown',{pointerId:2,clientX:120,clientY:120});
- canvas.tap('pointerup',{pointerId:2,clientX:120,clientY:120});
- assert.ok(seen.some(x=>x[0]==='move'));
- assert.ok(command.queuedArrivalActions.includes('1'),'previously selected hold queues on arrival');
+ assert.equal(command.openMove(),false,'standalone movement stays retired');
+ assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,true);
+ assert.equal(seen.some(x=>x[0]==='move'),false,
+  'deployment does not dispatch a live move without a confirmed action and target');
 });
 test('map controls and roster aggregation retain real 3D movement and squad identities',()=>{
  const js=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
