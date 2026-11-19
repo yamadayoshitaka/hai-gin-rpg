@@ -119,7 +119,8 @@ test('job-based tactics expose ninja ranged and real mission / inventory integra
  const mass=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
  assert.match(game,/onSpecial:\(id,action,targetId,arrival=false\)=>issueRealtimeSpecial/);
  assert.match(game,/roomItemRegistry\.transfer\(enemy\.id,thief\.id,stack\.itemId,1\)/);
- assert.match(game,/onUseItem:\(id,itemId,arrival=false\)=>performSquadBattleItem/);
+ assert.match(game,/onUseItem:\(id,itemId,arrival=false\)=>issueCommanderReinforcements/);
+ assert.match(game,/onRally:\(id,type,targets\)=>issueCommanderRally/);
  assert.match(mass,/type==='break_structure'/);
  assert.match(realtime,/showSpecialChoices\('dock'\)/);
  assert.match(realtime,/showSupportChoices\('map'\)/);
