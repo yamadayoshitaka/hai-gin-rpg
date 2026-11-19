@@ -389,3 +389,28 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleDock #realtimeCommandTabs button{font-size:10px;min-height:31px}
  #realtimeBattleDock #realtimeManageItems{font-size:9px}
 }
+
+/* Structure-target tactical locator. Every numbered pin is a real structure,
+   and tapping it only selects: issuing the order requires explicit confirm. */
+#battleRealtimeControls .realtimeContextChoices:has(.realtimeStructureMap){
+ max-height:min(43dvh,320px);
+}
+#battleRealtimeControls .realtimeStructureMap{
+ grid-column:1/-1;display:block;
+ box-sizing:border-box;max-width:100%;width:min(100%,260px);
+ height:auto;aspect-ratio:260/164;justify-self:center;
+ border:2px solid #efcb78;border-radius:6px;background:#132d3d;
+ touch-action:manipulation;cursor:crosshair;
+}
+#battleRealtimeControls .realtimeStructureSelection{
+ grid-column:1/-1;display:block;padding:4px 5px;
+ color:#fff0c0;background:#314c51;border:1px solid #beac75;
+ border-radius:5px;text-align:center;font:800 11px/1.25 system-ui;
+}
+#realtimeBattleMapOverlay .realtimeMapItemCategory{grid-template-columns:1fr 1fr}
+#realtimeBattleMapOverlay #realtimeMapManageItems{
+ min-height:32px;padding:2px;font:800 10px/1.15 system-ui;
+}
+@media(max-width:600px){
+ #battleRealtimeControls .realtimeContextChoices:has(.realtimeStructureMap){max-height:42dvh}
+}
