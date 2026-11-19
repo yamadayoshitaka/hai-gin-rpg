@@ -187,7 +187,7 @@ export function createRealtimeBattleCommands({
    ctx.beginPath();ctx.moveTo(0,k*h/4);ctx.lineTo(w,k*h/4);ctx.stroke();
   }
   ctx.strokeStyle='rgba(232,239,229,.38)';ctx.lineWidth=1.4;
-  ctx.strokeRect(.8,.8,w-1.6,h-1.6);
+  ctx.strokeRect?.(.8,.8,w-1.6,h-1.6);
   for(const pin of radarPins){
    const x=pin.x*w,y=pin.y*h,focus=pin.team===0&&pin.id===String(selectedId);
    ctx.beginPath();ctx.arc(x,y,focus?10:8,0,Math.PI*2);
@@ -352,6 +352,8 @@ export function createRealtimeBattleCommands({
   if(!getPaused()){
    onPause();planningOwnsPause=Boolean(getPaused());
   }
+  // Never start a countdown while simulation is still advancing.
+  if(!getPaused())return;
   if(!planningDeadline){
    planningDeadline=nowMs()+PLAN_LIMIT_MS;
    planningTicker=globalThis.setInterval?.(updatePlanningCountdown,200)??null;
