@@ -121,6 +121,6 @@ test('accepted map move reveals an action picker and defers command until arriva
  assert.match(source,/Math\.hypot\(own\.x-entry\.point\.x,own\.z-entry\.point\.z\)>3\.5/);
  assert.match(source,/if\(onOrder\(id,entry\.command\)\)arrivalActions\.delete\(id\)/);
  assert.match(source,/deploymentActions\.set\(id,command\)/);
- assert.match(source,/setBattleJobPortrait\(\$\('realtimeMapPortrait'\)/);
+ assert.match(source,/setBattleJobPortrait\(face,own\[index\]\?\.job,own\[index\]\?\.id,0\)/);
  assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapActionButtons/);
 });
