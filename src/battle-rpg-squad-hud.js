@@ -171,8 +171,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     const signature=JSON.stringify(row.effects||[]);
     if(effects&&effects.dataset.signature!==signature){
      effects.replaceChildren();effects.dataset.signature=signature;
-     effects.dataset.signature=JSON.stringify(row.effects||[]);
-   const valid=Array.isArray(row.effects)?row.effects:[];
+     const valid=Array.isArray(row.effects)?row.effects:[];
      for(const fx of valid.slice(0,7)){
       const tag=doc.createElement('span');
       tag.className=fx.kind==='debuff'?'debuff':'buff';
@@ -233,6 +232,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';
    effects.setAttribute('aria-label','現在の強化・弱体効果');
+   effects.dataset.signature=JSON.stringify(row.effects||[]);
    const valid=Array.isArray(row.effects)?row.effects:[];
    for(const fx of valid.slice(0,7)){
     const tag=doc.createElement('span');
