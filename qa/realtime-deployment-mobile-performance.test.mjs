@@ -127,7 +127,7 @@ test('job-based tactics expose ninja ranged and real mission / inventory integra
  assert.match(realtime,/onSpecial\(id,entry.special,entry.targetId,true\)/);
 });
 
-test('live panel targets a position and explicitly confirms movement or army-item use',()=>{
+test('live panel rejects movement-only and confirms action-target approach or shared-item use',()=>{
  const dom=mockDocument(),seen=[];
  let paused=false;
  const ui=createRealtimeBattleCommands({
@@ -157,7 +157,10 @@ test('live panel targets a position and explicitly confirms movement or army-ite
  map.tap('click',{clientX:120,clientY:110});
  assert.equal(seen.length,0,'selecting a map point cannot issue the move early');
  dom.root.querySelector('#realtimeConfirmStrategy').onclick();
- assert.equal(seen[0][0],'move','movement dispatches only on confirmation');
+ assert.equal(seen.length,0,'a map point alone never issues an order');
+ dom.root.querySelector('#realtimeHold').onclick();
+ dom.root.querySelector('#realtimeConfirmStrategy').onclick();
+ assert.equal(seen[0][0],'move','the chosen action authorizes approach on confirmation');
  ui.showSquadControls('1');
  dom.root.querySelector('#realtimeTabItems').onclick();
  assert.match(dom.root.querySelector('#realtimeInlineItemStatus').textContent,/戦闘取得累計 2/);

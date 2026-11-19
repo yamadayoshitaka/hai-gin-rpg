@@ -887,7 +887,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-inline-command1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-target-action1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-priest-support1';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
@@ -9950,9 +9950,15 @@ function realtimeSpecialTargets(id,action){
   if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
   return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
    .filter(route=>route.team===0&&['window','roof'].includes(route.kind)&&
-    (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage')))
-   .map(route=>({id:String(route.index),
-     label:route.kind==='roof'?'🏯 屋根 '+route.buildingIndex:'🏹 高所窓 '+route.buildingIndex}))
+    (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage'))&&
+    Number.isInteger(route.access?.x)&&Number.isInteger(route.access?.z)&&
+    !massSim._highGroundClaims?.has(route.buildingIndex+':0')&&
+    members.some(unit=>unit.hp>=unit.maxHp*.35&&!unit.mountId&&
+     (route.kind==='roof'?unit.jobId==='ninja':['archer','mage'].includes(unit.jobId))&&
+     (massSim._highGroundFlows?.[route.index]?.[unit.z*massSim.width+unit.x]??0x3fffffff)<0x3fffffff))
+   .map(route=>({id:String(route.index),x:route.access.x,z:route.access.z,
+     label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+route.buildingIndex+
+      '｜X'+route.access.x+' Z'+route.access.z}))
    .slice(0,24);
  }
  const allowed=action==='destroy_bridge'?['mage','summoner','ninja']:
@@ -10100,7 +10106,8 @@ function realtimeMoveTargets(kind,selectedSquad){
    if(!Number.isFinite(pos.x)||!Number.isFinite(pos.z))continue;
    const key=String(unit.team)+':'+String(unit.squadId);
    const previous=nearestBySquad.get(key);
-   const target={id:key+':'+String(unit.id),x:pos.x,z:pos.z,
+   const target={id:key+':'+String(unit.id),team:unit.team,squadId:String(unit.squadId),
+    x:pos.x,z:pos.z,
     label:(unit.team===0?'🔵 味方 ':'🔴 敵 ')+
      squadName(unit.squadId,unit.team)+' '+battleUnitJobName(unit)+
      (unit.isStrategist?'（軍師）':'')};
@@ -10204,8 +10211,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
-   text:'配置完了！部隊を選び、人物・物・位置を対象に作戦を確定してください。戦闘はリアルタイムです。'});
-   log('戦闘開始：部隊ごとの対象（人物・物・地図位置）と作戦を選んで確定できます。');
+   text:'配置完了！部隊の作戦と対象を選んでください。接近や登攀は自動で行います。'});
+   log('戦闘開始：部隊の作戦と対象を確定すると移動と実行が連続します。');
  },
  onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
  onFocus:id=>{
@@ -10227,6 +10234,17 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
     !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
   try{return issueIndividualSquadOrder(mode);}
+  finally{selectedSquadId=prior;}
+ },
+ onTargetOrder:(id,mode,target)=>{
+  if(!battleReady||finished||battleCeremony.locked||mode!=='charge'||
+    Number(target?.team)!==1||target?.squadId==null||
+    !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
+  const x=Math.round(Number(target.x)),z=Math.round(Number(target.z));
+  if(!Number.isFinite(x)||!Number.isFinite(z))return false;
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueIndividualSquadOrder('mission',{
+   type:'eliminate_squad',targetSquadId:String(target.squadId),x,z});}
   finally{selectedSquadId=prior;}
  },
  getAvailableItems:()=>realtimeItemStocks(),

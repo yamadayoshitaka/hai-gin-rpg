@@ -1,12 +1,12 @@
 /**
  * Real-time battle control surface.
- * One prebattle positioning pass; afterwards the user selects a squad and
- * its real destination while the combat simulation continues uninterrupted.
+ * One prebattle positioning pass; live orders select an action and its target.
+ * Movement is implicit in the selected action, not a standalone command.
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
-import {battleJobSpecialActions} from './battle-job-special-actions.js';
+import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261119-target-action1';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -23,6 +23,7 @@ export function createRealtimeBattleCommands({
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
+  onTargetOrder=()=>false,
  onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},onManageItems=()=>{},
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
@@ -78,17 +79,17 @@ export function createRealtimeBattleCommands({
     <label for="realtimeTargetKind">対象</label>
     <select id="realtimeTargetKind" aria-label="対象の種類">
      <option value="">対象なし</option><option value="people">👤 人物</option>
-     <option value="objects">🏠 物・建物</option><option value="point">📍 地図の位置</option>
+     <option value="objects">🏠 物・建物</option><option value="point">📍 指定地点</option>
     </select>
     <select id="realtimeTargetChoice" hidden aria-label="向かう人物・物を選択"></select>
     <div id="realtimeInlineMapArea" hidden>
-     <canvas id="realtimeInlineTargetMap" width="280" height="160" aria-label="移動先を地図上で選択"></canvas>
+     <canvas id="realtimeInlineTargetMap" width="280" height="160" aria-label="作戦対象の地点を地図上で選択"></canvas>
      <div class="realtimeInlineZoom">
       <button type="button" id="realtimeInlineZoomIn">＋</button>
       <button type="button" id="realtimeInlineZoomOut">－</button>
      </div>
     </div>
-    <small id="realtimeTargetMessage" role="status">対象を選ぶと人物・物・位置に向かいます。</small>
+    <small id="realtimeTargetMessage" role="status">作戦を選び、対象を指定すると自動で接近して実行します。</small>
    </div>
    <div id="realtimeDockAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
     <strong>攻撃種別</strong>
@@ -119,13 +120,13 @@ export function createRealtimeBattleCommands({
     <button type="button" id="realtimeConfirmItem" class="realtimeMainConfirm">✅ アイテム使用を確定</button>
    </div>
   </div>
-  <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="戦場地図で移動先を選択">
+  <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="開戦前の初期配置地図">
    <div class="realtimeMapCard">
     <header><strong id="realtimeMapTitle">開戦前の隊列配置</strong>
      <span id="realtimeMapPlanningClock" hidden>作戦 残り30秒</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
-    <div class="realtimeMapSquadPager" role="group" aria-label="配置・移動する味方隊をページ切替">
+    <div class="realtimeMapSquadPager" role="group" aria-label="配置する味方隊をページ切替">
      <button type="button" id="realtimeMapPrev" aria-label="前の味方隊">◀</button>
      <span class="realtimeMapPortrait" id="realtimeMapPortrait" aria-hidden="true"></span><strong id="realtimeMapSquadName" aria-live="polite">味方隊</strong>
      <button type="button" id="realtimeMapNext" aria-label="次の味方隊">▶</button>
@@ -139,10 +140,10 @@ export function createRealtimeBattleCommands({
       <span id="realtimeMapScale">100%</span>
      </div>
      <canvas id="realtimeBattleCanvas" width="464" height="464"
-      aria-label="味方隊を選択して、移動先の地図をタップ" tabindex="0"></canvas>
+      aria-label="味方隊を選択して初期配置する地図" tabindex="0"></canvas>
     </div>
     <div class="realtimeMapMessage" id="realtimeMapMessage" role="status"></div>
-    <div class="realtimeMapActionSheet" id="realtimeMapActionSheet" role="group" aria-label="移動後の行動を選択">
+    <div class="realtimeMapActionSheet" id="realtimeMapActionSheet" role="group" aria-label="初期配置時の行動を選択">
      <strong>② 隊の行動（兵符・物資の使用は軍師の指示）</strong>
      <small id="realtimeMapChosenAction" role="status">選択中：移動のみ</small>
      <div class="realtimeMapActionButtons">
@@ -347,7 +348,10 @@ export function createRealtimeBattleCommands({
   const id=String(selectedId||'');
   if(origin==='dock'){
    pendingStrategy={special:entry.special,targetId:entry.targetId};
-   $('realtimeSelectedState').textContent='固有作戦を選択しました。「作戦を確定」で発令';
+   hideContextChoices();
+   $('realtimeTargetMessage').textContent=['high_ground','unlock_door'].includes(entry.special)?
+    '対象を設定しました。確定後は自動で接近し、'+(entry.special==='unlock_door'?'鍵を開けます。':'高所から攻撃します。'):
+    '固有作戦の対象を設定しました。作戦を確定してください。';
    renderActionSelection();
    return;
   }
@@ -504,9 +508,9 @@ export function createRealtimeBattleCommands({
   const perPage=4,last=Math.max(0,Math.ceil(targets.length/perPage)-1);
   page=clamp(page,0,last);contextNote(node,action.label+'：対象を選択');
   const shown=targets.slice(page*perPage,(page+1)*perPage);
-  const isStructure=['building','bridge','door'].includes(action.target)&&shown.some(t=>Number.isFinite(t.x)&&Number.isFinite(t.z));
+  const isStructure=['building','bridge','door','height'].includes(action.target)&&shown.some(t=>Number.isFinite(t.x)&&Number.isFinite(t.z));
   if(isStructure){
-   contextNote(node,'🟨 地図の番号ピンか対象名をタップし、確定してください');
+   contextNote(node,'🟨 地図の番号ピンか対象名を選択してください。確定後は自動で接近して実行します。');
    const preview=doc.createElement('canvas');preview.className='realtimeStructureMap';
    preview.width=260;preview.height=164;
    preview.setAttribute('aria-label','作戦対象の建物・橋・扉の位置。番号を選択');
@@ -622,9 +626,9 @@ export function createRealtimeBattleCommands({
    targetZoom=Math.max(1,targetZoom);
    paintInlineTargetMap();
   }
-  $('realtimeTargetMessage').textContent=kind==='point'?'地図上で行きたい位置をタップ':
-   kind==='people'?'移動する人物を選択':
-   kind==='objects'?'向かう建物・物を選択':'人物・物・位置を選ぶと対象へ移動します';
+  $('realtimeTargetMessage').textContent=kind==='point'?'作戦を実行する地点をタップ':
+   kind==='people'?'作戦対象の人物を選択':
+   kind==='objects'?'作戦対象の建物・物を選択':'まず作戦を選択し、必要なら人物・物・地点を指定してください';
   renderActionSelection();
  }
  function selectedMovementTarget(){
@@ -655,8 +659,16 @@ export function createRealtimeBattleCommands({
   const id=String(selectedId||''),entry=pendingStrategy;
   const destination=selectedMovementTarget();
   let success=false;
+  if(!entry?.special&&!entry?.command){
+   $('realtimeTargetMessage').textContent='移動だけの指示はありません。作戦または固有作戦を選択してください。';
+   return false;
+  }
   if(entry?.special)success=onSpecial(id,entry.special,entry.targetId);
-  else if(destination){
+  else if(destination&&entry?.command==='charge'&&Number(destination.team)===1&&destination.squadId!=null){
+   // A targeted attack tracks the enemy squad until it can strike; it must
+   // not stop at the enemy's old map coordinates.
+   success=onTargetOrder(id,entry.command,destination);
+  }else if(destination&&entry?.command){
    const point=nearestLegalApproach(destination);
    if(point)success=onMove(id,point);
    if(success&&entry?.command)
@@ -673,7 +685,7 @@ export function createRealtimeBattleCommands({
   if(success){
    if(entry?.command)preferredActions.set(id,entry.attackKind?'attack_'+entry.attackKind:entry.command);
    if(entry?.special)preferredActions.set(id,'special_'+entry.special);
-   const label=entry?.special?'固有作戦':entry?.command?'選択作戦':'対象への移動';
+   const label=entry?.special?'固有作戦':'選択作戦';
    $('realtimeTargetMessage').textContent='✅ '+label+'を確定';
    pendingStrategy=null;closeSquadControls();
   }else $('realtimeTargetMessage').textContent=
@@ -724,7 +736,11 @@ export function createRealtimeBattleCommands({
    button.setAttribute('aria-pressed',String(active));
   }
   $('realtimeActionSkip').classList.toggle('selected',!chosen);
-  $('realtimeSpecial').disabled=!battleJobSpecialActions(getSelected()?.job).length;
+  const specialJob=String(getSelected()?.job||'');
+  $('realtimeSpecial').textContent=specialJob.includes('シーフ')?'🔓 鍵開け・盗む':
+   ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有':'★ 固有作戦';
+  $('realtimeSpecial').disabled=!battleJobSpecialActions(specialJob).length;
+  $('realtimeConfirmStrategy').disabled=!(pendingStrategy?.command||pendingStrategy?.special);
   for(const button of root.querySelectorAll('[data-action-after-move="special"]'))
    button.disabled=!battleJobSpecialActions(getSelected()?.job).length;
   for(const button of root.querySelectorAll('[data-attack-kind="far"]'))
@@ -1045,7 +1061,7 @@ export function createRealtimeBattleCommands({
   closeSquadControls,
   get controlsOpen(){return !$('realtimeBattleDock').hidden;},
   get commandCategory(){return dockTab;},
-  openMove(){if(started)openMap('move');},
+  openMove(){return false;}, // Live movement must be tied to an action and target.
   update(rows=[]){
    currentRows=rows;refreshOptions();
    if(started){
