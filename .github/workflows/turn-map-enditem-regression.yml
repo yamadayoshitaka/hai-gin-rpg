@@ -1,19 +1,27 @@
-name: Objective turn phone-map and end-turn item regression
+name: Realtime squad deployment and map-command regression
 on:
   push:
     branches: [main]
     paths:
-      - 'src/battle-objective-turns.js'
-      - 'src/battle-objective-turn-panel.js'
-      - 'src/battle-objective-turn-panel.css'
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-commands.css'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-client.js'
+      - 'src/mass-battle-worker-runtime.js'
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-commands.css'
       - 'tactics-wireframe.html'
       - 'qa/turn-map-paging-regression.test.mjs'
       - '.github/workflows/turn-map-enditem-regression.yml'
   pull_request:
     paths:
-      - 'src/battle-objective-turns.js'
-      - 'src/battle-objective-turn-panel.js'
-      - 'src/battle-objective-turn-panel.css'
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-commands.css'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-client.js'
+      - 'src/mass-battle-worker-runtime.js'
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-realtime-commands.css'
       - 'tactics-wireframe.html'
       - 'qa/turn-map-paging-regression.test.mjs'
       - '.github/workflows/turn-map-enditem-regression.yml'
@@ -28,13 +36,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check syntax of turn modules
+      - name: Check realtime deployment and Worker syntax
         run: |
-          node --check src/battle-objective-turns.js
-          node --check src/battle-objective-turn-panel.js
+          node --check src/battle-realtime-commands.js
+          node --check src/mass-battle-grid-sim.js
+          node --check src/mass-battle-worker-client.js
+          node --check src/mass-battle-worker-runtime.js
           node --check src/battle-hit-label-layout.js
           node --check src/confirmed-hit-overlay.js
-      - name: Regression for tap, paging, report items and HUD isolation
+      - name: Regression for one-time deployment, map tap and HUD isolation
         run: |
-          node --test qa/turn-map-paging-regression.test.mjs
+          node --experimental-vm-modules --test qa/turn-map-paging-regression.test.mjs
           node qa/confirmed-hit-feedback.test.mjs
