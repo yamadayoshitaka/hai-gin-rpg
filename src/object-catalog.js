@@ -689,10 +689,28 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Sewn jute sacks: flat resting base, bulging filled body, gathered neck and tied cord.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.98,metalness:0,flatShading:true});
+   const cord=new THREE.MeshStandardMaterial({color:0x655039,roughness:1,metalness:0});
+   const profile=[
+    new THREE.Vector2(0,0),new THREE.Vector2(.30*c,0),
+    new THREE.Vector2(.43*c,.09*c),new THREE.Vector2(.47*c,.27*c),
+    new THREE.Vector2(.43*c,.52*c),new THREE.Vector2(.31*c,.67*c),
+    new THREE.Vector2(.17*c,.72*c),new THREE.Vector2(.15*c,.79*c),
+    new THREE.Vector2(.20*c,.84*c),new THREE.Vector2(0,.84*c)
+   ];
+   const sackGeo=new THREE.LatheGeometry(profile,12);
+   const tieGeo=new THREE.TorusGeometry(.16*c,.025*c,5,12);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const sack=new THREE.Mesh(sackGeo,burlap);
+    sack.scale.set(1,.86,.85);
+    sack.rotation.y=i*.67;
+    sack.position.set(((i%2)*.86-.43)*c,Math.floor(i/2)*.59*c,((i%3)-1)*.2*c);
+    sack.castShadow=true;sack.receiveShadow=true;root.add(sack);
+    const tie=new THREE.Mesh(tieGeo,cord);
+    tie.rotation.x=Math.PI/2;
+    tie.position.copy(sack.position).add(new THREE.Vector3(0,.69*c,0));
+    tie.castShadow=true;root.add(tie);
    }
   }
   if(id==='town_stone_pile_001'){
