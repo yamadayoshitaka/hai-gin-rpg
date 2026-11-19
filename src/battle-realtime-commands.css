@@ -536,3 +536,45 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #battleRealtimeControls #realtimeBattleDock>button{font-size:10px;min-height:32px;padding:3px}
  #realtimeBattleDock #realtimeStrategyTargets select{font-size:11px}
 }
+
+
+/* 2026-11-19: touch-first command pickers, never Android native select sheets. */
+#battleRealtimeControls select.realtimeSourceSelect{display:none!important}
+#battleRealtimeControls .realtimeTapChoices{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:4px;width:100%;min-width:0;max-width:100%;align-items:stretch;
+}
+#battleRealtimeControls .realtimeTapChoices[hidden]{display:none!important}
+#battleRealtimeControls .realtimeTapChoices button.realtimeTapChoice{
+ display:block;width:100%;height:auto;min-height:37px;
+ padding:6px;text-align:left;overflow-wrap:anywhere;
+ background:#153c52;border:1px solid #668da4;
+ font:700 11px/1.3 system-ui;touch-action:manipulation;
+}
+#battleRealtimeControls .realtimeTapChoices button.realtimeTapChoice.selected,
+#battleRealtimeControls .realtimeContextChoices button.realtimeContextTarget.selected{
+ background:#37735c;border:2px solid #f3d28a;color:#fff9dc;
+}
+#battleRealtimeControls .realtimeTapChoices .realtimeTapPager{
+ grid-column:1/-1;display:flex;align-items:center;justify-content:center;
+ gap:10px;min-height:32px;
+}
+#battleRealtimeControls .realtimeTapPager button{
+ min-height:32px;padding:2px 11px;
+}
+#battleRealtimeControls .realtimeTapPager span{
+ font:800 11px system-ui;color:#ffefbb;
+}
+#battleRealtimeControls #realtimeStrategyTargets .realtimeTapChoices{flex:1 0 100%}
+#realtimeBattleDock #realtimeRallyInline .realtimeTapChoices,
+#realtimeBattleDock #realtimeItemInline .realtimeTapChoices{grid-column:1/-1}
+#battleRealtimeControls .realtimeContextChoices .realtimeMainConfirm{width:100%;background:#357351;border:2px solid #f3d28a}
+#battleRealtimeControls #realtimeMove,
+#squadDestination,
+#battleMoveButton{display:none!important}
+@media(max-width:600px){
+ #battleRealtimeControls .realtimeTapChoices button.realtimeTapChoice{
+  min-height:36px;padding:4px 5px;font-size:10px;
+ }
+ #realtimeBattleDock #realtimeStrategyTargets{gap:3px}
+}
