@@ -8994,7 +8994,7 @@ let trackedAllySquadId=squadIds[0]??null;
 battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
-  if(team===0)trackedAllySquadId=String(id);
+  if(team===0){trackedAllySquadId=String(id);realtimeCommandUI?.selectSquad(id);}
   else selectedEnemySquadId=String(id);
   for(const [key,marker] of squadMarkers)
    marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
@@ -9012,8 +9012,8 @@ function refreshBattleRpgSquadHud(sums){
   itemTypes:ROOM_ITEM_TYPES,auras:activeSquadBuffVfx,skirmishBuffs:skirmishSquadItemBuffs,
   massDebuffs:massSim?.squadDebuffs,skirmishDebuffs:skirmishStrategicDebuffs
  });
- battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked&&
-  document.getElementById('battleObjectiveTurnPanel')?.hidden!==false});
+ battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked});
+ realtimeCommandUI?.update(rows);
 }
 window.getBattleRpgSquadHudQA=()=>({
  rows:battleRpgHud?.rows||[],selected:battleRpgHud?.selected||'',visible:battleRpgHud?.visible||false
@@ -9765,7 +9765,69 @@ const jobPowerBreakdown=units=>{
   .sort((a,b)=>b.power-a.power||b.count-a.count||a.name.localeCompare(b.name,'ja'));
 };
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
+let realtimeCommandUI=null;
+realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
+ worldSize:WORLD_SIZE,
+ getMapBackground:()=>miniBase,
+ getSquads:()=>squadIds.map(id=>{
+  const all=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
+  const alive=all.filter(u=>u.hp>0&&u.alive!==false);
+  const center=squadCenter(id,0);
+  return {team:0,id,label:squadPrimaryJob(id)+'隊・'+squadName(id),job:squadPrimaryJob(id),
+   x:center?.x??0,z:center?.z??0,alive:alive.length,total:all.length,
+   hp:alive.reduce((n,u)=>n+(u.hp||0),0),
+   maxHp:all.reduce((n,u)=>n+(u.maxHp||0),0)};
+ }),
+ getEnemies:()=>enemySquadIds.map(id=>({team:1,id,...(squadCenter(id,1)||{})})),
+ getLegalPoint:(x,z)=>turnLegalPoint(x,z),
+ canDeploy:(x,z)=>x<=(massSim?.riverXAt(z)??riverAt(z))-9,
+ onDeploy:(id,point)=>{
+  if(!massSim)return false; // Do not move detached skirmish actors with no authoritative grid.
+  const applied=massSim.deploySquadBeforeBattle(id,point.x,point.z,0);
+  if(applied&&massWorker?.active)massWorker.deploySquadBeforeBattle(id,point.x,point.z,0);
+  return applied;
+ },
+ onStart:()=>{
+  battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
+  battleAudio.setPhase('march');
+  setBattlePaused(false);
+  battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
+  battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
+   text:'配置完了！各隊を選んで地図で移動先を指示してください。戦闘はリアルタイムで進行します。'});
+  log('戦闘開始：リアルタイム移動・交戦中。各隊の移動先は地図タップで変更できます。');
+ },
+ onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
+ onFocus:id=>{
+  const center=squadCenter(id,0);if(!center)return;
+  const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
+  followCamera=false;battleViewMode='commander';focusedHumanUnitId=null;
+  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.2,z),new THREE.Vector3(-12,13,18));
+  manualCameraFocusUntil=performance.now()+4500;setCameraActive(null);
+ },
+ onMove:(id,point)=>{
+  if(!battleReady||finished||battleCeremony.locked)return false;
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueSquadOrder('move',point);}
+  finally{selectedSquadId=prior;}
+ },
+ onOrder:(id,mode)=>{
+  if(!battleReady||finished||battleCeremony.locked)return false;
+  const prior=selectedSquadId;selectedSquadId=String(id);
+  try{return issueSquadOrder(mode);}
+  finally{selectedSquadId=prior;}
+ },
+ onRoster:()=>document.body.classList.toggle('battle-roster-open'),
+ onMenu:()=>$('battleMenuToggle').click(),
+ onPause:()=>setBattlePaused(!paused),
+ getPaused:()=>paused
+}):null;
 window.getBattleObjectiveTurnsQA=()=>null;
+window.getBattleRealtimeQA=()=>({
+ enabled:Boolean(realtimeCommandUI),started:Boolean(realtimeCommandUI?.started),
+ selectedSquadId:realtimeCommandUI?.selectedId||null,
+ mapOpen:Boolean(realtimeCommandUI?.isMapOpen),mode:realtimeCommandUI?.mode||null,
+ paused,battleReady
+});
 // Switch from march to combat score on actual first contact.
 let firstBattleEngagement=false,lastBattleContactCheck=-Infinity;
 function updateBattleEngagement(){
