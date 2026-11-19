@@ -8,8 +8,10 @@ import {MAGMA_SALAMANDER_REVISION,MAGMA_SALAMANDER_LEG_REACH,
  magmaSkullFromWolfKing,magmaTorsoFromWolfKing} from '../src/magma-salamander-sculpt.js';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_BODY_STRETCH,M019_LIMB_REACH,M019_LIMB_WIDTH,
- M019_APPROVED_SILHOUETTE,m019HeroSkullRings,m019HeroTorsoRings}
+ M019_APPROVED_SILHOUETTE,M019_SPRAWL_KNEE_X,M019_SPRAWL_FOOT_X,
+ m019HeroSkullRings,m019HeroTorsoRings}
  from '../src/m019-hero-sculpt.js';
+import {m019FullBodyFit} from '../src/m019-full-body-camera.js';
 
 test('m019 is an explicitly m001-derived original salamander, not a copied wolf',()=>{
  const donor=[{z:.5,y:0,rx:.1,ry:.1},{z:.4,y:0,rx:.2,ry:.2},
@@ -77,6 +79,13 @@ for(const detail of ['low','high']){
    assert.equal(pivot.torso.position.y,-M019_BODY_DROP);
    assert.equal(pivot.tail.scale.z,M019_TAIL_LENGTH);
    assert(pivot.tailTip?.userData!==undefined,'tail tip must be a movable pivot');
+   assert.equal(pivot.tailMid.parent,pivot.tail);
+   assert.equal(pivot.tailTip.parent,pivot.tailMid);
+   // A formerly +.164 Y offset created a visible disconnected tail.
+   // Current outer mid ring is at y=-.108; the tip inlet is y=-.016.
+   assert(Math.abs((pivot.tailTip.position.y-.016)-(-.108))<.075,
+    'the upcurled tip must overlap the previous anatomical tail ring');
+
    const body=meshes.find(o=>o.name==='species-shoulder-rib-pelvis-m019');
    assert.equal(body?.parent,pivot.torso);
    assert(body.userData.anatomicalStations>=8);
@@ -111,6 +120,17 @@ for(const detail of ['low','high']){
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-3'));
     const toe=pivot['toe'+legId.slice(3)];
     assert(toe?.userData.m019PlantedToeJoint,'m019 toes must follow joint');
+    const side=legId.endsWith('L')?-1:1;
+    const knee=pivot[legId.replace('leg','lower')];
+    assert.equal(knee.userData.m019SprawledKnee,true,
+      'true knee bones must spread laterally, not just drawn decorations');
+    assert.equal(knee.position.x,side*M019_SPRAWL_KNEE_X);
+    assert.equal(toe.position.x,side*M019_SPRAWL_FOOT_X);
+    const hipWorld=leg.getWorldPosition(new THREE.Vector3());
+    const footWorld=toe.getWorldPosition(new THREE.Vector3());
+    assert(side*(footWorld.x-hipWorld.x)>.23,
+      'each of four feet must be displaced laterally away from the torso');
+    assert.equal(toe.userData.m019SprawledOutward,true);
     model.updateMatrixWorld(true);
     const groundBox=new THREE.Box3().setFromObject(toe);
     assert(groundBox.min.y>-.18&&groundBox.min.y<.16,
@@ -201,5 +221,19 @@ test('m016/m017 retain their separate salamander lineages',()=>{
    model.traverse(obj=>{if(obj.name.startsWith('m019-'))count++});
    assert.equal(count,0,'m019-exclusive meshes must not leak into '+id);
   }finally{disposeMonsterSculpture(model)}
+ }
+});
+
+
+test('portrait and landscape camera fit the entire m019 from nose to tail',()=>{
+ for(const aspect of [.34,.43,.57,.72,1.33,1.80]){
+  const fit=m019FullBodyFit({
+    width:1.30,height:2.0,depth:9.2,aspect,fovDegrees:42
+  });
+  const halfHorizontal=Math.tan(fit.horizontalFovRadians/2);
+  assert(fit.horizontalSpan/(2*fit.distance)<=halfHorizontal*.88+1e-10,
+   'camera must use horizontal FOV to fit the tail at aspect '+aspect);
+  assert(fit.distance>=4);
+  assert.equal(fit.azimuth,'negative-x-side-head-right');
  }
 });
