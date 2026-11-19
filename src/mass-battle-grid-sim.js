@@ -1162,7 +1162,8 @@ export class MassBattleGridSimulation {
     const targetId=String(targetSquadId);
     const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
-    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.formationType==='support'&&u.jobId==='priest')
+    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
+      (u.formationType==='support'||(preferredSupportId!=null&&String(u.squadId)===String(preferredSupportId))))
       .map(u=>String(u.squadId)))];
     const mean=(group)=>({x:group.reduce((s,u)=>s+u.x,0)/group.length,z:group.reduce((s,u)=>s+u.z,0)/group.length});
     const point=mean(wounded);
