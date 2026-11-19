@@ -404,9 +404,24 @@ export function createRealtimeBattleCommands({
   const node=actionPanel(origin,'Support'),items=getAvailableItems(String(selectedId))||[];
   if(!items.length){contextNote(node,'援軍の兵符を所持していません。');return;}
   contextNote(node,'プレイヤー＝軍師が兵符を使って予備兵を補充します。部隊はアイテムを使用しません。');
-  for(const item of items)
-   contextButton(node,'📯 '+String(item.label||item.id)+' ×'+(item.quantity||0),
-    ()=>confirmContextAction(origin,{itemId:String(item.id)}));
+  let chosen=null;
+  const buttons=[];
+  for(const item of items){
+   const button=contextButton(node,'📯 '+String(item.label||item.id)+' ×'+(item.quantity||0),()=>{
+    chosen=String(item.id);
+    for(const entry of buttons){
+     const active=entry===button;
+     entry.classList.toggle('selected',active);
+     entry.setAttribute('aria-pressed',String(active));
+    }
+    confirm.disabled=false;
+   });
+   button.setAttribute('aria-pressed','false');buttons.push(button);
+  }
+  const confirm=contextButton(node,'✅ 選んだ兵符の使用を確定',()=>{
+   if(chosen)confirmContextAction(origin,{itemId:chosen});
+  });
+  confirm.classList.add('realtimeMainConfirm');confirm.disabled=true;
  }
  function issueDockOrder(command){
   if(!started)return false;
