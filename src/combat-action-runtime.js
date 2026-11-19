@@ -185,6 +185,29 @@ export class CombatActionRuntime {
     if ((target.guardUntil || 0) > this.time) damage *= .45;
     if ((target.absorbUntil || 0) > this.time) { target.hp = Math.min(target.maxHp, target.hp + damage * .25); damage *= .5; }
     damage = Math.max(0, Math.round(damage));
+    // Shield knights protect one nominated allied squad by physically absorbing
+    // most incoming hostile damage while within eight battle cells. A redirected
+    // hit is linked, so it cannot trigger another shield or recurse.
+    if(!linked&&damage>0&&attacker&&attacker.team!==target.team&&
+       target.squadId!=null&&Array.isArray(this._units)){
+      const pos=u=>({x:Number(u?.x??u?.cell?.x),z:Number(u?.z??u?.cell?.z)});
+      const victim=pos(target);
+      const cover=this._units.filter(u=>
+        u!==target&&isAlive(u)&&u.team===target.team&&u.jobId==='shield'&&
+        String(u.guardCoverTargetSquadId)===String(target.squadId)&&
+        Number(u.guardCoverUntil)>this.time&&Number.isFinite(victim.x)&&
+        Math.hypot(pos(u).x-victim.x,pos(u).z-victim.z)<=8)
+       .sort((a,b)=>Math.hypot(pos(a).x-victim.x,pos(a).z-victim.z)-
+         Math.hypot(pos(b).x-victim.x,pos(b).z-victim.z))[0];
+      if(cover){
+        const redirected=Math.max(1,Math.round(damage*.65));
+        damage-=redirected;
+        this.damageUnit(cover,redirected,null,element,true);
+        this.event('shieldCover',{guardId:cover.id,targetId:target.id,
+          protectedSquadId:String(target.squadId),absorbed:redirected,
+          x:victim.x,z:victim.z});
+      }
+    }
     const lostHp=Math.min(target.hp,damage);
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
