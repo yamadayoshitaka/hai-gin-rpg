@@ -10,7 +10,7 @@ export const BATTLE_ATTACK_CHOICES=Object.freeze([
  {id:'intercept',label:'迎撃',command:'defend',description:'守備姿勢から敵を迎え撃つ'},
  {id:'delay',label:'延期',command:'hold',description:'次の命令まで攻撃を保留'}
 ]);
-const RANGED_JOBS=['弓使い','魔法使い','僧侶','召喚士'];
+const RANGED_JOBS=['弓使い','魔法使い','僧侶','召喚士','忍者'];
 export function isRangedBattleJob(job){
  return RANGED_JOBS.some(name=>String(job||'').includes(name));
 }
