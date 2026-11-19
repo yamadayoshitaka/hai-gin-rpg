@@ -9117,7 +9117,7 @@ if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,trackedAllySquad
 function refreshBattleRpgSquadHud(sums){
  if(!battleRpgHud)return;
  const rows=makeBattleRpgStatusRows({
-  sums,units:squadRoster,allyIds:squadIds,enemyIds:enemySquadIds,
+  sums,units:massSim?.units??actors,allyIds:squadIds,enemyIds:enemySquadIds,
   getJob:(id,team)=>squadPrimaryJob(id,team,sums),
   getMode:(id,team)=>squadEffectiveOrder(id,team).mode,
   mass:Boolean(massSim),now:elapsed,simTime:massSim?.time??elapsed,
