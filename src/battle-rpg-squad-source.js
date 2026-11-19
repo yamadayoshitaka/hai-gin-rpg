@@ -2,16 +2,21 @@
  * Read-only adapter from live battle squad summaries to the mobile RPG HUD.
  * All effects are sourced from combat state; no invented ailments or buffs.
  */
+import {displayBattleJobName} from './battle-job-squads.js';
+import {strengthFromHp} from './battle-command-doctrine.js';
 export function makeBattleRpgStatusRows({
  sums,units=[],allyIds=[],enemyIds=[],getJob=()=>'',getMode=()=>null,
  mass=false,now=0,simTime=now,itemTypes={},auras=new Map(),
- skirmishBuffs=new Map(),massDebuffs=new Map(),skirmishDebuffs=new Map()
+ skirmishBuffs=new Map(),massDebuffs=new Map(),skirmishDebuffs=new Map(),commanderRallies=new Map()
 }={}){
  const safeIds=[allyIds,enemyIds];
- const maxHpBySquad=new Map();
+ const maxHpBySquad=new Map(),mpBySquad=new Map(),maxMpBySquad=new Map();
  for(const unit of units){
   const key=String(unit.team)+':'+String(unit.squadId);
   maxHpBySquad.set(key,(maxHpBySquad.get(key)||0)+Math.max(0,Number(unit.maxHp)||0));
+  maxMpBySquad.set(key,(maxMpBySquad.get(key)||0)+Math.max(0,Number(unit.maxMp)||0));
+  if(unit.alive!==false&&Number(unit.hp)>0)
+   mpBySquad.set(key,(mpBySquad.get(key)||0)+Math.max(0,Number(unit.mp)||0));
  }
  function effectsFor(team,id){
   const key=team+':'+id,effects=[];
@@ -36,6 +41,11 @@ export function makeBattleRpgStatusRows({
      put('buff',label,buff[stat],buff.until-now);
    }
   }
+  for(const buff of commanderRallies.get(String(id))||[]){
+   if(team!==0||buff.until<=now)continue;
+   for(const [stat,label] of [['attack','攻↑'],['defense','防↑'],['speed','速↑']])
+    put('buff',label,buff[stat],buff.until-now);
+  }
   const debuff=mass?massDebuffs?.get(key):
    team===1?skirmishDebuffs?.get(String(id)):null;
   const clock=mass?simTime:now;
@@ -50,10 +60,13 @@ export function makeBattleRpgStatusRows({
  const rows=[];
  for(let team=0;team<2;team++)for(const [index,id] of safeIds[team].entries()){
   const key=team+':'+String(id),stat=sums?.get(key),alive=Number(stat?.n)||0;
-  const job=String(getJob(id,team)||'部隊');
+  const job=displayBattleJobName(getJob(id,team)||'部隊');
   rows.push({team,id:String(id),name:'第'+(index+1)+'隊 '+job,job,
    alive,total:Number(stat?.total)||0,hp:Number(stat?.hp)||0,
    maxHp:maxHpBySquad.get(key)||Number(stat?.maxHp)||0,
+   mp:mpBySquad.get(key)||0,maxMp:maxMpBySquad.get(key)||0,
+   attackPercent:Math.round(strengthFromHp(Number(stat?.hp)||0,
+    maxHpBySquad.get(key)||Number(stat?.maxHp)||1)*100),
    mode:getMode(id,team),effects:effectsFor(team,id),
    center:alive>0?{x:stat.x/alive,z:stat.z/alive}:null});
  }

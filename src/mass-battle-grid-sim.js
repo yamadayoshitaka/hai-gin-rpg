@@ -1,9 +1,9 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=20261117-mount-interior1';
-import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.51';
-import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=20261119-rally-reserve2';
+import { COMBAT_RULES,availableCombatSkills } from './combat-action-spec.js?v=4.6.51';
+import {applySquadHeal} from './room-item-registry.js?v=20261119-rally-reserve2';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.49';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
@@ -87,7 +87,7 @@ export class MassBattleGridSimulation {
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
     this.strategy='eliminate';this.autoStrategySquads=new Set();
-    this.squadSize=Math.max(10,Math.ceil(sideCount/10));
+    this.squadSize=Math.max(1,Math.ceil(sideCount/10));
     this.squadCount=Math.ceil(sideCount/this.squadSize);
     this.formations=[
       createSquadFormationPlan(sideCount,deploymentLanes.length,0),
@@ -289,6 +289,31 @@ export class MassBattleGridSimulation {
     return !structure||structure.alive;
   }
 
+  /** Explicit range-job high-ground order uses the actual authored stair route. */
+  orderSquadHighGround(squadId,routeIndex,team=0){
+    const index=Number(routeIndex),route=this.highGroundRoutes[index];
+    if(!route||route.team!==team||!this._highGroundRouteAlive(route)||
+      !['window','roof'].includes(route.kind))return false;
+    const key=route.buildingIndex+':'+team;
+    if(this._highGroundClaims.has(key))return false;
+    const flow=this._highGroundFlows[index];
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.highGroundRouteIndex<0&&
+      (route.kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId))&&
+      !u.mountId&&u.hp>=u.maxHp*.35);
+    members.sort((a,b)=>
+      Math.hypot(a.x-route.access.x,a.z-route.access.z)-
+      Math.hypot(b.x-route.access.x,b.z-route.access.z));
+    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff&&
+      Math.hypot(u.x-route.access.x,u.z-route.access.z)<=65);
+    if(!unit)return false;
+    this.squadDestinations.delete(String(squadId));
+    this.squadFlows.delete(String(squadId));
+    unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
+    unit.highGroundT=0;unit.highGroundFloor=1;
+    this._highGroundClaims.set(key,unit.id);
+    return true;
+  }
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
     // Allocate inside-room patrol, second-floor archer and rooftop ninja
@@ -845,6 +870,56 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Explicit summon order for the summoner squad. Real summon objects and MP costs. */
+  summonSquadCreature(squadId,team=0){
+    const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+    for(const caster of casters){
+      const skills=availableCombatSkills('summoner',caster.rarity)
+       .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
+        (!caster._skillNext||(caster._skillNext[skill.id]||0)<=this.actions.time))
+       .sort((a,b)=>b.mp-a.mp);
+      for(const skill of skills){
+       if(this.actions.fireSkill(caster,skill,caster,this.units))return true;
+      }
+    }
+    return false;
+  }
+  /** Refill existing fallen unit slots with carried reserve soldiers.
+   * No new GPU actor objects and never more than the squad's authored size.
+   */
+  reinforceSquadFromReserve(squadId,count,team=0){
+    const missing=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      !u.isStrategist&&(!u.alive||!(u.hp>0)));
+    const leader=this.units.find(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0);
+    if(!leader||!missing.length)return {added:0};
+    const occupancy=new Set(this.units.filter(u=>u.alive&&u.hp>0)
+      .map(u=>u.x+':'+u.z));
+    let added=0;
+    const limit=Math.min(missing.length,Math.max(0,Math.floor(Number(count)||0)));
+    for(const u of missing){
+      if(added>=limit)break;
+      let cell=null;
+      for(let radius=1;radius<=6&&!cell;radius++)
+       for(let dz=-radius;dz<=radius&&!cell;dz++)
+        for(let dx=-radius;dx<=radius&&!cell;dx++){
+         const x=leader.x+dx,z=leader.z+dz;
+         if(Math.max(Math.abs(dx),Math.abs(dz))!==radius||
+           !Number.isInteger(x)||!Number.isInteger(z)||
+           !this._walkable(x,z)||occupancy.has(x+':'+z))continue;
+         cell={x,z};
+        }
+      if(!cell)break;
+      occupancy.add(cell.x+':'+cell.z);
+      Object.assign(u,{x:cell.x,z:cell.z,fromX:cell.x,fromZ:cell.z,
+       hp:u.maxHp,alive:true,deathAt:-1,deathX:cell.x,deathZ:cell.z,
+       cooldown:1,action:'idle',hitFlash:0,moveElapsed:0,moveDuration:0,
+       tacticalOrder:null,tacticalOrderUntil:0,highGroundRouteIndex:-1});
+      added++;
+    }
+    return {added};
+  }
   /** Same capped healing budget in the Worker and main-thread mirrors. */
   healSquadFromItem(squadId,totalHp,team=0){
     if(this._squadDebuff({team,squadId},'heal_block')>=1)return false;
@@ -1087,7 +1162,8 @@ export class MassBattleGridSimulation {
     const targetId=String(targetSquadId);
     const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
-    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.formationType==='support'&&u.jobId==='priest')
+    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
+      (u.formationType==='support'||(preferredSupportId!=null&&String(u.squadId)===String(preferredSupportId))))
       .map(u=>String(u.squadId)))];
     const mean=(group)=>({x:group.reduce((s,u)=>s+u.x,0)/group.length,z:group.reduce((s,u)=>s+u.z,0)/group.length});
     const point=mean(wounded);
@@ -1126,13 +1202,14 @@ export class MassBattleGridSimulation {
   setSquadMission(squadId,type,target){
     const id=String(squadId);
     if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander','unlock_door','fortify_lock',
-      'repair_structure','extinguish_fire','demolish_structure'].includes(type)||
+      'repair_structure','extinguish_fire','demolish_structure','break_structure'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
     const qualified=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id);
     if((type.startsWith('burn_')||type==='extinguish_fire')&&!qualified.some(u=>u.jobId==='mage'))return false;
     if(type==='repair_structure'&&!qualified.some(u=>['mage','ninja'].includes(u.jobId)))return false;
     if(type==='demolish_structure'&&!qualified.some(u=>u.jobId==='ninja'))return false;
+    if(type==='break_structure'&&!qualified.some(u=>['mage','summoner'].includes(u.jobId)))return false;
     if(['unlock_door','fortify_lock'].includes(type)&&!qualified.some(u=>u.jobId==='thief'))return false;
     let point=null;
     if(type==='eliminate_squad'||type==='eliminate_commander'){

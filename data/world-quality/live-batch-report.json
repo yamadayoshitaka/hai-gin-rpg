@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "237c1a4482aecb3821f4b5102c2d4a64c65680ec4ad04cb36cecbf1c9c8e8a99",
+  "sourceFingerprint": "5164202c7df0386af81dfac53611613524374e328a6aa5b00ffd3ae7c370286d",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for stone_fence_001 (visual review still required)"
+        "Real WebGL screenshots available for haystack_001 (visual review still required)"
       ]
     }
   },

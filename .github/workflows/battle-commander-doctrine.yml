@@ -1,0 +1,59 @@
+name: Commander reserves, rally and combat meters regression
+on:
+  pull_request:
+    paths:
+      - 'src/battle-command-doctrine.js'
+      - 'src/battle-job-special-actions.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/battle-rpg-squad-source.js'
+      - 'src/battle-rpg-squad-hud.*'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-*.js'
+      - 'src/battle-realtime-commands.*'
+      - 'src/room-item-registry.js'
+      - 'tactics-wireframe.html'
+      - 'qa/battle-commander-doctrine.test.mjs'
+      - '.github/workflows/battle-commander-doctrine.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/battle-command-doctrine.js'
+      - 'src/battle-job-special-actions.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/battle-rpg-squad-source.js'
+      - 'src/battle-rpg-squad-hud.*'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-*.js'
+      - 'src/battle-realtime-commands.*'
+      - 'src/room-item-registry.js'
+      - 'tactics-wireframe.html'
+      - 'qa/battle-commander-doctrine.test.mjs'
+      - '.github/workflows/battle-commander-doctrine.yml'
+permissions:
+  contents: read
+jobs:
+  commander-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check battle modules
+        run: |
+          node --check src/battle-command-doctrine.js
+          node --check src/battle-job-special-actions.js
+          node --check src/battle-rpg-squad-source.js
+          node --check src/battle-rpg-squad-hud.js
+          node --check src/battle-realtime-commands.js
+          node --check src/combat-action-runtime.js
+          node --check src/mass-battle-grid-sim.js
+          node --check src/mass-battle-worker-client.js
+          node --check src/mass-battle-worker-runtime.js
+      - name: Real reinforcement, commander buffs and squad meters
+        run: node --test qa/battle-commander-doctrine.test.mjs
+      - name: Existing party HUD regression
+        run: node --test qa/battle-rpg-squad-hud.test.mjs
+      - name: Mobile controls and contextual actions
+        run: node --test qa/realtime-deployment-mobile-performance.test.mjs

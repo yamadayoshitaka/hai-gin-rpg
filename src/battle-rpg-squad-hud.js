@@ -50,9 +50,10 @@ export function rpgHudCompactText(row){
  const effects=(row.effects||[]).map(e=>e.label).slice(0,2).join(' ');
  return String(row.name||'部隊')+' HP '+Math.round(row.hp||0)+'/'+Math.round(row.maxHp||0)+
   ' '+(Number(row.alive)||0)+'/'+(Number(row.total)||0)+'人 '+rpgHudStatus(row)+
+  ' 攻'+Math.round(Number(row.attackPercent)||0)+'% MP'+Math.round(Number(row.mp)||0)+'/'+Math.round(Number(row.maxMp)||0)+
   (effects?' '+effects:'');
 }
-export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus=()=>{}}={}){
+export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus=()=>{},onCommand=()=>{}}={}){
  const doc=documentRef;
  if(!doc?.body?.appendChild)return null;
  const root=doc.createElement('section');root.id='battleRpgSquadHud';
@@ -120,10 +121,28 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    if(rpgHudHealth(row.hp,row.maxHp)<=25&&Number(row.alive)>0)button.classList.add('critical');
    button.setAttribute('aria-label',rpgHudCompactText(row)+'。タップで戦場の隊に移動');
    button.title=button.getAttribute('aria-label');
-   button.onclick=()=>select(team,row.id,{focus:true});
+   button.onclick=()=>{
+    select(team,row.id);
+    if(team===0)onCommand(team,String(row.id));
+    else onFocus(team,String(row.id));
+   };
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
    const job=doc.createElement('span');job.className='rpgSquadJobIcon';
    setBattleJobPortrait(job,row.job,row.id,team);
+   job.setAttribute('role','button');
+   job.setAttribute('tabindex','0');
+   job.setAttribute('aria-label',team===0?
+    String(row.name)+'の作戦を開く':String(row.name)+'を確認');
+   const openByIcon=event=>{
+    event.stopPropagation();
+    select(team,row.id);
+    if(team===0)onCommand(team,String(row.id));
+    else onFocus(team,String(row.id));
+   };
+   job.addEventListener('click',openByIcon);
+   job.addEventListener('keydown',event=>{
+    if(event.key==='Enter'||event.key===' '){event.preventDefault();openByIcon(event);}
+   });
    const title=doc.createElement('strong');
    title.textContent=String(row.name||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
@@ -158,7 +177,19 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     more.title=valid.slice(3).map(fx=>String(fx.label||'効果')).join(' / ');
     effects.append(more);
    }
-   metrics.append(hp,hpValue,count,effects);
+   const attack=doc.createElement('div');attack.className='rpgSquadAttackMeter';
+   const attackBar=doc.createElement('i');
+   attackBar.style.width=clamp(Number(row.attackPercent)||0,0,100)+'%';
+   attack.title='攻撃力 '+Math.round(Number(row.attackPercent)||0)+'%（HP低下に連動、防御・移動は変化なし）';
+   const attackLabel=doc.createElement('span');attackLabel.textContent='⚔';
+   attack.append(attackBar,attackLabel);
+   const mana=doc.createElement('div');mana.className='rpgSquadMpMeter';
+   const manaBar=doc.createElement('i');
+   manaBar.style.width=rpgHudHealth(row.mp,row.maxMp)+'%';
+   mana.title='MP '+Math.round(Number(row.mp)||0)+'/'+Math.round(Number(row.maxMp)||0);
+   const manaLabel=doc.createElement('span');manaLabel.textContent='MP';
+   mana.append(manaBar,manaLabel);
+   metrics.append(hp,hpValue,count,effects,attack,mana);
    button.append(heading,metrics);
    fragment.append(button);
   }
@@ -172,7 +203,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(!visible)return;
   const next=Array.isArray(nextRows)?nextRows:[];
   const nextSig=JSON.stringify(next.map(r=>[r.team,r.id,r.alive,r.total,r.hp,r.maxHp,r.name,r.job,
-   r.mode,r.inContact,r.effects]));
+   r.mode,r.inContact,r.effects,r.attackPercent,r.mp,r.maxMp]));
   if(nextSig===root.dataset.signature)return;
   root.dataset.signature=nextSig;
   rows=next;

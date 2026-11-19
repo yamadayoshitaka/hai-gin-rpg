@@ -127,3 +127,221 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
   max-height:27dvh;width:min(100%,27dvh,270px)}
 }
+
+/* 2026-11-19: keep map action selection visible, while zoom stays on its left. */
+#realtimeBattleMapOverlay .realtimeMapViewport{
+ display:flex;align-items:center;justify-content:center;gap:6px;
+ width:100%;min-width:0;flex:0 1 auto}
+#realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom{
+ display:flex;flex-direction:column;flex:0 0 64px;align-self:flex-start;
+ align-items:stretch;gap:5px;min-width:0;margin:0}
+#realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom button{
+ min-height:41px;padding:4px 2px;font:800 11px/1.2 system-ui}
+#realtimeBattleMapOverlay .realtimeMapViewport #realtimeMapScale{
+ margin:1px 0 0;text-align:center;white-space:nowrap}
+#realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas,
+#realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+ width:min(calc(100% - 70px),43dvh,420px);max-width:calc(100% - 70px);
+ max-height:43dvh;flex:0 1 auto}
+#realtimeBattleMapOverlay .realtimeMapActionSheet{
+ display:flex;flex:0 0 auto;gap:4px}
+#realtimeBattleMapOverlay .realtimeMapActionSheet .realtimeMapActionButtons button.selected,
+#realtimeBattleMapOverlay .realtimeMapActionSheet .realtimeMapActionButtons button[aria-pressed="true"]{
+ background:#396f50!important;border-color:#f2d184!important;
+ box-shadow:inset 0 0 0 1px #ffe3a4}
+#realtimeBattleMapOverlay .realtimeActionSkip.selected{color:#ffdfa1!important}
+@media(max-width:600px){
+ #realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom{flex-basis:59px}
+ #realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom button{min-height:39px;font-size:10px}
+ #realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas,
+ #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+  width:min(calc(100% - 65px),39dvh,360px);max-width:calc(100% - 65px);
+  max-height:39dvh}
+}
+@media(max-height:560px){
+ #realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas,
+ #realtimeBattleMapOverlay .realtimeMapCard:has(.realtimeMapActionSheet:not([hidden])) #realtimeBattleCanvas{
+  width:min(calc(100% - 65px),34dvh,310px);max-height:34dvh}
+ #realtimeBattleMapOverlay .realtimeMapViewport .realtimeMapZoom button{min-height:34px}
+}
+
+/* Squad-icon-only contextual dock. Hidden until the player's face icon is tapped.
+   Always give the 3D battlefield its space back when no order is being chosen. */
+#realtimeBattleDock{
+ display:grid;grid-template-columns:minmax(0,1fr) repeat(3,minmax(54px,auto));
+ grid-auto-rows:minmax(29px,auto);gap:3px;padding:4px 5px;align-items:center
+}
+#realtimeBattleDock #realtimeDockClose{
+ grid-column:4;grid-row:1;min-height:31px;font-size:10px;padding:2px 4px
+}
+#realtimeBattleDock .realtimeDockSquadPager{
+ grid-column:1/4;grid-row:1;display:grid;grid-template-columns:30px 26px minmax(0,1fr) 30px 30px;
+ align-items:center;gap:3px;min-width:0
+}
+#realtimeBattleDock .realtimeDockSquadPager button{
+ min-height:31px;padding:0;font-size:15px
+}
+#realtimeBattleDock .realtimeDockSquadPager button:disabled{opacity:.3}
+#realtimeBattleDock .realtimeDockPortrait{
+ width:26px;height:26px;background-size:400% 400%;background-repeat:no-repeat;
+ border:1px solid #dcc18a;border-radius:5px
+}
+#realtimeBattleDock #realtimeDockSquadName{
+ font:800 11px/1.2 system-ui;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
+ text-align:center
+}
+#realtimeBattleDock #realtimeDockPage{font:750 9px system-ui;text-align:center}
+#realtimeBattleDock #realtimeSelectedState{
+ grid-column:1/4;grid-row:2;font-size:10px;min-height:15px;overflow:hidden
+}
+#realtimeBattleDock #realtimeMenu{grid-column:4;grid-row:2;min-height:27px;padding:0 3px}
+#realtimeBattleDock #realtimeMove{grid-column:1;grid-row:3}
+#realtimeBattleDock #realtimeDefend{grid-column:2;grid-row:3}
+#realtimeBattleDock #realtimeCharge{grid-column:3;grid-row:3}
+#realtimeBattleDock #realtimeHold{grid-column:4;grid-row:3}
+#realtimeBattleDock>button{min-height:32px;padding:3px 5px;font-size:11px}
+#realtimeBattleDock .realtimeAttackChoices{
+ grid-column:1/-1;grid-row:4
+}
+.realtimeAttackChoices[hidden]{display:none!important}
+.realtimeAttackChoices{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:4px;padding:4px;border:1px solid #c7a775;background:#102c43;border-radius:7px
+}
+.realtimeAttackChoices strong{
+ grid-column:1/-1;text-align:center;color:#f7dfb3;font:800 11px/1.2 system-ui
+}
+#battleRealtimeControls .realtimeAttackChoices button{
+ padding:3px 2px;min-width:0;min-height:31px;font-size:10px
+}
+#battleRealtimeControls .realtimeAttackChoices button.selected{
+ background:#447550;border-color:#f3d493
+}
+#battleRealtimeControls .realtimeAttackChoices button:disabled{opacity:.3}
+#battleRpgSquadHud .rpgSquadJobIcon{cursor:pointer;touch-action:manipulation;pointer-events:auto}
+#battleRpgSquadHud .rpgSquadJobIcon:focus-visible{outline:3px solid #f7d680;outline-offset:1px}
+@media(max-width:700px){
+ #realtimeBattleDock{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,minmax(49px,auto))}
+ #realtimeBattleDock .realtimeDockSquadPager{grid-column:1/4;grid-row:1}
+ #realtimeBattleDock #realtimeSelectedState{grid-column:1/4;grid-row:2}
+ #realtimeBattleDock #realtimeDockClose{grid-column:4;grid-row:1}
+ #realtimeBattleDock #realtimeMenu{grid-column:4;grid-row:2}
+ #realtimeBattleDock #realtimeMove{grid-column:1;grid-row:3}
+ #realtimeBattleDock #realtimeDefend{grid-column:2;grid-row:3}
+ #realtimeBattleDock #realtimeCharge{grid-column:3;grid-row:3}
+ #realtimeBattleDock #realtimeHold{grid-column:4;grid-row:3}
+ #realtimeBattleDock #realtimeDockSquadName{font-size:10px}
+ #realtimeBattleDock>button{min-height:31px}
+ #realtimeBattleDock .realtimeAttackChoices{grid-column:1/-1;grid-row:4}
+}
+
+/* Keep the opening map and its action subchoices inside a portrait handset. */
+#realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapAttackChoices:not([hidden])) #realtimeBattleCanvas{
+ width:min(calc(100% - 70px),32dvh,310px);max-height:32dvh;
+}
+@media(max-height:760px){
+ #realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapAttackChoices:not([hidden])) #realtimeBattleCanvas{
+  width:min(calc(100% - 70px),27dvh,260px);max-height:27dvh;
+ }
+ #realtimeBattleMapOverlay .realtimeAttackChoices{padding:2px;gap:2px}
+}
+
+/* Job-specific actions and support share the compact dock without obstructing the map. */
+#realtimeBattleDock #realtimeSupport{grid-column:1/3;grid-row:4}
+#realtimeBattleDock #realtimeSpecial{grid-column:3/5;grid-row:4}
+#realtimeBattleDock .realtimeAttackChoices{grid-row:5}
+#realtimeBattleDock .realtimeContextChoices{grid-column:1/-1;grid-row:5}
+#battleRealtimeControls .realtimeContextChoices{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;
+ padding:5px;border:1px solid #bbac80;background:#102c43;border-radius:7px;
+ max-height:min(28dvh,195px);overflow-y:auto;overscroll-behavior:contain;
+}
+#battleRealtimeControls .realtimeContextChoices[hidden]{display:none!important}
+#battleRealtimeControls .realtimeContextChoices>small{
+ grid-column:1/-1;color:#ffe5b5;font:700 11px/1.4 system-ui;text-align:center
+}
+#battleRealtimeControls .realtimeContextChoices button{
+ min-width:0;min-height:36px;font:700 11px/1.3 system-ui;padding:5px
+}
+#battleRealtimeControls .realtimeContextChoices .realtimeContextPager{
+ grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px
+}
+#realtimeBattleMapOverlay .realtimeMapActionSheet>[data-action-after-move="special"]{
+ min-height:32px;background:#2b526c;border:1px solid #a7c9dd;border-radius:7px;
+ font:800 11px system-ui
+}
+@media(max-width:600px){
+ #battleRealtimeControls .realtimeContextChoices{padding:3px;gap:3px;max-height:24dvh}
+ #battleRealtimeControls .realtimeContextChoices button{min-height:34px;font-size:10px}
+}
+
+/* 2026-11-19: centered leader radar – one pin per job squad, never per soldier. */
+#realtimeSquadRadar{
+ position:absolute;top:10px;left:50%;transform:translateX(-50%);
+ width:clamp(128px,35vw,210px);max-width:calc(100vw - 16px);
+ z-index:1;pointer-events:auto;
+ background:#091e31ec;border:1px solid #7fa5bc;border-radius:9px;
+ box-shadow:0 4px 15px #0009;padding:4px 5px 3px;
+}
+#realtimeSquadRadar .realtimeRadarHeader{
+ display:flex;gap:3px;align-items:center;justify-content:space-between;
+ font:800 10px/1.2 system-ui;color:#f0e4bc;white-space:nowrap;
+}
+#realtimeRadarClock{
+ font:800 9px/1.2 system-ui;color:#ffdf9b;
+ padding:2px 3px;border:1px solid #d7b678;border-radius:4px;
+}
+#realtimeRadarCanvas{
+ display:block;width:100%;height:auto;aspect-ratio:224/178;
+ margin-top:3px;border:1px solid #5a8daa;border-radius:4px;
+ touch-action:manipulation;cursor:pointer;
+}
+#realtimeRadarCanvas:focus-visible{outline:3px solid #f9db76;outline-offset:2px}
+#realtimeSquadRadar .realtimeRadarLegend{
+ font:800 8px/1.3 system-ui;white-space:nowrap;text-align:center;color:#7bd9ff;
+}
+#realtimeSquadRadar .realtimeRadarLegend span{color:#ff8998}
+#realtimeBattleDock #realtimePlanSeconds{
+ grid-row:2;grid-column:3;justify-self:end;
+ padding:2px 3px;border-radius:4px;border:1px solid #cdb574;
+ color:#ffdd96;background:#1e3448;
+ font:800 10px/1.1 system-ui;white-space:nowrap;
+}
+#realtimeBattleMapOverlay #realtimeMapPlanningClock{
+ font:800 12px/1.2 system-ui;color:#ffe19b;
+ padding:4px;border:1px solid #b99d62;border-radius:5px;
+}
+@media(max-width:600px){
+ #realtimeSquadRadar{top:7px;width:clamp(116px,35vw,160px);padding:3px}
+ #realtimeSquadRadar .realtimeRadarHeader{font-size:9px}
+ #realtimeSquadRadar .realtimeRadarLegend{font-size:7px}
+ #realtimeBattleDock #realtimePlanSeconds{font-size:9px}
+}
+
+/* Commander commands are not soldier inventory actions. All three fit on row 4. */
+#realtimeBattleDock #realtimeSupport{grid-column:1;grid-row:4}
+#realtimeBattleDock #realtimeRally{grid-column:2/4;grid-row:4;
+ background:#3b5664;border-color:#e3c77d}
+#realtimeBattleDock #realtimeSpecial{grid-column:4;grid-row:4}
+#realtimeBattleDock #realtimeDockRallyChoices{grid-column:1/-1;grid-row:5}
+#realtimeBattleDock #realtimeDockRallyChoices button[aria-pressed="true"]{
+ background:#335f52;border-color:#f4df92}
+@media(max-width:600px){
+ #realtimeBattleDock #realtimeSupport,
+ #realtimeBattleDock #realtimeRally,
+ #realtimeBattleDock #realtimeSpecial{font-size:10px;min-height:35px;padding:2px}
+}
+
+/* Persistent player-command selection; touch and keyboard states are visible. */
+#battleRealtimeControls #realtimeBattleDock>button.selected,
+#battleRealtimeControls .realtimeMapActionButtons button.selected,
+#battleRealtimeControls .realtimeMapActionButtons button[aria-pressed="true"]{
+ background:#356c57!important;border:2px solid #ffe28d!important;
+ box-shadow:inset 0 0 0 1px #fff5c766,0 0 0 1px #e7ca7f!important;color:#fff6c9!important
+}
+#battleRealtimeControls #realtimeBattleDock>button.selected:focus-visible,
+#battleRealtimeControls .realtimeAttackChoices button.selected:focus-visible{outline:3px solid #fff5ab;outline-offset:1px}
+#realtimeBattleDock #realtimeDockGuardChoices{grid-column:1/-1;grid-row:5}
+#realtimeMapChosenAction{display:block;color:#fff0ad;font:800 11px/1.3 system-ui;
+ padding:3px 5px;margin:2px 0;background:#193e50;border:1px solid #708f92;border-radius:5px}
+#realtimeBattleDock #realtimeSelectedState{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

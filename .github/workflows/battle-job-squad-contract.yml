@@ -1,0 +1,42 @@
+name: One job per battle squad regression
+on:
+  pull_request:
+    paths:
+      - 'src/battle-job-squads.js'
+      - 'src/mass-battle-formations.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/battle-rpg-squad-source.js'
+      - 'tactics-wireframe.html'
+      - 'qa/mass-battle-formations.test.mjs'
+      - '.github/workflows/battle-job-squad-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/battle-job-squads.js'
+      - 'src/mass-battle-formations.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/battle-rpg-squad-source.js'
+      - 'tactics-wireframe.html'
+      - 'qa/mass-battle-formations.test.mjs'
+      - '.github/workflows/battle-job-squad-contract.yml'
+permissions:
+  contents: read
+jobs:
+  one-job-ten-squads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check module syntax
+        run: |
+          node --check src/battle-job-squads.js
+          node --check src/mass-battle-formations.js
+          node --check src/mass-battle-grid-sim.js
+          node --check src/battle-rpg-squad-source.js
+      - name: Verify 10 single-job squads for 50 to 1000 soldiers
+        run: node qa/mass-battle-formations.test.mjs
+      - name: Verify destination, missions, support and navigation remain operational
+        run: node qa/mass-battle-grid.test.mjs

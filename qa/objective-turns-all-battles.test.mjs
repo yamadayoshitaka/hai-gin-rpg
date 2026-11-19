@@ -19,7 +19,10 @@ assert.match(html,/getBattleRealtimeQA/);
 assert.match(html,/const threeGroupPanel=!TOWN_MODE\?createBattleThreeGroupPanel/);
 assert.match(group,/allowRecompose=true/);
 assert.match(realtime,/realtimeBattleCanvas/);
-assert.match(realtime,/realtimeSquadSelect/);
+assert.doesNotMatch(realtime,/<select id="realtimeSquadSelect"/);
+assert.match(realtime,/id="realtimeDockPrev"/);
+assert.match(realtime,/id="realtimeDockNext"/);
+assert.match(realtime,/showSquadControls/);
 assert.match(css,/body\.battle-realtime-clean #battleTopDock/);
 assert.match(css,/body\.battle-realtime-clean #battleObjectiveTurnStatus/);
 for(const file of ['src/battle-realtime-commands.js','src/battle-three-group-panel.js']){
