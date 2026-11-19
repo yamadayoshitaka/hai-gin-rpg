@@ -1208,7 +1208,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // Shared clump direction, varied fibre cross sections. The 10x lanes
    // remain static, preserving the Android physics and triangle budget.
    const clump=Math.floor(i/9),clumpPhase=clump*2.39996323;
-   const radius=(half*fine)*(fiberMultiplier>=10?1.24:1.8)*
+   const radius=(half*fine)*(fiberMultiplier>=10?.68:1.8)*
     (.93+.07*Math.sin(clumpPhase));
    for(let lane=0;lane<extra;lane++){
     const laneAt=(lane+.5)/extra-.5;
@@ -1224,8 +1224,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      const t=j/segments;
      const rootFade=Math.min(1,t*7);
      // Additional static fibre curl follows the existing scalp-rooted guides.
-     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00065:.0012)+
-      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00020:.00033))*d.x*rootFade;
+     const shell=(Math.sin((lane+1)*2.39996323+i*.277)*(fiberMultiplier>=10?.00024:.0012)+
+      Math.sin(t*12.5+i*.37+lane*1.31)*(fiberMultiplier>=10?.00009:.00033))*d.x*rootFade;
      const offset=radius*(2*laneAt)*rootFade;
      // Stagger fine strand tips; avoid nine blunt, coplanar endings.
      const stagger=.94-.09*fract((i+1)*.75487766+(lane+1)*.61803398);
