@@ -81,6 +81,15 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  if(!material||glow||role==='eye'||role==='bone'||role==='accent'||translucent){
    return material;
  }
+ // m019 is dry vitrified basalt, not shiny green dragon scales. Keep the
+ // sculpted plate/fissure geometry visible, with no reptile colour map.
+ if(speciesId==='m019'&&(role==='skin'||role==='light'||role==='shadow')){
+   material.roughness=.91;
+   material.metalness=.025;
+   material.userData.photoSurface='procedural-volcanic-basalt';
+   material.userData.m019DryObsidian=true;
+   return material;
+ }
  // Anatomical realism needs independent materials for necrotic skin, linen
  // wrappings, burgundy velvet coats, weathered leather and iron armour.
  // The old family-wide 'undead = linen' made vampire faces look like cloth.
