@@ -704,10 +704,28 @@ export function createObjectById(id,{cellSize=2.2}={}){
   }
   if(id==='town_brazier_001'){
    for(const x of [-.58,.58])for(const z of [-.58,.58])box(.13*c,.9*c,.13*c,x*c,.45*c,z*c,iron);
-   const cup=new THREE.Mesh(new THREE.CylinderGeometry(.88*c,.6*c,.4*c,16),iron);
-   cup.position.y=1*c;root.add(cup);
-   const flame=new THREE.Mesh(new THREE.ConeGeometry(.38*c,.6*c,10),light);
-   flame.position.y=1.49*c;root.add(flame);
+   // Open bowl: outer lip, inner wall and recessed charcoal bed share a continuous profile.
+   const bowlProfile=[
+    new THREE.Vector2(0,.80*c),new THREE.Vector2(.56*c,.80*c),
+    new THREE.Vector2(.63*c,.83*c),new THREE.Vector2(.84*c,1.15*c),
+    new THREE.Vector2(.88*c,1.19*c),new THREE.Vector2(.78*c,1.19*c),
+    new THREE.Vector2(.74*c,1.13*c),new THREE.Vector2(.56*c,.92*c),
+    new THREE.Vector2(0,.92*c)
+   ];
+   const cup=new THREE.Mesh(new THREE.LatheGeometry(bowlProfile,24),iron);
+   cup.castShadow=true;cup.receiveShadow=true;root.add(cup);
+   const charcoal=new THREE.MeshStandardMaterial({color:0x292723,roughness:1,metalness:0,flatShading:true});
+   const ember=new THREE.MeshStandardMaterial({color:0x7c321b,roughness:.88,metalness:0,emissive:0x3a0c03,emissiveIntensity:.28});
+   const coalGeo=new THREE.DodecahedronGeometry(.12*c,0);
+   for(let i=0;i<9;i++){
+    const a=i*2.399963,r=(.13+.11*Math.sqrt(i))*c;
+    const coal=new THREE.Mesh(coalGeo,i%3===0?ember:charcoal);
+    coal.scale.set(1+(i%3)*.13,.58+(i%2)*.12,.85);
+    coal.position.set(Math.cos(a)*r,.96*c,Math.sin(a)*r);
+    coal.rotation.set(i*.21,i*.53,i*.17);coal.castShadow=true;root.add(coal);
+   }
+   const flame=new THREE.Mesh(new THREE.ConeGeometry(.32*c,.56*c,10),light);
+   flame.position.y=1.28*c;root.add(flame);
   }
   if(id==='town_herb_garden_001'){
    const earth=new THREE.MeshStandardMaterial({color:0x58432e,roughness:1});
