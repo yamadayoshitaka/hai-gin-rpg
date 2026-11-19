@@ -6,7 +6,7 @@
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-approved-four-view-slender-lizard-v4-20261119';
+export const M019_HERO_REVISION='m019-approved-lizard-sprawled-legs-v5-20261120';
 export const M019_BODY_DROP=.38;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -102,40 +102,54 @@ export function sculptM019Jaw(g,jaw){
 }
 
 /** 4 insect-slim lizard limbs: complete but narrow upper/lower joint shells. */
-export function sculptM019Limb(g,leg,distal,name,{fore=true,detail='high'}={}){
+/**
+ * A true lateral salamander sprawl: root remains buried in the trunk,
+ * the humerus/femur sweeps outward and the lower segment continues to
+ * the planted foot. The actual knee pivot must be at the same X as
+ * the upper-limb end ring; rotation still comes from the existing rig.
+ */
+export const M019_SPRAWL_KNEE_X=.265;
+export const M019_SPRAWL_FOOT_X=.185;
+export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'}={}){
  const front=fore===true;
+ const sign=Math.sign(side)||1;
  const upper=g.limbLoft(leg,'skin',[
-  {x:0,y:.49,z:front?-.011:-.053,rx:.086,rz:.102},
-  {x:0,y:.32,z:front?-.003:-.050,rx:.112,rz:.121},
-  {x:0,y:.13,z:front?-.036:.050,rx:.089,rz:.092},
-  {x:0,y:-.08,z:front?-.052:.092,rx:.063,rz:.073},
-  {x:0,y:-.25,z:front?-.012:.068,rx:.048,rz:.058}
+  {x:0,y:.49,z:front?-.011:-.053,rx:.092,rz:.104},
+  {x:sign*.061,y:.34,z:front?-.003:-.050,rx:.104,rz:.113},
+  {x:sign*.149,y:.13,z:front?-.036:.050,rx:.085,rz:.091},
+  {x:sign*.226,y:-.08,z:front?-.052:.092,rx:.063,rz:.074},
+  {x:sign*M019_SPRAWL_KNEE_X,y:-.25,z:front?-.012:.068,
+   rx:.051,rz:.057}
  ],{name:'m019-scaled-upper-limb-'+name});
  upper.userData.m019ContinuousLimb=true;
+ upper.userData.m019SprawledOutward=true;
  const lower=g.limbLoft(distal,'skin',[
-  {x:0,y:.17,z:front?-.032:.071,rx:.065,rz:.075},
-  {x:0,y:.035,z:front?-.016:.070,rx:.073,rz:.073},
-  {x:0,y:-.12,z:front?.011:.024,rx:.065,rz:.061},
-  {x:0,y:-.31,z:front?.048:.026,rx:.050,rz:.055},
-  {x:0,y:-.50,z:.070,rx:.048,rz:.052}
+  {x:0,y:.17,z:front?-.032:.071,rx:.061,rz:.074},
+  {x:sign*.030,y:.035,z:front?-.016:.070,rx:.071,rz:.071},
+  {x:sign*.079,y:-.12,z:front?.011:.024,rx:.062,rz:.061},
+  {x:sign*.142,y:-.31,z:front?.048:.026,rx:.050,rz:.054},
+  {x:sign*M019_SPRAWL_FOOT_X,y:-.50,z:.070,rx:.048,rz:.050}
  ],{name:'m019-scaled-lower-limb-'+name});
  lower.userData.m019ContinuousLimb=true;
+ lower.userData.m019SprawledOutward=true;
  if(detail!=='low'){
   const sleeve=g.bridge(distal,'skin',
-    [0,.107,.017],[0,-.071,.017],.065,.062);
+    [0,.107,.017],[sign*.033,-.071,.017],.066,.059);
   sleeve.name='m019-elbow-fascia-'+name;
  }
 }
 
-/** Four miniature outward-splayed lizard toes per planted paw. */
-export function sculptM019Paw(g,distal,name,{detail='high'}={}){
- const toe=g.group('toe'+name,[0,-.515,.113],distal);
+/** Tiny four-digit paws placed at the END of each outward-reaching shin. */
+export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
+ const sign=Math.sign(side)||1;
+ const toe=g.group('toe'+name,[sign*M019_SPRAWL_FOOT_X,-.515,.113],distal);
  toe.userData.m019PlantedToeJoint=true;
+ toe.userData.m019SprawledOutward=true;
  g.sphere(toe,'skin',[0,-.027,.051],[.092,.034,.122],
    {name:'m019-metatarsal-'+name,rough:.88});
  for(let digit=0;digit<4;digit++){
   const x=(digit-1.5)*.050;
-  const spread=(digit-1.5)*.017;
+  const spread=(digit-1.5)*.017+sign*.012;
   if(detail!=='low')g.sphere(toe,'skin',[x,-.026,.125],
     [.025,.025,.069],
     {name:'m019-digit-'+name+'-'+digit,rough:.84});
@@ -146,7 +160,6 @@ export function sculptM019Paw(g,distal,name,{detail='high'}={}){
  return toe;
 }
 
-/** The long whip tip curls UP in side view, as in the approved sheet. */
 export function sculptM019TailTip(g,tailTip){
  const tip=g.axialLoft(tailTip,'skin',[
   {z:.180,y:-.016,rx:.040,ry:.037},

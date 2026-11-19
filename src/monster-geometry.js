@@ -23,17 +23,18 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js?v=m019-turnaround-lizard-v4-20261119';
+ from './magma-salamander-sculpt.js?v=m019-sprawl-tail-v5-20261120';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
+ M019_SPRAWL_KNEE_X,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
- from './m019-hero-sculpt.js?v=m019-turnaround-lizard-v4-20261119';
+ from './m019-hero-sculpt.js?v=m019-sprawl-tail-v5-20261120';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-turnaround-lizard-v4-20261119';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-sprawl-tail-v5-20261120';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -1552,11 +1553,16 @@ if(salamanderLineage){
    // Counter-translate hock so the planted paw bind height is unchanged.
    const distal=g.group('lower'+name,
      s.id==='m001'?[0,fore>0?-.180:-.200,fore>0?-.038:.065]:
+     magmaSalamander?[side*M019_SPRAWL_KNEE_X,-.065,.015]:
        [0,-.065,.015],leg);
+   if(magmaSalamander){
+     distal.userData.m019SprawledKnee=true;
+     distal.userData.m019SplayedSide=side;
+   }
    if(s.id==='m001')distal.userData.anatomicalJoint=
      fore>0?'elbow':'stifle';
    if(magmaSalamander)sculptM019Limb(g,leg,distal,name,
-    {fore:fore>0,detail:coatDetail});
+    {fore:fore>0,side,detail:coatDetail});
    if(beastRemesh){
     g.limbLoft(distal,'skin',(s.id==='m001'?(fore>0?[
       // Forearm starts over elbow and tapers into elevated carpus.
@@ -1697,7 +1703,7 @@ if(salamanderLineage){
      // the legacy fixed paw as well made duplicate feet and floating claws.
      feet(g,distal,0,0,0,true,reptile?.75:1);
    }
-   if(magmaSalamander)sculptM019Paw(g,distal,name,{detail:coatDetail});
+   if(magmaSalamander)sculptM019Paw(g,distal,name,{side,detail:coatDetail});
    if(s.id==='m003'){
      // Four articulated digit pads and their curved keratin claws follow
      // an independent metacarpophalangeal/toe flexion group on each paw.
@@ -2272,7 +2278,8 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
  const tailTip=g.group('tailTip',
    felineMaster?[0,-.145,-.750]:
-   forestWolf?[0,.005,-.620]:magmaSalamander?[0,.164,-.645]:[.09,-.11,-.49-v*.10],tailMid);
+   forestWolf?[0,.005,-.620]:magmaSalamander?[0,-.060,-.645]:
+     [.09,-.11,-.49-v*.10],tailMid);
  if(felineMaster)g.sphere(tailTip,'skin',[0,-.007,-.012],
    [.038,.040,.047],{name:'feline-connected-tail-tip-'+s.id});
  else if(forestWolf)g.sphere(tailTip,'skin',[0,0,-.006],

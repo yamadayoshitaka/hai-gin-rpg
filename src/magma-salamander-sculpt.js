@@ -8,7 +8,7 @@
  * All pieces attach to existing movable parents. No floating decoration,
  * no replacement of another species, no expensive effect sprites at LOD low.
  */
-export const MAGMA_SALAMANDER_REVISION='m019-approved-four-view-slender-lizard-v4-20261119';
+export const MAGMA_SALAMANDER_REVISION='m019-approved-lizard-sprawled-legs-v5-20261120';
 export const MAGMA_SALAMANDER_LEG_REACH=.54;
 export const MAGMA_SALAMANDER_BODY_DROP=.38;
 
