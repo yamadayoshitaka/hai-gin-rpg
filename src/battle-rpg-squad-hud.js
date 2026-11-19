@@ -30,6 +30,21 @@ export function rpgHudStatus(row){
  if(mode==='charge')return '⚔ 突撃中';
  return '◷ 待機中';
 }
+/** Effect badges keep their percentage and duration in the accessible tooltip. */
+export function rpgHudEffectIcon(effect={}){
+ const label=String(effect.label||'');
+ const symbol=label.includes('攻')?'⚔':label.includes('防')?'🛡':
+  label.includes('速')?'⚡':label.includes('魔')?'✦':
+  label.includes('回')?'✚':label.includes('毒')?'☣':'✧';
+ return symbol+(effect.kind==='debuff'?'↓':'↑');
+}
+export function rpgHudStateIcon(row){
+ const state=rpgHudStatus(row);
+ return state.startsWith('☠')?'☠':state.startsWith('🆘')?'🆘':
+  state.startsWith('⚔')?'⚔':state.startsWith('🛡')?'🛡':
+  state.startsWith('✚')?'✚':state.startsWith('➤')?'➤':
+  state.startsWith('↩')?'↩':'◷';
+}
 export function rpgHudCompactText(row){
  const effects=(row.effects||[]).map(e=>e.label).slice(0,2).join(' ');
  return String(row.name||'部隊')+' HP '+Math.round(row.hp||0)+'/'+Math.round(row.maxHp||0)+
@@ -75,7 +90,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   const sideRows=rows.filter(r=>Number(r.team)===Number(team));
   const index=sideRows.findIndex(r=>String(r.id)===String(id));
   if(index>=0){
-   const pageSize=expanded[team]?5:2;
+   const pageSize=expanded[team]?Math.max(1,sideRows.length):5;
    pages[team]=Math.floor(index/pageSize);
   }
   renderSide(0);renderSide(1);
@@ -84,7 +99,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  function renderSide(team){
   const side=panels[team];
   const own=rows.filter(r=>Number(r.team)===team);
-  const pageSize=expanded[team]?5:2;
+  const pageSize=expanded[team]?Math.max(1,own.length):5;
   const totalPages=Math.max(1,Math.ceil(own.length/pageSize));
   pages[team]=clamp(pages[team],0,totalPages-1);
   const start=pages[team]*pageSize;
@@ -92,6 +107,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   side.pageLabel.textContent=(pages[team]+1)+'/'+totalPages;
   side.prev.disabled=pages[team]===0;
   side.next.disabled=pages[team]>=totalPages-1;
+  side.nav.hidden=expanded[team]||totalPages===1;
   side.list.replaceChildren();
   const fragment=doc.createDocumentFragment();
   for(const row of own.slice(start,start+pageSize)){
@@ -105,27 +121,44 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    button.title=button.getAttribute('aria-label');
    button.onclick=()=>select(team,row.id,{focus:true});
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
+   const job=doc.createElement('span');job.className='rpgSquadJobIcon';
+   job.textContent=rpgHudIcon(row.job);job.title=String(row.job||'兵士');
    const title=doc.createElement('strong');
-   title.textContent=rpgHudIcon(row.job)+' '+String(row.name||'部隊');
-   const status=doc.createElement('span');status.className='rpgSquadState';status.textContent=rpgHudStatus(row);
-   heading.append(title,status);
+   title.textContent=String(row.name||'部隊');
+   const status=doc.createElement('span');status.className='rpgSquadState';
+   status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
+   heading.append(job,title,status);
+   const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
    const hp=doc.createElement('div');hp.className='rpgSquadHp';
    const hpBar=doc.createElement('i');hpBar.style.width=rpgHudHealth(row.hp,row.maxHp)+'%';
+   hp.title='HP '+Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0));
    hp.append(hpBar);
-   const count=doc.createElement('div');count.className='rpgSquadNumbers';
-   count.textContent='HP '+Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0))+
-    '　残 '+Math.max(0,Number(row.alive)||0)+'/'+Math.max(0,Number(row.total)||0);
-   const effects=doc.createElement('div');effects.className='rpgSquadEffects';
-   const valid=(Array.isArray(row.effects)?row.effects:[]).slice(0,4);
-   if(!valid.length)effects.textContent='強化・弱体なし';
-   else for(const fx of valid){
+   const hpValue=doc.createElement('span');hpValue.className='rpgSquadHpValue';
+   hpValue.textContent=Math.ceil(Math.max(0,row.hp||0))+'/'+Math.ceil(Math.max(0,row.maxHp||0));
+   hpValue.title=hp.title;
+   const count=doc.createElement('span');count.className='rpgSquadNumbers';
+   count.textContent=Math.max(0,Number(row.alive)||0)+'/'+Math.max(0,Number(row.total)||0);
+   count.title='残存 '+count.textContent+'人';
+   const effects=doc.createElement('span');effects.className='rpgSquadEffects';
+   effects.setAttribute('aria-label','強化・弱体');
+   const valid=Array.isArray(row.effects)?row.effects:[];
+   for(const fx of valid.slice(0,3)){
     const tag=doc.createElement('span');
     tag.className=fx.kind==='debuff'?'debuff':'buff';
-    tag.textContent=String(fx.label||'効果')+(Number.isFinite(fx.seconds)?' '+Math.max(0,Math.ceil(fx.seconds))+'秒':'');
-    tag.title=String(fx.description||tag.textContent);
+    tag.textContent=rpgHudEffectIcon(fx);
+    tag.title=String(fx.description||fx.label||'効果')+
+     (Number.isFinite(fx.seconds)?' '+Math.max(0,Math.ceil(fx.seconds))+'秒':'');
+    tag.setAttribute('aria-label',tag.title);
     effects.append(tag);
    }
-   button.append(heading,hp,count,effects);
+   if(valid.length>3){
+    const more=doc.createElement('span');more.className='more';
+    more.textContent='+'+(valid.length-3);
+    more.title=valid.slice(3).map(fx=>String(fx.label||'効果')).join(' / ');
+    effects.append(more);
+   }
+   metrics.append(hp,hpValue,count,effects);
+   button.append(heading,metrics);
    fragment.append(button);
   }
   if(!own.length){

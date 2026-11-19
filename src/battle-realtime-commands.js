@@ -40,8 +40,12 @@ export function createRealtimeBattleCommands({
     <header><strong id="realtimeMapTitle">開戦前の隊列配置</strong>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
-    <label class="realtimeMapSquadLabel">対象の味方隊
-     <select id="realtimeMapSquad" aria-label="配置・移動する味方隊"></select></label>
+    <div class="realtimeMapSquadPager" role="group" aria-label="配置・移動する味方隊をページ切替">
+     <button type="button" id="realtimeMapPrev" aria-label="前の味方隊">◀</button>
+     <strong id="realtimeMapSquadName" aria-live="polite">味方隊</strong>
+     <button type="button" id="realtimeMapNext" aria-label="次の味方隊">▶</button>
+     <span id="realtimeMapPage" aria-label="選択中の隊番号">1/1</span>
+    </div>
     <div class="realtimeMapZoom">
      <button type="button" data-realtime-zoom="-1">－ 縮小</button>
      <button type="button" data-realtime-zoom="1">＋ 拡大</button>
@@ -63,7 +67,7 @@ export function createRealtimeBattleCommands({
   const own=squads();
   if(!own.length)return;
   if(!own.some(s=>String(s.id)===String(selectedId)))selectedId=String(own[0].id);
-  for(const select of [$('realtimeSquadSelect'),$('realtimeMapSquad')]){
+  for(const select of [$('realtimeSquadSelect')]){
    const keys=own.map(s=>String(s.id)+':'+String(s.label||''));
    if(select.dataset.signature!==keys.join('|')){
     select.replaceChildren(...own.map(s=>{
@@ -74,6 +78,11 @@ export function createRealtimeBattleCommands({
    }
    select.value=String(selectedId);
   }
+  const index=own.findIndex(s=>String(s.id)===String(selectedId));
+  $('realtimeMapSquadName').textContent=String(own[index]?.label||'第'+(index+1)+'隊');
+  $('realtimeMapPage').textContent=(index+1)+'/'+own.length;
+  $('realtimeMapPrev').disabled=index<=0;
+  $('realtimeMapNext').disabled=index>=own.length-1;
  }
  function getSelected(){return squads().find(s=>String(s.id)===String(selectedId))||null;}
  function setSelected(id,{focus=false}={}){
@@ -128,8 +137,8 @@ export function createRealtimeBattleCommands({
   $('realtimeStart').hidden=next!=='deploy';
   $('realtimeMapTitle').textContent=next==='deploy'?'開戦前の初期配置':'移動先を選択';
   $('realtimeMapHelp').textContent=next==='deploy'?
-   '隊を選んで味方陣地をタップ。重ならない安全なマスへ配置します。何も変えずに開始も可能です。':
-   '青い味方隊から1隊を選んで地図をタップ。移動は止めずにリアルタイム進行します。';
+   '◀ ▶で隊を切替え、味方陣地をタップして配置。何も変えずに開始も可能です。':
+   '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
   $('realtimeMapMessage').textContent='';
   if(next==='move'){zoom=1.6;const own=getSelected();centerX=own?.x??worldSize/2;centerZ=own?.z??worldSize/2;}
   else {zoom=1;centerX=centerZ=worldSize/2;}
@@ -189,8 +198,13 @@ export function createRealtimeBattleCommands({
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
- for(const select of [$('realtimeSquadSelect'),$('realtimeMapSquad')])
-  select.addEventListener('change',()=>setSelected(select.value));
+ $('realtimeSquadSelect').addEventListener('change',()=>setSelected($('realtimeSquadSelect').value));
+ for(const [button,offset] of [['realtimeMapPrev',-1],['realtimeMapNext',1]])
+  $(button).addEventListener('click',()=>{
+   const own=squads(),index=own.findIndex(s=>String(s.id)===String(selectedId));
+   const next=own[index+offset];
+   if(next)setSelected(next.id);
+  });
  for(const button of root.querySelectorAll('[data-realtime-zoom]'))
   button.onclick=()=>{zoom=clamp(zoom*(button.dataset.realtimeZoom==='1'?1.6:1/1.6),1,6);drawMap();};
  $('realtimeMapReset').onclick=()=>{zoom=1;centerX=centerZ=worldSize/2;drawMap();};

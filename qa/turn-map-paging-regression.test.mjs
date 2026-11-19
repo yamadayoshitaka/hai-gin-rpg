@@ -93,3 +93,18 @@ test('50v50 skirmish and story modes can position squads before combat',()=>{
  assert.match(battle,/occupiedCells\.set\(cellKey\(x,z\),actor\)/);
  assert.match(battle,/const mount=mountedCreatureOf\(actor\)/);
 });
+
+test('prebattle squad selection uses back/next paging, not an obstructive select box',()=>{
+ const source=read('../src/battle-realtime-commands.js');
+ const css=read('../src/battle-realtime-commands.css');
+ assert.match(source,/id="realtimeMapPrev"/);
+ assert.match(source,/id="realtimeMapNext"/);
+ assert.match(source,/id="realtimeMapPage"/);
+ assert.match(source,/id="realtimeMapSquadName"/);
+ assert.doesNotMatch(source,/<select id="realtimeMapSquad"/);
+ assert.match(source,/const next=own\[index\+offset\]/);
+ assert.match(source,/if\(next\)setSelected\(next\.id\)/);
+ assert.match(source,/realtimeMapPrev'\)\.disabled=index<=0/);
+ assert.match(source,/realtimeMapNext'\)\.disabled=index>=own\.length-1/);
+ assert.match(css,/#realtimeBattleMapOverlay \.realtimeMapSquadPager/);
+});
