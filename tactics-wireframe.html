@@ -9960,20 +9960,32 @@ function realtimeSpecialTargets(id,action){
    [{id:'self',label:'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
  if(action==='high_ground'){
   if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
+  const origin=squadCenter(id,0);
   return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
-   .filter(route=>route.team===0&&['window','roof'].includes(route.kind)&&
+   .filter(route=>['window','roof'].includes(route.kind)&&
     (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage'))&&
     Number.isInteger(route.access?.x)&&Number.isInteger(route.access?.z)&&
+    massSim._highGroundRouteAlive(route)&&
     (!massSim._highGroundClaims?.has(route.buildingIndex+':0')||
-      members.some(unit=>unit.highGroundRouteIndex===route.index))&&
+     members.some(unit=>unit.highGroundRouteIndex===route.index))&&
     members.some(unit=>unit.hp>=unit.maxHp*.35&&!unit.mountId&&
      (route.kind==='roof'?unit.jobId==='ninja':['archer','mage'].includes(unit.jobId))&&
      (unit.highGroundRouteIndex===route.index||
       (massSim._highGroundFlows?.[route.index]?.[unit.z*massSim.width+unit.x]??0x3fffffff)<0x3fffffff)))
-   .map(route=>({id:String(route.index),x:route.access.x,z:route.access.z,
-     label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+route.buildingIndex+
-      '｜X'+route.access.x+' Z'+route.access.z}))
-   .slice(0,24);
+   .map(route=>{
+    // Pins mark the firing point upstairs, not the entry door on the ground.
+    const endpoint=route.points.at(-1);
+    const x=Number.isFinite(endpoint?.x)?Math.round(endpoint.x/CELL+6):route.access.x;
+    const z=Number.isFinite(endpoint?.z)?Math.round(endpoint.z/CELL+6):route.access.z;
+    const building=townInstances[route.buildingIndex];
+    const name=japaneseBattleObjectName(building?.data?.name||building?.data?.kind||'建物','建物');
+    return {id:String(route.index),x,z,label:
+     (route.kind==='roof'?'🏯 屋根・':'🏹 高所窓・')+name+
+     '（'+(route.buildingIndex+1)+'番）｜X'+x+' Z'+z};
+   })
+   .sort((a,b)=>origin?
+    Math.hypot(a.x-origin.x,a.z-origin.z)-Math.hypot(b.x-origin.x,b.z-origin.z):0)
+   .slice(0,32);
  }
  const allowed=action==='destroy_bridge'?['mage','summoner','ninja']:
   action==='break_structure'?['mage','summoner']:
@@ -9996,10 +10008,12 @@ function realtimeSpecialTargets(id,action){
  }
  const kind=action==='destroy_bridge'?'bridge':action==='unlock_door'?'door':'building';
  const objects=(massSim?.actions?.objects??skirmishActions?.objects??[]);
+ const thiefRank=members.filter(u=>u.jobId==='thief')
+  .reduce((rank,u)=>Math.max(rank,u.rarity==='UR'?5:u.rarity==='R'?3:1),0);
  const origin=squadCenter(id,0);
  const distance=o=>origin?Math.hypot(o.x-origin.x,o.z-origin.z):Infinity;
  return objects.filter(o=>o.alive&&o.category==='structure'&&o.type===kind&&
-  (kind!=='door'||(o.team===1&&o.locked))&&
+  (kind!=='door'||(o.team===1&&o.locked&&o.lockLevel<=thiefRank))&&
   Number.isInteger(o.x)&&Number.isInteger(o.z))
   .sort((a,b)=>distance(a)-distance(b))
   .slice(0,60).map((o,index)=>{
