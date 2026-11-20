@@ -713,6 +713,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const profile=[[0,0],[.24,0],[.30,.025],[.36,.06],[.41,.13],[.43,.18],[.46,.31],[.445,.38],[.46,.43],[.44,.55],[.41,.69],[.355,.76],[.32,.81],[.235,.86],[.19,.88],[.14,.94],[.17,1.00]].map(([r,y])=>new THREE.Vector2(r*c,y*c));
    const bagGeometry=new THREE.LatheGeometry(profile,16);
    const cordGeometry=new THREE.TorusGeometry(.165*c,.022*c,6,16);
+   // Twine is actually tied: a raised knot and two short hanging ends.
+   // Shared geometries/material avoid a per-sack allocation and preserve the
+   // existing batched draw-mesh path for the five sacks.
+   const knotGeometry=new THREE.SphereGeometry(.045*c,8,6);
+   const tailGeometry=new THREE.CylinderGeometry(.012*c,.018*c,.19*c,6);
    for(let i=0;i<5;i++){
     const x=((i%2)*.86-.43)*c,z=((i%3)-1)*.2*c;
     const y=Math.floor(i/2)*.58*c;
@@ -720,6 +725,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
     sack.scale.set(1,1,.85);sack.position.set(x,y,z);sack.castShadow=true;sack.receiveShadow=true;root.add(sack);
     const cord=new THREE.Mesh(cordGeometry,twine);
     cord.rotation.x=Math.PI/2;cord.scale.y=.85;cord.position.set(x,y+.905*c,z);cord.castShadow=true;root.add(cord);
+    const knot=new THREE.Mesh(knotGeometry,twine);
+    knot.position.set(x+.145*c,y+.916*c,z+.025*c);knot.castShadow=true;root.add(knot);
+    for(const side of [-1,1]){
+     const tail=new THREE.Mesh(tailGeometry,twine);
+     tail.position.set(x+(.145+side*.036)*c,y+.806*c,z+.035*c);
+     tail.rotation.z=side*.22;tail.castShadow=true;root.add(tail);
+    }
    }
   }
   if(id==='town_stone_pile_001'){
