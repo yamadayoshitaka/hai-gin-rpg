@@ -7,7 +7,7 @@ export const BATTLE_JOB_SPECIAL_ACTIONS=Object.freeze({
   {id:'burn_building',label:'🔥 建物を燃やす',target:'building'}
  ]),
  '召喚士':Object.freeze([
-  {id:'summon_and_attack',label:'🐉 召喚→攻撃',target:'self'},
+  {id:'summon_and_attack',label:'🐉 召喚→攻撃対象を選ぶ',target:'enemy'},
   {id:'destroy_bridge',label:'🌉 召喚獣で橋を破壊',target:'bridge'},
   {id:'break_structure',label:'🐉 召喚獣で建物を破壊',target:'building'}
  ]),
