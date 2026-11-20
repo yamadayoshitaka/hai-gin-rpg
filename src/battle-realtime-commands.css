@@ -682,3 +682,22 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #battleCommandWizard .battleWizardBody{max-height:49dvh!important}
  #battleRealtimeControls #battleMissionNotice{left:6px;right:6px;font-size:10px}
 }
+
+/* Active command and queued-followup status: never cover the battlefield center. */
+#battleRealtimeControls #battleActiveOrderNotice{
+ position:fixed;left:clamp(90px,17vw,160px);right:clamp(90px,17vw,160px);
+ bottom:calc(var(--battleReportHeight,118px) + 35px);z-index:12;
+ padding:5px 9px;background:#10344ced;border:1px solid #9ebfce;
+ border-radius:8px;color:#e4f9ff;text-align:center;
+ font:750 11px/1.4 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ pointer-events:none;
+}
+#battleRealtimeControls #battleActiveOrderNotice[hidden]{display:none!important}
+#battleRealtimeControls:has(#realtimeBattleDock.wizard-active) #battleActiveOrderNotice{display:none!important}
+#battleCommandWizard .battleWizardCurrentOrder{
+ font:700 11px/1.45 system-ui;color:#ffdea2;padding:7px 9px;
+ border:1px solid #587b90;border-radius:6px;background:#122e45;
+}
+@media(max-width:600px){
+ #battleRealtimeControls #battleActiveOrderNotice{left:6px;right:6px;font-size:10px}
+}
