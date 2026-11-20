@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-visible-cpu-limbs-v10-20261120';
+export const M019_HERO_REVISION='m019-high-contrast-four-limbs-v11-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -115,11 +115,11 @@ export function sculptM019Jaw(g,jaw){
  * flat sideways plates. Short planted shins and original joints are retained.
  */
 // Sideways elbow remains wide, while the vertical shin is now short.
-export const M019_SPRAWL_KNEE_X=.68;
+export const M019_SPRAWL_KNEE_X=.93;
 export const M019_SPRAWL_KNEE_Y=-.085;
 export const M019_SPRAWL_FOOT_X=.007;
-export const M019_SPRAWL_FOOT_Y=-.650;
-export const M019_SHOULDER_LOCAL_Y=1.26;
+export const M019_SPRAWL_FOOT_Y=-.770;
+export const M019_SHOULDER_LOCAL_Y=1.325;
 /**
  * m019's four legs use a conventional, WebGL-compatible Mesh.
  * Mobile GPUs rendered v9's SkinnedMesh as invisible even while CPU
@@ -135,14 +135,17 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  const kneeY=M019_SPRAWL_KNEE_Y;
  const footY=kneeY+M019_SPRAWL_FOOT_Y;
  const points=[
-  [0,.035,z],[sign*.090,.038,z+.012],
-  [sign*.215,.028,z+.023],[sign*.370,-.004,z+.020],
-  [sign*.535,-.050,z+.010],[kneeX,kneeY,z],
-  [kneeX,kneeY-.120,z],[kneeX,kneeY-.270,z+.008],
-  [kneeX,kneeY-.440,z+.032],[kneeX,footY,z+.095]
+  // Place muscle crest ABOVE the dark belly and project the elbow farther
+  // outside the ribs. Previous centers were in silhouette shadow or hidden
+  // by the near-black abdomen even though they cast long floor shadows.
+  [0,.090,z],[sign*.145,.103,z+.012],
+  [sign*.330,.136,z+.023],[sign*.555,.079,z+.020],
+  [sign*.750,.015,z+.010],[kneeX,kneeY,z],
+  [kneeX,kneeY-.135,z],[kneeX,kneeY-.305,z+.008],
+  [kneeX,kneeY-.510,z+.032],[kneeX,footY,z+.095]
  ];
  const path=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
- const baseRadius=fore?.219:.242;
+ const baseRadius=fore?.291:.318;
  // The medium-dark rocky shading makes real legs visible against the black
  // torso without introducing a glowing red or rubbery-looking arm surface.
  const skin=g.tube(leg,'light',points,baseRadius,{
@@ -157,10 +160,10 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  if(attr.count!==ringCount*stride+2)throw Error('m019 continuous muscle needs closed rings');
  const radiusScale=t=>{
   if(t<.16)return 1.08+.05*Math.sin(t/.16*Math.PI);
-  if(t<.45)return 1.08-(t-.16)*1.15;
-  if(t<.63)return .7465-(t-.45)*1.14;
-  if(t<.85)return .5413-(t-.63)*.33;
-  return .4687-(t-.85)*.16;
+  if(t<.45)return 1.10-(t-.16)*.72;
+  if(t<.63)return .8912-(t-.45)*1.30;
+  if(t<.85)return .6572-(t-.63)*.57;
+  return .5318-(t-.85)*.48;
  };
  const weight=new Float32Array(attr.count);
  const smooth=t=>{
@@ -211,6 +214,8 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  skin.userData.m019WholeLegClosedSurface=true;
  skin.userData.m019GpuSkinningRemoved=true;
  skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
+ skin.userData.m019AboveFloorMuscleCrest=true;
+ skin.userData.m019VisibleLimbRevision='v11-muscle-contrast';
  skin.userData.m019MuscleRadius=baseRadius;
  skin.userData.m019HorizontalThigh=true;
  skin.userData.m019VerticalShin=true;
@@ -226,10 +231,10 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  for(let vein=0;vein<veins;vein++){
   const offset=vein*.024;
   const fissure=g.tube(leg,'accent',[
-   [sign*.045,.245-offset,z+.017],
-   [sign*.107,.242-offset,z+.043],
-   [sign*.169,.227-offset,z+.020],
-   [sign*.225,.199-offset,z+.035]
+   [sign*.088,.310-offset,z+.017],
+   [sign*.177,.343-offset,z+.043],
+   [sign*.283,.361-offset,z+.020],
+   [sign*.393,.328-offset,z+.035]
   ],detail==='low'?.0045:.0065,{
    name:'m019-limb-molten-crack-'+name+'-'+vein,
    glow:detail!=='low'
