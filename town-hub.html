@@ -144,6 +144,7 @@ import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setAr
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inncompact-20261116';
 import {registerBattlePlan,selectBattlePlan,allBattlePlans} from './src/battle-plan-recommendations.js?v=20261116';
 import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions,sortiePlanningStage} from './src/three-team-sortie.js';
+import {autoComposeThreeTeams} from './src/three-team-auto-composition.js';
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';
 import {mangaForStage} from './src/story-stage-manga.js';
@@ -247,7 +248,7 @@ $('townDialogueNext').onclick=()=>{
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
 function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();tavernGachaResults=null;panel=which;
- townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){sortieView='setup';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
+ townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){sortieView='templates';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){tavernGachaResults=null;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
  townAudio.setScene(insideFacility==='formation'?'inn':insideFacility==='save'?'church':insideFacility==='story'?'castle':insideFacility==='tavern'?'tavern':insideFacility?'shop':'town');}
@@ -406,7 +407,7 @@ function renderInnPages(){
  }
  root.replaceChildren(heading,nav,pages.strategies,pages.deployment,pages.overview,pages.squads,pages.recruit);
 }
-let sortieView='setup',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
+let sortieView='templates',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
@@ -476,6 +477,13 @@ $('panelContent').onclick=event=>{
  if(panel==='formation'){
   const target=event.target.closest('button');
   if(!target)return;
+  if(target.hasAttribute('data-sortie-auto')){
+   try{const summary=autoComposeThreeTeams(game,target.dataset.sortieAuto);
+    sortieTeamId=1;sortieView='templates';sortieCellIndex=5;persist();renderPanel();
+    notice('自動編成：'+(summary.mode==='strongest'?'最強':summary.mode==='economy'?'節約':'バランス')+' ／ '+summary.activeTeams+'隊・'+summary.planned+'人');
+   }catch(error){notice(error.message||String(error));renderPanel();}
+   return;
+  }
   if(target.hasAttribute('data-sortie-battle-save')){
    try{
     const name=$('panelContent').querySelector('[data-battle-plan-name]')?.value;

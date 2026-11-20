@@ -31,3 +31,9 @@ body.story-three-group-ui .threeGroupHpTrack>span{display:block;height:100%;back
 body.story-three-group-ui .tenGroupGrid button.danger .threeGroupHpTrack>span{background:#dc7366}
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button{min-height:61px}
 body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid button small{font-size:9px;line-height:1.1}
+
+/* Three actual command teams; strategy is accessible from the top-level cards. */
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+body.story-three-group-ui .battleThreeGroupPanel .threeTeamCard{display:grid;grid-template-rows:auto auto;gap:4px;min-width:0}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid .threeTeamCard button{font-size:11px;min-height:55px}
+body.story-three-group-ui .battleThreeGroupPanel .tenGroupGrid .threeTeamCard button.threeTeamCommand{min-height:36px;background:#5b492c;color:#ffe7ac;border-color:#bb9f66;text-align:center;align-items:center}

@@ -1,5 +1,5 @@
 /**
- * User-directed ten-team sortie planning. Teams are separate from strategists:
+ * User-directed three-team sortie planning. Teams are separate from strategists:
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
@@ -7,15 +7,15 @@ import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FO
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts} from './sortie-formation-template-rules.js';
-export const SORTIE_TEAM_IDS=Object.freeze(Array.from({length:10},(_,i)=>i+1));
-export const SORTIE_SQUADS_PER_GROUP=16;
+export const SORTIE_TEAM_IDS=Object.freeze(Array.from({length:3},(_,i)=>i+1));
+export const SORTIE_SQUADS_PER_GROUP=3;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
 export const SORTIE_TEST_LEVEL=99;
 export function sortieLevel(game){
  const requested=game?.sortieTestLevel;
  return Math.max(1,Math.min(99,Number.isFinite(Number(requested))?Math.trunc(Number(requested)):Number(game?.campaign?.commander?.level)||1));
 }
-export function sortieSquadCap(game){return Math.min(16,4+Math.floor(sortieLevel(game)/7));}
+export function sortieSquadCap(game){return 3;}
 export const SORTIE_GRID_EDGE=4;
 export const SORTIE_GRID_CELLS=SORTIE_GRID_EDGE*SORTIE_GRID_EDGE;
 const permutation=(first)=>Object.freeze([...first,...Array.from({length:16},(_,i)=>i).filter(i=>!first.includes(i))]);
@@ -52,8 +52,9 @@ const FORMATION_BASE=Object.freeze({
  dragon:Object.freeze({name:'龍牙陣形',level:85,attack:.23,defense:.12,mobility:.09}),
  constellation:Object.freeze({name:'星鐘陣形',level:99,attack:.25,defense:.22,mobility:.14,healing:.12})
 });
+const MAGIC_FORMATION_BONUS=Object.freeze({attack:.04,balanced:.08,support:.20,wall:.04,spear:.02,arrow:.14,wedge:.04,pincer:.09,circle:.13,ambush:.08,cross:.11,fortress:.05,dragon:.18,constellation:.24});
 export const SORTIE_FORMATIONS=Object.freeze(Object.fromEntries(
- Object.entries(FORMATION_BASE).map(([id,base])=>[id,Object.freeze({...base,...formationTemplate(id)})])
+ Object.entries(FORMATION_BASE).map(([id,base])=>[id,Object.freeze({...base,magic:MAGIC_FORMATION_BONUS[id]||0,...formationTemplate(id)})])
 ));
 const FORMATION_ROLE_CELL_JOBS=(formation,cell)=>{
  const rank=SORTIE_FORMATION_CELLS[formation]?.indexOf(cell);
@@ -90,7 +91,7 @@ export const unlockedSortieFormations=game=>Object.entries(SORTIE_FORMATIONS)
 export function sortieFormationBuff(game,teamId){
  const t=game?.sortiePlan?.teams?.find(x=>x.id===Number(teamId));
  const f=SORTIE_FORMATIONS[sortieFormationStatus(game,teamId).id]||{};
- return {attack:f.attack||0,defense:f.defense||0,mobility:f.mobility||0,healing:f.healing||0};
+ return {attack:f.attack||0,defense:f.defense||0,mobility:f.mobility||0,magic:f.magic||0,healing:f.healing||0};
 }
 export const SORTIE_ENTRY_SLOTS=Object.freeze([9,10,11,6,7,8,3,4,5,0]);
 export const SORTIE_TOTAL_RENDER_LIMIT=50; // The current campaign battle renderer.
@@ -167,7 +168,7 @@ export function ensureSortiePlan(game){
  const teams=SORTIE_TEAM_IDS.map(id=>{
   const old=saved?.find(t=>Number(t?.id)===id),team=blankTeam(id);
   if(!old)return team;
-  // Four distinct troop contingents per group. Migrate the former unbounded
+  // Only three job contingents per team; old extra jobs return to the reserve. Migrate the former unbounded
   // counts object without deleting troop inventory from the campaign.
   const slotSource=Array.isArray(old.slots)?old.slots:Object.keys(old.counts||{});
   const seen=new Set();
@@ -203,7 +204,7 @@ export function ensureSortiePlan(game){
   return team;
  });
  if(!saved?.length){
-  // Preserve as many existing troop contingents as possible, four per group.
+  // Preserve up to three job contingents per active team.
   sources.slice(0,SORTIE_TEAM_IDS.length*sortieSquadCap(game)).forEach((s,index)=>{
    const cap=sortieSquadCap(game),team=teams[Math.floor(index/cap)];
    team.slots[index%cap]=String(s.id);
@@ -350,7 +351,7 @@ export function setSortieCount(game,teamId,squadId,count){
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
-/** Assign a job contingent to one of four visible formation cells. */
+/** Assign a job contingent to one of three visible formation cells. */
 export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId),index=Number(slotIndex);
@@ -408,7 +409,7 @@ export function setSortieJobSlot(game,teamId,slotIndex,squadId){
  return teamOf(game,teamId);
 }
 /** Assign or move a real troop contingent on the 4x4 board.
- * One contingent occupies one cell and each group still holds at most four.
+ * One job contingent occupies one cell and each team holds at most three.
  */
 export function setSortieGridCell(game,teamId,cellIndex,squadId){
  ensureSortiePlan(game);
@@ -506,6 +507,24 @@ export function resolvedSortieSlot(game,stage,team){
 export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
  if(!jobs.size||!sortieFormationStatus(game,teamId).valid)return [];
+ const style=teamOf(game,teamId)?.formation||'balanced';
+ // Formation controls the allowed tactical families; jobs still gate execution.
+ const permitted={
+  attack:['charge','defend','hold','retreat','destroy','weaken'],
+  balanced:['charge','defend','hold','retreat','support','explore','destroy','weaken'],
+  support:['defend','hold','retreat','support','explore'],
+  wall:['defend','hold','retreat','support'],
+  spear:['charge','defend','hold','destroy'],
+  arrow:['charge','defend','hold','explore'],
+  wedge:['charge','defend','retreat','destroy'],
+  pincer:['charge','defend','retreat','explore','weaken'],
+  circle:['defend','hold','support','explore'],
+  ambush:['charge','hold','retreat','explore','weaken'],
+  cross:['charge','defend','hold','support','explore'],
+  fortress:['defend','hold','retreat','support'],
+  dragon:['charge','defend','support','destroy','weaken'],
+  constellation:['charge','defend','hold','retreat','support','explore','destroy','weaken']
+ }[style]||[];
  const orders=['charge','defend','hold','retreat'];
  const links=sortieAdjacentJobs(game,teamId);
  // A healer needs a neighboring unit to issue group support; a scout needs
@@ -515,7 +534,7 @@ export function availableSortieOrders(game,teamId){
  if(['忍者','シーフ','召喚士'].some(job=>jobs.has(job)))orders.push('explore');
  if([...jobs].some(j=>['魔法使い','忍者'].includes(j)))orders.push('destroy');
  if(['忍者','シーフ','魔法使い'].some(job=>jobs.has(job)))orders.push('weaken');
- return orders;
+ return orders.filter(order=>permitted.includes(order));
 }
 /** Store several battle methods during inn planning. Targets are chosen in battle. */
 export function setSortieTactics(game,teamId,tacticIds){
