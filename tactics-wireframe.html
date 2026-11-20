@@ -10399,6 +10399,27 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   getMoveTargets:(kind,id)=>realtimeMoveTargets(kind,id),
   getSharedItems:()=>realtimeSharedItems(),
  getObjectiveCheckpoints:()=>objectiveCheckpoints.snapshot(),
+ onCommandCommitted:entry=>{
+  const squadId=String(entry.squadId);
+  const groupId=normalizeArmyGroup(armyGroupBySquad[squadId])||'1';
+  let mode=null,point=null,targetIds=[];
+  if(entry.category==='move'&&entry.point){
+   mode=entry.arrival==='defend'?'defend':'hold';
+   point={x:entry.point.x,z:entry.point.z};
+  }else if(entry.category==='attack'&&entry.target?.squadId!=null){
+   mode='charge';targetIds=[String(entry.target.squadId)];
+  }else if(entry.category==='item'){
+   mode='item';targetIds=[String(entry.target?.id||squadId)];
+  }else if(entry.category==='special'&&
+      ['destroy_bridge','break_structure','burn_building'].includes(entry.specialId)){
+   mode='destroy';
+   const raw=String(entry.target?.id||'');
+   targetIds=[raw.startsWith('object:')?raw.slice(7):raw];
+  }
+  if(mode)objectiveCheckpoints.register({
+   groupId,mode,squadIds:[squadId],targetIds,point,itemId:entry.itemId||null
+  });
+ },
   onSharedItem:(itemId,id)=>useSquadBattleItem(itemId,id),
  getRallyInfo:id=>({
   ...rallyCycleStatus(),
