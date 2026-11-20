@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
-import {makeBattleRpgStatusRows} from '../src/battle-rpg-squad-source.js';
+import {makeBattleRpgStatusRows,aggregateBattleRpgTeams} from '../src/battle-rpg-squad-source.js';
 import {battleJobPortrait,JOB_PORTRAIT_FILES} from '../src/battle-job-portraits.js';
 import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon,rpgHudEffectIcon,rpgHudStateIcon,rpgHudTroopPercent} from '../src/battle-rpg-squad-hud.js';
 
@@ -206,4 +206,44 @@ test('single tap focuses camera; double tap opens allied orders; overview camera
  assert.match(js,/pendingTapTimer=setTimeout/);
  assert.match(js,/if\(pendingTapTimer!==null\)clearTimeout\(pendingTapTimer\)/);
  assert.match(html,/cameraOverviewOffset=new THREE\.Vector3\(110,510,110\)/);
+});
+
+
+test('three inn teams aggregate nine job squads in the combat HUD without changing real combat rows',()=>{
+ const physical=Array.from({length:9},(_,i)=>({
+  team:0,id:String((Math.floor(i/3)+1)*1000+i%3+1),
+  name:'第'+(i+1)+'隊',job:['剣士','魔法使い','僧侶'][i%3],
+  alive:i===4?0:2,total:2,hp:i===4?0:40,maxHp:80,
+  mp:i===4?0:8,maxMp:16,attackPercent:50,
+  effects:i===0?[{kind:'buff',label:'攻↑10%',seconds:5}]:[],
+  mode:'charge',inContact:i===0
+ }));
+ const enemies=Array.from({length:2},(_,i)=>({
+  team:1,id:String(i),name:'敵'+i,job:'魔獣',alive:1,total:1,hp:60,maxHp:60,
+  mp:0,maxMp:0,attackPercent:100,effects:[],mode:'charge',inContact:false
+ }));
+ const map=Object.fromEntries(physical.map((row,i)=>[row.id,Math.floor(i/3)+1]));
+ const result=aggregateBattleRpgTeams([...physical,...enemies],map);
+ assert.deepEqual(result.filter(row=>row.team===0).map(row=>row.id),['team:1','team:2','team:3']);
+ assert.deepEqual(result.filter(row=>row.team===1),enemies);
+ for(const [i,team] of result.slice(0,3).entries()){
+  assert.equal(team.members.length,3);
+  assert.deepEqual(team.members,physical.slice(i*3,i*3+3));
+  assert.equal(team.total,6);
+  assert.equal(team.maxHp,240);
+  assert.equal(team.maxMp,48);
+  assert.equal(team.job,'3ジョブ');
+ }
+ assert.equal(result[1].alive,4);
+ assert.equal(result[1].hp,80);
+ assert.equal(result[1].mp,16);
+ assert.equal(result[0].inContact,true);
+ assert.deepEqual(result[0].effects,physical[0].effects);
+ assert.equal(physical[0].id,'1001','physical battle squad ID must remain unchanged');
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const hud=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
+ assert.match(html,/aggregateBattleRpgTeams\(rows,armyGroupBySquad\)/);
+ assert.match(html,/targetedStrategyUi\.open\(group,\{startAtRecommendations:true,groupOnly:true\}\)/);
+ assert.match(hud,/expandedTeamId/);
+ assert.match(hud,/rpgJobDivision/);
 });
