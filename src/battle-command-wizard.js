@@ -167,6 +167,8 @@ export function mountBattleCommandWizard({
   }else if(kind?.startsWith('attack_')&&target&&Number(target.team)===1&&target.squadId!=null){
    accepted=onTargetOrder(id,state.command,target);
   }else if(state.command)accepted=onOrder(id,state.command);
+  if(accepted?.followup&&accepted?.point)
+   queueArrival(id,{command:accepted.followup,point:{...accepted.point}});
   if(accepted?.openMove){close();return;} // Already executed: never spend MP twice.
   if(accepted){
    onCommandCommitted({squadId:id,category:state.category,kind:state.kind,command:state.command,
