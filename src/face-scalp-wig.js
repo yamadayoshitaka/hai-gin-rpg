@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-real-fibres-v18';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-depth-ear-v19';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -602,8 +602,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   sheen:.12,sheenRoughness:.75,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
   transparent:false,opacity:1,depthWrite:true,
-  polygonOffset:shortHair,polygonOffsetFactor:shortHair?1:0,
-  polygonOffsetUnits:shortHair?1:0
+  polygonOffset:shortHair,polygonOffsetFactor:shortHair?-2:0,
+  polygonOffsetUnits:shortHair?-2:0
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
@@ -619,7 +619,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
- if(shortHair){mesh.userData.shortHairDepthPriority=false;}
+ if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
@@ -699,11 +699,11 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
   }
   tangent.normalize();
   widthDir.crossVectors(up,tangent).normalize();
-  const width=d.x*(.0010+.00048*fract01(i*.381966));
-  const length=d.x*(.014+.012*fract01(i*.41421356));
-  const base=root.clone().addScaledVector(up,d.x*.0030);
+  const width=d.x*(.0007+.00025*fract01(i*.381966));
+  const length=d.x*(.007+.006*fract01(i*.41421356));
+  const base=root.clone().addScaledVector(up,d.x*.0015);
   const tip=base.clone().addScaledVector(tangent,length)
-   .addScaledVector(up,d.x*.0025);
+   .addScaledVector(up,d.x*.0012);
   const points=[
    base.clone().addScaledVector(widthDir,-width),
    base.clone().addScaledVector(widthDir,width),
