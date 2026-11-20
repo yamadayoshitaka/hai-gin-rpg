@@ -1439,7 +1439,7 @@ cloneCanine?
    // Wolf king: shoulder limbs originate laterally from the scapula, not
    // under the midline of the chest; hips follow the narrower rear flanks.
    // Both toe and hock stay on the SAME lateral axis, no toe-out rotation.
-   const lateralX=magmaSalamander?(fore>0?.220:.198):
+   const lateralX=magmaSalamander?(fore>0?.315:.284):
      s.id==='m001'?
      (fore>0?.402:.317):
      // Move the shoulder and hip sockets INSIDE the trunk instead
@@ -1475,8 +1475,8 @@ if(salamanderLineage){
        // A torso-owned, embedded fascia joins each shoulder and hip
        // to the upper limb; it cannot float away with an animated knee.
        const fascia=g.bridge(torso,'skin',
-         [side*.133,1.256,fore>0?1.035:-1.025],
-         [side*.274,1.260,fore>0?1.035:-1.025],.148,.112);
+         [side*.202,1.310,fore>0?1.035:-1.025],
+         [side*.383,1.310,fore>0?1.035:-1.025],.174,.126);
        fascia.name='m019-shoulder-hip-fascia-'+name;
        fascia.userData.m019TorsoAnchoredSocket=true;
      }
