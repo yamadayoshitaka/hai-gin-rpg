@@ -216,6 +216,15 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/beast-http.log 2>&1 &
           node qa/beast-mother-webgl-smoke.cjs qa-reports/beast-mother-visual
+      - name: Render m019 four solid limbs in actual front and side WebGL
+        run: node qa/m019-visible-limbs-webgl.cjs qa-reports/m019-visible-limbs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m019-actual-webgl-limb-review
+          path: qa-reports/m019-visible-limbs/
+          retention-days: 14
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         if: always()
         with:
