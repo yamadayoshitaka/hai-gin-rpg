@@ -22,6 +22,8 @@ export function m019FullBodyFit({
   horizontalSpan:spanX,verticalSpan:spanY,
   horizontalFovRadians:2*Math.atan(hf),
   azimuth:'negative-x-side-head-right',
-  direction:Object.freeze({x:-.96,y:.205,z:.115})
+  // A raised three-quarter side view exposes the sprawled shoulder and
+  // planted toes; the old near-horizontal camera hid both behind the belly.
+  direction:Object.freeze({x:-.94,y:.355,z:.19})
  });
 }
