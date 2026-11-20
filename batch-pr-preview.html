@@ -13,6 +13,10 @@ label{font-size:12px;display:grid;gap:4px;min-width:155px;flex:1}
 select,button{font:inherit;padding:10px;background:#1c435c;border:1px solid #6a91a9;border-radius:8px;color:white;min-height:43px}
 button{cursor:pointer}
 button[aria-pressed=true]{background:#416f8a;border-color:#f1d69b}
+#touchMode{background:#286354;border-color:#92cbb3}
+#viewer.viewer-scroll-pass{pointer-events:none}
+#viewer.viewer-interactive{pointer-events:auto}
+@media(max-width:730px){#viewer.viewer-scroll-pass{height:62dvh;min-height:320px}}
 .info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0}
 .info>div{border:1px solid #44647a;background:#142b3d;padding:9px;border-radius:8px;min-width:0}
 .info strong{display:block;color:#f1d69b}
@@ -44,7 +48,8 @@ small{font-size:11px;color:#aec4d3}
 <p class="row"><a id="prLink" class="link" href="#" target="_blank" rel="noopener noreferrer">PRの実差分・コミットを確認</a><a id="mainLink" class="link" href="#" target="_blank" rel="noopener noreferrer">本編の画面を別タブで開く</a><a id="draftLink" class="link" href="#" target="_blank" rel="noopener noreferrer">PR版の画面を別タブで開く</a></p>
 <div class="row"><button id="published" type="button" aria-pressed="true">本編・公開版</button><button id="candidate" type="button" aria-pressed="false">PR・改修版（試験用）</button><span id="which">本編を表示中</span></div>
 <p id="warning" class="warn">PR版は第三者の静的ホスト（raw.githack.com）による試験的表示です。初回は確認ページが表示される場合があります。未公開の秘密情報や私物GLBは送らないでください。表示失敗時は「別タブで開く」をお試しください。</p>
-<iframe id="viewer" title="3Dプレビュー" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
+<p class="row"><button id="touchMode" type="button" aria-pressed="false">3Dを操作する（タップ）</button><small id="touchHint">画面スクロール優先：モデル上をスワイプしても下まで移動できます。操作する時だけ切り替えてください。</small></p>
+<iframe id="viewer" class="viewer-scroll-pass" title="3Dプレビュー" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
 <p class="summary" id="worldSummary" hidden>60種の品質受入状況を照合中…</p>
 <p><small>GitHub APIは閲覧時に自動呼出ししません。PRの最新SHAは「情報を手動取得」を押した時だけ1回問い合わせます。403発生中も本編とPRリンクは利用できます。Pages公開SHAはゲームと同じrelease.jsonで判定し、PRがマージされた事実だけで公開済みにはしません。モデル原画・実ソースは別々に検証してください。</small> <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/commits/main" target="_blank" rel="noopener noreferrer">GitHub mainのコミット履歴</a></p>
 </main>
@@ -55,6 +60,18 @@ const REPO='yamadayoshitaka/hai-gin-rpg',GH='https://github.com/'+REPO;
 const API='https://api.github.com/repos/'+REPO,PROD='https://yamadayoshitaka.github.io/hai-gin-rpg/';
 const PREVIEW='https://raw.githack.com/'+REPO+'/';
 const $=id=>document.getElementById(id);
+// Embedded WebGL consumes touch gestures on phones and traps the outer page.
+// Default to page scrolling; explicitly opt into model gestures when needed.
+function setTouchMode(interactive){
+ const frame=$('viewer'),button=$('touchMode');
+ frame.classList.toggle('viewer-interactive',interactive);
+ frame.classList.toggle('viewer-scroll-pass',!interactive);
+ button.setAttribute('aria-pressed',String(interactive));
+ button.textContent=interactive?'ページをスクロールする':'3Dを操作する（タップ）';
+ $('touchHint').textContent=interactive?'モデルの回転・ズーム操作中です。下へ移動するには「ページをスクロールする」を押してください。':'スクロール優先：モデルの上をスワイプしてもページを下へ移動できます。';
+}
+$('touchMode').addEventListener('click',()=>setTouchMode($('touchMode').getAttribute('aria-pressed')!=='true'));
+setTouchMode(false);
 let data=null,row=null,pr=null,mode='published',releaseSha=null,mainSha=null,seq=0;
 const groups={world:'🏰 オブジェクト',faceHair:'👤 顔・髪',outfit:'🛡️ 衣装',creatureMonster:'🐉 モンスター',creatureSummon:'✨ 召喚獣',gameQuality:'🎮 ゲーム画質/FPS/エラー',anime:'🎬 漫画'};
 const short=s=>typeof s==='string'?s.slice(0,12):'不明';
