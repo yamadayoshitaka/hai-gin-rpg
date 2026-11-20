@@ -52,14 +52,23 @@ const before=patient.hp;
 const call=rescue.requestSquadHealing(patient.squadId,String(priest.squadId));
 assert.ok(call&&call.supportId===String(priest.squadId));
 assert.equal(patient.hp,before,'UIから回復ボタンを押すだけでHPを増やさない');
-for(let i=0;i<170&&patient.hp===before;i++)rescue.step(.1);
+const healTrace=[];
+for(let i=0;i<170&&patient.hp===before;i++){
+ rescue.step(.1);
+ if(i<5||i%30===29)healTrace.push({i,
+  patient:[patient.x,patient.z,patient.hp],
+  priest:[priest.x,priest.z,priest.hp,priest.mp,priest.cooldown,priest._pendingCast?.skill?.id],
+  target:priest.healTargetSquadId,
+  nearby:rescue.actions.nearby(priest.team,priest.x,priest.z,14).filter(u=>u.hp<u.maxHp).map(u=>u.id).slice(0,5)
+ });
+}
 assert.ok(patient.hp>before,'僧侶が実際に回復魔法を使い負傷部隊のHPを回復する '+JSON.stringify({
  before,after:patient.hp,patientAlive:patient.alive,patientPosition:[patient.x,patient.z],
  priests:rescue.units.filter(u=>u.team===0&&u.jobId==='priest').slice(0,8)
   .map(u=>({squad:u.squadId,position:[u.x,u.z],mp:u.mp,cooldown:u.cooldown,
    pending:u._pendingCast?.skill?.id,healTarget:u.healTargetSquadId,
    action:u.action,alive:u.alive})),
- healing:[...rescue.squadHealTargets],casts:rescue.actions.castCount
+ healing:[...rescue.squadHealTargets],casts:rescue.actions.castCount,trace:healTrace
 }));
 assert.ok(patient.hp<=patient.maxHp);
 console.log('部隊別: 建物放火 / 橋破壊 / 敵部隊指定 / 編成固定 / 僧侶の回復支援 PASS');
