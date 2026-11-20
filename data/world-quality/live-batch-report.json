@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "2c6e9e22dde4fecf87276b4cb23ca94af6f782fc7d2c6683d0583d0eaaa1ccb3",
+  "sourceFingerprint": "b80de1dc96b72af74ee77a2d4d0d9575417e8938f316d323064ee13bc07834d3",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for manor_garden_001 (visual review still required)"
+        "Real WebGL screenshots available for timber_bridge_broken_001 (visual review still required)"
       ]
     }
   },
