@@ -402,7 +402,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // Short battle hair needs a full rear hairline through the nape. Keep
   // the frontal threshold unchanged so skin around the eyes stays exposed.
   const rearShortCover=shortHair&&battleStableCoverage&&zNorm<-.025;
-  // Cover posterior donor triangles below the old 58% cut, including the\n  // temple-to-occipital seam. Keep the forward face threshold unchanged.\n  const yCut=box.min.y+d.y*(zNorm>.10?.815:
+  // Cover posterior donor triangles below the old 58% cut, including the
+  // temple-to-occipital seam. Keep the forward face threshold unchanged.
+  const yCut=box.min.y+d.y*(zNorm>.10?.815:
    zNorm<-.035?(rearShortCover?.505:.525):
    Math.abs((mid.x-center.x)/d.x)>.19?.625:.71);
   // v64: do not DISCARD a whole scalp triangle if only one vertex
