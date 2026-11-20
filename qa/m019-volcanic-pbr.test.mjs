@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
-import {m019VolcanicSurface} from '../src/m019-volcanic-surface.js';
+import {m019VolcanicSurface} from '../src/m019-volcanic-surface.js?v=m019-volcanic-pbr-v19-20261120';
 
 for(const detail of ['low','high']){
  test('m019 '+detail+' has real basalt/lava texture on body, all four limbs and paws',()=>{
