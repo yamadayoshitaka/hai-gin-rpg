@@ -23,3 +23,28 @@ export function radarHitPin(pins=[],px=0,py=0,radius=.072){
  }
  return best;
 }
+
+
+/** Visual radar only: group physical job squads into 1-3 command-team pins. */
+export function battleThreeTeamRadarSquads(squads=[],groupBySquad={}){
+ const groups=new Map();
+ for(const squad of squads){
+  if(!squad||!(Number(squad.alive)>0)||
+   !Number.isFinite(squad.x)||!Number.isFinite(squad.z))continue;
+  const groupId=Number(groupBySquad[String(squad.id)]);
+  if(!Number.isInteger(groupId)||groupId<1||groupId>3)continue;
+  let group=groups.get(groupId);
+  if(!group){
+   group={id:String(squad.id),groupId,alive:0,total:0,x:0,z:0,weight:0};
+   groups.set(groupId,group);
+  }
+  const weight=Math.max(1,Number(squad.alive)||0);
+  group.x+=squad.x*weight;group.z+=squad.z*weight;group.weight+=weight;
+  group.alive+=Number(squad.alive)||0;
+  group.total+=Number(squad.total)||0;
+ }
+ return [...groups.values()].sort((a,b)=>a.groupId-b.groupId).map(group=>({
+  id:group.id,groupId:group.groupId,alive:group.alive,total:group.total,
+  x:group.x/group.weight,z:group.z/group.weight
+ }));
+}

@@ -913,7 +913,8 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-orderqueue2';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-three-team-radar2';
+import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
@@ -8914,7 +8915,8 @@ function zoomToSquadMember(id,team){
  return true;
 }
 function activateSquadLabel(id,team,x=0,y=0){
- battleRpgHud?.select(team,id);
+ battleRpgHud?.select(team,team===0&&THREE_TEAM_BATTLE?
+  'team:'+normalizeArmyGroup(armyGroupBySquad[String(id)]):id);
  // Show the inspection strip only after the double-tap window expires.
  // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished||squadCloseupLabelsHidden||
@@ -9374,7 +9376,7 @@ function refreshBattleRpgSquadHud(sums){
  realtimeCommandUI?.update(rows);
 }
 window.getBattleRpgSquadHudQA=()=>({
- build:'3team-hud2',threeTeamBattle:THREE_TEAM_BATTLE,
+ build:'3team-radar2',threeTeamBattle:THREE_TEAM_BATTLE,
  squads:squadIds.length,assignedGroups:Object.fromEntries(squadIds.map(id=>[id,armyGroupBySquad[id]])),
  rows:battleRpgHud?.rows||[],selected:battleRpgHud?.selected||'',visible:battleRpgHud?.visible||false
 });
@@ -10609,6 +10611,15 @@ let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  worldSize:WORLD_SIZE,
  getMapBackground:()=>miniBase,
+ // The public radar presents three command teams, never job division IDs.
+ // The normal skill/action roster remains physical for correct targeting.
+ getRadarSquads:own=>THREE_TEAM_BATTLE?
+  battleThreeTeamRadarSquads(own,armyGroupBySquad):own,
+ getRadarGroup:id=>THREE_TEAM_BATTLE?Number(armyGroupBySquad[String(id)]):null,
+ onRadarTeamCommand:groupId=>{
+  if(THREE_TEAM_BATTLE&&battleReady&&!finished&&!battleCeremony.locked)
+   targetedStrategyUi.open(groupId,{startAtRecommendations:true,groupOnly:true});
+ },
  getSquads:()=>{
   // Group the real roster in one pass, rather than scanning all soldiers
   // separately for each of ten squads on every UI refresh.
@@ -10682,7 +10693,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    log('戦闘開始：部隊の作戦と対象を確定すると移動と実行が連続します。');
    return true;
  },
- onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
+ onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,
+  THREE_TEAM_BATTLE?'team:'+normalizeArmyGroup(armyGroupBySquad[String(id)]):id);},
  onFocus:id=>{
   const center=squadCenter(id,0);if(!center)return;
   const x=(center.x-6)*CELL,z=(center.z-6)*CELL;

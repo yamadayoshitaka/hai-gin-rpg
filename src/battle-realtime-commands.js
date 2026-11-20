@@ -11,7 +11,7 @@ import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
-import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
+import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=three-team-radar2-20261120';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
@@ -24,6 +24,7 @@ export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX
 export function createRealtimeBattleCommands({
  documentRef=globalThis.document,worldSize=232,
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
+ getRadarSquads=null,getRadarGroup=null,onRadarTeamCommand=null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
   onTargetOrder=()=>false,
@@ -282,7 +283,17 @@ export function createRealtimeBattleCommands({
   lastRadarRenderAt=now;
   const w=radarCanvas.width,h=radarCanvas.height,ctx=radarCtx;
   const own=squads(),enemies=getEnemies();
-  radarPins=squadRadarPins(own,enemies,worldSize,currentRows);
+  const visibleAllies=typeof getRadarSquads==='function'?getRadarSquads(own):own;
+  radarPins=squadRadarPins(visibleAllies,enemies,worldSize,currentRows);
+  if(typeof getRadarSquads==='function'){
+   const byId=new Map(visibleAllies.map(row=>[String(row.id),row]));
+   for(const pin of radarPins)if(pin.team===0){
+    const group=Number(byId.get(String(pin.id))?.groupId);
+    if(Number.isInteger(group)&&group>=1&&group<=3){
+     pin.number=group;pin.groupId=group;
+    }
+   }
+  }
   ctx.clearRect(0,0,w,h);
   const background=getMapBackground();
   if(background)try{ctx.drawImage(background,0,0,w,h);}catch{}
@@ -295,7 +306,9 @@ export function createRealtimeBattleCommands({
   ctx.strokeStyle='rgba(232,239,229,.38)';ctx.lineWidth=1.4;
   ctx.strokeRect?.(.8,.8,w-1.6,h-1.6);
   for(const pin of radarPins){
-   const x=pin.x*w,y=pin.y*h,focus=pin.team===0&&pin.id===String(selectedId);
+   const focusedGroup=typeof getRadarGroup==='function'?Number(getRadarGroup(selectedId)):null;
+   const x=pin.x*w,y=pin.y*h,focus=pin.team===0&&
+    (pin.id===String(selectedId)||pin.groupId!=null&&pin.groupId===focusedGroup);
    ctx.beginPath();ctx.arc(x,y,focus?10:8,0,Math.PI*2);
    ctx.fillStyle=pin.team===0?'#5aceff':'#ff7884';ctx.fill();
    ctx.strokeStyle=focus?'#ffea92':'#132c40';ctx.lineWidth=focus?3.2:1.6;ctx.stroke();
@@ -1063,8 +1076,11 @@ export function createRealtimeBattleCommands({
  function activateRadarPin(px,py,{strategy=false}={}){
  const pin=radarHitPin(radarPins,px,py);
  if(strategy&&pin){
-  if(pin.team===0)showSquadControls(pin.id);
-  else onEnemySelect(pin.id);
+  if(pin.team===0){
+   if(pin.groupId!=null&&typeof onRadarTeamCommand==='function')
+    onRadarTeamCommand(pin.groupId,pin.id);
+   else showSquadControls(pin.id);
+  }else onEnemySelect(pin.id);
   return;
  }
  // Single tap => live 3D overhead camera; double tap => squad strategy.
