@@ -57,14 +57,20 @@ test('a second squad order queues during command cooldown, then executes once',(
  assert.equal(wizard.queuedOrder('0'),'');
  wizard.dispose();
 });
-test('active mission delays next order even after cooldown ends',()=>{
- const {wizard,status,orders}=setup({cooldown:0,moving:true});
+test('a new order overrides active movement instead of being stuck forever',()=>{
+ const {wizard,orders}=setup({cooldown:0,moving:true});
+ findChoice(wizard,'この内容で確定').onclick();
+ assert.equal(orders.length,1,'movement is not a lock on subsequent squad orders');
+ assert.deepEqual(orders,[{id:'0',command:'defend'}]);
+ wizard.dispose();
+});
+test('queued orders replace a running mission when the short cooldown ends',()=>{
+ const {wizard,status,orders}=setup({cooldown:5,moving:true});
  findChoice(wizard,'次の作戦として予約').onclick();
- wizard.tick();
- assert.equal(orders.length,0);
- status.moving=false;
- wizard.tick();
- assert.equal(orders.length,1);
+ wizard.tick();assert.equal(orders.length,0);
+ status.cooldown=0;
+ wizard.tick();assert.equal(orders.length,1,'mission must not postpone a new order');
+ wizard.tick();assert.equal(orders.length,1,'no duplicate dispatch');
  wizard.dispose();
 });
 test('commander unavailable explains why a new action is rejected',()=>{
