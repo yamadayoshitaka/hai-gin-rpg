@@ -336,21 +336,26 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  // Expand the donor-backed pigment underlay over the rear crown and temples.
  // The original .82/.27/.25 window left a visible shaved scalp halo around
  // the long hairstyle's top and sides; do not extend toward the face.
- const minHeight=box.min.y+d.y*.75;
+ // Posterior roots descend farther than the temples; keep the front
+ // hairline high to avoid painting the forehead or eyelids.
+ const rearMinHeight=box.min.y+d.y*.69;
+ const templeMinHeight=box.min.y+d.y*.77;
  let triangles=0;
  for(let t=0;t+2<n;t+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
   const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
   const highCrown=mid.y>=box.min.y+d.y*.84;
+  const posterior=mid.z<c.z-d.z*.065;
   const posteriorOrTemple=mid.z<=c.z+d.z*.015;
+  const minHeight=posterior?rearMinHeight:templeMinHeight;
   if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*(highCrown?.34:.30)||
-   Math.abs(mid.z-c.z)>d.z*(highCrown?.35:.30)||
+   Math.abs(mid.x-c.x)>d.x*(highCrown?.35:(posterior?.35:.30))||
+   Math.abs(mid.z-c.z)>d.z*(highCrown?.36:.32)||
    (!highCrown&&!posteriorOrTemple))continue;
   // Never extend this cover over the forehead or brows. Intact donor
   // triangles entirely above the upper hairline are the only source.
-  if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
+  if(points.some(p=>p.y<minHeight-d.y*.01))continue;
   // Source head triangles can have reversed winding after clipping or
   // donor retargeting. Keep the underlay front-facing with its scalp normals.
   const sourceFace=points[1].clone().sub(points[0]).cross(
