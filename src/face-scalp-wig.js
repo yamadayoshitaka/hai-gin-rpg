@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-8ad21228';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-seam-v4-7c82bfe0';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -409,6 +409,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    const zn=(v.z-center.z)/d.z;
    const xn=Math.abs(v.x-center.x)/d.x;
    const smooth=(a,b,x)=>{const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+   // Long hairstyles need continuous temple/forehead contact; keep the
+   // higher frontal skin line but remove the hard gap under the bangs.
    const rear=shortHair&&battleStableCoverage?.505:.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
@@ -445,7 +447,14 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    [clipped[0],clipped[j],clipped[j+1]]){
    const v=node.p.clone(),n=node.n;
    sourceScalpVerts.push(v.x,v.y,v.z);
-   v.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(v,box,volumeProfile));
+   // Keep the scalp cap in contact with the skin at its cut boundary.
+   // Volume lift used to float the cap above the forehead/temples and
+   // expose a bright wedge of underlying skin in the salon/long styles.
+   const seamDistance=Math.max(0,signedHairline(v));
+   const seamWidth=Math.max(d.y*.055,1e-6);
+   const seamT=THREE.MathUtils.clamp(seamDistance/seamWidth,0,1);
+   const seamBlend=seamT*seamT*(3-2*seamT);
+   v.addScaledVector(n,d.x*.0012+wigVolumeLiftAt(v,box,volumeProfile)*seamBlend);
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
