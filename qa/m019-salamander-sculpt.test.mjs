@@ -181,6 +181,8 @@ for(const detail of ['low','high']){
       assert(claw.visible&&claw.material.visible&&!claw.material.transparent);
       assert(claw.material.color.r<.45,
         'claw must use dark volcanic keratin instead of pale ivory');
+      assert(claw.material.roughness>=.80,
+        'volcanic talons need a dry matte keratin finish');
       const endpoints=claw.geometry.userData;
       assert(endpoints.tip[2]>endpoints.root[2]+.08,
         'talon must project beyond its rooted nail bed');
@@ -231,7 +233,19 @@ for(const detail of ['low','high']){
       assert(part.visible&&part.material.visible&&!part.material.transparent);
       assert(part.geometry.getAttribute('position').count>=24);
       assert(part.geometry.getIndex().count>=24);
+      assert.equal(part.userData.m019CurvedAnatomicalFallback,true);
+      assert(part.geometry.parameters.tubularSegments>=14);
+      assert(part.geometry.parameters.radialSegments>=10,
+        'the mobile fallback must remain round even at low detail');
+      assert(part.material.color.equals(body.material.color),
+        'both fallback legs must have the torso basalt pigment');
+      assert.equal(part.material.userData.m019DryObsidian,true);
     }
+    const basaltScutes=meshes.filter(mesh=>
+      mesh.name.startsWith('m019-embedded-arm-scute-'+suffix+'-')||
+      mesh.name.startsWith('m019-embedded-shin-scute-'+suffix+'-'));
+    assert.equal(basaltScutes.length,detail==='low'?0:4,
+      'near LOD needs subtle scutes without adding crowd draw calls');
     model.updateMatrixWorld(true);
     const mobileUpperBox=new THREE.Box3().setFromObject(mobileUpper);
     const mobileShinBox=new THREE.Box3().setFromObject(mobileShin);
@@ -270,8 +284,8 @@ for(const detail of ['low','high']){
     else
      assert(limbBox.min.x<bodyBox.min.x-.31,
       'left elbow must project beyond the torso silhouette');
-    assert(upper.material.color.r>body.material.color.r*1.65,
-      'real limb basalt must remain visible against charcoal torso');
+    assert(upper.material.color.equals(body.material.color),
+      'outer skin must not be a separate brown material');
     assert.equal(upper.userData.m019AboveFloorMuscleCrest,true);
     assert(upper.material.color.getHex()>0,
       'visible limbs must have a real lit basalt material');
