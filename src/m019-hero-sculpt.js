@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-volcanic-pbr-v19-20261120';
+export const M019_HERO_REVISION='m019-matched-charcoal-limbs-v20-20261121';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
