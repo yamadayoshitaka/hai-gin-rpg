@@ -74,11 +74,12 @@ for(const stage of CAMPAIGN_STAGES){
     location:chapter.location,stageName:stage.name,gender,
     camera:panelTypes[p.index]||panelTypes[0],
     expression:p.expression,emotion:p.mood,
+    phase:p.phase,requiresOutcomeNeutralArt:p.phase==='post'&&stage.kind!=='town',
     characters:npc,
     narration:p.text,
     outputPath:'assets/story/panels/'+p.id.replace(/-m(\d{1,2})$/,(_,n)=>'-m'+String(n).padStart(2,'0'))+
       (gender==='female'?'-female':'')+'.webp',
-    artDirection:'A SINGLE standalone horizontal 16:9 cinematic fantasy RPG illustration depicting THIS specific scene. Natural dynamic staging and period-consistent costumes. Use the canonical character ID portrait references, the location and actions described in the narration. The protagonist gender is '+gender+'. No text, no UI, no gameplay screenshot, no collage, no repeated chapter backdrop, no splash screen, no invented characters, no copying another franchise character.',
+    artDirection:'A SINGLE standalone horizontal 16:9 cinematic fantasy RPG illustration depicting THIS specific scene. Natural dynamic staging and period-consistent costumes. Use the canonical character ID portrait references, the location and actions described in the narration. The protagonist gender is '+gender+'. '+(p.phase==='post'&&stage.kind!=='town'?'POST-BATTLE OUTCOME-NEUTRAL ART: This exact image is reused for both victory and defeat. Show the surviving cast reflecting on the aftermath without depicting a confirmed victory, defeat, casualties, trophy, celebration or next-stage unlock. The game overlays the verified outcome-specific dialogue. ':'')+'No text, no UI, no gameplay screenshot, no collage, no repeated chapter backdrop, no splash screen, no invented characters, no copying another franchise character.',
     note:'A shotlist entry is an UNGENERATED instruction; never report it as completed art.'
    });
   }
