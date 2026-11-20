@@ -32,7 +32,7 @@ export function createBattleThreeGroupPanel({
   let html='';
   if(level==='groups'){
    html='<div class="threeGroupStep">① 隊を選択（最大3隊）</div><div class="tenGroupGrid">'+
-    groups.map(g=>'<button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong>'+groupHp(g)+'<small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人'+(g.danger?' ⚠':'')+'</small></button>').join('')+'</div>';
+    groups.map(g=>'<div class="threeTeamCard"><button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong>'+groupHp(g)+'<small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人'+(g.danger?' ⚠':'')+'</small></button><button class="threeTeamCommand" data-group-strategy="'+g.id+'" '+(!g.alive?'disabled':'')+'>⚑ 連携作戦</button></div>').join('')+'</div>';
   }else if(level==='divisions'){
    html=back('groups','3隊に戻る')+
     '<div class="threeGroupStep">② '+groupTitle(selected)+' · 分隊を選択</div>'+
@@ -66,7 +66,11 @@ export function createBattleThreeGroupPanel({
  });
  ally.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button||button.disabled)return;
-  if(button.dataset.group){groupId=Number(button.dataset.group);level='divisions';}
+  if(button.dataset.groupStrategy){
+   groupId=Number(button.dataset.groupStrategy);
+   const first=summaries().find(g=>g.id===groupId)?.divisions?.[0]?.id;
+   if(first)onStrategy(groupId,first);else onLog('第'+groupId+'隊に作戦を発令できる兵士がいません。');
+  }else if(button.dataset.group){groupId=Number(button.dataset.group);level='divisions';}
   else if(button.dataset.division){divisionId=String(button.dataset.division);level='status';onSquadSelect(divisionId);}
   else if(button.dataset.back){level=button.dataset.back;}
   else if(button.dataset.action){
