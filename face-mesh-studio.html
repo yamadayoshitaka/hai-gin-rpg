@@ -624,7 +624,7 @@ function setHairHiddenScalp(face,enabled){
  // Buzz/crew hair has exposed scalp between short fibres: keep anatomical
  // skin there until the short-fibre density can cover it without holes.
  const style=wigs.get(face===models.get('male')?.face?'male':'female')?.root?.userData;
- const shortCut=Boolean(style?.shortCutKind||style?.v33ScalpHuggingBuzz);
+ const shortCut=Boolean(style?.shortCutKind||style?.v33ScalpHuggingBuzz||\n  /buzz|crew|short|crop/i.test(style?.hairStyleId||''));
  if(shortCut){
   if(face.geometry!==original){face.geometry.dispose();face.geometry=original;}
   face.userData.hairScalpMaskActive=false;
@@ -636,7 +636,7 @@ function setHairHiddenScalp(face,enabled){
  const box=original.boundingBox,dx=box.max.x-box.min.x,
   dy=box.max.y-box.min.y,dz=box.max.z-box.min.z;
  const cx=(box.min.x+box.max.x)*.5,cz=(box.min.z+box.max.z)*.5;
- const index=geometry.index,triangleCount=(index?index.count:pos.count)/3;
+ const index=geometry.index,triangleCount=Math.floor((index?index.count:pos.count)/3);
  let masked=0;
  for(let t=0;t<triangleCount;t++){
   const ids=[0,1,2].map(k=>index?index.getX(t*3+k):t*3+k);
