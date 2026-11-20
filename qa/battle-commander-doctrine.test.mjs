@@ -67,7 +67,7 @@ test('summoner, thief and ranged job menu connects to real game functions',()=>{
  const summon=battleJobSpecialActions('召喚士');
  assert.ok(thief.some(a=>a.id==='unlock_door'));
  assert.ok(summon.some(a=>a.id==='summon_and_attack'));
- assert.equal(summon.some(a=>a.id==='summon_and_move'),false,'no move-only summon action');
+ assert.ok(summon.some(a=>a.id==='summon_and_move'),'self-targeted summon is available without an enemy');
  assert.ok(mage.some(a=>a.id==='high_ground'));
  assert.ok(battleJobSpecialActions('弓使い').some(a=>a.id==='high_ground'));
  const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
@@ -81,7 +81,7 @@ test('summoner, thief and ranged job menu connects to real game functions',()=>{
  assert.match(menu,/id="realtimeRally"/);
  assert.match(menu,/onReinforce\(id,entry\.itemId\)/);
  assert.match(menu,/getRallyInfo\(String\(selectedId\)\)/);
- assert.match(sim,/orderSquadHighGround\(squadId,routeIndex,team=0\)/);
+ assert.match(sim,/orderSquadHighGround\(squadId,routeIndex,team=0,\{manualHold=true\}=\{\}\)/);
  assert.match(worker,/case 'reinforceSquad'/);
  assert.match(worker,/case 'summonSquadCreature'/);
  assert.match(worker,/case 'orderSquadHighGround'/);
@@ -131,7 +131,7 @@ test('commander consumables never await movement and buildings have confirmable 
  assert.match(ui,/onManageItems\(targetId\)/);
  assert.match(ui,/className='realtimeStructureMap'/);
  assert.match(ui,/\['building','bridge','door','height'\]\.includes\(action\.target\)/);
- assert.match(ui,/✅ 選択した対象に作戦を実行/);
+ assert.match(ui,/確定後は自動で接近して実行します/);
  assert.match(css,/realtimeContextChoices:has\(\.realtimeStructureMap\)/);
  assert.match(html,/return \{id:String\(o\.id\),x:o\.x,z:o\.z/);
  assert.match(html,/label:.*kind==='bridge'/);
@@ -168,7 +168,7 @@ test('no standalone move or rally popup; tactics, buffs and inventory all need C
  assert.match(command,/function confirmDockStrategy\(\)/);
  assert.match(command,/function confirmInlineRally\(\)/);
  assert.match(command,/function confirmInlineItem\(\)/);
- assert.match(command,/getMoveTargets\(kind,String\(selectedId\)\)/);
+ assert.match(command,/getMoveTargets\('enemies',String\(selectedId\)\)/);
  assert.match(command,/onSharedItem\(itemId,squadId\)/);
  assert.match(css,/No rally\/item child windows/);
  assert.match(game,/getMoveTargets:\(kind,id\)=>realtimeMoveTargets\(kind,id\)/);
