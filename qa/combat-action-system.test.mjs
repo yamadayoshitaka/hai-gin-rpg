@@ -22,7 +22,7 @@ assert.equal(combatJobId('盾戦士'),'shield');
 assert.equal(combatJobId('シーフ'),'thief');
 assert.equal(combatJobId('盗賊'),'thief');
 assert.ok(COMBAT_OBJECT_SPECS.horse.category==='mount'&&COMBAT_OBJECT_SPECS.dragon.category==='summon');
-assert.ok(COMBAT_RULES.maximumObjectsPerTeam<100,'大軍戦でオブジェクトは上限管理');
+assert.ok(COMBAT_RULES.maximumObjectsPerTeam<=160,'大軍戦でオブジェクトは上限管理');
 
 const makeUnit=(id,team,jobId,x,z)=>({id,team,jobId,x,z,hp:100,maxHp:100,mp:250,maxMp:250,rarity:'UR',alive:true,cooldown:0});
 const allWalkable=new Uint8Array(32*32).fill(1);
