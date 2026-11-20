@@ -348,6 +348,17 @@ export class CombatActionRuntime {
       // or mount-forbidden shortcuts. Flying summons can share ground X/Z
       // but may not overlap another creature in the same air lane.
       let found=null;
+      // Preserve the established close cardinal spawn positions first;
+      // allied riders must still be able to mount a freshly called wolf.
+      const familiarNear=[[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
+      for(const [dx,dz] of familiarNear){
+        const px=x+dx,pz=z+dz;
+        if(this.free(px,pz,spec.flying)&&
+           (!groundMount||this.groundMountAllowed(px,pz))&&
+           (!spec.flying||this.airspaceClear(null,px,pz))){
+          found={x:px,z:pz};break;
+        }
+      }
       for(let radius=1;radius<=9&&!found;radius++){
         for(let dz=-radius;dz<=radius&&!found;dz++){
           for(let dx=-radius;dx<=radius;dx++){
