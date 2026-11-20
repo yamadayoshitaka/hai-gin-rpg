@@ -10211,31 +10211,30 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   updateUI();return true;
  }
  if(action==='summon_and_attack'||action==='summon_and_move'){
-  // Re-target an existing familiar without demanding MP or casting twice.
-  // The same squad owns a single active summon in both battle sizes.
-  const existing=(massSim?.actions?.objects??skirmishActions?.objects??[]).find(o=>
-   o.alive&&o.team===0&&o.category==='summon'&&String(o.squadId)===String(id));
-  let success=Boolean(existing);
-  if(!success&&massSim){
-   success=massSim.summonSquadCreature(id);
-   if(success&&massWorker?.active)massWorker.summonSquadCreature(id);
-  }else if(!success){
-   for(const member of members.filter(u=>u.jobId==='summoner'&&u.hp>0)){
+  // Every caster in this squad has an independent summon slot.
+  // Existing familiars stay alive and are merely retargeted.
+  const liveSummons=()=>((massSim?.actions?.objects??skirmishActions?.objects??[])
+   .filter(o=>o.alive&&o.team===0&&o.category==='summon'&&String(o.squadId)===String(id)));
+  const before=liveSummons().length;
+  if(massSim){
+   const created=massSim.summonSquadCreature(id);
+   if(created&&massWorker?.active)massWorker.summonSquadCreature(id);
+  }else{
+   for(const member of members.filter(u=>u.jobId==='summoner'&&u.hp>0&&u.alive!==false&&
+     !skirmishActions.summonOf(u).length)){
     const spells=availableCombatSkills('summoner',member.rarity)
      .filter(skill=>skill.kind==='summon'&&member.mp>=skill.mp)
      .sort((a,b)=>b.mp-a.mp);
-    for(const spell of spells)if(skirmishActions.fireSkill(member,spell,member,actors)){
-     success=true;break;
-    }
-    if(success)break;
+    for(const spell of spells)if(skirmishActions.fireSkill(member,spell,member,actors))break;
    }
   }
-  if(!success){
+  const active=liveSummons().length,created=Math.max(0,active-before);
+  if(!active){
    log(squadName(id)+'：召喚できません。MP・召喚枠・配置可能マスを確認');
    return false;
   }
-  battleCeremony.showOrder('🐉 '+squadName(id)+(existing?'：召喚獣の行動継続':'：召喚成功'),
-   existing?'既存の召喚獣を維持して行動します':'MPを消費して召喚獣が出現');
+  battleCeremony.showOrder('🐉 '+squadName(id)+'：召喚獣 '+active+'体',
+   created?created+'体を追加召喚。各召喚士につき最大1体、既存召喚獣は維持':'既存の召喚獣 '+active+'体に次の行動を指示');
   if(action==='summon_and_move')return true;
   const target=realtimeMoveTargets('enemies',id)
    .find(t=>String(t.squadId)===String(targetId));
