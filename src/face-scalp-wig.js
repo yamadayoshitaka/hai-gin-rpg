@@ -401,12 +401,19 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // Eyelids remain far below this threshold and are never overpainted.
   // Short battle hair needs a full rear hairline through the nape. Keep
   // the frontal threshold unchanged so skin around the eyes stays exposed.
-  const rearShortCover=shortHair&&battleStableCoverage&&zNorm<-.025;
-  // Cover posterior donor triangles below the old 58% cut, including the
-  // temple-to-occipital seam. Keep the forward face threshold unchanged.
-  const yCut=box.min.y+d.y*(zNorm>.10?.815:
-   zNorm<-.035?(rearShortCover?.505:.525):
-   Math.abs((mid.x-center.x)/d.x)>.19?.625:.71);
+  // Evaluate the hairline at EACH donor vertex, not per triangle midpoint.
+  // The old midpoint threshold jumped at the rear/temple boundary and
+  // produced a vertical exposed seam down the back of buzz cuts.
+  const hairlineFraction=v=>{
+   const zn=(v.z-center.z)/d.z;
+   const xn=Math.abs(v.x-center.x)/d.x;
+   const smooth=(a,b,x)=>{const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+   const rear=shortHair&&battleStableCoverage?.505:.525;
+   const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
+   const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
+   return THREE.MathUtils.lerp(temple,.815,smooth(.035,.16,zn));
+  };
+  const signedHairline=v=>v.y-(box.min.y+d.y*hairlineFraction(v));
   // v64: do not DISCARD a whole scalp triangle if only one vertex
   // falls below the hairline. That produced peppered scalp holes and
   // jagged roots. Clip the REAL triangle to the hairline plane and
@@ -421,11 +428,12 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   const clipped=[];
   for(let j=0;j<3;j++){
    const current=sourceNodes[j],previous=sourceNodes[(j+2)%3];
-   const inside=current.p.y>=yCut,wasInside=previous.p.y>=yCut;
+   const currentDistance=signedHairline(current.p);
+   const previousDistance=signedHairline(previous.p);
+   const inside=currentDistance>=0,wasInside=previousDistance>=0;
    if(inside!==wasInside){
-    const t=THREE.MathUtils.clamp((yCut-previous.p.y)/
-     Math.max(1e-9,Math.abs(current.p.y-previous.p.y))*
-     Math.sign(current.p.y-previous.p.y),0,1);
+    const t=THREE.MathUtils.clamp(previousDistance/
+     (previousDistance-currentDistance),0,1);
     clipped.push({p:previous.p.clone().lerp(current.p,t),
      n:previous.n.clone().lerp(current.n,t).normalize()});
    }
@@ -522,7 +530,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // Short-haired battle models had NO rear undercoat: sparse dark cap plus
  // 1.3%-head-height buzz lines became a bald polygon at normal distances.
  // These tiny staggered strips are baked INTO the existing cap draw mesh.
- const shortBackStrips=shortHair&&battleStableCoverage&&rearCandidates.length?96:0;
+ const shortBackStrips=0; // Disable disconnected dark spike triangles on buzz cuts.
  for(let k=0;k<shortBackStrips;k++){
   const sampleIndex=Math.min(rearCandidates.length-1,
    Math.floor(fract((k+1)*.61803398875)*rearCandidates.length));
