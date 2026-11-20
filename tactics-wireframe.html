@@ -10670,8 +10670,13 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   if(!battleReady||finished||battleCeremony.locked||
     !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
-  try{return issueIndividualSquadOrder('move',point);}
-  finally{selectedSquadId=prior;}
+  try{
+   if(storyRequest){
+    if(commandGroupIds(id).some(sid=>!canChangeSquadOrder(sid)))return false;
+    return issueSquadOrder('move',point);
+   }
+   return issueIndividualSquadOrder('move',point);
+  }finally{selectedSquadId=prior;}
  },
  onOrder:(id,mode,arrival=false)=>{
   if(!battleReady||finished||battleCeremony.locked||
@@ -10697,8 +10702,13 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    }
   }
   const prior=selectedSquadId;selectedSquadId=String(id);
-  try{return issueIndividualSquadOrder(mode);}
-  finally{selectedSquadId=prior;}
+  try{
+   if(storyRequest&&!arrival){
+    if(commandGroupIds(id).some(sid=>!canChangeSquadOrder(sid)))return false;
+    return issueSquadOrder(mode);
+   }
+   return issueIndividualSquadOrder(mode);
+  }finally{selectedSquadId=prior;}
  },
  onTargetOrder:(id,mode,target)=>{
   if(!battleReady||finished||battleCeremony.locked||mode!=='charge'||
@@ -10707,9 +10717,14 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   const x=Math.round(Number(target.x)),z=Math.round(Number(target.z));
   if(!Number.isFinite(x)||!Number.isFinite(z))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
-  try{return issueIndividualSquadOrder('mission',{
-   type:'eliminate_squad',targetSquadId:String(target.squadId),x,z});}
-  finally{selectedSquadId=prior;}
+  try{
+   const directive={type:'eliminate_squad',targetSquadId:String(target.squadId),x,z};
+   if(storyRequest){
+    if(commandGroupIds(id).some(sid=>!canChangeSquadOrder(sid)))return false;
+    return issueSquadOrder('mission',directive);
+   }
+   return issueIndividualSquadOrder('mission',directive);
+  }finally{selectedSquadId=prior;}
  },
  getAvailableItems:()=>realtimeItemStocks(),
  onUseItem:(id,itemId,arrival=false)=>issueCommanderReinforcements(id,itemId,{arrival}),
