@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-no-wig-volume-v13';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-native-buzz-cap-v14';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -406,12 +406,20 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // The old midpoint threshold jumped at the rear/temple boundary and
   // produced a vertical exposed seam down the back of buzz cuts.
   const hairlineFraction=v=>{
-   const zn=(v.z-center.z)/d.z;
-   const xn=Math.abs(v.x-center.x)/d.x;
-   const smooth=(a,b,x)=>{const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
-   // Long hairstyles need continuous temple/forehead contact; keep the
-   // higher frontal skin line but remove the hard gap under the bangs.
-   const rear=shortHair&&battleStableCoverage?.505:.525;
+   const zn=(v.z-center.z)/Math.max(d.z,1e-6);
+   const xn=Math.abs(v.x-center.x)/Math.max(d.x,1e-6);
+   const smooth=(a,b,x)=>{
+    const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);
+    return t*t*(3-2*t);
+   };
+   // Buzz hair must cover the donor's actual crown and sides.
+   // Preserve the forehead/eyes and the ears below the temporal line.
+   if(shortHair){
+    const rear=.53;
+    const side=THREE.MathUtils.lerp(rear,.64,smooth(-.10,.12,zn));
+    return THREE.MathUtils.lerp(side,.76,smooth(.10,.28,zn));
+   }
+   const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
    return THREE.MathUtils.lerp(temple,.815,smooth(.035,.16,zn));
@@ -467,8 +475,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // The generic crown hole repair fans arbitrary loops across the rear/ear
  // boundary and creates the large planar gray patches seen in buzzcut v5.
  // Preserve only donor-backed triangles for the close-cut style.
- const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box,
-  {microOnly:shortHair});
+ const crownRepair=shortHair?{repairs:0,repairCount:0,triangles:0,source:'donor-only'}:
+  repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -1308,7 +1316,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
   fineMesh.userData.staticPreviewDetail=true;
   fineMesh.userData.fiberMultiplier=fiberMultiplier;
-  root.add(fineMesh);
+  if(!style.shortCutKind)root.add(fineMesh);else{fineGeo.dispose();fineMat.dispose();}
   microFibreTriangles=tris.length/3;
  }
  // Characteristic coiffure sections must have their OWN REAL GEOMETRY.
