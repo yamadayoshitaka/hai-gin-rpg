@@ -5029,6 +5029,21 @@ function updateUnitFloorTravel(a,dt){
   }
  }
  if(travel.phase==='upstairs'){
+  // Continue to the selected castle level instead of stopping at floor 2.
+  if(travel.manualHighGroundTarget&&a.indoorFloor<travel.manualHighGroundGoal&&
+    elapsed-(travel.arrivedAt??elapsed)>.8){
+   const goal=travel.manualHighGroundGoal,building=travel.building;
+   if(requestUnitFloor(a,1,building,{forceStairs:true})){
+    a.floorTravel.manualHighGroundTarget=true;
+    a.floorTravel.manualHighGroundGoal=goal;
+   }
+   return true;
+  }
+  if(travel.manualHighGroundTarget&&a.indoorFloor===travel.manualHighGroundGoal){
+   a.poseMoving=false;
+   if(a.character&&a.attackTimer<=0)requestMotion(a,'idle');
+   return true;
+  }
   // A soldier must physically walk to the upper-storey chest before it can
   // collect the item. No click, floor-selection control or teleport is used.
   const loot=roomItemRegistry.list({
@@ -5573,7 +5588,7 @@ function tickAI(dt){
   massSim.step(.1);syncMassBattleSnapshot();
   return;
  }
- startAutomaticFloorTour();
+  // Automatic individual floor scouts are disabled; squads receive height orders together.
   if(skirmishActions){
    const sectors=new Map();
    skirmishObjectOccupancy.fill(-1);
@@ -9977,24 +9992,25 @@ function realtimeSpecialTargets(id,action){
     const structure=building.structure;
     if(destroyedTownBuildings.has(building.data)||!(structure?.floors?.length>1))continue;
     const gate=[...battleDoorDefinitions.values()].find(info=>info.building===building)?.object;
-    for(const kind of ['window','roof']){
+    for(let floor=2;floor<=structure.floors.length+1;floor++){
+     const kind=floor>structure.floors.length?'roof':'window';
      const windows=kind==='window'?buildingWindowFiringPositions(
-      structure,building.model.position,2,{cellSize:CELL}):[];
+      structure,building.model.position,floor,{cellSize:CELL}):[];
      if(kind==='roof'&&!roofAccessPlan(structure,{cellSize:CELL}))continue;
      if(kind==='window'&&!windows.length)continue;
-     const capable=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist);
+     const capable=members.filter(u=>u.hp>0&&u.alive!==false);
      if(!capable.length)continue;
-     const passDoor=!gate||gate.team===0||!gate.locked||kind==='roof';
-     const free=capable.some(u=>!u.floorTravel||
+     const passDoor=!gate||gate.team===0||!gate.locked;
+     const free=capable.every(u=>!u.floorTravel||
       (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase)));
      const available=passDoor&&free;
      const location=kind==='roof'?building.model.position:windows[0];
      const x=Math.round(location.x/CELL+6),z=Math.round(location.z/CELL+6);
      const reason=!passDoor?'敵の扉が施錠されています（シーフで解錠）':
-      !free?'現在ほかの高所へ移動中です':'';
-     result.push({id:'skirmish:'+index+':'+kind,x,z,available,reason,
+      !free?'隊員が別の高所へ移動中です':'';
+     result.push({id:'skirmish:'+index+':'+kind+':'+floor,x,z,available,reason,
       label:(kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+(index+1)+
-       '｜'+(kind==='roof'?'屋上':'2階')+'｜X'+x+' Z'+z+
+       '｜'+(kind==='roof'?'屋上':floor+'階')+'｜X'+x+' Z'+z+
        (available?'':'［'+reason+'］')});
     }
    }
@@ -10010,9 +10026,11 @@ function realtimeSpecialTargets(id,action){
     const already=members.some(unit=>unit.highGroundRouteIndex===route.index&&unit.hp>0);
     const occupied=massSim._highGroundClaims?.has(route.buildingIndex+':0')&&!already;
     const flow=massSim._highGroundFlows?.[route.index];
-    const canEnter=members.some(unit=>unit.hp>0&&unit.alive!==false&&!unit.isStrategist&&
-     !unit.mountId&&unit.highGroundRouteIndex<0&&
-     flow&&flow[unit.z*massSim.width+unit.x]<0x3fffffff);
+    const wholeSquad=members.filter(unit=>unit.hp>0&&unit.alive!==false);
+    const canEnter=wholeSquad.length>0&&wholeSquad.every(unit=>
+     !unit.mountId&&(unit.highGroundRouteIndex===route.index||
+      unit.highGroundRouteIndex<0&&flow&&
+      flow[unit.z*massSim.width+unit.x]<0x3fffffff));
     const intact=massSim._highGroundRouteAlive?.(route)!==false;
     const available=intact&&!occupied&&(already||canEnter);
     const reason=!intact?'建物が破壊されています':occupied?'味方が使用中です':
@@ -10022,7 +10040,7 @@ function realtimeSpecialTargets(id,action){
     const z=Math.round((top?.z??((route.access.z-6)*CELL))/CELL+6);
     return {id:String(route.index),x,z,entryPoint:{x:route.access.x,z:route.access.z},available,reason,
      label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+(route.buildingIndex+1)+
-      '｜'+(route.kind==='roof'?'屋上':'2階')+'｜X'+x+' Z'+z+
+      '｜'+(route.kind==='roof'?'屋上':route.level+'階')+'｜X'+x+' Z'+z+
       (available?'':'［'+reason+'］')};
    }).slice(0,80);
  }
@@ -10176,22 +10194,32 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
  }
  if(action==='high_ground'){
   if(!massSim){
-   const match=/^skirmish:([0-9]+):(window|roof)$/.exec(String(targetId));
+   const match=/^skirmish:([0-9]+):(window|roof):([0-9]+)$/.exec(String(targetId));
    if(!match)return false;
-   const building=townInstances[Number(match[1])],kind=match[2];
-   if(!building)return false;
-   const eligible=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist&&
-    (!u.floorTravel||
-     (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase))));
-   eligible.sort((a,b)=>a.root.position.distanceToSquared(building.model.position)-
-    b.root.position.distanceToSquared(building.model.position));
-   const selected=eligible[0];
-   if(!selected||!requestUnitFloor(selected,1,building))return false;
-   selected.floorTravel.manualHighGroundTarget=true;
-   selected._manualHighGroundBuilding=building;
+   const building=townInstances[Number(match[1])],floor=Number(match[3]);
+   if(!building||floor<2||floor>building.structure.floors.length+1)return false;
+   const eligible=members.filter(u=>u.hp>0&&u.alive!==false);
+   if(!eligible.length||eligible.some(u=>u.floorTravel&&
+    (u.floorTravel.building!==building||!['upstairs','roof'].includes(u.floorTravel.phase))))return false;
+   const started=[];
+   for(const unit of eligible){
+    if((unit.indoorFloor??1)>=floor)continue;
+    if(!requestUnitFloor(unit,1,building,{forceStairs:true})){
+     for(const rollback of started){
+      releaseGrappleRope(rollback.floorTravel);
+      rollback.floorTravel=null;rollback._manualHighGroundBuilding=null;
+     }
+     return false;
+    }
+    unit.floorTravel.manualHighGroundTarget=true;
+    unit.floorTravel.manualHighGroundGoal=floor;
+    unit._manualHighGroundBuilding=building;
+    started.push(unit);
+   }
+   if(!started.length&&eligible.some(unit=>(unit.indoorFloor??1)!==floor))return false;
    markRibbonOrderIssued(id);
    battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動',
-    kind==='roof'?'指定の屋根へ移動し到着後待機':'指定した建物の階段を登り到着後待機');
+    '第'+floor+'層まで隊全員で移動し、到着後待機');
    return true;
   }
   const routeIndex=Number(targetId);
