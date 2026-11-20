@@ -514,6 +514,47 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    }
   }
  }
+ // Continuous posterior drape beneath the detailed locks. Narrow independent
+ // ribbons alone expose the neck/head through their gaps at rear camera angles.
+ // Every root is sampled from the actual posterior donor scalp; the strips
+ // overlap as they settle into a smooth hair silhouette, without a floating cap.
+ const rearDrapePanels=!fullBody&&!shortHair&&rearCandidates.length?48:0;
+ const rearDrapeSegments=14;
+ for(let k=0;k<rearDrapePanels;k++){
+  const u=(k+.5)/rearDrapePanels;
+  const xTarget=center.x+(u*2-1)*d.x*.305;
+  const rootY=box.min.y+d.y*.885;
+  let root=rearCandidates[0],best=Infinity;
+  for(const candidate of rearCandidates){
+   const score=Math.abs(candidate.x-xTarget)/d.x*1.8+
+    Math.abs(candidate.y-rootY)/d.y+
+    Math.max(0,candidate.z-(center.z-d.z*.06))/d.z;
+   if(score<best){root=candidate;best=score;}
+  }
+  const tipY=box.min.y+d.y*(.115+.045*Math.pow(Math.abs(u*2-1),1.5));
+  const width=d.x*.0085;
+  const point=(t,edge)=>{
+   const settle=Math.min(1,t*5),flow=t*t*(3-2*t);
+   const x=THREE.MathUtils.lerp(root.x,xTarget,settle)+
+    Math.sin(u*13+t*2.5)*d.x*.0025*t;
+   const y=THREE.MathUtils.lerp(root.y,tipY,t);
+   // Follow the donor head initially, then fall behind the occiput.
+   const z=THREE.MathUtils.lerp(root.z-d.z*.007,
+    center.z-d.z*(.24+.015*Math.cos(u*Math.PI*2)),flow)+
+    Math.sin(Math.PI*t)*d.z*.018;
+   const taper=1-.16*Math.pow(t,10);
+   return f3(x+edge*width*taper,y,z);
+  };
+  for(let j=0;j<rearDrapeSegments;j++){
+   const t0=j/rearDrapeSegments,t1=(j+1)/rearDrapeSegments;
+   const a=point(t0,-1),b=point(t0,1);
+   const c=point(t1,-1),e=point(t1,1);
+   for(const v of [a,c,b,b,c,e]){
+    verts.push(v.x,v.y,v.z);
+    smoothNormals.push(0,0,-1);
+   }
+  }
+ }
  // Short-haired battle models had NO rear undercoat: sparse dark cap plus
  // 1.3%-head-height buzz lines became a bald polygon at normal distances.
  // These tiny staggered strips are baked INTO the existing cap draw mesh.
@@ -569,6 +610,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.rearUndercoatAnchoredToRealScalp=rearCandidates.length>0;
  mesh.userData.rearUndercoatTriangleCount=undercoatStrips*stripSegments*2;
  mesh.userData.rearUndercoatStripCount=undercoatStrips;
+ mesh.userData.rearDrapePanelCount=rearDrapePanels;
+ mesh.userData.rearDrapeTriangleCount=rearDrapePanels*rearDrapeSegments*2;
  mesh.userData.shortBackCoverageStripCount=shortBackStrips;
  mesh.userData.rearUndercoatMaxStripWidth=stripWidths.length?Math.max(...stripWidths):0;
  mesh.userData.rearUndercoatTipHeightRange=tipHeights.length?
