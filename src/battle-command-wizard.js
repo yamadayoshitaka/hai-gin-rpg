@@ -79,6 +79,15 @@ export function mountBattleCommandWizard({
    all.filter(a=>['heal_ally','revive_ally','frontline_guard'].includes(a.id)):
    all;
  }
+ function specialUnavailableReason(action,targets){
+  if(targets.some(t=>t.available!==false))return '';
+  const reasons=[...new Set(targets.map(t=>String(t.reason||'').trim()).filter(Boolean))];
+  if(reasons.length)return reasons.slice(0,2).join('／');
+  if(action.id==='high_ground')return '到達できる高所がありません（MPは消費しません）。階段・施錠・騎乗状態を確認してください';
+  if(['heal_ally','revive_ally'].includes(action.id))return '対象のHP・戦闘不能状態と僧侶の残MPを確認してください';
+  if(action.id.startsWith('summon'))return '召喚枠・対象・召喚士の残MPを確認してください';
+  return '実行可能な対象がありません（MP不足とは限りません）';
+ }
  function pickSpecial(action){
   const targets=getSpecialTargets(String(state.squad),action.id)||[];
   if(!targets.length){state.notice='対象がありません。必要MP・対象の状態・到達経路を確認してください。';render();return;}
@@ -154,7 +163,7 @@ export function mountBattleCommandWizard({
    if(kind==='move_high'){
     const current=(getSpecialTargets(id,'high_ground')||[]).find(t=>String(t.id)===String(target?.id));
     if(current&&current.available!==false){
-     accepted=onSpecial(id,'high_ground',String(current.id));
+     accepted=onSpecial(id,'high_ground',String(current.id),false,'hold');
      if(accepted&&point&&plan.arrival!=='hold')
       queueArrival(id,{...(plan.arrival==='special'?{special:plan.arrivalSpecialId,targetId:String(plan.arrivalTarget?.id)}:{command:plan.arrival}),point:{...point},highGroundTarget:String(current.id)});
     }
@@ -289,7 +298,7 @@ export function mountBattleCommandWizard({
      const targets=getSpecialTargets(String(state.squad),a.id)||[];
      const enabled=targets.some(t=>t.available!==false);
      button(a.label,()=>pickSpecial(a),{disabled:!enabled,
-      reason:enabled?'':'対象なし・MP不足・条件未達のため実行できません'});
+      reason:enabled?'':specialUnavailableReason(a,targets)});
     }
    }else if(state.category==='rally'){
     const info=getRallyInfo(String(state.squad));
@@ -342,7 +351,7 @@ export function mountBattleCommandWizard({
     const choices=getSpecialTargets(String(state.squad),skill.id)||[];
     const available=choices.some(t=>t.available!==false);
     button(skill.label,()=>advance('arrivalTarget',{arrivalSpecialId:skill.id,arrivalSpecialName:skill.label,arrivalTarget:null}),{
-     disabled:!available,reason:available?'':'対象または必要MPがありません'});
+     disabled:!available,reason:available?'':specialUnavailableReason(skill,choices)});
    }
   }else if(state.stage==='arrivalTarget'){
    const choices=getSpecialTargets(String(state.squad),state.arrivalSpecialId)||[];
