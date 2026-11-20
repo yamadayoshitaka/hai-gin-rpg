@@ -613,62 +613,19 @@ updateHairRuntimeDiagnostics();
 // Emergency stable path: preserve native GLB face materials and shader pipeline.
 // Earlier injected fragment shaders broke face and hair rendering on mobile.
 function setHairHiddenScalp(face,enabled){
- if(!face?.isMesh||!face.geometry)return;
- // Never alter GLB materials or shader hooks: remove only covered donor
- // scalp triangles in a reversible geometry clone, preserving face/ears/neck.
- if(!face.userData.originalHairScalpGeometry)
-  face.userData.originalHairScalpGeometry=face.geometry;
+ // Emergency rollback of the expensive per-triangle v9 head rewrite.
+ // Never modify the live donor geometry while the editor is rendering.
+ if(!face?.isMesh)return;
  const original=face.userData.originalHairScalpGeometry;
- if(!enabled){
-  if(face.geometry!==original){face.geometry.dispose();face.geometry=original;}
-  face.userData.hairScalpMaskActive=false;
-  face.userData.hairScalpMaskMode='off';return;
+ if(original&&face.geometry!==original){
+  face.geometry.dispose();
+  face.geometry=original;
  }
- // Buzz/crew hair has exposed scalp between short fibres: keep anatomical
- // skin there until the short-fibre density can cover it without holes.
- const style=wigs.get(face===models.get('male')?.face?'male':'female')?.root?.userData;
- const shortCut=Boolean(style?.shortCutKind||style?.v33ScalpHuggingBuzz||\n  /buzz|crew|short|crop/i.test(style?.hairStyleId||''));
- if(shortCut){
-  if(face.geometry!==original){face.geometry.dispose();face.geometry=original;}
-  face.userData.hairScalpMaskActive=false;
-  face.userData.hairScalpMaskMode='short-cut-skin-preserved';return;
- }
- const geometry=original.clone(),pos=geometry.getAttribute('position');
- if(!pos)return;
- original.computeBoundingBox();
- const box=original.boundingBox,dx=box.max.x-box.min.x,
-  dy=box.max.y-box.min.y,dz=box.max.z-box.min.z;
- const cx=(box.min.x+box.max.x)*.5,cz=(box.min.z+box.max.z)*.5;
- const index=geometry.index,triangleCount=Math.floor((index?index.count:pos.count)/3);
- let masked=0;
- for(let t=0;t<triangleCount;t++){
-  const ids=[0,1,2].map(k=>index?index.getX(t*3+k):t*3+k);
-  const x=ids.reduce((a,i)=>a+pos.getX(i),0)/3;
-  const y=ids.reduce((a,i)=>a+pos.getY(i),0)/3;
-  const z=ids.reduce((a,i)=>a+pos.getZ(i),0)/3;
-  const xNorm=Math.abs(x-cx)/Math.max(dx,1e-6);
-  const zNorm=(z-cz)/Math.max(dz,1e-6);
-  // Retain facial skin, eyebrows, temples, ears and nape. Only the high
-  // scalp underneath a long wig is removed. Conservative threshold also
-  // avoids opening the skin boundary where hair locks may be sparse.
-  const scalp=y>box.min.y+dy*(zNorm>.10?.90:zNorm<-.05?.77:.85)&&
-   xNorm<.36;
-  if(!scalp)continue;
-  if(index){
-   index.setX(t*3+1,ids[0]);index.setX(t*3+2,ids[0]);
-  }else{
-   for(let k=1;k<3;k++)pos.setXYZ(ids[k],
-    pos.getX(ids[0]),pos.getY(ids[0]),pos.getZ(ids[0]));
-  }
-  masked++;
- }
- if(index)index.needsUpdate=true;else pos.needsUpdate=true;
- if(face.geometry!==original)face.geometry.dispose();
- face.geometry=geometry;
- face.userData.hairScalpMaskActive=masked>0;
- face.userData.hairScalpMaskMode='reversible-covered-triangles-v9';
- face.userData.hairScalpMaskedTriangles=masked;
+ face.userData.hairScalpMaskActive=false;
+ face.userData.hairScalpMaskedTriangles=0;
+ face.userData.hairScalpMaskMode='v9-disabled-loading-hotfix';
 }
+
 function hideDuplicateHairCap(wig){
  if(!wig?.root)return;
  wig.root.traverse(node=>{
