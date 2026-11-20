@@ -179,6 +179,33 @@ for(const detail of ['low','high']){
     assert.equal(root?.userData.m019TorsoAnchoredSocket,true);
     const upper=meshes.find(o=>o.name==='m019-seamless-skin-'+suffix);
     assert.equal(upper?.parent,leg,'whole muscle skin follows shoulder');
+    // The old tests verified CPU vertices, while Android still drew only
+    // leg shadows. Verify an independent, non-deformed, visible pair for
+    // every limb in BOTH LODs, even if outer skin is unavailable to WebGL.
+    const mobileUpper=meshes.find(o=>o.name==='m019-mobile-upper-'+suffix);
+    const mobileShin=meshes.find(o=>o.name==='m019-mobile-shin-'+suffix);
+    assert(mobileUpper?.isMesh&&mobileShin?.isMesh,
+      suffix+' requires real permanent upper and lower meshes');
+    assert.equal(mobileUpper.parent,leg);
+    assert.equal(mobileShin.parent,knee);
+    for(const part of [mobileUpper,mobileShin]){
+      assert.equal(part.userData.m019IndependentVisibleCore,true);
+      assert.equal(part.isSkinnedMesh,undefined);
+      assert(part.visible&&part.material.visible&&!part.material.transparent);
+      assert(part.geometry.getAttribute('position').count>=24);
+      assert(part.geometry.getIndex().count>=24);
+    }
+    model.updateMatrixWorld(true);
+    const mobileUpperBox=new THREE.Box3().setFromObject(mobileUpper);
+    const mobileShinBox=new THREE.Box3().setFromObject(mobileShin);
+    assert(mobileUpperBox.max.y>.40,
+      'mobile upper muscle must rise above terrain/torso occlusion');
+    assert(mobileShinBox.max.y>.35&&mobileShinBox.min.y>-.06,
+      'mobile shin must visibly connect knee to the planted foot');
+    const mobileOuter=new THREE.Box3().setFromObject(mobileUpper);
+    assert(side>0?mobileOuter.max.x>bodyBox.max.x+.20:
+      mobileOuter.min.x<bodyBox.min.x-.20,
+      'mobile-visible core must extend outside the torso silhouette');
     // A real visible Mesh avoids the v9 GPU-skinned surface which vanished
     // on Android while CPU skeleton-space tests still returned PASS.
     assert.equal(upper.isMesh,true);
@@ -316,6 +343,12 @@ for(const detail of ['low','high']){
         action+' '+time+' visible solid arm must stay attached to animated foot');
        assert(mesh.visible&&mesh.material.visible,
         action+' '+time+' skin cannot disappear via visibility or material');
+       const lowerSafe=model.getObjectByName('m019-mobile-shin-'+id);
+       const upperSafe=model.getObjectByName('m019-mobile-upper-'+id);
+       assert(upperSafe.visible&&lowerSafe.visible,
+         action+' '+time+' independent mobile limbs must remain visible');
+       assert.equal(upperSafe.parent,arm);
+       assert.equal(lowerSafe.parent,joint);
        const worldBox=new THREE.Box3().setFromObject(mesh);
        const worldSize=worldBox.getSize(new THREE.Vector3());
        assert(worldSize.x>.28&&worldSize.y>.17,
@@ -402,5 +435,6 @@ test('portrait and landscape camera fit the entire m019 from nose to tail',()=>{
    'camera must use horizontal FOV to fit the tail at aspect '+aspect);
   assert(fit.distance>=4);
   assert.equal(fit.azimuth,'negative-x-side-head-right');
+  assert(fit.direction.y>.30,'mobile camera must show all sprawled legs above floor');
  }
 });

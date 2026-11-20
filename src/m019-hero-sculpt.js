@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-high-contrast-four-limbs-v11-20261120';
+export const M019_HERO_REVISION='m019-mobile-four-limb-safety-v12-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -119,7 +119,7 @@ export const M019_SPRAWL_KNEE_X=.93;
 export const M019_SPRAWL_KNEE_Y=-.085;
 export const M019_SPRAWL_FOOT_X=.007;
 export const M019_SPRAWL_FOOT_Y=-.770;
-export const M019_SHOULDER_LOCAL_Y=1.325;
+export const M019_SHOULDER_LOCAL_Y=1.360;
 /**
  * m019's four legs use a conventional, WebGL-compatible Mesh.
  * Mobile GPUs rendered v9's SkinnedMesh as invisible even while CPU
@@ -242,7 +242,25 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   fissure.userData.m019MoltenFissure=true;
   fissure.userData.m019InsetHeatVein=true;
  }
- return {upper:skin,lower:skin};
+
+ // The CPU-deformed outer skin was present in model-space QA but could be
+ // invisible in the mobile WebGL frame. Keep an always-renderable anatomical
+ // core along each real joint: upper muscle belongs to the hip/shoulder and
+ // shin belongs to the knee. These round capped-by-overlap shells sit INSIDE
+ // the outer continuous skin when it renders correctly. If a driver drops
+ // that dynamic vertex buffer, four complete planted limbs remain visible.
+ // No SkinnedMesh, per-frame geometry upload, detached plate or shadow sprite.
+ const visibleUpper=g.bridge(leg,'light',
+   [0,.090,z],[kneeX,kneeY,z],.160,.125);
+ visibleUpper.name='m019-mobile-upper-'+name;
+ visibleUpper.userData.m019IndependentVisibleCore=true;
+ visibleUpper.userData.m019ArticulatedParent='shoulder';
+ const visibleShin=g.bridge(distal,'light',
+   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],.124,.088);
+ visibleShin.name='m019-mobile-shin-'+name;
+ visibleShin.userData.m019IndependentVisibleCore=true;
+ visibleShin.userData.m019ArticulatedParent='knee';
+ return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
 }
 
 /** Four narrow toes at the END of the vertical shin, not a free ankle. */
