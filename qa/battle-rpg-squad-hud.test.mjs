@@ -207,3 +207,16 @@ test('single tap focuses camera; double tap opens allied orders; overview camera
  assert.match(js,/if\(pendingTapTimer!==null\)clearTimeout\(pendingTapTimer\)/);
  assert.match(html,/cameraOverviewOffset=new THREE\.Vector3\(110,510,110\)/);
 });
+
+test('MP meter is based on living casters only and cannot misreport a dead caster as insufficient MP',()=>{
+ const sums=new Map([['0:7',{n:1,total:2,hp:90,maxHp:90,x:12,z:14}]]);
+ const rows=makeBattleRpgStatusRows({sums,allyIds:['7'],enemyIds:[],
+  units:[
+   {team:0,squadId:'7',alive:true,hp:90,maxHp:100,mp:70,maxMp:100},
+   {team:0,squadId:'7',alive:false,hp:0,maxHp:100,mp:0,maxMp:100}
+  ],getJob:()=> '弓使い'});
+ assert.equal(rows[0].mp,70);
+ assert.equal(rows[0].maxMp,100);
+ assert.equal(rpgHudHealth(rows[0].mp,rows[0].maxMp),70,
+  'a dead ally must not add a phantom 100MP to the gauge denominator');
+});
