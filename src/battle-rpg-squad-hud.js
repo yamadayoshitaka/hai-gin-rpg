@@ -24,8 +24,10 @@ export function rpgHudStatus(row){
  if(!(Number(row.alive)>0))return '☠ 全滅';
  if(Number(row.alive)/Math.max(1,Number(row.total)||1)<=.25 ||
     rpgHudHealth(row.hp,row.maxHp)<=25)return '🆘 壊滅寸前';
- if(row.inContact)return '⚔ 交戦中';
  const mode=String(row.mode||'');
+ if(mode==='defend')return row.inContact?'🛡 守備中・交戦':'🛡 守備中';
+ if(mode==='hold')return row.inContact?'⏸ 待機中・敵接触':'⏸ 待機中';
+ if(row.inContact)return '⚔ 交戦中';
  if(mode==='retreat')return '↩ 後退中';
  if(mode==='move'||mode==='explore'||mode==='mission')return '➤ 移動中';
  if(mode==='heal'||mode==='support')return '✚ 支援中';
@@ -228,8 +230,9 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    const engaged=doc.createElement('span');engaged.className='rpgSquadEngaged';
    engaged.textContent='⚔';engaged.title='現在交戦中';
    engaged.setAttribute('aria-label','交戦中');engaged.hidden=!row.inContact;
-   // One state glyph per squad: engaged, guard or waiting (no duplicate combat badge).
-   heading.append(job,title,jobName,status);
+   // Show engagement only as a second glyph when the guard/wait stance differs.
+   engaged.hidden=!row.inContact||rpgHudStateIcon(row)==='⚔';
+   heading.append(job,title,jobName,status,engaged);
    const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';
    effects.setAttribute('aria-label','現在の強化・弱体効果');
