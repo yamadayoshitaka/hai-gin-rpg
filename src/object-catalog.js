@@ -705,10 +705,28 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Physical jute sacks: flat bearing base, bulging woven body, gathered neck.
+   // Share geometry across all five props to avoid redundant buffers.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,metalness:0,roughness:.98});
+   const cord=new THREE.MeshStandardMaterial({color:0x665038,metalness:0,roughness:1});
+   const profile=[
+    [0,0],[.28,.015],[.39,.075],[.45,.23],[.46,.43],
+    [.41,.61],[.29,.72],[.17,.78],[.115,.85],[.13,.91],[0,.93]
+   ].map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const sackGeometry=new THREE.LatheGeometry(profile,16);
+   sackGeometry.computeVertexNormals();
+   const knotGeometry=new THREE.TorusGeometry(.128*c,.021*c,6,16);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const sack=new THREE.Mesh(sackGeometry,burlap);
+    // The bottom row bears on terrain; upper sacks rest against the lower row.
+    const level=Math.floor(i/2);
+    sack.position.set(((i%2)*.86-.43)*c,level*.59*c,((i%3)-1)*.2*c);
+    sack.rotation.y=i*.41;sack.castShadow=true;sack.receiveShadow=true;
+    root.add(sack);
+    const knot=new THREE.Mesh(knotGeometry,cord);
+    knot.rotation.x=Math.PI/2;
+    knot.position.set(sack.position.x,sack.position.y+.84*c,sack.position.z);
+    knot.castShadow=true;root.add(knot);
    }
   }
   if(id==='town_stone_pile_001'){
