@@ -4,6 +4,7 @@
  * Movement is implicit in the selected action, not a standalone command.
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
+import {mountBattleCommandWizard} from './battle-command-wizard.js?v=20261120-wizard1';
 import {createBattleTapChoices} from './battle-tap-choices.js?v=20261119-mobile-choice1';
 import {eligibleEnemyBattleTargets,battleAttackNeedsEnemy} from './battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
@@ -30,6 +31,7 @@ export function createRealtimeBattleCommands({
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
+ getObjectiveCheckpoints=()=>[],
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
  onRally=()=>false,onMapOverview=()=>false
 }={}){
@@ -41,7 +43,6 @@ export function createRealtimeBattleCommands({
  let lastInlineItemRefresh=-Infinity,lastInlineItemSignature='';
  const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
- const PLAN_LIMIT_MS=30000;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
@@ -54,7 +55,7 @@ export function createRealtimeBattleCommands({
   </div>
   <div id="realtimeBattleDock" hidden role="group" aria-label="選択中の隊の作戦">
    <button type="button" id="realtimeDockClose" aria-label="作戦を閉じて戦闘に戻る">✕ 戻る</button>
-   <span id="realtimePlanSeconds" aria-live="off">作戦選択 残り30秒</span>
+   <span id="realtimePlanSeconds" aria-live="off">作戦選択中（時間制限なし）</span>
    <div class="realtimeDockSquadPager" role="group" aria-label="作戦を選ぶ隊をページ切替">
     <button type="button" id="realtimeDockPrev" aria-label="前の隊">◀</button>
     <span class="realtimeDockPortrait" id="realtimeDockPortrait" aria-hidden="true"></span>
@@ -127,7 +128,7 @@ export function createRealtimeBattleCommands({
   <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="開戦前の初期配置地図">
    <div class="realtimeMapCard">
     <header><strong id="realtimeMapTitle">開戦前の隊列配置</strong>
-     <span id="realtimeMapPlanningClock" hidden>作戦 残り30秒</span>
+     <span id="realtimeMapPlanningClock" hidden>作戦選択中</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
     <div class="realtimeMapSquadPager" role="group" aria-label="配置する味方隊をページ切替">
@@ -176,6 +177,26 @@ export function createRealtimeBattleCommands({
    </div>
   </div>`;
  doc.body.append(root);
+ const missionNotice=doc.createElement('div');
+ missionNotice.id='battleMissionNotice';missionNotice.setAttribute('role','status');
+ missionNotice.setAttribute('aria-live','polite');
+ missionNotice.textContent='🎯 作戦目標：進捗を確認中';
+ root.append(missionNotice);
+ let lastMissionSignature='',lastMissionUpdateAt=-Infinity;
+ function refreshMissionNotice(){
+  const now=nowMs();if(now-lastMissionUpdateAt<700)return;lastMissionUpdateAt=now;
+  let checkpoints=[];
+  try{checkpoints=getObjectiveCheckpoints()||[];}catch{}
+  const latest=checkpoints.slice(-4),last=latest.at(-1);
+  const completed=checkpoints.filter(p=>p.status==='達成'||p.status==='地点到着').length;
+  const message=!last?'🎯 作戦目標：未設定':
+   (last.status==='達成'||last.status==='地点到着'?'✅ 目的達成：':
+    last.status==='失敗'?'⚠ 作戦失敗：':'🎯 進行中：')+
+    '第'+String(last.groupId||1)+'班 '+String(last.label||'目標')+
+    '（'+Math.round(Number(last.progress)||0)+'%）｜達成 '+completed+'/'+checkpoints.length;
+  if(lastMissionSignature!==message){missionNotice.textContent=message;lastMissionSignature=message;}
+  missionNotice.hidden=!started;
+ }
  const tapChoices=createBattleTapChoices(root,{pageSize:5});
  const $=id=>root.querySelector('#'+id);
  const canvas=$('realtimeBattleCanvas'),ctx=canvas.getContext('2d');
@@ -881,39 +902,21 @@ export function createRealtimeBattleCommands({
   }
  }
  function updatePlanningCountdown(){
-  if(!planningDeadline)return;
-  const remain=Math.max(0,Math.ceil((planningDeadline-nowMs())/1000));
-  $('realtimePlanSeconds').textContent='作戦選択 残り'+remain+'秒';
-  $('realtimeRadarClock').hidden=false;
-  $('realtimeRadarClock').textContent='作戦 '+remain+'秒';
-  $('realtimeMapPlanningClock').textContent='残り'+remain+'秒';
-  if(remain===0){
-   // Do not silently overwrite a team's existing order when the time expires.
-   if(!$('realtimeBattleMapOverlay').hidden)closeMap();
-   closeSquadControls();
-  }
+  // No deadline: the player decides when to confirm or cancel the order.
+  $('realtimePlanSeconds').textContent='作戦選択中（時間制限なし）';
+  $('realtimeRadarClock').hidden=true;$('realtimeMapPlanningClock').hidden=true;
  }
  function enterPlanning(){
   if(!started)return;
-  if(!getPaused()){
-   onPause();planningOwnsPause=Boolean(getPaused());
-  }
-  // Never start a countdown while simulation is still advancing.
-  if(!getPaused())return;
-  if(!planningDeadline){
-   planningDeadline=nowMs()+PLAN_LIMIT_MS;
-   planningTicker=globalThis.setInterval?.(updatePlanningCountdown,200)??null;
-  }
+  if(!getPaused()){onPause();planningOwnsPause=Boolean(getPaused());}
   updatePlanningCountdown();
  }
  function exitPlanning(){
   planningDeadline=0;
   if(planningTicker!=null)globalThis.clearInterval?.(planningTicker);
-  planningTicker=null;
-  $('realtimeRadarClock').hidden=true;
+  planningTicker=null;$('realtimeRadarClock').hidden=true;
   if(!planningOwnsPause)return;
-  planningOwnsPause=false;
-  if(getPaused())onPause();
+  planningOwnsPause=false;if(getPaused())onPause();
  }
  function showSquadControls(id){
   if(!started)return false;
@@ -923,10 +926,12 @@ export function createRealtimeBattleCommands({
   $('realtimeBattleDock').hidden=false;
   setDockTab('strategy');
   updatePlanningCountdown();
+  commandWizard.open(id);
   drawRadar(true);
   return true;
  }
  function closeSquadControls(){
+  commandWizard.hide();
   $('realtimeBattleDock').hidden=true;
   pendingStrategy=null;pendingRally=null;targetPoint=null;
   hideContextChoices();
@@ -1217,6 +1222,15 @@ radarCanvas.addEventListener('keydown',event=>{
  };
  $('realtimeRoster')?.addEventListener('click',()=>onRoster());
  $('realtimeMenu').onclick=()=>{closeSquadControls();onMenu();};
+ const commandWizard=mountBattleCommandWizard({
+  documentRef:doc,dock:$('realtimeBattleDock'),worldSize,
+  getSquads:squads,getEnemies,getSelected,selectSquad:setSelected,
+  getMapBackground,getLegalPoint,getMoveTargets,getSpecialTargets,getSharedItems,getRallyInfo,
+  onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,
+  queueArrival:(id,entry)=>arrivalActions.set(String(id),entry),
+  setPreferred:(id,action)=>preferredActions.set(String(id),action),
+  onClose:closeSquadControls
+ });
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
   openDeployment(){started=false;mode='deploy';exitPlanning();planningOwnsPause=false;
@@ -1246,7 +1260,7 @@ radarCanvas.addEventListener('keydown',event=>{
      if(accepted)arrivalActions.delete(id);
     }
    }
-   renderStatus();
+   renderStatus();refreshMissionNotice();
    if(started&&!$('realtimeBattleDock').hidden){
     if(dockTab==='rally')refreshRallyState();
     if(dockTab==='items')refreshInlineItems();
@@ -1267,6 +1281,6 @@ radarCanvas.addEventListener('keydown',event=>{
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
   get planningSeconds(){return planningDeadline?Math.max(0,Math.ceil((planningDeadline-nowMs())/1000)):null;},
   get radarPins(){return [...radarPins];},
-  root,dispose(){exitPlanning();root.remove();}
+  root,dispose(){exitPlanning();commandWizard.dispose();root.remove();}
  };
 }
