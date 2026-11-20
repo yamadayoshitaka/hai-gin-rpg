@@ -34,19 +34,19 @@ export function autoComposeThreeTeams(game,mode='balanced'){
  const eligible=(formation)=>{
   const spec=SORTIE_FORMATIONS[formation];
   if(!spec||spec.level>Number(game.sortieTestLevel??game.campaign?.commander?.level??1))return null;
-  const picked=[],claimed=new Set(),temp=new Map();
+  const picked=[],claimed=new Set(),claimedJobs=new Set(),tierUsed={N:0,R:0,SR:0,SSR:0,UR:0};
   for(let i=0;i<spec.slots;i++){
    const role=FORMATION_ROLES[formation]?.[i],min=formationMinimumForRole(role);
    const candidates=sources.filter(s=>ROLE_JOBS[role]?.includes(s.job)&&!claimed.has(sourceKey(s))&&
-    (remaining.get(sourceKey(s))||0)-(temp.get(sourceKey(s))||0)>=min &&
-    min<=spec.rarityCaps[rarityOf(s)]);
+    !claimedJobs.has(s.job)&&(remaining.get(sourceKey(s))||0)>=min &&
+    tierUsed[rarityOf(s)]+min<=spec.rarityCaps[rarityOf(s)]);
    candidates.sort((a,b)=>contribution(b,mode)-contribution(a,mode)||
     (remaining.get(sourceKey(b))||0)-(remaining.get(sourceKey(a))||0)||
     sourceKey(a).localeCompare(sourceKey(b)));
    if(!candidates.length)return null;
-   const s=candidates[0],sid=sourceKey(s);
-   picked.push({sid,source:s,count:min,role});claimed.add(sid);
-   temp.set(sid,(temp.get(sid)||0)+min);
+   const s=candidates[0],sid=sourceKey(s),tier=rarityOf(s);
+   picked.push({sid,source:s,count:min,role});
+   claimed.add(sid);claimedJobs.add(s.job);tierUsed[tier]+=min;
   }
   return picked;
  };
