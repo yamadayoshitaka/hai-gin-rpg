@@ -750,7 +750,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    colliders.push({name:extra.name||'external-body',
     a:new THREE.Vector3(...extra.a),b:new THREE.Vector3(...extra.b),r:extra.r});
  }
- const hairLayers=style.shortCutKind?1:4;
+ const hairLayers=4;
  const ribbonStride=hairLayers*2;
  const vertexCount=lockCount*(segments+1)*ribbonStride;
  const vertices=new Float32Array(vertexCount*3),colors=new Float32Array(vertexCount*3);
