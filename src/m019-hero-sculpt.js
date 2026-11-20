@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-mobile-four-limb-safety-v12-20261120';
+export const M019_HERO_REVISION='m019-embedded-volcanic-talons-v13-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -263,7 +263,12 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
 }
 
-/** Four narrow toes at the END of the vertical shin, not a free ankle. */
+/**
+ * Four low, weight-bearing volcanic toes with genuine curved keratin tips.
+ * All parts follow the existing animated ankle pivot; no floating generic
+ * cone nails, chalk-white claws or GPU-dependent foot skin. Low LOD keeps
+ * real fingers and curved talons, only omitting extra surface fissures.
+ */
 export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  const sign=side<0?-1:1;
  const toe=g.group('toe'+name,
@@ -271,17 +276,55 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  toe.userData.m019PlantedToeJoint=true;
  toe.userData.m019SprawledOutward=true;
  toe.userData.m019RightAngleGrounding=true;
- g.sphere(toe,'skin',[0,-.022,.038],[.095,.035,.115],
-   {name:'m019-metatarsal-'+name,rough:.88});
+ toe.userData.m019ToeCount=4;
+ toe.userData.m019PawFinish='basalt-scutes-with-rooted-curved-keratin';
+ g.sphere(toe,'skin',[0,-.016,.048],[.109,.041,.127],
+   {name:'m019-metatarsal-'+name,rough:.92});
+ // The narrow dark scutes intersect the dorsal skin instead of floating
+ // above it. Do not add these extra draw calls in low/crowd LOD.
+ if(detail!=='low')for(let scute=0;scute<3;scute++){
+  const rock=g.rock(toe,'shadow',
+    [(scute-1)*.056,.015,.026+(.5-Math.abs(scute-1))*.020],
+    [.027,.010,.038],
+    {name:'m019-rooted-paw-scute-'+name+'-'+scute,rough:.94});
+  rock.userData.m019RootedBasaltScute=true;
+ }
  for(let digit=0;digit<4;digit++){
-  const x=(digit-1.5)*.048;
-  const spread=(digit-1.5)*.018+sign*.008;
-  if(detail!=='low')g.sphere(toe,'skin',
-    [x,-.022,.111],[.025,.027,.069],
-    {name:'m019-digit-'+name+'-'+digit,rough:.84});
-  g.rootedSpike(toe,'bone','skin',
-    [x,-.027,.151],[x+spread,-.057,.223],.012,
-    {name:'m019-rooted-claw-'+name+'-'+digit});
+  const x=(digit-1.5)*.050;
+  const spread=(digit-1.5)*.020+sign*.006;
+  // Round finger skin runs *inside* the central footpad and continues
+  // underneath the talon root, so nothing looks like a glued-on stick.
+  const finger=g.tube(toe,'skin',[
+   [x*.70,-.012,.060],
+   [x,-.013,.107],
+   [x+spread*.25,-.018,.146],
+   [x+spread*.40,-.025,.184]
+  ],detail==='low'?.021:.027,{
+   name:'m019-digit-'+name+'-'+digit,capEnds:true,taper:.65
+  });
+  finger.userData.m019ContinuousBasaltDigit=true;
+  const root=[x+spread*.22,-.008,.155];
+  const elbow=[x+spread*.55,.009,.215];
+  const tip=[x+spread,-.052,.255];
+  const claw=g.curvedHorn(toe,'bone',root,elbow,tip,
+   detail==='low'?.017:.021,{
+    name:'m019-rooted-claw-'+name+'-'+digit
+   });
+  claw.userData.m019CurvedKeratinTalon=true;
+  claw.userData.m019EmbeddedInFinger=true;
+  claw.userData.m019NaturalPigment='basalt-dark-bone';
+  // A very short unlit heat fracture at the nail-bed only. No glowing
+  // neon rod, detached socket or full-length orange cartoon outline.
+  if(detail!=='low'){
+   const seam=g.tube(toe,'accent',[
+    [root[0],root[1]+.018,root[2]-.008],
+    [root[0]+spread*.13,root[1]+.020,root[2]+.022],
+    [root[0]+spread*.26,root[1]+.017,root[2]+.043]
+   ],.003,{
+    name:'m019-nail-bed-fissure-'+name+'-'+digit,glow:false
+   });
+   seam.userData.m019InsetHeatVein=true;
+  }
  }
  return toe;
 }
