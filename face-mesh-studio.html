@@ -78,7 +78,7 @@ button{padding:9px 11px}
 <label for="quickWigStyle">髪型を切り替え <select id="quickWigStyle" aria-label="女性の髪型を選択"></select></label>
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
-<div class="previewStage" id="previewStage"><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<div class="previewStage" id="previewStage"><div id="hairBuildBadge" style="position:absolute;z-index:3;top:8px;left:8px;max-width:calc(100% - 16px);padding:5px 9px;border-radius:7px;background:rgba(8,22,34,.88);color:#e1f9ee;border:1px solid #6eaa9c;font-size:12px;pointer-events:none" aria-live="polite">髪モデル版：読込中…</div><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
 <button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
@@ -577,6 +577,9 @@ for(const mode of ['clay','color']){
  $(mode).addEventListener('click',()=>{faceMode=mode;repaint();});
 }
 function updateHairRuntimeDiagnostics(wig=null,error=null){
+ const badge=document.getElementById('hairBuildBadge');
+ if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
+  '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち');
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
