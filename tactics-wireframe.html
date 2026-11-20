@@ -9424,7 +9424,7 @@ const threeGroupPanel=!TOWN_MODE?createBattleThreeGroupPanel({
  enemyInitial:storyRequest?.enemyCount??(massSim?.sideCount??actors.filter(a=>a.team===1).length),
  allowRecompose:!massSim,
  onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
- onStrategy:(groupId,id)=>{if(battleReady&&!finished){const squad=id||squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[String(sid)])===groupId);if(squad){realtimeCommandUI?.selectSquad(squad);realtimeCommandUI?.openMove();}}},
+ onStrategy:(groupId,id)=>{if(battleReady&&!finished){const squad=id||squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[String(sid)])===groupId);if(squad){realtimeCommandUI?.showSquadControls(squad);}}},
  onInspect:id=>openVitals(id),
  onReinforce:result=>{
   const point=squadCenter(result.toId,0);
