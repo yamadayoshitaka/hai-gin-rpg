@@ -75,6 +75,7 @@ export function createMassBattleWorkerHandler(emit){
         case 'squadExplore':if(sim)sim.setSquadExploration(message.squadId,message.buildingId,message.x,message.z,message.team||0);break;
         case 'squadMission':if(sim)sim.setSquadMission(message.squadId,message.missionType,message.target);break;
         case 'squadHealing':if(sim)sim.requestSquadHealing(message.targetSquadId,message.supportSquadId);break;
+        case 'squadRevival':if(sim)sim.reviveSquadTarget(message.squadId,message.targetSquadId,message.team||0);break;
         case 'clearSquadDestination':sim?.clearSquadDestination(message.squadId);break;
         case 'order':if(sim?.units[message.id]){sim.units[message.id].order=message.order;gpu?.setOrder(message.id,message.order);}break;
         case 'igniteStructure':sim?.actions.igniteStructure(message.id,message.options);break;
