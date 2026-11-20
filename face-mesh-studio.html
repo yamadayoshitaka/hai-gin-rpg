@@ -618,10 +618,10 @@ function setHairHiddenScalp(face,enabled){
   const previous=mat.onBeforeCompile;
   mat.onBeforeCompile=shader=>{
    previous?.(shader);
-   shader.vertexShader='varying vec3 vHairMaskPosition;\\n'+shader.vertexShader;
+   shader.vertexShader='varying vec3 vHairMaskPosition;\n'+shader.vertexShader;
    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-    '#include <begin_vertex>\\n vHairMaskPosition = position;');
-   shader.fragmentShader='varying vec3 vHairMaskPosition;\\n'+shader.fragmentShader;
+    '#include <begin_vertex>\n vHairMaskPosition = position;');
+   shader.fragmentShader='varying vec3 vHairMaskPosition;\n'+shader.fragmentShader;
    const cut=`vec3 hairP = vHairMaskPosition;
     float hz = (hairP.z - ${center.z.toFixed(7)}) / ${Math.max(size.z,1e-5).toFixed(7)};
     float hx = abs(hairP.x - ${center.x.toFixed(7)}) / ${Math.max(size.x,1e-5).toFixed(7)};
@@ -632,7 +632,7 @@ function setHairHiddenScalp(face,enabled){
     // Preserve the frontal hairline, ears and all skin below the seam.
     if (normalizedY > hairLine + 0.018) discard;`;
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
-    '#include <clipping_planes_fragment>\\n'+cut);
+    '#include <clipping_planes_fragment>\n'+cut);
   };
   mat.customProgramCacheKey=()=> 'hair-hidden-scalp-v1-'+(source.customProgramCacheKey?.()||'');
   return mat;
