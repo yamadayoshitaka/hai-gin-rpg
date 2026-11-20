@@ -96,9 +96,9 @@ for(const id of ['archer','mage','priest','summoner','ninja','thief'])
 assert.match(formatSquadIntent({strategy:'environment_prepare'}).purpose,/作戦：環境整備/);
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(html,/id='openingSquadStrategies'/);
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/);
 assert.match(html,/STRATEGY_LABELS/);
-assert.match(html,/armyGroupBySquad\[id\]=group/,
+assert.match(html,/engineBattleJobNameForSquad\(Math\.floor\(i\/squadSize\)\)/,
  'Group membership is independent of each soldier profession');
 assert.doesNotMatch(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/,
  'Launching must preserve jobs, captain passives and original casualty identities');
