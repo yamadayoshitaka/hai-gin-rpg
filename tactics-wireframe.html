@@ -10443,7 +10443,8 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false,highGroundMode='a
     unit._manualHighGroundTargetId=String(targetId);
     started.push(unit);
    }
-   if(!started.length&&eligible.some(unit=>(unit.indoorFloor??1)!==floor))return false;
+   if(!started.length&&eligible.some(unit=>(unit.indoorFloor??1)!==floor&&
+     unit.floorTravel?.manualHighGroundTargetId!==String(targetId)))return false;
    for(const unit of eligible){
     unit._manualHighGroundAttack=highGroundMode!=='hold';
     if(unit.floorTravel?.building===building){
@@ -10459,8 +10460,6 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false,highGroundMode='a
    return true;
   }
   const routeIndex=Number(targetId);
-  const allHeightMembers=massSim?.units?.filter(u=>u.team===0&&String(u.squadId)===String(id)&&
-   u.hp>0&&u.alive!==false)||[];
   const manualHold=highGroundMode==='hold';
   // Reissuing this order on an already occupied roof must update combat posture.
   const success=massSim?.orderSquadHighGround(id,routeIndex,0,{manualHold})===true;
@@ -10753,7 +10752,12 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
     u.indoorFloor!==u.floorTravel.manualHighGroundGoal);
   const moving=Boolean((order.mode==='move'&&destination&&distance>3.5)||missionActive||highGroundMoving);
   const missionCompleted=massSim&&order.mode==='mission'&&!massSim.squadMissions?.has(squad);
-  const label=missionCompleted?'自動交戦｜次の敵を索敵中':
+  const highGroundAttack=highGroundTarget!=null&&heightMembers.every(u=>
+   massSim?!u.highGroundManualHold:u._manualHighGroundAttack===true);
+  const label=highGroundTarget!=null?
+   (highGroundAttack?(highGroundArrived?'🏹 高所攻撃中':'🏹 高所攻撃へ移動中'):
+    (highGroundArrived?'🏰 高所で待機中':'🏰 高所へ移動中'))+'｜MP消費なし｜次の命令可能':
+   missionCompleted?'自動交戦｜次の敵を索敵中':
    (intent.order||'自動戦闘').replace(/^号令：/,'')+
    '｜'+(intent.purpose||'索敵・交戦').replace(/^目的：/,'');
   return {label,cooldown,moving,highGroundTarget,highGroundArrived,
