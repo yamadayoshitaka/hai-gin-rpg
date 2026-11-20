@@ -23,7 +23,7 @@ test('50v50 high-ground selects a physical building, invokes floor travel and al
  assert.match(page,/id:'skirmish:'\+index\+':'\+kind\+':'\+floor/);
  assert.match(page,/for\(const unit of eligible\)/);
  assert.match(page,/requestUnitFloor\(unit,1,building,\{forceStairs:true\}\)/);
- assert.match(page,/selected\.floorTravel\.manualHighGroundTarget=true/);
+ assert.match(page,/unit\.floorTravel\.manualHighGroundTarget=true/);
  assert.match(page,/a\.floorTravel&&!a\.floorTravel\.manualHighGroundTarget/);
  assert.match(ui,/className='realtimeStructureMap'/);
 });
