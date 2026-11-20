@@ -569,7 +569,11 @@ function repaint(){
  // The clay look is intentionally bright to show topology; color mode uses
  // softer exposure so the natural skin tone is not washed out to white.
  renderer.toneMappingExposure=faceMode==='color'?.95:1.25;
- for(const [sex,m] of models)applyFaceColorMode(m.face,faceMode,{contactColor,makeupType:v32Makeup[sex]});
+ for(const [sex,m] of models){
+   setHairHiddenScalp(m.face,false);
+   applyFaceColorMode(m.face,faceMode,{contactColor,makeupType:v32Makeup[sex]});
+   if(wigOn&&wigs.get(sex))setHairHiddenScalp(m.face,true);
+  }
  setActive(['clay','color'],faceMode);
  persistHeroineFace();
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
@@ -580,7 +584,8 @@ for(const mode of ['clay','color']){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const badge=document.getElementById('hairBuildBadge');
  if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
-  '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち');
+  '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
+  '｜頭皮マスク：'+(models.get('female')?.face?.userData?.hairScalpMaskActive?'ON':'OFF');
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
@@ -605,15 +610,21 @@ function setHairHiddenScalp(face,enabled){
  if(!enabled){
   if(face.material!==original){const masked=face.material;face.material=original;
    for(const m of Array.isArray(masked)?masked:[masked])m.dispose?.();}
+  face.userData.hairScalpMaskActive=false;
   return;
  }
- if(face.material!==original)return;
+ if(face.material!==original){
+  // Other color/material modes can replace the source after a previous mask.
+  // Rebind to the live source rather than silently skipping the mask.
+  hiddenScalpOriginals.set(face,face.material);
+ }
+ const liveOriginal=hiddenScalpOriginals.get(face);
  face.geometry.computeBoundingBox();
  const box=face.geometry.boundingBox;
  if(!box)return;
  const size=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
- const materials=(Array.isArray(original)?original:[original]).map(source=>{
+ const materials=(Array.isArray(liveOriginal)?liveOriginal:[liveOriginal]).map(source=>{
   const mat=source.clone();
   const previous=mat.onBeforeCompile;
   mat.onBeforeCompile=shader=>{
@@ -637,7 +648,8 @@ function setHairHiddenScalp(face,enabled){
   mat.customProgramCacheKey=()=> 'hair-hidden-scalp-v1-'+(source.customProgramCacheKey?.()||'');
   return mat;
  });
- face.material=Array.isArray(original)?materials:materials[0];
+ face.material=Array.isArray(liveOriginal)?materials:materials[0];
+ face.userData.hairScalpMaskActive=true;
 }
 function updateAllHiddenScalps(){
  for(const sex of ['female','male']){
