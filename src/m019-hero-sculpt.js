@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-visible-charcoal-limbs-v15-20261120';
+export const M019_HERO_REVISION='m019-restored-rendered-bridge-v16-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -243,42 +243,34 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   fissure.userData.m019InsetHeatVein=true;
  }
 
- // Mobile fallback must match the torso: round curved muscles in dark
- // basalt, NOT the v12 straight brown bridging cylinders. Both parts are
- // immutable meshes, while shoulder/knee pivots retain natural articulation.
- const visibleUpper=g.tube(leg,'light',[
-   [0,.085,z],[sign*.160,.121,z+.014],
-   [sign*.342,.138,z+.025],[sign*.550,.082,z+.018],
-   [sign*.755,.008,z+.009],[kneeX,kneeY,z]
- ],.168,{
-   name:'m019-mobile-upper-'+name,capEnds:true,taper:.75,
-   tubularSegments:detail==='low'?14:24,
-   radialSegments:detail==='low'?10:12
- });
+ // Return to the EXACT geometry path that was visibly rendered in
+ // v4.5.27 (v13). v14 replaced stable oriented-bridge meshes with
+ // procedural tubes, after which Android showed only detached toes.
+ // The species' original generic dog-like limbs are intentionally excluded
+ // elsewhere; these two real meshes must ALWAYS remain renderable.
+ // Use the same low-profile sideways knee / planted shin as the last
+ // successfully photographed model, without further width reduction.
+ const visibleUpper=g.bridge(leg,'light',
+   [0,.090,z],[kneeX,kneeY,z],.160,.125);
+ visibleUpper.name='m019-mobile-upper-'+name;
  visibleUpper.userData.m019IndependentVisibleCore=true;
  visibleUpper.userData.m019ArticulatedParent='shoulder';
- visibleUpper.userData.m019CurvedAnatomicalFallback=true;
- const visibleShin=g.tube(distal,'light',[
-   [0,.055,0],[sign*.024,-.075,.009],
-   [sign*.039,-.275,.029],[sign*.029,-.500,.062],
-   [0,M019_SPRAWL_FOOT_Y,.095]
- ],.128,{
-   name:'m019-mobile-shin-'+name,capEnds:true,taper:.66,
-   tubularSegments:detail==='low'?14:24,
-   radialSegments:detail==='low'?10:12
- });
+ visibleUpper.userData.m019LastRenderedGeometry='v13-oriented-bridge';
+ visibleUpper.userData.m019StableVisibleBridge=true;
+ visibleUpper.frustumCulled=false;
+ const visibleShin=g.bridge(distal,'light',
+   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],.124,.088);
+ visibleShin.name='m019-mobile-shin-'+name;
  visibleShin.userData.m019IndependentVisibleCore=true;
  visibleShin.userData.m019ArticulatedParent='knee';
- visibleShin.userData.m019CurvedAnatomicalFallback=true;
- // v14 surface chips were positioned ABOVE the curved leg and
- // appeared as four pairs of floating black spots in the Android viewer.
- // Remove that geometry, retaining the actual sculpted muscle and toes.
- // Avoid self-shadow blackouts on these compact small mobile limb shells.
+ visibleShin.userData.m019LastRenderedGeometry='v13-oriented-bridge';
+ visibleShin.userData.m019StableVisibleBridge=true;
+ visibleShin.frustumCulled=false;
+ // Avoid baked shadow occlusion on the slender dark-basalt parts while
+ // preserving proper depth testing and shadow casting on the ground.
  visibleUpper.receiveShadow=false;
  visibleShin.receiveShadow=false;
  skin.receiveShadow=false;
- visibleUpper.userData.m019VisibleCharcoal=true;
- visibleShin.userData.m019VisibleCharcoal=true;
  return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
 }
 
