@@ -43,7 +43,7 @@ test('moving 50v50 squads visibly make progress instead of accepting only a UI c
 });
 test('actual 50 and 1000 unit summoner orders consume MP and create owned world objects',()=>{
  for(const count of [50,1000]){
-  const sim=create(count),summoner=sim.units.find(u=>u.team===0&&u.jobId==='summoner'&&u.alive);
+  const sim=create(count),summoner=sim.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='summoner'&&u.alive);
   assert.ok(summoner,'summoner must be present in the 10-job roster');
   const mp=summoner.mp;
   assert.equal(sim.summonSquadCreature(summoner.squadId),true,
@@ -57,7 +57,7 @@ test('actual 50 and 1000 unit summoner orders consume MP and create owned world 
 });
 test('explicit priest revival updates the actual fallen unit and MP budget',()=>{
  const sim=create(50);
- const priest=sim.units.find(u=>u.team===0&&u.jobId==='priest'&&u.alive);
+ const priest=sim.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='priest'&&u.alive);
  const victim=sim.units.find(u=>u.team===0&&u.squadId!==priest.squadId&&u.alive);
  assert.ok(priest&&victim);priest.rarity='UR';priest.mp=100;
  victim.x=victim.fromX=priest.x+1;victim.z=victim.fromZ=priest.z;
