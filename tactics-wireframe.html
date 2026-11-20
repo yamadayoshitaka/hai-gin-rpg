@@ -5129,13 +5129,20 @@ function updateUnitFloorTravel(a,dt){
     a.floorTravel.manualHighGroundTarget=true;
     a.floorTravel.manualHighGroundGoal=goal;
     a.floorTravel.manualHighGroundTargetId=a._manualHighGroundTargetId;
+    a.floorTravel.manualHighGroundAttack=a._manualHighGroundAttack===true;
    }
    return true;
   }
   if(travel.manualHighGroundTarget&&a.indoorFloor===travel.manualHighGroundGoal){
-   a.poseMoving=false;
-   if(a.character&&a.attackTimer<=0)requestMotion(a,'idle');
-   return true;
+   if(travel.manualHighGroundAttack){
+    // High-ground attack is an attack, not an unintentional hold order.
+    travel.manualHighGroundTarget=false;
+    a._manualHighGroundArrival='charge';
+   }else{
+    a.poseMoving=false;
+    if(a.character&&a.attackTimer<=0)requestMotion(a,'idle');
+    return true;
+   }
   }
   // A soldier must physically walk to the upper-storey chest before it can
   // collect the item. No click, floor-selection control or teleport is used.
@@ -5395,6 +5402,9 @@ window.__haiGinFloorTravelQA=()=>actors.filter(a=>a.floorTravel).map(a=>({
 function updateUpperFloorRangedCombat(a,dt){
  const travel=a.floorTravel;
  if(!travel||!['upstairs','roof'].includes(travel.phase)||a.hp<=0)return;
+ // Movement-only high ground must not attack; assault waits for the selected storey.
+ if(travel.manualHighGroundTarget&&(!travel.manualHighGroundAttack||
+    (a.indoorFloor??1)<Number(travel.manualHighGroundGoal||1)))return;
  const healing=a.job.role==='support'||a.job.damage<=0;
  // Local opponents on the SAME upper level were completely filtered out by
  // the external window targeting, even within a sword's reach.
@@ -10242,7 +10252,7 @@ function realtimeSpecialTargets(id,action){
      'マス｜X'+o.x+' Z'+o.z+(reason?'｜'+reason:'')};
   });
 }
-function issueRealtimeSpecial(id,action,targetId,arrival=false){
+function issueRealtimeSpecial(id,action,targetId,arrival=false,highGroundMode='attack'){
  if(!battleReady||finished||battleCeremony.locked||
   !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
  const members=realtimeJobMembers(id);
@@ -10427,26 +10437,40 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
     unit.floorTravel.manualHighGroundTarget=true;
     unit.floorTravel.manualHighGroundGoal=floor;
     unit.floorTravel.manualHighGroundTargetId=String(targetId);
+    unit.floorTravel.manualHighGroundAttack=highGroundMode!=='hold';
+    unit._manualHighGroundAttack=highGroundMode!=='hold';
     unit._manualHighGroundBuilding=building;
     unit._manualHighGroundTargetId=String(targetId);
     started.push(unit);
    }
    if(!started.length&&eligible.some(unit=>(unit.indoorFloor??1)!==floor))return false;
+   for(const unit of eligible){
+    unit._manualHighGroundAttack=highGroundMode!=='hold';
+    if(unit.floorTravel?.building===building){
+     unit.floorTravel.manualHighGroundAttack=highGroundMode!=='hold';
+     if((unit.indoorFloor??1)===floor)
+      unit.floorTravel.manualHighGroundTarget=highGroundMode==='hold';
+    }
+   }
    markRibbonOrderIssued(id);
-   battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動',
-    '第'+floor+'層まで隊全員で移動し、到着後待機');
+   battleCeremony.showOrder((highGroundMode==='hold'?'🏰 ':'🏹 ')+squadName(id)+
+    (highGroundMode==='hold'?'：高所移動':'：高所攻撃'),
+    '第'+floor+'層へ移動し、'+(highGroundMode==='hold'?'到着後待機':'到着後に高所から射撃（MP消費なし）'));
    return true;
   }
   const routeIndex=Number(targetId);
   const allHeightMembers=massSim?.units?.filter(u=>u.team===0&&String(u.squadId)===String(id)&&
    u.hp>0&&u.alive!==false)||[];
-  const already=allHeightMembers.length>0&&
-   allHeightMembers.every(u=>u.highGroundRouteIndex===routeIndex);
-  const success=Boolean(already)||massSim?.orderSquadHighGround(id,routeIndex,0)===true;
+  const manualHold=highGroundMode==='hold';
+  // Reissuing this order on an already occupied roof must update combat posture.
+  const success=massSim?.orderSquadHighGround(id,routeIndex,0,{manualHold})===true;
   if(!success)return false;
-  if(!already&&massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
+  if(massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0,{manualHold});
   markRibbonOrderIssued(id);
-  battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動','階段・屋根へ移動し到着後待機');
+  battleCeremony.showOrder((manualHold?'🏰 ':'🏹 ')+squadName(id)+
+   (manualHold?'：高所移動':'：高所攻撃'),
+   manualHold?'階段・屋根へ移動し到着後待機':
+    '階段・屋根へ移動し、到着後は高所から敵を射撃（MP消費なし）');
   return true;
  }
  if(action==='steal_item'){
@@ -10769,7 +10793,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  }),
  onRally:(id,type,targets)=>issueCommanderRally(id,type,targets),
  getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
- onSpecial:(id,action,targetId,arrival=false)=>issueRealtimeSpecial(id,action,targetId,arrival),
+ onSpecial:(id,action,targetId,arrival=false,highGroundMode='attack')=>
+  issueRealtimeSpecial(id,action,targetId,arrival,highGroundMode),
  onEnemySelect:id=>battleRpgHud?.select(1,id,{focus:true}),
  onRoster:()=>document.body.classList.toggle('battle-roster-open'),
  onMenu:()=>$('battleMenuToggle').click(),
