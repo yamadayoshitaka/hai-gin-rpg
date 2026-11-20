@@ -796,7 +796,7 @@ export function createRealtimeBattleCommands({
  function confirmDockStrategy(){
   const id=String(selectedId||''),entry=pendingStrategy;
   const destination=selectedMovementTarget();
-  let success=false;
+  let success=false,queuedArrival=false;
   if(!entry?.special&&!entry?.command){
    $('realtimeTargetMessage').textContent='移動だけの指示はありません。作戦または固有作戦を選択してください。';
    return false;
@@ -824,11 +824,14 @@ export function createRealtimeBattleCommands({
   }else if(destination&&entry?.command){
    const point=nearestLegalApproach(destination);
    if(point)success=onMove(id,point);
-   if(success&&entry?.command)
+   if(success&&entry?.command){
     arrivalActions.set(id,{command:entry.command,point:{...point}});
+    queuedArrival=true;
+   }
   }else if(entry?.command)success=onOrder(id,entry.command);
   if(success?.followup&&success?.point){
    arrivalActions.set(id,{command:success.followup,point:{...success.point}});
+   queuedArrival=true;
   }
   if(success?.openMove){
    // Summon has already happened. Next confirmation only moves the existing
@@ -839,6 +842,8 @@ export function createRealtimeBattleCommands({
    $('realtimeTargetKind').value='point';refreshMoveTargetChoices();return;
   }
   if(success){
+   // Ordinary dock orders also supersede stale arrival commands.
+   if(!queuedArrival&&!success?.deferred)arrivalActions.delete(id);
    if(entry?.command)preferredActions.set(id,entry.attackKind?'attack_'+entry.attackKind:entry.command);
    if(entry?.special)preferredActions.set(id,'special_'+entry.special);
    const label=entry?.special?'固有作戦':'選択作戦';
