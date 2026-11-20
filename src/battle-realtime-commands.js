@@ -1270,8 +1270,14 @@ radarCanvas.addEventListener('keydown',event=>{
     for(const [id,entry] of arrivalActions){
      const own=squads().find(s=>String(s.id)===String(id));
      if(!own||Number(own.alive)<=0){arrivalActions.delete(id);continue;}
-     if(!Number.isFinite(own.x)||!Number.isFinite(own.z))continue;
-     if(Math.hypot(own.x-entry.point.x,own.z-entry.point.z)>3.5)continue;
+     if(entry.highGroundTarget!=null){
+      const height=getOrderState(id)||{};
+      if(!height.highGroundArrived||
+       String(height.highGroundTarget)!==String(entry.highGroundTarget))continue;
+     }else{
+      if(!Number.isFinite(own.x)||!Number.isFinite(own.z))continue;
+      if(Math.hypot(own.x-entry.point.x,own.z-entry.point.z)>3.5)continue;
+     }
      // Arrival executes the action already authorized with this movement order.
      const accepted=entry.itemId?onUseItem(id,entry.itemId,true):
       entry.special?onSpecial(id,entry.special,entry.targetId,true):
