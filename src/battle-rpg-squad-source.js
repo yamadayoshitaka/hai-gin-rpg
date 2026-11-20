@@ -14,12 +14,9 @@ export function makeBattleRpgStatusRows({
  for(const unit of units){
   const key=String(unit.team)+':'+String(unit.squadId);
   maxHpBySquad.set(key,(maxHpBySquad.get(key)||0)+Math.max(0,Number(unit.maxHp)||0));
-  if(unit.alive!==false&&Number(unit.hp)>0){
-   // MP numerator and denominator must cover the same living casters.
-   // Dead members must not make a usable spell gauge look depleted.
-   maxMpBySquad.set(key,(maxMpBySquad.get(key)||0)+Math.max(0,Number(unit.maxMp)||0));
+  maxMpBySquad.set(key,(maxMpBySquad.get(key)||0)+Math.max(0,Number(unit.maxMp)||0));
+  if(unit.alive!==false&&Number(unit.hp)>0)
    mpBySquad.set(key,(mpBySquad.get(key)||0)+Math.max(0,Number(unit.mp)||0));
-  }
  }
  function effectsFor(team,id){
   const key=team+':'+id,effects=[];
