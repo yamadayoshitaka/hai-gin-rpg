@@ -62,6 +62,7 @@ button{padding:9px 11px}
 }
 </style><style>.v64-manager-link{display:inline-flex;margin:8px 0;padding:9px 12px;border-radius:8px;background:#246b59;color:white;text-decoration:none;border:1px solid #9bd8be}</style></head>
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
+<section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
 <header>
 <h1>顔・髪の編集 v75｜目頭・鼻筋・ほうれい線・毛束の実造形</h1>
 <a class="studioNav" href="./face-body-studio.html?v=57" id="returnToCostume">衣装確認画面に戻る</a>
@@ -212,7 +213,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261120-nape-4b6ed4b5';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261120-buzz-8ad21228';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
@@ -575,6 +576,21 @@ function repaint(){
 for(const mode of ['clay','color']){
  $(mode).addEventListener('click',()=>{faceMode=mode;repaint();});
 }
+function updateHairRuntimeDiagnostics(wig=null,error=null){
+ const el=document.getElementById('hairRuntimeDiagnostics');
+ if(!el)return;
+ const report=wig?.getReport?.()||{};
+ const scalp=wig?.root?.getObjectByName?.('scalpShell');
+ const meshCount=wig?.root?.children?.length??0;
+ const codeOk=FACE_HAIR_RUNTIME_BUILD==='20261120-buzz-8ad21228';
+ el.textContent='髪コード: '+FACE_HAIR_RUNTIME_BUILD+
+  ' / main想定: 20261120-buzz-8ad21228 / 読込判定: '+(codeOk?'一致':'不一致')+
+  ' / モデル生成: '+(error?'失敗 '+String(error):wig?'成功':'待機')+
+  ' / 毛束: '+(report.rootCount??'未取得')+
+  ' / 描画オブジェクト: '+meshCount+
+  ' / Pages公開SHA: 未検証（コード識別子のみ）';
+}
+updateHairRuntimeDiagnostics();
 function rebuildWig(){
  const chosen=synchronizeHeroHairSelection('female',v32Parts.female,
   v32PartMode?null:wigStyleId);
@@ -598,6 +614,7 @@ function rebuildWig(){
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
+  updateHairRuntimeDiagnostics(wig);
    $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
     '／'+wig.getReport().rootCount+'束・微細毛10倍';
   persistHeroineFace();
