@@ -4,7 +4,7 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-20T11:06:27.106Z",
+    "checkedAt": "2026-11-20T11:08:54.223Z",
     "category": "gameQuality",
     "status": "disabled",
     "mainBeforeSha": null,
@@ -23,7 +23,7 @@
     "gameQuality": {
       "lane": "model",
       "label": "全モデル→ゲーム",
-      "sourceFingerprint": "b6faeafd0c3a6b41f2b4005fb9d0715b9dec2ba10dbfd7fcac1a29f812521fba",
+      "sourceFingerprint": "9cf1054d85dbb98c4c11d1aa0b6578fe06ef67834ef3b7e30caa1b58fa24d220",
       "staticPassed": true,
       "staticStatus": "static_pass",
       "failedTests": [],
@@ -39,55 +39,10 @@
       }
     },
     "attempts": [],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44724763052"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44725088398"
   },
   "latestSourceCommit": null,
   "history": [
-    {
-      "checkedAt": "2026-11-18T15:04:30.270Z",
-      "category": "gameQuality",
-      "status": "blocked_candidates",
-      "mainBeforeSha": "93fce03026119fda0a42462fbe355bba2970218a",
-      "mainAfterSha": null,
-      "pr": null,
-      "sourceCommits": 0,
-      "modifiedSourceFiles": 0,
-      "sourceFiles": [],
-      "qaStatus": "not_run",
-      "pagesDispatch": "awaiting_release_dispatch",
-      "generatedGLBs": 0,
-      "webglApproved": false,
-      "androidFpsVerified": false,
-      "error": null,
-      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/641",
-      "gameQuality": {
-        "lane": "model",
-        "label": "全モデル→ゲーム",
-        "sourceFingerprint": "7c2e33f18872d321fdf98849f35a52c199b577acd15878f9bf863663af165a4c",
-        "staticPassed": true,
-        "staticStatus": "static_pass",
-        "failedTests": [],
-        "browser": {
-          "status": "not_run",
-          "reason": "This lane has no browser sample"
-        },
-        "modelSourceModified": 0,
-        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
-        "comparison": {
-          "comparable": false,
-          "reason": "no matching CI browser before/after sample"
-        }
-      },
-      "attempts": [
-        {
-          "pr": 412,
-          "sha": "f1920899cdfa9a97ae7d19bd8cff510d8bed3f8e",
-          "status": "no_applicable_source",
-          "reason": ""
-        }
-      ],
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44331197011"
-    },
     {
       "checkedAt": "2026-11-20T03:45:38.592Z",
       "category": "gameQuality",
@@ -1017,6 +972,44 @@
       },
       "attempts": [],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44724763052"
+    },
+    {
+      "checkedAt": "2026-11-20T11:08:54.223Z",
+      "category": "gameQuality",
+      "status": "disabled",
+      "mainBeforeSha": null,
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": null,
+      "gameQuality": {
+        "lane": "model",
+        "label": "全モデル→ゲーム",
+        "sourceFingerprint": "9cf1054d85dbb98c4c11d1aa0b6578fe06ef67834ef3b7e30caa1b58fa24d220",
+        "staticPassed": true,
+        "staticStatus": "static_pass",
+        "failedTests": [],
+        "browser": {
+          "status": "not_run",
+          "reason": "This lane has no browser sample"
+        },
+        "modelSourceModified": 0,
+        "note": "Only CI software WebGL FPS is measured; Android and visual quality remain unapproved.",
+        "comparison": {
+          "comparable": false,
+          "reason": "no matching CI browser before/after sample"
+        }
+      },
+      "attempts": [],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44725088398"
     }
   ]
 }
