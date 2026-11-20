@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-topology-v6';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-follicle-v7';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -732,7 +732,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // visible outer edge clear without creating a balloon helmet.
  // Keep the minimum crown almost flush with the real scalp. The old
  // offset plus four thick stacked ribbons looked like a raised helmet.
- const rootLift=d.x*.0125;
+ // Short crops should sit against the scalp; four lifted ribbon layers
+ // created bead-like follicle spikes around the ears and crown.
+ const rootLift=d.x*(style.shortCutKind?.0025:.0125);
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -748,7 +750,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    colliders.push({name:extra.name||'external-body',
     a:new THREE.Vector3(...extra.a),b:new THREE.Vector3(...extra.b),r:extra.r});
  }
- const hairLayers=4;
+ const hairLayers=style.shortCutKind?1:4;
  const ribbonStride=hairLayers*2;
  const vertexCount=lockCount*(segments+1)*ribbonStride;
  const vertices=new Float32Array(vertexCount*3),colors=new Float32Array(vertexCount*3);
