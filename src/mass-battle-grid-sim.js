@@ -1574,6 +1574,26 @@ export class MassBattleGridSimulation {
       const mission=u.team===0&&!personalOrderActive?this.squadMissions.get(String(u.squadId)):null;
       const healTarget=u.team===0&&!personalOrderActive?this.squadHealTargets.get(String(u.squadId)):null;
       u.healTargetSquadId=healTarget??null;
+      // An explicit squad-healing order is actionable, not merely a move
+      // marker. At spell range, priests must cast on the nominated wounded
+      // squad before the generic combat AI selects a different target.
+      if(u.jobId==='priest'&&healTarget!=null&&!u._pendingCast&&u.cooldown<=0){
+        const patient=this.units.filter(v=>v.team===u.team&&v.alive&&v.hp>0&&v.hp<v.maxHp&&
+          String(v.squadId)===String(healTarget)&&
+          Math.hypot(v.x-u.x,v.z-u.z)<=14)
+          .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+        const spells=availableCombatSkills('priest',u.rarity)
+          .filter(skill=>skill.kind==='heal'&&u.mp>=skill.mp&&
+            (!u._skillNext||(u._skillNext[skill.id]||0)<=this.actions.time)&&
+            patient&&Math.hypot(patient.x-u.x,patient.z-u.z)<=skill.range)
+          .sort((a,b)=>b.power-a.power);
+        if(patient&&spells.some(spell=>{
+          if(!this.actions.fireSkill(u,spell,patient,this.units))return false;
+          u.cooldown=Math.max(1,spell.cooldown);return true;
+        })){
+          u.vx=0;u.vz=0;u.action='skill';continue;
+        }
+      }
       let nearest=null,best=reach*reach,missionNearest=null,missionBest=reach*reach;
       let hiddenEnemy=null,hiddenDistance=reach*reach;
       // The previous scan chose a blocked, nearest enemy then discarded it.
