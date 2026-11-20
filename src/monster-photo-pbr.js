@@ -91,13 +91,13 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
    const surface=m019VolcanicSurface(detail);
    material.map=surface.albedo;
    material.normalMap=surface.normal;
-   material.normalScale=new THREE.Vector2(.30,.30);
+   material.normalScale=new THREE.Vector2(.34,.34);
    material.roughnessMap=surface.roughness;
    material.roughness=.96;
    material.metalness=.02;
-   material.emissive=new THREE.Color('#fa6220');
+   material.emissive=new THREE.Color('#ff6a24');
    material.emissiveMap=surface.emissive;
-   material.emissiveIntensity=detail==='low'?.32:.47;
+   material.emissiveIntensity=detail==='low'?.37:.52;
    material.userData.photoSurface='tiled-volcanic-rock-albedo-normal-emissive';
    material.userData.m019DryObsidian=true;
    material.userData.m019VolcanicPBR=true;
