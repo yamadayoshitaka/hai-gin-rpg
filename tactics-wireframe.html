@@ -8989,6 +8989,21 @@ const overviewInspector=$('overviewSquadInspector');
 const overviewPinNodes=new Map();
 const overviewProjection=new THREE.Vector3();
 let overviewSelectedKey=null,overviewPinClock=0,overviewInspectorSignature='';
+const overviewCurrentPointer=$('overviewCurrentSquadPointer');
+const overviewLocateSquad=$('overviewLocateSquad');
+const activeOverviewAllyId=()=>String(selectedSquadId??trackedAllySquadId??'');
+overviewLocateSquad.onclick=()=>{
+ if(!overviewSquadActive())return;
+ const id=activeOverviewAllyId(),center=squadCenter(id,0);
+ if(!center||!selectOverviewSquad(0,id))return;
+ // Keep the full-map camera angle, centred on the actual selected squad.
+ const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
+ followCamera=false;targetViewFollowing=false;focusedHumanUnitId=null;
+ manualCameraSquad=null;manualCameraFocusUntil=0;
+ battleViewMode='overview';
+ setBattleCamera(new THREE.Vector3(x,terrainY(x,z),z),cameraOverviewOffset);
+ setCameraActive('camOverview');drawSquadMiniMap();
+};
 const overviewSvgNS='http://www.w3.org/2000/svg';
 for(const team of [0,1]){
  const ids=team===0?squadIds:enemySquadIds;
@@ -9028,6 +9043,7 @@ function selectOverviewSquad(team,id){
  renderOverviewSquadInspector(true);
  for(const [k,node] of overviewPinNodes)
   node.pin.classList.toggle('selected',k===key);
+ if(team===0)trackedAllySquadId=String(id);
  return true;
 }
 function renderOverviewSquadInspector(force=false){
@@ -9150,9 +9166,12 @@ function updateOverviewSquadPins(dt){
  if(overviewHud.hidden===visible)overviewHud.hidden=!visible;
  document.body.classList.toggle('overview-squad-map',visible);
  if(!visible){
+  overviewCurrentPointer.hidden=true;
+  overviewLocateSquad.hidden=true;
   if(overviewSelectedKey)renderOverviewSquadInspector();
   return;
  }
+ const currentAllyId=activeOverviewAllyId();
  const squadNumberByGroup=buildSquadNumberByGroup();
  const rect=renderer.domElement.getBoundingClientRect();
  const report=$('battleDialogue'),topDock=$('battleTopDock');
@@ -9175,11 +9194,18 @@ function updateOverviewSquadPins(dt){
    y<bounds.top-24||y>bounds.bottom+24){
    node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue;
   }
-  points.push({key,x,y,team:node.team,squadIndex:node.squadIndex});
+  points.push({key,x,y,team:node.team,squadIndex:node.squadIndex,
+   priority:key===overviewSelectedKey?2:node.team===0&&String(node.id)===currentAllyId?1:0});
  }
  const placements=placeOverviewSquadPins(points,bounds,{
   width:innerWidth<=390?38:42,height:innerWidth<=390?37:40
  });
+ const realPosition=points.find(p=>p.key===squadKey(0,currentAllyId));
+ overviewCurrentPointer.hidden=!realPosition;
+ if(realPosition){
+  overviewCurrentPointer.style.left=Math.round(realPosition.x)+'px';
+  overviewCurrentPointer.style.top=Math.round(realPosition.y)+'px';
+ }
  overviewPinLeaders.setAttribute('viewBox','0 0 '+innerWidth+' '+innerHeight);
  for(const [key,node] of overviewPinNodes){
   const loc=placements.get(key);
@@ -9199,6 +9225,9 @@ function updateOverviewSquadPins(dt){
   node.pin.classList.toggle('critical',Number(remaining.split('/')[0])<=
    Number(remaining.split('/')[1])*.3);
   node.pin.classList.toggle('selected',key===overviewSelectedKey);
+  const own=node.team===0&&String(id)===currentAllyId;
+  node.pin.classList.toggle('current-squad',own);
+  node.pin.setAttribute('aria-current',own?'location':'false');
   node.pin.style.left=Math.round(loc.x)+'px';
   node.pin.style.top=Math.round(loc.y)+'px';
   node.pin.title=(node.team?'敵':'味方')+squadName(id,node.team)+
@@ -9220,7 +9249,17 @@ function updateOverviewSquadPins(dt){
  }).length;
  const summary='🔵 味方 '+aliveCount(0)+'/'+squadIds.length+
   '隊　🔴 敵 '+aliveCount(1)+'/'+enemySquadIds.length+'隊';
- if($('overviewMapSummary').textContent!==summary)$('overviewMapSummary').textContent=summary;
+ if($('overviewMapSummaryText').textContent!==summary)
+  $('overviewMapSummaryText').textContent=summary;
+ overviewLocateSquad.hidden=!realPosition;
+ if(realPosition){
+  const group=normalizeArmyGroup(armyGroupBySquad[currentAllyId]);
+  const index=squadNumberByGroup.get(group)?.get(currentAllyId)||1;
+  const buttonLabel='📍 操作中 '+group+'-'+index+' の位置';
+  if(overviewLocateSquad.textContent!==buttonLabel)overviewLocateSquad.textContent=buttonLabel;
+  overviewLocateSquad.setAttribute('aria-label',
+   squadName(currentAllyId)+'の実際の位置をマップ中央に表示');
+ }
  renderOverviewSquadInspector();
 }
 window.getOverviewSquadQA=()=>({visible:!overviewHud.hidden,
