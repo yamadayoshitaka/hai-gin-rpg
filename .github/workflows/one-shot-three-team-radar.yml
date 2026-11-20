@@ -1,0 +1,17 @@
+name: One-shot three-team radar verification
+on:
+  push:
+    branches:
+      - fix/battle-three-team-radar-20261120
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false linkedom@0.18.12
+      - run: node --check src/battle-center-radar.js && node --check src/battle-realtime-commands.js && node --check src/battle-rpg-squad-source.js
+      - run: node --test qa/battle-rpg-squad-hud.test.mjs qa/battle-three-team-hud-dom.test.mjs qa/battle-three-team-radar.test.mjs
