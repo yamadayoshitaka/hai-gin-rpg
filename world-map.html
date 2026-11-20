@@ -288,7 +288,7 @@ function launchSelectedStage(stageId){
   sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   saveSession();
-  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v=three-team-hud2-20261120';
+  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v=three-team-radar2-20261120';
  }catch(error){stageLaunching=false;$('deploymentPicker').hidden=true;message(error.message||String(error));}
 }
 let stageLaunching=false,deploymentTeamId=1;
