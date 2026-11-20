@@ -5,8 +5,8 @@ const el=(tag,text='',cls='')=>{
  if(cls)node.className=cls;return node;
 };
 /**
- * One real-time 30-second tactical interrupt. Simulation is frozen through
- * the game's authoritative pause/Worker path; deadline uses wall clock only.
+ * One player-controlled tactical interrupt. Simulation stays frozen until
+ * the player selects a plan or explicitly resumes.
  * Never changes an individual subdivision's order.
  */
 export function installBattleSituationPause({
@@ -39,7 +39,7 @@ export function installBattleSituationPause({
   const members=getMembers(id),recommendation=recommendBattleTactics(members);
   if(!members.some(u=>u&&u.alive!==false&&u.hp>0&&!u.isStrategist))return false;
   lastTriggeredAt=stamp;
-  active={id:String(id),remaining:30,wasPaused:getWasPaused(),recommendation};
+  active={id:String(id),remaining:null,wasPaused:getWasPaused(),recommendation};
   title.textContent='⚠ '+getSquadName(id)+'：'+warning.title;
   reason.textContent='戦闘を停止。推奨：'+(ORDERS.find(p=>p[0]===recommendation.order)?.[1]||'守備')+' — '+recommendation.orderReason;
   actions.replaceChildren();
@@ -57,11 +57,9 @@ export function installBattleSituationPause({
  }
  function update(dt){
   if(!active)return;
-  active.remaining=Math.max(0,active.remaining-Math.max(0,Number(dt)||0));
-  timer.textContent='残り '+Math.ceil(active.remaining)+'秒';
-  if(active.remaining<=0)stop();
+  timer.textContent='時間制限なし';
  }
  return {trigger,update,stop,get active(){return active!=null},
-  get squadId(){return active?.id??null},get remaining(){return active?.remaining??0},
+  get squadId(){return active?.id??null},get remaining(){return null},
   get recommended(){return active?.recommendation.order??null}};
 }
