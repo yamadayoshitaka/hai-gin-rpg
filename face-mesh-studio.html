@@ -585,7 +585,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const badge=document.getElementById('hairBuildBadge');
  if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
-  '｜頭皮マスク：'+(models.get('female')?.face?.userData?.hairScalpMaskActive?'ON':'OFF');
+  '｜頭皮補正v2：'+(models.get('female')?.face?.userData?.hairScalpMaskActive?'ON':'OFF');
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
