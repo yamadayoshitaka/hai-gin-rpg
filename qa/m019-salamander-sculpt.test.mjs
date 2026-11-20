@@ -179,14 +179,24 @@ for(const detail of ['low','high']){
     assert.equal(root?.userData.m019TorsoAnchoredSocket,true);
     const upper=meshes.find(o=>o.name==='m019-seamless-skin-'+suffix);
     assert.equal(upper?.parent,leg,'whole muscle skin follows shoulder');
-    assert.equal(upper.isSkinnedMesh,true,'one deformable skin is mandatory');
-    assert.equal(upper.skeleton.bones.length,2);
-    assert.equal(upper.skeleton.bones[0].parent,leg);
-    assert.equal(upper.skeleton.bones[1].parent,knee);
+    // A real visible Mesh avoids the v9 GPU-skinned surface which vanished
+    // on Android while CPU skeleton-space tests still returned PASS.
+    assert.equal(upper.isMesh,true);
+    assert.equal(upper.isSkinnedMesh,undefined,
+      'm019 must not depend on a device-specific GPU skinning path');
+    assert.equal(upper.userData.m019GpuSkinningRemoved,true);
+    assert.equal(upper.userData.m019VisibleLimbRenderer,'cpu-deformed-tube');
+    assert.equal(typeof upper.userData.m019RefreshVisibleLimb,'function');
     assert.equal(upper.userData.m019WholeLegClosedSurface,true);
-    assert.equal(upper.userData.m019SkinningBones,2);
-    assert(upper.geometry.getAttribute('skinIndex')?.count>0);
-    assert(upper.geometry.getAttribute('skinWeight')?.count>0);
+    assert.equal(upper.geometry.getAttribute('skinIndex'),undefined);
+    assert.equal(upper.frustumCulled,false);
+    model.updateMatrixWorld(true);
+    const limbBox=new THREE.Box3().setFromObject(upper);
+    const limbExtents=limbBox.getSize(new THREE.Vector3());
+    assert(limbExtents.x>.30&&limbExtents.y>.22,
+      'real visible shoulder-to-ankle mesh must occupy substantial width and height');
+    assert(upper.material.color.getHex()>0,
+      'visible limbs must have a real lit basalt material');
     assert.equal(upper?.userData.m019HorizontalThigh,true);
     // A vertical-oriented limbLoft turns lateral muscles into flat sheets.
     // TubeGeometry cross sections face the sideways bone and stay round.
@@ -218,10 +228,11 @@ for(const detail of ['low','high']){
     const geoPos=upper.geometry.getAttribute('position');
     const capIndex=geoPos.count-1;
     const capPosition=new THREE.Vector3().fromBufferAttribute(geoPos,capIndex);
-    const skinnedEnd=upper.localToWorld(upper.applyBoneTransform(capIndex,capPosition));
+    upper.userData.m019RefreshVisibleLimb();
+    const renderedEnd=upper.localToWorld(capPosition);
     const toeWorldPosition=toe.getWorldPosition(new THREE.Vector3());
-    assert(skinnedEnd.distanceTo(toeWorldPosition)<.045,
-      'real skinned ankle cap must meet the planted toes');
+    assert(renderedEnd.distanceTo(toeWorldPosition)<.045,
+      'the REAL visible ankle cap must meet the planted toes');
     const hipWorld=leg.getWorldPosition(new THREE.Vector3());
     const footWorld=toe.getWorldPosition(new THREE.Vector3());
     assert(side*(footWorld.x-hipWorld.x)>.38,
@@ -286,9 +297,15 @@ for(const detail of ['low','high']){
        const verts=mesh.geometry.getAttribute('position');
        const capIndex=verts.count-1;
        const cap=new THREE.Vector3().fromBufferAttribute(verts,capIndex);
-       const skinFoot=mesh.localToWorld(mesh.applyBoneTransform(capIndex,cap));
+       const skinFoot=mesh.localToWorld(cap);
        assert(skinFoot.distanceTo(toes.getWorldPosition(new THREE.Vector3()))<.055,
-        action+' '+time+' real skin must stay welded to animated foot');
+        action+' '+time+' visible solid arm must stay attached to animated foot');
+       assert(mesh.visible&&mesh.material.visible,
+        action+' '+time+' skin cannot disappear via visibility or material');
+       const worldBox=new THREE.Box3().setFromObject(mesh);
+       const worldSize=worldBox.getSize(new THREE.Vector3());
+       assert(worldSize.x>.28&&worldSize.y>.17,
+        action+' '+time+' visible limb must not collapse into an unseen strip');
       }
      }
     }
