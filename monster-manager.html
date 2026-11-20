@@ -870,6 +870,38 @@ window.__monsterViewerLayoutQA=()=>({
 });
 // Test-only inspection keeps the same real game sculpture/materials,
  // but renders the eye/cheek seams from frontal AND lateral cameras.
+// This inspection is deliberately about renderable world-space solids rather
+// than hidden animation pivot coordinates. Four invisible limbs must FAIL.
+window.__m019LimbVisibilityQA=()=>{
+ if(selected!=='m019'||!model)return null;
+ model.updateMatrixWorld(true);
+ const ids=['frontL','frontR','rearL','rearR'];
+ const limbs=ids.map(id=>{
+  const mesh=model.getObjectByName('m019-seamless-skin-'+id);
+  const toe=model.userData.pivots?.['toe'+id];
+  if(!mesh||!toe||!mesh.geometry)return {id,visible:false,reason:'missing'};
+  mesh.userData.m019RefreshVisibleLimb?.();
+  mesh.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(mesh);
+  const size=box.getSize(new THREE.Vector3());
+  const pos=mesh.geometry.getAttribute('position');
+  const end=new THREE.Vector3().fromBufferAttribute(pos,pos.count-1);
+  const contact=mesh.localToWorld(end)
+   .distanceTo(toe.getWorldPosition(new THREE.Vector3()));
+  const center=box.getCenter(new THREE.Vector3()).project(camera);
+  return {id,visible:mesh.visible&&mesh.material?.visible!==false&&
+    mesh.isMesh&&!mesh.isSkinnedMesh&&!box.isEmpty(),
+   renderer:mesh.userData.m019VisibleLimbRenderer,
+   width:size.x,height:size.y,depth:size.z,
+   ankleDistance:contact,ndc:[center.x,center.y,center.z],
+   triangles:mesh.geometry.getIndex()?.count/3||0};
+ });
+ return {ready:limbs.every(x=>x.visible&&x.width>.30&&x.height>.18&&
+   x.ankleDistance<.06&&x.triangles>10),
+  id:selected,meshCount:limbs.length,
+  gpuSkinnedLimbs:limbs.filter(x=>x.renderer!=='cpu-deformed-tube').length,
+  limbs,action:currentAction};
+};
 window.__m019FullBodyCameraQA=()=>selected==='m019'&&model?
  {...model.userData.m019LastFit,manualView:m019CameraUserAdjusted,
   viewport:[view.clientWidth,view.clientHeight]}:null;
