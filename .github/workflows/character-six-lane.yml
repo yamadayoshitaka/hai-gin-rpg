@@ -12,9 +12,9 @@ on:
       category:
         description: 'Run only one domain (all for scheduled QA)'
         required: false
-        default: 'all'
+        default: faceHair
         type: choice
-        options: [all, faceHair, outfit]
+        options: [faceHair]
       slot:
         description: 'Select a lane (0-5) or rotate automatically'
         required: false
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        category: [faceHair, outfit]
+        category: [faceHair]
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     steps:

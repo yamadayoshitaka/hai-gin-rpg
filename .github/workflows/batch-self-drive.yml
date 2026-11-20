@@ -1,12 +1,9 @@
 name: Autonomous latest-main source reconciliation and commit
 on:
   schedule:
-    # 5 categories rotated; actual model patches are bounded to one PR per run.
+    # Only the two owner-enabled quality domains run autonomously.
     - cron: '7 * * * *'
-    - cron: '22 * * * *'
-    - cron: '37 * * * *'
     - cron: '52 * * * *'
-    - cron: '57 * * * *'
   workflow_dispatch:
     inputs:
       category:
@@ -14,7 +11,7 @@ on:
         type: choice
         required: true
         default: faceHair
-        options: [faceHair, outfit, creatureMonster, world, anime]
+        options: [faceHair, world]
   pull_request:
     paths:
       - 'scripts/batch-self-drive.mjs'
