@@ -1,0 +1,373 @@
+name: Publish RPG Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Experimental male chest fitting']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  # GitHub's default queue=single cancels an older pending deployment whenever
+  # another main commit arrives. Keep FIFO queued releases instead; the latest
+  # main publish must not disappear while runners are saturated.
+  queue: max
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    # Preflight tests, asset optimization, artifact upload and public CDN checks
+    # share this job. Allow enough time for all of them; deploy-pages itself
+    # retains its separate action-level timeout.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - name: Reject corrupted public HTML and JavaScript blobs
+        run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
+      - name: Verify chained battle orders and automatic follow-ups
+        run: node --test qa/battle-command-followup.test.mjs
+      - name: Verify published batch PR preview and checkpoint contract
+        id: qa_0
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node --test qa/batch-work-progress.test.mjs
+      - name: Verify 108 original high-poly master and three level-of-detail contracts
+        id: qa_1
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node --test qa/creature-master-studio.test.mjs
+      - name: Verify 108-creature reconstruction scope, anatomy and non-destructive model assignments
+        id: qa_2
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node --test qa/creature-reconstruction-plan.test.mjs
+          node --test qa/creature-web-mesh-catalog.test.mjs
+      - name: Verify opt-in monster mesh adoption, nonhuman scope and rollback
+        id: qa_3
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node --test qa/creature-mesh-adoption.test.mjs
+      - name: Verify 50 monster and summon reference prompts plus evidence-based 100-point KPI
+        id: qa_4
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node --test qa/monster-quality-kpi.test.mjs
+          node scripts/monster-quality-status.mjs
+      - name: Verify 20 chapters, story progression and recorded AI voice contract
+        id: qa_5
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node qa/story-chronicle.test.mjs
+      - name: Verify new game core, town save, shops and 200-stage transitions
+        id: qa_6
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node --experimental-vm-modules qa/game-core-contract.test.mjs
+          node qa/army-groups.test.mjs
+      - name: Verify continents, gacha, NPC models and fences/flowers
+        id: qa_7
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node qa/continent-town-gacha-regression.test.mjs
+          node qa/town-tavern-gacha.test.mjs
+      - name: Verify registered Chapter 1 character-art references and 3D viewer linkage
+        id: qa_8
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node qa/chapter-one-character-art-bridge.test.mjs
+      - name: Verify independent male/female source-derived face meshes
+        id: qa_9
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          npm install --no-save --package-lock=false three@0.160.1
+          node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
+      - name: Verify m019 Android limb visibility / colour / toe continuity in low and high LOD
+        # Failures remain visible in the workflow; publishing may proceed.
+        id: qa_m019
+        continue-on-error: true
+        run: node --test qa/m019-salamander-sculpt.test.mjs qa/m019-volcanic-pbr.test.mjs
+      - name: Verify illustrated dialogue, original opening and scene music
+        id: qa_10
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node --experimental-vm-modules qa/story-cinematic-audio.test.mjs
+          node --experimental-vm-modules qa/stage-manga-continuity.test.mjs
+          node qa/story-chapter-one-three-art-status.test.mjs
+          node qa/story-stage-poster-production.test.mjs
+          node qa/story-panel-one-at-a-time.test.mjs
+          node qa/story-c01-s01-artwork-bytes.test.mjs
+          node qa/story-stage-one-full-batch.test.mjs
+          node qa/story-stage-one-resolution.test.mjs
+          node qa/real-game-c01-manga-integration.test.mjs
+          node --experimental-vm-modules qa/story-cinematic-raster.test.mjs
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements-pages.txt
+      - name: Install image optimizer for slim Pages artifact
+        run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Verify relay startup without duplicate page reloads
+        id: qa_11
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node qa/scene-navigation-startup.test.mjs
+      - name: Inventory all 1400 real chapter-panel pictures and validate gender-safe fallbacks
+        id: qa_12
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node scripts/build-story-art-coverage.mjs
+          node qa/story-art-coverage.test.mjs
+      - name: Assemble compact game website without master asset archives
+        run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Validate batch center and PR preview are shipped in the same Pages artifact
+        id: qa_13
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: |
+          node --test qa/pages-batch-center-live-parity.test.mjs
+          node --test qa/batch-main-pages-parity.test.mjs
+      - name: Verify published world map contains the 12 named regions (no stale lock overlay)
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=pages-dist/world-map.html
+          test -s "${file}"
+          grep -Fq '12地域共通マップ' "${file}"
+          grep -Fq 'TERRITORIES.map(t=>' "${file}"
+          if grep -Fq '[data-stage-pin]' "${file}"; then
+            echo '::error::Old numeric stage-pin overlay was copied into the Pages archive'
+            exit 1
+          fi
+          echo "PASS: release archive contains the refreshed 12-region map"
+      - name: Require same latest provisional artwork in game, chapter review and deployed release
+        id: qa_14
+        # Owner permits deployment despite QA failure; leave the outcome visible.
+        continue-on-error: true
+        run: node qa/pages-story-live-parity.test.mjs
+      - name: Record tolerated quality-test failures before publishing
+        if: always()
+        env:
+          QA_0: ${{ steps.qa_0.outcome }}
+          QA_1: ${{ steps.qa_1.outcome }}
+          QA_2: ${{ steps.qa_2.outcome }}
+          QA_3: ${{ steps.qa_3.outcome }}
+          QA_4: ${{ steps.qa_4.outcome }}
+          QA_5: ${{ steps.qa_5.outcome }}
+          QA_6: ${{ steps.qa_6.outcome }}
+          QA_7: ${{ steps.qa_7.outcome }}
+          QA_8: ${{ steps.qa_8.outcome }}
+          QA_9: ${{ steps.qa_9.outcome }}
+          QA_10: ${{ steps.qa_10.outcome }}
+          QA_11: ${{ steps.qa_11.outcome }}
+          QA_12: ${{ steps.qa_12.outcome }}
+          QA_13: ${{ steps.qa_13.outcome }}
+          QA_14: ${{ steps.qa_14.outcome }}
+        shell: bash
+        run: |
+          count=0
+          for key in $(seq 0 14); do
+            value="QA_${key}"
+            result="${!value}"
+            if [ "${result}" = failure ]; then
+              echo "::warning::Optional quality test ${key} failed. Publishing under explicit owner permission."
+              echo "- Optional quality test ${key}: failed (publication permitted)" >> "${GITHUB_STEP_SUMMARY}"
+              count=$((count+1))
+            fi
+          done
+          echo "Optional QA failures: ${count}. Integrity check, build and deployment remain mandatory." >> "${GITHUB_STEP_SUMMARY}"
+      # GitHub Pages can leave the deployment lock active even after the
+      # original deploy-pages job times out. Release the known orphan from
+      # the 2026-11-10 09:53 UTC attempt before creating a new deployment.
+      - name: Release stale Pages deployment lock
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Clear known timed-out backend jobs before uploading this release.
+          # These IDs are commit-scoped Pages deployment IDs, not Actions run IDs.
+          for stale in \
+            c094e70554f6e601655657887bef1fcc6b9470d5 \
+            49de908d6bc6197e8334b9d0ec2dfab8b6c88e18 \
+            77f657a0972e2af5087fb048f9d202b2721c407a; do
+          endpoint="repos/${GITHUB_REPOSITORY}/pages/deployments/${stale}"
+          echo "Checking previous Pages deployment ${stale}"
+          if state=$(gh api "${endpoint}" --jq '.status' 2>/tmp/pages-status-error); then
+            echo "Pages deployment state: ${state}"
+            case "${state}" in
+              succeed|failed|cancelled|canceled|deployment_cancelled|deployment_succeeded|deployment_failed)
+                echo "Previous Pages deployment is already terminal"
+                ;;
+              *)
+                if gh api -X POST "${endpoint}/cancel"; then
+                  echo "Stale Pages deployment cancelled"
+                else
+                  echo "::warning::Pages cancellation API refused; deployment may still be locked"
+                fi
+                ;;
+            esac
+          else
+            echo "::warning::Could not read stale Pages status; checking whether cancellation is possible"
+            if gh api -X POST "${endpoint}/cancel"; then
+              echo "Stale Pages deployment cancelled"
+            else
+              echo "::warning::Pages cancellation unavailable (status read/cancel both failed)"
+            fi
+          fi
+          done
+      - uses: actions/configure-pages@v6
+      # A re-run must not upload a second artifact with the same name.
+      # Use a different name for each run attempt, not only each run ID.
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: pages-dist
+          include-hidden-files: true
+      # Pages artifact metadata can lag immediately after a successful
+      # upload, so deploy-pages@v5 may see zero files. A retry of the
+      # SAME run creates duplicate github-pages artifacts and fails too.
+      # Verify exactly one visible artifact before requesting a deployment.
+      - name: Wait for the Pages upload to become visible in Actions API
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            count=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --jq "[.artifacts[] | select(.name == \"${PAGES_ARTIFACT_NAME}\")] | length" 2>/dev/null || echo 0)
+            echo "Attempt ${attempt}: visible Pages artifacts = ${count}"
+            if [[ "${count}" == "1" ]]; then
+              sleep 10
+              exit 0
+            fi
+            if [[ "${count}" != "0" ]]; then
+              echo "::error::Expected exactly one Pages artifact in a fresh workflow run"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Pages artifact not visible after upload; aborting deploy safely"
+          exit 1
+      # Serialized releases may trail active editing, but must never roll back
+      # a successful release or publish a commit outside main's history.
+      - name: Publish source in order without starving active development
+        id: latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          newest=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          relation=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${GITHUB_SHA}...${newest}" --jq '.status')
+          case "${relation}" in
+            ahead|identical) ;;
+            *)
+              echo "publish=false" >> "${GITHUB_OUTPUT}"
+              echo "::notice::Skipping source outside current main history"
+              exit 0 ;;
+          esac
+          previous=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-pages.yml/runs?status=success&branch=main&per_page=1" --jq '.workflow_runs[0].head_sha // ""')
+          if [[ -n "${previous}" && "${previous}" != "${GITHUB_SHA}" ]]; then
+            order=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${previous}...${GITHUB_SHA}" --jq '.status')
+            case "${order}" in
+              ahead|identical) ;;
+              *)
+                echo "publish=false" >> "${GITHUB_OUTPUT}"
+                echo "::notice::Skipping source older than the last successful release"
+                exit 0 ;;
+            esac
+          fi
+          echo "publish=true" >> "${GITHUB_OUTPUT}"
+      - id: deployment
+        if: steps.latest.outputs.publish == 'true'
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Verify public Pages actually serves the refreshed world map
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A successful Actions deployment is insufficient if a prior asset
+          # remains visible through the CDN. Use a unique URL per attempt.
+          for attempt in $(seq 1 18); do
+            url="https://yamadayoshitaka.github.io/hai-gin-rpg/world-map.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            if curl -fsSL --connect-timeout 8 --max-time 18 \
+              -H 'Cache-Control: no-cache' "${url}" -o /tmp/world-map-public.html; then
+              if grep -Fq '12地域共通マップ' /tmp/world-map-public.html &&
+                 grep -Fq 'TERRITORIES.map(t=>' /tmp/world-map-public.html &&
+                 ! grep -Fq '[data-stage-pin]' /tmp/world-map-public.html; then
+                echo "PASS: public GitHub Pages is serving the latest 12-region map"
+                exit 0
+              fi
+            fi
+            echo "::notice::Pages not yet serving refreshed 12-region map (attempt ${attempt}/18)"
+            sleep 5
+          done
+          echo '::error::Deployment completed but live Pages still served an old map'
+          exit 1
+
+      - name: Verify publicly served tactical page has the latest camera controls
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            url="https://yamadayoshitaka.github.io/hai-gin-rpg/tactics-wireframe.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            if curl -fsSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' "${url}" -o /tmp/tactics-public.html; then
+              if grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/tactics-public.html &&
+                 grep -Fq 'id="battleTeamCameraSwitches"' /tmp/tactics-public.html &&
+                 grep -Fq 'id="overviewCameraChoices"' /tmp/tactics-public.html; then
+                echo "PASS: public tactical battle page has this commit and both camera controls"
+                exit 0
+              fi
+            fi
+            echo "::notice::Battle page still stale (attempt ${attempt}/18)"
+            sleep 5
+          done
+          echo '::error::Public battle page is stale or missing perspective controls'
+          exit 1
+
+      - name: Verify public batch center and PR preview are the latest deployment (HTTP 403 guard)
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            batch_url="https://yamadayoshitaka.github.io/hai-gin-rpg/batch-monitor.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            preview_url="https://yamadayoshitaka.github.io/hai-gin-rpg/batch-pr-preview.html?verify=${GITHUB_SHA:0:12}-${attempt}"
+            batch_status=$(curl -sSL -o /tmp/batch-public.html -w '%{http_code}' --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' "${batch_url}" || true)
+            preview_status=$(curl -sSL -o /tmp/batch-pr-public.html -w '%{http_code}' --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' "${preview_url}" || true)
+            if [[ "${batch_status}" == 200 && "${preview_status}" == 200 ]] &&
+              grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/batch-public.html &&
+              grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/batch-pr-public.html &&
+              grep -Fq 'id="batchLaunchEvidence"' /tmp/batch-public.html &&
+              grep -Fq 'id="batchDisplaySelect"' /tmp/batch-public.html &&
+              grep -Fq 'id="worldObjectPicker"' /tmp/batch-public.html &&
+              grep -Fq 'getPrOnDemand(' /tmp/batch-pr-public.html; then
+              echo "PASS: public batch and PR comparison pages both serve exact source SHA ${GITHUB_SHA}"
+              exit 0
+            fi
+            echo "::warning::Batch UI Pages not ready: batch HTTP ${batch_status}, PR HTTP ${preview_status} (attempt ${attempt}/18)"
+            sleep 5
+          done
+          echo '::error::Deployed Pages did not serve verified batch center/PR preview. 403 or stale HTML persists.'
+          exit 1

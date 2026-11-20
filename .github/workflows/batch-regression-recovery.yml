@@ -1,19 +1,6 @@
 name: Six-category regression recovery and commit evidence
 on:
-  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'scripts/batch-regression-recovery.mjs'
-      - 'qa/batch-regression-recovery.test.mjs'
-      - 'batch-monitor.html'
-      - '.github/workflows/batch-regression-recovery.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/batch-regression-recovery.mjs'
-      - 'qa/batch-regression-recovery.test.mjs'
-      - '.github/workflows/batch-regression-recovery.yml'
 permissions:
   contents: write
   actions: write

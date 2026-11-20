@@ -1,0 +1,40 @@
+name: Maintenance control (manual-only)
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Choose one bounded read-only QA suite; all background batches remain paused'
+        type: choice
+        required: true
+        default: inventory
+        options: [inventory, battle, models, story]
+permissions:
+  contents: read
+concurrency:
+  group: maintenance-manual-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm every background group remains OFF
+        run: node -e "const s=require('./data/batch-center-switches.json'); if(Object.values(s.groups).some(g=>g.enabled)) process.exit(1);console.log('All automatic groups OFF')"
+      - name: Run only selected read-only verification
+        env:
+          TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          case "$TARGET" in
+            inventory) node --check src/creature-game-model-routing.js; node --check src/m019-hero-sculpt.js ;;
+            battle) node --test qa/three-team-sortie.test.mjs qa/battle-command-followup.test.mjs ;;
+            models) npm install --no-save --package-lock=false three@0.160.1; node --test qa/m019-salamander-sculpt.test.mjs qa/salamander-lineage-remesh.test.mjs ;;
+            story) node --check scripts/story-sequential-missing-batch.mjs; node --test qa/story-sequential-missing-batch.test.mjs ;;
+            *) exit 1 ;;
+          esac
+      - name: Explain release boundary
+        run: echo 'Manual QA completed. No content commits, image generation or automatic restart occur here.' >> "$GITHUB_STEP_SUMMARY"

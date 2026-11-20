@@ -1,31 +1,6 @@
 name: Manga 1-20 sequential missing image batch
 on:
-  # Cloudflare Free per-day gate resets at 00:00 UTC (09:00 JST).
-  # Run once after reset without requiring repeated manual "漫画やって".
-  # Existing scheduler still owns the 20-chapter queue and all safety checks.
-  schedule:
-    - cron: '35 0 * * *'
-  # Owner-requested one-shot kick to prove the production/reuse dispatch route.
-  push:
-    branches: [main]
-    paths:
-      - 'ops/run-manga-sequential-once-20261118.trigger'
   workflow_dispatch:
-  issues:
-    types: [opened]
-  pull_request:
-    paths:
-      - 'scripts/story-sequential-missing-batch.mjs'
-      - 'qa/story-sequential-missing-batch.test.mjs'
-      - '.github/workflows/story-sequential-missing-batch.yml'
-      - 'scripts/manual-hourly-batch-dispatch.mjs'
-      - 'scripts/story-chatgpt-fallback-handoff.mjs'
-      - 'src/story-generation-fallback.js'
-      - 'qa/story-chatgpt-fallback-handoff.test.mjs'
-      - 'qa/story-chatgpt-stage2-intake.test.mjs'
-      - 'src/story-chapter1-provisional-live.js'
-      - 'assets/story/chapter1-provisional-live/c01-s02__pre__male__c01-s02-m1.webp'
-      - 'assets/story/chatgpt-candidates/c01-s02__pre__male__c01-s02-m15.webp'
 permissions:
   contents: read
   actions: write

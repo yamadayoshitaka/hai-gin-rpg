@@ -1,0 +1,75 @@
+name: Battle visual E2E
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'assets/creatures/quaternius50/**'
+      - 'qa/quaternius-ultimate50.test.mjs'
+      - 'src/**'
+      - 'tactics-wireframe.html'
+      - 'qa/skirmish-two-legs.spec.mjs'
+      - 'qa/armor-four-legs-regression.test.mjs'
+      - 'qa/battle-visual.spec.mjs'
+      - 'qa/monster-manager.spec.mjs'
+      - 'monster-manager.html'
+      - 'qa/summon-gallery-mobile.spec.mjs'
+      - 'qa/canine-fur-face-regression.test.mjs'
+      - 'summon-showcase.html'
+      - 'playwright.config.mjs'
+      - '.github/workflows/battle-visual.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/battle-visual.yml'
+      - 'index.html'
+      - 'assets/creatures/quaternius50/**'
+      - 'qa/quaternius-ultimate50.test.mjs'
+      - 'src/**'
+      - 'tactics-wireframe.html'
+      - 'qa/skirmish-two-legs.spec.mjs'
+      - 'qa/armor-four-legs-regression.test.mjs'
+      - 'qa/battle-visual.spec.mjs'
+      - 'qa/monster-manager.spec.mjs'
+      - 'monster-manager.html'
+      - 'qa/summon-gallery-mobile.spec.mjs'
+      - 'qa/canine-fur-face-regression.test.mjs'
+      - 'summon-showcase.html'
+      - 'playwright.config.mjs'
+concurrency:
+  group: rpg-battle-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-battle:
+    runs-on: ubuntu-24.04
+    # Software WebGL runs serially and visual evidence collection can exceed
+    # 18 minutes; do not prematurely cancel the screenshot/recording job.
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false @playwright/test@1.58.2 three@0.160.1
+      - run: npx playwright install --with-deps chromium
+      - name: Existing deterministic battle tests
+        run: npm run test:battle
+      - name: High-density monster/PBR/LOD quality regression
+        run: npm run test:creature-master-quality
+      - name: Real browser battle recording
+        run: npx playwright test -c playwright.config.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: battle-visual-evidence
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Display outcome and evidence instructions
+        if: always()
+        run: |
+          echo '## 戦闘自動テスト結果の確認' >> "$GITHUB_STEP_SUMMARY"
+          echo 'ジョブの成功・失敗が実行結果です。起動から戦闘・操作の録画と画像はArtifactsのbattle-visual-evidenceから確認できます。' >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,144 @@
+name: Full-game six-lane visual, FPS and runtime quality regression
+on:
+  # Scheduled autonomous batches paused at owner request (2026-11-20).
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: 'Specific real-game quality lane to probe'
+        required: true
+        type: choice
+        default: model
+        options: [model, fidelity, motion, frame, scale, runtime]
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/game-quality-six-lane.yml'
+      - 'scripts/game-quality-six-batch.mjs'
+      - 'qa/game-quality-browser.cjs'
+      - 'qa/battle-ready-gate.cjs'
+      - 'qa/battle-ready-gate.test.cjs'
+      - 'qa/game-quality-six.test.mjs'
+      - 'qa/visual-frame-guard.py'
+      - 'qa/visual-frame-guard.test.mjs'
+      - 'qa/android-fps-audit.test.mjs'
+      - 'android-fps-audit.html'
+      - 'src/creature-*.js'
+      - 'src/monster-*.js'
+      - 'src/face-*.js'
+      - 'src/outfit-maintenance-model.js'
+      - 'src/character-system/**'
+      - 'src/mass-battle-*.js'
+      - 'src/battle-*.js'
+      - 'src/crowd-*.js'
+      - 'src/object-catalog.js'
+      - 'src/stage-static-instancing.js'
+      - 'tactics-wireframe.html'
+  pull_request:
+    paths:
+      - '.github/workflows/game-quality-six-lane.yml'
+      - 'scripts/game-quality-six-batch.mjs'
+      - 'qa/game-quality-browser.cjs'
+      - 'qa/game-quality-six.test.mjs'
+      - 'data/hourly-batch-dashboard.json'
+      - 'src/creature-*.js'
+      - 'src/monster-*.js'
+      - 'src/face-*.js'
+      - 'src/outfit-maintenance-model.js'
+      - 'src/character-system/**'
+      - 'src/mass-battle-*.js'
+      - 'src/battle-*.js'
+      - 'src/crowd-*.js'
+      - 'src/object-catalog.js'
+      - 'src/stage-static-instancing.js'
+      - 'tactics-wireframe.html'
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: write
+concurrency:
+  group: hai-gin-game-quality-six-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  full-game-regression:
+    if: github.event_name == 'pull_request' || vars.DISABLE_GAME_QUALITY_SIX != '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Check out immutable PR source or current main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Select the correct ten-minute lane even if GitHub scheduled the runner late
+        id: lane
+        env:
+          MANUAL_LANE: ${{ inputs.lane || '' }}
+          SCHEDULED_CRON: ${{ github.event.schedule || '' }}
+        run: |
+          lane=$(node --input-type=module -e "import {laneBySchedule} from './scripts/game-quality-six-batch.mjs'; const m=process.env.MANUAL_LANE; const name=['model','fidelity','motion','frame','scale','runtime'].includes(m)?m:laneBySchedule[process.env.SCHEDULED_CRON]||'model'; console.log(name)")
+          echo "lane=$lane" >> "$GITHUB_OUTPUT"
+          echo "## Six-lane game QA: $lane" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install open-source 3D runtime
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Verify six-lane configuration and protected performance quality
+        run: |
+          node --check scripts/game-quality-six-batch.mjs
+          node --check qa/game-quality-browser.cjs
+          node --test qa/game-quality-six.test.mjs qa/battle-ready-gate.test.cjs qa/android-fps-audit.test.mjs qa/visual-frame-guard.test.mjs
+      - name: Install software WebGL browser only for live FPS or game-error lanes
+        if: steps.lane.outputs.lane == 'frame' || steps.lane.outputs.lane == 'scale' || steps.lane.outputs.lane == 'runtime'
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Start real game HTTP server for browser evidence
+        if: steps.lane.outputs.lane == 'frame' || steps.lane.outputs.lane == 'scale' || steps.lane.outputs.lane == 'runtime'
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/game-quality-server.log 2>&1 &
+          echo $! > /tmp/game-quality-server.pid
+          sleep 2
+      - name: Collect real browser startup errors, frame P95 and draw calls
+        if: steps.lane.outputs.lane == 'frame' || steps.lane.outputs.lane == 'scale' || steps.lane.outputs.lane == 'runtime'
+        id: browser
+        continue-on-error: true
+        run: node qa/game-quality-browser.cjs --lane=${{ steps.lane.outputs.lane }}
+      - uses: actions/setup-python@v6
+        if: steps.lane.outputs.lane == 'frame'
+        with:
+          python-version: '3.12'
+      - name: Install image analysis only for actual rendered 50v50 game frames
+        if: steps.lane.outputs.lane == 'frame'
+        run: python3 -m pip install --disable-pip-version-check --quiet Pillow==11.3.0
+      - name: Reject blank or missing actual WebGL game frames
+        if: steps.lane.outputs.lane == 'frame'
+        run: python qa/visual-frame-guard.py qa-reports/game-quality-six/frame-webgl.png
+      - name: Run six-way source and game-runtime regression for selected lane
+        run: node scripts/game-quality-six-batch.mjs --lane ${{ steps.lane.outputs.lane }}
+      - name: Safely repair current main using a relevant owner-authored source PR, then record exact outcomes
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_CATEGORY: gameQuality
+          GAME_QUALITY_REPORT: qa-reports/game-quality-six/latest.json
+          SCHEDULED_CRON: ${{ github.event.schedule || '' }}
+        run: node scripts/batch-self-drive.mjs
+      - name: Upload 3D quality, true FPS/error and revision evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-quality-${{ github.run_id }}
+          path: |
+            qa-reports/game-quality-six/
+            qa-reports/batch-self-drive/latest.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Disclose actual limits
+        if: always()
+        run: |
+          echo 'A green static gate alone DOES NOT mean improved appearance or FPS.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'FPS samples use Chromium software WebGL on CI, not physical Android FPS.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Only source commits with an exact SHA prove code changes; unmeasured image quality remains pending.' >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "rebuildDate": "2026-11-20",
+  "ownerIntent": "pause-all-automatic-batches-and-rebuild",
+  "automaticBatches": "paused",
+  "manualQaOnly": true,
+  "pagesPublishing": "main-push-only",
+  "gameReleaseVerified": false,
+  "modelRoute": {
+    "m019": "m019-volcanic-pbr-v19-20261120",
+    "scope": "battle, editor, summons via shared revision registry"
+  },
+  "archive": "ops/legacy-workflows-20261120",
+  "lastCodeSha": null,
+  "notes": "Green Actions check alone does not establish visual QA or successful published model adoption."
+}

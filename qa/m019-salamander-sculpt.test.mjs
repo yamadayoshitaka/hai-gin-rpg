@@ -358,7 +358,7 @@ for(const detail of ['low','high']){
         return part.localToWorld(center.divideScalar(stride-1));
        };
        const kneeWorld=joint.getWorldPosition(new THREE.Vector3());
-       const toeWorld=toes.getWorldPosition(new THREE.Vector3());
+       const toeWorld=pivot['toe'+id].getWorldPosition(new THREE.Vector3());
        assert(endRing(visibleUpper,true).distanceTo(kneeWorld)<.07,
         action+' '+time+' upper limb must connect to the elbow');
        assert(endRing(visibleShin,false).distanceTo(kneeWorld)<.08,

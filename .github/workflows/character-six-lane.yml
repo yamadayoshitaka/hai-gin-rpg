@@ -1,6 +1,5 @@
 name: FF15 character face-hair and costume six-slot QA and production gate
 on:
-  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
     inputs:
       category:
@@ -15,31 +14,6 @@ on:
         default: 'auto'
         type: choice
         options: ['auto','0','1','2','3','4','5']
-  pull_request:
-    paths:
-      - 'src/character-system/**'
-      - 'src/face-*.js'
-      - 'src/independent-face-masters.js'
-      - 'src/hero-hair-controls-v43.js'
-      - 'src/heroine-battle-costume-bridge.js'
-      - 'src/outfit-maintenance-model.js'
-      - 'face-mesh-studio.html'
-      - 'face-body-studio.html'
-      - 'male-body-studio.html'
-      - 'outfit-maintenance.html'
-      - 'tactics-wireframe.html'
-      - 'data/character-system/quality-six-targets.json'
-      - 'scripts/character-six-batch.mjs'
-      - 'qa/character-six-lane-contract.test.mjs'
-      - 'qa/outfit-fps-diagnostic.test.mjs'
-      - 'scripts/outfit-fps-diagnostic.mjs'
-      - 'qa/studio-model-route-contract.test.mjs'
-      - 'qa/facehair-*.test.mjs'
-      - 'qa/human-v65-photoreal-quality.test.mjs'
-      - 'qa/independent-face-masters.test.mjs'
-      - 'qa/battle-face-hair-shield-recovery.test.mjs'
-      - 'qa/rider-armor-coverage-regression.test.mjs'
-      - '.github/workflows/character-six-lane.yml'
 permissions:
   contents: read
 concurrency:

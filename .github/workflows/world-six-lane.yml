@@ -1,15 +1,6 @@
 name: World six-lane hourly parity
 on:
-  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'ops/manual-world-six-once-20261118.trigger'
-  # Heavy six-lane world WebGL QA only for actual 3D model/scene changes;
-  # batch dashboard changes must not start six model jobs or cancel other PRs.
-  pull_request:
-    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','qa/world-quality-contract.test.mjs','qa/world-object-physical-quality.test.mjs','scripts/world-quality-capture.cjs','world-quality-preview.html']
 permissions:
   contents: write
   pull-requests: write

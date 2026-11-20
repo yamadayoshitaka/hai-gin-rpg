@@ -1,6 +1,5 @@
 name: Full-game six-lane visual, FPS and runtime quality regression
 on:
-  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
     inputs:
       lane:
@@ -9,48 +8,6 @@ on:
         type: choice
         default: model
         options: [model, fidelity, motion, frame, scale, runtime]
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/game-quality-six-lane.yml'
-      - 'scripts/game-quality-six-batch.mjs'
-      - 'qa/game-quality-browser.cjs'
-      - 'qa/battle-ready-gate.cjs'
-      - 'qa/battle-ready-gate.test.cjs'
-      - 'qa/game-quality-six.test.mjs'
-      - 'qa/visual-frame-guard.py'
-      - 'qa/visual-frame-guard.test.mjs'
-      - 'qa/android-fps-audit.test.mjs'
-      - 'android-fps-audit.html'
-      - 'src/creature-*.js'
-      - 'src/monster-*.js'
-      - 'src/face-*.js'
-      - 'src/outfit-maintenance-model.js'
-      - 'src/character-system/**'
-      - 'src/mass-battle-*.js'
-      - 'src/battle-*.js'
-      - 'src/crowd-*.js'
-      - 'src/object-catalog.js'
-      - 'src/stage-static-instancing.js'
-      - 'tactics-wireframe.html'
-  pull_request:
-    paths:
-      - '.github/workflows/game-quality-six-lane.yml'
-      - 'scripts/game-quality-six-batch.mjs'
-      - 'qa/game-quality-browser.cjs'
-      - 'qa/game-quality-six.test.mjs'
-      - 'data/hourly-batch-dashboard.json'
-      - 'src/creature-*.js'
-      - 'src/monster-*.js'
-      - 'src/face-*.js'
-      - 'src/outfit-maintenance-model.js'
-      - 'src/character-system/**'
-      - 'src/mass-battle-*.js'
-      - 'src/battle-*.js'
-      - 'src/crowd-*.js'
-      - 'src/object-catalog.js'
-      - 'src/stage-static-instancing.js'
-      - 'tactics-wireframe.html'
 permissions:
   contents: write
   actions: write

@@ -1,6 +1,5 @@
 name: Creature family six-lane quality QA (monster and summons)
 on:
-  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
     inputs:
       category:
@@ -15,39 +14,6 @@ on:
         default: 'auto'
         type: choice
         options: ['auto','0','1','2','3','4','5']
-  push:
-    branches: [main]
-    paths:
-      - 'src/avian-guardian-sculpt.js'
-      - 'src/magma-salamander-sculpt.js'
-      - 'src/m019-hero-sculpt.js'
-      - 'src/salamander-lineage-sculpt.js'
-      - 'qa/salamander-lineage-remesh.test.mjs'
-      - 'src/monster-geometry.js'
-      - 'src/monster-realistic-palettes.js'
-      - 'src/battle-registered-monster-model.js'
-      - 'qa/m019-salamander-sculpt.test.mjs'
-      - 'qa/creature-face-volume-batch.test.mjs'
-      - '.github/workflows/creature-six-lane.yml'
-  pull_request:
-    paths:
-      - 'src/creature-*.js'
-      - 'src/avian-guardian-sculpt.js'
-      - 'src/magma-salamander-sculpt.js'
-      - 'src/m019-hero-sculpt.js'
-      - 'src/salamander-lineage-sculpt.js'
-      - 'qa/salamander-lineage-remesh.test.mjs'
-      - 'src/monster-geometry.js'
-      - 'src/monster-realistic-palettes.js'
-      - 'src/battle-registered-monster-model.js'
-      - 'qa/m019-salamander-sculpt.test.mjs'
-      - 'qa/creature-face-volume-batch.test.mjs'
-      - 'src/monster-*.js'
-      - 'src/combat-creature-*.js'
-      - 'data/creature-quality-standards.json'
-      - 'scripts/creature-six-batch.mjs'
-      - 'qa/creature-six-lane-contract.test.mjs'
-      - '.github/workflows/creature-six-lane.yml'
 permissions:
   contents: read
 concurrency:

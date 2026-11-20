@@ -1,0 +1,144 @@
+name: World six-lane hourly parity
+on:
+  # Scheduled autonomous batches paused at owner request (2026-11-20).
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/manual-world-six-once-20261118.trigger'
+  # Heavy six-lane world WebGL QA only for actual 3D model/scene changes;
+  # batch dashboard changes must not start six model jobs or cancel other PRs.
+  pull_request:
+    paths: ['.github/workflows/world-six-lane.yml','scripts/world-six-batch.mjs','src/object-catalog.js','src/stage-library.js','src/stage-static-instancing.js','qa/world-quality-contract.test.mjs','qa/world-object-physical-quality.test.mjs','scripts/world-quality-capture.cjs','world-quality-preview.html']
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: world-six-lane-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  enabled:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          value=$(node -e "const s=require('./data/batch-center-switches.json');process.stdout.write(String(s.groups.world.enabled===true))")
+          if [ "$value" = true ]; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
+  six-batches:
+    needs: enabled
+    if: needs.enabled.outputs.run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [catalog, geometry, materials, interaction, lod, visual]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser setup
+        if: matrix.lane == 'visual'
+        run: |
+          npm install --no-save --package-lock=false playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Actual WebGL screenshots of real catalog
+        if: matrix.lane == 'visual'
+        run: |
+          mkdir -p qa-reports/world-six-lane
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/world-http.log 2>&1 &
+          ID=$(node --input-type=module -e "import {qualityInventory} from './scripts/world-quality-catalog.mjs';const a=qualityInventory.filter(x=>x.type==='object');process.stdout.write(a[Math.floor(Date.now()/3600000)%a.length].id)")
+          node scripts/world-quality-capture.cjs "$ID" qa-reports/world-six-lane/previews
+          cp "qa-reports/world-six-lane/previews/$ID-capture.json" qa-reports/world-six-lane/visual-capture.json
+          # Every freshly upgraded real-game model is captured in WebGL and
+          # checked for nonempty geometry, JS errors, draw calls and triangles.
+          for ASSET in cottage_table_001 cottage_chair_001 cottage_bed_001 cottage_shelf_001 cottage_barrel_001 town_well_001 town_crate_001 town_water_trough_001 town_signpost_001; do
+            node scripts/world-quality-capture.cjs "$ASSET" qa-reports/world-six-lane/physical --baseline
+          done
+      - name: Independent gate
+        run: |
+          node scripts/world-six-batch.mjs --lane "${{ matrix.lane }}"
+          if [ "${{ matrix.lane }}" = interaction ]; then node qa/world-quality-contract.test.mjs; fi
+          if [ "${{ matrix.lane }}" = lod ]; then node --test qa/stage-static-instancing.test.mjs; fi
+          if [ "${{ matrix.lane }}" = geometry ]; then node --test qa/object-list-catalog.test.mjs qa/world-object-physical-quality.test.mjs; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-six-${{ matrix.lane }}
+          path: |
+            qa-reports/world-six-lane/${{ matrix.lane }}.json
+            qa-reports/world-six-lane/physical/*-capture.json
+          retention-days: 7
+          if-no-files-found: error
+  integrate:
+    needs: [enabled, six-batches]
+    if: needs.enabled.outputs.run == 'true' && needs.six-batches.result == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: world-six-*
+          path: qa-reports/world-six-lane
+          merge-multiple: true
+      - run: |
+          node scripts/world-six-batch.mjs --integrate
+          node qa/world-object-production-transfer.test.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-six-integrated
+          path: |
+            data/world-quality/live-batch-report.json
+            data/world-quality/production-model-adoption.json
+      - name: Safely commit verified report without repository PR-create permission
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/world-quality/live-batch-report.json data/world-quality/catalog-targets.json data/world-quality/production-model-adoption.json
+          if git diff --cached --quiet; then
+            echo 'No integration report diff; no redundant commit' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          BRANCH="world/six-parity-${GITHUB_RUN_ID}"
+          git switch -c "$BRANCH"
+          git commit -m 'chore(world): six-gate live catalog report'
+          # Report-only writes may go straight to main after six successful QA
+          # gates, but never if the underlying world model source changed
+          # while this workflow was running.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if ! git diff --quiet "$GITHUB_SHA" origin/main -- \
+              src/object-catalog.js src/stage-library.js src/stage-static-instancing.js \
+              src/world-quality-pbr.js tactics-wireframe.html world-quality-preview.html \
+              src/tree-seasons.js; then
+              echo 'World source advanced since QA: stale evidence not published' >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo 'Report merge conflict: preserving work branch' >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+            if git push origin HEAD:main; then
+              echo "Integration-only report committed to main: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Concurrent main change or permissions prevented push ($attempt/3)" >> "$GITHUB_STEP_SUMMARY"
+          done
+          # Never call gh pr create: GitHub Actions tokens cannot create PRs
+          # in this repository. Keep a SHA-backed branch instead of falsely
+          # reporting a successful main merge.
+          git push origin "HEAD:refs/heads/$BRANCH"
+          echo "Main unavailable; saved verified report as $BRANCH. Manual review required." >> "$GITHUB_STEP_SUMMARY"
+          exit 1

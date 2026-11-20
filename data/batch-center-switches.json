@@ -1,58 +1,68 @@
 {
   "schemaVersion": 1,
-  "description": "Owner-confirmed switches controlling next batch work, not the ChatGPT scheduling service itself. Manual one-shot QA remains available while disabled.",
+  "description": "Global maintenance rebuild: all automatic generation/quality/story groups paused. Archived workflow source is preserved in ops/legacy-workflows-20261120. Only controlled Pages publishing occurs on main push.",
   "groups": {
     "human": {
       "enabled": false,
       "retiredFromCenter": true,
       "retiredAt": "2026-11-17",
-      "reason": "Replaced by FF15-target split quality lanes, historical records retained"
+      "reason": "Legacy group retired; original workflow preserved in Git archive",
+      "updatedAt": "2026-11-20"
     },
     "monster": {
       "enabled": false,
       "retiredFromCenter": true,
       "retiredAt": "2026-11-17",
-      "reason": "Replaced by FF15-target split quality lanes, historical records retained"
+      "reason": "Legacy group retired; original workflow preserved in Git archive",
+      "updatedAt": "2026-11-20"
     },
     "world": {
       "enabled": false,
       "reinstatedAt": "2026-11-17",
       "workflow": "world-six-lane.yml",
-      "reason": "User paused all scheduled quality batches; preserve finished changes and prioritize Pages release.",
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)",
       "updatedAt": "2026-11-20"
     },
     "anime": {
       "enabled": false,
-      "updatedAt": "2026-11-15T08:50:21.054Z",
-      "issueNumber": 394
+      "updatedAt": "2026-11-20",
+      "issueNumber": 394,
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)"
     },
     "faceHair": {
       "enabled": false,
       "registeredAt": "2026-11-17",
       "workflow": "character-six-lane.yml",
       "updatedAt": "2026-11-20",
-      "reason": "User paused all scheduled quality batches; preserve finished changes and prioritize Pages release."
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)"
     },
     "outfit": {
       "enabled": false,
       "registeredAt": "2026-11-17",
-      "workflow": "character-six-lane.yml"
+      "workflow": "character-six-lane.yml",
+      "updatedAt": "2026-11-20",
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)"
     },
     "creatureMonster": {
       "enabled": false,
       "registeredAt": "2026-11-17",
-      "workflow": "creature-six-lane.yml"
+      "workflow": "creature-six-lane.yml",
+      "updatedAt": "2026-11-20",
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)"
     },
     "creatureSummon": {
       "enabled": false,
       "registeredAt": "2026-11-17",
-      "workflow": "creature-six-lane.yml"
+      "workflow": "creature-six-lane.yml",
+      "updatedAt": "2026-11-20",
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)"
     },
     "gameQuality": {
       "enabled": false,
       "registeredAt": "2026-11-18",
       "workflow": "game-quality-six-lane.yml",
-      "reason": "Owner requested a separate six-way game-wide visual quality, FPS and runtime error self-regression batch"
+      "reason": "Full automatic maintenance pause; manual review and release only (2026-11-20)",
+      "updatedAt": "2026-11-20"
     }
   }
 }
