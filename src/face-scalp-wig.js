@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-native-buzz-cap-v14';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-cap-depth-v16';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -462,7 +462,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    const seamWidth=Math.max(d.y*.055,1e-6);
    const seamT=THREE.MathUtils.clamp(seamDistance/seamWidth,0,1);
    const seamBlend=seamT*seamT*(3-2*seamT);
-   v.addScaledVector(n,d.x*.0012);
+   v.addScaledVector(n,d.x*(shortHair?.0035:.0012));
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
@@ -583,7 +583,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   roughness:.80,metalness:0,clearcoat:.023,clearcoatRoughness:.76,
   sheen:.12,sheenRoughness:.75,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
-  transparent:false,opacity:1,depthWrite:true
+  transparent:false,opacity:1,depthWrite:true,
+  polygonOffset:shortHair,polygonOffsetFactor:shortHair?-2:0,
+  polygonOffsetUnits:shortHair?-2:0
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
@@ -599,6 +601,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
+ if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
