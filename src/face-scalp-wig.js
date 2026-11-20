@@ -43,7 +43,8 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.54||yn>.998)continue;
+  // The real apex (yn=1) must remain eligible for crown follicle roots.
+  if(yn<.54||yn>1.000001)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -66,7 +67,8 @@ function actualScalpCandidates(geo,box){
  // A donor mesh with sparse topology still receives every hair zone.
  for(const [zone,pool] of Object.entries(pools)){
   if(pool.length>3)continue;
-  const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
+  const onSide=q=>zone==='crown'?true:
+   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const frontal=zone.startsWith('fringe');
   const temple=zone.startsWith('temple');
@@ -82,7 +84,8 @@ function actualScalpCandidates(geo,box){
    if(zone.startsWith('back'))return depth<-.04&&height>=.61;
    if(frontal)return depth>.025&&height>.87&&height<.995;
    if(temple)return Math.abs((q.p.x-center.x)/d.x)>.15&&height>.80&&height<.96;
-   return height>.80;
+   // Do not replace missing crown follicles with forehead/cheek vertices.
+   return height>.825&&depth<.21;
   });
   if(candidates.length) pools[zone]=candidates;
   else{
