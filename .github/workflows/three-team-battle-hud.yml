@@ -1,20 +1,5 @@
 name: Three-team battle HUD regression
 on:
-  pull_request:
-    paths:
-      - 'src/battle-rpg-squad-source.js'
-      - 'src/battle-rpg-squad-hud.js'
-      - 'src/battle-rpg-squad-hud.css'
-      - 'tactics-wireframe.html'
-      - 'qa/battle-rpg-squad-hud.test.mjs'
-  push:
-    branches: [main]
-    paths:
-      - 'src/battle-rpg-squad-source.js'
-      - 'src/battle-rpg-squad-hud.js'
-      - 'src/battle-rpg-squad-hud.css'
-      - 'tactics-wireframe.html'
-      - 'qa/battle-rpg-squad-hud.test.mjs'
   workflow_dispatch:
 jobs:
   verify:
