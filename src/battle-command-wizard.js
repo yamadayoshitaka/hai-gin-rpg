@@ -180,7 +180,7 @@ export function mountBattleCommandWizard({
    // A newer combat/guard/special order supersedes the old destination's
    // arrival callback. Otherwise a stale hold order fires after the new one.
    if(['attack','defend','hold','special'].includes(plan.category)&&
-      !accepted?.followup)cancelArrival(id);
+      !accepted?.followup&&!accepted?.deferred)cancelArrival(id);
    onCommandCommitted({squadId:id,category:plan.category,kind:plan.kind,command:plan.command,
     target:plan.target,point:plan.point,arrival:plan.arrival,itemId:plan.item?.id,specialId:plan.specialId});
    setPreferred(id,plan.category==='move'?'move_'+(plan.arrival||'hold'):kind==='special'?'special_'+plan.specialId:plan.command||kind||'item');
