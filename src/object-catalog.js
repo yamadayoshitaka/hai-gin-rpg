@@ -475,8 +475,17 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const innerMat=new THREE.MeshStandardMaterial({color:0x383a35,metalness:.52,roughness:.7,side:THREE.BackSide});
    const liner=new THREE.Mesh(new THREE.CylinderGeometry(.372*c,.314*c,1.07*c,16,1,true),innerMat);
    liner.position.y=.625*c;root.add(liner);
-   const innerFloor=new THREE.Mesh(new THREE.CylinderGeometry(.314*c,.314*c,.018*c,16),innerMat);
-   innerFloor.position.y=.105*c;root.add(innerFloor);
+   // The interior floor must face upwards: the liner's BackSide material hides its top face.
+   const floorMat=new THREE.MeshStandardMaterial({color:0x383a35,metalness:.52,roughness:.7});
+   const innerFloor=new THREE.Mesh(new THREE.CylinderGeometry(.314*c,.314*c,.018*c,16),floorMat);
+   innerFloor.position.y=.105*c;innerFloor.receiveShadow=true;root.add(innerFloor);
+   // Twelve forged rivet heads tie the upper rim to the shell; geometry, not decals.
+   for(let i=0;i<12;i++){
+    const angle=i*Math.PI/6;
+    const rivet=new THREE.Mesh(new THREE.SphereGeometry(.026*c,8,6),metalMat);
+    rivet.position.set(Math.cos(angle)*.401*c,1.09*c,Math.sin(angle)*.401*c);
+    rivet.castShadow=true;root.add(rivet);
+   }
    // Rolled steel lip and three tapered reinforcing hoops follow the bin wall.
    const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,8,24),metalMat);
    rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
