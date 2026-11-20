@@ -195,6 +195,20 @@ for(const detail of ['low','high']){
     const limbExtents=limbBox.getSize(new THREE.Vector3());
     assert(limbExtents.x>.30&&limbExtents.y>.22,
       'real visible shoulder-to-ankle mesh must occupy substantial width and height');
+    // A shadow-only leg can have a valid world-space bounding box. Require
+    // a muscle crest above the terrain and clearly outside the rib cage,
+    // plus real warm-basalt colour contrast against the black torso.
+    assert(limbBox.max.y>.39,
+      'upper muscle must rise above the ground and dark belly occluder');
+    if(side>0)
+     assert(limbBox.max.x>bodyBox.max.x+.31,
+      'right elbow must project beyond the torso silhouette');
+    else
+     assert(limbBox.min.x<bodyBox.min.x-.31,
+      'left elbow must project beyond the torso silhouette');
+    assert(upper.material.color.r>body.material.color.r*1.65,
+      'real limb basalt must remain visible against charcoal torso');
+    assert.equal(upper.userData.m019AboveFloorMuscleCrest,true);
     assert(upper.material.color.getHex()>0,
       'visible limbs must have a real lit basalt material');
     assert.equal(upper?.userData.m019HorizontalThigh,true);

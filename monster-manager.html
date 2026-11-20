@@ -190,7 +190,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-sprawl-tail-fit';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m019-visible-cpu-limbs-v10-20261120';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m019-high-contrast-four-limbs-v11-20261120';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m019-visible-animation-v10-20261120';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=tengu-canonical-flight-v14-20261118';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
@@ -872,6 +872,53 @@ window.__monsterViewerLayoutQA=()=>({
  // but renders the eye/cheek seams from frontal AND lateral cameras.
 // This inspection is deliberately about renderable world-space solids rather
 // than hidden animation pivot coordinates. Four invisible limbs must FAIL.
+// An actual GPU colour/depth probe, not another Box3/triangle-count check.
+// The temporary magenta shader is ONLY a CI inspection surface; restore
+// original basalt materials before returning to normal gameplay.
+const m019PixelBackup=new Map();
+let m019SavedShadows=null,m019PixelMaterial=null;
+window.__m019LimbPixelProbeQA=(mode='restore')=>{
+ if(selected!=='m019'||!model)return null;
+ const names=['frontL','frontR','rearL','rearR'];
+ const skins=names.map(n=>model.getObjectByName('m019-seamless-skin-'+n));
+ if(skins.some(m=>!m))return {ready:false,missing:true};
+ if(mode!=='restore'&&m019SavedShadows==null){
+  m019SavedShadows=renderer.shadowMap.enabled;
+  renderer.shadowMap.enabled=false;
+  m019PixelMaterial=new THREE.MeshBasicMaterial({
+   color:0xff00ff,side:THREE.DoubleSide,
+   depthTest:true,depthWrite:true
+  });
+ }
+ for(const skin of skins){
+  if(mode==='restore'){
+   const orig=m019PixelBackup.get(skin);
+   if(orig){
+    skin.material=orig.material;
+    skin.castShadow=orig.castShadow;
+    skin.visible=orig.visible;
+   }
+  }else{
+   if(!m019PixelBackup.has(skin))
+    m019PixelBackup.set(skin,{
+     material:skin.material,castShadow:skin.castShadow,visible:skin.visible
+    });
+   skin.castShadow=false;
+   skin.visible=mode!=='hidden';
+   skin.material=mode==='magenta'?m019PixelMaterial:
+    m019PixelBackup.get(skin).material;
+  }
+ }
+ if(mode==='restore'){
+  m019PixelBackup.clear();
+  if(m019SavedShadows!=null)renderer.shadowMap.enabled=m019SavedShadows;
+  m019SavedShadows=null;
+  m019PixelMaterial?.dispose();m019PixelMaterial=null;
+ }
+ model.updateMatrixWorld(true);
+ renderer.render(scene,camera);
+ return {ready:true,mode,limbs:skins.length};
+};
 window.__m019LimbVisibilityQA=()=>{
  if(selected!=='m019'||!model)return null;
  model.updateMatrixWorld(true);
