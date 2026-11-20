@@ -1474,9 +1474,12 @@ if(salamanderLineage){
        leg.userData.m019RightAngleUpperArm=true;
        // A torso-owned, embedded fascia joins each shoulder and hip
        // to the upper limb; it cannot float away with an animated knee.
-       const fascia=g.bridge(torso,'skin',
-         [side*.202,1.310,fore>0?1.035:-1.025],
-         [side*.383,1.310,fore>0?1.035:-1.025],.174,.126);
+       // Match the actual limb's basalt material and PBR maps.
+       // Previously this dark skin sleeve contrasted with pale 'light'
+       // limb bars, producing a black socket / pasted-on arm seam.
+       const fascia=g.bridge(torso,'light',
+         [side*.192,1.310,fore>0?1.035:-1.025],
+         [side*.411,1.310,fore>0?1.035:-1.025],.181,.134);
        fascia.name='m019-shoulder-hip-fascia-'+name;
        fascia.userData.m019TorsoAnchoredSocket=true;
      }
