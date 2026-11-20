@@ -327,13 +327,12 @@ export class CombatActionRuntime {
     if (groundMount&&!this.groundMountAllowed(x,z)) return null;
     const sideObjects = this.objects.filter(o => o.alive && o.team === owner.team && o.category !== 'structure');
     const squadId=String(owner.squadId??'unassigned:'+owner.id);
-    // Exactly one active familiar and one horse PER SQUAD. A different
-    // summoner in the same formation cannot silently spawn a second dragon.
+    // Mounts remain one per squad; familiars are one per living summoner.
+    // Never reject a different caster just because a team-mate owns a summon.
     const existing=sideObjects.filter(o=>String(o.squadId)===squadId&&o.category===spec.category);
-    if(['summon','mount'].includes(spec.category)&&existing.length){
-      if(spec.category==='mount'||existing.some(o=>o.ownerId!==owner.id))return null;
-    }
+    if(spec.category==='mount'&&existing.length)return null;
     const previous=spec.category==='summon'?this.summonOf(owner):[];
+    if(spec.category==='summon'&&previous.length>COMBAT_RULES.maximumSummonsPerCaster)return null;
     if (sideObjects.length - previous.length >= COMBAT_RULES.maximumObjectsPerTeam) return null;
     // Ten strategists begin mounted on their ceremonial horses. Without a
     // separate cavalry budget, automatic horse skills claim every remaining
