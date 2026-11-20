@@ -132,10 +132,18 @@ function fittedScalpSurface(model,bone,headBounds){
  for(let i=0;i<vertices;i++){
   let weight=0;
   for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
-  if(weight<.56)continue;
+  // The candidate mesh already passed the stricter .56 head-weight ranking.
+  // A .56 per-vertex cutoff discards transition triangles along the crown,
+  // leaving bald wedges. Include moderately head-bound skin vertices only
+  // in this anatomical scalp extraction; keep the candidate selection strict.
+  // Allow weaker head-bone weights only near the apex: transition vertices
+  // close crown gaps without admitting lower-face/neck triangles into the wig.
+  if(weight<.42)continue;
   mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
   bone.worldToLocal(point);
   if(point.y<threshold)continue;
+  const crownHeight=(point.y-threshold)/Math.max(.001,headBounds.max.y-threshold);
+  if(weight<.48&&crownHeight<.65)continue;
   radial.copy(point).sub(center).normalize().multiplyScalar(.0045);
   point.add(radial);
   local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
@@ -151,6 +159,14 @@ function fittedScalpSurface(model,bone,headBounds){
    const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
    return {x,y,z,u:.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2)};
   });
+  // Reject collapsed or numerically invalid triangles before uploading the
+  // anatomical scalp. Fiber generation already guards degenerate faces, but
+  // the scalp underlay itself must not contain them (normal/UV artifacts).
+  if(corners.some(p=>!Number.isFinite(p.x+p.y+p.z+p.u)))continue;
+  const abx=corners[1].x-corners[0].x,aby=corners[1].y-corners[0].y,abz=corners[1].z-corners[0].z;
+  const acx=corners[2].x-corners[0].x,acy=corners[2].y-corners[0].y,acz=corners[2].z-corners[0].z;
+  const nx=aby*acz-abz*acy,ny=abz*acx-abx*acz,nz=abx*acy-aby*acx;
+  if(nx*nx+ny*ny+nz*nz<1e-12)continue;
   const us=corners.map(p=>p.u);
   if(Math.max(...us)-Math.min(...us)>.5){
    for(const p of corners)if(p.u<.5)p.u+=1;
@@ -187,7 +203,11 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
   a.fromBufferAttribute(positions,tri);
   b.fromBufferAttribute(positions,tri+1);
   c.fromBufferAttribute(positions,tri+2);
-  normal.subVectors(b,a).cross(tmp.subVectors(c,a)).normalize();
+  normal.subVectors(b,a).cross(tmp.subVectors(c,a));
+  // Degenerate scalp triangles have no reliable normal or tangent: emitting
+  // ribbons from them creates NaN coordinates and visible crown spikes.
+  if(normal.lengthSq()<1e-12)continue;
+  normal.normalize();
   // The geometry can have both clockwise and counterclockwise source faces.
   p.copy(a).add(b).add(c).multiplyScalar(1/3);
   if(normal.dot(tmp.copy(p).sub(center))<0)normal.negate();
@@ -198,12 +218,24 @@ function fittedScalpFibers(surface,bounds,tint,quality='preview'){
    const u=((tri*17+j*37)%97+1)/100,v=((tri*31+j*19)%83+1)/100;
    const x=Math.min(.94,u*.73),y=Math.min(.94-x,v*(.95-x));
    p.copy(a).multiplyScalar(1-x-y).addScaledVector(b,x).addScaledVector(c,y);
-   direction.set(p.x-center.x,0,p.z-center.z);
-   if(direction.lengthSq()<.00001)direction.set(.5,0,-.5);
-   direction.addScaledVector(normal,-direction.dot(normal)).normalize();
-   if(direction.lengthSq()<.001){direction.set(0,0,-1);
-    direction.addScaledVector(normal,-direction.dot(normal)).normalize()}
-   widthAxis.crossVectors(normal,direction).normalize();
+   // Grow from crown toward the nape instead of radiating horizontally:
+   // the latter produces porcupine-like spikes on the top of the head.
+   // Project the gravity/backward groom direction into the actual scalp tangent.
+   direction.set(0,-1,-.22);
+   direction.addScaledVector(normal,-direction.dot(normal));
+   if(direction.lengthSq()<.001){
+    direction.set(0,0,-1);
+    // Remove the normal component (not add it): the old fallback could
+    // point outside the scalp and create a visible vertical hair spike.
+    direction.addScaledVector(normal,-direction.dot(normal));
+   }
+   // The backup direction may also align with the normal at the crown.
+   // Skip that fiber rather than upload invalid vertices to WebGL.
+   if(direction.lengthSq()<1e-8)continue;
+   direction.normalize();
+   widthAxis.crossVectors(normal,direction);
+   if(widthAxis.lengthSq()<1e-8)continue;
+   widthAxis.normalize();
    // A sparse, almost-flat scalp was perceived as a bald head in the
    // 1000v1000 crowd. Keep the same triangle count but give each genuine
    // root fiber a readable swept silhouette at mid distance.
