@@ -947,6 +947,10 @@ export class MassBattleGridSimulation {
     }
     return false;
   }
+  /** Assign the creature its own battle target in the authoritative grid. */
+  commandSquadSummonAttack(squadId,targetSquadId,team=0){
+    return this.actions.commandSummonAttack(squadId,targetSquadId,this.units,team);
+  }
   /** Refill existing fallen unit slots with carried reserve soldiers.
    * No new GPU actor objects and never more than the squad's authored size.
    */
