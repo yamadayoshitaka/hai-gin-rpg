@@ -20,8 +20,9 @@ test('battle start is accepted only after battle state is unpaused',()=>{
 
 test('50v50 high-ground selects a physical building, invokes floor travel and allows roof pursuit',()=>{
  assert.match(page,/if\(!massSim\)\{[\s\S]*?Detailed 50v50 battles use actor floorTravel/);
- assert.match(page,/id:'skirmish:'\+index\+':'\+kind/);
- assert.match(page,/requestUnitFloor\(selected,1,building\)/);
+ assert.match(page,/id:'skirmish:'\+index\+':'\+kind\+':'\+floor/);
+ assert.match(page,/for\(const unit of eligible\)/);
+ assert.match(page,/requestUnitFloor\(unit,1,building,\{forceStairs:true\}\)/);
  assert.match(page,/selected\.floorTravel\.manualHighGroundTarget=true/);
  assert.match(page,/a\.floorTravel&&!a\.floorTravel\.manualHighGroundTarget/);
  assert.match(ui,/className='realtimeStructureMap'/);
