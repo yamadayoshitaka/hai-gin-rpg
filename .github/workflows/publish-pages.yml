@@ -355,9 +355,9 @@ jobs:
             if [[ "${batch_status}" == 200 && "${preview_status}" == 200 ]] &&
               grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/batch-public.html &&
               grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/batch-pr-public.html &&
-              grep -Fq 'id="batchLaunchEvidence"' /tmp/batch-public.html &&
-              grep -Fq 'id="batchDisplaySelect"' /tmp/batch-public.html &&
-              grep -Fq 'id="worldObjectPicker"' /tmp/batch-public.html &&
+              grep -Fq '<title>灰銀｜統合バッチセンター</title>' /tmp/batch-public.html &&
+              grep -Fq 'id="groups"' /tmp/batch-public.html &&
+              grep -Fq '自動処理を一括停止中' /tmp/batch-public.html &&
               grep -Fq 'getPrOnDemand(' /tmp/batch-pr-public.html; then
               echo "PASS: public batch and PR comparison pages both serve exact source SHA ${GITHUB_SHA}"
               exit 0
@@ -365,5 +365,5 @@ jobs:
             echo "::warning::Batch UI Pages not ready: batch HTTP ${batch_status}, PR HTTP ${preview_status} (attempt ${attempt}/18)"
             sleep 5
           done
-          echo '::error::Deployed Pages did not serve verified batch center/PR preview. 403 or stale HTML persists.'
+          echo '::error::Deployed Pages did not serve the current maintenance center/PR preview for this SHA.'
           exit 1
