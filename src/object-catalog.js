@@ -705,10 +705,21 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Gathered woven sacks: the closed foot, bulging shoulder and pinched neck
+   // are one continuous lathed mesh, rather than a hovering ellipsoid.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.98,metalness:0});
+   const cord=new THREE.MeshStandardMaterial({color:0x66513a,roughness:1,metalness:0});
+   const outline=[[0,0],[.24,.015],[.37,.07],[.43,.18],[.45,.33],[.42,.49],[.34,.59],[.20,.65],[.15,.72],[.18,.77],[.12,.80],[0,.80]]
+    .map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const sackGeo=new THREE.LatheGeometry(outline,12);
+   const tieGeo=new THREE.TorusGeometry(.16*c,.023*c,5,12);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const x=((i%2)*.86-.43)*c,z=((i%3)-1)*.2*c;
+    const baseY=Math.floor(i/2)*.58*c;
+    const sack=new THREE.Mesh(sackGeo,burlap);
+    sack.position.set(x,baseY,z);sack.scale.z=.85;sack.castShadow=true;sack.receiveShadow=true;root.add(sack);
+    const tie=new THREE.Mesh(tieGeo,cord);
+    tie.rotation.x=Math.PI/2;tie.position.set(x,baseY+.725*c,z);root.add(tie);
    }
   }
   if(id==='town_stone_pile_001'){
