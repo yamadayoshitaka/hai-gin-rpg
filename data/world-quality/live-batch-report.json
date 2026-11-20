@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "8f1281eecec58affa3b7a425bb5fc1e91d027e7c71b55c4316ea2657eb14637b",
+  "sourceFingerprint": "2c6e9e22dde4fecf87276b4cb23ca94af6f782fc7d2c6683d0583d0eaaa1ccb3",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for manor_noble_001 (visual review still required)"
+        "Real WebGL screenshots available for manor_garden_001 (visual review still required)"
       ]
     }
   },
