@@ -10072,7 +10072,7 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
  const members=realtimeJobMembers(id);
  const jobName=squadPrimaryJob(id);
- if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
+ if(action!=='high_ground'&&!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
  if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)&&target.available!==false))return false;
  if(action==='frontline_guard'){
   if(!members.some(u=>u.jobId==='shield'))return false;
