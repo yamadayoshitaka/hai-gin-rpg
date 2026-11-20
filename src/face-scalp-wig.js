@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-follicle-v7';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-microholes-v8';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -236,7 +236,7 @@ export function v63WigLockTone(t,seed,layer=0){
 /** v65 crown repair: identify and triangulate ONLY compact closed
  * boundaries in actual scalp triangles. Never cover the full head with a
  * fake wig hemisphere: intact anatomy remains unchanged. */
-export function repairRealCrownScalpHoles(vertices,normals,box){
+export function repairRealCrownScalpHoles(vertices,normals,box,{microOnly=false}={}){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  const tol=Math.max(d.x*.00025,1e-7),byKey=new Map(),edges=new Map();
  const key=p=>[p[0],p[1],p[2]].map(v=>Math.round(v/tol)).join(':');
@@ -271,7 +271,7 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
    for(const n of graph.get(k)||[])if(!group.has(n))pending.push(n);
   }
   for(const v of group)seen.add(v);
-  if(group.size<3||group.size>28||
+  if(group.size<3||group.size>(microOnly?8:28)||
    [...group].some(v=>graph.get(v)?.size!==2))continue;
   const ordered=[start],first=[...graph.get(start)][0];
   let prev=start,current=first;
@@ -287,7 +287,7 @@ export function repairRealCrownScalpHoles(vertices,normals,box){
   const xs=positions.map(p=>p[0]),zs=positions.map(p=>p[2]);
   const sizeX=Math.max(...xs)-Math.min(...xs);
   const sizeZ=Math.max(...zs)-Math.min(...zs);
-  if(sizeX>d.x*.22||sizeZ>d.z*.22||
+  if(sizeX>d.x*(microOnly?.075:.22)||sizeZ>d.z*(microOnly?.075:.22)||
    sizeX+sizeZ<d.x*.003)continue;
   const center=positions.reduce((v,p)=>{
    v[0]+=p[0]/positions.length;v[1]+=p[1]/positions.length;
@@ -467,9 +467,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // The generic crown hole repair fans arbitrary loops across the rear/ear
  // boundary and creates the large planar gray patches seen in buzzcut v5.
  // Preserve only donor-backed triangles for the close-cut style.
- const crownRepair=shortHair?
-  {repairs:0,addedTriangles:0,source:'donor-topology-only'}:
-  repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
+ const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box,
+  {microOnly:shortHair});
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
