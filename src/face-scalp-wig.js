@@ -592,6 +592,13 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ // Diagnostic: quantify whether this cap is truly aligned to donor skin.
+ // A visible mismatch here must be fixed before enabling skin deletion.
+ mesh.userData.donorAlignedCap=true;
+ mesh.userData.capVertexCount=verts.length/3;
+ mesh.userData.capDonorTriangleCount=originalScalpCount/3;
+ mesh.userData.capOffsetMode='donor-normal-plus-volume-lift';
+ mesh.userData.capHoleRepairCount=crownRepair.repairCount||0;
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
