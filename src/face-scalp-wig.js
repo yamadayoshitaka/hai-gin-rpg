@@ -43,7 +43,8 @@ function actualScalpCandidates(geo,box){
  for(let i=0;i<pos.count;i++){
   const p=f3(pos.getX(i),pos.getY(i),pos.getZ(i));
   const yn=(p.y-box.min.y)/d.y;
-  if(yn<.54||yn>.998)continue;
+  // The real apex (yn=1) must remain eligible for crown follicle roots.
+  if(yn<.54||yn>1.000001)continue;
   const nx=(p.x-center.x)/d.x,nz=(p.z-center.z)/d.z;
   const side=nx<0?'Left':'Right';
   const n=normals?f3(normals.getX(i),normals.getY(i),normals.getZ(i)).normalize():
@@ -66,7 +67,8 @@ function actualScalpCandidates(geo,box){
  // A donor mesh with sparse topology still receives every hair zone.
  for(const [zone,pool] of Object.entries(pools)){
   if(pool.length>3)continue;
-  const onSide=q=>zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
+  const onSide=q=>zone==='crown'?true:
+   zone.endsWith('Left')?q.p.x<center.x:q.p.x>=center.x;
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const frontal=zone.startsWith('fringe');
   const temple=zone.startsWith('temple');
@@ -82,13 +84,17 @@ function actualScalpCandidates(geo,box){
    if(zone.startsWith('back'))return depth<-.04&&height>=.61;
    if(frontal)return depth>.025&&height>.87&&height<.995;
    if(temple)return Math.abs((q.p.x-center.x)/d.x)>.15&&height>.80&&height<.96;
-   return height>.80;
+   // Do not replace missing crown follicles with forehead/cheek vertices.
+   return height>.825&&depth<.21;
   });
   if(candidates.length) pools[zone]=candidates;
   else{
    // Keep explicit QA failure instead of silently growing "rear" locks
    // out of the forehead on unusual incoming face topologies.
    if(rear)throw Error('Missing posterior scalp: '+zone);
+   // Never silently seed a bald crown from the cheeks or forehead.
+   // A missing anatomical crown is a topology defect, not a valid fallback.
+   if(zone==='crown')throw Error('Missing anatomical crown scalp roots');
    const sameSide=all.filter(onSide);
    pools[zone]=sameSide.length?sameSide:all;
   }
@@ -482,15 +488,21 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    center.z-d.z*(.14+.035*(1-Math.abs(2*u-1))));
   stripWidths.push(width*2);tipHeights.push(tipY);
   const vtx=(t,edge)=>{
+   // Fan the real scalp-rooted undercoat over the occiput instead of
+   // dropping 88 nearly vertical, flat-ended cards from a single row.
+   // Root remains fixed on the donor head; the bend grows below it.
    const eased=t*t*(3-2*t);
+   const fan=Math.sin(Math.PI*Math.min(1,t*.9));
+   const wave=Math.sin(k*2.39996323+t*4.4);
    const x=THREE.MathUtils.lerp(scalpRoot.x,targetX,eased)+
-    Math.sin(k*.85+t*3)*d.x*.00026*t;
+    side*d.x*.021*fan+wave*d.x*.006*t;
    const y=THREE.MathUtils.lerp(scalpRoot.y,tipY,t);
    const z=THREE.MathUtils.lerp(scalpRoot.z-d.z*.003,targetZ,eased)+
-    d.z*.0017*Math.sin(Math.PI*t);
-   const taper=1-.72*Math.pow(t,8);
+    d.z*(.014*fan+.004*Math.sin(k*.71+t*5)*t);
+   // Continuously narrow the silhouette, not a sudden pointed cut.
+   const taper=Math.max(.16,1-.84*t*t*(3-2*t));
    return f3(x+edge*width*taper,y,z+
-    Math.abs(edge)*d.z*.0012);
+    Math.abs(edge)*d.z*.0024*(1-t));
   };
   for(let j=0;j<stripSegments;j++){
    const t0=j/stripSegments,t1=(j+1)/stripSegments;
@@ -665,9 +677,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ // Reserve a real, upper-crown subset for central apex coverage. This
+ // reduces vertex-order bias without introducing synthetic scalp geometry.
+ const apexCrownPool=(pools.crown||[]).filter(q=>
+  (q.p.y-box.min.y)/d.y>=.94&&
+  Math.abs(q.p.x-center.x)/d.x<.24);
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const pool=zone==='crown'&&index%4===0&&apexCrownPool.length?
+   apexCrownPool:rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
