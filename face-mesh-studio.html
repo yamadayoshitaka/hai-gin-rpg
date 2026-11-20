@@ -217,7 +217,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261120-buzz-topology-v6-refresh1';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261120-buzz-follicle-v7-refresh1';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
@@ -590,15 +590,15 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const badge=document.getElementById('hairBuildBadge');
  if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
-  '｜頭皮描画v6：短髪の補修三角形を除去・純正材質';
+  '｜頭皮描画v7：短髪の毛根浮きを低減・純正材質';
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
  const scalp=wig?.root?.getObjectByName?.('scalpShell');
  const meshCount=wig?.root?.children?.length??0;
- const codeOk=FACE_HAIR_RUNTIME_BUILD==='20261120-buzz-topology-v6-refresh1';
+ const codeOk=FACE_HAIR_RUNTIME_BUILD==='20261120-buzz-follicle-v7-refresh1';
  el.textContent='髪コード: '+FACE_HAIR_RUNTIME_BUILD+
-  ' / main想定: 20261120-buzz-topology-v6-refresh1 / 読込判定: '+(codeOk?'一致':'不一致')+
+  ' / main想定: 20261120-buzz-follicle-v7-refresh1 / 読込判定: '+(codeOk?'一致':'不一致')+
   ' / モデル生成: '+(error?'失敗 '+String(error):wig?'成功':'待機')+
   ' / 毛束: '+(report.rootCount??'未取得')+
   ' / 描画オブジェクト: '+meshCount+
