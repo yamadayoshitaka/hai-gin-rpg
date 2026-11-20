@@ -585,7 +585,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const badge=document.getElementById('hairBuildBadge');
  if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
-  '｜頭皮マスク：'+(models.get('female')?.face?.userData?.hairScalpMaskActive?'ON':'OFF');
+  '｜頭皮補正v2：'+(models.get('female')?.face?.userData?.hairScalpMaskActive?'ON':'OFF');
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
@@ -640,16 +640,29 @@ function setHairHiddenScalp(face,enabled){
     float sideHair = mix(rearSide, 0.72, smoothstep(0.17, 0.26, hx));
     float hairLine = mix(sideHair, 0.83, smoothstep(0.04, 0.19, hz));
     float normalizedY = (hairP.y - ${box.min.y.toFixed(7)}) / ${Math.max(size.y,1e-5).toFixed(7)};
-    // Preserve the frontal hairline, ears and all skin below the seam.
-    if (normalizedY > hairLine + 0.018) discard;`;
+    // Pigment the EXISTING continuous head surface instead of discarding it.
+    // Discard created black crown holes wherever the separate cap had gaps.
+    float hairBlend = smoothstep(hairLine - 0.012, hairLine + 0.022, normalizedY);
+    vec3 hairMelanin = vec3(0.225, 0.115, 0.072);
+    diffuseColor.rgb = mix(diffuseColor.rgb, hairMelanin, hairBlend);`;
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
     '#include <clipping_planes_fragment>\n'+cut);
   };
-  mat.customProgramCacheKey=()=> 'hair-hidden-scalp-v1-'+(source.customProgramCacheKey?.()||'');
+  mat.customProgramCacheKey=()=> 'hair-continuous-pigment-v2-'+(source.customProgramCacheKey?.()||'');
   return mat;
  });
  face.material=Array.isArray(liveOriginal)?materials:materials[0];
  face.userData.hairScalpMaskActive=true;
+ face.userData.hairScalpMaskMode='continuous-pigment-no-discard';
+}
+function hideDuplicateHairCap(wig){
+ if(!wig?.root)return;
+ wig.root.traverse(node=>{
+  if(node.isMesh&&node.name==='REAL_SCALP_TRIANGLE_HAIR_CAP'){
+   node.visible=false;
+   node.userData.replacedByContinuousHeadPigment=true;
+  }
+ });
 }
 function updateAllHiddenScalps(){
  for(const sex of ['female','male']){
@@ -680,7 +693,7 @@ function rebuildWig(){
    volumeProfile:v32PartMode?v32Parts.female.hairVolume:'natural',
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
-  models.get('female').face.add(wig.root);wigs.set('female',wig);
+  models.get('female').face.add(wig.root);wigs.set('female',wig);hideDuplicateHairCap(wig);
   setHairHiddenScalp(models.get('female').face,true);
   updateHairRuntimeDiagnostics(wig);
    $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
@@ -745,7 +758,7 @@ function rebuildMaleHair(){
   volumeProfile:v32Parts.male.hairVolume,
   color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
  });
- models.get('male').face.add(hair.root);wigs.set('male',hair);
+ models.get('male').face.add(hair.root);wigs.set('male',hair);hideDuplicateHairCap(hair);
  setHairHiddenScalp(models.get('male').face,true);
  const size=models.get('male').face.geometry.boundingBox.getSize(new THREE.Vector3());
  hair.root.position.set(size.x*.008*v32Parts.male.hairX,
@@ -773,6 +786,7 @@ function rebuildFemale(){
  const oldWig=wigs.get('female');
  if(oldWig&&wigOn){
   next.face.add(oldWig.root);
+  hideDuplicateHairCap(oldWig);
   setHairHiddenScalp(next.face,true);
   const base=oldWig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
   if(base){base.geometry.dispose();base.geometry=next.face.geometry.clone();}
