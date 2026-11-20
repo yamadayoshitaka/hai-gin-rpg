@@ -31,7 +31,7 @@ export function createRealtimeBattleCommands({
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
- getObjectiveCheckpoints=()=>[],
+ getObjectiveCheckpoints=()=>[],onCommandCommitted=()=>{},
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
  onRally=()=>false,onMapOverview=()=>false
 }={}){
@@ -1226,7 +1226,7 @@ radarCanvas.addEventListener('keydown',event=>{
   documentRef:doc,dock:$('realtimeBattleDock'),worldSize,
   getSquads:squads,getEnemies,getSelected,selectSquad:setSelected,
   getMapBackground,getLegalPoint,getMoveTargets,getSpecialTargets,getSharedItems,getRallyInfo,
-  onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,
+  onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,onCommandCommitted,
   queueArrival:(id,entry)=>arrivalActions.set(String(id),entry),
   setPreferred:(id,action)=>preferredActions.set(String(id),action),
   onClose:closeSquadControls
