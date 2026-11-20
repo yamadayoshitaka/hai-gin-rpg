@@ -182,10 +182,13 @@ export function createSculpture(spec,detail='high'){
    }));
  };
  const tube=(parent,shade,points,radius=.04,{
-   name=null,capEnds=false,taper=1,glow=false
+   name=null,capEnds=false,taper=1,glow=false,
+   tubularSegments=null,radialSegments=null
  }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
-   const [segments,radial]=resolution.tube;
+   const [defaultSegments,defaultRadial]=resolution.tube;
+   const segments=tubularSegments??defaultSegments;
+   const radial=radialSegments??defaultRadial;
    const geo=new THREE.TubeGeometry(curve,segments,radius,radial,false);
    // Skinned tails and organic necks are NOT open pipes. Rebuild tapered
    // rings in place, then add real triangles closing both extremities.
@@ -509,11 +512,11 @@ export function createSculpture(spec,detail='high'){
    return skin;
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
- const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin'}={})=>{
+ const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin',rough=.49}={})=>{
    const geo=createRootedCreatureHornGeometry({
      root:rootPoint,elbow,tip,radius,detail:detail==='low'?'low':'high'
    });
-   const mesh=own(attach(parent,geo,shade,{name,rough:.49,metal:0}));
+   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
    mesh.userData.rootedKeratin=true;
    return mesh;
  };
