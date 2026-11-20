@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-orderqueue2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-icons1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-orderqueue2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-three-team-hud1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -919,8 +919,8 @@ import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEM
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-icons1';
-import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=20261119-rally-reserve2';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-three-team-hud1';
+import {makeBattleRpgStatusRows,aggregateBattleRpgTeams} from './src/battle-rpg-squad-source.js?v=20261120-three-team-hud1';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -9311,14 +9311,28 @@ const ribbonPages=[0,0],ribbonPageSize=5;
 let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
 battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  onCommand:(team,id)=>{
-  // The HUD may still receive a click while a short non-blocking cut-in is fading.
-  // Do not silently discard the requested strategy menu.
+  // Inn sorties are three command teams. Never submit a synthetic HUD team ID
+  // to the physical squad engine; use the already group-aware tactic planner.
   if(team!==0||!battleReady||finished)return;
+  if(storyRequest?.sortieTeamCount){
+   const group=String(id).startsWith('team:')?Number(String(id).slice(5)):
+    normalizeArmyGroup(armyGroupBySquad[String(id)]);
+   const squad=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
+    squadRoster.some(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
+   if(squad){trackedAllySquadId=String(squad);targetedStrategyUi.open(group,{startAtRecommendations:true,groupOnly:true});}
+   return;
+  }
   trackedAllySquadId=String(id);
   realtimeCommandUI?.showSquadControls(id);
  },
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
+  if(team===0&&storyRequest?.sortieTeamCount&&String(id).startsWith('team:')){
+   const group=Number(String(id).slice(5));
+   id=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
+    squadRoster.some(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
+   if(!id)return;
+  }
   if(team===0){trackedAllySquadId=String(id);realtimeCommandUI?.selectSquad(id);}
   else selectedEnemySquadId=String(id);
   for(const [key,marker] of squadMarkers)
@@ -9326,7 +9340,8 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
   beginSquadFocusCinematic(String(id),team,'result');
  }
 }):null;
-if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,trackedAllySquadId);
+if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,
+ storyRequest?.sortieTeamCount?'team:'+normalizeArmyGroup(armyGroupBySquad[String(trackedAllySquadId)]):trackedAllySquadId);
 function refreshBattleRpgSquadHud(sums){
  if(!battleRpgHud)return;
  const rows=makeBattleRpgStatusRows({
@@ -9338,7 +9353,11 @@ function refreshBattleRpgSquadHud(sums){
   massDebuffs:massSim?.squadDebuffs,skirmishDebuffs:skirmishStrategicDebuffs,
   commanderRallies
  });
- battleRpgHud.update(rows,{show:battleReady&&!finished&&!battleCeremony.locked});
+ // Aggregate only the campaign presentation. Live commands, MP and AI still
+ // read the original per-job rows, never a synthetic three-team HUD row.
+ battleRpgHud.update(storyRequest?.sortieTeamCount?
+  aggregateBattleRpgTeams(rows,armyGroupBySquad):rows,
+  {show:battleReady&&!finished&&!battleCeremony.locked});
  realtimeCommandUI?.update(rows);
 }
 window.getBattleRpgSquadHudQA=()=>({
