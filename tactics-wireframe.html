@@ -9978,13 +9978,20 @@ function realtimeSpecialTargets(id,action){
   }).filter(Boolean);
  }
  if(action==='summon_and_attack'){
-  if(!members.some(u=>u.jobId==='summoner'&&u.mp>=15))return [];
+  const existing=(massSim?.actions?.objects??skirmishActions?.objects??[]).some(o=>o.alive&&
+   o.category==='summon'&&o.team===0&&String(o.squadId)===String(id));
+  if(!existing&&!members.some(u=>u.jobId==='summoner'&&
+   availableCombatSkills('summoner',u.rarity).some(skill=>skill.kind==='summon'&&u.mp>=skill.mp)))return [];
   return realtimeMoveTargets('enemies',id).map(t=>({id:String(t.squadId),x:t.x,z:t.z,
    label:'🐉 召喚後に攻撃：'+t.label,available:true}));
  }
- if(action==='summon_and_move')
-  return members.some(u=>u.jobId==='summoner'&&u.mp>=15)?
-   [{id:'self',label:'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
+ if(action==='summon_and_move'){
+  const existing=(massSim?.actions?.objects??skirmishActions?.objects??[]).some(o=>o.alive&&
+   o.category==='summon'&&o.team===0&&String(o.squadId)===String(id));
+  return existing||members.some(u=>u.jobId==='summoner'&&
+   availableCombatSkills('summoner',u.rarity).some(skill=>skill.kind==='summon'&&u.mp>=skill.mp))?
+   [{id:'self',label:existing?'🐉 召喚済み（隊に追従中）':'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
+ }
  if(action==='high_ground'){
   if(!massSim){
    // Detailed 50v50 battles use actor floorTravel instead of massSim routes.
@@ -10164,11 +10171,15 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   updateUI();return true;
  }
  if(action==='summon_and_attack'||action==='summon_and_move'){
-  let success=false;
-  if(massSim){
+  // Re-target an existing familiar without demanding MP or casting twice.
+  // The same squad owns a single active summon in both battle sizes.
+  const existing=(massSim?.actions?.objects??skirmishActions?.objects??[]).find(o=>
+   o.alive&&o.team===0&&o.category==='summon'&&String(o.squadId)===String(id));
+  let success=Boolean(existing);
+  if(!success&&massSim){
    success=massSim.summonSquadCreature(id);
    if(success&&massWorker?.active)massWorker.summonSquadCreature(id);
-  }else{
+  }else if(!success){
    for(const member of members.filter(u=>u.jobId==='summoner'&&u.hp>0)){
     const spells=availableCombatSkills('summoner',member.rarity)
      .filter(skill=>skill.kind==='summon'&&member.mp>=skill.mp)
@@ -10179,9 +10190,13 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
     if(success)break;
    }
   }
-  if(!success)return false;
-  battleCeremony.showOrder('🐉 '+squadName(id)+'：召喚成功','MPを消費して召喚獣が出現');
-  if(action==='summon_and_move')return {openMove:true};
+  if(!success){
+   log(squadName(id)+'：召喚できません。MP・召喚枠・配置可能マスを確認');
+   return false;
+  }
+  battleCeremony.showOrder('🐉 '+squadName(id)+(existing?'：召喚獣の行動継続':'：召喚成功'),
+   existing?'既存の召喚獣を維持して行動します':'MPを消費して召喚獣が出現');
+  if(action==='summon_and_move')return true;
   const target=realtimeMoveTargets('enemies',id)
    .find(t=>String(t.squadId)===String(targetId));
   if(!target)return true; // The summon already succeeded; never spend MP twice.
@@ -11919,7 +11934,9 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   refreshCommanderOrderOptions();
   // Each allied squad can be positioned once, before the first AI tick.
-  for(const id of squadIds)setStartingSquadOrder(0,id,'hold');
+  // Unassigned squads enter an ordinary encounter on automatic charge.
+  // Explicit hold, defend or movement orders still override this per squad.
+  for(const id of squadIds)setStartingSquadOrder(0,id,'charge');
   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
   // Initialize the camera at squad 1, matching the highlighted first HUD row.
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
