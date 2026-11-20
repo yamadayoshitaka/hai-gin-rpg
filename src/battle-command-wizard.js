@@ -14,7 +14,7 @@ export function mountBattleCommandWizard({
  getSpecialTargets=()=>[],getSharedItems=()=>[],getRallyInfo=()=>({}),
  onMove=()=>false,onOrder=()=>false,onTargetOrder=()=>false,onSpecial=()=>false,
  onSharedItem=()=>false,onRally=()=>false,queueArrival=()=>{},setPreferred=()=>{},
- onCommandCommitted=()=>{},
+ onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
  onClose=()=>{}
 }={}){
  const doc=documentRef,root=doc.createElement('section');
@@ -23,6 +23,12 @@ export function mountBattleCommandWizard({
  root.hidden=true;dock.append(root);
  const state={stage:'squad',squad:null,category:null,kind:null,target:null,point:null,arrival:'hold',arrivalSpecialId:null,arrivalTarget:null,item:null,notice:''};
  const history=[];
+ const nextOrders=new Map(),failedOrders=new Map();
+ const nextLabel=p=>p.category==='item'?'🎒 '+String(p.item?.label||p.item?.name||'アイテム'):
+  p.category==='move'?'➤ '+(p.kind==='move_high'?'高所移動':'移動'):
+  p.category==='rally'?'📣 号令':
+  p.category==='special'||p.kind==='special'?String(p.specialName||'固有技'):
+  ({defend:'🛡 守備',hold:'⏸ 待機',charge:'⚔ 攻撃'}[p.command]||p.kind||'作戦');
  const actions=[
   ['move','➤ 移動'],['attack','⚔ 攻撃'],['defend','🛡 守備'],['hold','⏸ 待機'],
   ['special','✨ 固有技'],['support','✚ 支援'],['rally','📣 号令（バフ）']];
@@ -137,46 +143,92 @@ export function mountBattleCommandWizard({
    render();
   };
  }
- function issue(){
-  const id=String(state.squad),point=state.point,kind=state.kind,target=state.target;
+ function executePlan(plan){
+  const id=String(plan.squad),point=plan.point,kind=plan.kind,target=plan.target;
   let accepted=false;
-  if(state.category==='item'){
-   const current=(getSharedItems(id)||[]).find(t=>String(t.id)===String(state.item?.id));
+  if(plan.category==='item'){
+   const current=(getSharedItems(id)||[]).find(t=>String(t.id)===String(plan.item?.id));
    if(!current||current.usable===false||Number(current.quantity)<=0)accepted=false;
    else accepted=onSharedItem(String(current.id),String(target?.id));
-  }else if(state.category==='move'){
+  }else if(plan.category==='move'){
    if(kind==='move_high'){
     const current=(getSpecialTargets(id,'high_ground')||[]).find(t=>String(t.id)===String(target?.id));
     if(current&&current.available!==false){
      accepted=onSpecial(id,'high_ground',String(current.id));
-     if(accepted&&point&&state.arrival!=='hold')
-      queueArrival(id,{...(state.arrival==='special'?{special:state.arrivalSpecialId,targetId:String(state.arrivalTarget?.id)}:{command:state.arrival}),point:{...point}});
+     if(accepted&&point&&plan.arrival!=='hold')
+      queueArrival(id,{...(plan.arrival==='special'?{special:plan.arrivalSpecialId,targetId:String(plan.arrivalTarget?.id)}:{command:plan.arrival}),point:{...point}});
     }
    }else if(point){
     const legal=getLegalPoint(point.x,point.z);
     if(legal){
      accepted=onMove(id,{x:legal.x,z:legal.z});
-     if(accepted)queueArrival(id,{...(state.arrival==='special'?{special:state.arrivalSpecialId,targetId:String(state.arrivalTarget?.id)}:{command:state.arrival||'hold'}),point:{x:legal.x,z:legal.z}});
+     if(accepted)queueArrival(id,{...(plan.arrival==='special'?{special:plan.arrivalSpecialId,targetId:String(plan.arrivalTarget?.id)}:{command:plan.arrival||'hold'}),point:{x:legal.x,z:legal.z}});
     }
    }
-  }else if(state.category==='rally'){
-   accepted=onRally(id,state.command,[String(target?.id)]);
+  }else if(plan.category==='rally'){
+   accepted=onRally(id,plan.command,[String(target?.id)]);
   }else if(kind==='special'){
-   const current=(getSpecialTargets(id,state.specialId)||[]).find(t=>String(t.id)===String(target?.id));
-   if(current&&current.available!==false)accepted=onSpecial(id,state.specialId,String(current.id));
+   const current=(getSpecialTargets(id,plan.specialId)||[]).find(t=>String(t.id)===String(target?.id));
+   if(current&&current.available!==false)accepted=onSpecial(id,plan.specialId,String(current.id));
   }else if(kind?.startsWith('attack_')&&target&&Number(target.team)===1&&target.squadId!=null){
-   accepted=onTargetOrder(id,state.command,target);
-  }else if(state.command)accepted=onOrder(id,state.command);
+   accepted=onTargetOrder(id,plan.command,target);
+  }else if(plan.command)accepted=onOrder(id,plan.command);
   if(accepted?.followup&&accepted?.point)
    queueArrival(id,{command:accepted.followup,point:{...accepted.point}});
-  if(accepted?.openMove){close();return;} // Already executed: never spend MP twice.
+  if(accepted?.openMove)return true; // Summon or other special already spent resources.
   if(accepted){
-   onCommandCommitted({squadId:id,category:state.category,kind:state.kind,command:state.command,
-    target:state.target,point:state.point,arrival:state.arrival,itemId:state.item?.id,specialId:state.specialId});
-   setPreferred(id,state.category==='move'?'move_'+(state.arrival||'hold'):kind==='special'?'special_'+state.specialId:state.command||kind||'item');
-   close();
-  }else{state.notice='発令できませんでした。対象の状態、隊の生存、MP、軍師・経路の条件を確認してください。';render();}
+   onCommandCommitted({squadId:id,category:plan.category,kind:plan.kind,command:plan.command,
+    target:plan.target,point:plan.point,arrival:plan.arrival,itemId:plan.item?.id,specialId:plan.specialId});
+   setPreferred(id,plan.category==='move'?'move_'+(plan.arrival||'hold'):kind==='special'?'special_'+plan.specialId:plan.command||kind||'item');
+   return true;
+  }
+  return false;
  }
+ function issue(){
+  const plan=copy(),id=String(plan.squad);
+  const squad=getSquads().find(s=>String(s.id)===id);
+  if(!squad||Number(squad.alive)<=0){
+   state.notice='この隊は戦闘不能のため命令できません。';render();return;
+  }
+  const live=getOrderState(id)||{};
+  if(live.commanderReason&&plan.category!=='item'){
+   state.notice='発令できません：'+String(live.commanderReason);render();return;
+  }
+  const cooldown=Math.max(0,Number(live.cooldown)||0);
+  if(plan.category!=='rally'&&(cooldown>0||live.moving||live.blocked)){
+   // Store the plan, not a callback closing over mutable wizard state.
+   nextOrders.set(id,{plan,label:nextLabel(plan)});
+   failedOrders.delete(id);
+   close();return;
+  }
+  if(executePlan(plan)){
+   nextOrders.delete(id);failedOrders.delete(id);close();return;
+  }
+  state.notice='発令できません。軍師・対象・MP・経路・命令間隔を確認してください。';
+  render();
+ }
+ function tick(){
+  // Calls are driven by the battle UI update, not real-time timeouts.
+  for(const [id,entry] of nextOrders){
+   const squad=getSquads().find(s=>String(s.id)===id);
+   if(!squad||Number(squad.alive)<=0){
+    nextOrders.delete(id);failedOrders.set(id,'予約取消：部隊が戦闘不能');continue;
+   }
+   const status=getOrderState(id)||{};
+   if(Number(status.cooldown)>0||status.moving||status.blocked)continue;
+   if(status.commanderReason){
+    nextOrders.delete(id);failedOrders.set(id,status.commanderReason);continue;
+   }
+   if(executePlan(entry.plan)){nextOrders.delete(id);failedOrders.delete(id);}
+   else {
+    // A failed skill must never consume MP or repeat every frame.
+    nextOrders.delete(id);
+    failedOrders.set(id,'予約した'+entry.label+'を実行できません（対象・MP・経路を再確認）');
+   }
+  }
+ }
+ function queuedOrder(id){return nextOrders.get(String(id))?.label||'';}
+ function queuedError(id){return failedOrders.get(String(id))||'';}
  function render(){
   if(root.hidden)return;
   root.replaceChildren();
@@ -187,7 +239,15 @@ export function mountBattleCommandWizard({
   const prev=element('button','◀ 戻る');prev.onclick=back;prev.type='button';prev.disabled=!history.length;
   const quit=element('button','✕ 閉じる');quit.onclick=close;quit.type='button';
   buttons.append(prev,quit);head.append(buttons);root.append(head);
-  if(state.squad!=null)root.append(element('div',esc(currentSquad()?.label||'第'+state.squad+'隊')+'｜'+esc(currentSquad()?.job||'')+'｜'+Math.round(Number(currentSquad()?.hp)||0)+' HP','battleWizardSquadCaption'));
+  if(state.squad!=null){
+   root.append(element('div',esc(currentSquad()?.label||'第'+state.squad+'隊')+'｜'+esc(currentSquad()?.job||'')+'｜'+Math.round(Number(currentSquad()?.hp)||0)+' HP','battleWizardSquadCaption'));
+   const live=getOrderState(String(state.squad))||{};
+   const remain=Math.max(0,Number(live.cooldown)||0),pending=queuedOrder(state.squad);
+   const detail='現在：'+esc(live.label||'自動行動')+
+    (remain?'｜次の命令まで '+Math.ceil(remain)+'秒':'｜次の命令可能')+
+    (pending?'｜予約中：'+pending:'');
+   root.append(element('div',detail,'battleWizardCurrentOrder'));
+  }
   const body=element('div','','battleWizardBody');root.append(body);
   if(state.stage==='squad'){
    body.classList.add('battleWizardGrid');
@@ -195,6 +255,9 @@ export function mountBattleCommandWizard({
     button('第'+(index+1)+'隊｜'+esc(s.job||'隊')+'　'+esc(s.alive)+'/'+esc(s.total),()=>pickSquad(s.id),{
      disabled:!(Number(s.alive)>0),reason:Number(s.alive)>0?'':'全滅した隊は発令できません',chosen:String(s.id)===String(state.squad)});
   }else if(state.stage==='main'){
+   const queued=queuedOrder(state.squad);
+   if(queued)button('✕ 次の作戦予約を取り消す（'+queued+'）',()=>{nextOrders.delete(String(state.squad));render();});
+   if(queuedError(state.squad))note(queuedError(state.squad),true);
    button('⚔ 行動を選択する',()=>advance('actions'));
    button('🎒 アイテムを使用する',()=>advance('items',{category:'item',item:null,target:null}));
   }else if(state.stage==='actions'){
@@ -294,7 +357,11 @@ export function mountBattleCommandWizard({
    if(state.target)note('対象：'+esc(state.target.label||state.target.name||state.target.id));
    if(state.arrivalTarget)note('到着後の対象：'+esc(state.arrivalTarget.label||state.arrivalTarget.id));
    if(state.point)note('地点：X '+state.point.x+' / Z '+state.point.z);
-   button('✅ この内容で確定',issue);
+   const remain=Number(getOrderState(String(state.squad))?.cooldown)||0;
+   const live=getOrderState(String(state.squad))||{};
+   const reserving=state.category!=='rally'&&(remain>0||live.moving||live.blocked);
+   if(reserving)note('現在の作戦'+(live.moving?'が実行中':'に命令間隔が残っています')+'。この内容を次の作戦に予約します。');
+   button(reserving?'📋 次の作戦として予約':'✅ この内容で確定',issue);
   }
   if(state.notice)note(state.notice,true);
  }
@@ -308,5 +375,7 @@ export function mountBattleCommandWizard({
   root.hidden=true;dock.classList.remove('wizard-active');history.length=0;
  }
  function close(){hide();onClose();}
- return {root,open,close,hide,render,get stage(){return state.stage;},dispose(){root.remove();}};
+ return {root,open,close,hide,render,tick,queuedOrder,queuedError,
+  reset(){nextOrders.clear();failedOrders.clear();hide();},
+  get stage(){return state.stage;},dispose(){root.remove();}};
 }
