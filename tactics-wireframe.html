@@ -10060,16 +10060,12 @@ function realtimeSpecialTargets(id,action){
   const thieves=realtimeJobMembers(id).filter(u=>u.jobId==='thief');
   const stocks=roomItemRegistry.owned().filter(s=>s.quantity>0);
   const enemy=(massSim?.units??actors).filter(u=>u.team===1&&u.hp>0&&u.alive!==false);
-  return enemy.filter(u=>stocks.some(s=>String(s.ownerId)===String(u.id))&&
-   thieves.some(thief=>{
-    const from=realtimeMemberLocation(thief),target=realtimeMemberLocation(u);
-    return Number.isFinite(from.x)&&Number.isFinite(target.x)&&
-     Math.hypot(from.x-target.x,from.z-target.z)<=8;
-   })).slice(0,40).map(u=>{
+  return thieves.length?enemy.filter(u=>stocks.some(s=>String(s.ownerId)===String(u.id)))
+   .slice(0,40).map(u=>{
     const stock=stocks.find(s=>String(s.ownerId)===String(u.id));
     return {id:String(u.id),label:'敵 '+String(u.job?.name||u.jobId||u.id)+'：'+
      (ROOM_ITEM_TYPES[stock.itemId]?.name||stock.name||stock.itemId)};
-   });
+   }):[];
  }
  const kind=action==='destroy_bridge'?'bridge':action==='unlock_door'?'door':'building';
  const objects=(massSim?.actions?.objects??skirmishActions?.objects??[]);
@@ -10257,7 +10253,25 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   const enemy=(massSim?.units??actors).find(u=>u.team===1&&
    String(u.id)===String(targetId)&&u.hp>0&&u.alive!==false);
   const stack=roomItemRegistry.owned(enemy?.id).find(item=>item.quantity>0);
-  if(!thief||!enemy||!stack||!roomItemRegistry.transfer(enemy.id,thief.id,stack.itemId,1))return false;
+  if(!thief||!enemy||!stack)return false;
+  const origin=realtimeMemberLocation(thief),target=realtimeMemberLocation(enemy);
+  if(!Number.isFinite(origin.x)||!Number.isFinite(target.x))return false;
+  if(Math.hypot(origin.x-target.x,origin.z-target.z)>8){
+   // The thief acts within a coordinated squad movement. Do not offer
+   // remote stealing or make the order vanish because the target is distant.
+   const point=turnLegalPoint(Math.round(target.x),Math.round(target.z));
+   if(!point)return false;
+   const previous=selectedSquadId;selectedSquadId=String(id);
+   let moved=false;
+   try{moved=issueIndividualSquadOrder('move',point,arrival);}
+   finally{selectedSquadId=previous;}
+   if(!moved)return false;
+   realtimeCommandUI?.queueSpecialArrival(id,'steal_item',targetId,point);
+   if(!arrival)battleCeremony.showOrder('🎒 '+squadName(id)+'：盗みに移動',
+    '敵の所持品へ隊全員で接近。シーフが射程内で回収します');
+   return arrival?false:{deferred:true};
+  }
+  if(!roomItemRegistry.transfer(enemy.id,thief.id,stack.itemId,1))return false;
   for(const owner of [thief,enemy]){
    owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
     id:item.itemId,name:item.name,quantity:item.quantity
