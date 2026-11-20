@@ -4,7 +4,7 @@
  * Movement is implicit in the selected action, not a standalone command.
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
-import {mountBattleCommandWizard} from './battle-command-wizard.js?v=20261120-wizard1';
+import {mountBattleCommandWizard} from './battle-command-wizard.js?v=20261120-orderqueue2';
 import {createBattleTapChoices} from './battle-tap-choices.js?v=20261119-mobile-choice1';
 import {eligibleEnemyBattleTargets,battleAttackNeedsEnemy} from './battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
