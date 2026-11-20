@@ -160,8 +160,45 @@ for(const detail of ['low','high']){
       'a detached shin post must not survive alongside the new skin');
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-0'));
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-3'));
+    const pawSuffix=legId.slice(3);
+    const footMeshes=[];
+    model.getObjectByName('toe'+pawSuffix)?.traverse(obj=>{
+      if(obj.isMesh)footMeshes.push(obj);
+    });
+    const footByName=new Map(footMeshes.map(obj=>[obj.name,obj]));
+    for(let digit=0;digit<4;digit++){
+      const finger=footByName.get('m019-digit-'+pawSuffix+'-'+digit);
+      const claw=footByName.get('m019-rooted-claw-'+pawSuffix+'-'+digit);
+      assert(finger?.isMesh&&claw?.isMesh,
+        'all four fingers and curved talons must exist even at low LOD');
+      assert.equal(finger.userData.m019ContinuousBasaltDigit,true);
+      assert.equal(claw.userData.rootedKeratin,true);
+      assert.equal(claw.userData.m019CurvedKeratinTalon,true);
+      assert.equal(claw.userData.m019EmbeddedInFinger,true);
+      assert.equal(claw.geometry.userData.kind,'curved-keratin-horn');
+      assert(claw.geometry.getIndex().count>60,
+        'actual curved multi-ring claw geometry is required');
+      assert(claw.visible&&claw.material.visible&&!claw.material.transparent);
+      assert(claw.material.color.r<.45,
+        'claw must use dark volcanic keratin instead of pale ivory');
+      const endpoints=claw.geometry.userData;
+      assert(endpoints.tip[2]>endpoints.root[2]+.08,
+        'talon must project beyond its rooted nail bed');
+      assert(endpoints.tip[1]<-.04,
+        'curved talon ends near the contact plane, not levitating');
+      assert.equal(
+        footByName.has('m019-nail-bed-fissure-'+pawSuffix+'-'+digit),
+        detail!=='low','near LOD has nail-bed lava seams only');
+    }
+    assert.equal(
+      footMeshes.filter(obj=>obj.userData.m019RootedBasaltScute).length,
+      detail==='low'?0:3,
+      'high-detail paws carry shallow embedded rock scutes');
     const toe=pivot['toe'+legId.slice(3)];
     assert(toe?.userData.m019PlantedToeJoint,'m019 toes must follow joint');
+    assert.equal(toe.userData.m019ToeCount,4);
+    assert.equal(toe.userData.m019PawFinish,
+      'basalt-scutes-with-rooted-curved-keratin');
     const side=legId.endsWith('L')?-1:1;
     const knee=pivot[legId.replace('leg','lower')];
     assert.equal(knee.userData.m019SprawledKnee,true,
