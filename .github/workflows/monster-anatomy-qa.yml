@@ -2,6 +2,9 @@ name: Monster anatomy, joints and mesh quality (50 species)
 on:
   push:
     paths:
+      - 'src/m019-hero-sculpt.js'
+      - 'src/magma-salamander-sculpt.js'
+      - 'qa/m019-salamander-sculpt.test.mjs'
       - 'src/monster-shape-kit.js'
       - 'src/monster-geometry.js'
       - 'src/avian-guardian-sculpt.js'
@@ -16,6 +19,9 @@ on:
       - '.github/workflows/monster-anatomy-qa.yml'
   pull_request:
     paths:
+      - 'src/m019-hero-sculpt.js'
+      - 'src/magma-salamander-sculpt.js'
+      - 'qa/m019-salamander-sculpt.test.mjs'
       - 'src/monster-anatomy-reference.js'
       - 'src/creature-wolf-hybrid.js'
       - 'src/monster-summon-registry.js'
@@ -140,10 +146,13 @@ jobs:
           for file in src/monster-beastfolk-manifest.js src/monster-beastfolk-geometry.js src/monster-summon-registry.js src/monster-summon-renderer.js src/creature-wolf-hybrid.js src/creature-dragon-hybrids.js src/combat-creature-geometry.js src/creature-summon-humanoid-anatomy.js src/combat-creature-performance.js src/monster-anatomy-reference.js src/monster-joint-motion.js src/monster-animation.js src/beast-action-effects.js src/monster-geometry.js src/wolf-king-clone-source.js src/feline-master-variants.js src/beast-reference-quality.js src/creature-game-model-routing.js src/battle-registered-monster-model.js src/monster-humanoid-hair.js src/monster-character-cosplay.js src/monster-cosplay-pigmentation.js src/monster-humanoid-combat-poses.js src/monster-studio-base-intake.js src/monster-studio-skinned-rig-audit.js src/monster-gothic-sculpt.js src/monster-regal-garments.js src/female-summon-costumes.js src/dragonkin-native-scalp.js src/female-summon-scalp-cut.js; do
             node --check "$file"
           done
+          node --check src/m019-hero-sculpt.js
+          node --check src/magma-salamander-sculpt.js
       - name: Install pinned Three.js geometry runtime
         run: npm install --no-save --package-lock=false three@0.180.0
       - name: Run every-monster anatomy / action / reference test and baseline mesh contracts
         run: |
+          node --test qa/m019-salamander-sculpt.test.mjs qa/salamander-lineage-remesh.test.mjs
           node --test qa/monster-anatomy-motion.test.mjs qa/m001-crown-action-vfx.test.mjs qa/beast-m002-feline-gait-face-fx-regression.test.mjs qa/monster-canine-quality-rollout.test.mjs qa/beast-mother-clone-source.test.mjs qa/beast-face-visibility-regression.test.mjs qa/beast-face-proportion-joint-contact.test.mjs qa/feline-master-m007-m010.test.mjs qa/creature-game-model-routing.test.mjs qa/creature-mesh-adoption.test.mjs qa/monster-bestiary.test.mjs qa/monster-realism-progress.test.mjs qa/monster-m002-flame-wolf-rig.test.mjs qa/monster-m003-fenrir-rig.test.mjs qa/monster-m004-thunderwolf-gallop.test.mjs
       - name: Reject fake photoreal certification, cover all 108 source anatomy baselines
         run: |
@@ -188,6 +197,33 @@ jobs:
               exit 1
             fi
           fi
+
+  m019-actual-webgl:
+    # A standalone visual gate, never blocked by unrelated wolf/feline shots.
+    # Android artifact approval still needs the owner's on-device inspection.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deterministic Chromium WebGL
+        run: |
+          npm install --no-save --package-lock=false playwright@1.57.0 three@0.180.0
+          npx playwright install --with-deps chromium
+      - name: Verify and capture front and side, idle walk and run
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/m019-http.log 2>&1 &
+          node qa/m019-visible-limbs-webgl.cjs qa-reports/m019-visible-limbs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m019-actual-webgl-limb-review
+          path: qa-reports/m019-visible-limbs/
+          retention-days: 14
+          if-no-files-found: warn
 
   actual-wolf-feline-webgl:
     # Rendering real WebGL is required for the rear-view hole regression.

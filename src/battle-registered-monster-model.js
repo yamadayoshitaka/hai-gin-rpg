@@ -6,11 +6,11 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m019-turnaround-lizard-v4-20261119';
+ from './monster-geometry.js?v=m019-visible-cpu-limbs-v10-20261120';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
+ from './monster-animation.js?v=m019-visible-animation-v10-20261120';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=m019-turnaround-lizard-v4-20261119';
+ from './creature-game-model-routing.js?v=m019-visible-cpu-limbs-v10-20261120';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';

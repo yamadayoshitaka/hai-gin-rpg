@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /**
  * m019 — actual game mesh of the approved 2026-11-19 four-view concept:
  * long narrow lava lizard, tiny widely spaced planted limbs, whip-like
@@ -6,8 +8,8 @@
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-approved-four-view-slender-lizard-v4-20261119';
-export const M019_BODY_DROP=.38;
+export const M019_HERO_REVISION='m019-visible-cpu-limbs-v10-20261120';
+export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
 export const M019_LIMB_WIDTH=.66;
@@ -31,8 +33,8 @@ export function m019HeroSkullRings(m001Rings){
   return {
    z:r.z*(r.z>=0?1.87:1.46)+.048,
    y:r.y*.68-.047-.009*brow,
-   rx:r.rx*(.94+.13*brow)+.005*Math.sin(Math.PI*t),
-   ry:r.ry*(.61+.045*brow)
+   rx:r.rx*(.62+.090*brow)+.003*Math.sin(Math.PI*t),
+   ry:r.ry*(.59+.045*brow)
   };
  });
 }
@@ -56,13 +58,13 @@ export function m019HeroTorsoRings(referenceStations){
 /** A closed continuous wedge snout, not a wolf nose or a second face ball. */
 export function sculptM019Muzzle(g,head){
  const snout=g.axialLoft(head,'skin',[
-  {z:1.000,y:-.176,rx:.025,ry:.027},
-  {z:.969,y:-.171,rx:.073,ry:.048},
-  {z:.890,y:-.162,rx:.108,ry:.060},
-  {z:.766,y:-.139,rx:.139,ry:.077},
-  {z:.610,y:-.111,rx:.176,ry:.089},
-  {z:.432,y:-.065,rx:.200,ry:.115},
-  {z:.195,y:-.013,rx:.219,ry:.127}
+  {z:1.000,y:-.176,rx:.017,ry:.022},
+  {z:.969,y:-.171,rx:.046,ry:.040},
+  {z:.890,y:-.162,rx:.069,ry:.051},
+  {z:.766,y:-.139,rx:.090,ry:.067},
+  {z:.610,y:-.111,rx:.112,ry:.078},
+  {z:.432,y:-.065,rx:.133,ry:.101},
+  {z:.195,y:-.013,rx:.147,ry:.112}
  ],{name:'m019-unbroken-salamander-muzzle',rough:.82,
    ribbing:.004,capEnds:true});
  snout.userData.m019ContinuousMuzzle=true;
@@ -70,10 +72,10 @@ export function sculptM019Muzzle(g,head){
  for(const side of [-1,1]){
   const s=side<0?'L':'R';
   const cheek=g.bridge(head,'skin',
-    [side*.177,-.052,.202],[side*.216,-.126,.518],.070,.028);
+    [side*.113,-.052,.202],[side*.146,-.126,.518],.052,.022);
   cheek.name='m019-continuous-cheek-'+s;
   cheek.userData.m019CheekRooted=true;
-  g.sphere(head,'shadow',[side*.081,-.154,.967],
+  g.sphere(head,'shadow',[side*.059,-.154,.967],
     [.017,.009,.022],{name:'m019-nostril-'+s,rough:.93});
  }
  return snout;
@@ -82,72 +84,186 @@ export function sculptM019Muzzle(g,head){
 /** Slender mandible follows the jaw pivot and stays tucked in at rest. */
 export function sculptM019Jaw(g,jaw){
  const mandible=g.axialLoft(jaw,'skin',[
-  {z:.660,y:-.079,rx:.025,ry:.017},
-  {z:.615,y:-.073,rx:.093,ry:.027},
-  {z:.465,y:-.061,rx:.135,ry:.037},
-  {z:.280,y:-.041,rx:.158,ry:.045},
-  {z:.075,y:-.027,rx:.142,ry:.053},
-  {z:-.125,y:-.003,rx:.075,ry:.041}
+  {z:.660,y:-.079,rx:.020,ry:.016},
+  {z:.615,y:-.073,rx:.072,ry:.027},
+  {z:.465,y:-.061,rx:.092,ry:.036},
+  {z:.280,y:-.041,rx:.109,ry:.043},
+  {z:.075,y:-.027,rx:.098,ry:.051},
+  {z:-.125,y:-.003,rx:.060,ry:.040}
  ],{name:'m019-articulated-wide-mandible',rough:.84,
    ribbing:.002,capEnds:true});
  mandible.userData.m019MandibleRooted=true;
  for(const side of [-1,1]){
   const s=side<0?'L':'R';
   const fang=g.rootedSpike(jaw,'bone','skin',
-    [side*.102,-.038,.505],[side*.103,.013,.560],.014,
+    [side*.080,-.038,.505],[side*.081,.013,.560],.014,
     {name:'m019-lower-tusk-'+s});
   fang.tooth.userData.m019MovesWithJaw=true;
  }
  return mandible;
 }
 
-/** 4 insect-slim lizard limbs: complete but narrow upper/lower joint shells. */
-export function sculptM019Limb(g,leg,distal,name,{fore=true,detail='high'}={}){
- const front=fore===true;
- const upper=g.limbLoft(leg,'skin',[
-  {x:0,y:.49,z:front?-.011:-.053,rx:.086,rz:.102},
-  {x:0,y:.32,z:front?-.003:-.050,rx:.112,rz:.121},
-  {x:0,y:.13,z:front?-.036:.050,rx:.089,rz:.092},
-  {x:0,y:-.08,z:front?-.052:.092,rx:.063,rz:.073},
-  {x:0,y:-.25,z:front?-.012:.068,rx:.048,rz:.058}
- ],{name:'m019-scaled-upper-limb-'+name});
- upper.userData.m019ContinuousLimb=true;
- const lower=g.limbLoft(distal,'skin',[
-  {x:0,y:.17,z:front?-.032:.071,rx:.065,rz:.075},
-  {x:0,y:.035,z:front?-.016:.070,rx:.073,rz:.073},
-  {x:0,y:-.12,z:front?.011:.024,rx:.065,rz:.061},
-  {x:0,y:-.31,z:front?.048:.026,rx:.050,rz:.055},
-  {x:0,y:-.50,z:.070,rx:.048,rz:.052}
- ],{name:'m019-scaled-lower-limb-'+name});
- lower.userData.m019ContinuousLimb=true;
- if(detail!=='low'){
-  const sleeve=g.bridge(distal,'skin',
-    [0,.107,.017],[0,-.071,.017],.065,.062);
-  sleeve.name='m019-elbow-fascia-'+name;
+/**
+ * m019 lizard rig, two perpendicular segments, not dog/cat hind legs:
+ * torso-mounted SHOULDER / HIP pivots are at the actual skin socket.
+ * Upper arm / thigh is nearly horizontal to the lateral elbow / knee,
+ * lower arm / shin drops vertically. The top ring overlaps the trunk and
+ * the last upper ring overlaps the shin first rings at the joint.
+ *
+ * Coordinates are LOCAL to leg and distal pivots, respectively.
+ * True circular rings now face the limb direction rather than Y, avoiding
+ * flat sideways plates. Short planted shins and original joints are retained.
+ */
+// Sideways elbow remains wide, while the vertical shin is now short.
+export const M019_SPRAWL_KNEE_X=.68;
+export const M019_SPRAWL_KNEE_Y=-.085;
+export const M019_SPRAWL_FOOT_X=.007;
+export const M019_SPRAWL_FOOT_Y=-.650;
+export const M019_SHOULDER_LOCAL_Y=1.26;
+/**
+ * m019's four legs use a conventional, WebGL-compatible Mesh.
+ * Mobile GPUs rendered v9's SkinnedMesh as invisible even while CPU
+ * applyBoneTransform() returned correct joint locations. The continuous
+ * tube stays in shoulder-local space; its LOWER vertices are bent around
+ * the real elbow/knee pivot on every animation update. This keeps a single
+ * closed visible surface without GPU skinning, joints cut-outs or black posts.
+ */
+export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'}={}){
+ const sign=side<0?-1:1;
+ const z=fore?-.012:.022;
+ const kneeX=sign*M019_SPRAWL_KNEE_X;
+ const kneeY=M019_SPRAWL_KNEE_Y;
+ const footY=kneeY+M019_SPRAWL_FOOT_Y;
+ const points=[
+  [0,.035,z],[sign*.090,.038,z+.012],
+  [sign*.215,.028,z+.023],[sign*.370,-.004,z+.020],
+  [sign*.535,-.050,z+.010],[kneeX,kneeY,z],
+  [kneeX,kneeY-.120,z],[kneeX,kneeY-.270,z+.008],
+  [kneeX,kneeY-.440,z+.032],[kneeX,footY,z+.095]
+ ];
+ const path=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const baseRadius=fore?.219:.242;
+ // The medium-dark rocky shading makes real legs visible against the black
+ // torso without introducing a glowing red or rubbery-looking arm surface.
+ const skin=g.tube(leg,'light',points,baseRadius,{
+  name:'m019-seamless-skin-'+name,capEnds:true
+ });
+ const geometry=skin.geometry;
+ const attr=geometry.getAttribute('position');
+ const tubularSegments=geometry.parameters.tubularSegments;
+ const radialSegments=geometry.parameters.radialSegments;
+ const stride=radialSegments+1;
+ const ringCount=tubularSegments+1;
+ if(attr.count!==ringCount*stride+2)throw Error('m019 continuous muscle needs closed rings');
+ const radiusScale=t=>{
+  if(t<.16)return 1.08+.05*Math.sin(t/.16*Math.PI);
+  if(t<.45)return 1.08-(t-.16)*1.15;
+  if(t<.63)return .7465-(t-.45)*1.14;
+  if(t<.85)return .5413-(t-.63)*.33;
+  return .4687-(t-.85)*.16;
+ };
+ const weight=new Float32Array(attr.count);
+ const smooth=t=>{
+  const v=Math.max(0,Math.min(1,t));return v*v*(3-2*v);
+ };
+ for(let row=0;row<ringCount;row++){
+  const t=row/tubularSegments,center=path.getPointAt(t);
+  const radius=radiusScale(t),kneeWeight=smooth((t-.365)/.20);
+  for(let j=0;j<stride;j++){
+   const i=row*stride+j;
+   attr.setXYZ(i,
+    center.x+(attr.getX(i)-center.x)*radius,
+    center.y+(attr.getY(i)-center.y)*radius,
+    center.z+(attr.getZ(i)-center.z)*radius);
+   weight[i]=kneeWeight;
+  }
  }
+ weight[attr.count-1]=1; // closing cap follows ankle, not shoulder
+ const rest=new Float32Array(attr.array);
+ const inverseBind=new THREE.Matrix4().makeTranslation(-kneeX,-kneeY,-z);
+ const transform=new THREE.Matrix4(),deformed=new THREE.Vector3();
+ let lastX=NaN,lastY=NaN,lastZ=NaN;
+ function refreshVisibleLimb(){
+  if(lastX===distal.rotation.x&&lastY===distal.rotation.y&&lastZ===distal.rotation.z)
+   return;
+  lastX=distal.rotation.x;lastY=distal.rotation.y;lastZ=distal.rotation.z;
+  // In shoulder-local coordinates: distal matrix * inverse(bind pose).
+  // All trunk/shoulder movement comes from leg's actual world transform.
+  distal.updateMatrix();
+  transform.copy(distal.matrix).multiply(inverseBind);
+  for(let i=0;i<weight.length;i++){
+   const off=i*3,x=rest[off],y=rest[off+1],v=rest[off+2];
+   const w=weight[i];
+   if(w<=0){attr.setXYZ(i,x,y,v);continue;}
+   deformed.set(x,y,v).applyMatrix4(transform);
+   attr.setXYZ(i,x+(deformed.x-x)*w,
+    y+(deformed.y-y)*w,v+(deformed.z-v)*w);
+  }
+  attr.needsUpdate=true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+ }
+ skin.frustumCulled=false; // bounds are dynamic during gait
+ skin.userData.m019RefreshVisibleLimb=refreshVisibleLimb;
+ skin.userData.m019ContinuousLimb=true;
+ skin.userData.m019TrueRoundLimb=true;
+ skin.userData.m019CrossSectionsPerpendicularToAxis=true;
+ skin.userData.m019WholeLegClosedSurface=true;
+ skin.userData.m019GpuSkinningRemoved=true;
+ skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
+ skin.userData.m019MuscleRadius=baseRadius;
+ skin.userData.m019HorizontalThigh=true;
+ skin.userData.m019VerticalShin=true;
+ skin.userData.m019SprawledOutward=true;
+ g.root.userData.m019VisibleLimbUpdaters??=[];
+ g.root.userData.m019VisibleLimbUpdaters.push(refreshVisibleLimb);
+ // Combat and inspection call the same update; this fallback also works if
+ // another renderer changes joint rotations without calling our animation.
+ skin.onBeforeRender=refreshVisibleLimb;
+ refreshVisibleLimb();
+ // Small partly buried fissures; no detached long luminous rods.
+ const veins=detail==='low'?1:2;
+ for(let vein=0;vein<veins;vein++){
+  const offset=vein*.024;
+  const fissure=g.tube(leg,'accent',[
+   [sign*.045,.245-offset,z+.017],
+   [sign*.107,.242-offset,z+.043],
+   [sign*.169,.227-offset,z+.020],
+   [sign*.225,.199-offset,z+.035]
+  ],detail==='low'?.0045:.0065,{
+   name:'m019-limb-molten-crack-'+name+'-'+vein,
+   glow:detail!=='low'
+  });
+  fissure.userData.m019MoltenFissure=true;
+  fissure.userData.m019InsetHeatVein=true;
+ }
+ return {upper:skin,lower:skin};
 }
 
-/** Four miniature outward-splayed lizard toes per planted paw. */
-export function sculptM019Paw(g,distal,name,{detail='high'}={}){
- const toe=g.group('toe'+name,[0,-.515,.113],distal);
+/** Four narrow toes at the END of the vertical shin, not a free ankle. */
+export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
+ const sign=side<0?-1:1;
+ const toe=g.group('toe'+name,
+  [sign*M019_SPRAWL_FOOT_X,M019_SPRAWL_FOOT_Y,.105],distal);
  toe.userData.m019PlantedToeJoint=true;
- g.sphere(toe,'skin',[0,-.027,.051],[.092,.034,.122],
+ toe.userData.m019SprawledOutward=true;
+ toe.userData.m019RightAngleGrounding=true;
+ g.sphere(toe,'skin',[0,-.022,.038],[.095,.035,.115],
    {name:'m019-metatarsal-'+name,rough:.88});
  for(let digit=0;digit<4;digit++){
-  const x=(digit-1.5)*.050;
-  const spread=(digit-1.5)*.017;
-  if(detail!=='low')g.sphere(toe,'skin',[x,-.026,.125],
-    [.025,.025,.069],
+  const x=(digit-1.5)*.048;
+  const spread=(digit-1.5)*.018+sign*.008;
+  if(detail!=='low')g.sphere(toe,'skin',
+    [x,-.022,.111],[.025,.027,.069],
     {name:'m019-digit-'+name+'-'+digit,rough:.84});
   g.rootedSpike(toe,'bone','skin',
-    [x,-.031,.159],[x+spread,-.061,.234],.012,
+    [x,-.027,.151],[x+spread,-.057,.223],.012,
     {name:'m019-rooted-claw-'+name+'-'+digit});
  }
  return toe;
 }
 
-/** The long whip tip curls UP in side view, as in the approved sheet. */
-export function sculptM019TailTip(g,tailTip){
+export function sculptM019TailTip(g,tailTip,{detail='high'}={}){
  const tip=g.axialLoft(tailTip,'skin',[
   {z:.180,y:-.016,rx:.040,ry:.037},
   {z:.080,y:-.012,rx:.039,ry:.036},
@@ -159,5 +275,13 @@ export function sculptM019TailTip(g,tailTip){
     ribbing:.004,capEnds:true});
  tip.userData.m019ClosedTaperedTail=true;
  tip.userData.m019UpcurledTip=true;
+ // A fine molten seam grows with the curved tail tip; no screen-space VFX.
+ const seam=g.tube(tailTip,'accent',[
+  [.014,.025,.080],[.010,.061,-.100],
+  [.009,.137,-.280],[.007,.329,-.475],[.002,.532,-.610]
+ ],detail==='low'?.005:.009,{
+  name:'m019-molten-tail-tip',glow:detail!=='low'
+ });
+ seam.userData.m019SurfaceHeatChannel=true;
  return tip;
 }

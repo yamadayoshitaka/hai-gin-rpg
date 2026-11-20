@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>灰銀｜改修前後・ゲーム反映比較</title>
+<style>
+:root{font:14px/1.5 system-ui,sans-serif;color-scheme:dark;background:#101c2d;color:#f1f6fb}*{box-sizing:border-box}body{margin:0}header{padding:12px;background:#1c324a}h1{font-size:19px;margin:0}main{max-width:1000px;margin:auto;padding:12px}a{color:#b9e2ff}select,button{font:inherit;color:white;background:#234962;border:1px solid #7b9bb2;border-radius:8px;padding:10px;min-height:44px}button{cursor:pointer}.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}label{display:grid;gap:4px}.panel{border:1px solid #496a84;border-radius:10px;background:#182b40;padding:10px;margin:10px 0}.panel h2{font-size:16px;margin:0 0 7px}.panel iframe{width:100%;height:42dvh;min-height:300px;border:0;background:#263341;border-radius:7px}.status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.status div{background:#213c53;border-radius:7px;padding:8px;overflow-wrap:anywhere}.muted{color:#b8cbd9;font-size:12px}.warn{color:#f2d0a0}#pr{width:100%}@media(min-width:800px){.panel iframe{height:48dvh}} 
+</style></head><body><header><h1>改修前 / 改修後｜3D比較と本編反映</h1><a href="./batch-monitor.html">バッチセンターへ</a></header><main>
+<p class="muted">上：Pages公開版（本編側）／下：PRの候補版。両者を同時表示。下側は外部のraw.githack.com経由でGitHub PRのSHAを表示する試験用で、動作しない場合があります。表示しただけではゲーム採用や品質合格にはなりません。</p>
+<div class="controls"><label>分類<select id="kind"><option value="world">オブジェクト（60種）</option><option value="faceHair">人間モデル（顔・髪）</option></select></label><label>対象<select id="asset"></select></label></div>
+<div class="panel"><label>比較する改修PR<select id="pr"><option value="">改修PRを選択（未選択なら同一公開版）</option></select></label><button id="refresh">GitHubの最新PR・main・公開SHAを取得</button><p id="message" class="muted" role="status">PR一覧は手動で取得します。取得前の状態は未確認です。</p></div>
+<div class="panel"><h2>上：現行公開版 / ゲーム基準</h2><iframe id="before" title="現行公開版3D" loading="lazy"></iframe><p><a id="beforeLink" target="_blank" rel="noopener">現行版を別タブで開く</a></p></div>
+<div class="panel"><h2>下：改修版 / PR候補</h2><iframe id="after" title="PR改修版3D" loading="lazy" referrerpolicy="no-referrer"></iframe><p><a id="afterLink" target="_blank" rel="noopener">改修版を別タブで開く</a>　<a id="prLink" target="_blank" rel="noopener">PR差分を見る</a></p></div>
+<div class="panel"><h2>ゲーム反映ステータス</h2><div class="status"><div>最新main SHA<br><strong id="main">未取得</strong></div><div>改修PR SHA<br><strong id="head">未選択</strong></div><div>mainへのマージ<br><strong id="merged">未確認</strong></div><div>Pages公開SHA<br><strong id="release">未取得</strong></div><div>本編採用<br><strong id="adopted">未確認</strong></div><div>WebGL / FPS / 品質<br><strong>未検証</strong></div></div><p class="muted">本編採用は「PRマージ済み」だけでは確定しません。Pages release SHAと本編入口の一致が必要です。人間モデルは顔・髪の制作スタジオを表示し、PR内の個別モデルへの自動切替は保証しません。</p></div>
+</main><script>
+const R='yamadayoshitaka/hai-gin-rpg',API='https://api.github.com/repos/'+R,PAGES='https://yamadayoshitaka.github.io/hai-gin-rpg/',GH='https://github.com/'+R+'/pull/',HOST='https://raw.githack.com/'+R+'/';
+const $=id=>document.getElementById(id);let prs=[],mainSha='',releaseSha='',catalog=[],seq=0;
+const get=async u=>{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r.json()};
+const kindPath=()=> $('kind').value==='world'?'world-quality-preview.html':'character-face-catalog.html';
+const query=()=> $('kind').value==='world'?'?object='+encodeURIComponent($('asset').value):'';
+const current=()=>PAGES+kindPath()+query();
+function display(){
+ const token=++seq,selected=prs.find(p=>String(p.number)===$('pr').value);
+ const base=current(),candidate=selected?HOST+encodeURIComponent(selected.head.sha)+'/'+kindPath()+query():base;
+ $('before').src=base;$('beforeLink').href=base;$('after').src=candidate;$('afterLink').href=candidate;
+ $('prLink').href=selected?GH+selected.number:GH.replace(/pull\/$/,'pulls');
+ $('head').textContent=selected?selected.head.sha.slice(0,12):'未選択';
+ $('merged').textContent=selected?(selected.merged_at?'マージ済み':'未マージ（PR候補）'):'比較PR未選択';
+ $('main').textContent=mainSha?mainSha.slice(0,12):'未取得';
+ $('release').textContent=releaseSha?releaseSha.slice(0,12):'未取得';
+ $('adopted').textContent=!selected?'未確認':!selected.merged_at?'未反映（PR未マージ）':releaseSha&&releaseSha===selected.merge_commit_sha?'Pages SHA一致・本編個別採用は要確認':'未確認（公開SHA照合待ち）';
+}
+async function loadAssets(){
+ $('asset').replaceChildren();
+ if($('kind').value==='world'){
+  try{const j=await get(PAGES+'data/world-quality/catalog-targets.json?ts='+Date.now());catalog=j.objects||[];if(catalog.length!==60)throw Error('60 ID不一致');}
+  catch(e){catalog=[{id:'town_brazier_001',name:'火鉢'},{id:'town_herb_garden_001',name:'薬草園'},{id:'rocky_mountain_001',name:'岩山'}];$('message').textContent='60 ID一覧を取得できません：'+e.message;}
+  for(const item of catalog){const o=document.createElement('option');o.value=item.id;o.textContent=item.name+' ('+item.id+')';$('asset').append(o)}
+ }else{const o=document.createElement('option');o.value='faceHair';o.textContent='顔・髪モデル（スタジオ）';$('asset').append(o)}
+ display();
+}
+async function refresh(){
+ $('message').textContent='GitHub照合中…';
+ try{
+  const [main,pullList,release]=await Promise.allSettled([get(API+'/commits/main'),get(API+'/pulls?state=all&sort=updated&direction=desc&per_page=100'),get(PAGES+'release.json?ts='+Date.now())]);
+  if(main.status==='fulfilled'&&/^[a-f0-9]{40}$/.test(main.value.sha))mainSha=main.value.sha;
+  if(release.status==='fulfilled'){const v=release.value;releaseSha=v.commitSha||v.sha||v.commit||v.releaseSha||''}
+  if(pullList.status!=='fulfilled')throw Error('PR一覧取得失敗');
+  prs=pullList.value.filter(p=>{const s=(p.title+' '+(p.body||'')+' '+p.head.ref).toLowerCase();return $('kind').value==='world'?/world|object|brazier|trash|signpost|herb|rock|sack/.test(s):/facehair|face.hair|scalp|crown|hair/.test(s)});
+  const previous=$('pr').value;$('pr').replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='比較PRを選択';$('pr').append(empty);
+  for(const p of prs){const o=document.createElement('option');o.value=p.number;o.textContent='#'+p.number+' '+p.title.slice(0,90)+(p.merged_at?'（マージ済）':'（未マージ）');$('pr').append(o)}
+  if(prs.some(p=>String(p.number)===previous))$('pr').value=previous;
+  $('message').textContent='PR '+prs.length+'件 / main '+(mainSha?mainSha.slice(0,12):'未確認')+' / 公開SHA '+(releaseSha||'未確認')+'. PR候補は実描画・品質未承認です。';
+ }catch(e){$('message').textContent='取得失敗：'+e.message+'。過去SHAを最新として扱いません。'}
+ display();
+}
+$('kind').addEventListener('change',async()=>{prs=[];$('pr').replaceChildren(new Option('比較PRを選択',''));await loadAssets()});
+$('asset').addEventListener('change',display);$('pr').addEventListener('change',display);$('refresh').addEventListener('click',refresh);loadAssets();
+</script></body></html>

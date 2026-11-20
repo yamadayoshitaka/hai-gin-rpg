@@ -292,15 +292,14 @@ export class MassBattleGridSimulation {
   /** Explicit range-job high-ground order uses the actual authored stair route. */
   orderSquadHighGround(squadId,routeIndex,team=0){
     const index=Number(routeIndex),route=this.highGroundRoutes[index];
-    if(!route||route.team!==team||!this._highGroundRouteAlive(route)||
+    if(!route||!this._highGroundRouteAlive(route)||
       !['window','roof'].includes(route.kind))return false;
     const key=route.buildingIndex+':'+team;
     if(this._highGroundClaims.has(key))return false;
     const flow=this._highGroundFlows[index];
     const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
       u.alive&&u.hp>0&&u.highGroundRouteIndex<0&&
-      (route.kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId))&&
-      !u.mountId&&u.hp>=u.maxHp*.35);
+      !u.isStrategist&&!u.mountId);
     members.sort((a,b)=>
       Math.hypot(a.x-route.access.x,a.z-route.access.z)-
       Math.hypot(b.x-route.access.x,b.z-route.access.z));
@@ -312,6 +311,7 @@ export class MassBattleGridSimulation {
     this.squadFlows.delete(String(squadId));
     unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
     unit.highGroundT=0;unit.highGroundFloor=1;
+    unit.highGroundManualHold=true; // Height-move order is not an auto-attack command.
     this._highGroundClaims.set(key,unit.id);
     return true;
   }
@@ -403,7 +403,7 @@ export class MassBattleGridSimulation {
     if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
     u.highGroundRouteIndex=-1;u.highGroundPhase=0;
     u.highGroundFloor=1;u.highGroundStep=0;u.highGroundT=0;
-    u.upperPursuitTargetId=-1;
+    u.upperPursuitTargetId=-1;u.highGroundManualHold=false;
   }
 
   /** A window can see only outside its actual aperture. Never melee through
@@ -478,6 +478,7 @@ export class MassBattleGridSimulation {
       u.action='walk';u.vx=0;u.vz=0;return true;
     }
     if(u.highGroundPhase===2){
+      if(u.highGroundManualHold){u.vx=0;u.vz=0;u.action='hold';return true;}
       if(u.upperPursuitTargetId>=0){
         const enemy=this.units[u.upperPursuitTargetId];
         const enemyRoute=enemy&&this.highGroundRoutes[enemy.highGroundRouteIndex];
@@ -1145,6 +1146,20 @@ export class MassBattleGridSimulation {
     const reduced=1-this._squadDebuff(attacker,'attack');
     const exposed=1+this._squadDebuff(defender,'defense');
     return Math.max(1,Math.round(damage*reduced*exposed));
+  }
+  /** Shield squad intercepts attacks against a nominated allied squad.
+   * Persist this order in the simulation (including Worker), not just in UI. */
+  assignShieldCover(squadId,targetSquadId,team=0){
+    const guards=this.units.filter(u=>u.team===team&&u.alive&&u.hp>0&&
+      String(u.squadId)===String(squadId)&&u.jobId==='shield');
+    const protectedAlive=this.units.some(u=>u.team===team&&u.alive&&u.hp>0&&
+      String(u.squadId)===String(targetSquadId));
+    if(!guards.length||!protectedAlive)return false;
+    for(const guard of guards){
+      guard.guardCoverTargetSquadId=String(targetSquadId);
+      guard.guardCoverUntil=this.actions.time+60;
+    }
+    return true;
   }
   setSquadCommand(squadId,command,team=0){
     const id=String(squadId);

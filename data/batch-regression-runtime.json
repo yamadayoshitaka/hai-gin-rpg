@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-11-19T13:51:51.474Z",
+  "checkedAt": "2026-11-19T22:26:20.493Z",
   "source": "GitHub Actions authorized workflow-run API",
   "note": "Actions success verifies task execution, NOT 3D mesh change, QA visual approval, commit, merge or Pages deployment.",
   "recoveryPolicy": "watch all seven registered categories plus their game-quality, evolution, rule-self-heal and PR-source helpers; max three recovery launches per inspection; one bounded QA retry; persistent errors produce a code-editing Issue; paid image workflows are never retried",
@@ -12,10 +12,10 @@
         "outfit"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "failure",
-      "runId": 44519813394,
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44519813394",
+      "runId": 44613373201,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44613373201",
       "runAttempt": 1,
       "action": "dispatch_fixed_latest_main",
       "issueUrl": null,
@@ -23,9 +23,9 @@
       "maxAgeMinutes": 80,
       "decision": "dispatch_latest_main",
       "dispatchInputs": {},
-      "lastStartedAt": "2026-11-19T12:00:10Z",
-      "headSha": "66b42f8ebb2b0f05647249de165bb286a0901629",
-      "currentMainSha": "6baeef41a944972feabc27f8437bf9cf1b0758f0"
+      "lastStartedAt": "2026-11-19T20:54:19Z",
+      "headSha": "ca743bc64218ab9d0dd08f40e63685494b5ad6a1",
+      "currentMainSha": "114f9299efa0de2e8150f8ff4d7395e9b4d8c61c"
     },
     {
       "workflow": "creature-six-lane.yml",
@@ -34,7 +34,7 @@
         "creatureSummon"
       ],
       "enabled": false,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "disabled_by_owner",
       "runId": null,
       "runUrl": null,
@@ -52,10 +52,10 @@
         "world"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "success",
-      "runId": 44490678020,
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44490678020",
+      "runId": 44586085062,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44586085062",
       "runAttempt": 1,
       "action": "dispatch_missing_schedule",
       "issueUrl": null,
@@ -63,9 +63,9 @@
       "maxAgeMinutes": 110,
       "decision": "dispatch",
       "dispatchInputs": {},
-      "lastStartedAt": "2026-11-19T08:47:58Z",
-      "headSha": "9d86a5684cee92069c066b4ca16cb29c3e7629e9",
-      "currentMainSha": "6baeef41a944972feabc27f8437bf9cf1b0758f0"
+      "lastStartedAt": "2026-11-19T18:16:41Z",
+      "headSha": "e8d1a627b6b07576a7f912d5dca57c048b7211ac",
+      "currentMainSha": "114f9299efa0de2e8150f8ff4d7395e9b4d8c61c"
     },
     {
       "workflow": "game-quality-six-lane.yml",
@@ -73,7 +73,7 @@
         "gameQuality"
       ],
       "enabled": false,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "disabled_by_owner",
       "runId": null,
       "runUrl": null,
@@ -93,22 +93,20 @@
         "gameQuality"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "failure",
-      "runId": 44535927219,
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44535927219",
+      "runId": 44627845405,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44627845405",
       "runAttempt": 1,
-      "action": "dispatch_fixed_latest_main",
-      "issueUrl": null,
+      "action": "escalated_to_source_fix_issue",
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/715",
       "error": null,
       "maxAgeMinutes": 120,
-      "decision": "dispatch_latest_main",
-      "dispatchInputs": {
-        "domain": "hair"
-      },
-      "lastStartedAt": "2026-11-19T13:41:14Z",
-      "headSha": "4f2151dc5a7cc246ac869f7f49fe0d7581519d88",
-      "currentMainSha": "6baeef41a944972feabc27f8437bf9cf1b0758f0"
+      "decision": "escalate",
+      "dispatchInputs": null,
+      "lastStartedAt": "2026-11-19T22:21:27Z",
+      "headSha": "114f9299efa0de2e8150f8ff4d7395e9b4d8c61c",
+      "currentMainSha": "114f9299efa0de2e8150f8ff4d7395e9b4d8c61c"
     },
     {
       "workflow": "batch-rule-self-heal.yml",
@@ -116,7 +114,7 @@
         "gameQuality"
       ],
       "enabled": false,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "disabled_by_owner",
       "runId": null,
       "runUrl": null,
@@ -137,10 +135,10 @@
         "world"
       ],
       "enabled": true,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "success",
-      "runId": 44520445850,
-      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44520445850",
+      "runId": 44613634865,
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44613634865",
       "runAttempt": 1,
       "action": "none",
       "issueUrl": null,
@@ -148,9 +146,9 @@
       "maxAgeMinutes": 125,
       "decision": "success",
       "dispatchInputs": null,
-      "lastStartedAt": "2026-11-19T12:04:12Z",
-      "headSha": "66b42f8ebb2b0f05647249de165bb286a0901629",
-      "currentMainSha": "6baeef41a944972feabc27f8437bf9cf1b0758f0"
+      "lastStartedAt": "2026-11-19T20:55:54Z",
+      "headSha": "ca743bc64218ab9d0dd08f40e63685494b5ad6a1",
+      "currentMainSha": "114f9299efa0de2e8150f8ff4d7395e9b4d8c61c"
     },
     {
       "workflow": "story-sequential-missing-batch.yml",
@@ -158,7 +156,7 @@
         "anime"
       ],
       "enabled": false,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "disabled_by_owner",
       "runId": null,
       "runUrl": null,
@@ -176,7 +174,7 @@
         "anime"
       ],
       "enabled": false,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "disabled_by_owner",
       "runId": null,
       "runUrl": null,
@@ -194,7 +192,7 @@
         "anime"
       ],
       "enabled": false,
-      "checkedAt": "2026-11-19T13:51:51.474Z",
+      "checkedAt": "2026-11-19T22:26:20.493Z",
       "status": "disabled_by_owner",
       "runId": null,
       "runUrl": null,

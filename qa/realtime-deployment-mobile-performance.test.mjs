@@ -149,16 +149,18 @@ test('live panel rejects movement-only and confirms action-target approach or sh
  dom.root.querySelector('#realtimeStart').onclick();
  ui.showSquadControls('1');
  assert.doesNotMatch(dom.root.innerHTML,/id="realtimeMove"/);
- const kind=dom.root.querySelector('#realtimeTargetKind');
- kind.value='point';kind.onchange();
- const map=dom.root.querySelector('#realtimeInlineTargetMap');
- map.tap('click',{clientX:120,clientY:110});
- assert.equal(seen.length,0,'selecting a map point cannot issue the move early');
+ assert.equal(dom.root.querySelector('#realtimeStrategyTargets').hidden,true,
+  'enemy targets must not appear until an attack skill is chosen');
+ assert.equal(dom.root.querySelector('#realtimeTargetKind').hidden,true,
+  'the old generic person/building/position picker stays retired');
  dom.root.querySelector('#realtimeConfirmStrategy').onclick();
- assert.equal(seen.length,0,'a map point alone never issues an order');
+ assert.equal(seen.length,0,'confirmation without a chosen skill has no effect');
  dom.root.querySelector('#realtimeHold').onclick();
+ assert.equal(dom.root.querySelector('#realtimeStrategyTargets').hidden,true,
+  'wait is a self-targeted command and must not show unrelated people or buildings');
  dom.root.querySelector('#realtimeConfirmStrategy').onclick();
- assert.equal(seen[0][0],'move','the chosen action authorizes approach on confirmation');
+ assert.deepEqual(seen[0],['order','1','hold'],
+  'self-targeted skill executes only after explicit confirmation');
  ui.showSquadControls('1');
  dom.root.querySelector('#realtimeTabItems').onclick();
  assert.match(dom.root.querySelector('#realtimeInlineItemStatus').textContent,/戦闘取得累計 2/);

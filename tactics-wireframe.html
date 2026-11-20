@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261119-mobile-choice2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-engaged-stable3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-wizard1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-icons1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -835,6 +835,11 @@ body.compact-command-dock.squad-closeup #enemySquadRibbon{display:none!important
 #squadScreenLabels .squadScreenLabel.defeated:not([hidden]){border:5px dashed #abb1bd!important;background:#242b34ed!important;color:#d5d8df!important;box-shadow:0 0 0 3px #1a1d21!important;filter:grayscale(.7)}
 #squadScreenLabels .squadScreenLabel.defeated .squadStrength{color:#e6c5c5!important}
 #squadScreenLabels .squadScreenLabel.defeated .squadMarkerIcon{display:block!important;font-size:16px!important;line-height:1!important}
+/* The modern left/right squad HUD and radar replace the old large circular
+   battlefield icons. They obstruct the controls and must not capture taps. */
+body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
+ display:none!important;visibility:hidden!important;pointer-events:none!important
+}
 #battleSituationPause{position:fixed;z-index:87;top:calc(100px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(410px,calc(100vw - 16px));padding:10px;border:2px solid #ffd177;border-radius:13px;background:#101f32f5;color:#fff;box-shadow:0 10px 35px #000e;text-align:left;font:13px/1.4 system-ui}
 #battleSituationPause[hidden]{display:none!important}
 .battleSituationHeading{display:flex;align-items:center;justify-content:space-between;gap:6px}
@@ -887,12 +892,13 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261119-mobile-choice2';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-wizard1';
+import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
-import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261119-shield-front2';
+import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-engaged-stable3';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-icons1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=20261119-rally-reserve2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -1099,8 +1105,8 @@ import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-b
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {battleSquadJob,engineBattleJobNameForSquad,displayBattleJobName} from './src/battle-job-squads.js?v=20261119-job-teams';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261119-rally-reserve2';
-import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261120-shield-cover3';
+import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=20261120-roof2';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
@@ -1110,12 +1116,12 @@ import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=2026
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261119-rally-reserve2';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261120-shield-cover3';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=20261119-overlap1';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.16';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261119-rally-reserve2';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=20261120-damage-intercept3';
 import {createMountInteriorMask,isMountInteriorCell} from './src/mount-interior-policy.js?v=20261117-mount-interior1';
 import {selectActiveBattleEngagement} from './src/battle-engagement-camera.js?v=20261117-focus1';
 import {installBattleSituationPause} from './src/battle-situation-pause.js?v=20261117-interrupt1';
@@ -1127,7 +1133,7 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
 import {createRegisteredBattleMonster}
- from './src/battle-registered-monster-model.js?v=m019-turnaround-lizard-v4-20261119';
+ from './src/battle-registered-monster-model.js?v=m019-visible-cpu-limbs-v10-20261120';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
@@ -5599,7 +5605,8 @@ function tickAI(dt){
   // Automatic upstairs scouting is lower priority than a hostile soldier
   // within striking distance. The old unconditional floorTravel 'continue'
   // made both sides walk past adjacent living enemies without fighting.
-  if(a.floorTravel&&['approach','toStair'].includes(a.floorTravel.phase)){
+  if(a.floorTravel&&!a.floorTravel.manualHighGroundTarget&&
+     ['approach','toStair'].includes(a.floorTravel.phase)){
    const near=nearestEnemy(a,CELL*3.3),p=a.root.position,q=near?.root?.position;
    if(near&&q&&hutShotClear(p,q)&&hutShotClear(q,p)){
     const old=a.floorTravel;
@@ -9954,25 +9961,70 @@ function realtimeSpecialTargets(id,action){
     (action==='heal_ally'?'負傷 '+need.length+'人':'戦闘不能 '+need.length+'人')}:null;
   }).filter(Boolean);
  }
- if(action==='summon_and_move'||action==='summon_and_attack')
+ if(action==='summon_and_attack'){
+  if(!members.some(u=>u.jobId==='summoner'&&u.mp>=15))return [];
+  return realtimeMoveTargets('enemies',id).map(t=>({id:String(t.squadId),x:t.x,z:t.z,
+   label:'🐉 召喚後に攻撃：'+t.label,available:true}));
+ }
+ if(action==='summon_and_move')
   return members.some(u=>u.jobId==='summoner'&&u.mp>=15)?
    [{id:'self',label:'🐉 召喚獣を呼ぶ（MP消費）'}]:[];
  if(action==='high_ground'){
-  if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
+  if(!massSim){
+   // Detailed 50v50 battles use actor floorTravel instead of massSim routes.
+   const result=[];
+   for(const [index,building] of townInstances.entries()){
+    const structure=building.structure;
+    if(destroyedTownBuildings.has(building.data)||!(structure?.floors?.length>1))continue;
+    const gate=[...battleDoorDefinitions.values()].find(info=>info.building===building)?.object;
+    for(const kind of ['window','roof']){
+     const windows=kind==='window'?buildingWindowFiringPositions(
+      structure,building.model.position,2,{cellSize:CELL}):[];
+     if(kind==='roof'&&!roofAccessPlan(structure,{cellSize:CELL}))continue;
+     if(kind==='window'&&!windows.length)continue;
+     const capable=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist);
+     if(!capable.length)continue;
+     const passDoor=!gate||gate.team===0||!gate.locked||kind==='roof';
+     const free=capable.some(u=>!u.floorTravel||
+      (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase)));
+     const available=passDoor&&free;
+     const location=kind==='roof'?building.model.position:windows[0];
+     const x=Math.round(location.x/CELL+6),z=Math.round(location.z/CELL+6);
+     const reason=!passDoor?'敵の扉が施錠されています（シーフで解錠）':
+      !free?'現在ほかの高所へ移動中です':'';
+     result.push({id:'skirmish:'+index+':'+kind,x,z,available,reason,
+      label:(kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+(index+1)+
+       '｜'+(kind==='roof'?'屋上':'2階')+'｜X'+x+' Z'+z+
+       (available?'':'［'+reason+'］')});
+    }
+   }
+   return result;
+  }
+  if(!massSim)return [];
   return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
-   .filter(route=>route.team===0&&['window','roof'].includes(route.kind)&&
-    (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage'))&&
-    Number.isInteger(route.access?.x)&&Number.isInteger(route.access?.z)&&
-    (!massSim._highGroundClaims?.has(route.buildingIndex+':0')||
-      members.some(unit=>unit.highGroundRouteIndex===route.index))&&
-    members.some(unit=>unit.hp>=unit.maxHp*.35&&!unit.mountId&&
-     (route.kind==='roof'?unit.jobId==='ninja':['archer','mage'].includes(unit.jobId))&&
-     (unit.highGroundRouteIndex===route.index||
-      (massSim._highGroundFlows?.[route.index]?.[unit.z*massSim.width+unit.x]??0x3fffffff)<0x3fffffff)))
-   .map(route=>({id:String(route.index),x:route.access.x,z:route.access.z,
-     label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+route.buildingIndex+
-      '｜X'+route.access.x+' Z'+route.access.z}))
-   .slice(0,24);
+   .filter(route=>['window','roof'].includes(route.kind)&&
+    Number.isInteger(route.access?.x)&&Number.isInteger(route.access?.z))
+   .map(route=>{
+    // Include enemy-side structures. Display unavailable positions with reasons
+    // instead of silently dropping every rooftop from the tactical map.
+    const already=members.some(unit=>unit.highGroundRouteIndex===route.index&&unit.hp>0);
+    const occupied=massSim._highGroundClaims?.has(route.buildingIndex+':0')&&!already;
+    const flow=massSim._highGroundFlows?.[route.index];
+    const canEnter=members.some(unit=>unit.hp>0&&unit.alive!==false&&!unit.isStrategist&&
+     !unit.mountId&&unit.highGroundRouteIndex<0&&
+     flow&&flow[unit.z*massSim.width+unit.x]<0x3fffffff);
+    const intact=massSim._highGroundRouteAlive?.(route)!==false;
+    const available=intact&&!occupied&&(already||canEnter);
+    const reason=!intact?'建物が破壊されています':occupied?'味方が使用中です':
+     !available?'到達できる兵士がいません（経路・騎乗・HPを確認）':'';
+    const top=route.points.at(-1);
+    const x=Math.round((top?.x??((route.access.x-6)*CELL))/CELL+6);
+    const z=Math.round((top?.z??((route.access.z-6)*CELL))/CELL+6);
+    return {id:String(route.index),x,z,entryPoint:{x:route.access.x,z:route.access.z},available,reason,
+     label:(route.kind==='roof'?'🏯 屋根 ':'🏹 高所窓 ')+(route.buildingIndex+1)+
+      '｜'+(route.kind==='roof'?'屋上':'2階')+'｜X'+x+' Z'+z+
+      (available?'':'［'+reason+'］')};
+   }).slice(0,80);
  }
  const allowed=action==='destroy_bridge'?['mage','summoner','ninja']:
   action==='break_structure'?['mage','summoner']:
@@ -9998,19 +10050,26 @@ function realtimeSpecialTargets(id,action){
  const origin=squadCenter(id,0);
  const distance=o=>origin?Math.hypot(o.x-origin.x,o.z-origin.z):Infinity;
  return objects.filter(o=>o.alive&&o.category==='structure'&&o.type===kind&&
-  (kind!=='door'||(o.team===1&&o.locked))&&
+  (kind!=='door'||o.team===1)&&
   Number.isInteger(o.x)&&Number.isInteger(o.z))
   .sort((a,b)=>distance(a)-distance(b))
   .slice(0,60).map((o,index)=>{
    const raw=[o.name,o.structureName,o.buildingKind,o.label]
     .find(v=>typeof v==='string'&&v.trim()&&v!=='building'&&v!=='structure');
-   const name=raw?raw.trim().slice(0,14):kind==='bridge'?'橋':kind==='door'?'敵門':'建物';
+   const name=japaneseBattleObjectName(raw,
+    kind==='bridge'?'橋':kind==='door'?'敵の扉':'建物').slice(0,14);
    const dx=origin?o.x-origin.x:0,dz=origin?o.z-origin.z:0;
    const direction=Math.abs(dx)>=Math.abs(dz)?(dx>=0?'東':'西'):(dz>=0?'南':'北');
-   return {id:String(o.id),x:o.x,z:o.z,
+   const maxLock=members.filter(u=>u.jobId==='thief').reduce((best,u)=>
+    Math.max(best,u.rarity==='UR'?5:u.rarity==='R'?3:1),0);
+   const available=kind!=='door'||(o.team===1&&o.locked&&Number(o.lockLevel)<=maxLock);
+   const reason=kind==='door'?(o.locked?
+    (available?'鍵Lv.'+o.lockLevel+'／解錠可能':'鍵Lv.'+o.lockLevel+'／技能Lv.'+maxLock+'では開錠不可'):
+    '開錠済み'):'';
+   return {id:String(o.id),x:o.x,z:o.z,available,reason,
     label:(kind==='bridge'?'🌉 ':kind==='door'?'🔓 ':'🏠 ')+
      (index+1)+'. '+name+'｜'+direction+Math.round(distance(o))+
-     'マス｜X'+o.x+' Z'+o.z};
+     'マス｜X'+o.x+' Z'+o.z+(reason?'｜'+reason:'')};
   });
 }
 function issueRealtimeSpecial(id,action,targetId,arrival=false){
@@ -10018,8 +10077,8 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
  const members=realtimeJobMembers(id);
  const jobName=squadPrimaryJob(id);
- if(!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
- if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)))return false;
+ if(action!=='high_ground'&&!battleJobSpecialActions(jobName).some(entry=>entry.id===action))return false;
+ if(!realtimeSpecialTargets(id,action).some(target=>target.id===String(targetId)&&target.available!==false))return false;
  if(action==='frontline_guard'){
   if(!members.some(u=>u.jobId==='shield'))return false;
   const anchor=squadCenter(targetId,0);
@@ -10042,8 +10101,19 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   try{moved=issueIndividualSquadOrder('move',point);}
   finally{selectedSquadId=before;}
   if(!moved)return false;
-  battleCeremony.showOrder('🛡 '+squadName(id)+'：前衛防御',
-   squadName(targetId)+'の前方に展開、到着後に防御陣形で攻撃を受け止める');
+  // Guard changes the authoritative damage calculation, not just formation.
+  if(massSim){
+   if(!massSim.assignShieldCover(id,targetId,0))return false;
+   if(massWorker?.active)massWorker.assignShieldCover(id,targetId,0);
+  }else{
+   const until=(skirmishActions?.time??elapsed)+60;
+   for(const shield of members.filter(u=>u.jobId==='shield')){
+    shield.guardCoverTargetSquadId=String(targetId);
+    shield.guardCoverUntil=until;
+   }
+  }
+  battleCeremony.showOrder('🛡 '+squadName(id)+'：身代わり防御',
+   squadName(targetId)+'の前衛へ移動し、8マス以内の攻撃の65%を引き受ける（60秒）');
   return {followup:'defend',point};
  }
  if(action==='heal_ally'||action==='revive_ally'){
@@ -10092,11 +10162,38 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   if(!success)return false;
   battleCeremony.showOrder('🐉 '+squadName(id)+'：召喚成功','MPを消費して召喚獣が出現');
   if(action==='summon_and_move')return {openMove:true};
+  const target=realtimeMoveTargets('enemies',id)
+   .find(t=>String(t.squadId)===String(targetId));
+  if(!target)return true; // The summon already succeeded; never spend MP twice.
   const prior=selectedSquadId;selectedSquadId=String(id);
-  try{return issueIndividualSquadOrder('charge');}
-  finally{selectedSquadId=prior;}
+  try{
+   const ordered=issueIndividualSquadOrder('mission',{
+    type:'eliminate_squad',targetSquadId:String(target.squadId),
+    x:Math.round(target.x),z:Math.round(target.z)});
+   if(!ordered)log('召喚成功。敵対象への進軍は次の命令で設定してください。');
+   return true;
+  }finally{selectedSquadId=prior;}
  }
  if(action==='high_ground'){
+  if(!massSim){
+   const match=/^skirmish:([0-9]+):(window|roof)$/.exec(String(targetId));
+   if(!match)return false;
+   const building=townInstances[Number(match[1])],kind=match[2];
+   if(!building)return false;
+   const eligible=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist&&
+    (!u.floorTravel||
+     (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase))));
+   eligible.sort((a,b)=>a.root.position.distanceToSquared(building.model.position)-
+    b.root.position.distanceToSquared(building.model.position));
+   const selected=eligible[0];
+   if(!selected||!requestUnitFloor(selected,1,building))return false;
+   selected.floorTravel.manualHighGroundTarget=true;
+   selected._manualHighGroundBuilding=building;
+   markRibbonOrderIssued(id);
+   battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動',
+    kind==='roof'?'指定の屋根へ移動し到着後待機':'指定した建物の階段を登り到着後待機');
+   return true;
+  }
   const routeIndex=Number(targetId);
   const already=massSim?.units?.some(u=>u.team===0&&String(u.squadId)===String(id)&&
    u.hp>0&&u.highGroundRouteIndex===routeIndex);
@@ -10104,7 +10201,7 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   if(!success)return false;
   if(!already&&massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
   markRibbonOrderIssued(id);
-  battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃','既存の階段と窓を使用');
+  battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動','階段・屋根へ移動し到着後待機');
   return true;
  }
  if(action==='steal_item'){
@@ -10139,10 +10236,11 @@ function realtimeMoveTargets(kind,selectedSquad){
  const roster=massSim?.units??actors;
  const point=u=>({x:Number.isFinite(u.x)?u.x:u.cell?.x,
   z:Number.isFinite(u.z)?u.z:u.cell?.z});
- if(kind==='people'){
+ if(kind==='people'||kind==='enemies'){
   const nearestBySquad=new Map();
   for(const unit of roster){
-   if(!(unit.hp>0)||unit.alive===false||unit.team>1)continue;
+   if(!(unit.hp>0)||unit.alive===false||unit.team>1||
+    (kind==='enemies'&&unit.team!==1))continue;
    const pos=point(unit);
    if(!Number.isFinite(pos.x)||!Number.isFinite(pos.z))continue;
    const key=String(unit.team)+':'+String(unit.squadId);
@@ -10150,7 +10248,8 @@ function realtimeMoveTargets(kind,selectedSquad){
    const target={id:key+':'+String(unit.id),team:unit.team,squadId:String(unit.squadId),
     x:pos.x,z:pos.z,
     label:(unit.team===0?'🔵 味方 ':'🔴 敵 ')+
-     squadName(unit.squadId,unit.team)+' '+battleUnitJobName(unit)+
+     squadName(unit.squadId,unit.team)+'・'+battleUnitJobName(unit)+
+     '（'+Math.round(distance(pos))+'マス）'+
      (unit.isStrategist?'（軍師）':'')};
    if(!previous||distance(target)<distance(previous))nearestBySquad.set(key,target);
   }
@@ -10160,12 +10259,14 @@ function realtimeMoveTargets(kind,selectedSquad){
   const objects=(massSim?.actions?.objects??skirmishActions?.objects??[])
    .filter(obj=>obj.alive!==false&&Number.isFinite(obj.x)&&Number.isFinite(obj.z))
    .map(obj=>({id:'object:'+String(obj.id),x:obj.x,z:obj.z,
-    label:'🏠 '+String(obj.name||obj.label||obj.type||'設備')+'（'+Math.round(distance(obj))+'マス）'}));
+    label:'🏠 '+japaneseBattleObjectName(obj.name||obj.label||obj.type||'設備')+
+     '（'+Math.round(distance(obj))+'マス）'}));
   const buildings=townInstances.filter(b=>b?.model?.position&&b?.data).map(b=>{
    const x=Math.round(b.model.position.x/CELL+6);
    const z=Math.round(b.model.position.z/CELL+6);
    return {id:'building:'+b.model.uuid,x,z,
-    label:'🏠 '+String(b.data.name||b.data.kind||'建物')};
+    label:'🏠 '+japaneseBattleObjectName(b.data.name||b.data.kind||'建物','建物')+
+     '（'+Math.round(distance({x,z}))+'マス）'};
   }).filter(obj=>Number.isFinite(obj.x)&&Number.isFinite(obj.z));
   return [...objects,...buildings].sort((a,b)=>distance(a)-distance(b)).slice(0,45);
  }
@@ -10205,7 +10306,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }
   return squadIds.map(id=>{
    const stat=groups.get(String(id)),leader=leaders.get(String(id));
-   const job=[...stat.jobs].sort((a,b)=>b[1]-a[1])[0]?.[0]||'部隊';
+   // Resolve the engine's 盾戦士/盗賊 aliases before checking special skills.
+   const job=squadPrimaryJob(id);
    return {team:0,id,label:squadName(id),job,
     x:leader?.x??NaN,z:leader?.z??NaN,leaderId:leader?.leaderId??null,
     alive:stat.alive,total:stat.total,hp:stat.hp,maxHp:stat.maxHp};
@@ -10245,15 +10347,19 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   return true;
  },
  onStart:()=>{
+  commandOverviewLocked=false;document.body.classList.remove('battle-command-active');
+  controls.enabled=true;
   battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
   battleAudio.setPhase('march');
   setBattlePaused(false);
+  if(paused){log('戦闘開始を保留：別の戦況停止が有効です');return false;}
   // First battle camera is deliberately above friendly squad 1.
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
    text:'配置完了！部隊の作戦と対象を選んでください。接近や登攀は自動で行います。'});
    log('戦闘開始：部隊の作戦と対象を確定すると移動と実行が連続します。');
+   return true;
  },
  onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,id);},
  onFocus:id=>{
@@ -10262,6 +10368,17 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   followCamera=false;battleViewMode='commander';focusedHumanUnitId=null;
   setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.2,z),new THREE.Vector3(-12,13,18));
   manualCameraFocusUntil=performance.now()+4500;setCameraActive(null);
+ },
+ onMapOverview:point=>{
+  if(TOWN_MODE||!battleReady||finished||!point)return false;
+  const x=(point.x-6)*CELL,z=(point.z-6)*CELL;
+  focusedHumanUnitId=null;followCamera=false;targetViewFollowing=false;
+  manualCameraSquad=null;manualCameraFocusUntil=0;
+  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
+  battleViewMode='overview';commandOverviewLocked=false;controls.enabled=true;
+  setBattleCamera(new THREE.Vector3(x,terrainY(x,z),z),cameraOverviewOffset);
+  setCameraActive('camOverview');
+  return true;
  },
  onMove:(id,point)=>{
   if(!battleReady||finished||battleCeremony.locked||
@@ -10294,6 +10411,28 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   onManageItems:id=>openBattleItemsForSquad(id),
   getMoveTargets:(kind,id)=>realtimeMoveTargets(kind,id),
   getSharedItems:()=>realtimeSharedItems(),
+ getObjectiveCheckpoints:()=>objectiveCheckpoints.snapshot(),
+ onCommandCommitted:entry=>{
+  const squadId=String(entry.squadId);
+  const groupId=normalizeArmyGroup(armyGroupBySquad[squadId])||'1';
+  let mode=null,point=null,targetIds=[];
+  if(entry.category==='move'&&entry.point){
+   mode=entry.arrival==='defend'?'defend':'hold';
+   point={x:entry.point.x,z:entry.point.z};
+  }else if(entry.category==='attack'&&entry.target?.squadId!=null){
+   mode='charge';targetIds=[String(entry.target.squadId)];
+  }else if(entry.category==='item'){
+   mode='item';targetIds=[String(entry.target?.id||squadId)];
+  }else if(entry.category==='special'&&
+      ['destroy_bridge','break_structure','burn_building'].includes(entry.specialId)){
+   mode='destroy';
+   const raw=String(entry.target?.id||'');
+   targetIds=[raw.startsWith('object:')?raw.slice(7):raw];
+  }
+  if(mode)objectiveCheckpoints.register({
+   groupId,mode,squadIds:[squadId],targetIds,point,itemId:entry.itemId||null
+  });
+ },
   onSharedItem:(itemId,id)=>useSquadBattleItem(itemId,id),
  getRallyInfo:id=>({
   ...rallyCycleStatus(),

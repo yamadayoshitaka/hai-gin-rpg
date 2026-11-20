@@ -4,10 +4,12 @@
  * Movement is implicit in the selected action, not a standalone command.
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
+import {mountBattleCommandWizard} from './battle-command-wizard.js?v=20261120-wizard1';
 import {createBattleTapChoices} from './battle-tap-choices.js?v=20261119-mobile-choice1';
+import {eligibleEnemyBattleTargets,battleAttackNeedsEnemy} from './battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
-import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261119-shield-front2';
+import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -29,8 +31,9 @@ export function createRealtimeBattleCommands({
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
+ getObjectiveCheckpoints=()=>[],onCommandCommitted=()=>{},
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
- onRally=()=>false
+ onRally=()=>false,onMapOverview=()=>false
 }={}){
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
@@ -40,12 +43,11 @@ export function createRealtimeBattleCommands({
  let lastInlineItemRefresh=-Infinity,lastInlineItemSignature='';
  const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
- const PLAN_LIMIT_MS=30000;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
   <div id="realtimeSquadRadar" hidden role="group" aria-label="中央部隊レーダー">
-   <div class="realtimeRadarHeader"><strong>◎ 部隊レーダー</strong>
+   <div class="realtimeRadarHeader"><strong id="realtimeRadarTitle">◎ 部隊レーダー</strong>
     <span id="realtimeRadarClock" hidden aria-label="作戦選択の残り時間"></span></div>
    <canvas id="realtimeRadarCanvas" width="224" height="178"
     aria-label="味方と敵の隊長位置。青が味方、赤が敵。番号は隊番号" tabindex="0"></canvas>
@@ -53,7 +55,7 @@ export function createRealtimeBattleCommands({
   </div>
   <div id="realtimeBattleDock" hidden role="group" aria-label="選択中の隊の作戦">
    <button type="button" id="realtimeDockClose" aria-label="作戦を閉じて戦闘に戻る">✕ 戻る</button>
-   <span id="realtimePlanSeconds" aria-live="off">作戦選択 残り30秒</span>
+   <span id="realtimePlanSeconds" aria-live="off">作戦選択中（時間制限なし）</span>
    <div class="realtimeDockSquadPager" role="group" aria-label="作戦を選ぶ隊をページ切替">
     <button type="button" id="realtimeDockPrev" aria-label="前の隊">◀</button>
     <span class="realtimeDockPortrait" id="realtimeDockPortrait" aria-hidden="true"></span>
@@ -68,6 +70,7 @@ export function createRealtimeBattleCommands({
     <button type="button" id="realtimeTabItems" role="tab" aria-selected="false">🎒 アイテム</button>
    </div>
 
+   <span id="realtimeSkillStep" role="status">① 作戦・スキルを選択してください</span>
    <button type="button" id="realtimeDefend">🛡 守備</button>
    <button type="button" id="realtimeCharge">⚔ 攻撃</button>
    <button type="button" id="realtimeHold">◷ 待機</button>
@@ -75,14 +78,15 @@ export function createRealtimeBattleCommands({
    <button type="button" id="realtimeManageItems" hidden>🎁 全軍の共有アイテムを使う</button>
    <button type="button" id="realtimeRally" hidden>📣 バフの種類と対象を選択</button>
    <button type="button" id="realtimeSpecial">★ 固有作戦</button>
+   <button type="button" id="realtimeThiefUnlock" title="シーフ固有：鍵開け・盗む" hidden>🔓 鍵開け</button>
+   <button type="button" id="realtimeThiefSteal" hidden>🎒 盗む</button>
    <button type="button" id="realtimeMenu" aria-label="ゲームメニュー">☰</button>
-   <div id="realtimeStrategyTargets" role="group" aria-label="作戦対象：人物・物・位置">
-    <label for="realtimeTargetKind">対象</label>
-    <select id="realtimeTargetKind" aria-label="近くの人物・建物の切替">
-     <option value="people">👤 近くの人物</option>
-     <option value="objects">🏠 近くの建物・物</option>
+   <div id="realtimeStrategyTargets" hidden role="group" aria-label="選択した攻撃スキルで指定できる敵隊">
+    <strong id="realtimeTargetStep">② 攻撃対象の敵隊を選択</strong>
+    <select id="realtimeTargetKind" hidden aria-hidden="true">
+     <option value="enemies">敵部隊</option>
     </select>
-    <select id="realtimeTargetChoice" hidden aria-label="向かう人物・物を選択"></select>
+    <select id="realtimeTargetChoice" hidden aria-label="攻撃できる敵隊を選択"></select>
     <div id="realtimeInlineMapArea" hidden>
      <canvas id="realtimeInlineTargetMap" width="280" height="160" aria-label="作戦対象の地点を地図上で選択"></canvas>
      <div class="realtimeInlineZoom">
@@ -90,7 +94,7 @@ export function createRealtimeBattleCommands({
       <button type="button" id="realtimeInlineZoomOut">－</button>
      </div>
     </div>
-    <small id="realtimeTargetMessage" role="status">作戦を選び、対象を指定すると自動で接近して実行します。</small>
+    <small id="realtimeTargetMessage" role="status">攻撃方法を選んでから、対象の敵隊を指定してください。</small>
    </div>
    <div id="realtimeDockAttackChoices" class="realtimeAttackChoices" hidden role="group" aria-label="攻撃種別">
     <strong>攻撃種別</strong>
@@ -124,7 +128,7 @@ export function createRealtimeBattleCommands({
   <div id="realtimeBattleMapOverlay" hidden role="dialog" aria-modal="true" aria-label="開戦前の初期配置地図">
    <div class="realtimeMapCard">
     <header><strong id="realtimeMapTitle">開戦前の隊列配置</strong>
-     <span id="realtimeMapPlanningClock" hidden>作戦 残り30秒</span>
+     <span id="realtimeMapPlanningClock" hidden>作戦選択中</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
     <div class="realtimeMapSquadPager" role="group" aria-label="配置する味方隊をページ切替">
@@ -173,6 +177,26 @@ export function createRealtimeBattleCommands({
    </div>
   </div>`;
  doc.body.append(root);
+ const missionNotice=doc.createElement('div');
+ missionNotice.id='battleMissionNotice';missionNotice.setAttribute('role','status');
+ missionNotice.setAttribute('aria-live','polite');
+ missionNotice.textContent='🎯 作戦目標：進捗を確認中';
+ root.append(missionNotice);
+ let lastMissionSignature='',lastMissionUpdateAt=-Infinity;
+ function refreshMissionNotice(){
+  const now=nowMs();if(now-lastMissionUpdateAt<700)return;lastMissionUpdateAt=now;
+  let checkpoints=[];
+  try{checkpoints=getObjectiveCheckpoints()||[];}catch{}
+  const latest=checkpoints.slice(-4),last=latest.at(-1);
+  const completed=checkpoints.filter(p=>p.status==='達成'||p.status==='地点到着').length;
+  const message=!last?'🎯 作戦目標：未設定':
+   (last.status==='達成'||last.status==='地点到着'?'✅ 目的達成：':
+    last.status==='失敗'?'⚠ 作戦失敗：':'🎯 進行中：')+
+    '第'+String(last.groupId||1)+'班 '+String(last.label||'目標')+
+    '（'+Math.round(Number(last.progress)||0)+'%）｜達成 '+completed+'/'+checkpoints.length;
+  if(lastMissionSignature!==message){missionNotice.textContent=message;lastMissionSignature=message;}
+  missionNotice.hidden=!started;
+ }
  const tapChoices=createBattleTapChoices(root,{pageSize:5});
  const $=id=>root.querySelector('#'+id);
  const canvas=$('realtimeBattleCanvas'),ctx=canvas.getContext('2d');
@@ -381,12 +405,13 @@ export function createRealtimeBattleCommands({
   if(!['strategy','rally','items'].includes(next))return;
   dockTab=next;hideContextChoices();
   const strategy=next==='strategy',rally=next==='rally',items=next==='items';
-  for(const id of ['realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial'])
+  for(const id of ['realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial','realtimeThiefUnlock','realtimeThiefSteal'])
    $(id).hidden=!strategy;
   $('realtimeRally').hidden=true;
+  $('realtimeSkillStep').hidden=!strategy;
   $('realtimeSupport').hidden=true;
   $('realtimeManageItems').hidden=true;
-  $('realtimeStrategyTargets').hidden=!strategy;
+  $('realtimeStrategyTargets').hidden=!strategy||!battleAttackNeedsEnemy(pendingStrategy?.attackKind);
   $('realtimeConfirmStrategy').hidden=!strategy;
   $('realtimeRallyInline').hidden=!rally;
   $('realtimeItemInline').hidden=!items;
@@ -425,9 +450,12 @@ export function createRealtimeBattleCommands({
  }
  function issueDockOrder(command){
   if(!started)return false;
+  hideContextChoices();
   pendingStrategy={command};
+  $('realtimeSkillStep').textContent='② '+(command==='defend'?'守備':command==='hold'?'待機':'作戦')+
+   'を選択しました。対象指定は不要です。';
+  refreshMoveTargetChoices();
   renderActionSelection();
-  $('realtimeSelectedState').textContent='「'+actionDescription()+'」を選択中。対象を選んで確定してください。';
   return true;
  }
  function showGuardChoices(){
@@ -527,25 +555,35 @@ export function createRealtimeBattleCommands({
   tapChoices.renderAll();
  }
   function showSpecialTargets(origin,action,page=0){
+  pendingStrategy=null;
+  $('realtimeSkillStep').textContent='② '+action.label+'：実行できる対象を選んでください';
+  refreshMoveTargetChoices();
   const node=actionPanel(origin,'Special');
   contextButton(node,'◀ 戻る',()=>showSpecialChoices(origin));
   const targets=getSpecialTargets(String(selectedId),action.id)||[];
   if(!targets.length){contextNote(node,action.id==='high_ground'?
    '利用できる高所がありません。階段・窓までの経路や高所の占有状況を確認してください。':
    '実行できる対象がありません。');return;}
-  const perPage=4,last=Math.max(0,Math.ceil(targets.length/perPage)-1);
+  const perPage=['height','door','building','bridge'].includes(action.target)?8:4;
+  const last=Math.max(0,Math.ceil(targets.length/perPage)-1);
   page=clamp(page,0,last);contextNote(node,action.label+'：対象を選択');
   const shown=targets.slice(page*perPage,(page+1)*perPage);
   const isStructure=['building','bridge','door','height'].includes(action.target)&&shown.some(t=>Number.isFinite(t.x)&&Number.isFinite(t.z));
+  const focusHighGround=target=>{
+   if(action.id!=='high_ground'||!started||!Number.isFinite(target?.x)||!Number.isFinite(target?.z))return;
+   onMapOverview({x:Math.round(target.x),z:Math.round(target.z)});
+  };
   if(isStructure){
+   // Open the real 3D camera overhead, not only an inline two-dimensional map.
+   focusHighGround(shown.find(t=>t.available!==false&&Number.isFinite(t.x)&&Number.isFinite(t.z))||shown[0]);
    contextNote(node,'🟨 地図の番号ピンか対象名を選択してください。確定後は自動で接近して実行します。');
    const preview=doc.createElement('canvas');preview.className='realtimeStructureMap';
    preview.width=260;preview.height=164;
-   preview.setAttribute('aria-label','作戦対象の建物・橋・扉の位置。番号を選択');
+   preview.setAttribute('aria-label','作戦対象の屋根・高所・建物・橋・扉の位置。番号をタップして選択');
    preview.setAttribute('role','img');node.append(preview);
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
-   const ctx=preview.getContext?.('2d');let chosen=shown[0];
+   const ctx=preview.getContext?.('2d');let chosen=null,confirmButton=null;
    const paint=()=>{
     if(!ctx)return;
     const w=preview.width,h=preview.height;
@@ -556,15 +594,29 @@ export function createRealtimeBattleCommands({
     shown.forEach((target,index)=>{
      if(!Number.isFinite(target.x)||!Number.isFinite(target.z))return;
      const x=clamp(target.x/worldSize*w,6,w-6),y=clamp(target.z/worldSize*h,6,h-6);
-     const active=String(chosen.id)===String(target.id);
+     const active=chosen&&String(chosen.id)===String(target.id);
      ctx.beginPath();ctx.arc(x,y,active?12:9,0,Math.PI*2);
-     ctx.fillStyle=active?'#ffe3a0':'#ffb66d';ctx.fill();
+      ctx.fillStyle=target.available===false?'#7b8490':active?'#ffe3a0':'#ffb66d';ctx.fill();
      ctx.lineWidth=active?3:1;ctx.strokeStyle='#152a3a';ctx.stroke();
      ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
      ctx.fillStyle='#183145';ctx.fillText(String(page*perPage+index+1),x,y);
     });
    };
-   const choose=target=>{chosen=target;status.textContent='選択中：'+String(target.label||target.id);paint();};
+   const choose=target=>{
+    if(target.available===false){
+     status.textContent='選択不可：'+String(target.reason||'現在は実行できません');
+     return;
+    }
+    chosen=target;
+    focusHighGround(target);
+    status.textContent='選択中：'+String(target.label||target.id)+'。下の「作戦を確定」で実行します。';
+    if(origin==='dock'){
+     pendingStrategy={special:action.id,targetId:String(target.id)};
+     renderActionSelection();
+    }
+    if(confirmButton)confirmButton.disabled=false;
+    paint();
+   };
    preview.addEventListener('click',event=>{
     const box=preview.getBoundingClientRect();
     if(!box.width||!box.height)return;
@@ -578,29 +630,55 @@ export function createRealtimeBattleCommands({
     }
     if(nearest&&best<26)choose(nearest);
    });
-   for(const target of shown)contextButton(node,String(target.label||target.id),()=>choose(target));
-   contextButton(node,origin==='dock'?'対象を作戦に設定':'✅ 選択した対象に作戦を実行',()=>
-    confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)}));
-   choose(shown[0]);
+   for(const target of shown){
+    const button=contextButton(node,String(target.label||target.id),()=>choose(target));
+    button.disabled=target.available===false;
+    if(button.disabled)button.title=String(target.reason||'現在は実行できません');
+   }
+   confirmButton=contextButton(node,'✅ この高所・対象で固有技を確定',()=>{
+    if(!chosen)return;
+    if(origin==='dock')confirmDockStrategy();
+    else confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+   });
+   confirmButton.classList.add('realtimeMainConfirm');
+   confirmButton.disabled=true;
+   status.textContent='対象を選ぶまで作戦は発令されません。';
+   // The target-map canvas must be painted on first open, before any tap.
+   paint();
   }else{
-   let chosen=null;
+   let chosen=null,confirmButton=null;
    const status=doc.createElement('small');status.className='realtimeStructureSelection';
    status.setAttribute('role','status');node.append(status);
    for(const target of shown){
     const button=contextButton(node,String(target.label||target.id),()=>{
-     chosen=target;status.textContent='選択中：'+String(target.label||target.id);
+     if(target.available===false){
+      status.textContent='選択不可：'+String(target.reason||'現在は実行できません');
+      return;
+     }
+     chosen=target;
+     if(confirmButton)confirmButton.disabled=false;
+     status.textContent='選択中：'+String(target.label||target.id)+'。下の「固有技を確定」で実行します。';
+     if(origin==='dock'){
+      pendingStrategy={special:action.id,targetId:String(target.id)};
+      renderActionSelection();
+     }
      for(const child of node.querySelectorAll('button.realtimeContextTarget')){
       const active=child===button;child.classList.toggle('selected',active);
       child.setAttribute('aria-pressed',String(active));
      }
     });
     button.classList.add('realtimeContextTarget');button.setAttribute('aria-pressed','false');
+    button.disabled=target.available===false;
+    if(button.disabled)button.title=String(target.reason||'現在は実行できません');
    }
-   const confirm=contextButton(node,'✅ この対象で作戦を確定',()=>{
-    if(chosen)confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
+   confirmButton=contextButton(node,'✅ この対象で固有技を確定',()=>{
+    if(!chosen)return;
+    if(origin==='dock')confirmDockStrategy();
+    else confirmContextAction(origin,{special:action.id,targetId:String(chosen.id)});
    });
-   confirm.classList.add('realtimeMainConfirm');
-   status.textContent='対象をタップしてから確定してください。';
+   confirmButton.classList.add('realtimeMainConfirm');
+   confirmButton.disabled=true;
+   status.textContent='対象を選ぶまで作戦は発令されません。';
   }
   if(last>0){
    const nav=doc.createElement('div');nav.className='realtimeContextPager';node.append(nav);
@@ -611,11 +689,15 @@ export function createRealtimeBattleCommands({
   }
  }
  function showSpecialChoices(origin){
+  pendingStrategy=null;
+  $('realtimeSkillStep').textContent='① 使用する固有スキルを選択してください';
+  refreshMoveTargetChoices();
   const node=actionPanel(origin,'Special'),actions=battleJobSpecialActions(getSelected()?.job);
   if(!actions.length){contextNote(node,'このジョブの固有作戦はありません。');return;}
   contextNote(node,String(getSelected()?.job||'')+'隊の固有作戦');
   for(const action of actions)
    contextButton(node,action.label,()=>showSpecialTargets(origin,action));
+  renderActionSelection();
  }
 
  let listedMoveTargets=[];
@@ -645,50 +727,41 @@ export function createRealtimeBattleCommands({
   }
  }
  function refreshMoveTargetChoices(){
-  const kind=$('realtimeTargetKind').value;
-  const select=$('realtimeTargetChoice');
-  select.hidden=!(kind==='people'||kind==='objects');
-  $('realtimeInlineMapArea').hidden=kind!=='point';
-  const before=select.value;select.replaceChildren();
+  // Command flow: skill -> only eligible enemy targets -> explicit confirm.
+  const needsEnemy=battleAttackNeedsEnemy(pendingStrategy?.attackKind);
+  const select=$('realtimeTargetChoice'),previous=select.value;
+  $('realtimeStrategyTargets').hidden=dockTab!=='strategy'||!needsEnemy;
+  select.hidden=!needsEnemy;
+  $('realtimeTargetKind').hidden=true;
+  $('realtimeInlineMapArea').hidden=true;
   listedMoveTargets=[];
-  if(kind==='people'||kind==='objects'){
-   listedMoveTargets=(getMoveTargets(kind,String(selectedId))||[])
-    .filter(t=>Number.isFinite(t.x)&&Number.isFinite(t.z)).slice(0,45);
+  select.replaceChildren();
+  if(needsEnemy){
+   listedMoveTargets=eligibleEnemyBattleTargets(
+    getMoveTargets('enemies',String(selectedId))||[]).slice(0,40);
    const placeholder=doc.createElement('option');placeholder.value='';
-   placeholder.textContent=listedMoveTargets.length?'対象を選択':'対象がありません';
+   placeholder.textContent=listedMoveTargets.length?'敵隊を選択':'攻撃可能な敵隊がいません';
    select.append(placeholder);
    for(const target of listedMoveTargets){
     const opt=doc.createElement('option');opt.value=String(target.id);
-    opt.textContent=String(target.label||target.id);select.append(opt);
+    opt.textContent=String(target.label||'敵第'+target.squadId+'隊');
+    select.append(opt);
    }
-   select.value=listedMoveTargets.some(t=>String(t.id)===before)?before:'';
+   select.value=listedMoveTargets.some(t=>String(t.id)===previous)?previous:'';
   }
-  targetPoint=null;
-  if(kind==='point'){
-   const own=getSelected();
-   targetCenterX=Number.isFinite(own?.x)?own.x:worldSize/2;
-   targetCenterZ=Number.isFinite(own?.z)?own.z:worldSize/2;
-   targetZoom=Math.max(1,targetZoom);
-   paintInlineTargetMap();
-  }
-  $('realtimeTargetMessage').textContent=kind==='point'?'作戦を実行する地点をタップ':
-   kind==='people'?'近くの人物を選択（移動は作戦に含みます）':
-   kind==='objects'?'近くの建物・物を選択（移動は作戦に含みます）':'作戦と対象を選択してください';
+  $('realtimeTargetMessage').textContent=needsEnemy?
+   (listedMoveTargets.length?'敵隊を選んでから「作戦を確定」を押してください。':
+    'このスキルで指定できる敵隊がいません。'):'';
   tapChoices.renderAll();
-  renderActionSelection();
  }
  function selectedMovementTarget(){
-  const kind=$('realtimeTargetKind').value;
-  if(kind==='point')return targetPoint;
-  if(kind==='people'||kind==='objects'){
-   return listedMoveTargets.find(t=>String(t.id)===$('realtimeTargetChoice').value)||null;
-  }
-  return null;
+  if(!battleAttackNeedsEnemy(pendingStrategy?.attackKind))return null;
+  return listedMoveTargets.find(t=>String(t.id)===$('realtimeTargetChoice').value)||null;
  }
  function nearestLegalApproach(target){
   const x=Math.round(Number(target.x)),z=Math.round(Number(target.z));
   if(!Number.isFinite(x)||!Number.isFinite(z))return null;
-  const firstRadius=$('realtimeTargetKind').value==='point'?0:1;
+  const firstRadius=1;
   for(let r=0;r<=5;r++){
    const radius=r===0?firstRadius:r<=firstRadius?r-1:r;
    for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
@@ -709,7 +782,22 @@ export function createRealtimeBattleCommands({
    $('realtimeTargetMessage').textContent='移動だけの指示はありません。作戦または固有作戦を選択してください。';
    return false;
   }
-  if(entry?.special)success=onSpecial(id,entry.special,entry.targetId);
+  if(battleAttackNeedsEnemy(entry?.attackKind)){
+   const current=eligibleEnemyBattleTargets(getMoveTargets('enemies',id)||[]);
+   if(!destination||!current.some(t=>String(t.id)===String(destination.id))){
+    $('realtimeTargetMessage').textContent='有効な敵隊を選んでから確定してください。';
+    refreshMoveTargetChoices();renderActionSelection();return false;
+   }
+  }
+  if(entry?.special){
+   const valid=(getSpecialTargets(id,entry.special)||[]).some(t=>
+    String(t.id)===String(entry.targetId)&&t.available!==false);
+   if(!valid){
+    $('realtimeSkillStep').textContent='対象が無効になりました。スキルから選び直してください。';
+    pendingStrategy=null;renderActionSelection();return false;
+   }
+   success=onSpecial(id,entry.special,entry.targetId);
+  }
   else if(destination&&entry?.command==='charge'&&Number(destination.team)===1&&destination.squadId!=null){
    // A targeted attack tracks the enemy squad until it can strike; it must
    // not stop at the enemy's old map coordinates.
@@ -786,10 +874,21 @@ export function createRealtimeBattleCommands({
   }
   $('realtimeActionSkip').classList.toggle('selected',!chosen);
   const specialJob=String(getSelected()?.job||'');
-  $('realtimeSpecial').textContent=specialJob.includes('シーフ')?'🔓 鍵開け・盗む':
-   ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有':'★ 固有作戦';
+   const isThief=specialJob.includes('シーフ');
+  $('realtimeSpecial').textContent=
+   specialJob.includes('召喚士')?'🐉 召喚獣・固有技':
+   ['弓使い','魔法使い','忍者'].some(name=>specialJob.includes(name))?'🏹 高所攻撃・固有技':
+   specialJob.includes('盾騎士')||specialJob.includes('盾戦士')?'🛡 かばう・固有技':'★ 固有技';
+  $('realtimeSpecial').hidden=dockTab!=='strategy'||isThief;
+  $('realtimeThiefUnlock').hidden=dockTab!=='strategy'||!isThief;
+  $('realtimeThiefSteal').hidden=dockTab!=='strategy'||!isThief;
   $('realtimeSpecial').disabled=!battleJobSpecialActions(specialJob).length;
-  $('realtimeConfirmStrategy').disabled=!(pendingStrategy?.command||pendingStrategy?.special);
+  const mustPickEnemy=battleAttackNeedsEnemy(pendingStrategy?.attackKind);
+  $('realtimeStrategyTargets').hidden=dockTab!=='strategy'||!mustPickEnemy;
+  $('realtimeConfirmStrategy').disabled=
+   !(pendingStrategy?.command||pendingStrategy?.special)||
+   (mustPickEnemy&&!selectedMovementTarget())||
+   (pendingStrategy?.special&&!pendingStrategy.targetId);
   for(const button of root.querySelectorAll('[data-action-after-move="special"]'))
    button.disabled=!battleJobSpecialActions(getSelected()?.job).length;
   for(const button of root.querySelectorAll('[data-attack-kind="far"]'))
@@ -803,51 +902,36 @@ export function createRealtimeBattleCommands({
   }
  }
  function updatePlanningCountdown(){
-  if(!planningDeadline)return;
-  const remain=Math.max(0,Math.ceil((planningDeadline-nowMs())/1000));
-  $('realtimePlanSeconds').textContent='作戦選択 残り'+remain+'秒';
-  $('realtimeRadarClock').hidden=false;
-  $('realtimeRadarClock').textContent='作戦 '+remain+'秒';
-  $('realtimeMapPlanningClock').textContent='残り'+remain+'秒';
-  if(remain===0){
-   // Do not silently overwrite a team's existing order when the time expires.
-   if(!$('realtimeBattleMapOverlay').hidden)closeMap();
-   closeSquadControls();
-  }
+  // No deadline: the player decides when to confirm or cancel the order.
+  $('realtimePlanSeconds').textContent='作戦選択中（時間制限なし）';
+  $('realtimeRadarClock').hidden=true;$('realtimeMapPlanningClock').hidden=true;
  }
  function enterPlanning(){
   if(!started)return;
-  if(!getPaused()){
-   onPause();planningOwnsPause=Boolean(getPaused());
-  }
-  // Never start a countdown while simulation is still advancing.
-  if(!getPaused())return;
-  if(!planningDeadline){
-   planningDeadline=nowMs()+PLAN_LIMIT_MS;
-   planningTicker=globalThis.setInterval?.(updatePlanningCountdown,200)??null;
-  }
+  if(!getPaused()){onPause();planningOwnsPause=Boolean(getPaused());}
   updatePlanningCountdown();
  }
  function exitPlanning(){
   planningDeadline=0;
   if(planningTicker!=null)globalThis.clearInterval?.(planningTicker);
-  planningTicker=null;
-  $('realtimeRadarClock').hidden=true;
+  planningTicker=null;$('realtimeRadarClock').hidden=true;
   if(!planningOwnsPause)return;
-  planningOwnsPause=false;
-  if(getPaused())onPause();
+  planningOwnsPause=false;if(getPaused())onPause();
  }
  function showSquadControls(id){
   if(!started)return false;
   if(!setSelected(id))return false;
+  $('realtimeSkillStep').textContent='① 作戦・スキルを選択してください';
   enterPlanning();
   $('realtimeBattleDock').hidden=false;
   setDockTab('strategy');
   updatePlanningCountdown();
+  commandWizard.open(id);
   drawRadar(true);
   return true;
  }
  function closeSquadControls(){
+  commandWizard.hide();
   $('realtimeBattleDock').hidden=true;
   pendingStrategy=null;pendingRally=null;targetPoint=null;
   hideContextChoices();
@@ -866,6 +950,7 @@ export function createRealtimeBattleCommands({
  function openMap(next='move'){
   hideActionSheet();mode=next;refreshOptions();
   if(started)enterPlanning();
+  if(started)onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
   $('realtimeBattleMapOverlay').hidden=false;
   $('realtimeMapClose').hidden=next==='deploy';
   $('realtimeStart').hidden=next!=='deploy';
@@ -951,25 +1036,37 @@ export function createRealtimeBattleCommands({
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
- function activateRadarPin(px,py){
-  const pin=radarHitPin(radarPins,px,py);
-  if(!pin)return;
+ function activateRadarPin(px,py,{strategy=false}={}){
+ const pin=radarHitPin(radarPins,px,py);
+ if(strategy&&pin){
   if(pin.team===0)showSquadControls(pin.id);
   else onEnemySelect(pin.id);
+  return;
  }
- radarCanvas.addEventListener('click',event=>{
-  if(!started)return;
-  const rect=radarCanvas.getBoundingClientRect();
-  if(rect.width>0&&rect.height>0)
-   activateRadarPin((event.clientX-rect.left)/rect.width,(event.clientY-rect.top)/rect.height);
- });
- radarCanvas.addEventListener('keydown',event=>{
-  if(event.key!=='Enter'&&event.key!==' ')return;
-  event.preventDefault();
-  const pin=radarPins.find(p=>p.team===0&&p.id===String(selectedId))||
-   radarPins.find(p=>p.team===0);
-  if(pin)showSquadControls(pin.id);
- });
+ // Single tap => live 3D overhead camera; double tap => squad strategy.
+ if(pin?.team===0)setSelected(pin.id);
+ const point=pin||{x:px,y:py};
+ onMapOverview({x:Math.round(clamp(point.x*worldSize,0,worldSize-1)),
+  z:Math.round(clamp(point.y,0,1)*(worldSize-1))});
+}
+$('realtimeRadarTitle').onclick=()=>{
+ if(started)onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
+};
+radarCanvas.addEventListener('click',event=>{
+ if(!started)return;
+ const rect=radarCanvas.getBoundingClientRect();
+ if(rect.width>0&&rect.height>0)
+  activateRadarPin((event.clientX-rect.left)/rect.width,
+   (event.clientY-rect.top)/rect.height,{strategy:event.detail>=2});
+});
+radarCanvas.addEventListener('keydown',event=>{
+ if(event.key!=='Enter'&&event.key!==' ')return;
+ event.preventDefault();
+ const pin=radarPins.find(p=>p.team===0&&p.id===String(selectedId))||
+  radarPins.find(p=>p.team===0);
+ if(pin)activateRadarPin(pin.x,pin.y,{strategy:event.shiftKey});
+ else onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
+});
  for(const [button,offset] of [['realtimeMapPrev',-1],['realtimeMapNext',1],['realtimeDockPrev',-1],['realtimeDockNext',1]])
   $(button).addEventListener('click',()=>{
    const own=squads(),index=own.findIndex(s=>String(s.id)===String(selectedId));
@@ -1011,7 +1108,12 @@ export function createRealtimeBattleCommands({
     $(status).textContent='このジョブに遠距離攻撃はありません。';
     return;
    }
-   if(button.dataset.attackOrigin==='dock')pendingStrategy={command,attackKind:kind};
+   if(button.dataset.attackOrigin==='dock'){
+    pendingStrategy={command,attackKind:kind};
+    $('realtimeSkillStep').textContent='② '+button.textContent+
+     (battleAttackNeedsEnemy(kind)?'：攻撃する敵隊を選んでください':'：確定してください');
+    refreshMoveTargetChoices();
+   }
    else preferredActions.set(id,'attack_'+kind);
    renderActionSelection();
    if(button.dataset.attackOrigin==='map'){
@@ -1025,7 +1127,7 @@ export function createRealtimeBattleCommands({
     $('realtimeMapAttackChoices').hidden=true;
    }else{
     $('realtimeDockAttackChoices').hidden=true;
-    $('realtimeSelectedState').textContent='攻撃方法を選択しました。「作戦を確定」で発令します。';
+    $('realtimeSelectedState').textContent='攻撃方法を選択しました。指定可能な敵隊を選んで確定してください。';
     renderActionSelection();
    }
   };
@@ -1044,7 +1146,12 @@ export function createRealtimeBattleCommands({
  // Live movement is now chosen through a person, object or map-position target.
  $('realtimeMapClose').onclick=closeMap;
  $('realtimeDockClose').onclick=closeSquadControls;
- $('realtimeCharge').onclick=()=>{hideContextChoices();$('realtimeDockAttackChoices').hidden=false;renderActionSelection();};
+ $('realtimeCharge').onclick=()=>{
+  hideContextChoices();pendingStrategy=null;
+  $('realtimeSkillStep').textContent='① 攻撃方法を選択してください';
+  $('realtimeDockAttackChoices').hidden=false;
+  refreshMoveTargetChoices();renderActionSelection();
+ };
  $('realtimeSupport').onclick=()=>showSupportChoices('dock');
  $('realtimeMapManageItems').onclick=()=>{
   const targetId=String(selectedId||'');
@@ -1055,13 +1162,13 @@ export function createRealtimeBattleCommands({
   const targetId=String(selectedId||'');
   closeSquadControls();onManageItems(targetId);
  };
- $('realtimeTargetKind').onchange=()=>{
-  targetPoint=null;refreshMoveTargetChoices();
- };
+ $('realtimeTargetKind').onchange=()=>{refreshMoveTargetChoices();};
  $('realtimeTargetChoice').onchange=()=>{
   const chosen=selectedMovementTarget();
-  $('realtimeTargetMessage').textContent=chosen?'選択対象：'+String(chosen.label||chosen.id):
-   '対象を選択してください';
+  $('realtimeTargetMessage').textContent=chosen?
+   '選択した敵隊：'+String(chosen.label||chosen.id)+'。確定で作戦を実行します。':
+   '攻撃する敵隊を選択してください';
+  renderActionSelection();
  };
  $('realtimeInlineTargetMap').addEventListener('click',event=>{
   const canvas=$('realtimeInlineTargetMap'),rect=canvas.getBoundingClientRect();
@@ -1088,6 +1195,14 @@ export function createRealtimeBattleCommands({
  $('realtimeTabItems').onclick=()=>setDockTab('items');
  $('realtimeRally').onclick=()=>showRallyChoices();
  $('realtimeSpecial').onclick=()=>showSpecialChoices('dock');
+ $('realtimeThiefUnlock').onclick=()=>{
+  const action=battleJobSpecialActions(getSelected()?.job).find(entry=>entry.id==='unlock_door');
+  if(action)showSpecialTargets('dock',action);
+ };
+ $('realtimeThiefSteal').onclick=()=>{
+  const action=battleJobSpecialActions(getSelected()?.job).find(entry=>entry.id==='steal_item');
+  if(action)showSpecialTargets('dock',action);
+ };
  $('realtimeDefend').onclick=()=>{
   if(String(getSelected()?.job||'').includes('僧侶'))showGuardChoices();
   else issueDockOrder('defend');
@@ -1095,12 +1210,27 @@ export function createRealtimeBattleCommands({
  $('realtimeHold').onclick=()=>issueDockOrder('hold');
  $('realtimeStart').onclick=()=>{
   if(started)return;
+  // Do not close deployment while battle has failed to unpause.
+  const accepted=onStart();
+  if(accepted===false){
+   $('realtimeMapMessage').textContent='戦闘を開始できません。作戦停止状態を確認してください。';
+   return;
+  }
   started=true;mode='live';hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;
   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
-  onStart();renderStatus();drawRadar(true);
+  renderStatus();drawRadar(true);
  };
  $('realtimeRoster')?.addEventListener('click',()=>onRoster());
  $('realtimeMenu').onclick=()=>{closeSquadControls();onMenu();};
+ const commandWizard=mountBattleCommandWizard({
+  documentRef:doc,dock:$('realtimeBattleDock'),worldSize,
+  getSquads:squads,getEnemies,getSelected,selectSquad:setSelected,
+  getMapBackground,getLegalPoint,getMoveTargets,getSpecialTargets,getSharedItems,getRallyInfo,
+  onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,onCommandCommitted,
+  queueArrival:(id,entry)=>arrivalActions.set(String(id),entry),
+  setPreferred:(id,action)=>preferredActions.set(String(id),action),
+  onClose:closeSquadControls
+ });
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
   openDeployment(){started=false;mode='deploy';exitPlanning();planningOwnsPause=false;
@@ -1130,7 +1260,7 @@ export function createRealtimeBattleCommands({
      if(accepted)arrivalActions.delete(id);
     }
    }
-   renderStatus();
+   renderStatus();refreshMissionNotice();
    if(started&&!$('realtimeBattleDock').hidden){
     if(dockTab==='rally')refreshRallyState();
     if(dockTab==='items')refreshInlineItems();
@@ -1151,6 +1281,6 @@ export function createRealtimeBattleCommands({
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
   get planningSeconds(){return planningDeadline?Math.max(0,Math.ceil((planningDeadline-nowMs())/1000)):null;},
   get radarPins(){return [...radarPins];},
-  root,dispose(){exitPlanning();root.remove();}
+  root,dispose(){exitPlanning();commandWizard.dispose();root.remove();}
  };
 }

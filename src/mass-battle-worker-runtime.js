@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=20261117-mount-interior1';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=20261120-shield-cover3';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js?v=4.6.64';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
@@ -65,6 +65,7 @@ export function createMassBattleWorkerHandler(emit){
         case 'reinforceSquad':if(sim)sim.reinforceSquadFromReserve(message.squadId,message.count,message.team||0);break;
         case 'summonSquadCreature':if(sim)sim.summonSquadCreature(message.squadId,message.team||0);break;
         case 'orderSquadHighGround':if(sim)sim.orderSquadHighGround(message.squadId,message.routeIndex,message.team||0);break;
+        case 'shieldCover':if(sim)sim.assignShieldCover(message.squadId,message.targetSquadId,message.team||0);break;
         case 'buffSquadItem':if(sim)sim.applySquadItemBuff(message.squadId,message.itemId,message.buff,message.duration,message.team||0);break;
         case 'squadStrategy':if(sim)sim.setSquadStrategy(message.squadId,message.strategy);break;
         case 'squadFormationTypes':if(sim)sim.setSquadFormationTypes(message.types,message.team||0,message.assignments,message.jobSnapshots);break;

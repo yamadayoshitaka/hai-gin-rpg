@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "six_static_gates_passed_visual_approval_pending",
-  "sourceFingerprint": "815e24975eaae1087e4c128168fd4f3364905164318bc786980e07412f2df973",
+  "sourceFingerprint": "385a2d590e977deb6c1a8cb4255ad62ebf99f6eab381a62a786e6b028dc6d98d",
   "objectCount": 60,
   "stageCount": 200,
   "objectIds": [
@@ -109,7 +109,7 @@
     "visual": {
       "status": "gate_passed",
       "details": [
-        "Real WebGL screenshots available for town_herb_garden_001 (visual review still required)"
+        "Real WebGL screenshots available for inn_001 (visual review still required)"
       ]
     }
   },
