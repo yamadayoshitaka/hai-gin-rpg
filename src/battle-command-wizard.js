@@ -21,7 +21,7 @@ export function mountBattleCommandWizard({
  root.id='battleCommandWizard';root.className='battleCommandWizard';
  root.setAttribute('role','dialog');root.setAttribute('aria-label','部隊の行動と対象を順番に設定');
  root.hidden=true;dock.append(root);
- const state={stage:'squad',squad:null,category:null,kind:null,target:null,point:null,arrival:'hold',item:null,notice:''};
+ const state={stage:'squad',squad:null,category:null,kind:null,target:null,point:null,arrival:'hold',arrivalSpecialId:null,arrivalTarget:null,item:null,notice:''};
  const history=[];
  const actions=[
   ['move','➤ 移動'],['attack','⚔ 攻撃'],['defend','🛡 守備'],['hold','⏸ 待機'],
@@ -45,7 +45,7 @@ export function mountBattleCommandWizard({
   root.querySelector('.battleWizardBody').append(n);return n;
  }
  function currentSquad(){return getSquads().find(s=>String(s.id)===String(state.squad))||getSelected();}
- function pickSquad(id){if(selectSquad(id)!==false){advance('main',{squad:String(id),category:null,kind:null,target:null,point:null,item:null,arrival:'hold'});}}
+ function pickSquad(id){if(selectSquad(id)!==false){advance('main',{squad:String(id),category:null,kind:null,target:null,point:null,item:null,arrival:'hold',arrivalSpecialId:null,arrivalTarget:null});}}
  function actionOptions(){
   const job=currentSquad()?.job||'';
   const specials=battleJobSpecialActions(job);
@@ -149,14 +149,14 @@ export function mountBattleCommandWizard({
     const current=(getSpecialTargets(id,'high_ground')||[]).find(t=>String(t.id)===String(target?.id));
     if(current&&current.available!==false){
      accepted=onSpecial(id,'high_ground',String(current.id));
-     if(accepted&&state.arrival!=='hold'&&point)
-      queueArrival(id,{command:state.arrival,point:{...point}});
+     if(accepted&&point&&state.arrival!=='hold')
+      queueArrival(id,{...(state.arrival==='special'?{special:state.arrivalSpecialId,targetId:String(state.arrivalTarget?.id)}:{command:state.arrival}),point:{...point}});
     }
    }else if(point){
     const legal=getLegalPoint(point.x,point.z);
     if(legal){
      accepted=onMove(id,{x:legal.x,z:legal.z});
-     if(accepted)queueArrival(id,{command:state.arrival||'hold',point:{x:legal.x,z:legal.z}});
+     if(accepted)queueArrival(id,{...(state.arrival==='special'?{special:state.arrivalSpecialId,targetId:String(state.arrivalTarget?.id)}:{command:state.arrival||'hold'}),point:{x:legal.x,z:legal.z}});
     }
    }
   }else if(state.category==='rally'){
@@ -179,7 +179,7 @@ export function mountBattleCommandWizard({
   if(root.hidden)return;
   root.replaceChildren();
   const head=element('header','','battleWizardHead');
-  const names={squad:'① 味方隊を選択',main:'② 指示の種類',actions:'③ 行動を選択',types:'④ 行動の種類',targets:'⑤ 対象を選択',map:'⑤ マップで移動先を選択',arrival:'⑥ 到着後の自動行動',confirm:'⑦ 最終確認',items:'③ アイテムを選択'};
+  const names={squad:'① 味方隊を選択',main:'② 指示の種類',actions:'③ 行動を選択',types:'④ 行動の種類',targets:'⑤ 対象を選択',map:'⑤ マップで移動先を選択',arrival:'⑥ 到着後の自動行動',arrivalTypes:'⑥ 到着後の固有技',arrivalTarget:'⑥ 固有技の対象',confirm:'⑦ 最終確認',items:'③ アイテムを選択'};
   head.append(element('strong',names[state.stage]||'作戦'));
   const buttons=element('div','','battleWizardHeadButtons');
   const prev=element('button','◀ 戻る');prev.onclick=back;prev.type='button';prev.disabled=!history.length;
@@ -263,15 +263,34 @@ export function mountBattleCommandWizard({
    note('移動後の行動を指定できます。指定がなければ自動で待機します。');
    for(const [id,label] of [['hold','⏸ 待機'],['defend','🛡 守備'],['charge','⚔ 交戦']])
     button(label,()=>{state.arrival=id;advance('confirm');},{chosen:state.arrival===id});
-   if(state.kind==='move_high')note('高所では到着後に待機。登攀可能な経路が優先されます。');
+   const abilities=battleJobSpecialActions(currentSquad()?.job)||[];
+   if(abilities.length)button('✨ 到着後に固有技',()=>advance('arrivalTypes'));
+   if(state.kind==='move_high')note('高所では指定がなければ到着後待機。登攀可能な経路が優先されます。');
+  }else if(state.stage==='arrivalTypes'){
+   const abilities=battleJobSpecialActions(currentSquad()?.job)||[];
+   if(!abilities.length)note('このジョブに固有技はありません。',true);
+   for(const skill of abilities){
+    const choices=getSpecialTargets(String(state.squad),skill.id)||[];
+    const available=choices.some(t=>t.available!==false);
+    button(skill.label,()=>advance('arrivalTarget',{arrivalSpecialId:skill.id,arrivalSpecialName:skill.label,arrivalTarget:null}),{
+     disabled:!available,reason:available?'':'対象または必要MPがありません'});
+   }
+  }else if(state.stage==='arrivalTarget'){
+   const choices=getSpecialTargets(String(state.squad),state.arrivalSpecialId)||[];
+   if(!choices.length)note('実行可能な対象がありません。',true);
+   for(const target of choices){
+    button(esc(target.label||target.id),()=>advance('confirm',{arrival:'special',arrivalTarget:target}),{
+     disabled:target.available===false,reason:target.available===false?esc(target.reason||'使用できません'):''});
+   }
   }else if(state.stage==='confirm'){
    const description=state.category==='item'?'アイテム：'+esc(state.item?.label||state.item?.name):
-    state.category==='move'?'移動：'+(state.kind==='move_high'?'高所':'地面')+' → 到着後 '+({hold:'待機',defend:'守備',charge:'交戦'}[state.arrival]||'待機'):
+    state.category==='move'?'移動：'+(state.kind==='move_high'?'高所':'地面')+' → 到着後 '+({hold:'待機',defend:'守備',charge:'交戦',special:esc(state.arrivalSpecialName||'固有技')}[state.arrival]||'待機'):
     state.category==='rally'?'号令：'+esc(state.command):
     state.kind==='special'?esc(state.specialName):
     esc(state.kind||state.command);
    note(description);
    if(state.target)note('対象：'+esc(state.target.label||state.target.name||state.target.id));
+   if(state.arrivalTarget)note('到着後の対象：'+esc(state.arrivalTarget.label||state.arrivalTarget.id));
    if(state.point)note('地点：X '+state.point.x+' / Z '+state.point.z);
    button('✅ この内容で確定',issue);
   }
@@ -280,7 +299,7 @@ export function mountBattleCommandWizard({
  function open(id){
   history.length=0;
   Object.assign(state,{stage:'squad',squad:id==null?null:String(id),category:null,kind:null,
-   target:null,point:null,arrival:'hold',item:null,notice:''});
+   target:null,point:null,arrival:'hold',arrivalSpecialId:null,arrivalTarget:null,item:null,notice:''});
   dock.classList.add('wizard-active');root.hidden=false;render();
  }
  function hide(){
