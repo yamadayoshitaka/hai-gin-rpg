@@ -48,3 +48,4 @@ jobs:
           node --test qa/squad-missions-and-healing.test.mjs
           node --test qa/battle-start-highground-shield-cover.test.mjs
           node qa/mounted-summon-command-items.test.mjs
+          node qa/mass-battle-worker.test.mjs
