@@ -10239,15 +10239,24 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   if(action==='summon_and_move')return true;
   const target=realtimeMoveTargets('enemies',id)
    .find(t=>String(t.squadId)===String(targetId));
-  if(!target)return true; // The summon already succeeded; never spend MP twice.
-  const prior=selectedSquadId;selectedSquadId=String(id);
-  try{
-   const ordered=issueIndividualSquadOrder('mission',{
-    type:'eliminate_squad',targetSquadId:String(target.squadId),
-    x:Math.round(target.x),z:Math.round(target.z)});
-   if(!ordered)log('召喚成功。敵対象への進軍は次の命令で設定してください。');
+  if(!target){
+   log('召喚は成功しましたが、選んだ敵隊は既に存在しません。');
    return true;
-  }finally{selectedSquadId=prior;}
+  }
+  // The summoned monster is NOT a soldier in the summoner's squad.
+  // A normal squad mission cannot move it; direct the real creature AI.
+  const directed=massSim?
+   massSim.commandSquadSummonAttack(id,target.squadId,0):
+   skirmishActions.commandSummonAttack(id,target.squadId,actors,0);
+  if(!directed){
+   log('召喚は成功しましたが、召喚獣への敵追跡命令に失敗しました。');
+   return false;
+  }
+  if(massSim&&massWorker?.active)
+   massWorker.commandSquadSummonAttack(id,target.squadId,0);
+  log('🐉 '+squadName(id)+'の召喚獣：'+squadName(target.squadId,1)+'を追跡・攻撃開始');
+  updateUI();
+  return true;
  }
  if(action==='high_ground'){
   if(!massSim){
