@@ -68,10 +68,10 @@ test('high-ground wizard, arrival dispatcher and worker use one squad-level targ
  const worker=read('src/mass-battle-worker-runtime.js');
  const client=read('src/mass-battle-worker-client.js');
  const page=read('tactics-wireframe.html');
- assert.match(wizard,/highGroundTarget:String\\(current.id\\)/);
+ assert.match(wizard,/highGroundTarget:String\(current.id\)/);
  assert.match(commands,/height.highGroundArrived/);
  assert.match(worker,/case 'squadHighGroundArrival'/);
- assert.match(client,/setSquadHighGroundArrival\\(squadId,command,team=0\\)/);
+ assert.match(client,/setSquadHighGroundArrival\(squadId,command,team=0\)/);
  assert.match(page,/const highGroundArrived=Boolean/);
- assert.match(page,/massSim.setSquadHighGroundArrival\\(id,mode,0\\)/);
+ assert.match(page,/massSim.setSquadHighGroundArrival\(id,mode,0\)/);
 });
