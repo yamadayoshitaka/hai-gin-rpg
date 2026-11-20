@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-matched-basalt-anatomy-v14-20261120';
+export const M019_HERO_REVISION='m019-visible-charcoal-limbs-v15-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -148,7 +148,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  const baseRadius=fore?.291:.318;
  // The medium-dark rocky shading makes real legs visible against the black
  // torso without introducing a glowing red or rubbery-looking arm surface.
- const skin=g.tube(leg,'skin',points,baseRadius,{
+ const skin=g.tube(leg,'light',points,baseRadius,{
   name:'m019-seamless-skin-'+name,capEnds:true
  });
  const geometry=skin.geometry;
@@ -215,7 +215,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  skin.userData.m019GpuSkinningRemoved=true;
  skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
  skin.userData.m019AboveFloorMuscleCrest=true;
- skin.userData.m019VisibleLimbRevision='v14-basalt-match';
+ skin.userData.m019VisibleLimbRevision='v15-visible-charcoal';
  skin.userData.m019MuscleRadius=baseRadius;
  skin.userData.m019HorizontalThigh=true;
  skin.userData.m019VerticalShin=true;
@@ -246,7 +246,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  // Mobile fallback must match the torso: round curved muscles in dark
  // basalt, NOT the v12 straight brown bridging cylinders. Both parts are
  // immutable meshes, while shoulder/knee pivots retain natural articulation.
- const visibleUpper=g.tube(leg,'skin',[
+ const visibleUpper=g.tube(leg,'light',[
    [0,.085,z],[sign*.160,.121,z+.014],
    [sign*.342,.138,z+.025],[sign*.550,.082,z+.018],
    [sign*.755,.008,z+.009],[kneeX,kneeY,z]
@@ -258,7 +258,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  visibleUpper.userData.m019IndependentVisibleCore=true;
  visibleUpper.userData.m019ArticulatedParent='shoulder';
  visibleUpper.userData.m019CurvedAnatomicalFallback=true;
- const visibleShin=g.tube(distal,'skin',[
+ const visibleShin=g.tube(distal,'light',[
    [0,.055,0],[sign*.024,-.075,.009],
    [sign*.039,-.275,.029],[sign*.029,-.500,.062],
    [0,M019_SPRAWL_FOOT_Y,.095]
@@ -270,25 +270,15 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  visibleShin.userData.m019IndependentVisibleCore=true;
  visibleShin.userData.m019ArticulatedParent='knee';
  visibleShin.userData.m019CurvedAnatomicalFallback=true;
- // The near LOD has embedded scutes matching the torso's basalt surface.
- // Low LOD draws no extra plates; 50x50 and 1000x1000 stay affordable.
- if(detail!=='low'){
-   for(const [i,x,y] of [[0,.32,.276],[1,.59,.224]]){
-     const plate=g.rock(leg,'shadow',
-       [sign*x,y,z+.015],[.061,.015,.057],{
-         name:'m019-embedded-arm-scute-'+name+'-'+i,rough:.96
-       });
-     plate.userData.m019EmbeddedBasaltLimbScute=true;
-   }
-   for(let i=0;i<2;i++){
-     const plate=g.rock(distal,'shadow',
-       [sign*.024,-.216-i*.225,.135+i*.012],
-       [.052,.067,.014],{
-         name:'m019-embedded-shin-scute-'+name+'-'+i,rough:.96
-       });
-     plate.userData.m019EmbeddedBasaltLimbScute=true;
-   }
- }
+ // v14 surface chips were positioned ABOVE the curved leg and
+ // appeared as four pairs of floating black spots in the Android viewer.
+ // Remove that geometry, retaining the actual sculpted muscle and toes.
+ // Avoid self-shadow blackouts on these compact small mobile limb shells.
+ visibleUpper.receiveShadow=false;
+ visibleShin.receiveShadow=false;
+ skin.receiveShadow=false;
+ visibleUpper.userData.m019VisibleCharcoal=true;
+ visibleShin.userData.m019VisibleCharcoal=true;
  return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
 }
 
