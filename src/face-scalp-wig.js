@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-seam-v4-7c82bfe0';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-seam-v5';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -472,8 +472,13 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   p.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(p,box,volumeProfile));
   verts.push(p.x,p.y,p.z);smoothNormals.push(n.x,n.y,n.z);
  }
- const crownUnderlay=appendRealCrownUnderlay(
-  geo,box,verts,smoothNormals,volumeProfile);
+ // Buzz cuts already have a clipped scalp shell. Adding the second
+ // posterior underlay over the same donor triangles causes overlapping
+ // surfaces (z-fighting), polygon-shaped shade patches and hard seams.
+ // Retain the underlay only for longer styles with sparse hair coverage.
+ const crownUnderlay=shortHair?
+  {triangles:0,source:'disabled-for-short-hair'}:
+  appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile);
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -571,7 +576,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
  const melanin=[];
  for(let i=0;i<verts.length;i+=3){
-  const shade=v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
+  // Stable continuous pigment on the short cap: adjacent donor triangles
+  // must not receive visibly different tint at the same scalp boundary.
+  const shade=shortHair?0.96:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
   melanin.push(shade,shade*.995,shade*.988);
  }
  buffer.setAttribute('color',new THREE.Float32BufferAttribute(melanin,3));
