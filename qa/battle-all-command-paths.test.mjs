@@ -160,7 +160,7 @@ test('wizard exposes all job specials and routes each into a real handler',()=>{
   ['僧侶','味方を回復'],['弓使い','高所攻撃']
  ]){
   assert.ok(battleJobSpecialActions(job).length);
-  const w=act(job,['行動を選択','固有技',part,'有効な対象']);
+  const w=act(job,['行動を選択','固有技',part,part==='屋根'||part==='高所攻撃'?'城3階':'有効な対象']);
   assert.equal(w.events[0][0],'special',job);
  }
 });
