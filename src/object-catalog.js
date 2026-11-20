@@ -705,10 +705,20 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Shared lathed cloth profile: flat base, stuffed belly, gathered neck and
+   // open collar. Unlike the old ellipsoids, the bottom sits on its own plane.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.98,metalness:0,side:THREE.DoubleSide});
+   const twine=new THREE.MeshStandardMaterial({color:0x66513a,roughness:1,metalness:0});
+   const profile=[[0,0],[.26,0],[.36,.06],[.43,.18],[.46,.43],[.41,.69],[.32,.81],[.19,.88],[.14,.94],[.17,1.00]].map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const bagGeometry=new THREE.LatheGeometry(profile,16);
+   const cordGeometry=new THREE.TorusGeometry(.165*c,.022*c,6,16);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const x=((i%2)*.86-.43)*c,z=((i%3)-1)*.2*c;
+    const y=Math.floor(i/2)*.58*c;
+    const sack=new THREE.Mesh(bagGeometry,burlap);
+    sack.scale.set(1,1,.85);sack.position.set(x,y,z);sack.castShadow=true;sack.receiveShadow=true;root.add(sack);
+    const cord=new THREE.Mesh(cordGeometry,twine);
+    cord.rotation.x=Math.PI/2;cord.scale.y=.85;cord.position.set(x,y+.905*c,z);cord.castShadow=true;root.add(cord);
    }
   }
   if(id==='town_stone_pile_001'){
