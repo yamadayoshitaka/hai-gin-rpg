@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-cap-depth-v16';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-surface-offset-v17';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -415,8 +415,10 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
    if(shortHair){
-    const rear=.53;
-    const side=THREE.MathUtils.lerp(rear,.64,smooth(-.10,.12,zn));
+    // Extend the back/side donor cap toward the nape while keeping the
+    // front hairline high enough to leave the forehead and eyes visible.
+    const rear=.43;
+    const side=THREE.MathUtils.lerp(rear,.59,smooth(-.10,.12,zn));
     return THREE.MathUtils.lerp(side,.76,smooth(.10,.28,zn));
    }
    const rear=.525;
@@ -462,9 +464,25 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    const seamWidth=Math.max(d.y*.055,1e-6);
    const seamT=THREE.MathUtils.clamp(seamDistance/seamWidth,0,1);
    const seamBlend=seamT*seamT*(3-2*seamT);
-   v.addScaledVector(n,d.x*(shortHair?.0035:.0012));
+   // The donor's vertex normals can point into the skull or sideways at
+   // mirrored seams. For close-cut hair use the outward skull envelope
+   // direction, never the potentially inverted interpolated normal.
+   // This guarantees the cap is displaced OUT of the skin at each donor
+   // vertex instead of moving inward and disappearing behind the face.
+   if(shortHair){
+    const radial=new THREE.Vector3(
+     (v.x-center.x)/Math.max(d.x*.5,1e-6),
+     (v.y-(box.min.y+d.y*.48))/Math.max(d.y*.52,1e-6),
+     (v.z-center.z)/Math.max(d.z*.5,1e-6)
+    ).normalize();
+    const outward=n.dot(radial)<.25?radial:n.clone().add(radial).normalize();
+    v.addScaledVector(outward,d.x*.009);
+    smoothNormals.push(outward.x,outward.y,outward.z);
+   }else{
+    v.addScaledVector(n,d.x*.0012);
+    smoothNormals.push(n.x,n.y,n.z);
+   }
    verts.push(v.x,v.y,v.z);
-   smoothNormals.push(n.x,n.y,n.z);
   }
  }
  // Detect holes in the untouched donor topology BEFORE volume lift.
