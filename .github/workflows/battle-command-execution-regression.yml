@@ -7,11 +7,14 @@ on:
       - 'src/battle-realtime-commands.js'
       - 'src/battle-job-special-actions.js'
       - 'src/combat-action-runtime.js'
+      - 'src/battle-bridge-safety.js'
+      - 'src/combat-action-spec.js'
       - 'src/mass-battle-grid-sim.js'
       - 'src/mass-battle-worker-*.js'
       - 'qa/battle-all-command-paths.test.mjs'
       - 'qa/battle-command-followup.test.mjs'
       - 'qa/battle-manual-summon-attack.test.mjs'
+      - 'qa/battle-bridge-summon-evac.test.mjs'
       - '.github/workflows/battle-command-execution-regression.yml'
   push:
     branches: [main]
@@ -38,6 +41,7 @@ jobs:
           node --check src/battle-realtime-commands.js
           node --check src/battle-job-special-actions.js
           node --check src/combat-action-runtime.js
+          node --check src/battle-bridge-safety.js
           node --check src/mass-battle-grid-sim.js
           node --check src/mass-battle-worker-client.js
           node --check src/mass-battle-worker-runtime.js
@@ -46,6 +50,7 @@ jobs:
           node --test qa/battle-all-command-paths.test.mjs
           node --test qa/battle-command-followup.test.mjs
           node --test qa/battle-manual-summon-attack.test.mjs
+          node --test qa/battle-bridge-summon-evac.test.mjs
           node --test qa/squad-highground-unified-order.test.mjs
           node --test qa/squad-missions-and-healing.test.mjs
           node --test qa/battle-start-highground-shield-cover.test.mjs
