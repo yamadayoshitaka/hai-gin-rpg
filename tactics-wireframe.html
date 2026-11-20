@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-specialjob-confirm4"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261119-engaged-stable3"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-wizard1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-icons1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -892,13 +892,13 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-specialjob-confirm4';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-wizard1';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261119-engaged-stable3';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-icons1';
 import {makeBattleRpgStatusRows} from './src/battle-rpg-squad-source.js?v=20261119-rally-reserve2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
@@ -9977,8 +9977,7 @@ function realtimeSpecialTargets(id,action){
       structure,building.model.position,2,{cellSize:CELL}):[];
      if(kind==='roof'&&!roofAccessPlan(structure,{cellSize:CELL}))continue;
      if(kind==='window'&&!windows.length)continue;
-     const capable=members.filter(u=>u.hp>0&&u.alive!==false&&u.hp>=u.maxHp*.35&&
-      (kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId)));
+     const capable=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist);
      if(!capable.length)continue;
      const passDoor=!gate||gate.team===0||!gate.locked||kind==='roof';
      const free=capable.some(u=>!u.floorTravel||
@@ -9996,10 +9995,9 @@ function realtimeSpecialTargets(id,action){
    }
    return result;
   }
-  if(!massSim||!['archer','mage','ninja'].some(job=>jobs.has(job)))return [];
+  if(!massSim)return [];
   return massSim.highGroundRoutes.map((route,index)=>({...route,index}))
    .filter(route=>['window','roof'].includes(route.kind)&&
-    (route.kind==='roof'?jobs.has('ninja'):jobs.has('archer')||jobs.has('mage'))&&
     Number.isInteger(route.access?.x)&&Number.isInteger(route.access?.z))
    .map(route=>{
     // Include enemy-side structures. Display unavailable positions with reasons
@@ -10007,9 +10005,8 @@ function realtimeSpecialTargets(id,action){
     const already=members.some(unit=>unit.highGroundRouteIndex===route.index&&unit.hp>0);
     const occupied=massSim._highGroundClaims?.has(route.buildingIndex+':0')&&!already;
     const flow=massSim._highGroundFlows?.[route.index];
-    const canEnter=members.some(unit=>unit.hp>=unit.maxHp*.35&&!unit.mountId&&
-     unit.highGroundRouteIndex<0&&
-     (route.kind==='roof'?unit.jobId==='ninja':['archer','mage'].includes(unit.jobId))&&
+    const canEnter=members.some(unit=>unit.hp>0&&unit.alive!==false&&!unit.isStrategist&&
+     !unit.mountId&&unit.highGroundRouteIndex<0&&
      flow&&flow[unit.z*massSim.width+unit.x]<0x3fffffff);
     const intact=massSim._highGroundRouteAlive?.(route)!==false;
     const available=intact&&!occupied&&(already||canEnter);
@@ -10170,9 +10167,8 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
    if(!match)return false;
    const building=townInstances[Number(match[1])],kind=match[2];
    if(!building)return false;
-   const eligible=members.filter(u=>u.hp>0&&u.alive!==false&&
-    (kind==='roof'?u.jobId==='ninja':['archer','mage'].includes(u.jobId))&&
-    u.hp>=u.maxHp*.35&&(!u.floorTravel||
+   const eligible=members.filter(u=>u.hp>0&&u.alive!==false&&!u.isStrategist&&
+    (!u.floorTravel||
      (u.floorTravel.building===building&&['upstairs','roof'].includes(u.floorTravel.phase))));
    eligible.sort((a,b)=>a.root.position.distanceToSquared(building.model.position)-
     b.root.position.distanceToSquared(building.model.position));
@@ -10181,8 +10177,8 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
    selected.floorTravel.manualHighGroundTarget=true;
    selected._manualHighGroundBuilding=building;
    markRibbonOrderIssued(id);
-   battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃',
-    kind==='roof'?'忍者が鉤縄で指定した屋根へ登攀':'指定した建物の階段を登り2階窓から攻撃');
+   battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動',
+    kind==='roof'?'指定の屋根へ移動し到着後待機':'指定した建物の階段を登り到着後待機');
    return true;
   }
   const routeIndex=Number(targetId);
@@ -10192,7 +10188,7 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
   if(!success)return false;
   if(!already&&massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
   markRibbonOrderIssued(id);
-  battleCeremony.showOrder('🏹 '+squadName(id)+'：高所攻撃','既存の階段と窓を使用');
+  battleCeremony.showOrder('🏰 '+squadName(id)+'：高所移動','階段・屋根へ移動し到着後待機');
   return true;
  }
  if(action==='steal_item'){
@@ -10402,6 +10398,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   onManageItems:id=>openBattleItemsForSquad(id),
   getMoveTargets:(kind,id)=>realtimeMoveTargets(kind,id),
   getSharedItems:()=>realtimeSharedItems(),
+ getObjectiveCheckpoints:()=>objectiveCheckpoints.snapshot(),
   onSharedItem:(itemId,id)=>useSquadBattleItem(itemId,id),
  getRallyInfo:id=>({
   ...rallyCycleStatus(),
