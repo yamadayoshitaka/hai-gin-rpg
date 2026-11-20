@@ -289,31 +289,59 @@ export class MassBattleGridSimulation {
     return !structure||structure.alive;
   }
 
-  /** Explicit range-job high-ground order uses the actual authored stair route. */
-  orderSquadHighGround(squadId,routeIndex,team=0){
-    const index=Number(routeIndex),route=this.highGroundRoutes[index];
+  /** One order authorizes the *entire* squad, never an arbitrary scout.
+   * Every surviving member must share a traversable stair route. If the
+   * complete squad cannot reach it, reject instead of silently splitting. */
+  orderSquadHighGround(squadId,routeIndex,team=0,{manualHold=true}={}){
+    const id=String(squadId),index=Number(routeIndex),route=this.highGroundRoutes[index];
     if(!route||!this._highGroundRouteAlive(route)||
       !['window','roof'].includes(route.kind))return false;
-    const key=route.buildingIndex+':'+team;
-    if(this._highGroundClaims.has(key))return false;
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0);
+    if(!members.length)return false;
+    const key=route.buildingIndex+':'+team,claimed=this._highGroundClaims.get(key);
+    if(claimed!=null&&String(claimed)!==id)return false;
     const flow=this._highGroundFlows[index];
-    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
-      u.alive&&u.hp>0&&u.highGroundRouteIndex<0&&
-      !u.isStrategist&&!u.mountId);
-    members.sort((a,b)=>
-      Math.hypot(a.x-route.access.x,a.z-route.access.z)-
-      Math.hypot(b.x-route.access.x,b.z-route.access.z));
-    // A target order authorizes the full walkable route, even if the stairway
-    // is farther than the previous arbitrary 65-cell cutoff.
-    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff);
-    if(!unit)return false;
-    this.squadDestinations.delete(String(squadId));
-    this.squadFlows.delete(String(squadId));
-    unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
-    unit.highGroundT=0;unit.highGroundFloor=1;
-    unit.highGroundManualHold=true; // Height-move order is not an auto-attack command.
-    this._highGroundClaims.set(key,unit.id);
+    if(!flow||members.some(u=>u.mountId||
+      (u.highGroundRouteIndex>=0&&u.highGroundRouteIndex!==index)||
+      (u.highGroundRouteIndex<0&&flow[u.z*this.width+u.x]>=0x3fffffff)))return false;
+    if(team===0){
+      this.autoStrategySquads.delete(id);this.squadDestinations.delete(id);
+      this.squadFlows.delete(id);this.squadMissions.delete(id);
+      this.squadHealTargets.delete(id);this.clearSquadExploration(id,team);
+      this.squadCommands.set(id,'move');
+    }else this.enemySquadCommands.set(id,'move');
+    for(const unit of members){
+      if(unit.highGroundRouteIndex===index)continue;
+      unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
+      unit.highGroundT=0;unit.highGroundFloor=1;unit.highGroundManualHold=manualHold;
+      unit.tacticalOrder=null;unit.tacticalOrderUntil=0;
+    }
+    this._highGroundClaims.set(key,id);
     return true;
+  }
+  /** Preserve a building claim while any comrade still occupies its route. */
+  _releaseHighGroundClaimIfEmpty(unit,route){
+    if(!route)return;
+    const key=route.buildingIndex+':'+unit.team;
+    if(this.units.some(other=>other!==unit&&other.alive&&other.team===unit.team&&
+      other.highGroundRouteIndex>=0&&
+      this.highGroundRoutes[other.highGroundRouteIndex]?.buildingIndex===route.buildingIndex))return;
+    this._highGroundClaims.delete(key);
+  }
+  /** Later orders walk back down the actual staircase before ground travel. */
+  _cancelSquadHighGround(squadId,team=0){
+    const id=String(squadId);
+    for(const u of this.units){
+      if(u.team!==team||String(u.squadId)!==id||u.highGroundRouteIndex<0)continue;
+      if(u.highGroundPhase===0){this._releaseHighGroundUnit(u);continue;}
+      const route=this.highGroundRoutes[u.highGroundRouteIndex];
+      if(u.highGroundPhase===2){
+        u.highGroundStep=Math.max(0,(route?.points.length||2)-2);
+        u.highGroundT=1;
+      }
+      u.highGroundManualHold=false;u.upperPursuitTargetId=-1;
+      u.highGroundPhase=3;u.action='walk';
+    }
   }
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
@@ -348,10 +376,8 @@ export class MassBattleGridSimulation {
         if(cost<score){best=u;score=cost;}
       }
       if(best){
-        best.highGroundRouteIndex=index;
-        best.highGroundPhase=0;best.highGroundStep=0;
-        best.highGroundT=0;best.highGroundFloor=1;
-        this._highGroundClaims.set(route.buildingIndex+':'+best.team,best.id);
+        // Automatic rooftop tactics are squad-level too, not one-person detours.
+        this.orderSquadHighGround(best.squadId,index,best.team,{manualHold:false});
       }
     }
   }
@@ -390,17 +416,16 @@ export class MassBattleGridSimulation {
         if(dist<min){min=dist;best=u;}
       }
       if(best){
-        best.highGroundRouteIndex=routeIndex;best.highGroundPhase=0;
-        best.highGroundStep=0;best.highGroundT=0;best.highGroundFloor=1;
-        best.upperPursuitTargetId=enemy.id;
-        this._highGroundClaims.set(claimKey,best.id);
+        if(this.orderSquadHighGround(best.squadId,routeIndex,best.team,{manualHold:false}))
+          for(const u of this.units)if(u.team===best.team&&String(u.squadId)===String(best.squadId))
+            u.upperPursuitTargetId=enemy.id;
       }
     }
   }
 
   _releaseHighGroundUnit(u){
     const route=this.highGroundRoutes[u.highGroundRouteIndex];
-    if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
+    this._releaseHighGroundClaimIfEmpty(u,route);
     u.highGroundRouteIndex=-1;u.highGroundPhase=0;
     u.highGroundFloor=1;u.highGroundStep=0;u.highGroundT=0;
     u.upperPursuitTargetId=-1;u.highGroundManualHold=false;
@@ -788,6 +813,7 @@ export class MassBattleGridSimulation {
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     this.autoStrategySquads.delete(id);
     this.clearSquadExploration(id,0);
+    this._cancelSquadHighGround(id,0);
     this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
   }
   clearSquadDestination(squadId){
@@ -1165,6 +1191,7 @@ export class MassBattleGridSimulation {
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
     for(const u of this.units)if(u.team===team&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
+    this._cancelSquadHighGround(id,team);
     this.clearSquadExploration(id,team);
     if(team===0){
       this.autoStrategySquads.delete(id);
@@ -1323,7 +1350,7 @@ export class MassBattleGridSimulation {
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
     if(u.highGroundRouteIndex>=0){
       const route=this.highGroundRoutes[u.highGroundRouteIndex];
-      if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
+      this._releaseHighGroundClaimIfEmpty(u,route);
     }
     if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
