@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-donor-aligned-scalp-v10';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-hairline-v11';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -412,9 +412,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    // Long hairstyles need continuous temple/forehead contact; keep the
    // higher frontal skin line but remove the hard gap under the bangs.
    const rear=shortHair&&battleStableCoverage?.505:.525;
-   const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
-   const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
-   return THREE.MathUtils.lerp(temple,.815,smooth(.035,.16,zn));
+   const side=THREE.MathUtils.lerp(rear,shortHair?.555:.625,smooth(-.11,.025,zn));
+   const temple=THREE.MathUtils.lerp(side,shortHair?.605:.71,smooth(.15,.24,xn));
+   return THREE.MathUtils.lerp(temple,shortHair?.685:.815,smooth(.035,.16,zn));
   };
   const signedHairline=v=>v.y-(box.min.y+d.y*hairlineFraction(v));
   // v64: do not DISCARD a whole scalp triangle if only one vertex
