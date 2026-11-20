@@ -595,6 +595,56 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
   ' / Pages公開SHA: 未検証（コード識別子のみ）';
 }
 updateHairRuntimeDiagnostics();
+// Mask only the scalp UNDER hair; retain the donor geometry for root sampling.
+// Shader-space masking avoids deleting ear, face, neck, UV or blendshape data.
+const hiddenScalpOriginals=new WeakMap();
+function setHairHiddenScalp(face,enabled){
+ if(!face?.isMesh)return;
+ if(!hiddenScalpOriginals.has(face))hiddenScalpOriginals.set(face,face.material);
+ const original=hiddenScalpOriginals.get(face);
+ if(!enabled){
+  if(face.material!==original){const masked=face.material;face.material=original;
+   for(const m of Array.isArray(masked)?masked:[masked])m.dispose?.();}
+  return;
+ }
+ if(face.material!==original)return;
+ face.geometry.computeBoundingBox();
+ const box=face.geometry.boundingBox;
+ if(!box)return;
+ const size=box.getSize(new THREE.Vector3());
+ const center=box.getCenter(new THREE.Vector3());
+ const materials=(Array.isArray(original)?original:[original]).map(source=>{
+  const mat=source.clone();
+  const previous=mat.onBeforeCompile;
+  mat.onBeforeCompile=shader=>{
+   previous?.(shader);
+   shader.vertexShader='varying vec3 vHairMaskPosition;\n'+shader.vertexShader;
+   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
+    '#include <begin_vertex>\n vHairMaskPosition = position;');
+   shader.fragmentShader='varying vec3 vHairMaskPosition;\n'+shader.fragmentShader;
+   const cut=`vec3 hairP = vHairMaskPosition;
+    float hz = (hairP.z - ${center.z.toFixed(7)}) / ${Math.max(size.z,1e-5).toFixed(7)};
+    float hx = abs(hairP.x - ${center.x.toFixed(7)}) / ${Math.max(size.x,1e-5).toFixed(7)};
+    float rearSide = mix(0.53, 0.66, smoothstep(-0.15, 0.04, hz));
+    float sideHair = mix(rearSide, 0.72, smoothstep(0.17, 0.26, hx));
+    float hairLine = mix(sideHair, 0.83, smoothstep(0.04, 0.19, hz));
+    float normalizedY = (hairP.y - ${box.min.y.toFixed(7)}) / ${Math.max(size.y,1e-5).toFixed(7)};
+    // Preserve the frontal hairline, ears and all skin below the seam.
+    if (normalizedY > hairLine + 0.018) discard;`;
+   shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
+    '#include <clipping_planes_fragment>\n'+cut);
+  };
+  mat.customProgramCacheKey=()=> 'hair-hidden-scalp-v1-'+(source.customProgramCacheKey?.()||'');
+  return mat;
+ });
+ face.material=Array.isArray(original)?materials:materials[0];
+}
+function updateAllHiddenScalps(){
+ for(const sex of ['female','male']){
+  const face=models.get(sex)?.face;
+  if(face)setHairHiddenScalp(face,Boolean(wigOn&&wigs.get(sex)));
+ }
+}
 function rebuildWig(){
  const chosen=synchronizeHeroHairSelection('female',v32Parts.female,
   v32PartMode?null:wigStyleId);
@@ -603,6 +653,7 @@ function rebuildWig(){
  $('quickWigStyle').value=chosen.styleId;
  $('activeHairStyle').textContent='再生成：'+($('wigStyle').selectedOptions[0]?.textContent||chosen.styleId);
  performanceMetrics.wigRebuilds++;
+ setHairHiddenScalp(models.get('female')?.face,false);
  const previous=wigs.get('female');
  if(previous){
   previous.root.removeFromParent();previous.dispose();wigs.delete('female');
@@ -618,6 +669,7 @@ function rebuildWig(){
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
+  setHairHiddenScalp(models.get('female').face,true);
   updateHairRuntimeDiagnostics(wig);
    $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
     '／'+wig.getReport().rootCount+'束・微細毛10倍';
@@ -670,6 +722,7 @@ function rebuildMaleHair(){
  const chosen=synchronizeHeroHairSelection('male',v32Parts.male);
  Object.assign(v32Parts.male,chosen.parts);
  const previous=wigs.get('male');
+ setHairHiddenScalp(models.get('male')?.face,false);
  if(previous){previous.root.removeFromParent();previous.dispose();wigs.delete('male');}
  if(!v32PartMode||!ready||!wigOn||!models.get('male'))return;
  const hairSpec=resolveHeroHairSpec('male',v32Parts.male,chosen.styleId);
@@ -681,6 +734,7 @@ function rebuildMaleHair(){
   color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
  });
  models.get('male').face.add(hair.root);wigs.set('male',hair);
+ setHairHiddenScalp(models.get('male').face,true);
  const size=models.get('male').face.geometry.boundingBox.getSize(new THREE.Vector3());
  hair.root.position.set(size.x*.008*v32Parts.male.hairX,
   size.y*.007*v32Parts.male.hairY,0);
@@ -707,6 +761,7 @@ function rebuildFemale(){
  const oldWig=wigs.get('female');
  if(oldWig&&wigOn){
   next.face.add(oldWig.root);
+  setHairHiddenScalp(next.face,true);
   const base=oldWig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
   if(base){base.geometry.dispose();base.geometry=next.face.geometry.clone();}
  }
