@@ -31,7 +31,7 @@ export function createRealtimeBattleCommands({
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
- getObjectiveCheckpoints=()=>[],onCommandCommitted=()=>{},
+ getObjectiveCheckpoints=()=>[],onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
  onRally=()=>false,onMapOverview=()=>false
 }={}){
@@ -182,6 +182,25 @@ export function createRealtimeBattleCommands({
  missionNotice.setAttribute('aria-live','polite');
  missionNotice.textContent='🎯 作戦目標：進捗を確認中';
  root.append(missionNotice);
+ const orderNotice=doc.createElement('div');orderNotice.id='battleActiveOrderNotice';
+ orderNotice.setAttribute('role','status');orderNotice.textContent='📋 部隊作戦：選択待ち';
+ root.append(orderNotice);
+ let lastOrderSignature='';
+ function refreshOrderNotice(){
+  if(!started||!selectedId){orderNotice.hidden=true;return;}
+  orderNotice.hidden=false;
+  const live=getOrderState(String(selectedId))||{};
+  const index=squads().findIndex(s=>String(s.id)===String(selectedId));
+  const num=index>=0?index+1:'-';
+  const pending=commandWizard.queuedOrder(String(selectedId));
+  const failure=commandWizard.queuedError(String(selectedId));
+  const cooldown=Math.max(0,Number(live.cooldown)||0);
+  const status=failure?'⚠ '+failure:
+   '第'+num+'隊｜'+String(live.label||'自動行動')+
+   (pending?'｜📋 次：'+pending+(live.moving?'（移動完了待ち）':cooldown?'（'+Math.ceil(cooldown)+'秒後）':'（発令準備）'):
+    cooldown?'｜命令間隔 '+Math.ceil(cooldown)+'秒':'｜次の命令可能');
+  if(lastOrderSignature!==status){orderNotice.textContent=status;lastOrderSignature=status;}
+ }
  let lastMissionSignature='',lastMissionUpdateAt=-Infinity;
  function refreshMissionNotice(){
   const now=nowMs();if(now-lastMissionUpdateAt<700)return;lastMissionUpdateAt=now;
@@ -1226,14 +1245,14 @@ radarCanvas.addEventListener('keydown',event=>{
   documentRef:doc,dock:$('realtimeBattleDock'),worldSize,
   getSquads:squads,getEnemies,getSelected,selectSquad:setSelected,
   getMapBackground,getLegalPoint,getMoveTargets,getSpecialTargets,getSharedItems,getRallyInfo,
-  onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,onCommandCommitted,
+  onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,onCommandCommitted,getOrderState,
   queueArrival:(id,entry)=>arrivalActions.set(String(id),entry),
   setPreferred:(id,action)=>preferredActions.set(String(id),action),
   onClose:closeSquadControls
  });
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
-  openDeployment(){started=false;mode='deploy';exitPlanning();planningOwnsPause=false;
+  openDeployment(){started=false;mode='deploy';exitPlanning();commandWizard.reset();planningOwnsPause=false;
    $('realtimeSquadRadar').hidden=true;deploymentActions.clear();arrivalActions.clear();preferredActions.clear();invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;openMap('deploy');},
   selectSquad:setSelected,
   showSquadControls,
@@ -1260,7 +1279,8 @@ radarCanvas.addEventListener('keydown',event=>{
      if(accepted)arrivalActions.delete(id);
     }
    }
-   renderStatus();refreshMissionNotice();
+   if(started&&!getPaused())commandWizard.tick();
+   renderStatus();refreshMissionNotice();refreshOrderNotice();
    if(started&&!$('realtimeBattleDock').hidden){
     if(dockTab==='rally')refreshRallyState();
     if(dockTab==='items')refreshInlineItems();
@@ -1276,6 +1296,8 @@ radarCanvas.addEventListener('keydown',event=>{
   get selectedId(){return selectedId;},
   get mode(){return mode;},
   get queuedArrivalActions(){return [...arrivalActions.keys()]},
+  getQueuedOrder:id=>commandWizard.queuedOrder(id),
+  getQueuedError:id=>commandWizard.queuedError(id),
   get deploymentActions(){return [...deploymentActions.keys()]},
   get preferredActions(){return [...preferredActions.entries()]},
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
