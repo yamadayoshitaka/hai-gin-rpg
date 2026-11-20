@@ -402,9 +402,11 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // Short battle hair needs a full rear hairline through the nape. Keep
   // the frontal threshold unchanged so skin around the eyes stays exposed.
   const rearShortCover=shortHair&&battleStableCoverage&&zNorm<-.025;
+  // Cover posterior donor triangles below the old 58% cut, including the
+  // temple-to-occipital seam. Keep the forward face threshold unchanged.
   const yCut=box.min.y+d.y*(zNorm>.10?.815:
-   zNorm<-.035?(rearShortCover?.515:.58):
-   Math.abs((mid.x-center.x)/d.x)>.19?.68:.71);
+   zNorm<-.035?(rearShortCover?.505:.525):
+   Math.abs((mid.x-center.x)/d.x)>.19?.625:.71);
   // v64: do not DISCARD a whole scalp triangle if only one vertex
   // falls below the hairline. That produced peppered scalp holes and
   // jagged roots. Clip the REAL triangle to the hairline plane and
@@ -467,12 +469,15 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // The 88 old rear strips ended at HEAD length while the v22 long back
  // drape reached the shoulders: their overlapping cuts made two obvious
  // layers and a stair-step fringe on the back. One system owns the hair.
- const undercoatStrips=!fullBody&&!shortHair&&rearCandidates.length?88:0;
+ // Shared posterior opacity pass for every long hairstyle. The previous 88
+ // narrow strips left the actual scalp visible between disconnected cards.
+ // This is independent of style IDs so every long wig gets the same coverage.
+ const undercoatStrips=!fullBody&&!shortHair&&rearCandidates.length?160:0;
  const stripSegments=12,stripWidths=[],tipHeights=[];
  for(let k=0;k<undercoatStrips;k++){
   const u=(k+.5)/undercoatStrips,side=u<.5?-1:1;
-  const idealX=center.x+(2*u-1)*d.x*.267;
-  const preferredY=box.min.y+d.y*(.805+.025*Math.sin(k*2.39996323));
+  const idealX=center.x+(2*u-1)*d.x*.345;
+  const preferredY=box.min.y+d.y*(.875+.015*Math.sin(k*2.39996323));
   let scalpRoot=null,best=Infinity;
   for(const v of rearCandidates){
    const score=Math.abs(v.x-idealX)/d.x+
@@ -483,7 +488,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    .064*Math.pow(Math.abs(2*u-1),1.3)+
    .012*Math.sin(k*2.39996323)+
    .009*fract(k*.61803398875));
-  const width=d.x*(.0083+.0012*fract(k*.75487766));
+  const width=d.x*(.0098+.0014*fract(k*.75487766));
   const targetX=idealX+side*d.x*.008;
   const targetZ=Math.min(scalpRoot.z-d.z*.018,
    center.z-d.z*(.14+.035*(1-Math.abs(2*u-1))));
