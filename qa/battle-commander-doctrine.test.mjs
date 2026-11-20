@@ -81,7 +81,7 @@ test('summoner, thief and ranged job menu connects to real game functions',()=>{
  assert.match(menu,/id="realtimeRally"/);
  assert.match(menu,/onReinforce\(id,entry\.itemId\)/);
  assert.match(menu,/getRallyInfo\(String\(selectedId\)\)/);
- assert.match(sim,/orderSquadHighGround\(squadId,routeIndex,team=0\)/);
+ assert.match(sim,/orderSquadHighGround\(squadId,routeIndex,team=0,\{manualHold=true\}=\{\}\)/);
  assert.match(worker,/case 'reinforceSquad'/);
  assert.match(worker,/case 'summonSquadCreature'/);
  assert.match(worker,/case 'orderSquadHighGround'/);
