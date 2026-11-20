@@ -11,6 +11,7 @@ class FakeNode{
  }
  append(...nodes){for(const n of nodes)this.children.push(n)}
  replaceChildren(...nodes){this.children=nodes}
+ remove(){this.children=[]}
  setAttribute(k,v){this.attrs[k]=v}
  querySelector(selector){
   if(!selector.startsWith('.'))throw new Error('Unsupported mock selector');
