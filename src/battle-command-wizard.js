@@ -190,8 +190,11 @@ export function mountBattleCommandWizard({
   if(!squad||Number(squad.alive)<=0){
    state.notice='この隊は戦闘不能のため命令できません。';render();return;
   }
-  const cooldown=Math.max(0,Number(getOrderState(id)?.cooldown)||0);
   const live=getOrderState(id)||{};
+  if(live.commanderReason&&plan.category!=='item'){
+   state.notice='発令できません：'+String(live.commanderReason);render();return;
+  }
+  const cooldown=Math.max(0,Number(live.cooldown)||0);
   if(plan.category!=='rally'&&(cooldown>0||live.moving||live.blocked)){
    // Store the plan, not a callback closing over mutable wizard state.
    nextOrders.set(id,{plan,label:nextLabel(plan)});
