@@ -668,9 +668,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ // Reserve a real, upper-crown subset for central apex coverage. This
+ // reduces vertex-order bias without introducing synthetic scalp geometry.
+ const apexCrownPool=(pools.crown||[]).filter(q=>
+  (q.p.y-box.min.y)/d.y>=.94&&
+  Math.abs(q.p.x-center.x)/d.x<.24);
  const sampleRoot=(zone,index)=>{
   const rear=zone.startsWith('back')||zone.startsWith('nape');
-  const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
+  const pool=zone==='crown'&&index%4===0&&apexCrownPool.length?
+   apexCrownPool:rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
   // explicitly, regardless of donor topology vertex-order bias.
   const u=fract((index+1)*.61803398875+
