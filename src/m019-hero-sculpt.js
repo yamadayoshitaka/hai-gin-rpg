@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-contoured-bridge-anatomy-v17-20261120';
+export const M019_HERO_REVISION='m019-single-surface-anatomy-v18-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -135,42 +135,53 @@ export const M019_SHOULDER_LOCAL_Y=1.360;
 function contourM019StableBridge(mesh,from,to,{
  region='upper',side=1,detail='high'
 }={}){
- const geometry=mesh?.geometry;
- const position=geometry?.getAttribute('position');
+ const geometry=mesh?.geometry,position=geometry?.getAttribute('position');
  const uv=geometry?.getAttribute('uv');
- if(!position||!uv)throw Error('m019 requires the rendered bridge mesh');
+ if(!position||!uv)throw Error('m019 requires real oriented bridge rings');
  let stride=0;
- while(stride<uv.count&&uv.getY(stride)<.00001)stride++;
- if(stride<6||position.count%stride!==0)
-  throw Error('m019 oriented bridge ring topology has changed');
+ while(stride<uv.count&&Math.abs(uv.getY(stride))<1e-5)stride++;
+ if(stride<9||position.count%stride!==0)
+  throw Error('m019 bridge ring topology must remain round and regular');
  const rings=position.count/stride;
- if(rings<4)throw Error('m019 anatomical bridge needs several rings');
+ if(rings<10)throw Error('m019 needs enough longitudinal muscle stations');
  const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to);
- const center=new THREE.Vector3();
- const sign=side<0?-1:1;
- const upper=region==='upper';
+ const axis=b.clone().sub(a).normalize();
+ const u=new THREE.Vector3(1,0,0);
+ if(Math.abs(u.dot(axis))>.94)u.set(0,0,1);
+ u.addScaledVector(axis,-u.dot(axis)).normalize();
+ const v=new THREE.Vector3().crossVectors(axis,u).normalize();
+ const center=new THREE.Vector3(),radial=new THREE.Vector3();
+ const sign=side<0?-1:1,upper=region==='upper';
  for(let row=0;row<rings;row++){
   const t=row/(rings-1),arc=Math.sin(Math.PI*t);
   center.lerpVectors(a,b,t);
-  // The visible v16 bridge already spans shoulder -> knee -> paw.
-  // Add modest rounded muscle mass, NEVER reduce its minimum diameter.
-  const muscle=upper?.19:.12;
-  const joint=upper?.055*Math.exp(-Math.pow((1-t)/.18,2)):
-    .065*Math.exp(-Math.pow(t/.18,2));
-  const contour=1+muscle*arc*arc+joint;
-  const shiftY=upper?.024*arc:0;
-  const shiftX=upper?0:sign*.013*arc;
-  const shiftZ=(upper?.008:.013)*arc;
+  // Different anatomical profiles rather than uniform cylindrical bars:
+  // shoulder/thigh is fleshy at 1/3 and tapers into the elbow; the
+  // lower segment swells below the knee and narrows at the planted ankle.
+  const muscle=upper?.21*Math.exp(-Math.pow((t-.34)/.24,2)):
+    .20*Math.exp(-Math.pow((t-.24)/.27,2));
+  const joint=upper?.075*Math.exp(-Math.pow((t-.91)/.10,2)):
+    .055*Math.exp(-Math.pow((t-.055)/.13,2));
+  const taper=upper?1-.035*t:1-.065*t;
+  const shape=taper*(1+muscle+joint);
+  // Elliptical, rounded cross sections. The shift bends the real mesh;
+  // each endpoint remains fixed at its old successful bind pose.
+  const ovalU=upper?1.09:1.10,ovalV=upper?.90:.93;
+  const bendY=upper?.029*arc:0;
+  const bendX=upper?0:sign*.018*arc;
+  const bendZ=(upper?.017:.024)*arc;
   for(let j=0;j<stride;j++){
    const i=row*stride+j;
-   const angle=2*Math.PI*j/(stride-1);
+   radial.set(position.getX(i)-center.x,
+    position.getY(i)-center.y,position.getZ(i)-center.z);
    const grain=detail==='low'?1:
-    1+.013*Math.sin(5*angle+9*t)*arc;
-   const radius=contour*grain;
+    1+.009*Math.sin(t*22+j*2*Math.PI/(stride-1)*5)*arc;
+   const ru=radial.dot(u)*shape*ovalU*grain;
+   const rv=radial.dot(v)*shape*ovalV*grain;
    position.setXYZ(i,
-    center.x+(position.getX(i)-center.x)*radius+shiftX,
-    center.y+(position.getY(i)-center.y)*radius+shiftY,
-    center.z+(position.getZ(i)-center.z)*radius+shiftZ);
+    center.x+u.x*ru+v.x*rv+bendX,
+    center.y+u.y*ru+v.y*rv+bendY,
+    center.z+u.z*ru+v.z*rv+bendZ);
   }
  }
  position.needsUpdate=true;
@@ -180,6 +191,7 @@ function contourM019StableBridge(mesh,from,to,{
  mesh.userData.m019MuscleProfile=upper?'shoulder-elbow':'knee-ankle';
  mesh.userData.m019BridgeRingCount=rings;
  mesh.userData.m019NoAdditionalDrawCalls=true;
+ mesh.userData.m019EllipticalAnatomicalSections=true;
  return mesh;
 }
 /**
@@ -191,155 +203,47 @@ function contourM019StableBridge(mesh,from,to,{
  * closed visible surface without GPU skinning, joints cut-outs or black posts.
  */
 export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'}={}){
- const sign=side<0?-1:1;
- const z=fore?-.012:.022;
- const kneeX=sign*M019_SPRAWL_KNEE_X;
- const kneeY=M019_SPRAWL_KNEE_Y;
- const footY=kneeY+M019_SPRAWL_FOOT_Y;
- const points=[
-  // Place muscle crest ABOVE the dark belly and project the elbow farther
-  // outside the ribs. Previous centers were in silhouette shadow or hidden
-  // by the near-black abdomen even though they cast long floor shadows.
-  [0,.090,z],[sign*.145,.103,z+.012],
-  [sign*.330,.136,z+.023],[sign*.555,.079,z+.020],
-  [sign*.750,.015,z+.010],[kneeX,kneeY,z],
-  [kneeX,kneeY-.135,z],[kneeX,kneeY-.305,z+.008],
-  [kneeX,kneeY-.510,z+.032],[kneeX,footY,z+.095]
- ];
- const path=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
- const baseRadius=fore?.291:.318;
- // The medium-dark rocky shading makes real legs visible against the black
- // torso without introducing a glowing red or rubbery-looking arm surface.
- const skin=g.tube(leg,'light',points,baseRadius,{
-  name:'m019-seamless-skin-'+name,capEnds:true
- });
- const geometry=skin.geometry;
- const attr=geometry.getAttribute('position');
- const tubularSegments=geometry.parameters.tubularSegments;
- const radialSegments=geometry.parameters.radialSegments;
- const stride=radialSegments+1;
- const ringCount=tubularSegments+1;
- if(attr.count!==ringCount*stride+2)throw Error('m019 continuous muscle needs closed rings');
- const radiusScale=t=>{
-  if(t<.16)return 1.08+.05*Math.sin(t/.16*Math.PI);
-  if(t<.45)return 1.10-(t-.16)*.72;
-  if(t<.63)return .8912-(t-.45)*1.30;
-  if(t<.85)return .6572-(t-.63)*.57;
-  return .5318-(t-.85)*.48;
+ const sign=side<0?-1:1,z=fore?-.012:.022;
+ const kneeX=sign*M019_SPRAWL_KNEE_X,kneeY=M019_SPRAWL_KNEE_Y;
+ // The V16 oriented bridge was actually visible on mobile. In V17 both
+ // that bridge AND a CPU-deformed tube drew over each other, producing
+ // four doubled rectangular limbs. Use exactly ONE visible mesh per bone
+ // segment and preserve the real shoulder/knee parents and foot coordinates.
+ const quality={
+  longitudinalSegments:detail==='low'?12:24,
+  radialSegments:detail==='low'?10:16
  };
- const weight=new Float32Array(attr.count);
- const smooth=t=>{
-  const v=Math.max(0,Math.min(1,t));return v*v*(3-2*v);
- };
- for(let row=0;row<ringCount;row++){
-  const t=row/tubularSegments,center=path.getPointAt(t);
-  const radius=radiusScale(t),kneeWeight=smooth((t-.365)/.20);
-  for(let j=0;j<stride;j++){
-   const i=row*stride+j;
-   attr.setXYZ(i,
-    center.x+(attr.getX(i)-center.x)*radius,
-    center.y+(attr.getY(i)-center.y)*radius,
-    center.z+(attr.getZ(i)-center.z)*radius);
-   weight[i]=kneeWeight;
-  }
- }
- weight[attr.count-1]=1; // closing cap follows ankle, not shoulder
- const rest=new Float32Array(attr.array);
- const inverseBind=new THREE.Matrix4().makeTranslation(-kneeX,-kneeY,-z);
- const transform=new THREE.Matrix4(),deformed=new THREE.Vector3();
- let lastX=NaN,lastY=NaN,lastZ=NaN;
- function refreshVisibleLimb(){
-  if(lastX===distal.rotation.x&&lastY===distal.rotation.y&&lastZ===distal.rotation.z)
-   return;
-  lastX=distal.rotation.x;lastY=distal.rotation.y;lastZ=distal.rotation.z;
-  // In shoulder-local coordinates: distal matrix * inverse(bind pose).
-  // All trunk/shoulder movement comes from leg's actual world transform.
-  distal.updateMatrix();
-  transform.copy(distal.matrix).multiply(inverseBind);
-  for(let i=0;i<weight.length;i++){
-   const off=i*3,x=rest[off],y=rest[off+1],v=rest[off+2];
-   const w=weight[i];
-   if(w<=0){attr.setXYZ(i,x,y,v);continue;}
-   deformed.set(x,y,v).applyMatrix4(transform);
-   attr.setXYZ(i,x+(deformed.x-x)*w,
-    y+(deformed.y-y)*w,v+(deformed.z-v)*w);
-  }
-  attr.needsUpdate=true;
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
- }
- skin.frustumCulled=false; // bounds are dynamic during gait
- skin.userData.m019RefreshVisibleLimb=refreshVisibleLimb;
- skin.userData.m019ContinuousLimb=true;
- skin.userData.m019TrueRoundLimb=true;
- skin.userData.m019CrossSectionsPerpendicularToAxis=true;
- skin.userData.m019WholeLegClosedSurface=true;
- skin.userData.m019GpuSkinningRemoved=true;
- skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
- skin.userData.m019AboveFloorMuscleCrest=true;
- skin.userData.m019VisibleLimbRevision='v15-visible-charcoal';
- skin.userData.m019MuscleRadius=baseRadius;
- skin.userData.m019HorizontalThigh=true;
- skin.userData.m019VerticalShin=true;
- skin.userData.m019SprawledOutward=true;
- g.root.userData.m019VisibleLimbUpdaters??=[];
- g.root.userData.m019VisibleLimbUpdaters.push(refreshVisibleLimb);
- // Combat and inspection call the same update; this fallback also works if
- // another renderer changes joint rotations without calling our animation.
- skin.onBeforeRender=refreshVisibleLimb;
- refreshVisibleLimb();
- // Small partly buried fissures; no detached long luminous rods.
- const veins=detail==='low'?1:2;
- for(let vein=0;vein<veins;vein++){
-  const offset=vein*.024;
-  const fissure=g.tube(leg,'accent',[
-   [sign*.088,.310-offset,z+.017],
-   [sign*.177,.343-offset,z+.043],
-   [sign*.283,.361-offset,z+.020],
-   [sign*.393,.328-offset,z+.035]
-  ],detail==='low'?.0045:.0065,{
-   name:'m019-limb-molten-crack-'+name+'-'+vein,
-   glow:detail!=='low'
-  });
-  fissure.userData.m019MoltenFissure=true;
-  fissure.userData.m019InsetHeatVein=true;
- }
-
- // Return to the EXACT geometry path that was visibly rendered in
- // v4.5.27 (v13). v14 replaced stable oriented-bridge meshes with
- // procedural tubes, after which Android showed only detached toes.
- // The species' original generic dog-like limbs are intentionally excluded
- // elsewhere; these two real meshes must ALWAYS remain renderable.
- // Use the same low-profile sideways knee / planted shin as the last
- // successfully photographed model, without further width reduction.
- const visibleUpper=g.bridge(leg,'light',
-   [0,.090,z],[kneeX,kneeY,z],.160,.125);
- contourM019StableBridge(visibleUpper,
-   [0,.090,z],[kneeX,kneeY,z],
-   {region:'upper',side,detail});
- visibleUpper.name='m019-mobile-upper-'+name;
- visibleUpper.userData.m019IndependentVisibleCore=true;
- visibleUpper.userData.m019ArticulatedParent='shoulder';
- visibleUpper.userData.m019LastRenderedGeometry='v13-oriented-bridge';
- visibleUpper.userData.m019StableVisibleBridge=true;
- visibleUpper.frustumCulled=false;
- const visibleShin=g.bridge(distal,'light',
-   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],.124,.088);
- contourM019StableBridge(visibleShin,
+ const upper=g.bridge(leg,'light',
+   [0,.090,z],[kneeX,kneeY,z],fore?.167:.177,fore?.129:.136,quality);
+ contourM019StableBridge(upper,
+   [0,.090,z],[kneeX,kneeY,z],{region:'upper',side,detail});
+ upper.name='m019-mobile-upper-'+name;
+ upper.userData.m019IndependentVisibleCore=true;
+ upper.userData.m019ArticulatedParent='shoulder';
+ upper.userData.m019StableVisibleBridge=true;
+ upper.userData.m019LastRenderedGeometry='v13-oriented-bridge';
+ upper.userData.m019SingleVisibleAnatomicalShell=true;
+ upper.frustumCulled=false;
+ upper.receiveShadow=false;
+ const shin=g.bridge(distal,'light',
+   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],
+   fore?.131:.139,fore?.091:.096,quality);
+ contourM019StableBridge(shin,
    [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],
    {region:'shin',side,detail});
- visibleShin.name='m019-mobile-shin-'+name;
- visibleShin.userData.m019IndependentVisibleCore=true;
- visibleShin.userData.m019ArticulatedParent='knee';
- visibleShin.userData.m019LastRenderedGeometry='v13-oriented-bridge';
- visibleShin.userData.m019StableVisibleBridge=true;
- visibleShin.frustumCulled=false;
- // Avoid baked shadow occlusion on the slender dark-basalt parts while
- // preserving proper depth testing and shadow casting on the ground.
- visibleUpper.receiveShadow=false;
- visibleShin.receiveShadow=false;
- skin.receiveShadow=false;
- return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
+ shin.name='m019-mobile-shin-'+name;
+ shin.userData.m019IndependentVisibleCore=true;
+ shin.userData.m019ArticulatedParent='knee';
+ shin.userData.m019StableVisibleBridge=true;
+ shin.userData.m019LastRenderedGeometry='v13-oriented-bridge';
+ shin.userData.m019SingleVisibleAnatomicalShell=true;
+ shin.frustumCulled=false;
+ shin.receiveShadow=false;
+ // No second deforming muscle tube, shin post, luminous floating rod,
+ // disconnected knee sphere or duplicated mobile shell.
+ g.root.userData.m019VisibleLimbSegmentCount=
+   (g.root.userData.m019VisibleLimbSegmentCount||0)+2;
+ return {upper,lower:shin};
 }
 
 /**
