@@ -5,7 +5,7 @@ import {threeGroupOverview,reinforceDivision,mergeDivision} from './battle-three
 export function createBattleThreeGroupPanel({
  alliedNav,enemyNav,actors,groupBySquad,initialUnits=[],enemyInitial=0,allowRecompose=true,
  onSquadSelect=()=>{},onStrategy=()=>{},onInspect=()=>{},onReinforce=()=>{},
- onMerge=()=>{},onLog=()=>{}
+ onMerge=()=>{},onLog=()=>{},maxTeams=3
 }){
  const ally=document.createElement('div');ally.id='battleThreeGroupPanel';ally.className='battleThreeGroupPanel';
  ally.setAttribute('aria-label','班・分隊・状況');
@@ -15,7 +15,7 @@ export function createBattleThreeGroupPanel({
  document.body.classList.add('story-three-group-ui');
  let level='groups',groupId=1,divisionId=null,enemyOpen=false,pointerDown=false,lastPointerAt=-Infinity,lastRenderAt=-Infinity,oldMarkup='',oldEnemy='';
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits);
+ const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits,maxTeams);
  const back=(where,label)=>'<button type="button" data-back="'+where+'">◀ '+label+'</button>';
  const groupTitle=group=>'第'+group.id+'隊';
  const groupHp=group=>{
@@ -31,10 +31,10 @@ export function createBattleThreeGroupPanel({
   const groups=summaries(),selected=groups.find(g=>g.id===groupId)||groups[0];
   let html='';
   if(level==='groups'){
-   html='<div class="threeGroupStep">① 隊を選択（最大3隊）</div><div class="tenGroupGrid">'+
+   html='<div class="threeGroupStep">① 隊を選択（最大'+maxTeams+'隊）</div><div class="tenGroupGrid">'+
     groups.map(g=>'<div class="threeTeamCard"><button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong>'+groupHp(g)+'<small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人'+(g.danger?' ⚠':'')+'</small></button><button class="threeTeamCommand" data-group-strategy="'+g.id+'" '+(!g.alive?'disabled':'')+'>⚑ 連携作戦</button></div>').join('')+'</div>';
   }else if(level==='divisions'){
-   html=back('groups','3隊に戻る')+
+   html=back('groups',''+maxTeams+'隊に戻る')+
     '<div class="threeGroupStep">② '+groupTitle(selected)+' · 分隊を選択</div>'+
     (selected.divisions.map(d=>{
      const job=Object.entries(d.jobCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'兵士';
