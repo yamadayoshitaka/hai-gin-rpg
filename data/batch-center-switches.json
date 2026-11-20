@@ -15,10 +15,11 @@
       "reason": "Replaced by FF15-target split quality lanes, historical records retained"
     },
     "world": {
-      "enabled": true,
+      "enabled": false,
       "reinstatedAt": "2026-11-17",
       "workflow": "world-six-lane.yml",
-      "reason": "Owner requested object quality six-lane batch restored; human/monster legacy batches remain off"
+      "reason": "User paused all scheduled quality batches; preserve finished changes and prioritize Pages release.",
+      "updatedAt": "2026-11-20"
     },
     "anime": {
       "enabled": false,
@@ -26,9 +27,11 @@
       "issueNumber": 394
     },
     "faceHair": {
-      "enabled": true,
+      "enabled": false,
       "registeredAt": "2026-11-17",
-      "workflow": "character-six-lane.yml"
+      "workflow": "character-six-lane.yml",
+      "updatedAt": "2026-11-20",
+      "reason": "User paused all scheduled quality batches; preserve finished changes and prioritize Pages release."
     },
     "outfit": {
       "enabled": false,
