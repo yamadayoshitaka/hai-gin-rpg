@@ -164,6 +164,25 @@ test('wizard exposes all job specials and routes each into a real handler',()=>{
   assert.equal(w.events[0][0],'special',job);
  }
 });
+test('every published job special is confirmable and reaches its exact execution ID',()=>{
+ for(const job of ['召喚士','魔法使い','盾騎士','盾兵','シーフ','忍者','僧侶','弓使い']){
+  for(const ability of battleJobSpecialActions(job)){
+   const target=ability.id==='high_ground'?'城3階':'有効な対象';
+   const w=act(job,['行動を選択','固有技',ability.label,target]);
+   assert.deepEqual(w.events[0],['special','1',ability.id,
+     ability.id==='high_ground'?'3':'self'],job+' / '+ability.id);
+  }
+ }
+});
+test('steal action travels to a distant target and schedules a genuine inventory transfer',()=>{
+ const page=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ assert.match(page,/if\(action==='steal_item'\)\{/);
+ assert.match(page,/Math\.hypot\(origin\.x-target\.x,origin\.z-target\.z\)>8/);
+ assert.match(page,/queueSpecialArrival\(id,'steal_item',targetId,point\)/);
+ assert.match(page,/roomItemRegistry\.transfer\(enemy\.id,thief\.id,stack\.itemId,1\)/);
+ assert.match(ui,/queueSpecialArrival:\(id,special,targetId,point\)=>arrivalActions\.set/);
+});
 test('wizard higher-floor movement dispatches a real target and arrival callback',()=>{
  const w=act('弓使い',['行動を選択','移動','高所へ移動','城3階','交戦']);
  assert.deepEqual(w.events[0],['special','1','high_ground','3']);
