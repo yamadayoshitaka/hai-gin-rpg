@@ -35,7 +35,8 @@ const placed=registry.place('castle-1',{
  x:0,z:0,itemId:'healing_potion',quantity:1
 });
 assert.ok(registry.setPlacement(placed.id,{itemId:'high_potion',quantity:3}));
-assert.equal(registry.get(placed.id).item,'上級回復薬');
+assert.equal(registry.get(placed.id).item,ROOM_ITEM_TYPES.high_potion.name);
+assert.equal(ROOM_ITEM_TYPES.high_potion.category,'援軍','battle heal item was renamed to reinforcements');
 assert.equal(registry.pickup(placed.id,'first-soldier'),true);
 assert.equal(registry.pickup(placed.id,'second-soldier'),false);
 assert.equal(registry.owned('first-soldier')[0].quantity,3);
