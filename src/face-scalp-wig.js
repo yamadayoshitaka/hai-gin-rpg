@@ -488,15 +488,21 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    center.z-d.z*(.14+.035*(1-Math.abs(2*u-1))));
   stripWidths.push(width*2);tipHeights.push(tipY);
   const vtx=(t,edge)=>{
+   // Fan the real scalp-rooted undercoat over the occiput instead of
+   // dropping 88 nearly vertical, flat-ended cards from a single row.
+   // Root remains fixed on the donor head; the bend grows below it.
    const eased=t*t*(3-2*t);
+   const fan=Math.sin(Math.PI*Math.min(1,t*.9));
+   const wave=Math.sin(k*2.39996323+t*4.4);
    const x=THREE.MathUtils.lerp(scalpRoot.x,targetX,eased)+
-    Math.sin(k*.85+t*3)*d.x*.00026*t;
+    side*d.x*.021*fan+wave*d.x*.006*t;
    const y=THREE.MathUtils.lerp(scalpRoot.y,tipY,t);
    const z=THREE.MathUtils.lerp(scalpRoot.z-d.z*.003,targetZ,eased)+
-    d.z*.0017*Math.sin(Math.PI*t);
-   const taper=1-.72*Math.pow(t,8);
+    d.z*(.014*fan+.004*Math.sin(k*.71+t*5)*t);
+   // Continuously narrow the silhouette, not a sudden pointed cut.
+   const taper=Math.max(.16,1-.84*t*t*(3-2*t));
    return f3(x+edge*width*taper,y,z+
-    Math.abs(edge)*d.z*.0012);
+    Math.abs(edge)*d.z*.0024*(1-t));
   };
   for(let j=0;j<stripSegments;j++){
    const t0=j/stripSegments,t1=(j+1)/stripSegments;
