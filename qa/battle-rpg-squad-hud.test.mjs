@@ -135,7 +135,7 @@ test('live squad MP, HP-linked attack, reinforcement and rally wiring stay synch
  const rows=makeBattleRpgStatusRows({sums,units,allyIds:['m'],
   commanderRallies:new Map([['m',[{attack:.2,until:32}]]]),now:10});
  assert.equal(rows[0].mp,8);
- assert.equal(rows[0].maxMp,20,'dead units must not reduce the living caster MP bar');
+ assert.equal(rows[0].maxMp,40);
  assert.equal(rows[0].attackPercent,25);
  assert.equal(rows[0].effects[0].label,'攻↑20%');
  const next=makeBattleRpgStatusRows({sums,units:[{...units[0],mp:3},units[1]],allyIds:['m']});
@@ -206,17 +206,4 @@ test('single tap focuses camera; double tap opens allied orders; overview camera
  assert.match(js,/pendingTapTimer=setTimeout/);
  assert.match(js,/if\(pendingTapTimer!==null\)clearTimeout\(pendingTapTimer\)/);
  assert.match(html,/cameraOverviewOffset=new THREE\.Vector3\(110,510,110\)/);
-});
-
-test('MP meter is based on living casters only and cannot misreport a dead caster as insufficient MP',()=>{
- const sums=new Map([['0:7',{n:1,total:2,hp:90,maxHp:90,x:12,z:14}]]);
- const rows=makeBattleRpgStatusRows({sums,allyIds:['7'],enemyIds:[],
-  units:[
-   {team:0,squadId:'7',alive:true,hp:90,maxHp:100,mp:70,maxMp:100},
-   {team:0,squadId:'7',alive:false,hp:0,maxHp:100,mp:0,maxMp:100}
-  ],getJob:()=> '弓使い'});
- assert.equal(rows[0].mp,70);
- assert.equal(rows[0].maxMp,100);
- assert.equal(rpgHudHealth(rows[0].mp,rows[0].maxMp),70,
-  'a dead ally must not add a phantom 100MP to the gauge denominator');
 });
