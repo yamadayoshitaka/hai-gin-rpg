@@ -8,7 +8,7 @@
  * All pieces attach to existing movable parents. No floating decoration,
  * no replacement of another species, no expensive effect sprites at LOD low.
  */
-export const MAGMA_SALAMANDER_REVISION='m019-mobile-four-limb-safety-v12-20261120';
+export const MAGMA_SALAMANDER_REVISION='m019-embedded-volcanic-talons-v13-20261120';
 export const MAGMA_SALAMANDER_LEG_REACH=.54;
 export const MAGMA_SALAMANDER_BODY_DROP=.86;
 
@@ -154,7 +154,7 @@ export function markMagmaSalamander(root){
  root.userData.m019Reference2D='approved-four-view-slender-lizard-2026-11-19';
  root.userData.m019DistinctiveFeatures=[
   'elongated-narrow-wedge-head','paired-long-swept-horns',
-  'amber-slit-eyes','four-short-thin-lizard-legs','whip-tail','thin-basalt-spines'
+  'amber-slit-eyes','four-short-thin-lizard-legs','rooted-obsidian-talons','whip-tail','thin-basalt-spines'
  ];
  root.userData.m019ShortLegReach=MAGMA_SALAMANDER_LEG_REACH;
  root.userData.m019DorsalPlatesFollowTorso=true;
