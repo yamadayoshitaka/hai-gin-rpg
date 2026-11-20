@@ -66,7 +66,7 @@ export function mountBattleCommandWizard({
   });
  }
  function pickAction(id){
-  if(id==='hold'){advance('confirm',{category:id,kind:'hold'});return;}
+  if(id==='hold'){advance('confirm',{category:id,kind:'hold',command:'hold'});return;}
   if(id==='defend'){advance('types',{category:id});return;}
   if(id==='move'){advance('types',{category:id});return;}
   if(id==='attack'){advance('types',{category:id});return;}
