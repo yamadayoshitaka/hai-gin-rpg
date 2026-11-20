@@ -1,0 +1,52 @@
+name: Squad-wide castle high-ground regression
+on:
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/mass-battle-highground.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-client.js'
+      - 'src/mass-battle-worker-runtime.js'
+      - 'src/battle-command-wizard.js'
+      - 'src/battle-realtime-commands.js'
+      - 'src/targeted-strategy-runtime.js'
+      - 'qa/squad-highground-unified-order.test.mjs'
+      - 'qa/battle-highground-thief-map-overview.test.mjs'
+      - 'qa/battle-start-highground-shield-cover.test.mjs'
+      - '.github/workflows/squad-highground-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/mass-battle-highground.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/battle-realtime-commands.js'
+      - 'src/targeted-strategy-runtime.js'
+      - '.github/workflows/squad-highground-regression.yml'
+permissions:
+  contents: read
+jobs:
+  squad-highground:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify high-ground and command modules
+        run: |
+          node --check src/mass-battle-highground.js
+          node --check src/mass-battle-grid-sim.js
+          node --check src/mass-battle-worker-client.js
+          node --check src/mass-battle-worker-runtime.js
+          node --check src/battle-command-wizard.js
+          node --check src/battle-realtime-commands.js
+          node --check src/targeted-strategy-runtime.js
+      - name: Verify castle upper floors, squad unity and arrival actions
+        run: |
+          node --test qa/squad-highground-unified-order.test.mjs
+          node --test qa/battle-highground-thief-map-overview.test.mjs
+          node --test qa/battle-start-highground-shield-cover.test.mjs
+          node --experimental-vm-modules qa/central-battle-orders.test.mjs
+          node --experimental-vm-modules qa/formation-and-three-step-strategy.test.mjs
