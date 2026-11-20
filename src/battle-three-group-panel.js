@@ -1,5 +1,5 @@
 import {threeGroupOverview,reinforceDivision,mergeDivision} from './battle-three-group-hierarchy.js';
-/** Campaign HUD: ten groups -> subdivisions -> personnel/status/actions.
+/** Campaign HUD: three teams -> job divisions -> personnel/status/actions.
  * The old job list remains in the DOM for targeting and compatibility, hidden
  * until the player expands enemy selection. */
 export function createBattleThreeGroupPanel({
@@ -17,7 +17,7 @@ export function createBattleThreeGroupPanel({
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const summaries=()=>threeGroupOverview(actors,groupBySquad,initialUnits);
  const back=(where,label)=>'<button type="button" data-back="'+where+'">◀ '+label+'</button>';
- const groupTitle=group=>'第'+group.id+'班';
+ const groupTitle=group=>'第'+group.id+'隊';
  const groupHp=group=>{
   const current=Math.round(group.hp||0),max=Math.round(group.initialMaxHp||group.maxHp||0);
   const percent=max?Math.max(0,Math.min(100,Math.round(current/max*100))):0;
@@ -31,10 +31,10 @@ export function createBattleThreeGroupPanel({
   const groups=summaries(),selected=groups.find(g=>g.id===groupId)||groups[0];
   let html='';
   if(level==='groups'){
-   html='<div class="threeGroupStep">① 班を選択（最大10班）</div><div class="tenGroupGrid">'+
+   html='<div class="threeGroupStep">① 隊を選択（最大3隊）</div><div class="tenGroupGrid">'+
     groups.map(g=>'<button data-group="'+g.id+'" class="'+(g.danger?'danger':'')+'"><strong>'+groupTitle(g)+'</strong>'+groupHp(g)+'<small>生存 '+g.alive+'/'+Math.max(g.initial,g.alive)+'人'+(g.danger?' ⚠':'')+'</small></button>').join('')+'</div>';
   }else if(level==='divisions'){
-   html=back('groups','10班に戻る')+
+   html=back('groups','3隊に戻る')+
     '<div class="threeGroupStep">② '+groupTitle(selected)+' · 分隊を選択</div>'+
     (selected.divisions.map(d=>{
      const job=Object.entries(d.jobCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'兵士';
