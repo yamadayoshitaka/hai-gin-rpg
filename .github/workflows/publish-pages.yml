@@ -97,7 +97,7 @@ jobs:
         # Failures remain visible in the workflow; publishing may proceed.
         id: qa_m019
         continue-on-error: true
-        run: node --test qa/m019-salamander-sculpt.test.mjs
+        run: node --test qa/m019-salamander-sculpt.test.mjs qa/m019-volcanic-pbr.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         id: qa_10
         # Owner permits deployment despite QA failure; leave the outcome visible.
