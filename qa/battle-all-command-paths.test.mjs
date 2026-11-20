@@ -81,6 +81,17 @@ test('densely surrounded ground summoners find a safe real spawn tile beyond rad
  assert.equal(Math.max(Math.abs(summon.x-owner.x),Math.abs(summon.z-owner.z)),3);
  assert.equal(occupancy[summon.z*width+summon.x],-2,'real wolf collision tile is reserved');
 });
+test('two allied flying summons do not overlap or crash in shared airspace',()=>{
+ const width=25,rt=new CombatActionRuntime({width,height:width,walkable:new Uint8Array(width*width).fill(1)});
+ const a={id:1,team:0,squadId:'1',x:10,z:10,hp:100,alive:true};
+ const b={id:2,team:0,squadId:'2',x:10,z:10,hp:100,alive:true};
+ rt.beginTick(.1,[a,b]);
+ const first=rt.spawnObject('wyvern',a);
+ const second=rt.spawnObject('wyvern',b);
+ assert.ok(first&&second,'allied casters spawn distinct flying creatures');
+ assert.ok(Math.abs(first.x-second.x)>1||Math.abs(first.z-second.z)>1,
+  'airspace placement must keep separate flying creature meshes');
+});
 test('automatic six-second summoner chant resolves into a creature, not perpetual idle',()=>{
  const width=30,owner={id:1,team:0,squadId:'7',jobId:'summoner',rarity:'N',
   x:8,z:8,hp:100,maxHp:100,alive:true,mp:100,cooldown:0};
