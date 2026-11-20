@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m019-embedded-volcanic-talons-v13-20261120';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m019-matched-basalt-anatomy-v14-20261120';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -23,18 +23,18 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js?v=m019-embedded-volcanic-talons-v13-20261120';
+ from './magma-salamander-sculpt.js?v=m019-matched-basalt-anatomy-v14-20261120';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
  M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,M019_SHOULDER_LOCAL_Y,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
- from './m019-hero-sculpt.js?v=m019-embedded-volcanic-talons-v13-20261120';
+ from './m019-hero-sculpt.js?v=m019-matched-basalt-anatomy-v14-20261120';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-embedded-volcanic-talons-v13-20261120';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-matched-basalt-anatomy-v14-20261120';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -3082,5 +3082,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m019-embedded-volcanic-talons-v13-20261120';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m019-matched-basalt-anatomy-v14-20261120';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
