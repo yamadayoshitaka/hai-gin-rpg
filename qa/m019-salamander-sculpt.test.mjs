@@ -166,12 +166,20 @@ for(const detail of ['low','high']){
       if(obj.isMesh)footMeshes.push(obj);
     });
     const footByName=new Map(footMeshes.map(obj=>[obj.name,obj]));
+    const existingPad=footByName.get('m019-metatarsal-'+pawSuffix);
+    assert(existingPad?.isMesh,'original planted metatarsal must remain');
+    assert(existingPad.scale.y<existingPad.scale.x*.40,
+      'paw must be flattened for weight-bearing contact, not a round bulb');
+    assert.equal(footMeshes.filter(obj=>obj.name==='m019-metatarsal-'+pawSuffix).length,1,
+      'do not add duplicate hovering foot pads');
     for(let digit=0;digit<4;digit++){
       const finger=footByName.get('m019-digit-'+pawSuffix+'-'+digit);
       const claw=footByName.get('m019-rooted-claw-'+pawSuffix+'-'+digit);
       assert(finger?.isMesh&&claw?.isMesh,
         'all four fingers and curved talons must exist even at low LOD');
       assert.equal(finger.userData.m019ContinuousBasaltDigit,true);
+      assert(finger.geometry.parameters.radius>=(detail==='low'?.0215:.0285),
+        'digit roots must be visible and rounded at every LOD');
       assert.equal(claw.userData.rootedKeratin,true);
       assert.equal(claw.userData.m019CurvedKeratinTalon,true);
       assert.equal(claw.userData.m019EmbeddedInFinger,true);
@@ -236,6 +244,11 @@ for(const detail of ['low','high']){
       assert.equal(part.userData.m019StableVisibleBridge,true,
         'm019 must use the known-rendered v13 anatomical bridge, not v14 tubes');
       assert.equal(part.userData.m019LastRenderedGeometry,'v13-oriented-bridge');
+      assert.equal(part.userData.m019ContouredVisibleBridge,true,
+        'sculpt only the proven-to-render bridge vertices, not a new hidden tube');
+      assert.equal(part.userData.m019NoAdditionalDrawCalls,true,
+        'no floating mesh overlays or FPS regression from extra draw calls');
+      assert(part.userData.m019BridgeRingCount>=4);
       assert.equal(part.frustumCulled,false,
         'small animated legs must never be culled from stale bounds');
       assert(!part.geometry.parameters?.tubularSegments,
@@ -257,6 +270,36 @@ for(const detail of ['low','high']){
       mesh.name.startsWith('m019-embedded-arm-scute-'+suffix+'-')||
       mesh.name.startsWith('m019-embedded-shin-scute-'+suffix+'-')),
       'no floating scute dots beside the ankles or elbows');
+    // Geometric verification, not just a revision string: measure the
+    // displaced EXISTING rings and require anatomical muscle volume while
+    // preserving the exact old oriented-bridge topology.
+    const ringRadius=(mesh,t=.5)=>{
+      const geo=mesh.geometry,pos=geo.getAttribute('position');
+      const uv=geo.getAttribute('uv');
+      let stride=0;
+      while(stride<uv.count&&uv.getY(stride)<.00001)stride++;
+      assert(stride>=6&&pos.count%stride===0);
+      const row=Math.round((pos.count/stride-1)*t),start=row*stride;
+      const center=new THREE.Vector3();
+      for(let j=0;j<stride-1;j++)
+        center.add(new THREE.Vector3().fromBufferAttribute(pos,start+j));
+      center.multiplyScalar(1/(stride-1));
+      let radius=0;
+      for(let j=0;j<stride-1;j++)
+        radius+=new THREE.Vector3().fromBufferAttribute(pos,start+j)
+          .distanceTo(center);
+      return radius/(stride-1);
+    };
+    assert(ringRadius(mobileUpper)>.155&&ringRadius(mobileUpper)<.205,
+      'upper arm / thigh must have tapered sculptural muscle, not a thin stick');
+    assert(ringRadius(mobileShin)>.109&&ringRadius(mobileShin)<.154,
+      'shin should retain enough muscle while narrowing toward the toes');
+    assert.equal(mobileUpper.userData.m019MuscleProfile,'shoulder-elbow');
+    assert.equal(mobileShin.userData.m019MuscleProfile,'knee-ankle');
+    assert(!meshes.some(obj=>obj.name.startsWith('m019-upper-bulge-')||
+      obj.name.startsWith('m019-shin-bulge-')||
+      obj.name.startsWith('m019-knee-joint-')),
+      'floating joint or extra limb overlays must never regress');
     model.updateMatrixWorld(true);
     const mobileUpperBox=new THREE.Box3().setFromObject(mobileUpper);
     const mobileShinBox=new THREE.Box3().setFromObject(mobileShin);
