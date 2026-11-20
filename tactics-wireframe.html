@@ -9421,6 +9421,7 @@ for(const team of [0,1]){
 const threeGroupPanel=!TOWN_MODE?createBattleThreeGroupPanel({
  alliedNav:$('allySquadRibbon'),enemyNav:$('enemySquadRibbon'),
  actors:squadRoster,groupBySquad:armyGroupBySquad,initialUnits:storyRequest?.units??squadRoster,
+ maxTeams:storyRequest?3:10,
  enemyInitial:storyRequest?.enemyCount??(massSim?.sideCount??actors.filter(a=>a.team===1).length),
  allowRecompose:!massSim,
  onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
