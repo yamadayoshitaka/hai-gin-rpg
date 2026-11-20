@@ -214,7 +214,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   radialSegments:detail==='low'?10:16
  };
  const upper=g.bridge(leg,'light',
-   [0,.090,z],[kneeX,kneeY,z],fore?.167:.177,fore?.129:.136,quality);
+   [0,.090,z],[kneeX,kneeY,z],fore?.175:.184,fore?.132:.140,quality);
  contourM019StableBridge(upper,
    [0,.090,z],[kneeX,kneeY,z],{region:'upper',side,detail});
  upper.name='m019-mobile-upper-'+name;
@@ -227,7 +227,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  upper.receiveShadow=false;
  const shin=g.bridge(distal,'light',
    [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],
-   fore?.131:.139,fore?.091:.096,quality);
+   fore?.136:.143,fore?.094:.099,quality);
  contourM019StableBridge(shin,
    [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],
    {region:'shin',side,detail});
@@ -263,7 +263,7 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  toe.userData.m019PawFinish='basalt-scutes-with-rooted-curved-keratin';
  // Flatten the EXISTING paw skin against the ground and widen the toe
  // socket. No independent foot overlay that could float during animation.
- g.sphere(toe,'skin',[0,-.020,.052],[.115,.035,.131],
+ g.sphere(toe,'light',[0,-.020,.052],[.115,.035,.131],
    {name:'m019-metatarsal-'+name,rough:.92});
  // The narrow dark scutes intersect the dorsal skin instead of floating
  // above it. Do not add these extra draw calls in low/crowd LOD.
@@ -279,7 +279,7 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
   const spread=(digit-1.5)*.020+sign*.006;
   // Round finger skin runs *inside* the central footpad and continues
   // underneath the talon root, so nothing looks like a glued-on stick.
-  const finger=g.tube(toe,'skin',[
+  const finger=g.tube(toe,'light',[
    [x*.66,-.013,.058],
    [x,-.013,.107],
    [x+spread*.25,-.018,.146],
