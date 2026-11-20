@@ -170,3 +170,11 @@
 .sortieTeams.sortieTenTeams strong{font-size:clamp(9px,2.45vw,12px);white-space:nowrap}
 .sortieTeams.sortieTenTeams small{font-size:9px;margin-top:2px}
 @media(max-width:380px){.sortieTeams.sortieTenTeams{gap:2px}.sortieTeams.sortieTenTeams button{min-height:38px!important}}
+
+/* Three command teams, each limited to two or three job slots. */
+.sortieAutoOptions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.sortieAutoOptions button{min-height:36px!important;padding:5px 3px!important;font-size:11px!important}
+#panel.formation-command-ui .sortieViewBody .sortieFormationGrid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none;gap:7px}
+#panel.formation-command-ui .sortieViewBody .sortieFormationGrid button{min-height:72px!important;padding:8px 4px!important}
+.sortieGridHint{padding-top:3px}
+@media(max-height:700px){#panel.formation-command-ui .sortieViewBody .sortieFormationGrid button{min-height:53px!important}}
