@@ -315,11 +315,18 @@ export class MassBattleGridSimulation {
       this.squadCommands.set(id,'move');
     }else this.enemySquadCommands.set(id,'move');
     for(const unit of members){
-      if(unit.highGroundRouteIndex===index)continue;
+      if(unit.highGroundRouteIndex===index){
+        // Switching a selected rooftop from wait to attack must also affect
+        // soldiers who are already ascending or standing on the upper level.
+        unit.highGroundManualHold=manualHold;
+        continue;
+      }
       unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
       unit.highGroundT=0;unit.highGroundFloor=1;unit.highGroundManualHold=manualHold;
       unit.tacticalOrder=null;unit.tacticalOrderUntil=0;
     }
+    if(team===0&&members.every(u=>u.highGroundPhase===2))
+      this.squadCommands.set(id,manualHold?'hold':'charge');
     this._highGroundClaims.set(key,id);
     return true;
   }

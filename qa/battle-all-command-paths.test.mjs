@@ -210,7 +210,7 @@ test('steal action travels to a distant target and schedules a genuine inventory
 });
 test('wizard higher-floor movement dispatches a real target and arrival callback',()=>{
  const w=act('弓使い',['行動を選択','移動','高所へ移動','城3階','交戦']);
- assert.deepEqual(w.events[0],['special','1','high_ground','3']);
+ assert.deepEqual(w.events[0],['special','1','high_ground','3',false,'hold']);
  assert.equal(w.arrivals.length,1);
  assert.equal(w.arrivals[0][1].highGroundTarget,'3');
 });

@@ -95,3 +95,42 @@ test('climbers vacate ground collision tiles and returning soldiers find free la
  assert.match(code,/this\._highGroundEntryNext\.set\(gate,this.time\+\.65\)/);
  assert.match(code,/this\._occupancy\[landing.index\]=u.id/);
 });
+
+test('high-ground assault and high-ground movement keep distinct live attack postures',()=>{
+ const sim=mockSquad();
+ const mp=[38,52,73];sim.units.forEach((u,i)=>{u.mp=mp[i];u.maxMp=100;});
+ assert.equal(sim.orderSquadHighGround('1',0,0,{manualHold:false}),true);
+ assert.ok(sim.units.every(u=>u.highGroundRouteIndex===0&&!u.highGroundManualHold),
+  'high-ground attack must not inherit waiting posture');
+ assert.deepEqual(sim.units.map(u=>u.mp),mp,'climbing/physical ranged attack has no MP cost');
+ // Reissuing a movement-only order while the squad is ascending holds it.
+ assert.equal(sim.orderSquadHighGround('1',0,0,{manualHold:true}),true);
+ assert.ok(sim.units.every(u=>u.highGroundManualHold));
+ for(const u of sim.units)u.highGroundPhase=2;
+ assert.equal(sim.orderSquadHighGround('1',0,0,{manualHold:false}),true);
+ assert.ok(sim.units.every(u=>!u.highGroundManualHold));
+ assert.equal(sim.squadCommands.get('1'),'charge');
+ assert.equal(sim.orderSquadHighGround('1',0,0,{manualHold:true}),true);
+ assert.ok(sim.units.every(u=>u.highGroundManualHold));
+ assert.equal(sim.squadCommands.get('1'),'hold');
+ assert.deepEqual(sim.units.map(u=>u.mp),mp);
+});
+
+test('the order wizard and worker agree on high-ground attack, hold and MP-accurate reasons',()=>{
+ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+ const wizard=read('src/battle-command-wizard.js');
+ const page=read('tactics-wireframe.html');
+ const client=read('src/mass-battle-worker-client.js');
+ const worker=read('src/mass-battle-worker-runtime.js');
+ assert.match(wizard,/onSpecial\(id,'high_ground',String\(current\.id\),false,'hold'\)/);
+ assert.match(wizard,/if\(action\.id==='high_ground'\)return '到達できる高所がありません（MPは消費しません）/);
+ assert.doesNotMatch(wizard,/対象なし・MP不足・条件未達のため実行できません/);
+ assert.match(wizard,/reason:enabled\?'':specialUnavailableReason\(a,targets\)/);
+ assert.match(page,/const manualHold=highGroundMode==='hold'/);
+ assert.match(page,/massSim\?\.orderSquadHighGround\(id,routeIndex,0,\{manualHold\}\)/);
+ assert.match(page,/unit\.floorTravel\.manualHighGroundAttack=highGroundMode!=='hold'/);
+ assert.match(page,/travel\.manualHighGroundTarget=false/);
+ assert.match(page,/MP消費なし/);
+ assert.match(client,/orderSquadHighGround\(squadId,routeIndex,team=0,\{manualHold=true\}=\{\}\)/);
+ assert.match(worker,/manualHold:message\.manualHold!==false/);
+});
