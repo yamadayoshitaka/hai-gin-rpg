@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-microholes-v8';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-donor-aligned-scalp-v10';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -454,7 +454,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    const seamWidth=Math.max(d.y*.055,1e-6);
    const seamT=THREE.MathUtils.clamp(seamDistance/seamWidth,0,1);
    const seamBlend=seamT*seamT*(3-2*seamT);
-   v.addScaledVector(n,d.x*.0012+wigVolumeLiftAt(v,box,volumeProfile)*seamBlend);
+   v.addScaledVector(n,d.x*.0012);
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
@@ -467,8 +467,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // The generic crown hole repair fans arbitrary loops across the rear/ear
  // boundary and creates the large planar gray patches seen in buzzcut v5.
  // Preserve only donor-backed triangles for the close-cut style.
- const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box,
-  {microOnly:shortHair});
+ const crownRepair=shortHair?{repairs:0,triangles:0,source:'donor-only-short-cut'}:
+  repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -733,7 +733,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // offset plus four thick stacked ribbons looked like a raised helmet.
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
- const rootLift=d.x*(style.shortCutKind?.0025:.0125);
+ const rootLift=d.x*(style.shortCutKind?.0012:.0025);
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -769,8 +769,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(outward.dot(away)<0)outward.negate();
   // Root guide is lifted by exactly the same profile as the visible
   // scalp shell; otherwise hair would sink into the raised wig base.
-  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift+
-   wigVolumeLiftAt(seed.p,box,volumeProfile));
+  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift);
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
   const partSide=Math.sign(wigRoot.x-whorl.x)||side;
