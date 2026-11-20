@@ -10138,6 +10138,51 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
    squadName(targetId)+'の前衛へ移動し、8マス以内の攻撃の65%を引き受ける（60秒）');
   return {followup:'defend',point};
  }
+ if(action==='revive_ally'){
+  const fallen=(massSim?.units??actors).filter(u=>u.team===0&&
+   String(u.squadId)===String(targetId)&&(!u.alive||u.hp<=0));
+  const priests=members.filter(u=>u.jobId==='priest'&&u.hp>0&&u.alive!==false);
+  if(!fallen.length||!priests.length)return false;
+  let revived=false;
+  if(massSim){
+   revived=massSim.reviveSquadTarget(id,targetId,0);
+   if(revived&&massWorker?.active)massWorker.reviveSquadTarget(id,targetId,0);
+  }else{
+   for(const priest of priests){
+    const skills=availableCombatSkills('priest',priest.rarity)
+     .filter(skill=>skill.kind==='revive'&&priest.mp>=skill.mp);
+    for(const skill of skills){
+     const victim=fallen.find(u=>{
+      const a=realtimeMemberLocation(priest),b=realtimeMemberLocation(u);
+      return Math.hypot(a.x-b.x,a.z-b.z)<=skill.range;
+     });
+     if(victim&&skirmishActions?.fireSkill(priest,skill,victim,actors)){
+      revived=true;break;
+     }
+    }
+    if(revived)break;
+   }
+  }
+  if(revived){
+   markRibbonOrderIssued(id);
+   battleCeremony.showOrder('✧ '+squadName(id)+'：蘇生成功',
+    squadName(targetId)+'の戦闘不能者を復活。MPを消費しました');
+   updateUI();return true;
+  }
+  const fallenAt=realtimeMemberLocation(fallen[0]);
+  if(!Number.isFinite(fallenAt.x)||!Number.isFinite(fallenAt.z))return false;
+  const point=turnLegalPoint(Math.round(fallenAt.x),Math.round(fallenAt.z));
+  if(!point)return false;
+  const previous=selectedSquadId;selectedSquadId=String(id);
+  let moved=false;
+  try{moved=issueIndividualSquadOrder('move',point,arrival);}
+  finally{selectedSquadId=previous;}
+  if(!moved)return false;
+  realtimeCommandUI?.queueSpecialArrival(id,'revive_ally',targetId,point);
+  if(!arrival)battleCeremony.showOrder('✧ '+squadName(id)+'：蘇生対象へ移動',
+   '隊全員で接近し、詠唱範囲に入った僧侶が蘇生します');
+  return arrival?false:{deferred:true};
+ }
  if(action==='heal_ally'||action==='revive_ally'){
   const group=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(targetId)&&!u.isStrategist);
   const candidates=action==='heal_ally'?group.filter(u=>u.hp>0&&u.alive!==false&&u.hp<u.maxHp):
