@@ -892,7 +892,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-wizard1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-orderqueue2';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
@@ -10412,6 +10412,23 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   getMoveTargets:(kind,id)=>realtimeMoveTargets(kind,id),
   getSharedItems:()=>realtimeSharedItems(),
  getObjectiveCheckpoints:()=>objectiveCheckpoints.snapshot(),
+ getOrderState:id=>{
+  const squad=String(id),order=squadEffectiveOrder(squad,0);
+  const intent=squadIntent(squad,0),cooldown=squadOrderCooldownSeconds(squad);
+  const destination=order.destination;
+  const center=squadCenter(squad,0);
+  const distance=destination&&center&&Number.isFinite(destination.x)&&Number.isFinite(destination.z)?
+   Math.hypot(destination.x-center.x,destination.z-center.z):0;
+  const missionActive=order.mode==='mission'&&
+   (massSim?.squadMissions?.has(squad)||
+    (order.type==='eliminate_squad'&&
+     (massSim?.units??actors).some(u=>u.team===1&&String(u.squadId)===String(order.targetSquadId)&&u.hp>0&&u.alive!==false)));
+  const moving=Boolean((order.mode==='move'&&destination&&distance>3.5)||missionActive);
+  const label=(intent.order||'自動戦闘').replace(/^号令：/,'')+
+   '｜'+(intent.purpose||'索敵・交戦').replace(/^目的：/,'');
+  return {label,cooldown,moving,blocked:!battleReady||finished||battleCeremony.locked,
+   commanderReason:squadCommanderUnavailableReason(squad)};
+ },
  onCommandCommitted:entry=>{
   const squadId=String(entry.squadId);
   const groupId=normalizeArmyGroup(armyGroupBySquad[squadId])||'1';
