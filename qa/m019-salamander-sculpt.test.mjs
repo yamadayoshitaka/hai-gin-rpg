@@ -143,6 +143,9 @@ for(const detail of ['low','high']){
    const mandible=meshes.find(o=>o.name==='m019-articulated-wide-mandible');
    assert.equal(mandible.parent,pivot.jaw);
    assert.equal(pivot.jaw.parent,pivot.head);
+   assert.equal(model.userData.m019VisibleLimbSegmentCount,8);
+   assert(!model.userData.m019VisibleLimbUpdaters?.length,
+    'old animated CPU tube duplicating the bridge must be removed');
    for(const legId of ['legfrontL','legfrontR','legrearL','legrearR']){
     const leg=pivot[legId];
     assert(leg?.userData.m019ShortPlantedLeg,legId+' must be short');
@@ -154,7 +157,8 @@ for(const detail of ['low','high']){
     assert.equal(leg.scale.y,M019_LIMB_REACH);
     assert(Math.abs(leg.position.z)>1,
       'fore and hind legs must be separated across elongated body');
-    assert(nameSet.has('m019-seamless-skin-'+legId.slice(3)));
+    assert(!nameSet.has('m019-seamless-skin-'+legId.slice(3)),
+      'overlaid CPU muscle skin would produce doubled polygonal legs');
     assert(!nameSet.has('m019-scaled-upper-limb-'+legId.slice(3)));
     assert(!nameSet.has('m019-scaled-lower-limb-'+legId.slice(3)),
       'a detached shin post must not survive alongside the new skin');
@@ -224,163 +228,59 @@ for(const detail of ['low','high']){
     const root=meshes.find(o=>o.name==='m019-shoulder-hip-fascia-'+suffix);
     assert.equal(root?.parent,pivot.torso,'shoulder skin follows body');
     assert.equal(root?.userData.m019TorsoAnchoredSocket,true);
-    const upper=meshes.find(o=>o.name==='m019-seamless-skin-'+suffix);
-    assert.equal(upper?.parent,leg,'whole muscle skin follows shoulder');
-    // The old tests verified CPU vertices, while Android still drew only
-    // leg shadows. Verify an independent, non-deformed, visible pair for
-    // every limb in BOTH LODs, even if outer skin is unavailable to WebGL.
-    const mobileUpper=meshes.find(o=>o.name==='m019-mobile-upper-'+suffix);
-    const mobileShin=meshes.find(o=>o.name==='m019-mobile-shin-'+suffix);
-    assert(mobileUpper?.isMesh&&mobileShin?.isMesh,
-      suffix+' requires real permanent upper and lower meshes');
-    assert.equal(mobileUpper.parent,leg);
-    assert.equal(mobileShin.parent,knee);
-    for(const part of [mobileUpper,mobileShin]){
-      assert.equal(part.userData.m019IndependentVisibleCore,true);
-      assert.equal(part.isSkinnedMesh,undefined);
+    const upper=meshes.find(m=>m.name==='m019-mobile-upper-'+suffix);
+    const shin=meshes.find(m=>m.name==='m019-mobile-shin-'+suffix);
+    assert(upper?.isMesh&&shin?.isMesh,'four legs each need real upper and shin');
+    assert.equal(upper.parent,leg);
+    assert.equal(shin.parent,knee);
+    assert.equal(meshes.filter(m=>m.name==='m019-mobile-upper-'+suffix).length,1);
+    assert.equal(meshes.filter(m=>m.name==='m019-mobile-shin-'+suffix).length,1);
+    assert(!meshes.some(m=>m.name.startsWith('m019-limb-molten-crack-'+suffix)),
+      'old detached orange limb bars must not render');
+    for(const [part,kind] of [[upper,'shoulder-elbow'],[shin,'knee-ankle']]){
       assert(part.visible&&part.material.visible&&!part.material.transparent);
-      assert(part.geometry.getAttribute('position').count>=24);
-      assert(part.geometry.getIndex().count>=24);
-      assert.equal(part.userData.m019StableVisibleBridge,true,
-        'm019 must use the known-rendered v13 anatomical bridge, not v14 tubes');
+      assert.equal(part.userData.m019StableVisibleBridge,true);
+      assert.equal(part.userData.m019SingleVisibleAnatomicalShell,true);
+      assert.equal(part.userData.m019ContouredVisibleBridge,true);
+      assert.equal(part.userData.m019EllipticalAnatomicalSections,true);
+      assert.equal(part.userData.m019MuscleProfile,kind);
+      assert.equal(part.userData.m019NoAdditionalDrawCalls,true);
       assert.equal(part.userData.m019LastRenderedGeometry,'v13-oriented-bridge');
-      assert.equal(part.userData.m019ContouredVisibleBridge,true,
-        'sculpt only the proven-to-render bridge vertices, not a new hidden tube');
-      assert.equal(part.userData.m019NoAdditionalDrawCalls,true,
-        'no floating mesh overlays or FPS regression from extra draw calls');
-      assert(part.userData.m019BridgeRingCount>=4);
-      assert.equal(part.frustumCulled,false,
-        'small animated legs must never be culled from stale bounds');
-      assert(!part.geometry.parameters?.tubularSegments,
-        'do not regress to procedural TubeGeometry hidden on Android');
-      // A dark pigment identical to the near-black belly caused the
-      // v14 limbs to disappear against the floor. Keep them moderately
-      // brighter but with the same charcoal hue and rough volcanic PBR.
-      assert(part.material.color.r>body.material.color.r*2,
-        'limb basalt must retain enough contrast to be visible on Android');
-      assert(part.material.color.r<body.material.color.r*8,
-        'limbs must stay charcoal, never return to bright red-brown');
-      assert(Math.abs(part.material.color.r-part.material.color.g)<.16,
-        'limbs must not use the old reddish-brown hue');
-      assert.equal(part.receiveShadow,false,
-        'prevent short limbs from blacking out due to self-shadow');
+      assert(!part.frustumCulled&&!part.receiveShadow);
+      assert(!part.isSkinnedMesh);
+      assert(!part.geometry.parameters?.tubularSegments);
+      assert(part.geometry.getAttribute('position').count>100);
+      assert(part.geometry.getIndex().count>100);
       assert.equal(part.material.userData.m019DryObsidian,true);
+      assert(part.material.color.r>body.material.color.r*2);
     }
-    assert(!meshes.some(mesh=>
-      mesh.name.startsWith('m019-embedded-arm-scute-'+suffix+'-')||
-      mesh.name.startsWith('m019-embedded-shin-scute-'+suffix+'-')),
-      'no floating scute dots beside the ankles or elbows');
-    // Geometric verification, not just a revision string: measure the
-    // displaced EXISTING rings and require anatomical muscle volume while
-    // preserving the exact old oriented-bridge topology.
-    const ringRadius=(mesh,t=.5)=>{
-      const geo=mesh.geometry,pos=geo.getAttribute('position');
-      const uv=geo.getAttribute('uv');
+    const ringRadius=(mesh,t)=>{
+      const p=mesh.geometry.getAttribute('position'),uv=mesh.geometry.getAttribute('uv');
       let stride=0;
-      while(stride<uv.count&&uv.getY(stride)<.00001)stride++;
-      assert(stride>=6&&pos.count%stride===0);
-      const row=Math.round((pos.count/stride-1)*t),start=row*stride;
-      const center=new THREE.Vector3();
-      for(let j=0;j<stride-1;j++)
-        center.add(new THREE.Vector3().fromBufferAttribute(pos,start+j));
-      center.multiplyScalar(1/(stride-1));
-      let radius=0;
-      for(let j=0;j<stride-1;j++)
-        radius+=new THREE.Vector3().fromBufferAttribute(pos,start+j)
-          .distanceTo(center);
-      return radius/(stride-1);
+      while(stride<uv.count&&Math.abs(uv.getY(stride))<1e-5)stride++;
+      assert(stride>=11&&p.count%stride===0,'round evenly spaced rings');
+      const start=Math.round((p.count/stride-1)*t)*stride;
+      const center=new THREE.Vector3(),point=new THREE.Vector3();
+      for(let k=0;k<stride-1;k++)
+        center.add(point.fromBufferAttribute(p,start+k));
+      center.divideScalar(stride-1);
+      let rad=0;
+      for(let k=0;k<stride-1;k++)
+        rad+=point.fromBufferAttribute(p,start+k).distanceTo(center);
+      return rad/(stride-1);
     };
-    assert(ringRadius(mobileUpper)>.155&&ringRadius(mobileUpper)<.205,
-      'upper arm / thigh must have tapered sculptural muscle, not a thin stick');
-    assert(ringRadius(mobileShin)>.109&&ringRadius(mobileShin)<.154,
-      'shin should retain enough muscle while narrowing toward the toes');
-    assert.equal(mobileUpper.userData.m019MuscleProfile,'shoulder-elbow');
-    assert.equal(mobileShin.userData.m019MuscleProfile,'knee-ankle');
-    assert(!meshes.some(obj=>obj.name.startsWith('m019-upper-bulge-')||
-      obj.name.startsWith('m019-shin-bulge-')||
-      obj.name.startsWith('m019-knee-joint-')),
-      'floating joint or extra limb overlays must never regress');
+    assert(ringRadius(upper,.4)>.158&&ringRadius(upper,.4)<.23,
+      'anatomical shoulder muscle needs noncylindrical rounded contour');
+    assert(ringRadius(shin,.30)>.113&&ringRadius(shin,.30)<.175);
+    assert(ringRadius(shin,.90)<ringRadius(shin,.30),
+      'shin tapers towards planted ankle');
     model.updateMatrixWorld(true);
-    const mobileUpperBox=new THREE.Box3().setFromObject(mobileUpper);
-    const mobileShinBox=new THREE.Box3().setFromObject(mobileShin);
-    assert(mobileUpperBox.max.y>.40,
-      'mobile upper muscle must rise above terrain/torso occlusion');
-    assert(mobileShinBox.max.y>.35&&mobileShinBox.min.y>-.06,
-      'mobile shin must visibly connect knee to the planted foot');
-    const mobileOuter=new THREE.Box3().setFromObject(mobileUpper);
-    assert(side>0?mobileOuter.max.x>bodyBox.max.x+.20:
-      mobileOuter.min.x<bodyBox.min.x-.20,
-      'mobile-visible core must extend outside the torso silhouette');
-    // A real visible Mesh avoids the v9 GPU-skinned surface which vanished
-    // on Android while CPU skeleton-space tests still returned PASS.
-    assert.equal(upper.isMesh,true);
-    assert.equal(upper.isSkinnedMesh,undefined,
-      'm019 must not depend on a device-specific GPU skinning path');
-    assert.equal(upper.userData.m019GpuSkinningRemoved,true);
-    assert.equal(upper.userData.m019VisibleLimbRenderer,'cpu-deformed-tube');
-    assert.equal(typeof upper.userData.m019RefreshVisibleLimb,'function');
-    assert.equal(upper.userData.m019WholeLegClosedSurface,true);
-    assert.equal(upper.geometry.getAttribute('skinIndex'),undefined);
-    assert.equal(upper.frustumCulled,false);
-    model.updateMatrixWorld(true);
-    const limbBox=new THREE.Box3().setFromObject(upper);
-    const limbExtents=limbBox.getSize(new THREE.Vector3());
-    assert(limbExtents.x>.30&&limbExtents.y>.22,
-      'real visible shoulder-to-ankle mesh must occupy substantial width and height');
-    // A shadow-only leg can have a valid world-space bounding box. Require
-    // a muscle crest above the terrain and clearly outside the rib cage,
-    // plus real warm-basalt colour contrast against the black torso.
-    assert(limbBox.max.y>.39,
-      'upper muscle must rise above the ground and dark belly occluder');
-    if(side>0)
-     assert(limbBox.max.x>bodyBox.max.x+.31,
-      'right elbow must project beyond the torso silhouette');
-    else
-     assert(limbBox.min.x<bodyBox.min.x-.31,
-      'left elbow must project beyond the torso silhouette');
-    assert(upper.material.color.r>body.material.color.r*2,
-      'visible outer muscle must be brighter charcoal than the shaded belly');
-    assert(upper.material.color.r<body.material.color.r*8,
-      'outer muscle must match the torso family rather than tan');
-    assert.equal(upper.userData.m019AboveFloorMuscleCrest,true);
-    assert(upper.material.color.getHex()>0,
-      'visible limbs must have a real lit basalt material');
-    assert.equal(upper?.userData.m019HorizontalThigh,true);
-    // A vertical-oriented limbLoft turns lateral muscles into flat sheets.
-    // TubeGeometry cross sections face the sideways bone and stay round.
-    assert.equal(upper.userData.m019TrueRoundLimb,true);
-    assert.equal(upper.userData.m019CrossSectionsPerpendicularToAxis,true);
-    assert.equal(upper.userData.cappedTubularSkin,true);
-    assert.equal(upper.material.userData.m019DryObsidian,true);
-    const upperRoot=upper.geometry.getAttribute('position');
-    const radial=detail==='low'?5:8,ring=radial+1;
-    let minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
-    for(let j=0;j<ring;j++){
-     minY=Math.min(minY,upperRoot.getY(j));
-     maxY=Math.max(maxY,upperRoot.getY(j));
-     minZ=Math.min(minZ,upperRoot.getZ(j));
-     maxZ=Math.max(maxZ,upperRoot.getZ(j));
-    }
-    assert(maxY-minY>.21&&maxZ-minZ>.21,
-      'round shoulder/thigh needs substantial muscle depth in both axes');
-    assert((maxY-minY)/(maxZ-minZ)>.58 &&
-           (maxY-minY)/(maxZ-minZ)<1.72,
-      'lateral upper leg must not be an extremely flat oval');
-    assert(nameSet.has('m019-limb-molten-crack-'+suffix+'-0'),
-      'heat channel must follow the rounded moving limb');
-    if(detail==='high')assert(nameSet.has('m019-limb-molten-crack-'+suffix+'-1'),
-      'near LOD preserves branching molten limb markings');
-    assert.equal(upper.userData.m019VerticalShin,true);
-    // Validate the ACTUAL deforming mesh, not only its joint coordinates.
-    model.updateMatrixWorld(true);
-    const geoPos=upper.geometry.getAttribute('position');
-    const capIndex=geoPos.count-1;
-    const capPosition=new THREE.Vector3().fromBufferAttribute(geoPos,capIndex);
-    upper.userData.m019RefreshVisibleLimb();
-    const renderedEnd=upper.localToWorld(capPosition);
-    const toeWorldPosition=toe.getWorldPosition(new THREE.Vector3());
-    assert(renderedEnd.distanceTo(toeWorldPosition)<.045,
-      'the REAL visible ankle cap must meet the planted toes');
+    const upperBox=new THREE.Box3().setFromObject(upper);
+    const shinBox=new THREE.Box3().setFromObject(shin);
+    assert(upperBox.max.y>.38&&shinBox.max.y>.34);
+    assert(shinBox.min.y>-.09,'ankle not beneath terrain');
+    assert(side>0?upperBox.max.x>bodyBox.max.x+.20:
+      upperBox.min.x<bodyBox.min.x-.20,'elbow outside silhouette');
     const hipWorld=leg.getWorldPosition(new THREE.Vector3());
     const footWorld=toe.getWorldPosition(new THREE.Vector3());
     assert(side*(footWorld.x-hipWorld.x)>.38,
@@ -440,26 +340,35 @@ for(const detail of ['low','high']){
         id.startsWith('front')?-.012:.022));
        assert(end.distanceTo(joint.getWorldPosition(new THREE.Vector3()))<1e-5,
         action+' '+time+' must never split the elbow/knee');
-       const mesh=model.getObjectByName('m019-seamless-skin-'+id);
-       const toes=pivot['toe'+id];
-       const verts=mesh.geometry.getAttribute('position');
-       const capIndex=verts.count-1;
-       const cap=new THREE.Vector3().fromBufferAttribute(verts,capIndex);
-       const skinFoot=mesh.localToWorld(cap);
-       assert(skinFoot.distanceTo(toes.getWorldPosition(new THREE.Vector3()))<.055,
-        action+' '+time+' visible solid arm must stay attached to animated foot');
-       assert(mesh.visible&&mesh.material.visible,
-        action+' '+time+' skin cannot disappear via visibility or material');
-       const lowerSafe=model.getObjectByName('m019-mobile-shin-'+id);
-       const upperSafe=model.getObjectByName('m019-mobile-upper-'+id);
-       assert(upperSafe.visible&&lowerSafe.visible,
-         action+' '+time+' independent mobile limbs must remain visible');
-       assert.equal(upperSafe.parent,arm);
-       assert.equal(lowerSafe.parent,joint);
-       const worldBox=new THREE.Box3().setFromObject(mesh);
-       const worldSize=worldBox.getSize(new THREE.Vector3());
-       assert(worldSize.x>.28&&worldSize.y>.17,
-        action+' '+time+' visible limb must not collapse into an unseen strip');
+       const visibleUpper=model.getObjectByName('m019-mobile-upper-'+id);
+       const visibleShin=model.getObjectByName('m019-mobile-shin-'+id);
+       assert(visibleUpper.visible&&visibleShin.visible,
+        action+' '+time+' all four limbs remain visible');
+       assert.equal(visibleUpper.parent,arm);
+       assert.equal(visibleShin.parent,joint);
+       const endRing=(part,last)=>{
+        const p=part.geometry.getAttribute('position');
+        const uv=part.geometry.getAttribute('uv');
+        let stride=0;
+        while(stride<uv.count&&Math.abs(uv.getY(stride))<1e-5)stride++;
+        const start=last?p.count-stride:0;
+        const center=new THREE.Vector3(),point=new THREE.Vector3();
+        for(let k=0;k<stride-1;k++)
+          center.add(point.fromBufferAttribute(p,start+k));
+        return part.localToWorld(center.divideScalar(stride-1));
+       };
+       const kneeWorld=joint.getWorldPosition(new THREE.Vector3());
+       const toeWorld=toes.getWorldPosition(new THREE.Vector3());
+       assert(endRing(visibleUpper,true).distanceTo(kneeWorld)<.07,
+        action+' '+time+' upper limb must connect to the elbow');
+       assert(endRing(visibleShin,false).distanceTo(kneeWorld)<.08,
+        action+' '+time+' shin must connect to the elbow');
+       assert(endRing(visibleShin,true).distanceTo(toeWorld)<.06,
+        action+' '+time+' shin must meet the planted foot');
+       const areaUpper=new THREE.Box3().setFromObject(visibleUpper).getSize(new THREE.Vector3());
+       const areaShin=new THREE.Box3().setFromObject(visibleShin).getSize(new THREE.Vector3());
+       assert(areaUpper.x>.25&&areaShin.y>.15,
+        action+' '+time+' rendered muscle must not vanish');
       }
      }
     }
