@@ -1,12 +1,6 @@
 name: Autonomous latest-main source reconciliation and commit
 on:
-  schedule:
-    # 5 categories rotated; actual model patches are bounded to one PR per run.
-    - cron: '7 * * * *'
-    - cron: '22 * * * *'
-    - cron: '37 * * * *'
-    - cron: '52 * * * *'
-    - cron: '57 * * * *'
+  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
     inputs:
       category:

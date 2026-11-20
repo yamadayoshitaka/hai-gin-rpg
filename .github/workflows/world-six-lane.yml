@@ -1,7 +1,6 @@
 name: World six-lane hourly parity
 on:
-  schedule:
-    - cron: '12 * * * *'
+  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
   push:
     branches: [main]

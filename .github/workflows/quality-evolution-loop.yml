@@ -1,10 +1,6 @@
 name: Free continuous 3D face-hair-outfit quality evolution
 on:
-  schedule:
-    # No paid API. One bounded domain per interval; latest main every run.
-    - cron: '8 * * * *'
-    - cron: '28 * * * *'
-    - cron: '48 * * * *'
+  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
     inputs:
       domain:
