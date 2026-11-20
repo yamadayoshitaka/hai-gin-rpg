@@ -335,8 +335,8 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  // Donor-backed pigment layer: cover rear crown and temple gaps without
  // placing a floating wig cap over the face or the neck.
- const rearMinHeight=box.min.y+d.y*.69;
- const templeMinHeight=box.min.y+d.y*.77;
+ const rearMinHeight=box.min.y+d.y*.57;
+ const templeMinHeight=box.min.y+d.y*.70;
  let triangles=0;
  for(let t=0;t+2<n;t+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
@@ -351,7 +351,7 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
    Math.abs(mid.z-c.z)>d.z*(highCrown?.36:.32)||
    (!highCrown&&!posteriorOrTemple))continue;
   // Every underlay vertex must remain above the local anatomical hairline.
-  if(points.some(p=>p.y<minHeight-d.y*.01))continue;
+  if(points.some(p=>p.y<minHeight-d.y*.035))continue;
   // Source head triangles can have reversed winding after clipping or
   // donor retargeting. Keep the underlay front-facing with its scalp normals.
   const sourceFace=points[1].clone().sub(points[0]).cross(
@@ -531,16 +531,17 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     Math.max(0,candidate.z-(center.z-d.z*.06))/d.z;
    if(score<best){root=candidate;best=score;}
   }
-  const tipY=box.min.y+d.y*(.115+.045*Math.pow(Math.abs(u*2-1),1.5));
-  const width=d.x*.0085;
+  const tipY=box.min.y+d.y*(.095+.045*Math.pow(Math.abs(u*2-1),1.5));
+  const width=d.x*.0105;
   const point=(t,edge)=>{
    const settle=Math.min(1,t*5),flow=t*t*(3-2*t);
    const x=THREE.MathUtils.lerp(root.x,xTarget,settle)+
     Math.sin(u*13+t*2.5)*d.x*.0025*t;
    const y=THREE.MathUtils.lerp(root.y,tipY,t);
    // Follow the donor head initially, then fall behind the occiput.
-   const z=THREE.MathUtils.lerp(root.z-d.z*.007,
-    center.z-d.z*(.24+.015*Math.cos(u*Math.PI*2)),flow)+
+   const z=THREE.MathUtils.lerp(root.z-d.z*.012,
+    Math.min(root.z-d.z*.042,
+     center.z-d.z*(.46+.012*Math.cos(u*Math.PI*2))),flow)+
     Math.sin(Math.PI*t)*d.z*.018;
    const taper=1-.16*Math.pow(t,10);
    return f3(x+edge*width*taper,y,z);
