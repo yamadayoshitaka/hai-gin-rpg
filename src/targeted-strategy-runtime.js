@@ -13,28 +13,21 @@ export const TARGETED_STRATEGY_KINDS=Object.freeze({
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const button=(attr,label,active=false,disabled=false)=>'<button type="button" '+attr+' class="'+(active?'active':'')+'" '+(disabled?'disabled':'')+'>'+esc(label)+'</button>';
 export function planStrategyDistribution(plan,selectedSquads,methodIds){
- const squadById=new Map((plan?.squads||[]).map(s=>[String(s.id),s]));
+ const squads=new Map((plan?.squads||[]).map(s=>[String(s.id),s]));
+ const ids=[...new Set(selectedSquads.map(String))];
  const methods=[...new Set(methodIds)].map(id=>STRATEGY_METHODS[id]).filter(Boolean);
- const allocations=methods.map(m=>({method:m,squadIds:[]}));
- const unmatched=[];
- for(const id of selectedSquads){
-  const squad=squadById.get(String(id));
-  if(!squad)continue;
-  const possible=allocations.filter(x=>(squad.allowed||plan?.allowed||[]).includes(x.method.mode)&&
-   (!x.method.jobs.length||x.method.jobs.some(job=>(squad.jobs||[]).includes(job)))&&
-   (!x.method.requiresSummon||squad.hasSummon));
-  if(!possible.length){unmatched.push(String(id));continue;}
-  possible.sort((a,b)=>a.squadIds.length-b.squadIds.length);
-  possible[0].squadIds.push(String(id));
- }
- const total=allocations.reduce((n,x)=>n+x.squadIds.length,0);
- const rows=allocations.filter(x=>x.squadIds.length).map(x=>({...x,soldiers:x.squadIds.reduce((n,id)=>n+Math.max(1,Number(squadById.get(id)?.soldiers)||1),0)}));
- const totalSoldiers=rows.reduce((n,x)=>n+x.soldiers,0);
- let running=0;
- return {total,totalSoldiers,unmatched,rows:rows.map((x,i)=>{
-  const percent=i===rows.length-1?100-running:Math.round(x.soldiers/totalSoldiers*100);
-  running+=percent;return {...x,percent};
- })};
+ const method=methods.length===1?methods[0]:null;
+ const unmatched=ids.filter(id=>{
+  const squad=squads.get(id);
+  return !method||!squad||!(squad.allowed||plan?.allowed||[]).includes(method.mode)||
+   (method.jobs.length>0&&!method.jobs.some(job=>(squad.jobs||[]).includes(job)))||
+   (method.requiresSummon&&!squad.hasSummon);
+ });
+ if(!method||unmatched.length||!ids.length)
+  return {total:0,totalSoldiers:0,unmatched,rows:[]};
+ const soldiers=ids.reduce((n,id)=>n+Math.max(1,Number(squads.get(id)?.soldiers)||1),0);
+ return {total:ids.length,totalSoldiers:soldiers,unmatched:[],
+  rows:[{method,squadIds:ids,soldiers,percent:100}]};
 }
 /**
  * The authoritative pause-and-command controller. No side menus or separate
@@ -323,8 +316,8 @@ export function createTargetedStrategyUi({
   const first=grouped().find(g=>liveSquads(g.plan).length);
   if(!first)return false;
   groupId=String(id&&liveSquads(planFor(id)).length?id:first.id);
-  overviewGroupOnly=Boolean(groupOnly);
-  scope=overviewGroupOnly||squadId==null?'group':'squad';preferredSquad=squadId==null?null:String(squadId);
+  overviewGroupOnly=true;
+  scope='group';preferredSquad=null;
   selectGroup(groupId);step=startAtRecommendations?'family':'scope';family='attack';intent='melee';
   selectedMethods=new Set();selectedTargets=new Set();chosenItem=null;mapPoint=null;error='';
   mapTileOverlay=null;
@@ -396,8 +389,7 @@ export function createTargetedStrategyUi({
   if(t.hasAttribute('data-strategy-back')){back();return;}
   if(t.hasAttribute('data-strategy-next')){next();return;}
   if(t.hasAttribute('data-strategy-scope')){
-   if(!overviewGroupOnly)scope=t.dataset.strategyScope;
-   selectGroup(groupId);
+   scope='group';selectGroup(groupId);
   }else if(t.hasAttribute('data-strategy-group')){selectGroup(t.dataset.strategyGroup);}
   else if(t.hasAttribute('data-strategy-template')){
    const chosen=getTemplates(String(groupId)).find(x=>String(x.id)===String(t.dataset.strategyTemplate));
@@ -410,7 +402,7 @@ export function createTargetedStrategyUi({
    selectedTargets.clear();mapPoint=null;chosenItem=null;step='method';
   }
   else if(t.hasAttribute('data-strategy-squad')){
-   if(overviewGroupOnly)return; // Overview divisions are inspection selections, never individual orders.
+   return; // Individual subdivision orders are retired.
    const id=String(t.dataset.strategySquad);selectedSquads=new Set([id]);preferredSquad=id;
   }else if(t.hasAttribute('data-strategy-family')){
    if(t.dataset.strategyFamily==='item'){chosenItem=null;selectedTargets.clear();step='items';}
@@ -419,7 +411,7 @@ export function createTargetedStrategyUi({
    intent=t.dataset.strategyIntent;step='method';selectedMethods.clear();
   }else if(t.hasAttribute('data-strategy-method')){
    const id=t.dataset.strategyMethod;
-   if(selectedMethods.has(id))selectedMethods.delete(id);else selectedMethods.add(id);
+   if(selectedMethods.has(id))selectedMethods.clear();else selectedMethods=new Set([id]);
   }else if(t.hasAttribute('data-strategy-item')){
    chosenItem=String(t.dataset.strategyItem);selectedTargets.clear();step='target';
   }else if(t.hasAttribute('data-strategy-target')){
@@ -453,7 +445,7 @@ export function createTargetedStrategyUi({
   if(step==='scope'){
    const source=allSquadGroups().find(s=>String(s.id)===nearest.id);
    if(source&&String(source.groupId)!==String(groupId))selectGroup(source.groupId);
-   if(scope==='squad'){selectedSquads=new Set([nearest.id]);preferredSquad=nearest.id;}
+   // Radar selection always changes the whole group.
   }else if(chosenItem)selectedTargets=new Set([nearest.id]);
   else if(selectedTargets.has(nearest.id))selectedTargets.delete(nearest.id);
   else selectedTargets.add(nearest.id);

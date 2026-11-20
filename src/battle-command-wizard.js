@@ -156,7 +156,7 @@ export function mountBattleCommandWizard({
     if(current&&current.available!==false){
      accepted=onSpecial(id,'high_ground',String(current.id));
      if(accepted&&point&&plan.arrival!=='hold')
-      queueArrival(id,{...(plan.arrival==='special'?{special:plan.arrivalSpecialId,targetId:String(plan.arrivalTarget?.id)}:{command:plan.arrival}),point:{...point}});
+      queueArrival(id,{...(plan.arrival==='special'?{special:plan.arrivalSpecialId,targetId:String(plan.arrivalTarget?.id)}:{command:plan.arrival}),point:{...point},highGroundTarget:String(current.id)});
     }
    }else if(point){
     const legal=getLegalPoint(point.x,point.z);

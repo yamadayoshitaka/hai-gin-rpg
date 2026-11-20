@@ -83,14 +83,24 @@ const candidates={allowed:['charge','weaken'],squads:[
  {id:'mage',soldiers:3,jobs:['mage'],allowed:['charge','weaken']},
  {id:'ninja',soldiers:5,jobs:['ninja'],allowed:['charge','weaken']}
 ]};
-const plan=planStrategyDistribution(candidates,['sword','mage','ninja'],
+const split=planStrategyDistribution(candidates,['sword','mage','ninja'],
  ['melee_focus','cut_attack','cut_speed']);
+assert.equal(split.total,0,'different tactics cannot silently split a unified squad');
+const uniform={allowed:['hold'],squads:[
+ {id:'sword',soldiers:2,jobs:['sword'],allowed:['hold']},
+ {id:'mage',soldiers:3,jobs:['mage'],allowed:['hold']},
+ {id:'ninja',soldiers:5,jobs:['ninja'],allowed:['hold']}
+]};
+const plan=planStrategyDistribution(uniform,['sword','mage','ninja'],['hold_line']);
 assert.equal(plan.total,3);
 assert.equal(plan.unmatched.length,0);
-assert.equal(plan.rows.reduce((n,x)=>n+x.percent,0),100);
+assert.equal(plan.rows.length,1,'the squad has exactly one action');
+assert.equal(plan.rows[0].percent,100);
 assert.equal(plan.totalSoldiers,10);
-assert.deepEqual(plan.rows.map(x=>x.percent),[20,30,50],'percentages are weighted by actual troop counts');
-assert.equal(new Set(plan.rows.flatMap(x=>x.squadIds)).size,3,'a physical squad is not duplicated');
+assert.deepEqual(plan.rows[0].squadIds,['sword','mage','ninja']);
+const invalid=planStrategyDistribution(candidates,['sword','mage','ninja'],['melee_focus']);
+assert.equal(invalid.total,0,'incompatible jobs must not be left behind without warning');
+assert.equal(invalid.unmatched.length,2);
 
 const sim=Object.create(MassBattleGridSimulation.prototype);
 sim.time=1;sim.squadDebuffs=new Map();sim.squadItemBuffs=new Map();sim.enemySquadItemBuffs=new Map();
