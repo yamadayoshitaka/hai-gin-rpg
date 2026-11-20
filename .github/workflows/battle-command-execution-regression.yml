@@ -1,0 +1,50 @@
+name: Full command execution regression
+on:
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/battle-command-wizard.js'
+      - 'src/battle-realtime-commands.js'
+      - 'src/battle-job-special-actions.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-worker-*.js'
+      - 'qa/battle-all-command-paths.test.mjs'
+      - 'qa/battle-command-followup.test.mjs'
+      - '.github/workflows/battle-command-execution-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/battle-command-wizard.js'
+      - 'src/combat-action-runtime.js'
+      - 'qa/battle-all-command-paths.test.mjs'
+      - '.github/workflows/battle-command-execution-regression.yml'
+permissions:
+  contents: read
+jobs:
+  command-execution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of UI, simulation, orders and worker
+        run: |
+          node --check src/battle-command-wizard.js
+          node --check src/battle-realtime-commands.js
+          node --check src/battle-job-special-actions.js
+          node --check src/combat-action-runtime.js
+          node --check src/mass-battle-grid-sim.js
+          node --check src/mass-battle-worker-client.js
+          node --check src/mass-battle-worker-runtime.js
+      - name: Execute actual battle orders and all wizard paths
+        run: |
+          node --test qa/battle-all-command-paths.test.mjs
+          node --test qa/battle-command-followup.test.mjs
+          node --test qa/squad-highground-unified-order.test.mjs
+          node --test qa/squad-missions-and-healing.test.mjs
+          node --test qa/battle-start-highground-shield-cover.test.mjs
+          node qa/mounted-summon-command-items.test.mjs
