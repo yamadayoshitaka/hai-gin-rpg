@@ -135,7 +135,7 @@ test('live squad MP, HP-linked attack, reinforcement and rally wiring stay synch
  const rows=makeBattleRpgStatusRows({sums,units,allyIds:['m'],
   commanderRallies:new Map([['m',[{attack:.2,until:32}]]]),now:10});
  assert.equal(rows[0].mp,8);
- assert.equal(rows[0].maxMp,40);
+ assert.equal(rows[0].maxMp,20,'dead units must not reduce the living caster MP bar');
  assert.equal(rows[0].attackPercent,25);
  assert.equal(rows[0].effects[0].label,'攻↑20%');
  const next=makeBattleRpgStatusRows({sums,units:[{...units[0],mp:3},units[1]],allyIds:['m']});
