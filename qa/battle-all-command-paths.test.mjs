@@ -55,6 +55,20 @@ test('actual 50 and 1000 unit summoner orders consume MP and create owned world 
   assert.equal(sim.summonSquadCreature(summoner.squadId),false,'a live familiar is not cast again');
  }
 });
+test('explicit priest revival updates the actual fallen unit and MP budget',()=>{
+ const sim=create(50);
+ const priest=sim.units.find(u=>u.team===0&&u.jobId==='priest'&&u.alive);
+ const victim=sim.units.find(u=>u.team===0&&u.squadId!==priest.squadId&&u.alive);
+ assert.ok(priest&&victim);priest.rarity='UR';priest.mp=100;
+ victim.x=victim.fromX=priest.x+1;victim.z=victim.fromZ=priest.z;
+ sim._markDead(victim);
+ const mp=priest.mp,live=sim.live[0];
+ assert.equal(sim.reviveSquadTarget(priest.squadId,victim.squadId),true);
+ assert.ok(victim.alive&&victim.hp>0,'a real dead actor is revived');
+ assert.ok(priest.mp<mp,'the real priest pays the revival spell cost');
+ assert.equal(sim.live[0],live+1);
+ assert.equal(sim.reviveSquadTarget(priest.squadId,victim.squadId),false,'cannot revive living actors');
+});
 test('densely surrounded ground summoners find a safe real spawn tile beyond radius two',()=>{
  const width=32,occupancy=new Int32Array(width*width).fill(1);
  occupancy[(16+3)*width+16]=-1; // one available tile at radius 3
@@ -220,7 +234,7 @@ test('all UI routes are wired to the real runtime and Worker, not decoration',()
  for(const id of ['onMove:','onOrder:','onTargetOrder:','onSpecial:','onSharedItem:','onRally:'])
   assert.ok(page.includes(id),'missing live callback: '+id);
  for(const id of ['squadDestination','squadCommand','squadMission','squadHealing',
-  'orderSquadHighGround','summonSquadCreature','squadHighGroundArrival','shieldCover'])
+  'orderSquadHighGround','summonSquadCreature','squadHighGroundArrival','shieldCover','squadRevival'])
   assert.ok(worker.includes("case '"+id+"'"),'Worker cannot execute '+id);
  assert.ok(ui.includes('commandWizard.tick()'),'queued commands must be driven every battle update');
  assert.match(page,/for\(const id of squadIds\)setStartingSquadOrder\(0,id,'charge'\)/);
