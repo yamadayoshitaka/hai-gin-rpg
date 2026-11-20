@@ -613,17 +613,62 @@ updateHairRuntimeDiagnostics();
 // Emergency stable path: preserve native GLB face materials and shader pipeline.
 // Earlier injected fragment shaders broke face and hair rendering on mobile.
 function setHairHiddenScalp(face,enabled){
- // Emergency rollback of the expensive per-triangle v9 head rewrite.
- // Never modify the live donor geometry while the editor is rendering.
  if(!face?.isMesh)return;
- const original=face.userData.originalHairScalpGeometry;
- if(original&&face.geometry!==original){
-  face.geometry.dispose();
+ const ud=face.userData;
+ const original=ud.originalHairScalpGeometry||face.geometry;
+ ud.originalHairScalpGeometry=original;
+ const old=face.geometry;
+ if(old!==original){
   face.geometry=original;
+  old.dispose();
  }
- face.userData.hairScalpMaskActive=false;
- face.userData.hairScalpMaskedTriangles=0;
- face.userData.hairScalpMaskMode='v9-disabled-loading-hotfix';
+ ud.hairScalpMaskActive=false;
+ ud.hairScalpMaskedTriangles=0;
+ ud.hairScalpMaskMode='OFF';
+ if(!enabled)return;
+ // Mask only if an actual opaque donor-backed hair cap exists.
+ // Short hair can be masked; long styles retain native skin until
+ // their coverage is validated. Do not mutate the donor source.
+ const wig=wigs.get(genderForFace(face));
+ const cap=wig?.root?.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ if(!cap?.visible||!cap.geometry||!wig?.root?.userData)return;
+ const style=wig.root.userData;
+ if(!style.hairStyleId&& !style.styleId)return;
+ const styleName=String(style.hairStyleId||style.styleId);
+ if(!/buzz|short|crop/i.test(styleName))return;
+ const pos=original.getAttribute('position'),idx=original.index;
+ if(!pos)return;
+ original.computeBoundingBox();
+ const box=original.boundingBox,dim=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+ const count=idx?idx.count:pos.count,kept=[];
+ let removed=0;
+ for(let i=0;i+2<count;i+=3){
+  const ids=[0,1,2].map(k=>idx?idx.getX(i+k):i+k);
+  const y=ids.reduce((n,j)=>n+pos.getY(j),0)/3;
+  const z=ids.reduce((n,j)=>n+pos.getZ(j),0)/3;
+  const x=Math.abs(ids.reduce((n,j)=>n+pos.getX(j),0)/3-center.x);
+  // Conservative crown-only selection, safely above the eyes/ears.
+  const crown=y>box.min.y+dim.y*.83&&x<dim.x*.35&&
+   Math.abs(z-center.z)<dim.z*.34;
+  if(crown){removed++;continue;}
+  kept.push(...ids);
+ }
+ if(!removed)return;
+ const masked=original.clone();
+ masked.setIndex(kept);
+ // Preserve donor material grouping only when there is one material.
+ // Multi-material donor meshes are deliberately not rewritten.
+ if(Array.isArray(face.material)&&face.material.length>1){masked.dispose();return;}
+ masked.clearGroups();
+ masked.computeBoundingSphere();
+ face.geometry=masked;
+ ud.hairScalpMaskActive=true;
+ ud.hairScalpMaskedTriangles=removed;
+ ud.hairScalpMaskMode='conservative-crown-donor-triangles';
+}
+function genderForFace(face){
+ for(const [sex,m] of models)if(m?.face===face)return sex;
+ return 'female';
 }
 
 function hideDuplicateHairCap(wig){
