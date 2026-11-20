@@ -507,6 +507,24 @@ export function resolvedSortieSlot(game,stage,team){
 export function availableSortieOrders(game,teamId){
  const jobs=new Set(sortieTeamSquads(game,teamId).map(s=>s.job));
  if(!jobs.size||!sortieFormationStatus(game,teamId).valid)return [];
+ const style=teamOf(game,teamId)?.formation||'balanced';
+ // Formation controls the allowed tactical families; jobs still gate execution.
+ const permitted={
+  attack:['charge','defend','hold','retreat','destroy','weaken'],
+  balanced:['charge','defend','hold','retreat','support','explore','destroy','weaken'],
+  support:['defend','hold','retreat','support','explore'],
+  wall:['defend','hold','retreat','support'],
+  spear:['charge','defend','hold','destroy'],
+  arrow:['charge','defend','hold','explore'],
+  wedge:['charge','defend','retreat','destroy'],
+  pincer:['charge','defend','retreat','explore','weaken'],
+  circle:['defend','hold','support','explore'],
+  ambush:['charge','hold','retreat','explore','weaken'],
+  cross:['charge','defend','hold','support','explore'],
+  fortress:['defend','hold','retreat','support'],
+  dragon:['charge','defend','support','destroy','weaken'],
+  constellation:['charge','defend','hold','retreat','support','explore','destroy','weaken']
+ }[style]||[];
  const orders=['charge','defend','hold','retreat'];
  const links=sortieAdjacentJobs(game,teamId);
  // A healer needs a neighboring unit to issue group support; a scout needs
@@ -516,7 +534,7 @@ export function availableSortieOrders(game,teamId){
  if(['忍者','シーフ','召喚士'].some(job=>jobs.has(job)))orders.push('explore');
  if([...jobs].some(j=>['魔法使い','忍者'].includes(j)))orders.push('destroy');
  if(['忍者','シーフ','魔法使い'].some(job=>jobs.has(job)))orders.push('weaken');
- return orders;
+ return orders.filter(order=>permitted.includes(order));
 }
 /** Store several battle methods during inn planning. Targets are chosen in battle. */
 export function setSortieTactics(game,teamId,tacticIds){
