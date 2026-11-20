@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-restored-rendered-bridge-v16-20261120';
+export const M019_HERO_REVISION='m019-contoured-bridge-anatomy-v17-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -120,6 +120,68 @@ export const M019_SPRAWL_KNEE_Y=-.085;
 export const M019_SPRAWL_FOOT_X=.007;
 export const M019_SPRAWL_FOOT_Y=-.770;
 export const M019_SHOULDER_LOCAL_Y=1.360;
+/**
+ * Shape the ALREADY RENDERING oriented-bridge topology in place.
+ *
+ * On Android the four historical bridge meshes render reliably, whereas
+ * replacing them with tubes made the limbs disappear. This only reshapes
+ * their existing vertex rings: no new Mesh, material, draw call, shrink
+ * scale, LOD mask or change to the articulated parent rig.
+ *
+ * The muscle profile swells across the anatomical shaft and merges into
+ * the elbow/knee. Both endpoints keep their original positions so the
+ * planted toes and torso fascia do not detach during animations.
+ */
+function contourM019StableBridge(mesh,from,to,{
+ region='upper',side=1,detail='high'
+}={}){
+ const geometry=mesh?.geometry;
+ const position=geometry?.getAttribute('position');
+ const uv=geometry?.getAttribute('uv');
+ if(!position||!uv)throw Error('m019 requires the rendered bridge mesh');
+ let stride=0;
+ while(stride<uv.count&&uv.getY(stride)<.00001)stride++;
+ if(stride<6||position.count%stride!==0)
+  throw Error('m019 oriented bridge ring topology has changed');
+ const rings=position.count/stride;
+ if(rings<4)throw Error('m019 anatomical bridge needs several rings');
+ const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to);
+ const center=new THREE.Vector3();
+ const sign=side<0?-1:1;
+ const upper=region==='upper';
+ for(let row=0;row<rings;row++){
+  const t=row/(rings-1),arc=Math.sin(Math.PI*t);
+  center.lerpVectors(a,b,t);
+  // The visible v16 bridge already spans shoulder -> knee -> paw.
+  // Add modest rounded muscle mass, NEVER reduce its minimum diameter.
+  const muscle=upper?.19:.12;
+  const joint=upper?.055*Math.exp(-Math.pow((1-t)/.18,2)):
+    .065*Math.exp(-Math.pow(t/.18,2));
+  const contour=1+muscle*arc*arc+joint;
+  const shiftY=upper?.024*arc:0;
+  const shiftX=upper?0:sign*.013*arc;
+  const shiftZ=(upper?.008:.013)*arc;
+  for(let j=0;j<stride;j++){
+   const i=row*stride+j;
+   const angle=2*Math.PI*j/(stride-1);
+   const grain=detail==='low'?1:
+    1+.013*Math.sin(5*angle+9*t)*arc;
+   const radius=contour*grain;
+   position.setXYZ(i,
+    center.x+(position.getX(i)-center.x)*radius+shiftX,
+    center.y+(position.getY(i)-center.y)*radius+shiftY,
+    center.z+(position.getZ(i)-center.z)*radius+shiftZ);
+  }
+ }
+ position.needsUpdate=true;
+ geometry.computeVertexNormals();
+ geometry.computeBoundingSphere();
+ mesh.userData.m019ContouredVisibleBridge=true;
+ mesh.userData.m019MuscleProfile=upper?'shoulder-elbow':'knee-ankle';
+ mesh.userData.m019BridgeRingCount=rings;
+ mesh.userData.m019NoAdditionalDrawCalls=true;
+ return mesh;
+}
 /**
  * m019's four legs use a conventional, WebGL-compatible Mesh.
  * Mobile GPUs rendered v9's SkinnedMesh as invisible even while CPU
@@ -252,6 +314,9 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  // successfully photographed model, without further width reduction.
  const visibleUpper=g.bridge(leg,'light',
    [0,.090,z],[kneeX,kneeY,z],.160,.125);
+ contourM019StableBridge(visibleUpper,
+   [0,.090,z],[kneeX,kneeY,z],
+   {region:'upper',side,detail});
  visibleUpper.name='m019-mobile-upper-'+name;
  visibleUpper.userData.m019IndependentVisibleCore=true;
  visibleUpper.userData.m019ArticulatedParent='shoulder';
@@ -260,6 +325,9 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  visibleUpper.frustumCulled=false;
  const visibleShin=g.bridge(distal,'light',
    [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],.124,.088);
+ contourM019StableBridge(visibleShin,
+   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],
+   {region:'shin',side,detail});
  visibleShin.name='m019-mobile-shin-'+name;
  visibleShin.userData.m019IndependentVisibleCore=true;
  visibleShin.userData.m019ArticulatedParent='knee';
@@ -289,7 +357,9 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  toe.userData.m019RightAngleGrounding=true;
  toe.userData.m019ToeCount=4;
  toe.userData.m019PawFinish='basalt-scutes-with-rooted-curved-keratin';
- g.sphere(toe,'skin',[0,-.016,.048],[.109,.041,.127],
+ // Flatten the EXISTING paw skin against the ground and widen the toe
+ // socket. No independent foot overlay that could float during animation.
+ g.sphere(toe,'skin',[0,-.020,.052],[.115,.035,.131],
    {name:'m019-metatarsal-'+name,rough:.92});
  // The narrow dark scutes intersect the dorsal skin instead of floating
  // above it. Do not add these extra draw calls in low/crowd LOD.
@@ -306,12 +376,12 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
   // Round finger skin runs *inside* the central footpad and continues
   // underneath the talon root, so nothing looks like a glued-on stick.
   const finger=g.tube(toe,'skin',[
-   [x*.70,-.012,.060],
+   [x*.66,-.013,.058],
    [x,-.013,.107],
    [x+spread*.25,-.018,.146],
    [x+spread*.40,-.025,.184]
-  ],detail==='low'?.021:.027,{
-   name:'m019-digit-'+name+'-'+digit,capEnds:true,taper:.65
+  ],detail==='low'?.022:.029,{
+   name:'m019-digit-'+name+'-'+digit,capEnds:true,taper:.70
   });
   finger.userData.m019ContinuousBasaltDigit=true;
   const root=[x+spread*.22,-.008,.155];
