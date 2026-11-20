@@ -92,6 +92,9 @@ function actualScalpCandidates(geo,box){
    // Keep explicit QA failure instead of silently growing "rear" locks
    // out of the forehead on unusual incoming face topologies.
    if(rear)throw Error('Missing posterior scalp: '+zone);
+   // Never silently seed a bald crown from the cheeks or forehead.
+   // A missing anatomical crown is a topology defect, not a valid fallback.
+   if(zone==='crown')throw Error('Missing anatomical crown scalp roots');
    const sameSide=all.filter(onSide);
    pools[zone]=sameSide.length?sameSide:all;
   }
