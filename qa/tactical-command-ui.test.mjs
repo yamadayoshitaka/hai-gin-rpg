@@ -50,7 +50,8 @@ for(const file of ['town-hub.html','story-mode.html','tactics-wireframe.html']){
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/battleTacticalUi\.onSquadSums\(sums\)/);
 assert.match(battle,/battleTacticalUi\.renderFor\(id\)/);
-assert.match(battle,/commanderOrderInterval\(sid\)-elapsed/);
+assert.match(battle,/usedAt\+commanderOrderInterval\(id\)-elapsed/);
+assert.match(battle,/function commanderOrderInterval\(_id\)\{return SQUAD_MANUAL_COMMAND_COOLDOWN;\}/);
 // Legacy opening-order summary was retired with the no-turn real-time dock.
 assert.match(battle,/realtimeCommandUI=!TOWN_MODE\?createRealtimeBattleCommands/);
 assert.match(battle,/getMoveTargets:\(kind,id\)=>realtimeMoveTargets/);

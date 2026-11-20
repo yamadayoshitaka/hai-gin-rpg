@@ -186,7 +186,7 @@ test('slim rails show 1隊, job name, and two usable gauges',()=>{
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.match(js,/jobName\.className='rpgSquadJobName'/);
  assert.match(js,/jobName\.textContent=String\(row\.job\|\|'部隊'\)/);
- assert.match(js,/heading\.append\(job,title,jobName,status\)/);
+ assert.match(js,/heading\.append\(job,title,jobName,status,engaged\)/);
  assert.match(js,/title\.textContent=.*\$1隊/);
  assert.match(css,/\.rpgSquadJobName\{\s*grid-column:1\/-1;grid-row:2/);
  assert.match(css,/grid-template-rows:16px 10px 8px 8px repeat\(2,5px\)/);

@@ -207,8 +207,8 @@ test('planning pauses the combat clock and only releases its own pause on exit',
  assert.match(src,/function enterPlanning\(\)/);
  assert.match(src,/if\(!started\)return/);
  assert.match(src,/if\(!getPaused\(\)\)\{/);
- assert.match(src,/planningDeadline=nowMs\(\)\+PLAN_LIMIT_MS/);
- assert.match(src,/globalThis\.setInterval\?\.\(updatePlanningCountdown,200\)/);
+ assert.match(src,/作戦選択中（時間制限なし）/);
+ assert.match(src,/function updatePlanningCountdown\(\)/);
  assert.match(src,/onPause\(\);planningOwnsPause=Boolean\(getPaused\(\)\)/);
  assert.match(src,/function exitPlanning\(\)/);
  assert.match(src,/if\(!planningOwnsPause\)return/);
@@ -263,17 +263,15 @@ test('central radar shows only commander positions for 10+10 and highlights sele
  assert.match(css,/#realtimeSquadRadar\{/);
  assert.match(page,/onEnemySelect:id=>battleRpgHud\?\.select\(1,id,\{focus:true\}\)/);
 });
-test('30-second strategy selection timer keeps previous orders and releases its own pause',()=>{
+test('strategy selection has no deadline and owns only its own combat pause',()=>{
  const view=read('../src/battle-realtime-commands.js');
  const html=read('../tactics-wireframe.html');
- assert.match(view,/const PLAN_LIMIT_MS=30000/);
  assert.match(view,/id="realtimePlanSeconds"/);
- assert.match(view,/id="realtimeMapPlanningClock"/);
- assert.match(view,/id="realtimeRadarClock"/);
- assert.match(view,/planningTicker=globalThis\.setInterval\?\.\(updatePlanningCountdown,200\)/);
- assert.match(view,/if\(remain===0\)\{/);
- assert.match(view,/if\(!\$\('realtimeBattleMapOverlay'\)\.hidden\)closeMap\(\)/);
- assert.match(view,/closeSquadControls\(\)/);
+ assert.match(view,/作戦選択中（時間制限なし）/);
+ assert.doesNotMatch(view,/const PLAN_LIMIT_MS=30000/);
+ assert.doesNotMatch(view,/planningDeadline=nowMs\(\)\+PLAN_LIMIT_MS/);
+ assert.match(view,/function updatePlanningCountdown\(\)/);
+ assert.match(view,/planningDeadline=0/);
  assert.match(view,/if\(!planningOwnsPause\)return/);
  assert.match(view,/if\(getPaused\(\)\)onPause\(\)/);
  assert.match(html,/if\(team!==0\|\|!battleReady\|\|finished\)return/);

@@ -42,7 +42,7 @@ test('finished batch report must be based on verified main SHA and real browser 
  const sw=JSON.parse(fs.readFileSync('data/batch-center-switches.json','utf8'));
  const lane=j.groups.find(g=>g.id==='gameQuality');
  assert(lane,'Game-wide batch card missing');
- assert.equal(sw.groups.gameQuality.enabled,true);
+ assert.equal(typeof sw.groups.gameQuality.enabled,'boolean','respect owner enable/disable switch');
  assert.equal(lane.workflow,'game-quality-six-lane.yml');
  const html=fs.readFileSync('batch-monitor.html','utf8');
  assert.match(html,/gameQuality/);

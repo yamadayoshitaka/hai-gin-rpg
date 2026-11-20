@@ -61,7 +61,8 @@ assert.match(outfit,/surfaceCheck:true/,'actual garment proximity controls skin 
 assert.match(army,/if\(retainedBodyVertices!==humanVertices\)/,'body vertex coverage is checked after GPU consolidation');
 assert.match(army,/simulation\.getStepPhase\(u,alpha\)/,'full-body walking motion follows completed grid footsteps');
 assert.doesNotMatch(army,/CylinderGeometry|BoxGeometry|SphereGeometry/,'箱型・円柱型の代用人体を作らない');
-assert.match(game,/randomRosters=\[randomJobRoster\(JOBS,TEAM_SIZE\),randomJobRoster\(JOBS,TEAM_SIZE\)\]/);
+assert.match(game,/const randomRosters=\[0,1\]\.map\(\(\)=>\{/);
+assert.match(game,/engineBattleJobNameForSquad\(Math\.floor\(i\/squadSize\)\)/);
 assert.match(game,/for\(let team=0;team<2;team\+\+\)for\(let i=0;i<TEAM_SIZE;i\+\+\)/);
 assert.match(game,/ランダム職業リアルタイム自動戦闘を開始/);
 const jobs=['剣士','格闘家','魔法使い','弓使い','盾戦士','盗賊','忍者','槍兵','僧侶','召喚士'];
