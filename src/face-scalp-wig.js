@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-safe-v8-rollback-v12';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-no-wig-volume-v13';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -371,7 +371,7 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
    // Keep below the primary shell by one contact clearance. If the
    // shell has a gap this shows hair, otherwise the primary wins z-test.
    v.addScaledVector(dir,d.x*.0009+
-    wigVolumeLiftAt(raw,box,volumeProfile)*.88);
+    0);
    vertices.push(v.x,v.y,v.z);
    normals.push(dir.x,dir.y,dir.z);
   }
@@ -454,7 +454,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    const seamWidth=Math.max(d.y*.055,1e-6);
    const seamT=THREE.MathUtils.clamp(seamDistance/seamWidth,0,1);
    const seamBlend=seamT*seamT*(3-2*seamT);
-   v.addScaledVector(n,d.x*.0012+wigVolumeLiftAt(v,box,volumeProfile)*seamBlend);
+   v.addScaledVector(n,d.x*.0012);
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
@@ -474,7 +474,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    sourceScalpVerts[i*3+2]);
   const n=f3(donorNormals[i*3],donorNormals[i*3+1],
    donorNormals[i*3+2]);
-  p.addScaledVector(n,d.x*.0015+wigVolumeLiftAt(p,box,volumeProfile));
+  p.addScaledVector(n,d.x*.0015);
   verts.push(p.x,p.y,p.z);smoothNormals.push(n.x,n.y,n.z);
  }
  // Buzz cuts already have a clipped scalp shell. Adding the second
@@ -769,8 +769,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(outward.dot(away)<0)outward.negate();
   // Root guide is lifted by exactly the same profile as the visible
   // scalp shell; otherwise hair would sink into the raised wig base.
-  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift+
-   wigVolumeLiftAt(seed.p,box,volumeProfile));
+  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift);
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
   const partSide=Math.sign(wigRoot.x-whorl.x)||side;
