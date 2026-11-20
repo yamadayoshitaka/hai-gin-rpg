@@ -61,7 +61,8 @@ assert.match(inn,/data-army-captain/);
 assert.match(inn,/registerInnStrategyTemplate\(game/);
 assert.match(inn,/setInnCommanderInitialOrder\(game/);
 assert.match(battle,/const innStoryStrategy=null/);
-assert.match(battle,/storyRequest\?\.initialSquadOrders\?\.\[String\(id\)\]/);
+// The archived inn orders stay in bridge data; live battles use one-time deployment.
+assert.match(battle,/realtimeCommandUI\?\.openDeployment\(\)/);
 assert.equal(Object.keys(TACTICAL_STRATEGIES).length,4);
 for(const [name,markup] of [['inn',inn],['battle',battle]]){
  const modules=[...markup.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];

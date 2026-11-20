@@ -299,7 +299,7 @@ export class MassBattleGridSimulation {
   orderSquadHighGround(squadId,routeIndex,team=0,{manualHold=true}={}){
     const id=String(squadId),index=Number(routeIndex),route=this.highGroundRoutes[index];
     if(!route||!this._highGroundRouteAlive(route)||
-      !['window','roof'].includes(route.kind))return false;
+      !['interior','window','roof'].includes(route.kind))return false;
     const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0);
     if(!members.length)return false;
     const key=route.buildingIndex+':'+team,claimed=this._highGroundClaims.get(key);

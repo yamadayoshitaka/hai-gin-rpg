@@ -59,12 +59,16 @@ assert.equal(new Set(plan.assignments.map(a=>a.id)).size,20);
 assert.ok(plan.summaries.find(s=>s.squadId==='0').heal>=5,'Manual job buttons reserve real priests');
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(html,/manualScreen\.id='manualFormationScreen'/);
-assert.match(html,/manualJobs\[id\]/);
-assert.match(html,/manualPager\.append\(manualPrev,manualPageText,manualNext\)/,
- 'Every manual profession is available through prev/next buttons');
-assert.match(html,/MASS_JOBS\.slice\(manualPage\*manualPageSize/,
- 'Manual editor shows a fixed page rather than a clipped scrolling list');
+// The retired standalone manual formation editor is replaced by the one-time,
+ // live-map squad deployment. Verify the active integration, not removed widgets.
+const realtime=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/);
+assert.match(html,/createRealtimeBattleCommands\(\{/);
+assert.match(realtime,/id="realtimeBattleMapOverlay"/);
+assert.match(realtime,/id="realtimeStart"/);
+assert.match(realtime,/onDeploy\(selectedId,point\)/);
+assert.match(realtime,/function confirmDockStrategy\(\)/);
+assert.match(html,/engineBattleJobNameForSquad\(Math\.floor\(i\/squadSize\)\)/);
 assert.doesNotMatch(html,/range\.type='range'/,'Formation sliders were removed');
 assert.match(html,/squadQuickPage==='explore'/);
 assert.match(html,/requestSquadRecovery\(target\.targetId\)/);
@@ -82,6 +86,6 @@ assert.match(html,/button\.userDataDeaths\.textContent/);
 assert.match(html,/ribbonPageSize=5/);
 assert.match(html,/const visibleRibbonPageSize=Math\.max\(3,Math\.min\(8,Math\.floor\(available\/64\)\)\)/,
  'Side squad icons adapt to screen height and show at least three teams without scrolling');
-assert.match(html,/setOpeningWizardPage\('formation'\)/);
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/);
 assert.match(html,/vitalsPageSize=5/);
 console.log('PASS sustained casts, stronger broad magic, precise job buttons, non-scrolling pages and mirrored death counters');

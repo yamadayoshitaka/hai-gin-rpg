@@ -63,7 +63,7 @@ assert.match(gpu,/runPose\.z\+=\(0\.46-contactProgress\*0\.92\)\*shoeMask\*activ
 assert.match(gpu,/real-rig-crowd-packed-v11-upper-body-strike/,
  'WebGL shader programs are invalidated');
 const page=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(page,/confirmed-hit-overlay\.js\?v=4\.6\.36/,
+assert.match(page,/confirmed-hit-overlay\.js\?v=20261119\-overlap1/,
  'mobile browser must load the version with no hit circles');
 assert.match(page,/mass-visual-motion\.js\?v=4\.6\.36/,
  'mobile browser must load the distance-derived gait');

@@ -55,5 +55,7 @@ assert.match(battle,/targetedStrategyUi\.open\(group,\{\s*startAtRecommendations
 assert.match(battle,/recommendOverviewGroupPlans\(BATTLE_PLAN_PRESETS,STRATEGY_METHODS/);
 assert.match(strategy,/function open\(id=null,\{squadId=null,groupOnly=false,startAtRecommendations=false\}=\{\}\)/);
 assert.match(strategy,/step=startAtRecommendations\?'family':'scope'/);
-assert.match(strategy,/if\(overviewGroupOnly\)return; \/\/ Overview divisions are inspection selections/);
+assert.match(strategy,/overviewGroupOnly=true/);
+assert.match(strategy,/scope='group';preferredSquad=null/);
+assert.match(strategy,/if\(overviewGroupOnly&&step==='family'\)\{close\(\);return;\}/);
 console.log('PASS: 20 visible world-centroid squad pins, tap-to-inspect, recommendation-first group orders, divisions selection only');

@@ -54,7 +54,7 @@ const worker=readFileSync(new URL('../src/mass-battle-worker-runtime.js',import.
 const client=readFileSync(new URL('../src/mass-battle-worker-client.js',import.meta.url),'utf8');
 for(const token of ['function beginCommanderCinematic(squadId)','function updateCommanderCinematic()',
  'emitSquadBuffEffect(id','battleCeremony.showOrder(message,effect.effect)',
- 'battleCeremony.showOrder(\'🎒 \'+supply.name','id=\'battleItemsSquad\'',
+ 'battleCeremony.showOrder(\'🎒 軍師から物資支給：\'+squadName(id)','id=\'battleItemsSquad\'',
  'massSim.applySquadItemBuff','massWorker.buffSquadItem','massWorker.healSquadItem']){
  assert.ok(html.includes(token),token+' is connected');
 }

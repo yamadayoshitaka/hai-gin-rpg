@@ -56,18 +56,17 @@ for(const count of [50,1000]){
   'A battle in progress cannot secretly change formation type');
 }
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(html,/openingPlan\.id='openingSquadStrategies'/);
-assert.match(html,/for\(const group of \[1,2,3\]\)/);
-assert.match(html,/armyGroupBySquad\[id\]=group/);
-assert.match(html,/manualJobs\[id\]/);
-assert.match(html,/function openManualJobEditor\(id\)/);
-assert.doesNotMatch(html,/range\.type='range'/,'Job counts use buttons rather than sliders');
-assert.match(html,/refs\.buttons\.querySelectorAll\('button'\)/);
-assert.match(html,/refreshFormationPreview\(\)/);
+// Production uses one-time map deployment rather than the retired manual editor.
+const realtime=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/);
+assert.match(realtime,/id="realtimeBattleMapOverlay"/);
+assert.match(realtime,/id="realtimeStart"/);
+assert.match(realtime,/onDeploy\(selectedId,point\)/);
+assert.match(html,/engineBattleJobNameForSquad\(Math\.floor\(i\/squadSize\)\)/);
+assert.doesNotMatch(html,/manualScreen\.id='manualFormationScreen'/);
 assert.doesNotMatch(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/);
 assert.doesNotMatch(html,/applySquadRecomposition\(actors,plan,\{team\}\)/);
 assert.match(html,/formation:selectedSquadType\(key,team\)/);
-assert.match(html,/開戦前の隊列編成/);
 const moduleCode=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
 assert.ok(moduleCode,'Battle HTML must contain executable game module');
 const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{

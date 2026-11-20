@@ -12,7 +12,7 @@ const section=html.slice(start,end);
 // Execute the real reward-ledger code too. A partial function extraction that
 // omitted recordBattleTreasure produced a false ReferenceError although the
 // live game declares the function before the item collector.
-const ledgerStart=html.indexOf('const battleTreasureLedger=new Map();');
+const ledgerStart=html.indexOf('const battleTreasureLedger=new Map(),battleTreasureAcquiredLedger=new Map();');
 const ledgerEnd=html.indexOf('function battleTreasureReceipt()',ledgerStart);
 assert.ok(ledgerStart>0&&ledgerEnd>ledgerStart,'Battle treasure ledger is defined');
 const ledgerSection=html.slice(ledgerStart,ledgerEnd);
