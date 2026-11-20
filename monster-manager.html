@@ -926,7 +926,13 @@ window.__m019LimbVisibilityQA=()=>{
  const limbs=ids.map(id=>{
   const mesh=model.getObjectByName('m019-seamless-skin-'+id);
   const toe=model.userData.pivots?.['toe'+id];
-  if(!mesh||!toe||!mesh.geometry)return {id,visible:false,reason:'missing'};
+  const mobileUpper=model.getObjectByName('m019-mobile-upper-'+id);
+  const mobileShin=model.getObjectByName('m019-mobile-shin-'+id);
+  const stable=[mobileUpper,mobileShin];
+  const mobileCoreReady=stable.every(part=>part?.isMesh&&part.visible&&
+    part.material?.visible!==false&&part.geometry?.getIndex()?.count>24);
+  if(!mesh||!toe||!mesh.geometry)return {id,visible:false,
+    mobileCoreReady,reason:'missing'};
   mesh.userData.m019RefreshVisibleLimb?.();
   mesh.updateMatrixWorld(true);
   const box=new THREE.Box3().setFromObject(mesh);
@@ -941,10 +947,13 @@ window.__m019LimbVisibilityQA=()=>{
    renderer:mesh.userData.m019VisibleLimbRenderer,
    width:size.x,height:size.y,depth:size.z,
    ankleDistance:contact,ndc:[center.x,center.y,center.z],
-   triangles:mesh.geometry.getIndex()?.count/3||0};
+   triangles:mesh.geometry.getIndex()?.count/3||0,
+   mobileCoreReady,mobileCoreMeshes:stable.filter(Boolean).length};
  });
- return {ready:limbs.every(x=>x.visible&&x.width>.30&&x.height>.18&&
-   x.ankleDistance<.06&&x.triangles>10),
+ return {ready:limbs.every(x=>x.visible&&x.mobileCoreReady&&
+   x.width>.30&&x.height>.18&&x.ankleDistance<.06&&x.triangles>10),
+  geometryOnly:true,
+  note:'Actual Android pixels still require visual verification',
   id:selected,meshCount:limbs.length,
   gpuSkinnedLimbs:limbs.filter(x=>x.renderer!=='cpu-deformed-tube').length,
   limbs,action:currentAction};
