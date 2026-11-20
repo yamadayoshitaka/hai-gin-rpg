@@ -8,28 +8,42 @@ export function overviewPinLabel({team,squadIndex,group,division}){
  if(team===1)return '敵'+(squadIndex+1);
  return String(group)+'-'+String(division);
 }
-export function placeOverviewSquadPins(points,bounds,{width=42,height=40}={}){
+export function placeOverviewSquadPins(points,bounds,{width=42,height=40,avoidAnchors=false}={}){
  const result=new Map(),taken=[];
  if(!Number.isFinite(bounds.left)||!Number.isFinite(bounds.top))return result;
  const minX=bounds.left+width/2,maxX=bounds.right-width/2;
  const minY=bounds.top+height/2,maxY=bounds.bottom-height/2;
  if(maxX<minX||maxY<minY)return result;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- // Use a stable order across frames, preventing labels from swapping sides.
- for(const p of [...points].sort((a,b)=>a.team-b.team||
-  a.squadIndex-b.squadIndex||String(a.key).localeCompare(String(b.key)))){
-  if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
+ const valid=points.filter(p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y));
+ // A real-world location dot must not disappear beneath a 42x40 badge.
+ // Preserve the old in-place layout for callers that do not draw source dots.
+ const coversAnchor=(x,y)=>avoidAnchors&&valid.some(p=>
+  Math.abs(p.x-x)<width/2+13&&Math.abs(p.y-y)<height/2+13);
+ // Stable selection priority: the actively commanded squad gets the clearest
+ // nearby badge, but even ITS badge is moved away from its true location dot.
+ for(const p of [...valid].sort((a,b)=>(Number(b.priority)||0)-(Number(a.priority)||0)||
+  a.team-b.team||a.squadIndex-b.squadIndex||String(a.key).localeCompare(String(b.key)))){
   const ax=clamp(p.x,minX,maxX),ay=clamp(p.y,minY,maxY);
-  const intersects=(x,y)=>taken.some(t=>Math.abs(t.x-x)<width+2&&Math.abs(t.y-y)<height+2);
-  let best={x:ax,y:ay},found=false;
-  // Deterministic small spiral; never run a costly physics layout at 60fps.
-  for(let ring=0;ring<=5&&!found;ring++){
-   const steps=ring?8:1;
+  const collisions=(x,y)=>taken.reduce((n,t)=>
+   n+(Math.abs(t.x-x)<width+2&&Math.abs(t.y-y)<height+2?1:0),0);
+  let best={x:ax,y:ay},found=false,score=Infinity;
+  // 12 deterministic radial candidates per band. Usually the first band
+  // suffices, so 20 units at 5Hz remain cheap on mobile GPUs/CPUs.
+  for(let ring=avoidAnchors?3:0;ring<=(avoidAnchors?11:5)&&!found;ring++){
+   const steps=avoidAnchors?12:ring?8:1;
    for(let n=0;n<steps;n++){
-    const angle=n*Math.PI/4,dist=ring*16;
+    const angle=n*2*Math.PI/steps,dist=ring*16;
     const x=clamp(ax+Math.cos(angle)*dist,minX,maxX);
     const y=clamp(ay+Math.sin(angle)*dist,minY,maxY);
-    if(!intersects(x,y)){best={x,y};found=true;break}
+    const overlap=collisions(x,y),covered=coversAnchor(x,y);
+    if(overlap===0&&!covered){best={x,y};found=true;break}
+    // Dense battles may have no free spot; choose the least obstructive
+    // fallback rather than snapping the badge back over the real-world dot.
+    if(avoidAnchors){
+     const penalty=overlap*1000+(covered?200:0)+Math.hypot(x-p.x,y-p.y)*.01;
+     if(penalty<score){score=penalty;best={x,y}}
+    }
    }
   }
   taken.push(best);

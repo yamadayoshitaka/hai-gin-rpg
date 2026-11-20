@@ -74,7 +74,7 @@ assert.match(html,/function updateBattleResultCutins\(\)/);
 assert.match(html,/if\(battleCeremony\.state!=='idle'\)return/);
 assert.match(html,/battleCeremony\.showResult\(next\.title\)/);
 assert.match(html,/reportAfterBattleCutin\(next\.text,next\)/);
-assert.match(html,/queueBattleResultCutin\('🎁 アイテム入手'/);
+assert.match(html,/queueBattleResultCutin\('🎁 '\+\(ROOM_ITEM_TYPES\[loot\.itemId\]/);
 assert.match(html,/queueBattleResultCutin\('✚ 回復報告'/);
 assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅'/);
 assert.match(html,/battleCeremony\.update\(\);[\s\S]{0,650}?updateBattleResultCutins\(\)/,

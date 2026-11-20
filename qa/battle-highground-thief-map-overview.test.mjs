@@ -27,11 +27,12 @@ test('selected rooftops and second-floor windows are visible with physical avail
  assert.match(tactics,/route\.points\.at\(-1\)/);
  assert.match(controls,/target\.available===false/);
  assert.match(controls,/t\.available!==false/);
- assert.doesNotMatch(highground,/if\(!windows\.length\)continue/);
- assert.match(highground,/if\(windows\.length\)\{/);
+ assert.match(highground,/for\(let floor=2;floor<=b\.structure\.floors\.length;floor\+\+\)/);
+ assert.match(highground,/const stageCandidates=\[\]/);
  const order=simulation.split('orderSquadHighGround(')[1].split('_assignHighGroundUnits(')[0];
  assert.doesNotMatch(order,/route\.team!==team/);
- assert.match(order,/_highGroundClaims\.has\(key\)/);
+ assert.match(order,/_highGroundClaims\.get\(key\)/);
+ assert.match(order,/for\(const unit of members\)/);
 });
 
 test('central radar tap switches the actual three-dimensional camera into overhead mode',()=>{

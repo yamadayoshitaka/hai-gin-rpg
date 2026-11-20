@@ -6,13 +6,13 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m019-round-lava-v8-20261120';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=m019-restored-rendered-bridge-v16-20261120';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=m019-round-lava-v8-20261120';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=m019-high-contrast-four-limbs-v11-20261120';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[112,80],rock:4,rod:28,tube:[64,16],torus:[16,72]}),
@@ -182,10 +182,13 @@ export function createSculpture(spec,detail='high'){
    }));
  };
  const tube=(parent,shade,points,radius=.04,{
-   name=null,capEnds=false,taper=1,glow=false
+   name=null,capEnds=false,taper=1,glow=false,
+   tubularSegments=null,radialSegments=null
  }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
-   const [segments,radial]=resolution.tube;
+   const [defaultSegments,defaultRadial]=resolution.tube;
+   const segments=tubularSegments??defaultSegments;
+   const radial=radialSegments??defaultRadial;
    const geo=new THREE.TubeGeometry(curve,segments,radius,radial,false);
    // Skinned tails and organic necks are NOT open pipes. Rebuild tapered
    // rings in place, then add real triangles closing both extremities.
@@ -509,11 +512,11 @@ export function createSculpture(spec,detail='high'){
    return skin;
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
- const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin'}={})=>{
+ const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin',rough=.49}={})=>{
    const geo=createRootedCreatureHornGeometry({
      root:rootPoint,elbow,tip,radius,detail:detail==='low'?'low':'high'
    });
-   const mesh=own(attach(parent,geo,shade,{name,rough:.49,metal:0}));
+   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
    mesh.userData.rootedKeratin=true;
    return mesh;
  };

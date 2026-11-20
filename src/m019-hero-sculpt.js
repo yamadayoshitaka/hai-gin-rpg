@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-visible-cpu-limbs-v10-20261120';
+export const M019_HERO_REVISION='m019-restored-rendered-bridge-v16-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -115,11 +115,11 @@ export function sculptM019Jaw(g,jaw){
  * flat sideways plates. Short planted shins and original joints are retained.
  */
 // Sideways elbow remains wide, while the vertical shin is now short.
-export const M019_SPRAWL_KNEE_X=.68;
+export const M019_SPRAWL_KNEE_X=.93;
 export const M019_SPRAWL_KNEE_Y=-.085;
 export const M019_SPRAWL_FOOT_X=.007;
-export const M019_SPRAWL_FOOT_Y=-.650;
-export const M019_SHOULDER_LOCAL_Y=1.26;
+export const M019_SPRAWL_FOOT_Y=-.770;
+export const M019_SHOULDER_LOCAL_Y=1.360;
 /**
  * m019's four legs use a conventional, WebGL-compatible Mesh.
  * Mobile GPUs rendered v9's SkinnedMesh as invisible even while CPU
@@ -135,14 +135,17 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  const kneeY=M019_SPRAWL_KNEE_Y;
  const footY=kneeY+M019_SPRAWL_FOOT_Y;
  const points=[
-  [0,.035,z],[sign*.090,.038,z+.012],
-  [sign*.215,.028,z+.023],[sign*.370,-.004,z+.020],
-  [sign*.535,-.050,z+.010],[kneeX,kneeY,z],
-  [kneeX,kneeY-.120,z],[kneeX,kneeY-.270,z+.008],
-  [kneeX,kneeY-.440,z+.032],[kneeX,footY,z+.095]
+  // Place muscle crest ABOVE the dark belly and project the elbow farther
+  // outside the ribs. Previous centers were in silhouette shadow or hidden
+  // by the near-black abdomen even though they cast long floor shadows.
+  [0,.090,z],[sign*.145,.103,z+.012],
+  [sign*.330,.136,z+.023],[sign*.555,.079,z+.020],
+  [sign*.750,.015,z+.010],[kneeX,kneeY,z],
+  [kneeX,kneeY-.135,z],[kneeX,kneeY-.305,z+.008],
+  [kneeX,kneeY-.510,z+.032],[kneeX,footY,z+.095]
  ];
  const path=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
- const baseRadius=fore?.219:.242;
+ const baseRadius=fore?.291:.318;
  // The medium-dark rocky shading makes real legs visible against the black
  // torso without introducing a glowing red or rubbery-looking arm surface.
  const skin=g.tube(leg,'light',points,baseRadius,{
@@ -157,10 +160,10 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  if(attr.count!==ringCount*stride+2)throw Error('m019 continuous muscle needs closed rings');
  const radiusScale=t=>{
   if(t<.16)return 1.08+.05*Math.sin(t/.16*Math.PI);
-  if(t<.45)return 1.08-(t-.16)*1.15;
-  if(t<.63)return .7465-(t-.45)*1.14;
-  if(t<.85)return .5413-(t-.63)*.33;
-  return .4687-(t-.85)*.16;
+  if(t<.45)return 1.10-(t-.16)*.72;
+  if(t<.63)return .8912-(t-.45)*1.30;
+  if(t<.85)return .6572-(t-.63)*.57;
+  return .5318-(t-.85)*.48;
  };
  const weight=new Float32Array(attr.count);
  const smooth=t=>{
@@ -211,6 +214,8 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  skin.userData.m019WholeLegClosedSurface=true;
  skin.userData.m019GpuSkinningRemoved=true;
  skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
+ skin.userData.m019AboveFloorMuscleCrest=true;
+ skin.userData.m019VisibleLimbRevision='v15-visible-charcoal';
  skin.userData.m019MuscleRadius=baseRadius;
  skin.userData.m019HorizontalThigh=true;
  skin.userData.m019VerticalShin=true;
@@ -226,10 +231,10 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  for(let vein=0;vein<veins;vein++){
   const offset=vein*.024;
   const fissure=g.tube(leg,'accent',[
-   [sign*.045,.245-offset,z+.017],
-   [sign*.107,.242-offset,z+.043],
-   [sign*.169,.227-offset,z+.020],
-   [sign*.225,.199-offset,z+.035]
+   [sign*.088,.310-offset,z+.017],
+   [sign*.177,.343-offset,z+.043],
+   [sign*.283,.361-offset,z+.020],
+   [sign*.393,.328-offset,z+.035]
   ],detail==='low'?.0045:.0065,{
    name:'m019-limb-molten-crack-'+name+'-'+vein,
    glow:detail!=='low'
@@ -237,10 +242,44 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   fissure.userData.m019MoltenFissure=true;
   fissure.userData.m019InsetHeatVein=true;
  }
- return {upper:skin,lower:skin};
+
+ // Return to the EXACT geometry path that was visibly rendered in
+ // v4.5.27 (v13). v14 replaced stable oriented-bridge meshes with
+ // procedural tubes, after which Android showed only detached toes.
+ // The species' original generic dog-like limbs are intentionally excluded
+ // elsewhere; these two real meshes must ALWAYS remain renderable.
+ // Use the same low-profile sideways knee / planted shin as the last
+ // successfully photographed model, without further width reduction.
+ const visibleUpper=g.bridge(leg,'light',
+   [0,.090,z],[kneeX,kneeY,z],.160,.125);
+ visibleUpper.name='m019-mobile-upper-'+name;
+ visibleUpper.userData.m019IndependentVisibleCore=true;
+ visibleUpper.userData.m019ArticulatedParent='shoulder';
+ visibleUpper.userData.m019LastRenderedGeometry='v13-oriented-bridge';
+ visibleUpper.userData.m019StableVisibleBridge=true;
+ visibleUpper.frustumCulled=false;
+ const visibleShin=g.bridge(distal,'light',
+   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],.124,.088);
+ visibleShin.name='m019-mobile-shin-'+name;
+ visibleShin.userData.m019IndependentVisibleCore=true;
+ visibleShin.userData.m019ArticulatedParent='knee';
+ visibleShin.userData.m019LastRenderedGeometry='v13-oriented-bridge';
+ visibleShin.userData.m019StableVisibleBridge=true;
+ visibleShin.frustumCulled=false;
+ // Avoid baked shadow occlusion on the slender dark-basalt parts while
+ // preserving proper depth testing and shadow casting on the ground.
+ visibleUpper.receiveShadow=false;
+ visibleShin.receiveShadow=false;
+ skin.receiveShadow=false;
+ return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
 }
 
-/** Four narrow toes at the END of the vertical shin, not a free ankle. */
+/**
+ * Four low, weight-bearing volcanic toes with genuine curved keratin tips.
+ * All parts follow the existing animated ankle pivot; no floating generic
+ * cone nails, chalk-white claws or GPU-dependent foot skin. Low LOD keeps
+ * real fingers and curved talons, only omitting extra surface fissures.
+ */
 export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  const sign=side<0?-1:1;
  const toe=g.group('toe'+name,
@@ -248,17 +287,55 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  toe.userData.m019PlantedToeJoint=true;
  toe.userData.m019SprawledOutward=true;
  toe.userData.m019RightAngleGrounding=true;
- g.sphere(toe,'skin',[0,-.022,.038],[.095,.035,.115],
-   {name:'m019-metatarsal-'+name,rough:.88});
+ toe.userData.m019ToeCount=4;
+ toe.userData.m019PawFinish='basalt-scutes-with-rooted-curved-keratin';
+ g.sphere(toe,'skin',[0,-.016,.048],[.109,.041,.127],
+   {name:'m019-metatarsal-'+name,rough:.92});
+ // The narrow dark scutes intersect the dorsal skin instead of floating
+ // above it. Do not add these extra draw calls in low/crowd LOD.
+ if(detail!=='low')for(let scute=0;scute<3;scute++){
+  const rock=g.rock(toe,'shadow',
+    [(scute-1)*.056,.015,.026+(.5-Math.abs(scute-1))*.020],
+    [.027,.010,.038],
+    {name:'m019-rooted-paw-scute-'+name+'-'+scute,rough:.94});
+  rock.userData.m019RootedBasaltScute=true;
+ }
  for(let digit=0;digit<4;digit++){
-  const x=(digit-1.5)*.048;
-  const spread=(digit-1.5)*.018+sign*.008;
-  if(detail!=='low')g.sphere(toe,'skin',
-    [x,-.022,.111],[.025,.027,.069],
-    {name:'m019-digit-'+name+'-'+digit,rough:.84});
-  g.rootedSpike(toe,'bone','skin',
-    [x,-.027,.151],[x+spread,-.057,.223],.012,
-    {name:'m019-rooted-claw-'+name+'-'+digit});
+  const x=(digit-1.5)*.050;
+  const spread=(digit-1.5)*.020+sign*.006;
+  // Round finger skin runs *inside* the central footpad and continues
+  // underneath the talon root, so nothing looks like a glued-on stick.
+  const finger=g.tube(toe,'skin',[
+   [x*.70,-.012,.060],
+   [x,-.013,.107],
+   [x+spread*.25,-.018,.146],
+   [x+spread*.40,-.025,.184]
+  ],detail==='low'?.021:.027,{
+   name:'m019-digit-'+name+'-'+digit,capEnds:true,taper:.65
+  });
+  finger.userData.m019ContinuousBasaltDigit=true;
+  const root=[x+spread*.22,-.008,.155];
+  const elbow=[x+spread*.55,.009,.215];
+  const tip=[x+spread,-.052,.255];
+  const claw=g.curvedHorn(toe,'bone',root,elbow,tip,
+   detail==='low'?.017:.021,{
+    name:'m019-rooted-claw-'+name+'-'+digit,rough:.83
+   });
+  claw.userData.m019CurvedKeratinTalon=true;
+  claw.userData.m019EmbeddedInFinger=true;
+  claw.userData.m019NaturalPigment='basalt-dark-bone';
+  // A very short unlit heat fracture at the nail-bed only. No glowing
+  // neon rod, detached socket or full-length orange cartoon outline.
+  if(detail!=='low'){
+   const seam=g.tube(toe,'accent',[
+    [root[0],root[1]+.018,root[2]-.008],
+    [root[0]+spread*.13,root[1]+.020,root[2]+.022],
+    [root[0]+spread*.26,root[1]+.017,root[2]+.043]
+   ],.003,{
+    name:'m019-nail-bed-fissure-'+name+'-'+digit,glow:false
+   });
+   seam.userData.m019InsetHeatVein=true;
+  }
  }
  return toe;
 }

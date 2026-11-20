@@ -48,9 +48,9 @@ assert.match(html,/topQuickActions'\)\.appendChild\(\$\('battleMenuToggle'\)\)/)
 assert.doesNotMatch(html,/topMenuSlot'\)\.appendChild\(\$\('battleMenuToggle'\)\)/);
 assert.match(html,/const stageBgmReady=battleAudio\.prepare\(\)/);
 assert.match(html,/const recordingLoaded=await stageBgmReady/);
-assert.match(html,/const playing=await battleAudio\.unlock\(\)/);
-assert.match(html,/if\(playing\)\{launch\(\);return\}/);
-assert.match(html,/onPhase:phase=>\{if\(phase==='intro'\)battleAudio\.orderFanfare\(\)/);
+assert.match(html,/battleAudio\.unlock\(\)\.catch\(\(\)=>\{\}\)/);
+assert.match(html,/battleAudio\.setPhase\('march'\)/);
+assert.match(html,/onPhase:phase=>\{if\(phase==='intro'\)\{battleAudio\.setPhase\('march'\);battleAudio\.orderFanfare\(\);\}/);
 assert.match(html,/else battleAudio\.setPhase\(phase\)/);
 assert.match(html,/battleCeremony\.startIntro\(\{stageName:selectedStage\.name,stageFeature:stageCharacter\.feature\}\)/);
 

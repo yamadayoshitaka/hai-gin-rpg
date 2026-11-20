@@ -150,7 +150,7 @@ export class CombatActionRuntime {
     if(!this.inside(x,z))return false;
     return !this.objects.some(other=>other!==source&&other.alive&&other.flying&&
       Math.abs(other.x-x)<=1&&Math.abs(other.z-z)<=1&&
-      Math.abs((other.height||3)-(source.height||3))<2);
+      Math.abs((other.height||3)-(source?.height||3))<2);
   }
   flightRoofHeight(x,z){
     let roof=2.6;
@@ -327,13 +327,12 @@ export class CombatActionRuntime {
     if (groundMount&&!this.groundMountAllowed(x,z)) return null;
     const sideObjects = this.objects.filter(o => o.alive && o.team === owner.team && o.category !== 'structure');
     const squadId=String(owner.squadId??'unassigned:'+owner.id);
-    // Exactly one active familiar and one horse PER SQUAD. A different
-    // summoner in the same formation cannot silently spawn a second dragon.
+    // Mounts remain one per squad; familiars are one per living summoner.
+    // Never reject a different caster just because a team-mate owns a summon.
     const existing=sideObjects.filter(o=>String(o.squadId)===squadId&&o.category===spec.category);
-    if(['summon','mount'].includes(spec.category)&&existing.length){
-      if(spec.category==='mount'||existing.some(o=>o.ownerId!==owner.id))return null;
-    }
+    if(spec.category==='mount'&&existing.length)return null;
     const previous=spec.category==='summon'?this.summonOf(owner):[];
+    if(spec.category==='summon'&&previous.length>COMBAT_RULES.maximumSummonsPerCaster)return null;
     if (sideObjects.length - previous.length >= COMBAT_RULES.maximumObjectsPerTeam) return null;
     // Ten strategists begin mounted on their ceremonial horses. Without a
     // separate cavalry budget, automatic horse skills claim every remaining
@@ -343,8 +342,34 @@ export class CombatActionRuntime {
         COMBAT_RULES.maximumMountsPerTeam) return null;
     let at = { x, z };
     if (!mounted) {
-      const candidates = [[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
-      const found = candidates.map(([dx,dz]) => ({ x: x + dx, z: z + dz })).find(p => this.free(p.x, p.z, spec.flying)&&(!groundMount||this.groundMountAllowed(p.x,p.z)));
+      // Large squads may occupy every immediately adjacent ground tile.
+      // Search concentric rings for a valid real spawn cell, with no wall
+      // or mount-forbidden shortcuts. Flying summons can share ground X/Z
+      // but may not overlap another creature in the same air lane.
+      let found=null;
+      // Preserve the established close cardinal spawn positions first;
+      // allied riders must still be able to mount a freshly called wolf.
+      const familiarNear=[[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
+      for(const [dx,dz] of familiarNear){
+        const px=x+dx,pz=z+dz;
+        if(this.free(px,pz,spec.flying)&&
+           (!groundMount||this.groundMountAllowed(px,pz))&&
+           (!spec.flying||this.airspaceClear(null,px,pz))){
+          found={x:px,z:pz};break;
+        }
+      }
+      for(let radius=1;radius<=9&&!found;radius++){
+        for(let dz=-radius;dz<=radius&&!found;dz++){
+          for(let dx=-radius;dx<=radius;dx++){
+            if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+            const px=x+dx,pz=z+dz;
+            if(!this.free(px,pz,spec.flying)||
+               (groundMount&&!this.groundMountAllowed(px,pz))||
+               (spec.flying&&!this.airspaceClear(null,px,pz)))continue;
+            found={x:px,z:pz};break;
+          }
+        }
+      }
       if (!found) return null;
       at = found;
     }
@@ -410,6 +435,19 @@ export class CombatActionRuntime {
     return true;
   }
   summonOf(owner) { return this.objects.filter(o => o.alive && o.category === 'summon' && o.ownerId === owner.id); }
+  /** Direct a summoned creature to pursue a nominated enemy squad even beyond
+   * its usual autonomous 22-tile aggro radius. Independent summons are world
+   * objects, so a soldier-only squad mission cannot direct their movement. */
+  commandSummonAttack(squadId,targetSquadId,units=this._units??[],team=0){
+    if(targetSquadId==null)return false;
+    const destination=String(targetSquadId),source=String(squadId);
+    if(!units.some(u=>isAlive(u)&&u.team!==team&&String(u.squadId)===destination))return false;
+    const summons=this.objects.filter(o=>o.alive&&o.category==='summon'&&
+      o.team===team&&String(o.squadId)===source);
+    if(!summons.length)return false;
+    for(const summon of summons)summon.commandTargetSquadId=destination;
+    return true;
+  }
   nearby(team, x, z, range, { includeDead = false } = {}) {
     const out = [];
     // Spatial index can be supplied by the mass simulation. Dead combatants
@@ -808,13 +846,30 @@ export class CombatActionRuntime {
           }
         }
       }
-      let target = null, best = (COMBAT_RULES.summonLeashTiles + o.spec.range) ** 2;
-      for (const u of this.nearby(1 - o.team, o.x, o.z, COMBAT_RULES.summonLeashTiles + o.spec.range)) {
-        if (!isAlive(u) || (u.stealthUntil || 0) > this.time) continue;
-        const d = (u.x - o.x) ** 2 + (u.z - o.z) ** 2;
-        if (d < best) { target = u; best = d; }
+      let target=null,best=Infinity;
+      // Explicit summon → attack never stalls because an enemy is outside
+      // the automatic aggro radius. Follow the actual live enemy squad.
+      if(o.commandTargetSquadId!=null){
+        for(const u of units){
+          if(!isAlive(u)||u.team===o.team||
+            String(u.squadId)!==String(o.commandTargetSquadId)||
+            (u.stealthUntil||0)>this.time)continue;
+          const d=(u.x-o.x)**2+(u.z-o.z)**2;
+          if(d<best){target=u;best=d;}
+        }
+        // Once that squad is defeated, resume ordinary nearby enemy search.
+        if(!target)o.commandTargetSquadId=null;
       }
-      if (!target) continue;
+      if(!target){
+        best=(COMBAT_RULES.summonLeashTiles+o.spec.range)**2;
+        for(const u of this.nearby(1-o.team,o.x,o.z,
+          COMBAT_RULES.summonLeashTiles+o.spec.range)){
+          if(!isAlive(u)||(u.stealthUntil||0)>this.time)continue;
+          const d=(u.x-o.x)**2+(u.z-o.z)**2;
+          if(d<best){target=u;best=d;}
+        }
+      }
+      if(!target)continue;
       if (best <= o.spec.range ** 2) {
         if (!o.pendingAttack&&this.time >= o.nextAttackAt) {
           const style=CREATURE_PERFORMANCE[o.type];

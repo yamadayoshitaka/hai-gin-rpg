@@ -4,10 +4,10 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-19T20:27:15.208Z",
+    "checkedAt": "2026-11-20T02:14:38.792Z",
     "category": "faceHair",
     "status": "blocked_candidates",
-    "mainBeforeSha": "8e984e70c4f9a23e69d115428125dbbac5b50028",
+    "mainBeforeSha": "915722a1dfa5f6f7591f51602608199c79ab82f4",
     "mainAfterSha": null,
     "pr": null,
     "sourceCommits": 0,
@@ -23,46 +23,52 @@
     "gameQuality": null,
     "attempts": [
       {
-        "pr": 765,
-        "sha": "aeb7b7ab20877fde8f00a9a06a339574dcdb548e",
+        "pr": 799,
+        "sha": "7ca383a524c103192807134ac04adbcbec62008c",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed un ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.270436\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.801273\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.3265\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.185568\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.220981\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.747926\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.350551\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.169288\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+      },
+      {
+        "pr": 765,
+        "sha": "bdf8567cf258f2d7240f6ae5a880b13fadacdfce",
+        "status": "qa_rejected",
+        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.188784\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.717178\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.342038\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.168627\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 752,
         "sha": "e64439e2b3f24110339bc7607f9b59c8c99ac527",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.231056\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.818289\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.320371\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.209074\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.188879\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.72045\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.330471\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.162716\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 738,
         "sha": "a644ba4b3fbdba0ac099677e745a3965165d9f73",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.231688\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.819581\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.314793\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.215023\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.195369\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.726472\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.33344\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.164956\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 733,
         "sha": "8c9a2d1d260b3f03e4c308bc11751d96a7a64681",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.231999\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.815454\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.335604\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.185208\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.180724\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.734757\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.334756\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.166722\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 728,
         "sha": "1aa001bebb882d6959a43dfe03bf75886fb5011d",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.200832\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.806191\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.318428\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.191157\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.197788\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.709681\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.34431\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.163551\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 723,
         "sha": "bd5d96fc2e65e03a892bae8793101206053845bc",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.202284\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.829005\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.323786\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.191427\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.210687\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.757124\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.346204\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.177153\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 714,
         "sha": "6d7df7a54d8fecdb69f33ded99c027675d948df7",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.222034\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.83743\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.320452\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.207092\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.209498\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.725805\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.340558\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.172749\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 713,
@@ -74,7 +80,7 @@
         "pr": 699,
         "sha": "8b1008007bebb4cdf2c58b7d50cff4b30bfd786c",
         "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.224427\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.800694\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.309516\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.207272\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.28441\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.749924\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.325453\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.183152\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       },
       {
         "pr": 680,
@@ -87,15 +93,9 @@
         "sha": "93428ab3a0138e22658a4c42b8c8c4e91e955d44",
         "status": "already_applied",
         "reason": ""
-      },
-      {
-        "pr": 656,
-        "sha": "0fcbb32c89ff0ae5325799c1923d406b74105916",
-        "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.202054\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.809356\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.330787\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.184267\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44608765683"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44659300284"
   },
   "latestSourceCommit": {
     "checkedAt": "2026-11-18T11:28:55.072Z",
@@ -745,6 +745,100 @@
         }
       ],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44608765683"
+    },
+    {
+      "checkedAt": "2026-11-20T02:14:38.792Z",
+      "category": "faceHair",
+      "status": "blocked_candidates",
+      "mainBeforeSha": "915722a1dfa5f6f7591f51602608199c79ab82f4",
+      "mainAfterSha": null,
+      "pr": null,
+      "sourceCommits": 0,
+      "modifiedSourceFiles": 0,
+      "sourceFiles": [],
+      "qaStatus": "not_run",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/issues/639",
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 799,
+          "sha": "7ca383a524c103192807134ac04adbcbec62008c",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.220981\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.747926\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.350551\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.169288\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 765,
+          "sha": "bdf8567cf258f2d7240f6ae5a880b13fadacdfce",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.188784\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.717178\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.342038\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.168627\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 752,
+          "sha": "e64439e2b3f24110339bc7607f9b59c8c99ac527",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.188879\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.72045\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.330471\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.162716\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 738,
+          "sha": "a644ba4b3fbdba0ac099677e745a3965165d9f73",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.195369\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.726472\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.33344\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.164956\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 733,
+          "sha": "8c9a2d1d260b3f03e4c308bc11751d96a7a64681",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.180724\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.734757\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.334756\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.166722\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 728,
+          "sha": "1aa001bebb882d6959a43dfe03bf75886fb5011d",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.197788\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.709681\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.34431\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.163551\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 723,
+          "sha": "bd5d96fc2e65e03a892bae8793101206053845bc",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.210687\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.757124\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.346204\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.177153\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 714,
+          "sha": "6d7df7a54d8fecdb69f33ded99c027675d948df7",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed  ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.209498\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.725805\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.340558\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.172749\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 713,
+          "sha": "f435805cd3b0d01d0f8d662e536d3c2c8d834263",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 699,
+          "sha": "8b1008007bebb4cdf2c58b7d50cff4b30bfd786c",
+          "status": "qa_rejected",
+          "reason": "Regression QA did not pass: failed n ALL six character acceptance lanes instead of the minute-only scheduled slot\n  ---\n  duration_ms: 0.28441\n  type: 'test'\n  ...\n# Subtest: phone face/hair editor actual procedural sources are mandatory batch inputs\nok 6 - phone face/hair editor actual procedural sources are mandatory batch inputs\n  ---\n  duration_ms: 0.749924\n  type: 'test'\n  ...\n# Subtest: 17-job outfit preview and real battle production generators are both monitored\nok 7 - 17-job outfit preview and real battle production generators are both monitored\n  ---\n  duration_ms: 0.325453\n  type: 'test'\n  ...\n# Subtest: studio and battle remain separate 3D implementations; QA must protect both\nok 8 - studio and battle remain separate 3D implementations; QA must protect both\n  ---\n  duration_ms: 0.183152\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 7\n# fail 1\n# cancelled 0\n# skipped 0"
+        },
+        {
+          "pr": 680,
+          "sha": "27c41a9f137a083dbd9062ecbd0e6085bb722e3f",
+          "status": "no_applicable_source",
+          "reason": ""
+        },
+        {
+          "pr": 668,
+          "sha": "93428ab3a0138e22658a4c42b8c8c4e91e955d44",
+          "status": "already_applied",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44659300284"
     }
   ]
 }

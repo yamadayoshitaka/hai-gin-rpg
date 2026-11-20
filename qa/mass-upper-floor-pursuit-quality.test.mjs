@@ -32,7 +32,7 @@ defender.cooldown=3;defender.action='idle';
 attacker.x=110;attacker.z=117;
 attacker.fromX=110;attacker.fromZ=117;
 attacker.moveDuration=0;attacker.moveElapsed=0;attacker.cooldown=0;
-sim._highGroundClaims.set('9:1',defender.id);
+sim._highGroundClaims.set('9:1',String(defender.squadId));
 const duplicate={...defender,team:0,id:-5};
 duplicate.highGroundFloor=3;
 assert.equal(sim._canSee(attacker,defender),false,
@@ -43,7 +43,7 @@ sim._assignUpperFloorPursuits();
 assert.equal(attacker.highGroundRouteIndex,0,
  'melee soldier must select the real stair route to the enemy floor');
 assert.equal(attacker.upperPursuitTargetId,defender.id);
-assert.equal(sim._highGroundClaims.get('9:0'),attacker.id,
+assert.equal(sim._highGroundClaims.get('9:0'),String(attacker.squadId),
  'opposing teams can use a staircase without overwriting the defender claim');
 const copy=new MassBattleGridSimulation(100,2041,{
  width,height:width,walkable,bridges:[],riverXAt:()=>116

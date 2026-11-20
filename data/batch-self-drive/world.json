@@ -4,12 +4,12 @@
   "source": "GitHub Actions verified autonomous run journal",
   "description": "A successful job alone is not a 3D model update. Only sourceCommits>0 with a real commit SHA proves source changes. Visual approval and Android FPS are separate.",
   "latest": {
-    "checkedAt": "2026-11-19T18:42:34.455Z",
+    "checkedAt": "2026-11-20T00:57:19.496Z",
     "category": "world",
     "status": "source_committed_main",
-    "mainBeforeSha": "b6cbc9f184d5603e6059a1223fa31d1630f95f23",
-    "mainAfterSha": "f2c3d82ec383a5286365cdb857828cfd4262a0d1",
-    "pr": 769,
+    "mainBeforeSha": "ef8292be9b4fd9515b73d30d80f3892696ea66fe",
+    "mainAfterSha": "90f67ba9cc2d53b3e765b16133e51ca8731116d0",
+    "pr": 785,
     "sourceCommits": 1,
     "modifiedSourceFiles": 1,
     "sourceFiles": [
@@ -25,27 +25,21 @@
     "gameQuality": null,
     "attempts": [
       {
-        "pr": 770,
-        "sha": "d6cb2c62b18b47c251c25e730ab5999a9d87eff6",
-        "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed -quality.test.mjs:27:30\n#     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n#     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n#     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n#   generatedMessage: false,\n#   code: 'ERR_ASSERTION',\n#   actual: false,\n#   expected: true,\n#   operator: '==',\n#   diff: 'simple'\n# }\n# Node.js v22.23.5\n# Subtest: qa/world-object-physical-quality.test.mjs\nnot ok 2 - qa/world-object-physical-quality.test.mjs\n  ---\n  duration_ms: 27.609847\n  type: 'test'\n  location: '/home/runner/work/hai-gin-rpg/hai-gin-rpg/qa/world-object-physical-quality.test.mjs:1:1'\n  failureType: 'testCodeFailure'\n  exitCode: 1\n  signal: ~\n  error: 'test failed'\n  code: 'ERR_TEST_FAILURE'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 1\n# fail 1\n# cancelled 0\n# skipped 0"
-      },
-      {
-        "pr": 769,
-        "sha": "a91ad4e1f69602c54a186a50e74a64c24f6b056b",
+        "pr": 785,
+        "sha": "04a9b3a152ffc829bdfa4a37158b0317912e3948",
         "status": "merged_to_main",
         "reason": ""
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44590560989"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44649885614"
   },
   "latestSourceCommit": {
-    "checkedAt": "2026-11-19T18:42:34.455Z",
+    "checkedAt": "2026-11-20T00:57:19.496Z",
     "category": "world",
     "status": "source_committed_main",
-    "mainBeforeSha": "b6cbc9f184d5603e6059a1223fa31d1630f95f23",
-    "mainAfterSha": "f2c3d82ec383a5286365cdb857828cfd4262a0d1",
-    "pr": 769,
+    "mainBeforeSha": "ef8292be9b4fd9515b73d30d80f3892696ea66fe",
+    "mainAfterSha": "90f67ba9cc2d53b3e765b16133e51ca8731116d0",
+    "pr": 785,
     "sourceCommits": 1,
     "modifiedSourceFiles": 1,
     "sourceFiles": [
@@ -61,19 +55,13 @@
     "gameQuality": null,
     "attempts": [
       {
-        "pr": 770,
-        "sha": "d6cb2c62b18b47c251c25e730ab5999a9d87eff6",
-        "status": "qa_rejected",
-        "reason": "Regression QA did not pass: failed -quality.test.mjs:27:30\n#     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n#     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n#     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n#   generatedMessage: false,\n#   code: 'ERR_ASSERTION',\n#   actual: false,\n#   expected: true,\n#   operator: '==',\n#   diff: 'simple'\n# }\n# Node.js v22.23.5\n# Subtest: qa/world-object-physical-quality.test.mjs\nnot ok 2 - qa/world-object-physical-quality.test.mjs\n  ---\n  duration_ms: 27.609847\n  type: 'test'\n  location: '/home/runner/work/hai-gin-rpg/hai-gin-rpg/qa/world-object-physical-quality.test.mjs:1:1'\n  failureType: 'testCodeFailure'\n  exitCode: 1\n  signal: ~\n  error: 'test failed'\n  code: 'ERR_TEST_FAILURE'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 1\n# fail 1\n# cancelled 0\n# skipped 0"
-      },
-      {
-        "pr": 769,
-        "sha": "a91ad4e1f69602c54a186a50e74a64c24f6b056b",
+        "pr": 785,
+        "sha": "04a9b3a152ffc829bdfa4a37158b0317912e3948",
         "status": "merged_to_main",
         "reason": ""
       }
     ],
-    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44590560989"
+    "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44649885614"
   },
   "history": [
     {
@@ -297,6 +285,36 @@
         }
       ],
       "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44590560989"
+    },
+    {
+      "checkedAt": "2026-11-20T00:57:19.496Z",
+      "category": "world",
+      "status": "source_committed_main",
+      "mainBeforeSha": "ef8292be9b4fd9515b73d30d80f3892696ea66fe",
+      "mainAfterSha": "90f67ba9cc2d53b3e765b16133e51ca8731116d0",
+      "pr": 785,
+      "sourceCommits": 1,
+      "modifiedSourceFiles": 1,
+      "sourceFiles": [
+        "src/object-catalog.js"
+      ],
+      "qaStatus": "passed",
+      "pagesDispatch": "awaiting_release_dispatch",
+      "generatedGLBs": 0,
+      "webglApproved": false,
+      "androidFpsVerified": false,
+      "error": null,
+      "issueUrl": null,
+      "gameQuality": null,
+      "attempts": [
+        {
+          "pr": 785,
+          "sha": "04a9b3a152ffc829bdfa4a37158b0317912e3948",
+          "status": "merged_to_main",
+          "reason": ""
+        }
+      ],
+      "runUrl": "https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/44649885614"
     }
   ]
 }

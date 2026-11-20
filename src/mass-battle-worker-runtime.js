@@ -64,7 +64,10 @@ export function createMassBattleWorkerHandler(emit){
         case 'healSquadItem':if(sim)sim.healSquadFromItem(message.squadId,message.amount,message.team||0);break;
         case 'reinforceSquad':if(sim)sim.reinforceSquadFromReserve(message.squadId,message.count,message.team||0);break;
         case 'summonSquadCreature':if(sim)sim.summonSquadCreature(message.squadId,message.team||0);break;
+        case 'squadSummonAttack':if(sim)sim.commandSquadSummonAttack(
+          message.squadId,message.targetSquadId,message.team??0);break;
         case 'orderSquadHighGround':if(sim)sim.orderSquadHighGround(message.squadId,message.routeIndex,message.team||0);break;
+        case 'squadHighGroundArrival':if(sim)sim.setSquadHighGroundArrival(message.squadId,message.command,message.team||0);break;
         case 'shieldCover':if(sim)sim.assignShieldCover(message.squadId,message.targetSquadId,message.team||0);break;
         case 'buffSquadItem':if(sim)sim.applySquadItemBuff(message.squadId,message.itemId,message.buff,message.duration,message.team||0);break;
         case 'squadStrategy':if(sim)sim.setSquadStrategy(message.squadId,message.strategy);break;
@@ -74,6 +77,7 @@ export function createMassBattleWorkerHandler(emit){
         case 'squadExplore':if(sim)sim.setSquadExploration(message.squadId,message.buildingId,message.x,message.z,message.team||0);break;
         case 'squadMission':if(sim)sim.setSquadMission(message.squadId,message.missionType,message.target);break;
         case 'squadHealing':if(sim)sim.requestSquadHealing(message.targetSquadId,message.supportSquadId);break;
+        case 'squadRevival':if(sim)sim.reviveSquadTarget(message.squadId,message.targetSquadId,message.team||0);break;
         case 'clearSquadDestination':sim?.clearSquadDestination(message.squadId);break;
         case 'order':if(sim?.units[message.id]){sim.units[message.id].order=message.order;gpu?.setOrder(message.id,message.order);}break;
         case 'igniteStructure':sim?.actions.igniteStructure(message.id,message.options);break;

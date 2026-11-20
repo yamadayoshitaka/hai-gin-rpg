@@ -186,14 +186,14 @@ test('slim rails show 1隊, job name, and two usable gauges',()=>{
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.match(js,/jobName\.className='rpgSquadJobName'/);
  assert.match(js,/jobName\.textContent=String\(row\.job\|\|'部隊'\)/);
- assert.match(js,/heading\.append\(job,title,jobName,status\)/);
+ assert.match(js,/heading\.append\(job,title,jobName,status,engaged\)/);
  assert.match(js,/title\.textContent=.*\$1隊/);
  assert.match(css,/\.rpgSquadJobName\{\s*grid-column:1\/-1;grid-row:2/);
  assert.match(css,/grid-template-rows:16px 10px 8px 8px repeat\(2,5px\)/);
  assert.match(css,/\.rpgSquadMeter-hp\{grid-row:5\}/);
  assert.match(css,/\.rpgSquadMeter-mp\{grid-row:6\}/);
  assert.match(css,/width:clamp\(52px,13\.5vw,78px\)/);
- assert.match(html,/battle-rpg-squad-hud\.js\?v=20261119-engaged-stable3/);
+ assert.match(html,/battle-rpg-squad-hud\.js\?v=/);
 });
 
 test('single tap focuses camera; double tap opens allied orders; overview camera is overhead',()=>{

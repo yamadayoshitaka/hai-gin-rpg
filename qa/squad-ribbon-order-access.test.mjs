@@ -20,7 +20,7 @@ assert.match(circle,/applyOverviewCamera\('squad'\)/);
 assert.doesNotMatch(circle,/else openSquadTactics\(id\)/);
 const open=segment('function openSquadTactics(id){','function beginStrategistWarp(){');
 assert.match(open,/if\(!TOWN_MODE\)\{/);
-assert.match(open,/targetedStrategyUi\.open\(group,\{groupOnly:true,startAtRecommendations:true\}\)/);
+assert.match(open,/return realtimeCommandUI\?\.selectSquad\(id\)\?\?false/);
 assert.match(open,/if\(!paused\)setBattlePaused\(true\)/);
 assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('main'\)/);
 const overview=segment("$('overviewRecommendPlan').onclick=()=>{",'function updateOverviewSquadPins(');

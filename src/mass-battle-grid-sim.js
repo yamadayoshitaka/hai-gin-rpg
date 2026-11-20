@@ -118,6 +118,9 @@ export class MassBattleGridSimulation {
     this.highGroundRoutes=[];
     this._highGroundFlows=[];
     this._highGroundClaims=new Map();
+    // Every squad uses a shared stair gate; the ground entrance is freed
+    // once a soldier climbs into the real 3D staircase.
+    this._highGroundEntryNext=new Map();
     this.actions.onNavigationChange=()=>this._buildFlows();
     // Dense random access for collisions, but clear only occupied cells on the
     // next tick. A million-cell map should not cost a million writes per tick.
@@ -273,6 +276,7 @@ export class MassBattleGridSimulation {
       Number.isInteger(route.access?.z)&&this._walkable(route.access.x,route.access.z)&&
       ['window','roof','interior'].includes(route.kind)).slice(0,80);
     this._highGroundClaims.clear();
+    this._highGroundEntryNext.clear();
     this._rebuildHighGroundFlows();
   }
 
@@ -289,31 +293,69 @@ export class MassBattleGridSimulation {
     return !structure||structure.alive;
   }
 
-  /** Explicit range-job high-ground order uses the actual authored stair route. */
-  orderSquadHighGround(squadId,routeIndex,team=0){
-    const index=Number(routeIndex),route=this.highGroundRoutes[index];
+  /** One order authorizes the *entire* squad, never an arbitrary scout.
+   * Every surviving member must share a traversable stair route. If the
+   * complete squad cannot reach it, reject instead of silently splitting. */
+  orderSquadHighGround(squadId,routeIndex,team=0,{manualHold=true}={}){
+    const id=String(squadId),index=Number(routeIndex),route=this.highGroundRoutes[index];
     if(!route||!this._highGroundRouteAlive(route)||
-      !['window','roof'].includes(route.kind))return false;
-    const key=route.buildingIndex+':'+team;
-    if(this._highGroundClaims.has(key))return false;
+      !['interior','window','roof'].includes(route.kind))return false;
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0);
+    if(!members.length)return false;
+    const key=route.buildingIndex+':'+team,claimed=this._highGroundClaims.get(key);
+    if(claimed!=null&&String(claimed)!==id)return false;
     const flow=this._highGroundFlows[index];
-    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
-      u.alive&&u.hp>0&&u.highGroundRouteIndex<0&&
-      !u.isStrategist&&!u.mountId);
-    members.sort((a,b)=>
-      Math.hypot(a.x-route.access.x,a.z-route.access.z)-
-      Math.hypot(b.x-route.access.x,b.z-route.access.z));
-    // A target order authorizes the full walkable route, even if the stairway
-    // is farther than the previous arbitrary 65-cell cutoff.
-    const unit=members.find(u=>flow&&flow[u.z*this.width+u.x]<0x3fffffff);
-    if(!unit)return false;
-    this.squadDestinations.delete(String(squadId));
-    this.squadFlows.delete(String(squadId));
-    unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
-    unit.highGroundT=0;unit.highGroundFloor=1;
-    unit.highGroundManualHold=true; // Height-move order is not an auto-attack command.
-    this._highGroundClaims.set(key,unit.id);
+    if(!flow||members.some(u=>u.mountId||
+      (u.highGroundRouteIndex>=0&&u.highGroundRouteIndex!==index)||
+      (u.highGroundRouteIndex<0&&flow[u.z*this.width+u.x]>=0x3fffffff)))return false;
+    if(team===0){
+      this.autoStrategySquads.delete(id);this.squadDestinations.delete(id);
+      this.squadFlows.delete(id);this.squadMissions.delete(id);
+      this.squadHealTargets.delete(id);this.clearSquadExploration(id,team);
+      this.squadCommands.set(id,'move');
+    }else this.enemySquadCommands.set(id,'move');
+    for(const unit of members){
+      if(unit.highGroundRouteIndex===index)continue;
+      unit.highGroundRouteIndex=index;unit.highGroundPhase=0;unit.highGroundStep=0;
+      unit.highGroundT=0;unit.highGroundFloor=1;unit.highGroundManualHold=manualHold;
+      unit.tacticalOrder=null;unit.tacticalOrderUntil=0;
+    }
+    this._highGroundClaims.set(key,id);
     return true;
+  }
+  /** Arrival posture changes without discarding the reached upper floor.
+   * A charge fights from windows or roof; defend/hold keeps every member waiting. */
+  setSquadHighGroundArrival(squadId,command,team=0){
+    if(!['charge','defend','hold'].includes(command))return false;
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&u.alive&&u.hp>0);
+    if(!members.length||members.some(u=>u.highGroundRouteIndex<0||u.highGroundPhase!==2))return false;
+    for(const u of members)u.highGroundManualHold=command!=='charge';
+    (team===0?this.squadCommands:this.enemySquadCommands).set(String(squadId),command);
+    return true;
+  }
+  /** Preserve a building claim while any comrade still occupies its route. */
+  _releaseHighGroundClaimIfEmpty(unit,route){
+    if(!route)return;
+    const key=route.buildingIndex+':'+unit.team;
+    if(this.units.some(other=>other!==unit&&other.alive&&other.team===unit.team&&
+      other.highGroundRouteIndex>=0&&
+      this.highGroundRoutes[other.highGroundRouteIndex]?.buildingIndex===route.buildingIndex))return;
+    this._highGroundClaims.delete(key);
+  }
+  /** Later orders walk back down the actual staircase before ground travel. */
+  _cancelSquadHighGround(squadId,team=0){
+    const id=String(squadId);
+    for(const u of this.units){
+      if(u.team!==team||String(u.squadId)!==id||u.highGroundRouteIndex<0)continue;
+      if(u.highGroundPhase===0){this._releaseHighGroundUnit(u);continue;}
+      const route=this.highGroundRoutes[u.highGroundRouteIndex];
+      if(u.highGroundPhase===2){
+        u.highGroundStep=Math.max(0,(route?.points.length||2)-2);
+        u.highGroundT=1;
+      }
+      u.highGroundManualHold=false;u.upperPursuitTargetId=-1;
+      u.highGroundPhase=3;u.action='walk';
+    }
   }
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
@@ -348,10 +390,8 @@ export class MassBattleGridSimulation {
         if(cost<score){best=u;score=cost;}
       }
       if(best){
-        best.highGroundRouteIndex=index;
-        best.highGroundPhase=0;best.highGroundStep=0;
-        best.highGroundT=0;best.highGroundFloor=1;
-        this._highGroundClaims.set(route.buildingIndex+':'+best.team,best.id);
+        // Automatic rooftop tactics are squad-level too, not one-person detours.
+        this.orderSquadHighGround(best.squadId,index,best.team,{manualHold:false});
       }
     }
   }
@@ -390,17 +430,16 @@ export class MassBattleGridSimulation {
         if(dist<min){min=dist;best=u;}
       }
       if(best){
-        best.highGroundRouteIndex=routeIndex;best.highGroundPhase=0;
-        best.highGroundStep=0;best.highGroundT=0;best.highGroundFloor=1;
-        best.upperPursuitTargetId=enemy.id;
-        this._highGroundClaims.set(claimKey,best.id);
+        if(this.orderSquadHighGround(best.squadId,routeIndex,best.team,{manualHold:false}))
+          for(const u of this.units)if(u.team===best.team&&String(u.squadId)===String(best.squadId))
+            u.upperPursuitTargetId=enemy.id;
       }
     }
   }
 
   _releaseHighGroundUnit(u){
     const route=this.highGroundRoutes[u.highGroundRouteIndex];
-    if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
+    this._releaseHighGroundClaimIfEmpty(u,route);
     u.highGroundRouteIndex=-1;u.highGroundPhase=0;
     u.highGroundFloor=1;u.highGroundStep=0;u.highGroundT=0;
     u.upperPursuitTargetId=-1;u.highGroundManualHold=false;
@@ -445,6 +484,11 @@ export class MassBattleGridSimulation {
           u.highGroundPhase=2;u.highGroundFloor=1;
           u.vx=0;u.vz=0;u.action='hold';return true;
         }
+        const gate=route.buildingIndex+':'+u.team;
+        if((this._highGroundEntryNext.get(gate)||0)>this.time){
+          u.action='hold';u.vx=0;u.vz=0;return true;
+        }
+        this._highGroundEntryNext.set(gate,this.time+.65);
         u.highGroundPhase=1;u.highGroundStep=0;u.highGroundT=0;
         u.moveElapsed=0;u.moveDuration=0;
         u.vx=0;u.vz=0;u.action='walk';return true;
@@ -472,6 +516,21 @@ export class MassBattleGridSimulation {
         MASS_MOVEMENT_SCALE*2.2*dt;
       const step=advanceMassHighGroundRoute(reversed,reverseStep,reverseT,speed);
       if(step.done){
+        // Descend to a genuinely empty, walkable ground cell; do not stack
+        // every returning soldier in the same staircase entrance tile.
+        let landing=null;
+        for(let radius=0;radius<=4&&!landing;radius++)
+          for(let dz=-radius;dz<=radius&&!landing;dz++)
+            for(let dx=-radius;dx<=radius;dx++){
+              if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+              const x=route.access.x+dx,z=route.access.z+dz,index=z*this.width+x;
+              if(!this._walkable(x,z,u.jobId)||this._occupancy[index]!==-1)continue;
+              landing={x,z,index};break;
+            }
+        if(!landing){u.action='hold';return true;}
+        u.x=landing.x;u.z=landing.z;u.fromX=u.x;u.fromZ=u.z;
+        u.moveElapsed=u.moveDuration=0;u.vx=u.vz=0;
+        this._occupancy[landing.index]=u.id;this._occupiedTouched.push(landing.index);
         this._releaseHighGroundUnit(u);u.action='idle';return true;
       }
       u.highGroundStep=n-1-step.step;u.highGroundT=1-step.t;
@@ -788,6 +847,7 @@ export class MassBattleGridSimulation {
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     this.autoStrategySquads.delete(id);
     this.clearSquadExploration(id,0);
+    this._cancelSquadHighGround(id,0);
     this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
   }
   clearSquadDestination(squadId){
@@ -875,17 +935,23 @@ export class MassBattleGridSimulation {
   /** Explicit summon order for the summoner squad. Real summon objects and MP costs. */
   summonSquadCreature(squadId,team=0){
     const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
-      u.alive&&u.hp>0&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+      u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+    let summoned=0;
     for(const caster of casters){
       const skills=availableCombatSkills('summoner',caster.rarity)
        .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
         (!caster._skillNext||(caster._skillNext[skill.id]||0)<=this.actions.time))
        .sort((a,b)=>b.mp-a.mp);
       for(const skill of skills){
-       if(this.actions.fireSkill(caster,skill,caster,this.units))return true;
+       if(this.actions.fireSkill(caster,skill,caster,this.units)){summoned++;break;}
       }
     }
-    return false;
+    // One invocation fills all available caster slots, not only the first.
+    return summoned>0;
+  }
+  /** Assign the creature its own battle target in the authoritative grid. */
+  commandSquadSummonAttack(squadId,targetSquadId,team=0){
+    return this.actions.commandSummonAttack(squadId,targetSquadId,this.units,team);
   }
   /** Refill existing fallen unit slots with carried reserve soldiers.
    * No new GPU actor objects and never more than the squad's authored size.
@@ -955,7 +1021,7 @@ export class MassBattleGridSimulation {
   _applyGlobalStrategy(){
     this._enforceLastSurvivorStrategy();
     if([...this.squadStrategies.values()].includes('recovery')){
-      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&
+      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&
         u.jobId==='priest'&&u.formationType==='support'&&
         !this.squadCommands.has(String(u.squadId))&&
         this.squadStrategies.get(String(u.squadId))==='recovery').map(u=>String(u.squadId)))];
@@ -990,7 +1056,7 @@ export class MassBattleGridSimulation {
       // Recovery remains a dedicated strategy, but environmental-maintenance
       // teams with a priest can also heal wounded troops before repairs.
       for(const u of this.units){
-        if(!u.alive||u.team!==0||u.jobId!=='priest'||
+        if(!u.alive||u.team!==0||u.isStrategist||u.jobId!=='priest'||
           this.squadStrategies.get(String(u.squadId))!=='environment_prepare'||
           this.squadCommands.has(String(u.squadId)))continue;
         const patient=this.units.filter(v=>v.team===0&&v.alive&&v.hp<v.maxHp*.65)
@@ -1165,6 +1231,7 @@ export class MassBattleGridSimulation {
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
     for(const u of this.units)if(u.team===team&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
+    this._cancelSquadHighGround(id,team);
     this.clearSquadExploration(id,team);
     if(team===0){
       this.autoStrategySquads.delete(id);
@@ -1174,11 +1241,35 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Explicit resurrection has an authoritative HP/MP and Worker outcome.
+   * The UI can first move this entire squad into casting range. */
+  reviveSquadTarget(squadId,targetSquadId,team=0){
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='priest');
+    const fallen=this.units.filter(u=>u.team===team&&String(u.squadId)===String(targetSquadId)&&
+      (!u.alive||u.hp<=0));
+    for(const caster of members){
+      const spells=availableCombatSkills('priest',caster.rarity)
+        .filter(spell=>spell.kind==='revive'&&caster.mp>=spell.mp)
+        .sort((a,b)=>b.hpPercent-a.hpPercent);
+      for(const spell of spells){
+        const victim=fallen.find(u=>Math.hypot(u.x-caster.x,u.z-caster.z)<=spell.range);
+        if(!victim)continue;
+        const liveBefore=this.live[team];
+        if(!this.actions.fireSkill(caster,spell,victim,this.units))continue;
+        // onRevive is attached during step(); before the first tick there
+        // is no event callback, so keep the actual alive counter correct.
+        if(this.live[team]===liveBefore)this.live[team]++;
+        return true;
+      }
+    }
+    return false;
+  }
   requestSquadHealing(targetSquadId,preferredSupportId=null){
     const targetId=String(targetSquadId);
     const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
-    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
+    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&!u.isStrategist&&u.team===0&&u.jobId==='priest'&&
       (u.formationType==='support'||(preferredSupportId!=null&&String(u.squadId)===String(preferredSupportId))))
       .map(u=>String(u.squadId)))];
     const mean=(group)=>({x:group.reduce((s,u)=>s+u.x,0)/group.length,z:group.reduce((s,u)=>s+u.z,0)/group.length});
@@ -1323,7 +1414,7 @@ export class MassBattleGridSimulation {
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
     if(u.highGroundRouteIndex>=0){
       const route=this.highGroundRoutes[u.highGroundRouteIndex];
-      if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
+      this._releaseHighGroundClaimIfEmpty(u,route);
     }
     if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
@@ -1380,10 +1471,14 @@ export class MassBattleGridSimulation {
       if(squadIndex>=0&&squadIndex<formationCount.length){
         formationX[squadIndex]+=u.x;formationZ[squadIndex]+=u.z;formationCount[squadIndex]++;
       }
-      reserve(u.z*this.width+u.x,u.id);
-      // The departure tile remains reserved until its full walking animation
-      // has cleared the cell. This prevents visual overlaps in narrow bridges.
-      if(u.moveElapsed<u.moveDuration)reserve(u.fromZ*this.width+u.fromX,u.id);
+      // Upper-floor soldiers no longer occupy a ground-floor collision tile.
+      // Their physical coordinates are controlled by real 3D stair waypoints.
+      // Otherwise one soldier would permanently block every following squadmate.
+      if(u.highGroundPhase===0){
+        reserve(u.z*this.width+u.x,u.id);
+        // The departure tile remains reserved until the grid stride clears it.
+        if(u.moveElapsed<u.moveDuration)reserve(u.fromZ*this.width+u.fromX,u.id);
+      }
       const sector=Math.floor(u.z/SECTOR)*this._sectorCols+Math.floor(u.x/SECTOR);
       nextIds[u.id]=-1;
       if(heads[sector]===-1)heads[sector]=u.id;
@@ -1509,6 +1604,26 @@ export class MassBattleGridSimulation {
       const mission=u.team===0&&!personalOrderActive?this.squadMissions.get(String(u.squadId)):null;
       const healTarget=u.team===0&&!personalOrderActive?this.squadHealTargets.get(String(u.squadId)):null;
       u.healTargetSquadId=healTarget??null;
+      // An explicit squad-healing order is actionable, not merely a move
+      // marker. At spell range, priests must cast on the nominated wounded
+      // squad before the generic combat AI selects a different target.
+      if(u.jobId==='priest'&&healTarget!=null&&!u._pendingCast&&u.cooldown<=0){
+        const patient=this.units.filter(v=>v.team===u.team&&v.alive&&v.hp>0&&v.hp<v.maxHp&&
+          String(v.squadId)===String(healTarget)&&
+          Math.hypot(v.x-u.x,v.z-u.z)<=14)
+          .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+        const spells=availableCombatSkills('priest',u.rarity)
+          .filter(skill=>skill.kind==='heal'&&u.mp>=skill.mp&&
+            (!u._skillNext||(u._skillNext[skill.id]||0)<=this.actions.time)&&
+            patient&&Math.hypot(patient.x-u.x,patient.z-u.z)<=skill.range)
+          .sort((a,b)=>b.power-a.power);
+        if(patient&&spells.some(spell=>{
+          if(!this.actions.fireSkill(u,spell,patient,this.units))return false;
+          u.cooldown=Math.max(1,spell.cooldown);return true;
+        })){
+          u.vx=0;u.vz=0;u.action='skill';continue;
+        }
+      }
       let nearest=null,best=reach*reach,missionNearest=null,missionBest=reach*reach;
       let hiddenEnemy=null,hiddenDistance=reach*reach;
       // The previous scan chose a blocked, nearest enemy then discarded it.

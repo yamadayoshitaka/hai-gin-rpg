@@ -14,7 +14,7 @@ function mockDocument(){
  },set(){return true}});
  const mk=()=>({
   hidden:false,textContent:'',dataset:{},style:{},value:'',disabled:false,
-  attributes:{},events:new Map(),classList:{toggle(){},add(){}},
+  attributes:{},events:new Map(),classList:{toggle(){},add(){},remove(){},contains(){return false}},
   addEventListener(event,callback){this.events.set(event,callback)},
   setAttribute(key,value){this.attributes[key]=value},
   getBoundingClientRect(){return {left:0,top:0,width:240,height:240}},

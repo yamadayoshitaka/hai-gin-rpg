@@ -37,7 +37,9 @@ assert.match(battle,/button\.hidden=Math\.floor\(index\/perPage\)!==squadQuickPa
 assert.match(battle,/const perPage=4,count=/);
 assert.match(battle,/bar\.append\(previous,status,next\);squadQuickList\.append\(bar\)/);
 assert.match(battle,/const distance=commandFocus\.isCommander\?8\.6:9\.5/);
-assert.match(battle,/initialCommanderCinematicPending=squadIds\.find\(id=>hasSquadCommander\(id\)\)/);
+assert.match(battle,/const cameraOverviewOffset=new THREE.Vector3\(110,510,110\)/);
+assert.match(battle,/function beginCommanderCinematic\(squadId\)/);
+assert.doesNotMatch(battle,/initialCommanderCinematicPending=squadIds\.find\(id=>hasSquadCommander\(id\)\)/);
 assert.match(battle,/beginCommanderCinematic\(first\)/);
 assert.match(battle,/kind==='order'\)closeOffset\.normalize\(\)\.multiplyScalar\(8\.6\)/);
 assert.match(battle,/setAdaptiveBattlePixelRatio\(nextRatio\)/);

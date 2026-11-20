@@ -471,12 +471,29 @@ export function createObjectById(id,{cellSize=2.2}={}){
    body.position.y=.61*c;body.castShadow=true;root.add(body);
    const bottom=new THREE.Mesh(new THREE.CylinderGeometry(.35*c,.35*c,.07*c,12),metalMat);
    bottom.position.y=.06*c;root.add(bottom);
-   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
+   // Visible inner wall and dark recessed floor: open top must not show through to terrain.
+   const innerMat=new THREE.MeshStandardMaterial({color:0x383a35,metalness:.52,roughness:.7,side:THREE.BackSide});
+   const liner=new THREE.Mesh(new THREE.CylinderGeometry(.372*c,.314*c,1.07*c,16,1,true),innerMat);
+   liner.position.y=.625*c;root.add(liner);
+   const floorMat=new THREE.MeshStandardMaterial({color:0x383a35,metalness:.52,roughness:.7,side:THREE.FrontSide});
+   const innerFloor=new THREE.Mesh(new THREE.CylinderGeometry(.314*c,.314*c,.018*c,16),floorMat);
+   innerFloor.position.y=.105*c;root.add(innerFloor);
+   // Rolled steel lip and three tapered reinforcing hoops follow the bin wall.
+   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,8,24),metalMat);
    rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
+   for(const y of [.23,.59,.96]){
+    const radius=(.34+(.4-.34)*(y-.035)/1.15)*c;
+    const hoop=new THREE.Mesh(new THREE.TorusGeometry(radius,.024*c,5,24),metalMat);
+    hoop.rotation.x=Math.PI/2;hoop.position.y=y*c;
+    hoop.castShadow=true;root.add(hoop);
+   }
+   // Forged longitudinal ribs are metal, not wooden strips; follow the tapered wall.
    for(let i=0;i<12;i++){const a=i*Math.PI/6;
-    const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
-    slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
-    slot.rotation.y=-a;root.add(slot);
+    const rib=new THREE.Mesh(new THREE.CylinderGeometry(.017*c,.021*c,.8*c,6),metalMat);
+    rib.position.set(Math.cos(a)*.371*c,.62*c,Math.sin(a)*.371*c);
+    rib.rotation.z=-Math.cos(a)*.052;
+    rib.rotation.x=Math.sin(a)*.052;
+    rib.castShadow=true;root.add(rib);
    }
   }
   if(id==='town_handcart_001'){
@@ -689,10 +706,20 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Shared lathed cloth profile: flat base, stuffed belly, gathered neck and
+   // open collar. Unlike the old ellipsoids, the bottom sits on its own plane.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.98,metalness:0,side:THREE.DoubleSide});
+   const twine=new THREE.MeshStandardMaterial({color:0x66513a,roughness:1,metalness:0});
+   const profile=[[0,0],[.24,0],[.30,.025],[.36,.06],[.41,.13],[.43,.18],[.46,.31],[.445,.38],[.46,.43],[.44,.55],[.41,.69],[.355,.76],[.32,.81],[.235,.86],[.19,.88],[.14,.94],[.17,1.00]].map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const bagGeometry=new THREE.LatheGeometry(profile,16);
+   const cordGeometry=new THREE.TorusGeometry(.165*c,.022*c,6,16);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const x=((i%2)*.86-.43)*c,z=((i%3)-1)*.2*c;
+    const y=Math.floor(i/2)*.58*c;
+    const sack=new THREE.Mesh(bagGeometry,burlap);
+    sack.scale.set(1,1,.85);sack.position.set(x,y,z);sack.castShadow=true;sack.receiveShadow=true;root.add(sack);
+    const cord=new THREE.Mesh(cordGeometry,twine);
+    cord.rotation.x=Math.PI/2;cord.scale.y=.85;cord.position.set(x,y+.905*c,z);cord.castShadow=true;root.add(cord);
    }
   }
   if(id==='town_stone_pile_001'){

@@ -160,8 +160,47 @@ for(const detail of ['low','high']){
       'a detached shin post must not survive alongside the new skin');
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-0'));
     assert(nameSet.has('m019-rooted-claw-'+legId.slice(3)+'-3'));
+    const pawSuffix=legId.slice(3);
+    const footMeshes=[];
+    model.getObjectByName('toe'+pawSuffix)?.traverse(obj=>{
+      if(obj.isMesh)footMeshes.push(obj);
+    });
+    const footByName=new Map(footMeshes.map(obj=>[obj.name,obj]));
+    for(let digit=0;digit<4;digit++){
+      const finger=footByName.get('m019-digit-'+pawSuffix+'-'+digit);
+      const claw=footByName.get('m019-rooted-claw-'+pawSuffix+'-'+digit);
+      assert(finger?.isMesh&&claw?.isMesh,
+        'all four fingers and curved talons must exist even at low LOD');
+      assert.equal(finger.userData.m019ContinuousBasaltDigit,true);
+      assert.equal(claw.userData.rootedKeratin,true);
+      assert.equal(claw.userData.m019CurvedKeratinTalon,true);
+      assert.equal(claw.userData.m019EmbeddedInFinger,true);
+      assert.equal(claw.geometry.userData.kind,'curved-keratin-horn');
+      assert(claw.geometry.getIndex().count>60,
+        'actual curved multi-ring claw geometry is required');
+      assert(claw.visible&&claw.material.visible&&!claw.material.transparent);
+      assert(claw.material.color.r<.45,
+        'claw must use dark volcanic keratin instead of pale ivory');
+      assert(claw.material.roughness>=.80,
+        'volcanic talons need a dry matte keratin finish');
+      const endpoints=claw.geometry.userData;
+      assert(endpoints.tip[2]>endpoints.root[2]+.08,
+        'talon must project beyond its rooted nail bed');
+      assert(endpoints.tip[1]<-.04,
+        'curved talon ends near the contact plane, not levitating');
+      assert.equal(
+        footByName.has('m019-nail-bed-fissure-'+pawSuffix+'-'+digit),
+        detail!=='low','near LOD has nail-bed lava seams only');
+    }
+    assert.equal(
+      footMeshes.filter(obj=>obj.userData.m019RootedBasaltScute).length,
+      detail==='low'?0:3,
+      'high-detail paws carry shallow embedded rock scutes');
     const toe=pivot['toe'+legId.slice(3)];
     assert(toe?.userData.m019PlantedToeJoint,'m019 toes must follow joint');
+    assert.equal(toe.userData.m019ToeCount,4);
+    assert.equal(toe.userData.m019PawFinish,
+      'basalt-scutes-with-rooted-curved-keratin');
     const side=legId.endsWith('L')?-1:1;
     const knee=pivot[legId.replace('leg','lower')];
     assert.equal(knee.userData.m019SprawledKnee,true,
@@ -179,6 +218,56 @@ for(const detail of ['low','high']){
     assert.equal(root?.userData.m019TorsoAnchoredSocket,true);
     const upper=meshes.find(o=>o.name==='m019-seamless-skin-'+suffix);
     assert.equal(upper?.parent,leg,'whole muscle skin follows shoulder');
+    // The old tests verified CPU vertices, while Android still drew only
+    // leg shadows. Verify an independent, non-deformed, visible pair for
+    // every limb in BOTH LODs, even if outer skin is unavailable to WebGL.
+    const mobileUpper=meshes.find(o=>o.name==='m019-mobile-upper-'+suffix);
+    const mobileShin=meshes.find(o=>o.name==='m019-mobile-shin-'+suffix);
+    assert(mobileUpper?.isMesh&&mobileShin?.isMesh,
+      suffix+' requires real permanent upper and lower meshes');
+    assert.equal(mobileUpper.parent,leg);
+    assert.equal(mobileShin.parent,knee);
+    for(const part of [mobileUpper,mobileShin]){
+      assert.equal(part.userData.m019IndependentVisibleCore,true);
+      assert.equal(part.isSkinnedMesh,undefined);
+      assert(part.visible&&part.material.visible&&!part.material.transparent);
+      assert(part.geometry.getAttribute('position').count>=24);
+      assert(part.geometry.getIndex().count>=24);
+      assert.equal(part.userData.m019StableVisibleBridge,true,
+        'm019 must use the known-rendered v13 anatomical bridge, not v14 tubes');
+      assert.equal(part.userData.m019LastRenderedGeometry,'v13-oriented-bridge');
+      assert.equal(part.frustumCulled,false,
+        'small animated legs must never be culled from stale bounds');
+      assert(!part.geometry.parameters?.tubularSegments,
+        'do not regress to procedural TubeGeometry hidden on Android');
+      // A dark pigment identical to the near-black belly caused the
+      // v14 limbs to disappear against the floor. Keep them moderately
+      // brighter but with the same charcoal hue and rough volcanic PBR.
+      assert(part.material.color.r>body.material.color.r*2,
+        'limb basalt must retain enough contrast to be visible on Android');
+      assert(part.material.color.r<body.material.color.r*8,
+        'limbs must stay charcoal, never return to bright red-brown');
+      assert(Math.abs(part.material.color.r-part.material.color.g)<.16,
+        'limbs must not use the old reddish-brown hue');
+      assert.equal(part.receiveShadow,false,
+        'prevent short limbs from blacking out due to self-shadow');
+      assert.equal(part.material.userData.m019DryObsidian,true);
+    }
+    assert(!meshes.some(mesh=>
+      mesh.name.startsWith('m019-embedded-arm-scute-'+suffix+'-')||
+      mesh.name.startsWith('m019-embedded-shin-scute-'+suffix+'-')),
+      'no floating scute dots beside the ankles or elbows');
+    model.updateMatrixWorld(true);
+    const mobileUpperBox=new THREE.Box3().setFromObject(mobileUpper);
+    const mobileShinBox=new THREE.Box3().setFromObject(mobileShin);
+    assert(mobileUpperBox.max.y>.40,
+      'mobile upper muscle must rise above terrain/torso occlusion');
+    assert(mobileShinBox.max.y>.35&&mobileShinBox.min.y>-.06,
+      'mobile shin must visibly connect knee to the planted foot');
+    const mobileOuter=new THREE.Box3().setFromObject(mobileUpper);
+    assert(side>0?mobileOuter.max.x>bodyBox.max.x+.20:
+      mobileOuter.min.x<bodyBox.min.x-.20,
+      'mobile-visible core must extend outside the torso silhouette');
     // A real visible Mesh avoids the v9 GPU-skinned surface which vanished
     // on Android while CPU skeleton-space tests still returned PASS.
     assert.equal(upper.isMesh,true);
@@ -195,6 +284,22 @@ for(const detail of ['low','high']){
     const limbExtents=limbBox.getSize(new THREE.Vector3());
     assert(limbExtents.x>.30&&limbExtents.y>.22,
       'real visible shoulder-to-ankle mesh must occupy substantial width and height');
+    // A shadow-only leg can have a valid world-space bounding box. Require
+    // a muscle crest above the terrain and clearly outside the rib cage,
+    // plus real warm-basalt colour contrast against the black torso.
+    assert(limbBox.max.y>.39,
+      'upper muscle must rise above the ground and dark belly occluder');
+    if(side>0)
+     assert(limbBox.max.x>bodyBox.max.x+.31,
+      'right elbow must project beyond the torso silhouette');
+    else
+     assert(limbBox.min.x<bodyBox.min.x-.31,
+      'left elbow must project beyond the torso silhouette');
+    assert(upper.material.color.r>body.material.color.r*2,
+      'visible outer muscle must be brighter charcoal than the shaded belly');
+    assert(upper.material.color.r<body.material.color.r*8,
+      'outer muscle must match the torso family rather than tan');
+    assert.equal(upper.userData.m019AboveFloorMuscleCrest,true);
     assert(upper.material.color.getHex()>0,
       'visible limbs must have a real lit basalt material');
     assert.equal(upper?.userData.m019HorizontalThigh,true);
@@ -302,6 +407,12 @@ for(const detail of ['low','high']){
         action+' '+time+' visible solid arm must stay attached to animated foot');
        assert(mesh.visible&&mesh.material.visible,
         action+' '+time+' skin cannot disappear via visibility or material');
+       const lowerSafe=model.getObjectByName('m019-mobile-shin-'+id);
+       const upperSafe=model.getObjectByName('m019-mobile-upper-'+id);
+       assert(upperSafe.visible&&lowerSafe.visible,
+         action+' '+time+' independent mobile limbs must remain visible');
+       assert.equal(upperSafe.parent,arm);
+       assert.equal(lowerSafe.parent,joint);
        const worldBox=new THREE.Box3().setFromObject(mesh);
        const worldSize=worldBox.getSize(new THREE.Vector3());
        assert(worldSize.x>.28&&worldSize.y>.17,
@@ -388,5 +499,6 @@ test('portrait and landscape camera fit the entire m019 from nose to tail',()=>{
    'camera must use horizontal FOV to fit the tail at aspect '+aspect);
   assert(fit.distance>=4);
   assert.equal(fit.azimuth,'negative-x-side-head-right');
+  assert(fit.direction.y>.30,'mobile camera must show all sprawled legs above floor');
  }
 });

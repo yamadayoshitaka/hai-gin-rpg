@@ -116,15 +116,35 @@ export function createMassHighGroundRoutes(buildings,{
     catch{continue;}
     // A usable roof does not require a 2F firing window. In particular,
     // ninja rooftops must survive window-less building catalog variants.
-    const windows=buildingWindowFiringPositions(b.structure,pos,2,{cellSize});
     const preferredX=team===0?1:-1;
     const access={x:entry.x,z:entry.z};
     const ground={x:(entry.x-offset)*cellSize,z:(entry.z-offset)*cellSize};
     ground.y=terrainY?.(ground.x,ground.z)??pos.y;
     const stage=stairGroundEntryPoint(b.structure,pos,steps,{cellSize});
     const staged=stage?toCell(stage):null;
-    const entryRoute=groundPath(access,staged);
-    if(!entryRoute)continue; // a real door-to-first-tread corridor is mandatory
+    if(!staged)continue;
+    // A castle's spiral stair footprint can make the nominal approach tile
+    // unwalkable. Find a nearby *reachable* landing without crossing walls.
+    // Reject distant substitutes: the remaining 3D step must meet the tread.
+    const stageCandidates=[];
+    for(let radius=0;radius<=3;radius++)
+      for(let dz=-radius;dz<=radius;dz++)
+        for(let dx=-radius;dx<=radius;dx++){
+          if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+          const cell={x:staged.x+dx,z:staged.z+dz};
+          if(clear(cell.x,cell.z))stageCandidates.push({
+            cell,offset:Math.hypot(dx,dz)});
+        }
+    stageCandidates.sort((a,b)=>a.offset-b.offset);
+    let entryRoute=null;
+    for(const candidate of stageCandidates){
+      const path=groundPath(access,candidate.cell);
+      if(!path)continue;
+      const landing=path.at(-1),px=(landing.x-offset)*cellSize,pz=(landing.z-offset)*cellSize;
+      if(Math.hypot(px-steps[0].x,pz-steps[0].z)>cellSize*3.6)continue;
+      entryRoute=path;break;
+    }
+    if(!entryRoute)continue; // only collision-safe connected entry routes
     const basePoints=[...entryRoute.map(cell=>{
       const x=(cell.x-offset)*cellSize,z=(cell.z-offset)*cellSize;
       return {x,y:terrainY?.(x,z)??pos.y,z};
@@ -136,15 +156,23 @@ export function createMassHighGroundRoutes(buildings,{
     const base={id:'battle-highground-'+index,buildingIndex:index,
       structureId:'world-building-'+index,team,access,
       doorPosition:floorTravelEntryPoint(b)};
-    if(windows.length){
-      // Face the hostile army when several authored apertures exist.
+    // Every occupied castle storey is a selectable destination, not just 2F.
+    // Reuse the real 1F stair entrance and append the intervening flights.
+    for(let floor=2;floor<=b.structure.floors.length;floor++){
+      const windows=buildingWindowFiringPositions(b.structure,pos,floor,{cellSize});
+      if(!windows.length)continue;
+      const floorPoints=basePoints.slice();
+      try{
+        for(let level=2;level<floor;level++)
+          floorPoints.push(...buildFloorTravelRoute(b.structure,pos,level,level+1));
+      }catch{continue;}
       windows.sort((a,b)=>
         (b.normal.x*preferredX-a.normal.x*preferredX)*100+
-        Math.hypot(steps.at(-1).x-a.x,steps.at(-1).z-a.z)-
-        Math.hypot(steps.at(-1).x-b.x,steps.at(-1).z-b.z));
+        Math.hypot(floorPoints.at(-1).x-a.x,floorPoints.at(-1).z-a.z)-
+        Math.hypot(floorPoints.at(-1).x-b.x,floorPoints.at(-1).z-b.z));
       const bay=windows[0];
-      routes.push({...base,kind:'window',level:2,
-        points:[...basePoints,{x:bay.x,y:bay.y,z:bay.z}],
+      routes.push({...base,id:base.id+'-floor-'+floor,kind:'window',level:floor,
+        points:[...floorPoints,{x:bay.x,y:bay.y,z:bay.z}],
         window:toGridWindow(bay)});
     }
     const roof=roofAccessPlan(b.structure,{cellSize});

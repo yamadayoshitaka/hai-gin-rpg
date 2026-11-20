@@ -77,7 +77,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.25</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.30</small></h1>
  <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a><a href="./monster-quality-review.html?monster=m001">品質KPI管理</a><a href="./creature-reconstruction-plan.html">108体再構成</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -187,10 +187,10 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-sprawl-tail-fit';
+import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-mobile-leg-fit';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m019-visible-cpu-limbs-v10-20261120';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m019-restored-rendered-bridge-v16-20261120';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m019-visible-animation-v10-20261120';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=tengu-canonical-flight-v14-20261118';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
@@ -872,6 +872,53 @@ window.__monsterViewerLayoutQA=()=>({
  // but renders the eye/cheek seams from frontal AND lateral cameras.
 // This inspection is deliberately about renderable world-space solids rather
 // than hidden animation pivot coordinates. Four invisible limbs must FAIL.
+// An actual GPU colour/depth probe, not another Box3/triangle-count check.
+// The temporary magenta shader is ONLY a CI inspection surface; restore
+// original basalt materials before returning to normal gameplay.
+const m019PixelBackup=new Map();
+let m019SavedShadows=null,m019PixelMaterial=null;
+window.__m019LimbPixelProbeQA=(mode='restore')=>{
+ if(selected!=='m019'||!model)return null;
+ const names=['frontL','frontR','rearL','rearR'];
+ const skins=names.map(n=>model.getObjectByName('m019-seamless-skin-'+n));
+ if(skins.some(m=>!m))return {ready:false,missing:true};
+ if(mode!=='restore'&&m019SavedShadows==null){
+  m019SavedShadows=renderer.shadowMap.enabled;
+  renderer.shadowMap.enabled=false;
+  m019PixelMaterial=new THREE.MeshBasicMaterial({
+   color:0xff00ff,side:THREE.DoubleSide,
+   depthTest:true,depthWrite:true
+  });
+ }
+ for(const skin of skins){
+  if(mode==='restore'){
+   const orig=m019PixelBackup.get(skin);
+   if(orig){
+    skin.material=orig.material;
+    skin.castShadow=orig.castShadow;
+    skin.visible=orig.visible;
+   }
+  }else{
+   if(!m019PixelBackup.has(skin))
+    m019PixelBackup.set(skin,{
+     material:skin.material,castShadow:skin.castShadow,visible:skin.visible
+    });
+   skin.castShadow=false;
+   skin.visible=mode!=='hidden';
+   skin.material=mode==='magenta'?m019PixelMaterial:
+    m019PixelBackup.get(skin).material;
+  }
+ }
+ if(mode==='restore'){
+  m019PixelBackup.clear();
+  if(m019SavedShadows!=null)renderer.shadowMap.enabled=m019SavedShadows;
+  m019SavedShadows=null;
+  m019PixelMaterial?.dispose();m019PixelMaterial=null;
+ }
+ model.updateMatrixWorld(true);
+ renderer.render(scene,camera);
+ return {ready:true,mode,limbs:skins.length};
+};
 window.__m019LimbVisibilityQA=()=>{
  if(selected!=='m019'||!model)return null;
  model.updateMatrixWorld(true);
@@ -879,7 +926,13 @@ window.__m019LimbVisibilityQA=()=>{
  const limbs=ids.map(id=>{
   const mesh=model.getObjectByName('m019-seamless-skin-'+id);
   const toe=model.userData.pivots?.['toe'+id];
-  if(!mesh||!toe||!mesh.geometry)return {id,visible:false,reason:'missing'};
+  const mobileUpper=model.getObjectByName('m019-mobile-upper-'+id);
+  const mobileShin=model.getObjectByName('m019-mobile-shin-'+id);
+  const stable=[mobileUpper,mobileShin];
+  const mobileCoreReady=stable.every(part=>part?.isMesh&&part.visible&&
+    part.material?.visible!==false&&part.geometry?.getIndex()?.count>24);
+  if(!mesh||!toe||!mesh.geometry)return {id,visible:false,
+    mobileCoreReady,reason:'missing'};
   mesh.userData.m019RefreshVisibleLimb?.();
   mesh.updateMatrixWorld(true);
   const box=new THREE.Box3().setFromObject(mesh);
@@ -894,10 +947,13 @@ window.__m019LimbVisibilityQA=()=>{
    renderer:mesh.userData.m019VisibleLimbRenderer,
    width:size.x,height:size.y,depth:size.z,
    ankleDistance:contact,ndc:[center.x,center.y,center.z],
-   triangles:mesh.geometry.getIndex()?.count/3||0};
+   triangles:mesh.geometry.getIndex()?.count/3||0,
+   mobileCoreReady,mobileCoreMeshes:stable.filter(Boolean).length};
  });
- return {ready:limbs.every(x=>x.visible&&x.width>.30&&x.height>.18&&
-   x.ankleDistance<.06&&x.triangles>10),
+ return {ready:limbs.every(x=>x.visible&&x.mobileCoreReady&&
+   x.width>.30&&x.height>.18&&x.ankleDistance<.06&&x.triangles>10),
+  geometryOnly:true,
+  note:'Actual Android pixels still require visual verification',
   id:selected,meshCount:limbs.length,
   gpuSkinnedLimbs:limbs.filter(x=>x.renderer!=='cpu-deformed-tube').length,
   limbs,action:currentAction};
