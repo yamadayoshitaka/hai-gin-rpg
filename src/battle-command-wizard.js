@@ -14,6 +14,7 @@ export function mountBattleCommandWizard({
  getSpecialTargets=()=>[],getSharedItems=()=>[],getRallyInfo=()=>({}),
  onMove=()=>false,onOrder=()=>false,onTargetOrder=()=>false,onSpecial=()=>false,
  onSharedItem=()=>false,onRally=()=>false,queueArrival=()=>{},setPreferred=()=>{},
+ onCommandCommitted=()=>{},
  onClose=()=>{}
 }={}){
  const doc=documentRef,root=doc.createElement('section');
@@ -168,6 +169,8 @@ export function mountBattleCommandWizard({
   }else if(state.command)accepted=onOrder(id,state.command);
   if(accepted?.openMove){close();return;} // Already executed: never spend MP twice.
   if(accepted){
+   onCommandCommitted({squadId:id,category:state.category,kind:state.kind,command:state.command,
+    target:state.target,point:state.point,arrival:state.arrival,itemId:state.item?.id,specialId:state.specialId});
    setPreferred(id,state.category==='move'?'move_'+(state.arrival||'hold'):kind==='special'?'special_'+state.specialId:state.command||kind||'item');
    close();
   }else{state.notice='発令できませんでした。対象の状態、隊の生存、MP、軍師・経路の条件を確認してください。';render();}
