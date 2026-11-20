@@ -90,7 +90,7 @@ export function mountBattleCommandWizard({
  }
  function pickSpecial(action){
   const targets=getSpecialTargets(String(state.squad),action.id)||[];
-  if(!targets.length){state.notice='対象がありません。必要MP・対象の状態・到達経路を確認してください。';render();return;}
+  if(!targets.some(t=>t.available!==false)){state.notice=specialUnavailableReason(action,targets);render();return;}
   advance('targets',{kind:'special',specialId:action.id,specialName:action.label,target:null});
  }
  function selectType(kind,extra={}){
@@ -253,7 +253,11 @@ export function mountBattleCommandWizard({
   const quit=element('button','✕ 閉じる');quit.onclick=close;quit.type='button';
   buttons.append(prev,quit);head.append(buttons);root.append(head);
   if(state.squad!=null){
-   root.append(element('div',esc(currentSquad()?.label||'第'+state.squad+'隊')+'｜'+esc(currentSquad()?.job||'')+'｜'+Math.round(Number(currentSquad()?.hp)||0)+' HP','battleWizardSquadCaption'));
+   const unit=currentSquad();
+   const hasMp=Number.isFinite(Number(unit?.mp))&&Number.isFinite(Number(unit?.maxMp));
+   const mpLabel=hasMp?'｜MP '+Math.ceil(Math.max(0,Number(unit.mp)))+'/'+Math.ceil(Math.max(0,Number(unit.maxMp))):'';
+   root.append(element('div',esc(unit?.label||'第'+state.squad+'隊')+'｜'+esc(unit?.job||'')+
+    '｜'+Math.round(Number(unit?.hp)||0)+' HP'+mpLabel,'battleWizardSquadCaption'));
    const live=getOrderState(String(state.squad))||{};
    const remain=Math.max(0,Number(live.cooldown)||0),pending=queuedOrder(state.squad);
    const detail='現在：'+esc(live.label||'自動行動')+
