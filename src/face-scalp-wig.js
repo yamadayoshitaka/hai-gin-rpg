@@ -333,15 +333,21 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  if(!attr)throw Error('True 3D source head required');
  const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const minHeight=box.min.y+d.y*.82;
+ // Expand the donor-backed pigment underlay over the rear crown and temples.
+ // The original .82/.27/.25 window left a visible shaved scalp halo around
+ // the long hairstyle's top and sides; do not extend toward the face.
+ const minHeight=box.min.y+d.y*.75;
  let triangles=0;
  for(let t=0;t+2<n;t+=3){
   const ids=[0,1,2].map(k=>idx?idx.getX(t+k):t+k);
   const points=ids.map(i=>f3(attr.getX(i),attr.getY(i),attr.getZ(i)));
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
+  const highCrown=mid.y>=box.min.y+d.y*.84;
+  const posteriorOrTemple=mid.z<=c.z+d.z*.015;
   if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*.27||
-   Math.abs(mid.z-c.z)>d.z*.25)continue;
+   Math.abs(mid.x-c.x)>d.x*(highCrown?.34:.30)||
+   Math.abs(mid.z-c.z)>d.z*(highCrown?.35:.30)||
+   (!highCrown&&!posteriorOrTemple))continue;
   // Never extend this cover over the forehead or brows. Intact donor
   // triangles entirely above the upper hairline are the only source.
   if(points.some(p=>p.y<box.min.y+d.y*.74))continue;
