@@ -15,4 +15,4 @@ jobs:
       - name: Install lightweight DOM test dependency
         run: npm install --no-save --package-lock=false linkedom@0.18.12
       - name: Verify real DOM with three teams and nested job divisions
-        run: node --test qa/battle-rpg-squad-hud.test.mjs qa/battle-three-team-hud-dom.test.mjs
+        run: node --test qa/battle-rpg-squad-hud.test.mjs qa/battle-three-team-hud-dom.test.mjs qa/battle-three-team-radar.test.mjs
