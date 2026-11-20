@@ -1305,6 +1305,9 @@ radarCanvas.addEventListener('keydown',event=>{
   get queuedArrivalActions(){return [...arrivalActions.keys()]},
   getQueuedOrder:id=>commandWizard.queuedOrder(id),
   getQueuedError:id=>commandWizard.queuedError(id),
+  queueSpecialArrival:(id,special,targetId,point)=>arrivalActions.set(String(id),{
+   special,targetId:String(targetId),point:{x:point.x,z:point.z}
+  }),
   get deploymentActions(){return [...deploymentActions.keys()]},
   get preferredActions(){return [...preferredActions.entries()]},
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
