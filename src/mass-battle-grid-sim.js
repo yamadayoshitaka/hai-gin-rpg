@@ -935,7 +935,7 @@ export class MassBattleGridSimulation {
   /** Explicit summon order for the summoner squad. Real summon objects and MP costs. */
   summonSquadCreature(squadId,team=0){
     const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
-      u.alive&&u.hp>0&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+      u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
     for(const caster of casters){
       const skills=availableCombatSkills('summoner',caster.rarity)
        .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
@@ -1015,7 +1015,7 @@ export class MassBattleGridSimulation {
   _applyGlobalStrategy(){
     this._enforceLastSurvivorStrategy();
     if([...this.squadStrategies.values()].includes('recovery')){
-      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&
+      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&
         u.jobId==='priest'&&u.formationType==='support'&&
         !this.squadCommands.has(String(u.squadId))&&
         this.squadStrategies.get(String(u.squadId))==='recovery').map(u=>String(u.squadId)))];
@@ -1050,7 +1050,7 @@ export class MassBattleGridSimulation {
       // Recovery remains a dedicated strategy, but environmental-maintenance
       // teams with a priest can also heal wounded troops before repairs.
       for(const u of this.units){
-        if(!u.alive||u.team!==0||u.jobId!=='priest'||
+        if(!u.alive||u.team!==0||u.isStrategist||u.jobId!=='priest'||
           this.squadStrategies.get(String(u.squadId))!=='environment_prepare'||
           this.squadCommands.has(String(u.squadId)))continue;
         const patient=this.units.filter(v=>v.team===0&&v.alive&&v.hp<v.maxHp*.65)
@@ -1239,7 +1239,7 @@ export class MassBattleGridSimulation {
    * The UI can first move this entire squad into casting range. */
   reviveSquadTarget(squadId,targetSquadId,team=0){
     const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
-      u.alive&&u.hp>0&&u.jobId==='priest');
+      u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='priest');
     const fallen=this.units.filter(u=>u.team===team&&String(u.squadId)===String(targetSquadId)&&
       (!u.alive||u.hp<=0));
     for(const caster of members){
@@ -1263,7 +1263,7 @@ export class MassBattleGridSimulation {
     const targetId=String(targetSquadId);
     const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
-    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
+    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&!u.isStrategist&&u.team===0&&u.jobId==='priest'&&
       (u.formationType==='support'||(preferredSupportId!=null&&String(u.squadId)===String(preferredSupportId))))
       .map(u=>String(u.squadId)))];
     const mean=(group)=>({x:group.reduce((s,u)=>s+u.x,0)/group.length,z:group.reduce((s,u)=>s+u.z,0)/group.length});
