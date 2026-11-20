@@ -10424,7 +10424,9 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
     (order.type==='eliminate_squad'&&
      (massSim?.units??actors).some(u=>u.team===1&&String(u.squadId)===String(order.targetSquadId)&&u.hp>0&&u.alive!==false)));
   const moving=Boolean((order.mode==='move'&&destination&&distance>3.5)||missionActive);
-  const label=(intent.order||'自動戦闘').replace(/^号令：/,'')+
+  const missionCompleted=massSim&&order.mode==='mission'&&!massSim.squadMissions?.has(squad);
+  const label=missionCompleted?'自動交戦｜次の敵を索敵中':
+   (intent.order||'自動戦闘').replace(/^号令：/,'')+
    '｜'+(intent.purpose||'索敵・交戦').replace(/^目的：/,'');
   return {label,cooldown,moving,blocked:!battleReady||finished||battleCeremony.locked,
    commanderReason:squadCommanderUnavailableReason(squad)};
