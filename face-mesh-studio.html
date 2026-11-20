@@ -217,7 +217,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261121-buzz-surface-offset-v17';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261121-buzz-real-fibres-v18';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
@@ -668,7 +668,7 @@ function rebuildWig(){
   setHairHiddenScalp(models.get('female').face,true);
   updateHairRuntimeDiagnostics(wig);
    $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
-    '／'+wig.getReport().rootCount+'束・微細毛10倍';
+    '／'+wig.getReport().rootCount+'束・'+(wig.getReport().closeCutFibreCount?wig.getReport().closeCutFibreCount+'本の実毛': '微細毛10倍');
   persistHeroineFace();
   if(v32PartMode){
    const size=models.get('female').face.geometry.boundingBox.getSize(new THREE.Vector3());
