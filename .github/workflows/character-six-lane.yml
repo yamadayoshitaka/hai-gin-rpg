@@ -1,12 +1,6 @@
 name: FF15 character face-hair and costume six-slot QA and production gate
 on:
-  schedule:
-    - cron: '3 * * * *'
-    - cron: '13 * * * *'
-    - cron: '23 * * * *'
-    - cron: '33 * * * *'
-    - cron: '43 * * * *'
-    - cron: '53 * * * *'
+  # Scheduled autonomous batches paused at owner request (2026-11-20).
   workflow_dispatch:
     inputs:
       category:
