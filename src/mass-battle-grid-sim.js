@@ -118,6 +118,9 @@ export class MassBattleGridSimulation {
     this.highGroundRoutes=[];
     this._highGroundFlows=[];
     this._highGroundClaims=new Map();
+    // Every squad uses a shared stair gate; the ground entrance is freed
+    // once a soldier climbs into the real 3D staircase.
+    this._highGroundEntryNext=new Map();
     this.actions.onNavigationChange=()=>this._buildFlows();
     // Dense random access for collisions, but clear only occupied cells on the
     // next tick. A million-cell map should not cost a million writes per tick.
@@ -273,6 +276,7 @@ export class MassBattleGridSimulation {
       Number.isInteger(route.access?.z)&&this._walkable(route.access.x,route.access.z)&&
       ['window','roof','interior'].includes(route.kind)).slice(0,80);
     this._highGroundClaims.clear();
+    this._highGroundEntryNext.clear();
     this._rebuildHighGroundFlows();
   }
 
@@ -480,6 +484,11 @@ export class MassBattleGridSimulation {
           u.highGroundPhase=2;u.highGroundFloor=1;
           u.vx=0;u.vz=0;u.action='hold';return true;
         }
+        const gate=route.buildingIndex+':'+u.team;
+        if((this._highGroundEntryNext.get(gate)||0)>this.time){
+          u.action='hold';u.vx=0;u.vz=0;return true;
+        }
+        this._highGroundEntryNext.set(gate,this.time+.65);
         u.highGroundPhase=1;u.highGroundStep=0;u.highGroundT=0;
         u.moveElapsed=0;u.moveDuration=0;
         u.vx=0;u.vz=0;u.action='walk';return true;
@@ -507,6 +516,21 @@ export class MassBattleGridSimulation {
         MASS_MOVEMENT_SCALE*2.2*dt;
       const step=advanceMassHighGroundRoute(reversed,reverseStep,reverseT,speed);
       if(step.done){
+        // Descend to a genuinely empty, walkable ground cell; do not stack
+        // every returning soldier in the same staircase entrance tile.
+        let landing=null;
+        for(let radius=0;radius<=4&&!landing;radius++)
+          for(let dz=-radius;dz<=radius&&!landing;dz++)
+            for(let dx=-radius;dx<=radius;dx++){
+              if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+              const x=route.access.x+dx,z=route.access.z+dz,index=z*this.width+x;
+              if(!this._walkable(x,z,u.jobId)||this._occupancy[index]!==-1)continue;
+              landing={x,z,index};break;
+            }
+        if(!landing){u.action='hold';return true;}
+        u.x=landing.x;u.z=landing.z;u.fromX=u.x;u.fromZ=u.z;
+        u.moveElapsed=u.moveDuration=0;u.vx=u.vz=0;
+        this._occupancy[landing.index]=u.id;this._occupiedTouched.push(landing.index);
         this._releaseHighGroundUnit(u);u.action='idle';return true;
       }
       u.highGroundStep=n-1-step.step;u.highGroundT=1-step.t;
@@ -1417,10 +1441,14 @@ export class MassBattleGridSimulation {
       if(squadIndex>=0&&squadIndex<formationCount.length){
         formationX[squadIndex]+=u.x;formationZ[squadIndex]+=u.z;formationCount[squadIndex]++;
       }
-      reserve(u.z*this.width+u.x,u.id);
-      // The departure tile remains reserved until its full walking animation
-      // has cleared the cell. This prevents visual overlaps in narrow bridges.
-      if(u.moveElapsed<u.moveDuration)reserve(u.fromZ*this.width+u.fromX,u.id);
+      // Upper-floor soldiers no longer occupy a ground-floor collision tile.
+      // Their physical coordinates are controlled by real 3D stair waypoints.
+      // Otherwise one soldier would permanently block every following squadmate.
+      if(u.highGroundPhase===0){
+        reserve(u.z*this.width+u.x,u.id);
+        // The departure tile remains reserved until the grid stride clears it.
+        if(u.moveElapsed<u.moveDuration)reserve(u.fromZ*this.width+u.fromX,u.id);
+      }
       const sector=Math.floor(u.z/SECTOR)*this._sectorCols+Math.floor(u.x/SECTOR);
       nextIds[u.id]=-1;
       if(heads[sector]===-1)heads[sector]=u.id;

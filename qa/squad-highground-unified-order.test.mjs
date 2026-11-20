@@ -75,3 +75,23 @@ test('high-ground wizard, arrival dispatcher and worker use one squad-level targ
  assert.match(page,/const highGroundArrived=Boolean/);
  assert.match(page,/massSim.setSquadHighGroundArrival\(id,mode,0\)/);
 });
+
+test('stair queue admits a soldier then gates the next one without splitting the squad',()=>{
+ const sim=mockSquad();sim._highGroundEntryNext=new Map();sim.time=1;
+ for(const u of sim.units){u.x=4;u.z=4;u.moveElapsed=0;u.moveDuration=0;}
+ assert.equal(sim.orderSquadHighGround('1',0,0),true);
+ assert.equal(sim._tickHighGroundUnit(sim.units[0],.1),true);
+ assert.equal(sim.units[0].highGroundPhase,1);
+ assert.equal(sim._tickHighGroundUnit(sim.units[1],.1),true);
+ assert.equal(sim.units[1].highGroundPhase,0,'second soldier waits at the stair gate');
+ sim.time+=.7;
+ assert.equal(sim._tickHighGroundUnit(sim.units[1],.1),true);
+ assert.equal(sim.units[1].highGroundPhase,1,'second soldier begins the same route after the gap');
+ assert.equal(sim._highGroundClaims.get('0:0'),'1','same squad keeps one coordinated order');
+});
+test('climbers vacate ground collision tiles and returning soldiers find free landings',()=>{
+ const code=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
+ assert.match(code,/if\(u.highGroundPhase===0\)\{\s*reserve\(u.z\*this.width\+u.x,u.id\)/);
+ assert.match(code,/this\._highGroundEntryNext\.set\(gate,this.time\+\.65\)/);
+ assert.match(code,/this\._occupancy\[landing.index\]=u.id/);
+});
