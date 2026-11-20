@@ -1,3 +1,4 @@
+export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-8ad21228';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
