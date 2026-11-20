@@ -684,7 +684,7 @@ $('sortieConfirm').addEventListener('click',()=>{try{
  const lanes=Object.fromEntries([...$('sortieSquads').querySelectorAll('[data-sortie-lane]')].map(el=>[el.dataset.sortieLane,el.value]));
  const request=createStoryBattleRequest(state,selected,{battleId:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),lanes});
  sessionStorage.setItem(STORY_BATTLE_REQUEST_KEY,JSON.stringify(request));sessionStorage.removeItem(STORY_BATTLE_RESULT_KEY);
- save();stopMusic();location.href='./tactics-wireframe.html?storyBattle=1&v=4.4.29';
+ save();stopMusic();location.href='./tactics-wireframe.html?storyBattle=1&v=three-team-hud2-20261120';
  }catch(error){$('sortieDialog').hidden=true;showMessage(error.message||String(error));}});
 $('recruitForm').addEventListener('submit',event=>{event.preventDefault();const d=new FormData(event.target);applyAction(()=>{const cost=recruit(state,{job:d.get('job'),rarity:d.get('rarity'),count:Number(d.get('count')),purpose:d.get('purpose'),commanderId:d.get('commanderId'),faceId:selectedJobFaceId});return cost+'Gで傭兵を雇いました。';});});
 $('armyCommanderList').addEventListener('click',event=>{const target=event.target.closest('[data-select-army]');if(target){selectedArmyId=target.dataset.selectArmy;renderArmy();return;}if(event.target.closest('[data-new-army]'))showTab('leaders');});
