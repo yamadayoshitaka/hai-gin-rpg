@@ -16,8 +16,10 @@ export function placeOverviewSquadPins(points,bounds,{width=42,height=40}={}){
  if(maxX<minX||maxY<minY)return result;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  // Use a stable order across frames, preventing labels from swapping sides.
- for(const p of [...points].sort((a,b)=>a.team-b.team||
-  a.squadIndex-b.squadIndex||String(a.key).localeCompare(String(b.key)))){
+ // Reserve the true centroid for the selected squad before laying out nearby
+ // enemies/other allies; those badges move aside, not the player's active badge.
+ for(const p of [...points].sort((a,b)=>(Number(b.priority)||0)-(Number(a.priority)||0)||
+  a.team-b.team||a.squadIndex-b.squadIndex||String(a.key).localeCompare(String(b.key)))){
   if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
   const ax=clamp(p.x,minX,maxX),ay=clamp(p.y,minY,maxY);
   const intersects=(x,y)=>taken.some(t=>Math.abs(t.x-x)<width+2&&Math.abs(t.y-y)<height+2);
