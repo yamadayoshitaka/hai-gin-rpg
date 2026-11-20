@@ -166,7 +166,7 @@ export function mountBattleCommandWizard({
   }else if(kind?.startsWith('attack_')&&target&&Number(target.team)===1&&target.squadId!=null){
    accepted=onTargetOrder(id,state.command,target);
   }else if(state.command)accepted=onOrder(id,state.command);
-  if(accepted?.openMove){state.notice='召喚できました。召喚獣の移動は移動メニューから指定してください。';render();return;}
+  if(accepted?.openMove){close();return;} // Already executed: never spend MP twice.
   if(accepted){
    setPreferred(id,state.category==='move'?'move_'+(state.arrival||'hold'):kind==='special'?'special_'+state.specialId:state.command||kind||'item');
    close();
@@ -280,8 +280,9 @@ export function mountBattleCommandWizard({
    target:null,point:null,arrival:'hold',item:null,notice:''});
   dock.classList.add('wizard-active');root.hidden=false;render();
  }
- function close(){
-  root.hidden=true;dock.classList.remove('wizard-active');history.length=0;onClose();
+ function hide(){
+  root.hidden=true;dock.classList.remove('wizard-active');history.length=0;
  }
- return {root,open,close,render,get stage(){return state.stage;},dispose(){root.remove();}};
+ function close(){hide();onClose();}
+ return {root,open,close,hide,render,get stage(){return state.stage;},dispose(){root.remove();}};
 }
