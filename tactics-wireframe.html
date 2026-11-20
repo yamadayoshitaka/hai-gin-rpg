@@ -1128,6 +1128,7 @@ import {installBattleSituationPause} from './src/battle-situation-pause.js?v=202
  import {COMBAT_RULES,combatJobId,availableCombatSkills} from './src/combat-action-spec.js?v=4.6.51';
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=20261117-horse-saddle-fix1';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
+import {bridgeSafetySnapshot} from './src/battle-bridge-safety.js?v=20261120-bridge1';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
@@ -3322,6 +3323,77 @@ for(const [index,b] of townInstances.entries()){
  battleDoorDefinitions.set(id,{building:b,object});
 }
 const structureCollapseVfx=new StructureCollapseVfx(THREE,scene,{cellSize:CELL,terrainHeight:terrainY});
+const bridgeSafetyPanel=document.createElement('section');
+bridgeSafetyPanel.id='bridgeSafetyPanel';
+bridgeSafetyPanel.style.cssText='font:12px system-ui;color:#e6eff7;background:#111e30ed;border:1px solid #7792a9;border-radius:7px;padding:4px 8px;margin-top:3px;max-width:320px';
+const bridgeSafetyTitle=document.createElement('strong');
+bridgeSafetyTitle.textContent='🌉 橋の残耐久度';
+const bridgeSafetyList=document.createElement('div');
+bridgeSafetyList.id='bridgeSafetyList';
+const bridgeEvacuateButton=document.createElement('button');
+bridgeEvacuateButton.id='bridgeEvacuateButton';
+bridgeEvacuateButton.type='button';
+bridgeEvacuateButton.textContent='📯 橋から退避';
+bridgeEvacuateButton.hidden=true;
+bridgeEvacuateButton.style.cssText='display:none;margin-top:4px;padding:5px 8px;border:1px solid #ffb46d;background:#743b27;color:white;border-radius:6px;font:700 12px system-ui;pointer-events:auto;touch-action:manipulation';
+bridgeSafetyPanel.append(bridgeSafetyTitle,bridgeSafetyList,bridgeEvacuateButton);
+$('topStructureSlot').appendChild(bridgeSafetyPanel);
+let bridgeSafetyLastAt=-Infinity,bridgeEvacIds=[];
+const bridgesWarned=new Set();
+function updateBridgeSafety(){
+ if(elapsed-bridgeSafetyLastAt<.7)return;
+ bridgeSafetyLastAt=elapsed;
+ const items=bridgeSafetySnapshot((massSim?.actions??skirmishActions)?.objects,
+  destructibleScenes,massSim?.units??actors,elapsed);
+ bridgeSafetyPanel.hidden=!items.length;
+ if(!items.length)return;
+ const rows=[],atRisk=new Set();
+ for(const item of items){
+  const line=document.createElement('div');
+  const state=item.collapsed?'崩落':item.danger?'⚠ 崩落危険':item.caution?'注意':'正常';
+  line.textContent=item.name+' '+Math.ceil(item.hp)+' / '+Math.ceil(item.maxHp)+
+   ' ('+Math.round(item.ratio*100)+'%) '+state;
+  if(item.danger)line.style.color='#ffad7a';
+  else if(item.caution)line.style.color='#f4dd94';
+  rows.push(line);
+  for(const id of item.affectedSquads)atRisk.add(id);
+  if(item.danger&&!bridgesWarned.has(item.id)){
+   bridgesWarned.add(item.id);
+   battleDialogue.push({key:'bridge-danger:'+item.id+':'+Math.floor(elapsed),
+    speaker:'伝令',kind:'critical',priority:99,forceDisplay:true,
+    text:'緊急！ '+item.name+'の残耐久 '+Math.ceil(item.hp)+'！ 崩落の危険。橋上の味方隊は直ちに退避せよ！'});
+  }else if(!item.danger)bridgesWarned.delete(item.id);
+ }
+ bridgeSafetyList.replaceChildren(...rows);
+ bridgeEvacIds=[...atRisk];
+ bridgeEvacuateButton.hidden=!bridgeEvacIds.length;
+ bridgeEvacuateButton.style.display=bridgeEvacIds.length?'block':'none';
+ if(bridgeEvacIds.length)
+  bridgeEvacuateButton.textContent='📯 橋上の'+bridgeEvacIds.length+'隊へ緊急退避';
+}
+bridgeEvacuateButton.addEventListener('click',()=>{
+ const previous=selectedSquadId,accepted=[],blocked=[];
+ // Emergency orders bypass normal cooldown but respect commander casualties.
+ try{
+  for(const id of bridgeEvacIds){
+   if(individualCommanderUnavailableReason(id)){blocked.push(id);continue;}
+   selectedSquadId=String(id);
+   if(issueIndividualSquadOrder('retreat',null,true)){
+    accepted.push(id);lastSquadOrderAt.set(String(id),elapsed);
+   }
+  }
+ }finally{selectedSquadId=previous;}
+ if(accepted.length){
+  const message='橋の崩落危険！ '+accepted.map(id=>squadName(id)).join('・')+'に退避号令！';
+  log(message);
+  battleDialogue.push({key:'bridge-evac:'+Math.floor(elapsed*10),
+   speaker:'軍師',kind:'critical',priority:99,forceDisplay:true,text:message});
+  battleCeremony.showOrder('📯 橋から緊急退避',message);
+  refreshSquadOrderLabel();drawSquadMiniMap();updateUI();
+ }
+ if(blocked.length)log('軍師不在で退避命令不可：'+blocked.map(id=>squadName(id)).join('・'));
+});
+
 const structureHealth=document.createElement('div');
 structureHealth.id='structureHealth';
 structureHealth.style.cssText='position:fixed;top:138px;left:10px;z-index:11;background:#1b2435e9;border:1px solid #dfaa6e;border-radius:6px;padding:5px 9px;color:#ffe7c2;font:12px system-ui;pointer-events:none;display:none';
@@ -11706,6 +11778,7 @@ function animate(){
    massRenderer.update(massAlpha,massEndElapsed,creatureVisualTime);
   }
   combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],creatureVisualTime,massSim?.units||actors,elapsed,massSim?massAlpha:0,massRenderFrame);
+  if(!TOWN_MODE)updateBridgeSafety();
  cpuPhaseNow=performance.now();battleCpuProfiler.record('objects',cpuPhaseNow-cpuPhaseAt);cpuPhaseAt=cpuPhaseNow;
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const groundCameraY=terrainY(camera.position.x,camera.position.z)+1.7;
