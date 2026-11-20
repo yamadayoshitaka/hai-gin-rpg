@@ -936,16 +936,18 @@ export class MassBattleGridSimulation {
   summonSquadCreature(squadId,team=0){
     const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
       u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+    let summoned=0;
     for(const caster of casters){
       const skills=availableCombatSkills('summoner',caster.rarity)
        .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
         (!caster._skillNext||(caster._skillNext[skill.id]||0)<=this.actions.time))
        .sort((a,b)=>b.mp-a.mp);
       for(const skill of skills){
-       if(this.actions.fireSkill(caster,skill,caster,this.units))return true;
+       if(this.actions.fireSkill(caster,skill,caster,this.units)){summoned++;break;}
       }
     }
-    return false;
+    // One invocation fills all available caster slots, not only the first.
+    return summoned>0;
   }
   /** Assign the creature its own battle target in the authoritative grid. */
   commandSquadSummonAttack(squadId,targetSquadId,team=0){
