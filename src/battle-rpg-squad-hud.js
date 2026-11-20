@@ -222,13 +222,14 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    });
    const title=doc.createElement('strong');
    // Three campaign team labels are distinct from their nested job divisions.
-   title.textContent=row.isJobDivision?'└'+String(row.job||'分隊'):
-    String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1隊');
+   title.textContent=String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1隊');
+   if(row.isJobDivision)title.textContent='└'+String(row.job||'分隊');
    title.title=String(row.name||'部隊');
    // Keep the actual job visible even in the half-width side rails.
    // The number remains beside the portrait; the job owns its own full-width row.
    const jobName=doc.createElement('span');jobName.className='rpgSquadJobName';
-   jobName.textContent=row.isJobDivision?'ジョブ':String(row.job||'部隊');
+   jobName.textContent=String(row.job||'部隊');
+   if(row.isJobDivision)jobName.textContent='ジョブ';
    jobName.title=String(row.name||'部隊')+'｜'+String(row.job||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
    status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
