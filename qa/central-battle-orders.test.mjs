@@ -68,11 +68,9 @@ function radarTap(x,z){
   clientX:x*2,clientY:z*2});
 }
 assert.equal(ui.open(1),true);
-assert.equal(ui.currentStep(),'scope');
-assert.match(panel.innerHTML,/班単位の作戦/);
-assert.match(panel.innerHTML,/個別の作戦/);
+assert.equal(ui.currentStep(),'family','the old division-choice page is retired');
+assert.doesNotMatch(panel.innerHTML,/個別の作戦（分隊）/);
 assert.equal(pause,1);
-click('next');assert.equal(ui.currentStep(),'family');
 click('family','attack');assert.equal(ui.currentStep(),'intent');
 click('intent','melee');assert.equal(ui.currentStep(),'method');
 click('method','melee_focus');
@@ -90,9 +88,9 @@ assert.equal(planStrategyDistribution({squads,allowed:['charge','defend']},
  squads.map(x=>x.id),['melee_focus']).totalSoldiers,10);
 
 ui.open('1',{squadId:'1002'});
-assert.match(panel.innerHTML,/個別の作戦/);
-assert.match(panel.innerHTML,/第2分隊/);
-click('next');click('family','defense');click('intent','block');
+assert.equal(ui.currentStep(),'family','old squadId cannot select an independent subdivision');
+assert.match(panel.innerHTML,/集中殲滅/);
+click('family','defense');click('intent','block');
 click('method','block_passage');click('next');
 assert.equal(ui.currentStep(),'target');
 assert.match(panel.innerHTML,/centralCommandMap/);
@@ -100,11 +98,11 @@ radarTap(116,116);
 assert.match(panel.innerHTML,/116, 116/);
 click('next');click('next');
 assert.equal(ui.isOpen(),false);
-assert.equal(maps.length,1);assert.deepEqual(maps[0].squadIds,['1002']);
+assert.equal(maps.length,1);assert.deepEqual(maps[0].squadIds,['1001','1002']);
 assert.deepEqual(mapPositions,[{x:116,z:116}]);
 assert.equal(pause,2);assert.equal(resume,2);
 
-ui.open();click('next');
+ui.open();
 click('family','item');assert.equal(ui.currentStep(),'items');
 assert.match(panel.innerHTML,/治癒の薬/);
 click('item','potion');assert.equal(ui.currentStep(),'target');
@@ -117,13 +115,10 @@ assert.equal(pause,3);assert.equal(resume,3);
 
 ui.open();click('close');assert.equal(ui.isOpen(),false);
 assert.equal(pause,4);assert.equal(resume,4,'cancel restores prior battle pause exactly once');
-ui.open();
-assert.match(panel.innerHTML,/第2班（紫）/,'teams have distinct radar colours and legend');
-assert.match(panel.innerHTML,/弓使い3人/,'team card identifies job and headcount');
-radarTap(200,20); // group mode: tap the second team by its radar pin
-assert.match(panel.innerHTML,/<span>第2班<\/span>/,'tap switches the selected group');
+ui.open('2');
+assert.equal(ui.currentStep(),'family','group 2 opens without a subdivision selector');
 click('close');
-ui.open('1');click('next');
+ui.open('1');
 assert.match(panel.innerHTML,/集中殲滅/,'inn plans appear in the battle command panel');
 click('template','assault');
 assert.equal(ui.currentStep(),'method','template fills in the correct method and still requires target confirmation');
@@ -146,7 +141,7 @@ assert.match(battle,/id="topStrategy"/);
 // Invalid ground must not become an actual order target even if tapped.
 const guarded=make((x,z)=>x!==116||z!==116);
 guarded.open('1',{squadId:'1002'});
-click('next');click('family','defense');click('intent','block');
+click('family','defense');click('intent','block');
 click('method','block_passage');click('next');
 const oldMapOrders=mapPositions.length;
 radarTap(116,116);
@@ -163,4 +158,4 @@ assert.match(css,/body\.story-center-orders #enemySquadRibbon/);
 assert.match(css,/#targetedStrategyCard/);
 new SourceTextModule(readFileSync(new URL('../src/targeted-strategy-runtime.js',import.meta.url),'utf8'),
  {identifier:'targeted-strategy-runtime.js'});
-console.log('PASS: center pause/close, group vs individual, multiple enemies, radar target and item tactical flow');
+console.log('PASS: center pause/close, unified squad commands, multiple enemies, radar targets and item flow');
