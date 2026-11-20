@@ -237,15 +237,23 @@ for(const detail of ['low','high']){
       assert(part.geometry.parameters.tubularSegments>=14);
       assert(part.geometry.parameters.radialSegments>=10,
         'the mobile fallback must remain round even at low detail');
-      assert(part.material.color.equals(body.material.color),
-        'both fallback legs must have the torso basalt pigment');
+      // A dark pigment identical to the near-black belly caused the
+      // v14 limbs to disappear against the floor. Keep them moderately
+      // brighter but with the same charcoal hue and rough volcanic PBR.
+      assert(part.material.color.r>body.material.color.r*2,
+        'limb basalt must retain enough contrast to be visible on Android');
+      assert(part.material.color.r<body.material.color.r*8,
+        'limbs must stay charcoal, never return to bright red-brown');
+      assert(Math.abs(part.material.color.r-part.material.color.g)<.16,
+        'limbs must not use the old reddish-brown hue');
+      assert.equal(part.receiveShadow,false,
+        'prevent short limbs from blacking out due to self-shadow');
       assert.equal(part.material.userData.m019DryObsidian,true);
     }
-    const basaltScutes=meshes.filter(mesh=>
+    assert(!meshes.some(mesh=>
       mesh.name.startsWith('m019-embedded-arm-scute-'+suffix+'-')||
-      mesh.name.startsWith('m019-embedded-shin-scute-'+suffix+'-'));
-    assert.equal(basaltScutes.length,detail==='low'?0:4,
-      'near LOD needs subtle scutes without adding crowd draw calls');
+      mesh.name.startsWith('m019-embedded-shin-scute-'+suffix+'-')),
+      'no floating scute dots beside the ankles or elbows');
     model.updateMatrixWorld(true);
     const mobileUpperBox=new THREE.Box3().setFromObject(mobileUpper);
     const mobileShinBox=new THREE.Box3().setFromObject(mobileShin);
@@ -284,8 +292,10 @@ for(const detail of ['low','high']){
     else
      assert(limbBox.min.x<bodyBox.min.x-.31,
       'left elbow must project beyond the torso silhouette');
-    assert(upper.material.color.equals(body.material.color),
-      'outer skin must not be a separate brown material');
+    assert(upper.material.color.r>body.material.color.r*2,
+      'visible outer muscle must be brighter charcoal than the shaded belly');
+    assert(upper.material.color.r<body.material.color.r*8,
+      'outer muscle must match the torso family rather than tan');
     assert.equal(upper.userData.m019AboveFloorMuscleCrest,true);
     assert(upper.material.color.getHex()>0,
       'visible limbs must have a real lit basalt material');
