@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m019-volcanic-pbr-v19-20261120';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -23,18 +23,18 @@ import {BEAST_REFERENCE_QUALITY_REVISION,REFERENCE_CROWN_QUALITY,
  from './beast-reference-quality.js?v=m001-donor-v1-20261117';
 import {sculptBloodMoonVampire,sculptVampireHand} from './monster-vampire-sculpt.js';
 import {markMagmaSalamander,MAGMA_SALAMANDER_REVISION}
- from './magma-salamander-sculpt.js?v=m019-volcanic-pbr-v19-20261120';
+ from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
  M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,M019_SHOULDER_LOCAL_Y,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
- from './m019-hero-sculpt.js?v=m019-volcanic-pbr-v19-20261120';
+ from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-volcanic-pbr-v19-20261120';
+ markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -1474,9 +1474,12 @@ if(salamanderLineage){
        leg.userData.m019RightAngleUpperArm=true;
        // A torso-owned, embedded fascia joins each shoulder and hip
        // to the upper limb; it cannot float away with an animated knee.
-       const fascia=g.bridge(torso,'skin',
-         [side*.202,1.310,fore>0?1.035:-1.025],
-         [side*.383,1.310,fore>0?1.035:-1.025],.174,.126);
+       // Match the actual limb's basalt material and PBR maps.
+       // Previously this dark skin sleeve contrasted with pale 'light'
+       // limb bars, producing a black socket / pasted-on arm seam.
+       const fascia=g.bridge(torso,'light',
+         [side*.192,1.310,fore>0?1.035:-1.025],
+         [side*.411,1.310,fore>0?1.035:-1.025],.181,.134);
        fascia.name='m019-shoulder-hip-fascia-'+name;
        fascia.userData.m019TorsoAnchoredSocket=true;
      }
@@ -3082,5 +3085,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m019-volcanic-pbr-v19-20261120';
-export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m019-volcanic-pbr-v19-20261120';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m019-matched-charcoal-limbs-v20-20261121';
+export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m019-matched-charcoal-limbs-v20-20261121';

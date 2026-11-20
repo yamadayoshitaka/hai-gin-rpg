@@ -40,12 +40,35 @@ for(const detail of ['low','high']){
    assert(body?.isMesh);
    const inspect=[body];
    for(const id of ['frontL','frontR','rearL','rearR']){
-    for(const suffix of ['m019-mobile-upper-','m019-mobile-shin-',
-      'm019-metatarsal-']){
-      const obj=meshes.find(m=>m.name===suffix+id);
-      assert(obj?.isMesh,suffix+id+' missing model');
-      inspect.push(obj);
+    // The v19 screenshot had black torso/shoulder, pale stone limbs and
+    // dark feet. All visible segments must now share a single charcoal
+    // palette role AND the same actual lava maps, including the fascia.
+    const names=['m019-shoulder-hip-fascia-','m019-mobile-upper-',
+      'm019-mobile-shin-','m019-metatarsal-'];
+    const sections=names.slice(0,4).map(prefix=>{
+      const mesh=meshes.find(m=>m.name===prefix+id);
+      assert(mesh?.isMesh,prefix+id+' missing model');
+      inspect.push(mesh);
+      return mesh;
+    });
+    for(let finger=0;finger<4;finger++){
+      const mesh=meshes.find(m=>m.name==='m019-digit-'+id+'-'+finger);
+      assert(mesh?.isMesh,'volcanic toe material missing '+id+' '+finger);
+      inspect.push(mesh);sections.push(mesh);
     }
+    const ref=sections[1].material;
+    for(const section of sections){
+      assert.equal(section.material.color.getHex(),ref.color.getHex(),
+        section.name+' differs in basal colour from its shoulder and shin');
+      assert.equal(section.material.map,ref.map);
+      assert.equal(section.material.emissiveMap,ref.emissiveMap);
+    }
+    const torso=body.material.color;
+    const limb=ref.color;
+    assert(limb.r>torso.r*1.5&&limb.r<torso.r*3.7,
+      'limbs should be readable dark basalt, never pale stone or lost black');
+    assert(Math.abs(limb.r-limb.g)<.05,
+      'limbs must not be warm brown planks');
    }
    for(const mesh of inspect){
     const m=mesh.material,uv=mesh.geometry.getAttribute('uv');

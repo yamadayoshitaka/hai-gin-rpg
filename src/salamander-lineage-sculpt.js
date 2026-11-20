@@ -8,7 +8,7 @@
  */
 import {magmaSkullFromWolfKing,magmaTorsoFromWolfKing,
  sculptMagmaSalamanderEye,sculptMagmaSalamanderHorn,
- sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-volcanic-pbr-v19-20261120';
+ sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 
 export const SALAMANDER_LINEAGE_REVISION='m019-source-salamander-lineage-v2-20261119';
 export const SALAMANDER_LINEAGE=Object.freeze({
