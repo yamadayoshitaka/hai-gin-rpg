@@ -13,8 +13,10 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  # Concurrent main merges used to cancel every Pages deploy before upload.
-  # Keep one running and one queued so rapid changes cannot starve publishing.
+  # GitHub's default queue=single cancels an older pending deployment whenever
+  # another main commit arrives. Keep FIFO queued releases instead; the latest
+  # main publish must not disappear while runners are saturated.
+  queue: max
   cancel-in-progress: false
 jobs:
   deploy:
