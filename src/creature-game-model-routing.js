@@ -12,8 +12,8 @@ import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
-import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-matched-basalt-anatomy-v14-20261120';
-import {M019_HERO_REVISION} from './m019-hero-sculpt.js?v=m019-matched-basalt-anatomy-v14-20261120';
+import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-visible-charcoal-limbs-v15-20261120';
+import {M019_HERO_REVISION} from './m019-hero-sculpt.js?v=m019-visible-charcoal-limbs-v15-20261120';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor} from './salamander-lineage-sculpt.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
 
 const humanoids=new Set(HUMAN_MONSTER_IDS);

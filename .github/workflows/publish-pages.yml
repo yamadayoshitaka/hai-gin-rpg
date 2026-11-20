@@ -93,6 +93,11 @@ jobs:
         run: |
           npm install --no-save --package-lock=false three@0.160.1
           node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
+      - name: Verify m019 Android limb visibility / colour / toe continuity in low and high LOD
+        # Failures remain visible in the workflow; publishing may proceed.
+        id: qa_m019
+        continue-on-error: true
+        run: node --test qa/m019-salamander-sculpt.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         id: qa_10
         # Owner permits deployment despite QA failure; leave the outcome visible.
