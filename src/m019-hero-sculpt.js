@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-embedded-volcanic-talons-v13-20261120';
+export const M019_HERO_REVISION='m019-matched-basalt-anatomy-v14-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -148,7 +148,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  const baseRadius=fore?.291:.318;
  // The medium-dark rocky shading makes real legs visible against the black
  // torso without introducing a glowing red or rubbery-looking arm surface.
- const skin=g.tube(leg,'light',points,baseRadius,{
+ const skin=g.tube(leg,'skin',points,baseRadius,{
   name:'m019-seamless-skin-'+name,capEnds:true
  });
  const geometry=skin.geometry;
@@ -215,7 +215,7 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  skin.userData.m019GpuSkinningRemoved=true;
  skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
  skin.userData.m019AboveFloorMuscleCrest=true;
- skin.userData.m019VisibleLimbRevision='v11-muscle-contrast';
+ skin.userData.m019VisibleLimbRevision='v14-basalt-match';
  skin.userData.m019MuscleRadius=baseRadius;
  skin.userData.m019HorizontalThigh=true;
  skin.userData.m019VerticalShin=true;
@@ -243,23 +243,52 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   fissure.userData.m019InsetHeatVein=true;
  }
 
- // The CPU-deformed outer skin was present in model-space QA but could be
- // invisible in the mobile WebGL frame. Keep an always-renderable anatomical
- // core along each real joint: upper muscle belongs to the hip/shoulder and
- // shin belongs to the knee. These round capped-by-overlap shells sit INSIDE
- // the outer continuous skin when it renders correctly. If a driver drops
- // that dynamic vertex buffer, four complete planted limbs remain visible.
- // No SkinnedMesh, per-frame geometry upload, detached plate or shadow sprite.
- const visibleUpper=g.bridge(leg,'light',
-   [0,.090,z],[kneeX,kneeY,z],.160,.125);
- visibleUpper.name='m019-mobile-upper-'+name;
+ // Mobile fallback must match the torso: round curved muscles in dark
+ // basalt, NOT the v12 straight brown bridging cylinders. Both parts are
+ // immutable meshes, while shoulder/knee pivots retain natural articulation.
+ const visibleUpper=g.tube(leg,'skin',[
+   [0,.085,z],[sign*.160,.121,z+.014],
+   [sign*.342,.138,z+.025],[sign*.550,.082,z+.018],
+   [sign*.755,.008,z+.009],[kneeX,kneeY,z]
+ ],.168,{
+   name:'m019-mobile-upper-'+name,capEnds:true,taper:.75,
+   tubularSegments:detail==='low'?14:24,
+   radialSegments:detail==='low'?10:12
+ });
  visibleUpper.userData.m019IndependentVisibleCore=true;
  visibleUpper.userData.m019ArticulatedParent='shoulder';
- const visibleShin=g.bridge(distal,'light',
-   [0,.055,0],[0,M019_SPRAWL_FOOT_Y,.095],.124,.088);
- visibleShin.name='m019-mobile-shin-'+name;
+ visibleUpper.userData.m019CurvedAnatomicalFallback=true;
+ const visibleShin=g.tube(distal,'skin',[
+   [0,.055,0],[sign*.024,-.075,.009],
+   [sign*.039,-.275,.029],[sign*.029,-.500,.062],
+   [0,M019_SPRAWL_FOOT_Y,.095]
+ ],.128,{
+   name:'m019-mobile-shin-'+name,capEnds:true,taper:.66,
+   tubularSegments:detail==='low'?14:24,
+   radialSegments:detail==='low'?10:12
+ });
  visibleShin.userData.m019IndependentVisibleCore=true;
  visibleShin.userData.m019ArticulatedParent='knee';
+ visibleShin.userData.m019CurvedAnatomicalFallback=true;
+ // The near LOD has embedded scutes matching the torso's basalt surface.
+ // Low LOD draws no extra plates; 50x50 and 1000x1000 stay affordable.
+ if(detail!=='low'){
+   for(const [i,x,y] of [[0,.32,.276],[1,.59,.224]]){
+     const plate=g.rock(leg,'shadow',
+       [sign*x,y,z+.015],[.061,.015,.057],{
+         name:'m019-embedded-arm-scute-'+name+'-'+i,rough:.96
+       });
+     plate.userData.m019EmbeddedBasaltLimbScute=true;
+   }
+   for(let i=0;i<2;i++){
+     const plate=g.rock(distal,'shadow',
+       [sign*.024,-.216-i*.225,.135+i*.012],
+       [.052,.067,.014],{
+         name:'m019-embedded-shin-scute-'+name+'-'+i,rough:.96
+       });
+     plate.userData.m019EmbeddedBasaltLimbScute=true;
+   }
+ }
  return {upper:skin,lower:skin,mobileUpper:visibleUpper,mobileShin:visibleShin};
 }
 
@@ -308,7 +337,7 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
   const tip=[x+spread,-.052,.255];
   const claw=g.curvedHorn(toe,'bone',root,elbow,tip,
    detail==='low'?.017:.021,{
-    name:'m019-rooted-claw-'+name+'-'+digit
+    name:'m019-rooted-claw-'+name+'-'+digit,rough:.83
    });
   claw.userData.m019CurvedKeratinTalon=true;
   claw.userData.m019EmbeddedInFinger=true;
