@@ -150,7 +150,7 @@ export class CombatActionRuntime {
     if(!this.inside(x,z))return false;
     return !this.objects.some(other=>other!==source&&other.alive&&other.flying&&
       Math.abs(other.x-x)<=1&&Math.abs(other.z-z)<=1&&
-      Math.abs((other.height||3)-(source.height||3))<2);
+      Math.abs((other.height||3)-(source?.height||3))<2);
   }
   flightRoofHeight(x,z){
     let roof=2.6;
