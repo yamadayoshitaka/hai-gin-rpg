@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-seam-v5';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-topology-v6';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -463,7 +463,13 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // All three studio volume presets now share exactly the same topology.
  const originalScalpCount=verts.length/3;
  const donorNormals=smoothNormals.slice();
- const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
+ // Never bridge short-hair donor boundary loops with synthesized triangles.
+ // The generic crown hole repair fans arbitrary loops across the rear/ear
+ // boundary and creates the large planar gray patches seen in buzzcut v5.
+ // Preserve only donor-backed triangles for the close-cut style.
+ const crownRepair=shortHair?
+  {repairs:0,addedTriangles:0,source:'donor-topology-only'}:
+  repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -578,7 +584,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  for(let i=0;i<verts.length;i+=3){
   // Stable continuous pigment on the short cap: adjacent donor triangles
   // must not receive visibly different tint at the same scalp boundary.
-  const shade=shortHair?0.96:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
+  const shade=shortHair?1.0:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
   melanin.push(shade,shade*.995,shade*.988);
  }
  buffer.setAttribute('color',new THREE.Float32BufferAttribute(melanin,3));
