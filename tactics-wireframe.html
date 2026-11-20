@@ -747,7 +747,13 @@ body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
 /* The 3D overview IS the command map. Crisp DOM badges do not cost GPU meshes. */
 #overviewSquadHud[hidden],#overviewSquadInspector[hidden],.overviewSquadPin[hidden]{display:none!important}
 #overviewSquadHud{position:fixed;inset:0;z-index:22;pointer-events:none;font-family:system-ui}
-#overviewPins{position:absolute;inset:0;pointer-events:none}
+#overviewPins{position:absolute;inset:0;pointer-events:none;z-index:2}
+#overviewPinDots{position:absolute;inset:0;width:100%;height:100%;z-index:7;
+ pointer-events:none;overflow:visible}
+#overviewPinDots .overviewWorldDot{stroke:#081825;stroke-width:3px;
+ paint-order:stroke fill;filter:drop-shadow(0 0 4px #000)}
+#overviewPinDots .overviewWorldDot.current-squad{
+ stroke:#fffad2;stroke-width:4px;filter:drop-shadow(0 0 7px #ffe866)}
 #overviewMapSummary{
  position:fixed;left:50%;top:calc(var(--battleTopBottom,185px) + 7px);
  transform:translateX(-50%);width:max-content;max-width:calc(100vw - 20px);
@@ -761,7 +767,7 @@ body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
  color:#192433;background:#ffe899;border:2px solid #fff9d5;border-radius:7px;
  font:900 11px/1.15 system-ui;white-space:nowrap}
 #overviewLocateSquad[hidden],#overviewCurrentSquadPointer[hidden]{display:none!important}
-#overviewCurrentSquadPointer{position:absolute;z-index:5;pointer-events:none;
+#overviewCurrentSquadPointer{position:absolute;z-index:8;pointer-events:none;
  transform:translate(-50%,-50%);width:25px;height:25px;
  border:3px solid #fff4a4;border-radius:50%;background:#ffe35e45;
  box-shadow:0 0 0 4px #201800dd,0 0 0 8px #ffe35e88,0 0 22px #ffe35e}
@@ -770,7 +776,7 @@ body[data-circle-target] #battleCancelCircleTarget{display:flex!important}
  border:2px solid #fff8cb;border-radius:6px;white-space:nowrap;font:900 12px system-ui}
 .overviewSquadPin.current-squad{border:4px solid #fff0a4!important;background:#53621ef5!important;
  box-shadow:0 0 0 3px #fffac0,0 0 22px #ffdc4d!important;z-index:6!important}
-#overviewPinLeaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#overviewPinLeaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
 .overviewSquadPin{
  position:absolute;transform:translate(-50%,-50%);z-index:2;
  display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -868,6 +874,7 @@ body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
 <div id="overviewSquadHud" hidden aria-label="俯瞰戦場の味方と敵の部隊を選択">
  <svg id="overviewPinLeaders" aria-hidden="true"></svg>
  <div id="overviewPins"></div>
+ <svg id="overviewPinDots" aria-hidden="true"></svg>
  <div id="overviewMapSummary" role="status"><span id="overviewMapSummaryText">味方・敵の部隊位置を表示中</span><button id="overviewLocateSquad" type="button" hidden>📍 操作隊はここ</button></div>
   <div id="overviewCurrentSquadPointer" hidden aria-hidden="true"></div>
 </div>
@@ -8985,6 +8992,7 @@ for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,
  */
 const overviewHud=$('overviewSquadHud'),overviewPins=$('overviewPins');
 const overviewPinLeaders=$('overviewPinLeaders');
+const overviewPinDots=$('overviewPinDots');
 const overviewInspector=$('overviewSquadInspector');
 const overviewPinNodes=new Map();
 const overviewProjection=new THREE.Vector3();
@@ -9020,10 +9028,14 @@ for(const team of [0,1]){
   const line=document.createElementNS(overviewSvgNS,'path');
   line.setAttribute('stroke',team?'#ffadbb':'#a2e4ff');
   line.setAttribute('stroke-width','1.5');line.setAttribute('fill','none');
+  line.setAttribute('stroke-opacity','0.6');
   const dot=document.createElementNS(overviewSvgNS,'circle');
-  dot.setAttribute('r','3.5');dot.setAttribute('fill',team?'#ff9fac':'#a4eaff');
+  dot.setAttribute('class','overviewWorldDot');
+  dot.setAttribute('r','7');dot.setAttribute('fill',team?'#ff5269':'#45e5ff');
+  dot.setAttribute('stroke',team?'#45101d':'#051e2a');
   line.style.display='none';dot.style.display='none';
-  overviewPinLeaders.append(line,dot);
+  overviewPinLeaders.append(line);
+  overviewPinDots.append(dot);
   overviewPinNodes.set(key,{pin,title,count,line,dot,team,id,squadIndex});
  }
 }
@@ -9198,7 +9210,8 @@ function updateOverviewSquadPins(dt){
    priority:key===overviewSelectedKey?2:node.team===0&&String(node.id)===currentAllyId?1:0});
  }
  const placements=placeOverviewSquadPins(points,bounds,{
-  width:innerWidth<=390?38:42,height:innerWidth<=390?37:40
+  width:innerWidth<=390?38:42,height:innerWidth<=390?37:40,
+  avoidAnchors:true // preserve every real-position dot, not just the active squad
  });
  const realPosition=points.find(p=>p.key===squadKey(0,currentAllyId));
  overviewCurrentPointer.hidden=!realPosition;
@@ -9207,6 +9220,7 @@ function updateOverviewSquadPins(dt){
   overviewCurrentPointer.style.top=Math.round(realPosition.y)+'px';
  }
  overviewPinLeaders.setAttribute('viewBox','0 0 '+innerWidth+' '+innerHeight);
+ overviewPinDots.setAttribute('viewBox','0 0 '+innerWidth+' '+innerHeight);
  for(const [key,node] of overviewPinNodes){
   const loc=placements.get(key);
   if(!loc){node.pin.hidden=true;node.line.style.display='none';node.dot.style.display='none';continue}
@@ -9233,14 +9247,22 @@ function updateOverviewSquadPins(dt){
   node.pin.title=(node.team?'敵':'味方')+squadName(id,node.team)+
    '　残存'+remaining+'名（タップして作戦情報）';
   node.pin.hidden=false;
+  // The dot always marks the true projected squad centre. Only the
+  // number badge is displaced; connect them with a thin leader line.
+  const currentDot=node.team===0&&String(node.id)===currentAllyId;
+  node.dot.setAttribute('cx',String(loc.anchorX));
+  node.dot.setAttribute('cy',String(loc.anchorY));
+  node.dot.setAttribute('r',currentDot?'10':'7');
+  node.dot.setAttribute('fill',currentDot?'#ffe25e':node.team?'#ff5269':'#45e5ff');
+  node.dot.classList.toggle('current-squad',currentDot);
+  node.dot.style.display='';
   if(loc.displaced){
    node.line.setAttribute('d','M'+loc.anchorX.toFixed(1)+','+loc.anchorY.toFixed(1)+
     ' L'+loc.x.toFixed(1)+','+loc.y.toFixed(1));
-   node.dot.setAttribute('cx',String(loc.anchorX));
-   node.dot.setAttribute('cy',String(loc.anchorY));
   }
+  node.line.setAttribute('stroke-width',currentDot?'2.7':'1.5');
+  node.line.setAttribute('stroke-opacity',currentDot?'1':'0.6');
   node.line.style.display=loc.displaced?'':'none';
-  node.dot.style.display=loc.displaced?'':'none';
  }
  const aliveCount=team=>[...overviewPinNodes.values()].filter(node=>{
   if(node.team!==team)return false;

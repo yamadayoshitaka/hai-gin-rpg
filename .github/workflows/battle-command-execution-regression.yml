@@ -16,6 +16,7 @@ on:
       - 'qa/battle-manual-summon-attack.test.mjs'
       - 'qa/battle-bridge-summon-evac.test.mjs'
       - 'qa/battle-active-squad-location.test.mjs'
+      - 'qa/battle-visible-squad-dots.test.mjs'
       - '.github/workflows/battle-command-execution-regression.yml'
   push:
     branches: [main]
@@ -53,6 +54,7 @@ jobs:
           node --test qa/battle-manual-summon-attack.test.mjs
           node --test qa/battle-bridge-summon-evac.test.mjs
           node --test qa/battle-active-squad-location.test.mjs
+          node --test qa/battle-visible-squad-dots.test.mjs
           node --test qa/squad-highground-unified-order.test.mjs
           node --test qa/squad-missions-and-healing.test.mjs
           node --test qa/battle-start-highground-shield-cover.test.mjs
