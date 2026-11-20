@@ -329,5 +329,10 @@ export function animateMonsterModel(model,time=0){
  if(['m002','m007','m008','m009','m010'].includes(
     model.userData.speciesId))
    updateReferenceBeastFx(model,{action,progress,time:motionTime});
+ // m019's visible continuous skin is deformed after every joint rotation.
+ // The old v9 GPU SkinnedMesh could be invisible on mobile browsers even
+ // though CPU bone math passed every pivot-only regression.
+ if(model.userData.speciesId==='m019')
+   for(const refresh of model.userData.m019VisibleLimbUpdaters||[])refresh();
  return {action,progress,...(leap?{leapPhase:leap.phase}:null)};
 }

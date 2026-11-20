@@ -198,6 +198,33 @@ jobs:
             fi
           fi
 
+  m019-actual-webgl:
+    # A standalone visual gate, never blocked by unrelated wolf/feline shots.
+    # Android artifact approval still needs the owner's on-device inspection.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deterministic Chromium WebGL
+        run: |
+          npm install --no-save --package-lock=false playwright@1.57.0 three@0.180.0
+          npx playwright install --with-deps chromium
+      - name: Verify and capture front and side, idle walk and run
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/m019-http.log 2>&1 &
+          node qa/m019-visible-limbs-webgl.cjs qa-reports/m019-visible-limbs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m019-actual-webgl-limb-review
+          path: qa-reports/m019-visible-limbs/
+          retention-days: 14
+          if-no-files-found: warn
+
   actual-wolf-feline-webgl:
     # Rendering real WebGL is required for the rear-view hole regression.
     # No visual art approval is inferred from technical screenshot success.
