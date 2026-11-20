@@ -64,7 +64,7 @@ assert.doesNotMatch(army,/CylinderGeometry|BoxGeometry|SphereGeometry/,'箱型�
 assert.match(game,/const randomRosters=\[0,1\]\.map\(\(\)=>\{/);
 assert.match(game,/engineBattleJobNameForSquad\(Math\.floor\(i\/squadSize\)\)/);
 assert.match(game,/for\(let team=0;team<2;team\+\+\)for\(let i=0;i<TEAM_SIZE;i\+\+\)/);
-assert.match(game,/ランダム職業リアルタイム自動戦闘を開始/);
+assert.match(game,/戦闘開始：部隊の作戦と対象を確定すると移動と実行が連続します/);
 const jobs=['剣士','格闘家','魔法使い','弓使い','盾戦士','盗賊','忍者','槍兵','僧侶','召喚士'];
 for(const seed of [.1,.37,.82]){
  const roster=randomJobRoster(jobs,50,()=>seed);
