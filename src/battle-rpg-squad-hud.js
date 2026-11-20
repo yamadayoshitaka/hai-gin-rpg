@@ -66,7 +66,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  root.setAttribute('aria-label','戦場の味方隊と敵隊のRPGステータス');
  root.hidden=true;
  const panels=[];
- let rows=[],selected='',expanded=[true,true],pages=[0,0],visible=false;
+ let rows=[],selected='',expanded=[true,true],pages=[0,0],visible=false,expandedTeamId=null;
  let pendingTapTimer=null,lastTap=null;
  // Roster refreshes replace DOM elements: distinguish taps using stable squad keys.
  for(let team=0;team<=1;team++){
@@ -118,6 +118,8 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   }
   if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);
   lastTap={key,at:now};
+  const parent=team===0&&rows.find(row=>row.id===String(id)&&Array.isArray(row.members));
+  if(parent)expandedTeamId=expandedTeamId===String(id)?null:String(id);
   select(team,id);
   pendingTapTimer=setTimeout(()=>{
    if(lastTap?.key!==key)return;
@@ -127,12 +129,15 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  }
  function renderSide(team){
   const side=panels[team];
-  const own=rows.filter(r=>Number(r.team)===team);
+  const base=rows.filter(r=>Number(r.team)===team);
+  const own=team===0?base.flatMap(row=>
+   Array.isArray(row.members)&&expandedTeamId===String(row.id)?
+    [row,...row.members.map(member=>({...member,isJobDivision:true,parentTeamId:row.id}))]:[row]):base;
   const pageSize=expanded[team]?Math.max(1,own.length):5;
   const totalPages=Math.max(1,Math.ceil(own.length/pageSize));
   pages[team]=clamp(pages[team],0,totalPages-1);
   const start=pages[team]*pageSize;
-  side.count.textContent=own.filter(x=>Number(x.alive)>0).length+'/'+own.length+'隊';
+  side.count.textContent=base.filter(x=>Number(x.alive)>0).length+'/'+base.length+'隊';
   side.pageLabel.textContent=(pages[team]+1)+'/'+totalPages;
   side.prev.disabled=pages[team]===0;
   side.next.disabled=pages[team]>=totalPages-1;
@@ -192,7 +197,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     fragment.append(previous);continue;
    }
    const button=doc.createElement('button');button.type='button';
-   button.className='rpgSquadRow';
+   button.className='rpgSquadRow'+(row.isJobDivision?' rpgJobDivision':'')+(Array.isArray(row.members)?' rpgTeamSummary':'');
    button.dataset.squadKey=selectionKey(team,row.id);
    if(selected===button.dataset.squadKey)button.classList.add('selected');
    if(!(Number(row.alive)>0))button.classList.add('defeated');
@@ -216,14 +221,14 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     if(event.key==='Enter'||event.key===' '){event.preventDefault();openByIcon(event);}
    });
    const title=doc.createElement('strong');
-   // Keep the squad unit (1隊 ... 10隊) visible on both narrow rails.
-   // Full names remain in the accessible label and browser tooltip.
-   title.textContent=String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1隊');
+   // Three campaign team labels are distinct from their nested job divisions.
+   title.textContent=row.isJobDivision?'└'+String(row.job||'分隊'):
+    String(row.name||'部隊').replace(/^第(\d+)隊.*$/,'$1隊');
    title.title=String(row.name||'部隊');
    // Keep the actual job visible even in the half-width side rails.
    // The number remains beside the portrait; the job owns its own full-width row.
    const jobName=doc.createElement('span');jobName.className='rpgSquadJobName';
-   jobName.textContent=String(row.job||'部隊');
+   jobName.textContent=row.isJobDivision?'ジョブ':String(row.job||'部隊');
    jobName.title=String(row.name||'部隊')+'｜'+String(row.job||'部隊');
    const status=doc.createElement('span');status.className='rpgSquadState';
    status.textContent=rpgHudStateIcon(row);status.title=rpgHudStatus(row);
@@ -287,10 +292,12 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(!visible)return;
   const next=Array.isArray(nextRows)?nextRows:[];
   const nextSig=JSON.stringify(next.map(r=>[r.team,r.id,r.alive,r.total,r.hp,r.maxHp,r.name,r.job,
-   r.mode,r.inContact,r.effects,r.attackPercent,r.mp,r.maxMp]));
+   r.mode,r.inContact,r.effects,r.attackPercent,r.mp,r.maxMp,
+   r.members?.map(member=>[member.id,member.alive,member.hp,member.mp,member.effects])]));
   if(nextSig===root.dataset.signature)return;
   root.dataset.signature=nextSig;
   rows=next;
+  if(expandedTeamId&&!rows.some(r=>String(r.id)===expandedTeamId))expandedTeamId=null;
   const firstAlly=rows.find(r=>Number(r.team)===0);
   const firstRender=!selected&&firstAlly;
   if(firstRender){selected=selectionKey(0,firstAlly.id);pages=[0,0];}
