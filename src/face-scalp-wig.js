@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261120-buzz-hairline-v11';
+export const FACE_HAIR_RUNTIME_BUILD='20261120-safe-v8-rollback-v12';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -412,9 +412,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    // Long hairstyles need continuous temple/forehead contact; keep the
    // higher frontal skin line but remove the hard gap under the bangs.
    const rear=shortHair&&battleStableCoverage?.505:.525;
-   const side=THREE.MathUtils.lerp(rear,shortHair?.555:.625,smooth(-.11,.025,zn));
-   const temple=THREE.MathUtils.lerp(side,shortHair?.605:.71,smooth(.15,.24,xn));
-   return THREE.MathUtils.lerp(temple,shortHair?.685:.815,smooth(.035,.16,zn));
+   const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
+   const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
+   return THREE.MathUtils.lerp(temple,.815,smooth(.035,.16,zn));
   };
   const signedHairline=v=>v.y-(box.min.y+d.y*hairlineFraction(v));
   // v64: do not DISCARD a whole scalp triangle if only one vertex
@@ -454,7 +454,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    const seamWidth=Math.max(d.y*.055,1e-6);
    const seamT=THREE.MathUtils.clamp(seamDistance/seamWidth,0,1);
    const seamBlend=seamT*seamT*(3-2*seamT);
-   v.addScaledVector(n,d.x*.0012);
+   v.addScaledVector(n,d.x*.0012+wigVolumeLiftAt(v,box,volumeProfile)*seamBlend);
    verts.push(v.x,v.y,v.z);
    smoothNormals.push(n.x,n.y,n.z);
   }
@@ -467,8 +467,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // The generic crown hole repair fans arbitrary loops across the rear/ear
  // boundary and creates the large planar gray patches seen in buzzcut v5.
  // Preserve only donor-backed triangles for the close-cut style.
- const crownRepair=shortHair?{repairs:0,triangles:0,source:'donor-only-short-cut'}:
-  repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
+ const crownRepair=repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box,
+  {microOnly:shortHair});
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -733,7 +733,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // offset plus four thick stacked ribbons looked like a raised helmet.
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
- const rootLift=d.x*(style.shortCutKind?.0012:.0025);
+ const rootLift=d.x*(style.shortCutKind?.0025:.0125);
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -769,7 +769,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(outward.dot(away)<0)outward.negate();
   // Root guide is lifted by exactly the same profile as the visible
   // scalp shell; otherwise hair would sink into the raised wig base.
-  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift);
+  const wigRoot=seed.p.clone().addScaledVector(outward,rootLift+
+   wigVolumeLiftAt(seed.p,box,volumeProfile));
   const side=zone.endsWith('Left')?-1:zone.endsWith('Right')?1:
    Math.sign(wigRoot.x-center.x)||1;
   const partSide=Math.sign(wigRoot.x-whorl.x)||side;
