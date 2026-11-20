@@ -705,10 +705,26 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
   }
   if(id==='town_sacks_001'){
-   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:1});
+   // Current-main adaptation of PR #802: gathered jute profile plus visible sewn seam.
+   const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.98,metalness:0});
+   const cord=new THREE.MeshStandardMaterial({color:0x66513a,roughness:1,metalness:0});
+   const stitching=new THREE.MeshStandardMaterial({color:0xb8a080,roughness:1,metalness:0});
+   const outline=[[0,0],[.24,.015],[.37,.07],[.43,.18],[.45,.33],[.42,.49],[.34,.59],[.20,.65],[.15,.72],[.18,.77],[.12,.80],[0,.80]]
+    .map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const sackGeo=new THREE.LatheGeometry(outline,16);
+   const tieGeo=new THREE.TorusGeometry(.16*c,.023*c,6,16);
+   // Slightly proud stitched seam follows the tapered front contour.
+   const seamPoints=[[.28,.035],[.38,.10],[.44,.22],[.46,.34],[.43,.47],[.35,.58],[.21,.65]]
+    .map(([r,y])=>new THREE.Vector3(0,y*c,r*c*.85+.008*c));
+   const seamGeo=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(seamPoints),18,.009*c,4,false);
    for(let i=0;i<5;i++){
-    const sack=new THREE.Mesh(new THREE.SphereGeometry(.45*c,10,8),burlap);
-    sack.scale.set(1,.72,.85);sack.position.set(((i%2)*.86-.43)*c,(.36+Math.floor(i/2)*.58)*c,((i%3)-1)*.2*c);root.add(sack);
+    const x=((i%2)*.86-.43)*c,z=((i%3)-1)*.2*c,baseY=Math.floor(i/2)*.58*c;
+    const sack=new THREE.Mesh(sackGeo,burlap);
+    sack.position.set(x,baseY,z);sack.scale.z=.85;root.add(sack);
+    const tie=new THREE.Mesh(tieGeo,cord);
+    tie.rotation.x=Math.PI/2;tie.position.set(x,baseY+.725*c,z);root.add(tie);
+    const seam=new THREE.Mesh(seamGeo,stitching);
+    seam.position.set(x,baseY,z);root.add(seam);
    }
   }
   if(id==='town_stone_pile_001'){
