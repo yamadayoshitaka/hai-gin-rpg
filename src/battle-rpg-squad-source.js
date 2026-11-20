@@ -79,3 +79,41 @@ export function makeBattleRpgStatusRows({
  for(const row of rows)delete row.center;
  return rows;
 }
+
+
+/**
+ * Campaign-only HUD adapter. The battle engine still controls the real job
+ * squads independently; the visual roster groups them under the three actual
+ * inn sortie teams. Never aggregate the enemy, or pass these synthetic IDs to
+ * the realtime unit-command engine.
+ */
+export function aggregateBattleRpgTeams(rows,groupBySquad={}){
+ const all=Array.isArray(rows)?rows:[];
+ const teams=new Map();
+ for(const row of all){
+  if(Number(row.team)!==0)continue;
+  const requested=Number(groupBySquad[String(row.id)]);
+  const groupId=Number.isInteger(requested)&&requested>=1&&requested<=3?requested:1;
+  if(!teams.has(groupId))teams.set(groupId,[]);
+  teams.get(groupId).push(row);
+ }
+ const sum=(members,key)=>members.reduce((total,row)=>total+(Number(row[key])||0),0);
+ const allies=[...teams].sort((a,b)=>a[0]-b[0]).map(([groupId,members])=>{
+  const jobs=[...new Set(members.map(row=>String(row.job||'兵士')))];
+  const totalMaxHp=sum(members,'maxHp');
+  const effects=[...new Map(members.flatMap(row=>row.effects||[])
+   .map(effect=>[effect.kind+':'+effect.label,effect])).values()];
+  return {
+   team:0,id:'team:'+groupId,groupId,
+   name:'第'+groupId+'隊',job:jobs.length+'ジョブ',jobs,members,
+   alive:sum(members,'alive'),total:sum(members,'total'),
+   hp:sum(members,'hp'),maxHp:totalMaxHp,
+   mp:sum(members,'mp'),maxMp:sum(members,'maxMp'),
+   attackPercent:totalMaxHp>0?Math.round(members.reduce((n,row)=>
+    n+(Number(row.attackPercent)||0)*(Number(row.maxHp)||0),0)/totalMaxHp):0,
+   mode:members.every(row=>row.mode===members[0]?.mode)?members[0]?.mode:'mixed',
+   inContact:members.some(row=>row.inContact),effects
+  };
+ });
+ return [...allies,...all.filter(row=>Number(row.team)===1)];
+}
