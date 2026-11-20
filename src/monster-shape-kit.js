@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m019-contoured-bridge-anatomy-v17-20261120';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=m019-single-surface-anatomy-v18-20261120';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
@@ -232,10 +232,16 @@ export function createSculpture(spec,detail='high'){
  /** Smooth continuous tapered joint between shoulder and skull; bury the
   * broad end in the body and the narrow end inside the head.
   */
- const bridge=(parent,shade,from,to,startRadius,endRadius)=>{
+ const bridge=(parent,shade,from,to,startRadius,endRadius,{
+   longitudinalSegments=null,radialSegments=null
+ }={})=>{
    const a=V(from),b=V(to),d=b.clone().sub(a),length=d.length();
    if(length<.0001)return null;
-   const [segments,radial]=resolution.tube;
+   // Keep the proven mobile oriented-bridge renderer. Optional quality
+   // rings are used only for m019; every other species keeps its old LOD.
+   const [defaultSegments,defaultRadial]=resolution.tube;
+   const segments=longitudinalSegments??defaultSegments;
+   const radial=radialSegments??defaultRadial;
    const axis=d.normalize(),u=new THREE.Vector3(1,0,0);
    if(Math.abs(u.dot(axis))>.94)u.set(0,0,1);
    u.addScaledVector(axis,-u.dot(axis)).normalize();

@@ -8,7 +8,7 @@
  */
 import {magmaSkullFromWolfKing,magmaTorsoFromWolfKing,
  sculptMagmaSalamanderEye,sculptMagmaSalamanderHorn,
- sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-contoured-bridge-anatomy-v17-20261120';
+ sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-single-surface-anatomy-v18-20261120';
 
 export const SALAMANDER_LINEAGE_REVISION='m019-source-salamander-lineage-v2-20261119';
 export const SALAMANDER_LINEAGE=Object.freeze({
