@@ -48,3 +48,30 @@ test('castle floors and skirmish orders are not hardcoded to 2F or one scout',()
  assert.match(page,/for\(const unit of eligible\)/);
  assert.match(tactics,/scope='group';preferredSquad=null/);
 });
+
+test('arrival waits for the entire elevated squad and changes all combat postures',()=>{
+ const sim=mockSquad();assert.equal(sim.orderSquadHighGround('1',0,0),true);
+ assert.equal(sim.setSquadHighGroundArrival('1','charge',0),false,
+  'premature arrival must not release waiting soldiers');
+ assert.ok(sim.units.every(u=>u.highGroundManualHold));
+ for(const u of sim.units)u.highGroundPhase=2;
+ assert.equal(sim.setSquadHighGroundArrival('1','charge',0),true);
+ assert.ok(sim.units.every(u=>u.highGroundManualHold===false));
+ assert.ok(sim.units.every(u=>u.highGroundRouteIndex===0));
+ assert.equal(sim.setSquadHighGroundArrival('1','hold',0),true);
+ assert.ok(sim.units.every(u=>u.highGroundManualHold===true));
+});
+test('high-ground wizard, arrival dispatcher and worker use one squad-level target',()=>{
+ const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
+ const wizard=read('src/battle-command-wizard.js');
+ const commands=read('src/battle-realtime-commands.js');
+ const worker=read('src/mass-battle-worker-runtime.js');
+ const client=read('src/mass-battle-worker-client.js');
+ const page=read('tactics-wireframe.html');
+ assert.match(wizard,/highGroundTarget:String\\(current.id\\)/);
+ assert.match(commands,/height.highGroundArrived/);
+ assert.match(worker,/case 'squadHighGroundArrival'/);
+ assert.match(client,/setSquadHighGroundArrival\\(squadId,command,team=0\\)/);
+ assert.match(page,/const highGroundArrived=Boolean/);
+ assert.match(page,/massSim.setSquadHighGroundArrival\\(id,mode,0\\)/);
+});
