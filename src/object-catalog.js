@@ -709,7 +709,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    // open collar. Unlike the old ellipsoids, the bottom sits on its own plane.
    const burlap=new THREE.MeshStandardMaterial({color:0x9d8867,roughness:.98,metalness:0,side:THREE.DoubleSide});
    const twine=new THREE.MeshStandardMaterial({color:0x66513a,roughness:1,metalness:0});
-   const profile=[[0,0],[.26,0],[.36,.06],[.43,.18],[.46,.43],[.41,.69],[.32,.81],[.19,.88],[.14,.94],[.17,1.00]].map(([r,y])=>new THREE.Vector2(r*c,y*c));
+   const profile=[[0,0],[.24,0],[.30,.025],[.36,.06],[.41,.13],[.43,.18],[.46,.31],[.445,.38],[.46,.43],[.44,.55],[.41,.69],[.355,.76],[.32,.81],[.235,.86],[.19,.88],[.14,.94],[.17,1.00]].map(([r,y])=>new THREE.Vector2(r*c,y*c));
    const bagGeometry=new THREE.LatheGeometry(profile,16);
    const cordGeometry=new THREE.TorusGeometry(.165*c,.022*c,6,16);
    for(let i=0;i<5;i++){
