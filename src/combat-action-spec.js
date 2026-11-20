@@ -8,7 +8,7 @@ import {MONSTER_SUMMON_SPECS,MONSTER_SUMMON_SKILLS}
 export const RARITY_RANK = Object.freeze({ N: 0, R: 1, UR: 2 });
 export const COMBAT_RULES = Object.freeze({
   tickSeconds: 0.1, maxMp: 100, mpRecoveryPerSecond: 0.45,
-  maximumObjectsPerTeam: 36, maximumMountsPerTeam: 18, maximumSummonsPerCaster: 1,
+  maximumObjectsPerTeam: 160, maximumMountsPerTeam: 18, maximumSummonsPerCaster: 1,
   summonDamageLinkRatio: .5, mountedSummonDamageLinkRatio: .12,
   summonLeashTiles: 22, summonLifetimeSeconds: 45,
   horseLifetimeSeconds: 240, mountedSpeedMultiplier: 3, mountedDamageMultiplier: 3,
