@@ -18,7 +18,9 @@ test('every summoner can call a separate familiar in the same squad',()=>{
  for(const caster of casters)assert.equal(runtime.summonOf(caster).length,1);
  const owners=new Set(runtime.objects.filter(o=>o.category==='summon').map(o=>o.ownerId));
  assert.deepEqual([...owners].sort(),[0,1,2]);
- assert.equal(runtime.fireSkill(casters[1],skill,casters[1],casters),false,'skill cooldown is preserved');
+ assert.equal(runtime.fireSkill(casters[1],skill,casters[1],casters),true,'the same caster may replace their own familiar');
+ assert.equal(runtime.getStats().summons,3,'replacement never adds a second familiar for the same owner');
+ assert.equal(runtime.summonOf(casters[1]).length,1);
 });
 
 test('mass squad summon fills all free owner slots without resummoning existing ones',()=>{
