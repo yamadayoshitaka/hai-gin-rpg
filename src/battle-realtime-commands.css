@@ -626,3 +626,59 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 #battleRealtimeControls #realtimeBattleDock .realtimeContextChoices .realtimeMainConfirm:disabled{
  opacity:.60;filter:grayscale(.6);
 }
+
+/* Single-window hierarchical command wizard (overrides legacy multi-panel dock). */
+#battleRealtimeControls #realtimeBattleDock.wizard-active{
+ position:fixed!important;left:max(8px,env(safe-area-inset-left))!important;
+ right:max(8px,env(safe-area-inset-right))!important;
+ bottom:calc(var(--battleReportHeight,118px) + 7px)!important;
+ top:auto!important;z-index:60!important;width:auto!important;
+ max-height:calc(100dvh - var(--battleReportHeight,118px) - 75px)!important;
+ display:block!important;overflow:hidden!important;padding:8px!important;
+ border:1px solid #88c3cf!important;background:#07192ef5!important;
+ border-radius:12px!important;
+}
+#realtimeBattleDock.wizard-active > :not(#battleCommandWizard){display:none!important}
+#realtimeBattleDock.wizard-active #battleCommandWizard{
+ display:flex!important;flex-direction:column!important;
+ width:100%;max-height:calc(100dvh - var(--battleReportHeight,118px) - 90px);
+ gap:6px;min-width:0;color:#f4ecdc;overflow:hidden;
+}
+#realtimeBattleDock.wizard-active #battleCommandWizard[hidden]{display:none!important}
+.battleWizardHead{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ font:800 14px/1.3 system-ui;color:#ffe3a3}
+.battleWizardHeadButtons{display:flex;gap:6px}
+#battleCommandWizard button{cursor:pointer;touch-action:manipulation;
+ color:#e8f6ff;border:1px solid #78acc7;background:#163953;
+ border-radius:7px;padding:9px 12px;min-height:39px;font:750 12px/1.35 system-ui}
+#battleCommandWizard button:disabled{opacity:.57;cursor:not-allowed}
+#battleCommandWizard button.selected{background:#37695b;border-color:#f6d17b}
+#battleCommandWizard .battleWizardBody{display:flex;flex-direction:column;gap:7px;
+ min-height:0;max-height:min(53dvh,520px);overflow-y:auto;overscroll-behavior:contain;
+ scrollbar-width:thin;padding:4px 2px 7px}
+#battleCommandWizard .battleWizardBody.battleWizardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+#battleCommandWizard .battleWizardChoice{display:flex;flex-direction:column;align-items:stretch;
+ gap:4px;flex-shrink:0;min-height:46px;text-align:left;white-space:normal}
+#battleCommandWizard .battleWizardReason{display:block;color:#f3c4a6;font:650 10px/1.3 system-ui}
+#battleCommandWizard .battleWizardNotice{margin:2px 0;padding:7px 9px;
+ color:#cde7ea;background:#16364b;border-radius:6px;font:700 12px/1.5 system-ui}
+#battleCommandWizard .battleWizardNotice.error{border:1px solid #e09a85;color:#ffdfbc}
+#battleCommandWizard .battleWizardSquadCaption{font:700 11px/1.4 system-ui;color:#afdaed}
+#battleCommandWizard .battleWizardMap{display:block;width:100%;height:auto;
+ max-height:34dvh;object-fit:contain;border:1px solid #8cb4c7;border-radius:8px;touch-action:manipulation}
+#battleCommandWizard .battleWizardMapControls{display:flex;gap:6px}
+#battleCommandWizard .battleWizardMapControls>button{flex:1}
+#battleRealtimeControls #battleMissionNotice{
+ position:fixed;left:clamp(90px,17vw,160px);right:clamp(90px,17vw,160px);
+ bottom:calc(var(--battleReportHeight,118px) + 3px);z-index:12;
+ padding:5px 9px;background:#0b233cdd;border:1px solid #7a9d9b;
+ border-radius:8px;color:#f8e8ba;text-align:center;
+ font:750 11px/1.4 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ pointer-events:none}
+#battleRealtimeControls #battleMissionNotice[hidden]{display:none!important}
+#battleRealtimeControls:has(#realtimeBattleDock.wizard-active) #battleMissionNotice{display:none!important}
+@media(max-width:600px){
+ #battleRealtimeControls #realtimeBattleDock.wizard-active{bottom:calc(var(--battleReportHeight,118px) + 4px)!important}
+ #battleCommandWizard .battleWizardBody{max-height:49dvh!important}
+ #battleRealtimeControls #battleMissionNotice{left:6px;right:6px;font-size:10px}
+}
