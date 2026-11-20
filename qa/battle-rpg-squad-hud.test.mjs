@@ -70,7 +70,7 @@ test('RPG status is sourced from real squads but collapsed by default to reveal 
  assert.match(battle,/createBattleRpgSquadHud/);
  assert.match(battle,/makeBattleRpgStatusRows/);
  assert.match(battle,/refreshBattleRpgSquadHud\(sums\)/);
- assert.match(battle,/battleRpgHud\?\.select\(team,id\)/);
+ assert.match(battle,/battleRpgHud\?\.select\(team,team===0&&THREE_TEAM_BATTLE\?/);
  assert.match(battle,/label\.userDataSquadTitle\.textContent/);
  assert.match(battle,/realtimeCommandUI\?\.update\(rows\)/);
  assert.match(map,/realtimeRoster/);
@@ -305,7 +305,7 @@ test('every playable battle link and display refresh route to the three-team HUD
  assert.match(battle,/aggregateBattleRpgTeams\(rows,armyGroupBySquad\)/);
  assert.match(battle,/if\(THREE_TEAM_BATTLE\)for\(const unit of squadRoster\)/);
  assert.doesNotMatch(battle,/battleRpgHud\.update\(storyRequest\?\.sortieTeamCount\?/);
- assert.match(map,/v=three-team-hud2-20261120/);
- assert.match(game,/v=three-team-hud2-20261120/);
- assert.match(story,/storyBattle=1&v=three-team-hud2-20261120/);
+ assert.match(map,/v=three-team-radar2-20261120/);
+ assert.match(game,/v=three-team-radar2-20261120/);
+ assert.match(story,/storyBattle=1&v=three-team-radar2-20261120/);
 });
