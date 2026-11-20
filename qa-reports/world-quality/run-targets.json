@@ -3,8 +3,8 @@
     "object:entry_door_lv5_001"
   ],
   "run": {
-    "id": "44590124267",
-    "startedAt": "2026-11-19T18:45:01.496Z",
+    "id": "44649661645",
+    "startedAt": "2026-11-20T00:56:50.947Z",
     "mode": "results",
     "requested": 1,
     "requestedTarget": null,
@@ -15,11 +15,11 @@
     "targetIds": [
       "object:entry_door_lv5_001"
     ],
-    "generated": 1,
+    "generated": 0,
     "failed": [],
-    "providerCalls": 1,
+    "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-    "completedAt": "2026-11-19T18:45:01.496Z"
+    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+    "completedAt": "2026-11-20T00:56:50.948Z"
   }
 }

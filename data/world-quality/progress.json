@@ -238,55 +238,12 @@
       "roughnessProposal": 1,
       "review": "WEBGL_CAPTURE_OR_COMPARE_BLOCKED",
       "productionApplied": false,
-      "lastReviewedAt": "2026-11-19T18:45:01.496Z",
+      "lastReviewedAt": "2026-11-20T00:56:50.948Z",
       "error": "python3 scripts/world-quality-compare.py: Traceback (most recent call last):\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 70, in <module>\n    output=run(Path(args.reference),json.loads(Path(args.capture_json).read_text()))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 41, in run\n    ref=features(ref_path)\n        ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/hai-gin-rpg/hai-gin-rpg/scripts/world-quality-compare.py\", line 25",
-      "captureAttempts": 1
+      "captureAttempts": 2
     }
   },
   "runs": [
-    {
-      "id": "44004217527",
-      "startedAt": "2026-11-17T02:38:52.323Z",
-      "mode": "reference",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 60,
-      "targetIds": [
-        "object:spiral_stairs_castle_3f_001",
-        "object:entry_door_lv1_001",
-        "object:entry_door_lv2_001"
-      ],
-      "generated": 3,
-      "failed": [],
-      "providerCalls": 3,
-      "stopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-      "completedAt": "2026-11-17T02:39:20.827Z"
-    },
-    {
-      "id": "44004217527",
-      "startedAt": "2026-11-17T02:39:32.156Z",
-      "mode": "results",
-      "requested": 3,
-      "requestedTarget": null,
-      "requestedKind": "all",
-      "customInstructionHash": null,
-      "stageCount": 200,
-      "objectCount": 60,
-      "targetIds": [
-        "object:spiral_stairs_castle_3f_001",
-        "object:entry_door_lv1_001",
-        "object:entry_door_lv2_001"
-      ],
-      "generated": 3,
-      "failed": [],
-      "providerCalls": 3,
-      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-      "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-      "completedAt": "2026-11-17T02:39:32.156Z"
-    },
     {
       "id": "44070997425",
       "startedAt": "2026-11-17T11:08:49.276Z",
@@ -645,11 +602,50 @@
       "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
       "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
       "completedAt": "2026-11-19T18:45:01.496Z"
+    },
+    {
+      "id": "44649661645",
+      "startedAt": "2026-11-20T00:56:44.488Z",
+      "mode": "reference",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv5_001"
+      ],
+      "generated": 0,
+      "failed": [],
+      "providerCalls": 0,
+      "stopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+      "completedAt": "2026-11-20T00:56:44.489Z"
+    },
+    {
+      "id": "44649661645",
+      "startedAt": "2026-11-20T00:56:50.947Z",
+      "mode": "results",
+      "requested": 1,
+      "requestedTarget": null,
+      "requestedKind": "all",
+      "customInstructionHash": "260e4ee09a64f706b89fb05e6fd68ce4937fd5434f997d5a0eff0e418cbac2d3",
+      "stageCount": 200,
+      "objectCount": 60,
+      "targetIds": [
+        "object:entry_door_lv5_001"
+      ],
+      "generated": 0,
+      "failed": [],
+      "providerCalls": 0,
+      "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
+      "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+      "completedAt": "2026-11-20T00:56:50.948Z"
     }
   ],
   "lastRun": {
-    "id": "44590124267",
-    "startedAt": "2026-11-19T18:45:01.496Z",
+    "id": "44649661645",
+    "startedAt": "2026-11-20T00:56:50.947Z",
     "mode": "results",
     "requested": 1,
     "requestedTarget": null,
@@ -660,11 +656,11 @@
     "targetIds": [
       "object:entry_door_lv5_001"
     ],
-    "generated": 1,
+    "generated": 0,
     "failed": [],
-    "providerCalls": 1,
+    "providerCalls": 0,
     "stopReason": "REVIEW_PROPOSALS_RECORDED_NOT_MERGED",
-    "referenceStopReason": "REFERENCE_GENERATED_VISUAL_QA_PENDING",
-    "completedAt": "2026-11-19T18:45:01.496Z"
+    "referenceStopReason": "REVIEW_EXISTING_REFERENCE_ONLY",
+    "completedAt": "2026-11-20T00:56:50.948Z"
   }
 }
