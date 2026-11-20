@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-surface-offset-v17';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-real-fibres-v18';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -602,8 +602,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   sheen:.12,sheenRoughness:.75,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
   transparent:false,opacity:1,depthWrite:true,
-  polygonOffset:shortHair,polygonOffsetFactor:shortHair?-2:0,
-  polygonOffsetUnits:shortHair?-2:0
+  polygonOffset:shortHair,polygonOffsetFactor:shortHair?1:0,
+  polygonOffsetUnits:shortHair?1:0
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
@@ -619,7 +619,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
- if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
+ if(shortHair){mesh.userData.shortHairDepthPriority=false;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
@@ -640,6 +640,105 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.rearUndercoatTipHeightRange=tipHeights.length?
   Math.max(...tipHeights)-Math.min(...tipHeights):0;
  mesh.userData.rearUndercoatStyle='overlapping-real-scalp-rooted-tapered-ribbons';
+ return mesh;
+}
+
+/**
+ * v18: A buzz cut needs real surface-anchored fibres, not only a uniformly
+ * coloured skull cap. Sample the already clipped donor scalp triangle surface
+ * by area, placing thousands of small tapered quads just outside it. This
+ * avoids extra head copies, generated scalp masks and head-top bald spots.
+ */
+function createCloseCutScalpFibres(cap,box,color,hairCount){
+ const position=cap.geometry.getAttribute('position');
+ const normal=cap.geometry.getAttribute('normal');
+ const triangleCount=Math.floor(position.count/3);
+ const cumulative=new Float64Array(triangleCount);
+ let area=0;
+ const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+ for(let t=0;t<triangleCount;t++){
+  a.fromBufferAttribute(position,t*3);
+  b.fromBufferAttribute(position,t*3+1);
+  c.fromBufferAttribute(position,t*3+2);
+  area+=b.clone().sub(a).cross(c.clone().sub(a)).length()*.5;
+  cumulative[t]=area;
+ }
+ if(!area)return null;
+ const d=box.getSize(new THREE.Vector3());
+ const strands=Math.min(9000,Math.max(4800,Math.round(hairCount)));
+ const vertices=new Float32Array(strands*4*3);
+ const colors=new Float32Array(strands*4*3);
+ const indices=new Uint32Array(strands*6);
+ const pigment=new THREE.Color(color);
+ const fract01=x=>x-Math.floor(x);
+ const up=new THREE.Vector3(),root=new THREE.Vector3();
+ const tangent=new THREE.Vector3(),widthDir=new THREE.Vector3();
+ for(let i=0;i<strands;i++){
+  const sampleArea=fract01((i+.5)*.61803398875)*area;
+  let lo=0,hi=triangleCount-1;
+  while(lo<hi){const m=(lo+hi)>>1;if(cumulative[m]<sampleArea)lo=m+1;else hi=m;}
+  const t=lo,j=t*3;
+  a.fromBufferAttribute(position,j);
+  b.fromBufferAttribute(position,j+1);
+  c.fromBufferAttribute(position,j+2);
+  const u=Math.sqrt(fract01((i+1)*.7548776662));
+  const v=fract01((i+1)*.569840291);
+  const w0=1-u,w1=u*(1-v),w2=u*v;
+  root.copy(a).multiplyScalar(w0).addScaledVector(b,w1).addScaledVector(c,w2);
+  up.set(normal.getX(j)*w0+normal.getX(j+1)*w1+normal.getX(j+2)*w2,
+   normal.getY(j)*w0+normal.getY(j+1)*w1+normal.getY(j+2)*w2,
+   normal.getZ(j)*w0+normal.getZ(j+1)*w1+normal.getZ(j+2)*w2).normalize();
+  const scalpCenter=box.getCenter(new THREE.Vector3());
+  if(up.dot(root.clone().sub(scalpCenter))<0)up.negate();
+  // Forward/back grooming direction is projected onto the REAL local
+  // scalp tangent: no flat, radial spikes or fibres buried in skin.
+  tangent.set(Math.sin(i*2.39996323)*.18,-1,-.38);
+  tangent.addScaledVector(up,-tangent.dot(up));
+  if(tangent.lengthSq()<1e-8){
+   tangent.set(0,0,-1).addScaledVector(up,up.z);
+  }
+  tangent.normalize();
+  widthDir.crossVectors(up,tangent).normalize();
+  const width=d.x*(.0010+.00048*fract01(i*.381966));
+  const length=d.x*(.014+.012*fract01(i*.41421356));
+  const base=root.clone().addScaledVector(up,d.x*.0030);
+  const tip=base.clone().addScaledVector(tangent,length)
+   .addScaledVector(up,d.x*.0025);
+  const points=[
+   base.clone().addScaledVector(widthDir,-width),
+   base.clone().addScaledVector(widthDir,width),
+   tip.clone().addScaledVector(widthDir,-width*.22),
+   tip.clone().addScaledVector(widthDir,width*.22)
+  ];
+  const tone=.53+.27*fract01((i+1)*.7320508);
+  for(let k=0;k<4;k++){
+   const at=(i*4+k)*3;
+   vertices[at]=points[k].x;vertices[at+1]=points[k].y;
+   vertices[at+2]=points[k].z;
+   const shade=tone*(k<2?.88:1);
+   colors[at]=pigment.r*shade;
+   colors[at+1]=pigment.g*shade;
+   colors[at+2]=pigment.b*shade;
+  }
+  const at=i*6,baseIndex=i*4;
+  indices[at]=baseIndex;indices[at+1]=baseIndex+2;
+  indices[at+2]=baseIndex+1;indices[at+3]=baseIndex+1;
+  indices[at+4]=baseIndex+2;indices[at+5]=baseIndex+3;
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.BufferAttribute(vertices,3));
+ geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+ geometry.setIndex(new THREE.BufferAttribute(indices,1));
+ geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ const material=new THREE.MeshStandardMaterial({
+  color:0xffffff,vertexColors:true,roughness:.94,metalness:0,
+  side:THREE.DoubleSide,depthTest:true,depthWrite:true
+ });
+ const mesh=new THREE.Mesh(geometry,material);
+ mesh.name='CLOSE_CUT_SCALP_FIBRES_V18';
+ mesh.userData.rootedOnRealScalp=true;
+ mesh.userData.fibreCount=strands;
+ mesh.userData.source='donor-backed-clipped-scalp-surface';
  return mesh;
 }
 /**
@@ -762,7 +861,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // offset plus four thick stacked ribbons looked like a raised helmet.
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
- const rootLift=d.x*(style.shortCutKind?.0025:.0125);
+ const rootLift=d.x*(style.shortCutKind==='buzz'?.013:style.shortCutKind?.010:.0125);
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -846,7 +945,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const cutKind=style.shortCutKind||null;
   // Do not make all battle buzz cuts visually bald. Actual crop length
   // remains short, without changing studio/editor style definitions.
-  const shortLength=cutKind==='buzz'?(battleStableCoverage?.088:.013):
+  const shortLength=cutKind==='buzz'?(battleStableCoverage?.088:.032):
    cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618)):
    (fringe||overFace)?
@@ -918,8 +1017,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // Short locks grow along the *real scalp normal*. Buzz lies close
    // to the skin rather than shortening vertical long-hair curtains.
    const p=j===0?wigRoot.clone():cutKind?
-    wigRoot.clone().addScaledVector(outward,d.x*(cutKind==='buzz'?.004:
-     cutKind==='very-short'?.017:.029)*Math.sin(Math.PI*t))
+    wigRoot.clone().addScaledVector(outward,d.x*(cutKind==='buzz'? .010*Math.sin(Math.PI*t*.5):
+     (cutKind==='very-short'?.017:.029)*Math.sin(Math.PI*t)))
      .add(f3(side*d.x*(cutKind==='buzz'?.001:.008)*t,
       -length*t,(back?-1:1)*d.z*(cutKind==='buzz'?.001:.007)*t)):
     f3(THREE.MathUtils.lerp(wigRoot.x,targetX,fall)+templeVolume+strandWave*t+curl,
@@ -1263,7 +1362,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // exported GLBs and the 3D editor can remove them without touching skin.
  // Physical guide strands are NOT simulated 10x (mobile-safe distinction).
  let microFibreCount=0,microFibreTriangles=0;
- if(fiberMultiplier>1){
+ if(fiberMultiplier>1&&!style.shortCutKind){
   const extra=fiberMultiplier-1,coords=[],shades=[],tris=[];
   // Unique coarse hair stations avoid zero-area tip triangles from an
   // accidentally repeated last point. Moving guides still use 12 points;
@@ -1340,6 +1439,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(!style.shortCutKind)root.add(fineMesh);else{fineGeo.dispose();fineMat.dispose();}
   microFibreTriangles=tris.length/3;
  }
+ // Close crops still need visible fibres OUTSIDE the scalp foundation.
+ // Their count is independently reported, not a fake 10x fibre label.
+ const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
+  cap,box,color,lockCount*fiberMultiplier):null;
+ if(closeCutFibres)root.add(closeCutFibres);
  // Characteristic coiffure sections must have their OWN REAL GEOMETRY.
  // A bun is not short straight hair with a "bun" label; plaits contain
  // three interwoven strands and ponytails have a distinct tied root.
@@ -1363,7 +1467,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  let consolidatedHair=null;
  if(staticGroom&&normalLayeredSingleMesh){
   const nodes=[cap,locks,...root.children.filter(node=>
-   node.name==='DETACHABLE_WIG_FINE_FIBRES'||node.userData?.styledHairGeometry)];
+   node.name==='DETACHABLE_WIG_FINE_FIBRES'||
+   node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
   const normalLayers=clamp(Math.trunc(normalLayerCount),1,3),normalStep=d.x*.0018;
   let vertexOffset=0;
@@ -1463,6 +1568,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   wigAssetType:'independent-wig',centerPart:style.part==='center',
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
+  closeCutFibreCount:closeCutFibres?.userData.fibreCount||0,
+  closeCutFibresOnSurface:Boolean(closeCutFibres),
   microFibresAnimated:false,
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
