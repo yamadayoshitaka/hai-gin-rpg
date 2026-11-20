@@ -5,19 +5,20 @@
  */
 export const squadAlive=u=>u?.team===0&&u.hp>0&&u.alive!==false&&!u.defeated;
 const same=(a,b)=>String(a)===String(b);
-export function threeGroupOverview(units,groupBySquad,initialUnits=[]){
- const output=Array.from({length:3},(_,i)=>i+1).map(id=>({id,alive:0,initial:0,hp:0,maxHp:0,initialMaxHp:0,divisions:[],danger:false}));
+export function threeGroupOverview(units,groupBySquad,initialUnits=[],maxTeams=3){
+ const teamLimit=Math.max(1,Math.min(10,Number(maxTeams)||3));
+ const output=Array.from({length:teamLimit},(_,i)=>i+1).map(id=>({id,alive:0,initial:0,hp:0,maxHp:0,initialMaxHp:0,divisions:[],danger:false}));
  const initialSource=initialUnits.length?initialUnits:units.filter(u=>u.team===0&&!u.isStrategist);
  const visited=new Map();
  for(const u of initialSource){
   if(u.team!==undefined&&u.team!==0)continue; // Campaign request units omit team; all are allies.
   const group=Number((u.armyGroupId??groupBySquad[String(u.squadId)]??1));
-  if(group>=1&&group<=3){output[group-1].initial++;output[group-1].initialMaxHp+=Number(u.maxHp)||Number(u.hp)||0;}
+  if(group>=1&&group<=teamLimit){output[group-1].initial++;output[group-1].initialMaxHp+=Number(u.maxHp)||Number(u.hp)||0;}
  }
  for(const u of units){
   if(!squadAlive(u))continue;
   const group=Number((u.armyGroupId??groupBySquad[String(u.squadId)]??1));
-  if(group<1||group>3)continue;
+  if(group<1||group>teamLimit)continue;
   const item=output[group-1];item.alive++;item.hp+=u.hp;item.maxHp+=u.maxHp||u.hp;
   const key=group+':'+String(u.squadId);
   let div=visited.get(key);
