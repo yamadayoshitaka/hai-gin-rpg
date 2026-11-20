@@ -38,7 +38,7 @@ assert.ok(demolish.setSquadMission(attacker.squadId,'eliminate_squad',{targetSqu
 assert.equal(demolish.squadMissions.get(String(attacker.squadId)).targetSquadId,'0');
 
 const rescue=setup();
-const priest=rescue.units.find(u=>u.team===0&&u.jobId==='priest'&&u.formationType==='support');
+const priest=rescue.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='priest'&&u.formationType==='support');
 const patient=rescue.units.find(u=>u.team===0&&u.squadId===0);
 assert.ok(priest&&patient);
 const occupied=new Set(rescue.units.map(u=>u.x+':'+u.z));
