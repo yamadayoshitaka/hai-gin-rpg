@@ -435,5 +435,6 @@ test('portrait and landscape camera fit the entire m019 from nose to tail',()=>{
    'camera must use horizontal FOV to fit the tail at aspect '+aspect);
   assert(fit.distance>=4);
   assert.equal(fit.azimuth,'negative-x-side-head-right');
+  assert(fit.direction.y>.30,'mobile camera must show all sprawled legs above floor');
  }
 });
