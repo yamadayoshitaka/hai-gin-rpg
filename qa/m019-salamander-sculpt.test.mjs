@@ -233,10 +233,13 @@ for(const detail of ['low','high']){
       assert(part.visible&&part.material.visible&&!part.material.transparent);
       assert(part.geometry.getAttribute('position').count>=24);
       assert(part.geometry.getIndex().count>=24);
-      assert.equal(part.userData.m019CurvedAnatomicalFallback,true);
-      assert(part.geometry.parameters.tubularSegments>=14);
-      assert(part.geometry.parameters.radialSegments>=10,
-        'the mobile fallback must remain round even at low detail');
+      assert.equal(part.userData.m019StableVisibleBridge,true,
+        'm019 must use the known-rendered v13 anatomical bridge, not v14 tubes');
+      assert.equal(part.userData.m019LastRenderedGeometry,'v13-oriented-bridge');
+      assert.equal(part.frustumCulled,false,
+        'small animated legs must never be culled from stale bounds');
+      assert(!part.geometry.parameters?.tubularSegments,
+        'do not regress to procedural TubeGeometry hidden on Android');
       // A dark pigment identical to the near-black belly caused the
       // v14 limbs to disappear against the floor. Keep them moderately
       // brighter but with the same charcoal hue and rough volcanic PBR.
