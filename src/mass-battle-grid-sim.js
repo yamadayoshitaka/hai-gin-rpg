@@ -319,6 +319,16 @@ export class MassBattleGridSimulation {
     this._highGroundClaims.set(key,id);
     return true;
   }
+  /** Arrival posture changes without discarding the reached upper floor.
+   * A charge fights from windows or roof; defend/hold keeps every member waiting. */
+  setSquadHighGroundArrival(squadId,command,team=0){
+    if(!['charge','defend','hold'].includes(command))return false;
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&u.alive&&u.hp>0);
+    if(!members.length||members.some(u=>u.highGroundRouteIndex<0||u.highGroundPhase!==2))return false;
+    for(const u of members)u.highGroundManualHold=command!=='charge';
+    (team===0?this.squadCommands:this.enemySquadCommands).set(String(squadId),command);
+    return true;
+  }
   /** Preserve a building claim while any comrade still occupies its route. */
   _releaseHighGroundClaimIfEmpty(unit,route){
     if(!route)return;
