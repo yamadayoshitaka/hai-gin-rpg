@@ -101,14 +101,14 @@ class Node {
   }
   return walk(this);
  }
- getContext(){return {fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){}}}
+ getContext(){return {fillRect(){},drawImage(){},beginPath(){},arc(){},stroke(){},fill(){}}}
  getBoundingClientRect(){return {left:0,top:0,width:440,height:235}}
 }
 const doc={createElement:tag=>new Node(tag)};
 const click=(wizard,part)=>{
  const body=wizard.root.querySelector('.battleWizardBody');
  const button=body?.children.find(n=>n.tagName==='button'&&String(n.textContent).includes(part)&&!n.disabled);
- assert.ok(button,'Missing selectable '+part+' on stage '+wizard.stage);
+ assert.ok(button,'Missing selectable '+part+' on stage '+wizard.stage+' choices: '+(body?.children||[]).map(x=>x.textContent).join(' / '));
  button.onclick();return button;
 };
 function setupWizard(job,options={}){
