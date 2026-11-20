@@ -197,7 +197,7 @@ export function createRealtimeBattleCommands({
   const cooldown=Math.max(0,Number(live.cooldown)||0);
   const status=failure?'⚠ '+failure:
    '第'+num+'隊｜'+String(live.label||'自動行動')+
-   (pending?'｜📋 次：'+pending+(live.moving?'（移動完了待ち）':cooldown?'（'+Math.ceil(cooldown)+'秒後）':'（発令準備）'):
+   (pending?'｜📋 次：'+pending+(cooldown?'（'+Math.ceil(cooldown)+'秒後）':'（発令準備）'):
     cooldown?'｜命令間隔 '+Math.ceil(cooldown)+'秒':'｜次の命令可能');
   if(lastOrderSignature!==status){orderNotice.textContent=status;lastOrderSignature=status;}
  }
@@ -1247,6 +1247,7 @@ radarCanvas.addEventListener('keydown',event=>{
   getMapBackground,getLegalPoint,getMoveTargets,getSpecialTargets,getSharedItems,getRallyInfo,
   onMove,onOrder,onTargetOrder,onSpecial,onSharedItem,onRally,onCommandCommitted,getOrderState,
   queueArrival:(id,entry)=>arrivalActions.set(String(id),entry),
+  cancelArrival:id=>arrivalActions.delete(String(id)),
   setPreferred:(id,action)=>preferredActions.set(String(id),action),
   onClose:closeSquadControls
  });
