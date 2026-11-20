@@ -490,13 +490,23 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   stripWidths.push(width*2);tipHeights.push(tipY);
   const vtx=(t,edge)=>{
    const eased=t*t*(3-2*t);
-   const x=THREE.MathUtils.lerp(scalpRoot.x,targetX,eased)+
-    Math.sin(k*.85+t*3)*d.x*.00026*t;
+   // Follow the crown's radial parting before gravity takes over.
+   // The alternating sweep and layered S-curve prevent a flat curtain
+   // of parallel vertical cards without moving the anatomical root.
+   const radial=(2*u-1)*d.x*.018*Math.sin(Math.PI*t*.75);
+   const wave=d.x*.0048*Math.sin(Math.PI*t)*
+    Math.sin(k*1.61803398875+t*4.1);
+   const x=THREE.MathUtils.lerp(scalpRoot.x,targetX,eased)+radial+wave;
    const y=THREE.MathUtils.lerp(scalpRoot.y,tipY,t);
    const z=THREE.MathUtils.lerp(scalpRoot.z-d.z*.003,targetZ,eased)+
-    d.z*.0017*Math.sin(Math.PI*t);
-   const taper=1-.72*Math.pow(t,8);
-   return f3(x+edge*width*taper,y,z+
+    d.z*.012*Math.sin(Math.PI*t)+
+    d.z*.004*Math.sin(t*5.3+k*.67)*Math.sin(Math.PI*t);
+   // Rounded, layered tips retain a visible lock width until the last
+   // segment; avoid the previous uniform pointed-triangle silhouette.
+   const tipBlend=THREE.MathUtils.smoothstep(t,.88,1);
+   const taper=1-.44*Math.pow(t,5)-.22*tipBlend;
+   const tipRound=Math.abs(edge)*d.y*.0035*tipBlend;
+   return f3(x+edge*width*taper,y+tipRound,z+
     Math.abs(edge)*d.z*.0012);
   };
   for(let j=0;j<stripSegments;j++){
