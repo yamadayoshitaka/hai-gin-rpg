@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
-import {makeBattleRpgStatusRows,aggregateBattleRpgTeams} from '../src/battle-rpg-squad-source.js';
+import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from '../src/battle-rpg-squad-source.js';
 import {battleJobPortrait,JOB_PORTRAIT_FILES} from '../src/battle-job-portraits.js';
 import {rpgHudHealth,rpgHudStatus,rpgHudCompactText,rpgHudIcon,rpgHudEffectIcon,rpgHudStateIcon,rpgHudTroopPercent} from '../src/battle-rpg-squad-hud.js';
 
@@ -246,4 +246,66 @@ test('three inn teams aggregate nine job squads in the combat HUD without changi
  assert.match(html,/targetedStrategyUi\.open\(group,\{startAtRecommendations:true,groupOnly:true\}\)/);
  assert.match(hud,/expandedTeamId/);
  assert.match(hud,/rpgJobDivision/);
+});
+
+
+test('classic story and CPU 8-10 physical squads become at most three real HUD command teams',()=>{
+ const squadIds=Array.from({length:8},(_,i)=>String(i+1));
+ const jobs=['騎士','僧侶','魔法使い','僧侶','魔法使い','騎士','剣士','剣士'];
+ const map=resolveBattleThreeTeamGroups(squadIds,id=>jobs[Number(id)-1],{},false);
+ assert.equal(Object.keys(map).length,8);
+ assert.deepEqual(new Set(Object.values(map)),new Set([1,2,3]));
+ assert.equal(map['1'],map['6']);
+ assert.equal(map['2'],map['4']);
+ assert.equal(map['3'],map['5']);
+ assert.equal(map['7'],map['8']);
+ const rows=squadIds.map((id,index)=>({
+  team:0,id,job:jobs[index],name:'第'+id+'隊',alive:1,total:1,
+  hp:100,maxHp:100,mp:10,maxMp:10,attackPercent:100,
+  mode:'charge',effects:[],inContact:false
+ }));
+ const enemy={...rows[0],id:'e1',team:1,name:'敵'};
+ const grouped=aggregateBattleRpgTeams([...rows,enemy],map);
+ assert.equal(grouped.filter(x=>x.team===0).length,3);
+ assert.deepEqual(grouped.filter(x=>x.team===1),[enemy]);
+ assert.equal(grouped.filter(x=>x.team===0).reduce((n,x)=>n+x.total,0),8);
+ for(const group of grouped.filter(x=>x.team===0)){
+  assert.ok(group.jobs.length<=3,'at most 3 distinct jobs per team');
+  assert.ok(group.members.length>0,'no empty replacement teams');
+ }
+ const tenIds=Array.from({length:10},(_,i)=>String(i+1));
+ const nineJobs=['剣士','盾騎士','魔法使い','僧侶','弓使い','忍者','シーフ','召喚士','格闘家','剣士'];
+ const tenGroups=resolveBattleThreeTeamGroups(tenIds,id=>nineJobs[Number(id)-1]);
+ assert.ok([...new Set(Object.values(tenGroups))].length<=3);
+ for(const team of [1,2,3]){
+  const distinct=[...new Set(tenIds.filter(id=>tenGroups[id]===team).map(id=>nineJobs[Number(id)-1]))];
+  assert.ok(distinct.length<=3,'normal battle team cannot exceed three jobs');
+ }
+});
+
+test('authoritative inn mapping overrides fallback, but legacy ten-group mapping is normalized',()=>{
+ const ids=['11','22','33','44'];
+ const modern=resolveBattleThreeTeamGroups(ids,id=>'僧侶',
+  {'11':3,'22':1,'33':1,'44':2},true);
+ assert.deepEqual(modern,{'11':3,'22':1,'33':1,'44':2});
+ const old=resolveBattleThreeTeamGroups(ids,id=>id,
+  {'11':1,'22':5,'33':8,'44':10},true);
+ assert.equal(Object.keys(old).length,4);
+ assert.ok(Object.values(old).every(x=>x>=1&&x<=3));
+});
+
+test('every playable battle link and display refresh route to the three-team HUD',()=>{
+ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const map=readFileSync(new URL('../world-map.html',import.meta.url),'utf8');
+ const game=readFileSync(new URL('../game.html',import.meta.url),'utf8');
+ const story=readFileSync(new URL('../story-mode.html',import.meta.url),'utf8');
+ assert.match(battle,/const THREE_TEAM_BATTLE=!TOWN_MODE&&!MASS_SIZE/);
+ assert.match(battle,/resolveBattleThreeTeamGroups\(squadIds,id=>squadPrimaryJob\(id\)/);
+ assert.match(battle,/battleRpgHud\.update\(THREE_TEAM_BATTLE\?/);
+ assert.match(battle,/aggregateBattleRpgTeams\(rows,armyGroupBySquad\)/);
+ assert.match(battle,/if\(THREE_TEAM_BATTLE\)for\(const unit of squadRoster\)/);
+ assert.doesNotMatch(battle,/battleRpgHud\.update\(storyRequest\?\.sortieTeamCount\?/);
+ assert.match(map,/v=three-team-hud2-20261120/);
+ assert.match(game,/v=three-team-hud2-20261120/);
+ assert.match(story,/storyBattle=1&v=three-team-hud2-20261120/);
 });

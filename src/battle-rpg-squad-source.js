@@ -117,3 +117,37 @@ export function aggregateBattleRpgTeams(rows,groupBySquad={}){
  });
  return [...allies,...all.filter(row=>Number(row.team)===1)];
 }
+
+/**
+ * Resolve the 3 command teams for every playable 50-person battle entry.
+ * Modern inn battles keep their authoritative formation mapping. Legacy story
+ * and quick CPU battles group identical jobs together without deleting real
+ * physical squads, so each team can command up to 3 distinct jobs.
+ */
+export function resolveBattleThreeTeamGroups(squadIds,getJob=()=>'',provided={},authoritative=false){
+ const ids=[...new Set((squadIds||[]).map(String))];
+ const valid=id=>{
+  const n=Number(provided[String(id)]);
+  return Number.isInteger(n)&&n>=1&&n<=3;
+ };
+ if(authoritative&&ids.every(valid))
+  return Object.fromEntries(ids.map(id=>[id,Number(provided[id])]));
+ const byJob=new Map();
+ for(const id of ids){
+  const job=String(getJob(id)||'兵士');
+  if(!byJob.has(job))byJob.set(job,[]);
+  byJob.get(job).push(id);
+ }
+ const teams=[{id:1,people:0,jobs:0},{id:2,people:0,jobs:0},{id:3,people:0,jobs:0}];
+ const groups={};
+ for(const members of byJob.values()){
+  // Prefer fewer physically assigned squads and preserve the 3-job limit.
+  const available=teams.filter(t=>t.jobs<3);
+  const pool=(available.length?available:teams).sort((a,b)=>
+   a.people-b.people||a.jobs-b.jobs||a.id-b.id);
+  const chosen=pool[0];
+  chosen.people+=members.length;chosen.jobs++;
+  for(const id of members)groups[id]=chosen.id;
+ }
+ return groups;
+}

@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-orderqueue2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-three-team-hud1"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261120-orderqueue2"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-three-team-hud2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -919,8 +919,8 @@ import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEM
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-three-team-hud1';
-import {makeBattleRpgStatusRows,aggregateBattleRpgTeams} from './src/battle-rpg-squad-source.js?v=20261120-three-team-hud1';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-three-team-hud2';
+import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from './src/battle-rpg-squad-source.js?v=20261120-three-team-hud2';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -1260,6 +1260,9 @@ const pipelineLine=document.createElement('div');
 pipelineLine.className='menuLine';pipelineLine.append(pipelineLink);
 $('battleMenu').append(pipelineLine);
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
+// All normal gameplay paths (modern inn, classic story, CPU) command three
+// formation teams; only dedicated 100+ actor stress-test modes retain ten.
+const THREE_TEAM_BATTLE=!TOWN_MODE&&!MASS_SIZE;
 const corpsePolicy=new BattleCorpsePolicy();
 $('corpseLifetime').onchange=e=>corpsePolicy.setLifetime(e.target.value==='never'?Infinity:Number(e.target.value));
 document.title='灰銀戦記 ― 沈黙の星鐘 | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.69';
@@ -6523,7 +6526,17 @@ const selectedSquadType=(id,team=0)=>selectedSquadFormations.get(team+':'+String
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 const armyGroupBySquad={...storyRequest?.armyGroupBySquad};
-for(const [index,id] of squadIds.entries())armyGroupBySquad[id]=normalizeArmyGroup(armyGroupBySquad[id]??(storyRequest?1:Math.min(10,Math.floor(index*10/Math.max(1,squadIds.length))+1)));
+const playableThreeTeams=THREE_TEAM_BATTLE?
+ resolveBattleThreeTeamGroups(squadIds,id=>squadPrimaryJob(id),armyGroupBySquad,
+  Boolean(storyRequest?.sortieTeamCount)):null;
+for(const [index,id] of squadIds.entries())
+ armyGroupBySquad[id]=THREE_TEAM_BATTLE?playableThreeTeams[id]:
+  normalizeArmyGroup(armyGroupBySquad[id]??(storyRequest?1:Math.min(10,Math.floor(index*10/Math.max(1,squadIds.length))+1)));
+// Keep the physical actor grouping and the HUD/command lookup in lockstep.
+if(THREE_TEAM_BATTLE)for(const unit of squadRoster){
+ if(unit.team!==0)continue;
+ unit.armyGroupId=armyGroupBySquad[String(unit.squadId)];
+}
 const commandGroupIds=id=>battleGroupMembers(id,squadIds,armyGroupBySquad);
 const commandGroupName=id=>'第'+normalizeArmyGroup(armyGroupBySquad[String(id)])+'班';
 // Item spending is manual until the user opts each squad into automation.
@@ -9314,7 +9327,7 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
   // Inn sorties are three command teams. Never submit a synthetic HUD team ID
   // to the physical squad engine; use the already group-aware tactic planner.
   if(team!==0||!battleReady||finished)return;
-  if(storyRequest?.sortieTeamCount){
+  if(THREE_TEAM_BATTLE){
    const group=String(id).startsWith('team:')?Number(String(id).slice(5)):
     normalizeArmyGroup(armyGroupBySquad[String(id)]);
    const squad=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
@@ -9327,7 +9340,7 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  },
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
-  if(team===0&&storyRequest?.sortieTeamCount&&String(id).startsWith('team:')){
+  if(team===0&&THREE_TEAM_BATTLE&&String(id).startsWith('team:')){
    const group=Number(String(id).slice(5));
    id=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
     squadRoster.some(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
@@ -9341,7 +9354,7 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  }
 }):null;
 if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,
- storyRequest?.sortieTeamCount?'team:'+normalizeArmyGroup(armyGroupBySquad[String(trackedAllySquadId)]):trackedAllySquadId);
+ THREE_TEAM_BATTLE?'team:'+normalizeArmyGroup(armyGroupBySquad[String(trackedAllySquadId)]):trackedAllySquadId);
 function refreshBattleRpgSquadHud(sums){
  if(!battleRpgHud)return;
  const rows=makeBattleRpgStatusRows({
@@ -9355,12 +9368,14 @@ function refreshBattleRpgSquadHud(sums){
  });
  // Aggregate only the campaign presentation. Live commands, MP and AI still
  // read the original per-job rows, never a synthetic three-team HUD row.
- battleRpgHud.update(storyRequest?.sortieTeamCount?
+ battleRpgHud.update(THREE_TEAM_BATTLE?
   aggregateBattleRpgTeams(rows,armyGroupBySquad):rows,
   {show:battleReady&&!finished&&!battleCeremony.locked});
  realtimeCommandUI?.update(rows);
 }
 window.getBattleRpgSquadHudQA=()=>({
+ build:'3team-hud2',threeTeamBattle:THREE_TEAM_BATTLE,
+ squads:squadIds.length,assignedGroups:Object.fromEntries(squadIds.map(id=>[id,armyGroupBySquad[id]])),
  rows:battleRpgHud?.rows||[],selected:battleRpgHud?.selected||'',visible:battleRpgHud?.visible||false
 });
 
@@ -9440,7 +9455,7 @@ for(const team of [0,1]){
 const threeGroupPanel=!TOWN_MODE?createBattleThreeGroupPanel({
  alliedNav:$('allySquadRibbon'),enemyNav:$('enemySquadRibbon'),
  actors:squadRoster,groupBySquad:armyGroupBySquad,initialUnits:storyRequest?.units??squadRoster,
- maxTeams:storyRequest?3:10,
+ maxTeams:THREE_TEAM_BATTLE?3:10,
  enemyInitial:storyRequest?.enemyCount??(massSim?.sideCount??actors.filter(a=>a.team===1).length),
  allowRecompose:!massSim,
  onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
