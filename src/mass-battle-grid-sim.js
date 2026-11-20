@@ -935,7 +935,7 @@ export class MassBattleGridSimulation {
   /** Explicit summon order for the summoner squad. Real summon objects and MP costs. */
   summonSquadCreature(squadId,team=0){
     const casters=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
-      u.alive&&u.hp>0&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
+      u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='summoner'&&!this.actions.summonOf(u).length);
     for(const caster of casters){
       const skills=availableCombatSkills('summoner',caster.rarity)
        .filter(skill=>skill.kind==='summon'&&caster.mp>=skill.mp&&
@@ -1015,7 +1015,7 @@ export class MassBattleGridSimulation {
   _applyGlobalStrategy(){
     this._enforceLastSurvivorStrategy();
     if([...this.squadStrategies.values()].includes('recovery')){
-      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&
+      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&
         u.jobId==='priest'&&u.formationType==='support'&&
         !this.squadCommands.has(String(u.squadId))&&
         this.squadStrategies.get(String(u.squadId))==='recovery').map(u=>String(u.squadId)))];
@@ -1050,7 +1050,7 @@ export class MassBattleGridSimulation {
       // Recovery remains a dedicated strategy, but environmental-maintenance
       // teams with a priest can also heal wounded troops before repairs.
       for(const u of this.units){
-        if(!u.alive||u.team!==0||u.jobId!=='priest'||
+        if(!u.alive||u.team!==0||u.isStrategist||u.jobId!=='priest'||
           this.squadStrategies.get(String(u.squadId))!=='environment_prepare'||
           this.squadCommands.has(String(u.squadId)))continue;
         const patient=this.units.filter(v=>v.team===0&&v.alive&&v.hp<v.maxHp*.65)
@@ -1235,11 +1235,35 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Explicit resurrection has an authoritative HP/MP and Worker outcome.
+   * The UI can first move this entire squad into casting range. */
+  reviveSquadTarget(squadId,targetSquadId,team=0){
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&!u.isStrategist&&u.jobId==='priest');
+    const fallen=this.units.filter(u=>u.team===team&&String(u.squadId)===String(targetSquadId)&&
+      (!u.alive||u.hp<=0));
+    for(const caster of members){
+      const spells=availableCombatSkills('priest',caster.rarity)
+        .filter(spell=>spell.kind==='revive'&&caster.mp>=spell.mp)
+        .sort((a,b)=>b.hpPercent-a.hpPercent);
+      for(const spell of spells){
+        const victim=fallen.find(u=>Math.hypot(u.x-caster.x,u.z-caster.z)<=spell.range);
+        if(!victim)continue;
+        const liveBefore=this.live[team];
+        if(!this.actions.fireSkill(caster,spell,victim,this.units))continue;
+        // onRevive is attached during step(); before the first tick there
+        // is no event callback, so keep the actual alive counter correct.
+        if(this.live[team]===liveBefore)this.live[team]++;
+        return true;
+      }
+    }
+    return false;
+  }
   requestSquadHealing(targetSquadId,preferredSupportId=null){
     const targetId=String(targetSquadId);
     const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
     if(!wounded.length)return null;
-    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
+    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&!u.isStrategist&&u.team===0&&u.jobId==='priest'&&
       (u.formationType==='support'||(preferredSupportId!=null&&String(u.squadId)===String(preferredSupportId))))
       .map(u=>String(u.squadId)))];
     const mean=(group)=>({x:group.reduce((s,u)=>s+u.x,0)/group.length,z:group.reduce((s,u)=>s+u.z,0)/group.length});
@@ -1574,6 +1598,26 @@ export class MassBattleGridSimulation {
       const mission=u.team===0&&!personalOrderActive?this.squadMissions.get(String(u.squadId)):null;
       const healTarget=u.team===0&&!personalOrderActive?this.squadHealTargets.get(String(u.squadId)):null;
       u.healTargetSquadId=healTarget??null;
+      // An explicit squad-healing order is actionable, not merely a move
+      // marker. At spell range, priests must cast on the nominated wounded
+      // squad before the generic combat AI selects a different target.
+      if(u.jobId==='priest'&&healTarget!=null&&!u._pendingCast&&u.cooldown<=0){
+        const patient=this.units.filter(v=>v.team===u.team&&v.alive&&v.hp>0&&v.hp<v.maxHp&&
+          String(v.squadId)===String(healTarget)&&
+          Math.hypot(v.x-u.x,v.z-u.z)<=14)
+          .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+        const spells=availableCombatSkills('priest',u.rarity)
+          .filter(skill=>skill.kind==='heal'&&u.mp>=skill.mp&&
+            (!u._skillNext||(u._skillNext[skill.id]||0)<=this.actions.time)&&
+            patient&&Math.hypot(patient.x-u.x,patient.z-u.z)<=skill.range)
+          .sort((a,b)=>b.power-a.power);
+        if(patient&&spells.some(spell=>{
+          if(!this.actions.fireSkill(u,spell,patient,this.units))return false;
+          u.cooldown=Math.max(1,spell.cooldown);return true;
+        })){
+          u.vx=0;u.vz=0;u.action='skill';continue;
+        }
+      }
       let nearest=null,best=reach*reach,missionNearest=null,missionBest=reach*reach;
       let hiddenEnemy=null,hiddenDistance=reach*reach;
       // The previous scan chose a blocked, nearest enemy then discarded it.

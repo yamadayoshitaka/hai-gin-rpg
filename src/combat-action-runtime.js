@@ -150,7 +150,7 @@ export class CombatActionRuntime {
     if(!this.inside(x,z))return false;
     return !this.objects.some(other=>other!==source&&other.alive&&other.flying&&
       Math.abs(other.x-x)<=1&&Math.abs(other.z-z)<=1&&
-      Math.abs((other.height||3)-(source.height||3))<2);
+      Math.abs((other.height||3)-(source?.height||3))<2);
   }
   flightRoofHeight(x,z){
     let roof=2.6;
@@ -343,8 +343,34 @@ export class CombatActionRuntime {
         COMBAT_RULES.maximumMountsPerTeam) return null;
     let at = { x, z };
     if (!mounted) {
-      const candidates = [[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
-      const found = candidates.map(([dx,dz]) => ({ x: x + dx, z: z + dz })).find(p => this.free(p.x, p.z, spec.flying)&&(!groundMount||this.groundMountAllowed(p.x,p.z)));
+      // Large squads may occupy every immediately adjacent ground tile.
+      // Search concentric rings for a valid real spawn cell, with no wall
+      // or mount-forbidden shortcuts. Flying summons can share ground X/Z
+      // but may not overlap another creature in the same air lane.
+      let found=null;
+      // Preserve the established close cardinal spawn positions first;
+      // allied riders must still be able to mount a freshly called wolf.
+      const familiarNear=[[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
+      for(const [dx,dz] of familiarNear){
+        const px=x+dx,pz=z+dz;
+        if(this.free(px,pz,spec.flying)&&
+           (!groundMount||this.groundMountAllowed(px,pz))&&
+           (!spec.flying||this.airspaceClear(null,px,pz))){
+          found={x:px,z:pz};break;
+        }
+      }
+      for(let radius=1;radius<=9&&!found;radius++){
+        for(let dz=-radius;dz<=radius&&!found;dz++){
+          for(let dx=-radius;dx<=radius;dx++){
+            if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+            const px=x+dx,pz=z+dz;
+            if(!this.free(px,pz,spec.flying)||
+               (groundMount&&!this.groundMountAllowed(px,pz))||
+               (spec.flying&&!this.airspaceClear(null,px,pz)))continue;
+            found={x:px,z:pz};break;
+          }
+        }
+      }
       if (!found) return null;
       at = found;
     }

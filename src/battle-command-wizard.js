@@ -13,7 +13,7 @@ export function mountBattleCommandWizard({
  getMapBackground=()=>null,getLegalPoint=()=>null,getMoveTargets=()=>[],
  getSpecialTargets=()=>[],getSharedItems=()=>[],getRallyInfo=()=>({}),
  onMove=()=>false,onOrder=()=>false,onTargetOrder=()=>false,onSpecial=()=>false,
- onSharedItem=()=>false,onRally=()=>false,queueArrival=()=>{},setPreferred=()=>{},
+ onSharedItem=()=>false,onRally=()=>false,queueArrival=()=>{},cancelArrival=()=>{},setPreferred=()=>{},
  onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
  onClose=()=>{}
 }={}){
@@ -66,7 +66,7 @@ export function mountBattleCommandWizard({
   });
  }
  function pickAction(id){
-  if(id==='hold'){advance('confirm',{category:id,kind:'hold'});return;}
+  if(id==='hold'){advance('confirm',{category:id,kind:'hold',command:'hold'});return;}
   if(id==='defend'){advance('types',{category:id});return;}
   if(id==='move'){advance('types',{category:id});return;}
   if(id==='attack'){advance('types',{category:id});return;}
@@ -177,6 +177,10 @@ export function mountBattleCommandWizard({
    queueArrival(id,{command:accepted.followup,point:{...accepted.point}});
   if(accepted?.openMove)return true; // Summon or other special already spent resources.
   if(accepted){
+   // A newer combat/guard/special order supersedes the old destination's
+   // arrival callback. Otherwise a stale hold order fires after the new one.
+   if(['attack','defend','hold','special'].includes(plan.category)&&
+      !accepted?.followup&&!accepted?.deferred)cancelArrival(id);
    onCommandCommitted({squadId:id,category:plan.category,kind:plan.kind,command:plan.command,
     target:plan.target,point:plan.point,arrival:plan.arrival,itemId:plan.item?.id,specialId:plan.specialId});
    setPreferred(id,plan.category==='move'?'move_'+(plan.arrival||'hold'):kind==='special'?'special_'+plan.specialId:plan.command||kind||'item');
@@ -195,7 +199,7 @@ export function mountBattleCommandWizard({
    state.notice='発令できません：'+String(live.commanderReason);render();return;
   }
   const cooldown=Math.max(0,Number(live.cooldown)||0);
-  if(plan.category!=='rally'&&(cooldown>0||live.moving||live.blocked)){
+  if(plan.category!=='rally'&&(cooldown>0||live.blocked)){
    // Store the plan, not a callback closing over mutable wizard state.
    nextOrders.set(id,{plan,label:nextLabel(plan)});
    failedOrders.delete(id);
@@ -215,7 +219,7 @@ export function mountBattleCommandWizard({
     nextOrders.delete(id);failedOrders.set(id,'予約取消：部隊が戦闘不能');continue;
    }
    const status=getOrderState(id)||{};
-   if(Number(status.cooldown)>0||status.moving||status.blocked)continue;
+   if(Number(status.cooldown)>0||status.blocked)continue;
    if(status.commanderReason){
     nextOrders.delete(id);failedOrders.set(id,status.commanderReason);continue;
    }
@@ -359,8 +363,8 @@ export function mountBattleCommandWizard({
    if(state.point)note('地点：X '+state.point.x+' / Z '+state.point.z);
    const remain=Number(getOrderState(String(state.squad))?.cooldown)||0;
    const live=getOrderState(String(state.squad))||{};
-   const reserving=state.category!=='rally'&&(remain>0||live.moving||live.blocked);
-   if(reserving)note('現在の作戦'+(live.moving?'が実行中':'に命令間隔が残っています')+'。この内容を次の作戦に予約します。');
+   const reserving=state.category!=='rally'&&(remain>0||live.blocked);
+   if(reserving)note('現在の作戦は継続中です。命令間隔が終わり次第、新しい指示へ切り替えます。');
    button(reserving?'📋 次の作戦として予約':'✅ この内容で確定',issue);
   }
   if(state.notice)note(state.notice,true);

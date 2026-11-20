@@ -79,8 +79,13 @@ try{
     }
     if(tick===34){
       const target={type:'burn_tree',targetId:'mission-tree-78-116',x:78,z:116};
-      assert.ok(reference.setSquadMission(2,'burn_tree',target));
-      worker.postMessage({type:'squadMission',squadId:2,missionType:'burn_tree',target});
+      // Current 10-squad roster assigns one job per squad. Do not assume
+      // squad 2 contains a mage; pick the real caster in both simulations.
+      const mageSquad=reference.units.find(u=>u.team===0&&!u.isStrategist&&
+        u.alive&&u.jobId==='mage')?.squadId;
+      assert.ok(mageSquad!=null,'an actual mage squad exists');
+      assert.ok(reference.setSquadMission(mageSquad,'burn_tree',target));
+      worker.postMessage({type:'squadMission',squadId:mageSquad,missionType:'burn_tree',target});
     }
     if(tick===8){
       // Send this before the armies meet. With 8-way dash movement the

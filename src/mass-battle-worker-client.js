@@ -81,6 +81,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     setSquadExploration(squadId,buildingId,x,z,team=0){if(!failed)worker.postMessage({type:'squadExplore',squadId,buildingId,x,z,team});},
     setSquadMission(squadId,missionType,target){if(!failed)worker.postMessage({type:'squadMission',squadId,missionType,target});},
     requestSquadHealing(targetSquadId,supportSquadId){if(!failed)worker.postMessage({type:'squadHealing',targetSquadId,supportSquadId});},
+    reviveSquadTarget(squadId,targetSquadId,team=0){if(!failed)worker.postMessage({type:'squadRevival',squadId,targetSquadId,team});},
     clearSquadDestination(squadId){if(!failed)worker.postMessage({type:'clearSquadDestination',squadId});},
     setOrder(id,order){if(!failed)worker.postMessage({type:'order',id,order});},
     igniteStructure(id,options){if(!failed)worker.postMessage({type:'igniteStructure',id,options});},
