@@ -326,18 +326,26 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  // Previous battle-only SphereGeometry was a smooth bald cap. A roughly
  // 500-triangle skin-conforming scalp is inexpensive and can be instanced.
  const scalpSurface=fittedScalpSurface(model,bone,size.bounds);
+ // A skinned mesh can lack enough head-weighted crown triangles (for example
+ // stylized/low-vertex crowd heads). The old fallback was a bare, smooth
+ // sphere because root fibers were only generated for a sampled skin mesh.
+ // Bake its anatomical fit into geometry so the SAME root-fiber generator
+ // covers the fallback without adding an extra draw call for the cap.
+ const fallbackSurface=!scalpSurface?new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56).toNonIndexed():null;
+ if(fallbackSurface){
+  fallbackSurface.scale(bodySize.x*.53,crownHeight,bodySize.z*.53);
+  fallbackSurface.translate(headCenter.x,size.bounds.max.y-crownHeight+.004,
+    headCenter.z-bodySize.z*.015);
+ }
+ const crownSurface=scalpSurface||fallbackSurface;
  const fiber=scalpFiberMap();
- const crown=new THREE.Mesh(scalpSurface||new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56),
+ const crown=new THREE.Mesh(crownSurface,
   new THREE.MeshStandardMaterial({color:tint,map:fiber,bumpMap:fiber,bumpScale:.0015,
    roughness:.87,metalness:0,side:THREE.DoubleSide}));
  crown.name='fitted-scalp-underlay';
- if(!scalpSurface){
-  crown.scale.set(bodySize.x*.53,crownHeight,bodySize.z*.53);
-  crown.position.set(headCenter.x,size.bounds.max.y-crownHeight+.004,headCenter.z-bodySize.z*.015);
- }
  crown.castShadow=true;crown.receiveShadow=true;
  hairRoot.add(crown,lod);
- const scalpFibers=fittedScalpFibers(scalpSurface,size.bounds,tint,quality);
+ const scalpFibers=fittedScalpFibers(crownSurface,size.bounds,tint,quality);
  if(scalpFibers){scalpFibers.name='anatomical-root-fibers';hairRoot.add(scalpFibers)}
  // Preserve the real, fiber-textured scalp in the exposed part of a hood's
  // face opening. Previously we hid the entire crown mesh whenever headwear
@@ -356,7 +364,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  hairRoot.visible=true;
  hairRoot.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
   scalpUnderlay:true,scalpMethod:scalpSurface?'skinned-head-surface':'lightweight-crown',
-  scalpTriangles:scalpSurface?scalpSurface.attributes.position.count/3:0,
+  scalpTriangles:crownSurface.index?crownSurface.index.count/3:crownSurface.attributes.position.count/3,
   rootFiberTriangles:scalpFibers?scalpFibers.geometry.attributes.position.count/3:0,
   fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z,
   foreheadHairDepth:foreheadZ,
