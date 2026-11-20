@@ -128,7 +128,7 @@ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'
 assert.match(battle,/story-center-orders/);
 assert.match(battle,/if\(!TOWN_MODE\)document.body.classList.add\('story-center-orders'\)/,
  'the public direct battle link gets the new UI even without storyBattle=1');
-assert.match(battle,/directBattlePreview/,'the standalone battle loads into the new UI');
+assert.match(battle,/realtimeCommandUI=!TOWN_MODE\?createRealtimeBattleCommands/,'direct battle uses the live squad command interface');
 assert.match(battle,/getRadarTargets:/,'live radar gets both armies');
 assert.match(battle,/central-battle-orders\.css/);
 assert.match(battle,/objectiveCheckpoints\.update\(\)/);
