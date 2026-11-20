@@ -37,11 +37,11 @@ assert.ok(Math.hypot(plan[0].x-plan[1].x,plan[0].z-plan[1].z)>.55,
  'Two rewards are not accidentally de-duplicated by the nearby-marker rule');
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const worker=readFileSync(new URL('../src/mass-battle-worker-runtime.js',import.meta.url),'utf8');
-assert.match(html,/id='openingSquadOrders'/,'Pre-battle selection is visible');
+assert.match(html,/realtimeCommandUI\?\.openDeployment\(\)/,'One-time prebattle deployment uses the live map');
 assert.match(html,/for\(const team of \[0,1\]\)/,'Both armies are configurable');
 assert.match(html,/INITIAL_ORDER_LABELS=\{charge:/,'Starting commands are explicit');
 assert.match(html,/explore:'🔎 探索'/);
-assert.match(html,/queueSquadExplorations\(team,id,\(representative\?\.buildingPicker\|\|buildingPicker\)\.getIds\(\),\{beforeBattle:true\}\)/);
+assert.match(html,/function queueSquadExplorations\(team,id,ids/,'Exploration path remains executable for both armies');
 assert.match(html,/function createExplorationPicker\(defaultIds=\[\]\)/,'Exploration uses the map picker');
 assert.match(html,/function queueSquadExplorations\(team,id,ids/,'Several buildings can be explored sequentially');
 assert.match(html,/function issueBuildingExploration\(team,squadId,buildingId/);
