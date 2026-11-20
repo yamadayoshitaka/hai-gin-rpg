@@ -1235,6 +1235,30 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Explicit resurrection has an authoritative HP/MP and Worker outcome.
+   * The UI can first move this entire squad into casting range. */
+  reviveSquadTarget(squadId,targetSquadId,team=0){
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+      u.alive&&u.hp>0&&u.jobId==='priest');
+    const fallen=this.units.filter(u=>u.team===team&&String(u.squadId)===String(targetSquadId)&&
+      (!u.alive||u.hp<=0));
+    for(const caster of members){
+      const spells=availableCombatSkills('priest',caster.rarity)
+        .filter(spell=>spell.kind==='revive'&&caster.mp>=spell.mp)
+        .sort((a,b)=>b.hpPercent-a.hpPercent);
+      for(const spell of spells){
+        const victim=fallen.find(u=>Math.hypot(u.x-caster.x,u.z-caster.z)<=spell.range);
+        if(!victim)continue;
+        const liveBefore=this.live[team];
+        if(!this.actions.fireSkill(caster,spell,victim,this.units))continue;
+        // onRevive is attached during step(); before the first tick there
+        // is no event callback, so keep the actual alive counter correct.
+        if(this.live[team]===liveBefore)this.live[team]++;
+        return true;
+      }
+    }
+    return false;
+  }
   requestSquadHealing(targetSquadId,preferredSupportId=null){
     const targetId=String(targetSquadId);
     const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp&&this._squadDebuff(u,'heal_block')<1);
