@@ -8,7 +8,7 @@ import * as THREE from 'three';
  * This is a species-specific resculpt of the existing m001 stations.
  * Do not propagate the new ratios to m001, m016 or m017. No billboards.
  */
-export const M019_HERO_REVISION='m019-seamless-two-bone-limb-v9-20261120';
+export const M019_HERO_REVISION='m019-visible-cpu-limbs-v10-20261120';
 export const M019_BODY_DROP=.86;
 export const M019_TAIL_LENGTH=2.20;
 export const M019_LIMB_REACH=.54;
@@ -121,11 +121,12 @@ export const M019_SPRAWL_FOOT_X=.007;
 export const M019_SPRAWL_FOOT_Y=-.650;
 export const M019_SHOULDER_LOCAL_Y=1.26;
 /**
- * One real continuous skin covers shoulder -> elbow -> shin -> ankle.
- * Two bones (one bound to shoulder and one to knee) deform the SAME mesh,
- * so no disconnected black shin-post can exist at any gait frame.
- * Unlike v8, the glowing fissure is inset at the shoulder and cannot extend
- * past the solid muscle as a detached thin orange arm.
+ * m019's four legs use a conventional, WebGL-compatible Mesh.
+ * Mobile GPUs rendered v9's SkinnedMesh as invisible even while CPU
+ * applyBoneTransform() returned correct joint locations. The continuous
+ * tube stays in shoulder-local space; its LOWER vertices are bent around
+ * the real elbow/knee pivot on every animation update. This keeps a single
+ * closed visible surface without GPU skinning, joints cut-outs or black posts.
  */
 export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'}={}){
  const sign=side<0?-1:1;
@@ -134,26 +135,26 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
  const kneeY=M019_SPRAWL_KNEE_Y;
  const footY=kneeY+M019_SPRAWL_FOOT_Y;
  const points=[
-  [0,.035,z], [sign*.090,.038,z+.012],
-  [sign*.215,.028,z+.023], [sign*.370,-.004,z+.020],
-  [sign*.535,-.050,z+.010], [kneeX,kneeY,z],
-  [kneeX,kneeY-.120,z], [kneeX,kneeY-.270,z+.008],
-  [kneeX,kneeY-.440,z+.032], [kneeX,footY,z+.095]
+  [0,.035,z],[sign*.090,.038,z+.012],
+  [sign*.215,.028,z+.023],[sign*.370,-.004,z+.020],
+  [sign*.535,-.050,z+.010],[kneeX,kneeY,z],
+  [kneeX,kneeY-.120,z],[kneeX,kneeY-.270,z+.008],
+  [kneeX,kneeY-.440,z+.032],[kneeX,footY,z+.095]
  ];
  const path=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
- const baseRadius=fore?.194:.210;
- const raw=g.tube(leg,'skin',points,baseRadius,{
+ const baseRadius=fore?.219:.242;
+ // The medium-dark rocky shading makes real legs visible against the black
+ // torso without introducing a glowing red or rubbery-looking arm surface.
+ const skin=g.tube(leg,'light',points,baseRadius,{
   name:'m019-seamless-skin-'+name,capEnds:true
  });
- const geometry=raw.geometry;
+ const geometry=skin.geometry;
  const attr=geometry.getAttribute('position');
  const tubularSegments=geometry.parameters.tubularSegments;
  const radialSegments=geometry.parameters.radialSegments;
  const stride=radialSegments+1;
  const ringCount=tubularSegments+1;
- const regularVertices=ringCount*stride;
- if(attr.count!==regularVertices+2)throw Error('m019 limb requires closed tube rings');
- // Gradual anatomical radius changes, never a cylinder or disconnected post.
+ if(attr.count!==ringCount*stride+2)throw Error('m019 continuous muscle needs closed rings');
  const radiusScale=t=>{
   if(t<.16)return 1.08+.05*Math.sin(t/.16*Math.PI);
   if(t<.45)return 1.08-(t-.16)*1.15;
@@ -161,65 +162,74 @@ export function sculptM019Limb(g,leg,distal,name,{fore=true,side=1,detail='high'
   if(t<.85)return .5413-(t-.63)*.33;
   return .4687-(t-.85)*.16;
  };
- const skinIndices=[],skinWeights=[];
+ const weight=new Float32Array(attr.count);
  const smooth=t=>{
   const v=Math.max(0,Math.min(1,t));return v*v*(3-2*v);
  };
  for(let row=0;row<ringCount;row++){
   const t=row/tubularSegments,center=path.getPointAt(t);
-  const radius=radiusScale(t);
-  // Smooth skin weights cross the elbow. Both bones influence its rings,
-  // rather than rigidly splitting upper muscle from the lower shin.
-  const kneeWeight=smooth((t-.365)/.20);
+  const radius=radiusScale(t),kneeWeight=smooth((t-.365)/.20);
   for(let j=0;j<stride;j++){
    const i=row*stride+j;
    attr.setXYZ(i,
     center.x+(attr.getX(i)-center.x)*radius,
     center.y+(attr.getY(i)-center.y)*radius,
     center.z+(attr.getZ(i)-center.z)*radius);
-   skinIndices.push(0,1,0,0);
-   skinWeights.push(1-kneeWeight,kneeWeight,0,0);
+   weight[i]=kneeWeight;
   }
  }
- // Cap centres are part of the very same mesh and follow the right bones.
- for(const w of [0,1]){
-  skinIndices.push(0,1,0,0);
-  skinWeights.push(1-w,w,0,0);
+ weight[attr.count-1]=1; // closing cap follows ankle, not shoulder
+ const rest=new Float32Array(attr.array);
+ const inverseBind=new THREE.Matrix4().makeTranslation(-kneeX,-kneeY,-z);
+ const transform=new THREE.Matrix4(),deformed=new THREE.Vector3();
+ let lastX=NaN,lastY=NaN,lastZ=NaN;
+ function refreshVisibleLimb(){
+  if(lastX===distal.rotation.x&&lastY===distal.rotation.y&&lastZ===distal.rotation.z)
+   return;
+  lastX=distal.rotation.x;lastY=distal.rotation.y;lastZ=distal.rotation.z;
+  // In shoulder-local coordinates: distal matrix * inverse(bind pose).
+  // All trunk/shoulder movement comes from leg's actual world transform.
+  distal.updateMatrix();
+  transform.copy(distal.matrix).multiply(inverseBind);
+  for(let i=0;i<weight.length;i++){
+   const off=i*3,x=rest[off],y=rest[off+1],v=rest[off+2];
+   const w=weight[i];
+   if(w<=0){attr.setXYZ(i,x,y,v);continue;}
+   deformed.set(x,y,v).applyMatrix4(transform);
+   attr.setXYZ(i,x+(deformed.x-x)*w,
+    y+(deformed.y-y)*w,v+(deformed.z-v)*w);
+  }
+  attr.needsUpdate=true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
  }
- geometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(skinIndices,4));
- geometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(skinWeights,4));
- attr.needsUpdate=true;
- geometry.computeVertexNormals();
- geometry.computeBoundingSphere();
- const shoulderBone=new THREE.Bone();
- shoulderBone.name='m019-skin-shoulder-'+name;
- const elbowBone=new THREE.Bone();
- elbowBone.name='m019-skin-knee-'+name;
- leg.add(shoulderBone);
- distal.add(elbowBone);
- leg.remove(raw);
- const skin=new THREE.SkinnedMesh(geometry,raw.material);
- skin.name='m019-seamless-skin-'+name;
- skin.castShadow=true;skin.receiveShadow=true;skin.frustumCulled=false;
- skin.userData={...raw.userData,
-  m019ContinuousLimb:true,m019TrueRoundLimb:true,
-  m019CrossSectionsPerpendicularToAxis:true,
-  m019WholeLegClosedSurface:true,m019SkinningBones:2,
-  m019MuscleRadius:baseRadius,m019HorizontalThigh:true,
-  m019VerticalShin:true,m019SprawledOutward:true};
- leg.add(skin);
- g.root.updateMatrixWorld(true);
- skin.bind(new THREE.Skeleton([shoulderBone,elbowBone]));
- // Heat stays on the proximal muscle, not a naked glowing stick from the
- // torso to a disconnected shin. Low LOD keeps one very short fissure.
+ skin.frustumCulled=false; // bounds are dynamic during gait
+ skin.userData.m019RefreshVisibleLimb=refreshVisibleLimb;
+ skin.userData.m019ContinuousLimb=true;
+ skin.userData.m019TrueRoundLimb=true;
+ skin.userData.m019CrossSectionsPerpendicularToAxis=true;
+ skin.userData.m019WholeLegClosedSurface=true;
+ skin.userData.m019GpuSkinningRemoved=true;
+ skin.userData.m019VisibleLimbRenderer='cpu-deformed-tube';
+ skin.userData.m019MuscleRadius=baseRadius;
+ skin.userData.m019HorizontalThigh=true;
+ skin.userData.m019VerticalShin=true;
+ skin.userData.m019SprawledOutward=true;
+ g.root.userData.m019VisibleLimbUpdaters??=[];
+ g.root.userData.m019VisibleLimbUpdaters.push(refreshVisibleLimb);
+ // Combat and inspection call the same update; this fallback also works if
+ // another renderer changes joint rotations without calling our animation.
+ skin.onBeforeRender=refreshVisibleLimb;
+ refreshVisibleLimb();
+ // Small partly buried fissures; no detached long luminous rods.
  const veins=detail==='low'?1:2;
  for(let vein=0;vein<veins;vein++){
   const offset=vein*.024;
   const fissure=g.tube(leg,'accent',[
-   [sign*.045,.235-offset,z+.017],
-   [sign*.107,.232-offset,z+.043],
-   [sign*.169,.217-offset,z+.020],
-   [sign*.225,.189-offset,z+.035]
+   [sign*.045,.245-offset,z+.017],
+   [sign*.107,.242-offset,z+.043],
+   [sign*.169,.227-offset,z+.020],
+   [sign*.225,.199-offset,z+.035]
   ],detail==='low'?.0045:.0065,{
    name:'m019-limb-molten-crack-'+name+'-'+vein,
    glow:detail!=='low'
