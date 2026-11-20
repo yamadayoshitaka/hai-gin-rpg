@@ -5036,6 +5036,7 @@ function updateUnitFloorTravel(a,dt){
    if(requestUnitFloor(a,1,building,{forceStairs:true})){
     a.floorTravel.manualHighGroundTarget=true;
     a.floorTravel.manualHighGroundGoal=goal;
+    a.floorTravel.manualHighGroundTargetId=a._manualHighGroundTargetId;
    }
    return true;
   }
@@ -9998,7 +9999,7 @@ function realtimeSpecialTargets(id,action){
       structure,building.model.position,floor,{cellSize:CELL}):[];
      if(kind==='roof'&&!roofAccessPlan(structure,{cellSize:CELL}))continue;
      if(kind==='window'&&!windows.length)continue;
-     const capable=members.filter(u=>u.hp>0&&u.alive!==false);
+     const capable=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
      if(!capable.length)continue;
      const passDoor=!gate||gate.team===0||!gate.locked;
      const free=capable.every(u=>!u.floorTravel||
@@ -10023,10 +10024,11 @@ function realtimeSpecialTargets(id,action){
    .map(route=>{
     // Include enemy-side structures. Display unavailable positions with reasons
     // instead of silently dropping every rooftop from the tactical map.
-    const already=members.some(unit=>unit.highGroundRouteIndex===route.index&&unit.hp>0);
+    const heightMembers=massSim.units.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
+    const already=heightMembers.length>0&&heightMembers.every(unit=>unit.highGroundRouteIndex===route.index);
     const occupied=massSim._highGroundClaims?.has(route.buildingIndex+':0')&&!already;
     const flow=massSim._highGroundFlows?.[route.index];
-    const wholeSquad=members.filter(unit=>unit.hp>0&&unit.alive!==false);
+    const wholeSquad=heightMembers;
     const canEnter=wholeSquad.length>0&&wholeSquad.every(unit=>
      !unit.mountId&&(unit.highGroundRouteIndex===route.index||
       unit.highGroundRouteIndex<0&&flow&&
@@ -10198,7 +10200,7 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
    if(!match)return false;
    const building=townInstances[Number(match[1])],floor=Number(match[3]);
    if(!building||floor<2||floor>building.structure.floors.length+1)return false;
-   const eligible=members.filter(u=>u.hp>0&&u.alive!==false);
+   const eligible=actors.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
    if(!eligible.length||eligible.some(u=>u.floorTravel&&
     (u.floorTravel.building!==building||!['upstairs','roof'].includes(u.floorTravel.phase))))return false;
    const started=[];
@@ -10213,7 +10215,9 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
     }
     unit.floorTravel.manualHighGroundTarget=true;
     unit.floorTravel.manualHighGroundGoal=floor;
+    unit.floorTravel.manualHighGroundTargetId=String(targetId);
     unit._manualHighGroundBuilding=building;
+    unit._manualHighGroundTargetId=String(targetId);
     started.push(unit);
    }
    if(!started.length&&eligible.some(unit=>(unit.indoorFloor??1)!==floor))return false;
@@ -10223,8 +10227,10 @@ function issueRealtimeSpecial(id,action,targetId,arrival=false){
    return true;
   }
   const routeIndex=Number(targetId);
-  const already=massSim?.units?.some(u=>u.team===0&&String(u.squadId)===String(id)&&
-   u.hp>0&&u.highGroundRouteIndex===routeIndex);
+  const allHeightMembers=massSim?.units?.filter(u=>u.team===0&&String(u.squadId)===String(id)&&
+   u.hp>0&&u.alive!==false)||[];
+  const already=allHeightMembers.length>0&&
+   allHeightMembers.every(u=>u.highGroundRouteIndex===routeIndex);
   const success=Boolean(already)||massSim?.orderSquadHighGround(id,routeIndex,0)===true;
   if(!success)return false;
   if(!already&&massWorker?.active)massWorker.orderSquadHighGround(id,routeIndex,0);
@@ -10418,6 +10424,26 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  onOrder:(id,mode,arrival=false)=>{
   if(!battleReady||finished||battleCeremony.locked||
     !hasSquadCommander(id)||(!arrival&&!canChangeSquadOrder(id)))return false;
+  if(arrival){
+   const members=(massSim?.units??actors).filter(u=>u.team===0&&
+    String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
+   if(members.length){
+    if(massSim&&members.every(u=>u.highGroundRouteIndex>=0&&u.highGroundPhase===2)){
+     const ok=massSim.setSquadHighGroundArrival(id,mode,0);
+     if(ok&&massWorker?.active)massWorker.setSquadHighGroundArrival(id,mode,0);
+     return ok;
+    }
+    if(!massSim&&members.every(u=>u.floorTravel?.manualHighGroundTargetId&&
+       (u.floorTravel.phase==='upstairs'||u.floorTravel.phase==='roof')&&
+       u.indoorFloor===u.floorTravel.manualHighGroundGoal)){
+     for(const u of members){
+      u.floorTravel.manualHighGroundTarget=mode!=='charge';
+      u._manualHighGroundArrival=mode;
+     }
+     return true;
+    }
+   }
+  }
   const prior=selectedSquadId;selectedSquadId=String(id);
   try{return issueIndividualSquadOrder(mode);}
   finally{selectedSquadId=prior;}
@@ -10451,12 +10477,34 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    (massSim?.squadMissions?.has(squad)||
     (order.type==='eliminate_squad'&&
      (massSim?.units??actors).some(u=>u.team===1&&String(u.squadId)===String(order.targetSquadId)&&u.hp>0&&u.alive!==false)));
-  const moving=Boolean((order.mode==='move'&&destination&&distance>3.5)||missionActive);
+  const heightMembers=(massSim?.units??actors).filter(u=>u.team===0&&
+   String(u.squadId)===squad&&u.hp>0&&u.alive!==false);
+  const massHeight=massSim&&heightMembers.length>0&&heightMembers.every(u=>
+   u.highGroundRouteIndex>=0);
+  const massTarget=massHeight?String(heightMembers[0].highGroundRouteIndex):null;
+  const massSame=massHeight&&heightMembers.every(u=>
+   String(u.highGroundRouteIndex)===massTarget);
+  const skirmishHeight=!massSim&&heightMembers.length>0&&heightMembers.every(u=>
+   u.floorTravel?.manualHighGroundTargetId);
+  const skirmishTarget=skirmishHeight?heightMembers[0].floorTravel.manualHighGroundTargetId:null;
+  const skirmishSame=skirmishHeight&&heightMembers.every(u=>
+   u.floorTravel.manualHighGroundTargetId===skirmishTarget);
+  const highGroundTarget=massSame?massTarget:skirmishSame?skirmishTarget:null;
+  const highGroundArrived=Boolean(highGroundTarget!=null&&heightMembers.every(u=>
+   massSim?u.highGroundPhase===2:
+    (u.floorTravel.phase==='upstairs'||u.floorTravel.phase==='roof')&&
+    u.indoorFloor===u.floorTravel.manualHighGroundGoal));
+  const highGroundMoving=heightMembers.some(u=>massSim?
+   u.highGroundRouteIndex>=0&&u.highGroundPhase!==2:
+   u.floorTravel?.manualHighGroundTargetId&&
+    u.indoorFloor!==u.floorTravel.manualHighGroundGoal);
+  const moving=Boolean((order.mode==='move'&&destination&&distance>3.5)||missionActive||highGroundMoving);
   const missionCompleted=massSim&&order.mode==='mission'&&!massSim.squadMissions?.has(squad);
   const label=missionCompleted?'自動交戦｜次の敵を索敵中':
    (intent.order||'自動戦闘').replace(/^号令：/,'')+
    '｜'+(intent.purpose||'索敵・交戦').replace(/^目的：/,'');
-  return {label,cooldown,moving,blocked:!battleReady||finished||battleCeremony.locked,
+  return {label,cooldown,moving,highGroundTarget,highGroundArrived,
+   blocked:!battleReady||finished||battleCeremony.locked,
    commanderReason:squadCommanderUnavailableReason(squad)};
  },
  onCommandCommitted:entry=>{
