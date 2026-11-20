@@ -8,7 +8,7 @@
  */
 import {magmaSkullFromWolfKing,magmaTorsoFromWolfKing,
  sculptMagmaSalamanderEye,sculptMagmaSalamanderHorn,
- sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-high-contrast-four-limbs-v11-20261120';
+ sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-mobile-four-limb-safety-v12-20261120';
 
 export const SALAMANDER_LINEAGE_REVISION='m019-source-salamander-lineage-v2-20261119';
 export const SALAMANDER_LINEAGE=Object.freeze({
