@@ -69,7 +69,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  const main='<div class="sortieBar">'+
   button('data-sortie-view="templates"','陣形：'+esc(team.formation==='free'?FREE_FORMATION_NAME:SORTIE_FORMATIONS[team.formation]?.name||'標準陣形')+' ▾')+
   button('data-sortie-view="orders"','作戦 '+(team.tactics||[]).length+'件選択 ▸')+
-  '</div><div class="sortieGridHint"><b>第'+team.id+'隊・最大3ジョブ</b><small>陣形を先に選択してから配置+'</small></div>'+
+  '</div><div class="sortieGridHint"><b>第'+team.id+'隊・最大3ジョブ</b><small>陣形を先に選択してから配置</small></div>'+
   '<div class="sortieFormationGrid" role="group" aria-label="最大3ジョブの配置枠">'+cells+'</div>'+
   '<div class="sortieGridFooter"><small>陣形：'+quota.spec.slots+'ジョブ · '+esc(status.reason)+'</small>'+
   button('data-sortie-view="count"','人数 ▸')+button('data-sortie-view="divisions"','分隊 ▸')+'</div>'+
