@@ -10,10 +10,8 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  # GitHub's default queue=single cancels an older pending deployment whenever
-  # another main commit arrives. Keep FIFO queued releases instead; the latest
-  # main publish must not disappear while runners are saturated.
-  queue: max
+  # Preserve an active deployment, but coalesce stale pending commits:
+  # only the latest main revision must remain queued for publication.
   cancel-in-progress: false
 jobs:
   deploy:
