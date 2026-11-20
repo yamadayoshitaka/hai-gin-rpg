@@ -191,7 +191,8 @@ export function mountBattleCommandWizard({
    state.notice='この隊は戦闘不能のため命令できません。';render();return;
   }
   const cooldown=Math.max(0,Number(getOrderState(id)?.cooldown)||0);
-  if(plan.category!=='rally'&&cooldown>0){
+  const live=getOrderState(id)||{};
+  if(plan.category!=='rally'&&(cooldown>0||live.moving||live.blocked)){
    // Store the plan, not a callback closing over mutable wizard state.
    nextOrders.set(id,{plan,label:nextLabel(plan)});
    failedOrders.delete(id);
@@ -211,7 +212,10 @@ export function mountBattleCommandWizard({
     nextOrders.delete(id);failedOrders.set(id,'予約取消：部隊が戦闘不能');continue;
    }
    const status=getOrderState(id)||{};
-   if(Number(status.cooldown)>0||status.moving)continue;
+   if(Number(status.cooldown)>0||status.moving||status.blocked)continue;
+   if(status.commanderReason){
+    nextOrders.delete(id);failedOrders.set(id,status.commanderReason);continue;
+   }
    if(executePlan(entry.plan)){nextOrders.delete(id);failedOrders.delete(id);}
    else {
     // A failed skill must never consume MP or repeat every frame.
@@ -351,9 +355,10 @@ export function mountBattleCommandWizard({
    if(state.arrivalTarget)note('到着後の対象：'+esc(state.arrivalTarget.label||state.arrivalTarget.id));
    if(state.point)note('地点：X '+state.point.x+' / Z '+state.point.z);
    const remain=Number(getOrderState(String(state.squad))?.cooldown)||0;
-   if(remain>0&&state.category!=='rally')
-    note('現在の命令間隔が残り'+Math.ceil(remain)+'秒。確定すると次の行動として予約し、実行可能になった時に発令します。');
-   button(remain>0&&state.category!=='rally'?'📋 次の作戦として予約':'✅ この内容で確定',issue);
+   const live=getOrderState(String(state.squad))||{};
+   const reserving=state.category!=='rally'&&(remain>0||live.moving||live.blocked);
+   if(reserving)note('現在の作戦'+(live.moving?'が実行中':'に命令間隔が残っています')+'。この内容を次の作戦に予約します。');
+   button(reserving?'📋 次の作戦として予約':'✅ この内容で確定',issue);
   }
   if(state.notice)note(state.notice,true);
  }
