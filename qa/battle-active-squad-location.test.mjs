@@ -18,16 +18,27 @@ test('chosen active squad keeps its projected real position when other badges ov
  assert.equal(positions.size,3);
 });
 
-test('the mobile battle map always marks the actually selected squad and offers a locate action',()=>{
+test('mobile overview keeps the real position marker without an obstructing location button',()=>{
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.match(html,/id="overviewCurrentSquadPointer"/);
- assert.match(html,/id="overviewLocateSquad"/);
+ assert.doesNotMatch(html,/id="overviewLocateSquad"/);
+ assert.doesNotMatch(html,/📍 操作中/);
+ assert.doesNotMatch(html,/#overviewCurrentSquadPointer::after/);
  assert.match(html,/classList\.toggle\('current-squad',own\)/);
  assert.match(html,/realPosition=points\.find\(p=>p\.key===squadKey\(0,currentAllyId\)\)/);
  assert.match(html,/priority:key===overviewSelectedKey\?2:node\.team===0/);
- assert.match(html,/overviewLocateSquad\.onclick=\(\)=>/);
- assert.match(html,/setBattleCamera\(new THREE\.Vector3\(x,terrainY\(x,z\),z\),cameraOverviewOffset\)/);
  assert.match(html,/const radarSquadId=String\(selectedSquadId\?\?trackedAllySquadId\?\?'\'\)/);
  assert.match(html,/!selected&&k<8&&usedPinCenters/);
  assert.match(html,/◎ 現在位置/);
+});
+
+test('selecting one squad makes other map badges, dots and leaders translucent and restores them on close',()=>{
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ assert.match(html,/function syncOverviewSelectionHighlight\(\)/);
+ assert.match(html,/node\.pin\.classList\.toggle\('deemphasized',dim\)/);
+ assert.match(html,/node\.dot\.classList\.toggle\('deemphasized',dim\)/);
+ assert.match(html,/node\.line\.classList\.toggle\('deemphasized',dim\)/);
+ assert.match(html,/\.overviewSquadPin\.deemphasized\{opacity:\.27/);
+ assert.match(html,/overviewSelectedKey=key;overviewInspectorSignature='';[\s\S]*?syncOverviewSelectionHighlight\(\);/);
+ assert.match(html,/overviewSelectedKey=null;overviewInspector\.hidden=true;overviewInspectorSignature='';\s*syncOverviewSelectionHighlight\(\);/);
 });
