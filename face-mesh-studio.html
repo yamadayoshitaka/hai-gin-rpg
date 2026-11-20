@@ -1286,8 +1286,17 @@ async function init(){
   for(const sex of ['female','male'])refreshExpression(sex);
   if(savedHeroinePreset?.hairDensity){$('wigDensity').value=String(wigDensity);
    $('wigDensityValue').value=String(wigDensity)+'束';}
-  $('status').textContent='顔メッシュ生成完了。髪モデルを準備中…';
-  rebuildWig();rebuildMaleHair();
+  // Show the actual face immediately, before the expensive hair build.
+  // Previously the first visible frame depended on finishing all hair work.
+  const initialGender=new URLSearchParams(location.search).get('gender')==='male'?'male':'female';
+  selectGender(initialGender);
+  resize();orbit.update();renderer.render(scene,camera);
+  $('status').textContent='顔モデル表示完了。髪モデルを準備中…';
+  // Yield a frame so Android can paint the model and progress text.
+  await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+  try{rebuildWig();}catch(hairError){console.error('Initial female wig failed',hairError);}
+  await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+  try{rebuildMaleHair();}catch(hairError){console.error('Initial male wig failed',hairError);}
   for(const id of ['female','male','front','threeQuarter','side','back','crown','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43','autoBlink','talkDemo'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
