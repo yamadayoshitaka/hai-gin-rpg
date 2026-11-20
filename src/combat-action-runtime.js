@@ -436,6 +436,19 @@ export class CombatActionRuntime {
     return true;
   }
   summonOf(owner) { return this.objects.filter(o => o.alive && o.category === 'summon' && o.ownerId === owner.id); }
+  /** Direct a summoned creature to pursue a nominated enemy squad even beyond
+   * its usual autonomous 22-tile aggro radius. Independent summons are world
+   * objects, so a soldier-only squad mission cannot direct their movement. */
+  commandSummonAttack(squadId,targetSquadId,units=this._units??[],team=0){
+    if(targetSquadId==null)return false;
+    const destination=String(targetSquadId),source=String(squadId);
+    if(!units.some(u=>isAlive(u)&&u.team!==team&&String(u.squadId)===destination))return false;
+    const summons=this.objects.filter(o=>o.alive&&o.category==='summon'&&
+      o.team===team&&String(o.squadId)===source);
+    if(!summons.length)return false;
+    for(const summon of summons)summon.commandTargetSquadId=destination;
+    return true;
+  }
   nearby(team, x, z, range, { includeDead = false } = {}) {
     const out = [];
     // Spatial index can be supplied by the mass simulation. Dead combatants
@@ -834,13 +847,30 @@ export class CombatActionRuntime {
           }
         }
       }
-      let target = null, best = (COMBAT_RULES.summonLeashTiles + o.spec.range) ** 2;
-      for (const u of this.nearby(1 - o.team, o.x, o.z, COMBAT_RULES.summonLeashTiles + o.spec.range)) {
-        if (!isAlive(u) || (u.stealthUntil || 0) > this.time) continue;
-        const d = (u.x - o.x) ** 2 + (u.z - o.z) ** 2;
-        if (d < best) { target = u; best = d; }
+      let target=null,best=Infinity;
+      // Explicit summon → attack never stalls because an enemy is outside
+      // the automatic aggro radius. Follow the actual live enemy squad.
+      if(o.commandTargetSquadId!=null){
+        for(const u of units){
+          if(!isAlive(u)||u.team===o.team||
+            String(u.squadId)!==String(o.commandTargetSquadId)||
+            (u.stealthUntil||0)>this.time)continue;
+          const d=(u.x-o.x)**2+(u.z-o.z)**2;
+          if(d<best){target=u;best=d;}
+        }
+        // Once that squad is defeated, resume ordinary nearby enemy search.
+        if(!target)o.commandTargetSquadId=null;
       }
-      if (!target) continue;
+      if(!target){
+        best=(COMBAT_RULES.summonLeashTiles+o.spec.range)**2;
+        for(const u of this.nearby(1-o.team,o.x,o.z,
+          COMBAT_RULES.summonLeashTiles+o.spec.range)){
+          if(!isAlive(u)||(u.stealthUntil||0)>this.time)continue;
+          const d=(u.x-o.x)**2+(u.z-o.z)**2;
+          if(d<best){target=u;best=d;}
+        }
+      }
+      if(!target)continue;
       if (best <= o.spec.range ** 2) {
         if (!o.pendingAttack&&this.time >= o.nextAttackAt) {
           const style=CREATURE_PERFORMANCE[o.type];
