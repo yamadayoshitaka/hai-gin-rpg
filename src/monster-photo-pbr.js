@@ -7,6 +7,8 @@
  * and aquatic creatures use clearcoat/translucency until water scans exist.
  */
 import * as THREE from 'three';
+import {m019VolcanicSurface,m019VolcanicTextureStats}
+ from './m019-volcanic-surface.js?v=m019-volcanic-pbr-v19-20261120';
 
 export const CREATURE_SURFACE_SOURCES=Object.freeze({
   fur:Object.freeze({
@@ -81,13 +83,27 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  if(!material||glow||role==='eye'||role==='bone'||role==='accent'||translucent){
    return material;
  }
- // m019 is dry vitrified basalt, not shiny green dragon scales. Keep the
- // sculpted plate/fissure geometry visible, with no reptile colour map.
+ // m019 previously only set a "volcanic" metadata tag and roughness:
+ // there were NO real textures. The legs rendered as smooth light bars.
+ // Bind genuine reusable PBR maps on the same existing torso/leg/foot meshes.
+ // Emission is masked to sparse narrow fracture lines, not full glowing skin.
  if(speciesId==='m019'&&(role==='skin'||role==='light'||role==='shadow')){
-   material.roughness=.91;
-   material.metalness=.025;
-   material.userData.photoSurface='procedural-volcanic-basalt';
+   const surface=m019VolcanicSurface(detail);
+   material.map=surface.albedo;
+   material.normalMap=surface.normal;
+   material.normalScale=new THREE.Vector2(.30,.30);
+   material.roughnessMap=surface.roughness;
+   material.roughness=.96;
+   material.metalness=.02;
+   material.emissive=new THREE.Color('#fa6220');
+   material.emissiveMap=surface.emissive;
+   material.emissiveIntensity=detail==='low'?.32:.47;
+   material.userData.photoSurface='tiled-volcanic-rock-albedo-normal-emissive';
    material.userData.m019DryObsidian=true;
+   material.userData.m019VolcanicPBR=true;
+   material.userData.m019LavaHeatOnlyInFissures=true;
+   material.userData.m019TextureResolution=surface.resolution;
+   material.needsUpdate=true;
    return material;
  }
  // Anatomical realism needs independent materials for necrotic skin, linen
@@ -128,6 +144,7 @@ export function detachMonsterPhotoMaterial(material){
 export function monsterPhotoCacheStats(){
  return Object.freeze({
    textures:textureCache.size,
+   volcanicTextures:m019VolcanicTextureStats().textureMaps,
    sources:Object.keys(CREATURE_SURFACE_SOURCES).length,
  });
 }

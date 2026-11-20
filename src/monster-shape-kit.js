@@ -6,13 +6,13 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m019-single-surface-anatomy-v18-20261120';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=m019-volcanic-pbr-v19-20261120';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=m019-high-contrast-four-limbs-v11-20261120';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=m019-volcanic-pbr-v19-20261120';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[112,80],rock:4,rod:28,tube:[64,16],torus:[16,72]}),
@@ -68,7 +68,7 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},s
        transmission:.14,thickness:.4}:{}),
    });
    if(role==='skin'||role==='light'||role==='fabric'||role==='bandage'||
-     role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')){
+     role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(spec.id==='m019'&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
      });
