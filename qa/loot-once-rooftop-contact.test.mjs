@@ -75,7 +75,7 @@ assert.match(game,/const actualDamage=strategicDamage\(a,target,localEnemy===tar
  'same-level combat uses ordinary attack strength, not an elevated shooting bonus');
 assert.match(game,/function hideCollectedRoomLootMarkers\(/,
  'all exhausted overlapping treasure objects must disappear');
-assert.match(game,/if\(a\.floorTravel&&\['approach','toStair'\]\.includes\(a\.floorTravel\.phase\)\)/,
+assert.match(game,/if\(a\.floorTravel&&!a\.floorTravel\.manualHighGroundTarget&&\s*\['approach','toStair'\]\.includes\(a\.floorTravel\.phase\)\)/,
  'a soldier walking toward stairs must monitor nearby hostile troops');
 assert.match(game,/a\._highGroundRetryUntil=elapsed\+7;\s*a\.floorTravel=null;a\.thinkTimer=0/,
  'a nearby hostile cancels stair scouting and returns the soldier to normal combat AI');
