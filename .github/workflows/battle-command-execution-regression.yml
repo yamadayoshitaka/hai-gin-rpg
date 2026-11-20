@@ -11,6 +11,7 @@ on:
       - 'src/mass-battle-worker-*.js'
       - 'qa/battle-all-command-paths.test.mjs'
       - 'qa/battle-command-followup.test.mjs'
+      - 'qa/battle-manual-summon-attack.test.mjs'
       - '.github/workflows/battle-command-execution-regression.yml'
   push:
     branches: [main]
@@ -44,6 +45,7 @@ jobs:
         run: |
           node --test qa/battle-all-command-paths.test.mjs
           node --test qa/battle-command-followup.test.mjs
+          node --test qa/battle-manual-summon-attack.test.mjs
           node --test qa/squad-highground-unified-order.test.mjs
           node --test qa/squad-missions-and-healing.test.mjs
           node --test qa/battle-start-highground-shield-cover.test.mjs

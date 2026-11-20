@@ -64,6 +64,8 @@ export function createMassBattleWorkerHandler(emit){
         case 'healSquadItem':if(sim)sim.healSquadFromItem(message.squadId,message.amount,message.team||0);break;
         case 'reinforceSquad':if(sim)sim.reinforceSquadFromReserve(message.squadId,message.count,message.team||0);break;
         case 'summonSquadCreature':if(sim)sim.summonSquadCreature(message.squadId,message.team||0);break;
+        case 'squadSummonAttack':if(sim)sim.commandSquadSummonAttack(
+          message.squadId,message.targetSquadId,message.team??0);break;
         case 'orderSquadHighGround':if(sim)sim.orderSquadHighGround(message.squadId,message.routeIndex,message.team||0);break;
         case 'squadHighGroundArrival':if(sim)sim.setSquadHighGroundArrival(message.squadId,message.command,message.team||0);break;
         case 'shieldCover':if(sim)sim.assignShieldCover(message.squadId,message.targetSquadId,message.team||0);break;

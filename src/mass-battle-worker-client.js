@@ -70,6 +70,9 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     healSquadItem(squadId,amount,team=0){if(!failed)worker.postMessage({type:'healSquadItem',squadId,amount,team});},
     reinforceSquad(squadId,count,team=0){if(!failed)worker.postMessage({type:'reinforceSquad',squadId,count,team});},
     summonSquadCreature(squadId,team=0){if(!failed)worker.postMessage({type:'summonSquadCreature',squadId,team});},
+    commandSquadSummonAttack(squadId,targetSquadId,team=0){
+      if(!failed)worker.postMessage({type:'squadSummonAttack',squadId,targetSquadId,team});
+    },
     orderSquadHighGround(squadId,routeIndex,team=0){if(!failed)worker.postMessage({type:'orderSquadHighGround',squadId,routeIndex,team});},
     setSquadHighGroundArrival(squadId,command,team=0){if(!failed)worker.postMessage({type:'squadHighGroundArrival',squadId,command,team});},
     assignShieldCover(squadId,targetSquadId,team=0){if(!failed)worker.postMessage({type:'shieldCover',squadId,targetSquadId,team});},
