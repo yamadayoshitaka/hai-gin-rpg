@@ -21,7 +21,7 @@ export const HUMANOID_MONSTER_COSTUMES=Object.freeze({
  m015:define('m015','male','guard','slim','stern','swept','assassin','staff',
    'tengu',[0x647881,0x232b35,0x6c7278,0xaf744c],{wings:true,beak:true}),
  m031:define('m031','male','guard','slim','elder','bald','swordsman','sword',
-   'skeleton',[0x8a8574,0x343b3d,0x747572,0x9a8d75],{skull:true}),
+   'skeleton',[0x8a8574,0x343b3d,0x747572,0x9a8d75],{skull:true,noBeard:true,boneOnly:true}),
  m032:define('m032','male','civilian','slim','elder','bald','monk','none',
    'mummy',[0x5f654c,0xa69a85,0x65544a,0x665944],{wrappings:true}),
  m033:define('m033','male','guard','tall','stern','short','knight','sword',
