@@ -22,7 +22,7 @@ import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
  from './monster-cosplay-pigmentation.js?v=4.5.21';
 import {addConstructMonsterCostume,isConstructCostume,
- CONSTRUCT_SHELL_SPECIES,CONSTRUCT_FULL_SHELL_REVISION}
+ CONSTRUCT_SHELL_SPECIES,CONSTRUCT_FULL_SHELL_REVISION,isFullBodyMonsterShell}
  from './monster-construct-costume.js?v=golem-anatomical-facets-v3-20261121';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
@@ -43,6 +43,8 @@ import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  createRegalLimbGeometry,createRegalFootGeometry}
  from './monster-regal-garments.js?v=4.5.19';
 
+import {createMineralLimbArticulator}
+ from './monster-mineral-limb-articulator.js?v=bone-to-bone-20261121';
 import {applyHumanlikeConceptFinish}
  from './monster-humanoid-concept-finish.js?v=humanoid-concept-sculpt-v1-20261121';
 
@@ -123,6 +125,7 @@ function locateBones(model){
   pelvis:find('hips','pelvis','root'),
   arms:[find('upperarm_l','leftarm'),find('upperarm_r','rightarm')],
   forearms:[find('lowerarm_l','leftforearm'),find('lowerarm_r','rightforearm')],
+  hands:[find('hand_l','lefthand'),find('hand_r','righthand')],
   legs:[find('thigh_l','leftupleg'),find('thigh_r','rightupleg')],
   calves:[find('calf_l','leftleg'),find('calf_r','rightleg')],
   feet:[find('foot_l','leftfoot'),find('foot_r','rightfoot')]
@@ -139,6 +142,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   pelvis:createFrame(joints.pelvis??joints.spine,model),
   arms:joints.arms.map(b=>createFrame(b,model)),
   forearms:joints.forearms.map((b,i)=>createFrame(b??joints.arms[i],model)),
+  hands:joints.hands.map((b,i)=>b?createFrame(b,model):null),
   legs:joints.legs.map(b=>createFrame(b,model)),
   calves:joints.calves.map((b,i)=>createFrame(b??joints.legs[i],model)),
   feet:joints.feet.map((b,i)=>b?createFrame(b,model):null),
@@ -151,7 +155,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
  const ownedGeo=[],ownedMats=[],ownedTextures=[];
  const construct=isConstructCostume(profile);
- const mineral=construct?CONSTRUCT_SHELL_SPECIES[profile.costume]:null;
+ const fullBody=isFullBodyMonsterShell(profile);
+ const mineral=fullBody?CONSTRUCT_SHELL_SPECIES[profile.costume]:null;
  const concealedDonorMeshes=[];
  const palette={
   constructBase:mineral?.base??0x777777,
@@ -189,12 +194,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const materials=new Map();
  const mat=(role)=>{
   if(!materials.has(role)){
-   if(construct&&role.startsWith('construct')){
+   if(fullBody&&role.startsWith('construct')){
     // Mineral PBR is local, vivid and photograph-free. A donor's dark
     // velvet diffuse atlas must never turn purple crystal into black cloth.
     const isCore=role==='constructCore';
     const isCrystal=profile.costume==='crystal_construct';
-    const isMetalShell=['bronze_construct','silver_construct'].includes(profile.costume);
+    const isMetalShell=['bronze_construct','silver_construct','dark_knight'].includes(profile.costume);
     const m=new THREE.MeshPhysicalMaterial({
      color:palette[role],flatShading:true,side:THREE.DoubleSide,
      roughness:isCrystal?.24:isMetalShell?.36:.79,
@@ -326,6 +331,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
    node.userData.constructDonorConcealed=true;
    return;
   }
+  if(fullBody&&!construct&&node.isMesh){
+   concealedDonorMeshes.push({node,visible:node.visible});
+   node.visible=false;
+   node.userData.constructDonorConcealed=true;
+   return;
+  }
   // The seraph is explicitly beardless. Do not hide scalp hair, eyelashes,
   // eyebrows or the whole face; only named moustache/beard meshes.
   if(profile.noBeard===true&&/(?:^|[_\\s-])(?:beard|moustache|mustache|goatee|stubble|facialhair)(?:$|[_\\s-])/i.test(node.name||'')){
@@ -348,7 +359,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
  // attach a single continuous head-grown scalp and long, tapered hair:
  // source Quaternius hair is intentionally hidden by canonical actor loader.
- const groom=construct?null:attachCanonicalCharacterGroom({
+ const groom=construct?null:fullBody?null:attachCanonicalCharacterGroom({
   THREE,model,frames:{...frames,head:frames.headGroom},
   headBone:joints.head,profile,detail,
   attach:(frame,g,role,name,p,r)=>
@@ -358,14 +369,15 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const gothic=hasGothicMonsterSculpt(costume);
  const demonic=hasDemonCosmetics(profile);
  const femaleSummon=isFemaleSummonCostume(profile);
- if(gothic)addGothicMonsterSculpt({
+ if(gothic&&!fullBody)addGothicMonsterSculpt({
    THREE,profile,detail,frames,attach,tube,torus
  });
- if(construct)addConstructMonsterCostume({
+ if(fullBody)addConstructMonsterCostume({
    THREE,profile,detail,frames,attach,tube
  });
- if(demonic)addDemonicFaceCosmetics({
-   THREE,profile,detail,frames,attach,tube
+ if(demonic&&(!fullBody||profile.id==='m042'))addDemonicFaceCosmetics({
+   THREE,profile,detail,frames,attach,tube,
+   wingTailOnly:fullBody
  });
  const dragonSkull=['dragonkin_female','dragonkin_male'].includes(profile.costume)?
   measureCanonicalScalp(model,joints.head,{groomFrame:frames.headGroom}):null;
@@ -394,7 +406,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  }):null;
  // Structural garment layers are essential: the canonical full-body donor
  // wears little clothing. A cape or set of wings is not an outfit.
- const royalOutfit=wardrobeFor(profile);
+ const royalOutfit=fullBody?null:wardrobeFor(profile);
  if(royalOutfit)addRegalHumanoidOutfit({
    profile,detail,frames,attach,tube
  });
@@ -564,16 +576,23 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(profile.mage){
   bands(frames.chest,'rune-hem',-.38,-.21,.23,.17,1.9,'accent');
  }
- const conceptFinish=construct?Object.freeze({id:profile.id,
+ const conceptFinish=fullBody?Object.freeze({id:profile.id,
   revision:CONSTRUCT_FULL_SHELL_REVISION,
   skeletonAnchored:true,visualApproved:false}):
   applyHumanlikeConceptFinish({THREE,profile,detail,frames,attach,tube});
+ if(fullBody)model.userData.mineralArticulator=createMineralLimbArticulator({
+  model,frames,id:profile.id
+ });
  model.userData.monsterCostume={
   id:profile.id,kind:costume,heroSource:profile.modelId,
   humanConceptFinish:conceptFinish,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
-  constructSculptEdition:construct?CONSTRUCT_FULL_SHELL_REVISION:null,
+  constructSculptEdition:fullBody?CONSTRUCT_FULL_SHELL_REVISION:null,
+  armourSourceHumanFaceHidden:fullBody&&concealedDonorMeshes.length>0,
+  noHumanoidUnderwear:fullBody,
+  anatomicalLimbFitting:fullBody?model.userData.mineralArticulator.revision:null,
+  fullBodyShellParts:fullBody?frames.chest.userData.golemShellParts??0:0,
   constructDonorMeshesConcealed:concealedDonorMeshes.length,
   constructSkinExposed:construct?false:null,
   constructMineralTheme:mineral?.theme??null,
@@ -605,7 +624,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   modelUprightGroom:!!frames.headGroom.userData.modelUprightGroom,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,
-  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||construct,
+  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||fullBody,
   clothCoverageValidated:!!royalOutfit,
   shoulderYokeAttached:!!royalOutfit,neckCollarTapered:!!royalOutfit,
   shoulderFitCalibrated:outfitFit.calibrated,
@@ -614,13 +633,14 @@ function buildMonsterCostume(THREE,model,profile,detail){
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
+  delete model.userData.mineralArticulator;
   for(const {node,visible} of concealedDonorMeshes){
    node.visible=visible;delete node.userData.constructDonorConcealed;
   }
   scalpCut?.dispose();
   for(const frame of [...Object.values(frames).filter(x=>x?.isGroup),
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves,
-   ...frames.feet.filter(Boolean)])
+   ...frames.feet.filter(Boolean),...frames.hands.filter(Boolean)])
    frame.parent?.remove(frame);
   for(const geo of ownedGeo)geo.dispose();
   for(const texture of ownedTextures)texture.dispose();
@@ -717,6 +737,9 @@ export function createCosplayedHumanoidMonster(spec,{
    const delta=lastTime===null?0:clamp(time-lastTime,0,.13);
    lastTime=time;motion.mixer.update(delta);
    combatMotion?.update(action,clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
+   // Source mesh is hidden for mineral/armoured creatures: fit shells
+   // between each moving pair of joints AFTER the native animation mixer.
+   visual?.userData.mineralArticulator?.update(action);
    if(isFlyingTengu)updateCanonicalTenguFlight(root,host,visual,action,time,elapsed);
    if(profile.costume==='seraph_female'){
     for(const pivot of seraphWingPivots){
