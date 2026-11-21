@@ -87,7 +87,11 @@ function attachUser(tex,m){
 }
 export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  detail='high',metal=0,glow=false,translucent=false}={}){
- if(!material||glow||role==='eye'||role==='bone'||role==='accent'||translucent){
+ if(!material||glow||role==='eye'||role==='accent'||translucent){
+   return material;
+ }
+ if(role==='bone'){
+   decorateAll50MonsterSurface(material,{speciesId,family,role,detail,glow,translucent});
    return material;
  }
  // The m016 swamp skin and m017 steel scales share the anatomical
