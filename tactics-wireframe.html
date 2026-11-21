@@ -912,6 +912,7 @@ import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoin
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {formationAllowsTactic} from './src/formation-strategy-unlocks.js';
+import {availableFormationOpeningTactics} from './src/prebattle-opening-tactics.js';
 import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-signature-strategies.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
@@ -11187,6 +11188,25 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   const strategies=[...(allowed.includes('charge')?['assault']:[]),
    ...(allowed.includes('defend')||allowed.includes('hold')?['defense','balanced']:[]),
    ...(allowed.includes('explore')?['explore']:[])];
+  const formationState=storyRequest?.formationIntegrity?.[String(group)]||saved;
+  const formationId=formationState.formation||saved.formation||'balanced';
+  const formationActive=formationState.active??(saved.formationActive!==false);
+  const divisions=ids.map(id=>({
+   id,jobs:[...targetedSubSquadJobs(id)],
+   orders:storyRequest?.availableSquadOrders?.[id]||[],
+   hasSummon:squadRoster.some(u=>u.team===0&&String(u.squadId)===String(id)&&
+    u.isSummon&&u.hp>0&&u.alive!==false)
+  }));
+  const activeEnemies=enemySquadIds.filter(id=>squadRoster.some(u=>u.team===1&&
+   String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false));
+  const structures=(massSim?.actions?.objects||skirmishActions?.objects||[])
+   .filter(o=>o.alive&&o.category==='structure'&&
+    ['bridge','tree','building','door'].includes(o.type));
+  const advanced=availableFormationOpeningTactics({
+   formation:formationId,active:formationActive,divisions,
+   enemyCount:activeEnemies.length,structureCount:structures.length,
+   buildingCount:availableExplorationBuildings().length,supportAvailable:!!massSim
+  });
   const byOrder={charge:'assault',defend:'defense',hold:'balanced',support:'defense',explore:'explore'};
   const names={attack:'前進陣形',balanced:'標準陣形',support:'後衛陣形',wall:'防壁陣形',
    spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
@@ -11194,8 +11214,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
   return {strategy:THREE_TEAM_BATTLE?null:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',captain:saved.captain||null,
    formationActive:saved.formationActive!==false,
-   allowedStrategies:strategies.length?strategies:['assault','defense','balanced'],
-   reason:saved.formationActive===false?'陣形補正なし':''};
+   allowedStrategies:[...(strategies.length?strategies:['assault','defense','balanced']),...advanced],
+   reason:!formationActive?'陣形補正なし':''};
  },
  getRadarEnemies:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
   enemySquadIds.map(id=>{
@@ -11283,13 +11303,61 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   return true;
  },
  onStart:({initialPlans={}}={})=>{
+  // Execute actual extra tactics, not just an opening-screen label.
+  const applyOpeningAdditional=(group,members,id)=>{
+   const method=STRATEGY_METHODS[id];
+   const state=storyRequest?.formationIntegrity?.[String(group)]||
+    storyRequest?.initialTeamPlans?.[String(group)]||{};
+   if(!method||!formationAllowsTactic(state.formation||'balanced',id,state.active!==false))return false;
+   const capable=members.filter(sid=>{
+    const jobs=targetedSubSquadJobs(sid);
+    const orders=storyRequest?.availableSquadOrders?.[String(sid)]||[];
+    return orders.includes(method.mode)&&(!method.jobs.length||
+      method.jobs.some(job=>jobs.has(job)))&&(!method.requiresSummon||
+      squadRoster.some(u=>u.team===0&&String(u.squadId)===String(sid)&&
+       u.isSummon&&u.hp>0&&u.alive!==false));
+   });
+   if(!capable.length)return false;
+   const enemies=enemySquadIds.filter(id=>squadRoster.some(u=>u.team===1&&
+    String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false)).map(String);
+   let result=false;
+   if(method.type==='enemy'&&enemies.length){
+    if(['melee_split','ranged_split'].includes(id)&&enemies.length<2)return false;
+    result=issueTargetedPlan({groupId:group,mode:method.mode,
+     squadIds:capable,targetIds:enemies,tacticId:id})===true;
+   }else if(id==='destroy_path'){
+    const objects=(massSim?.actions?.objects||skirmishActions?.objects||[])
+     .filter(o=>o.alive&&o.category==='structure'&&
+      ['bridge','tree','building','door'].includes(o.type));
+    if(objects.length)result=issueTargetedPlan({groupId:group,mode:'destroy',
+     squadIds:capable,targetIds:objects.map(o=>String(o.id)),tacticId:id})===true;
+   }else if(id==='scout_summon'){
+    const buildings=availableExplorationBuildings();
+    if(buildings.length)result=issueTargetedPlan({groupId:group,mode:'explore',
+     squadIds:capable,targetIds:buildings.map(b=>String(b.id)),tacticId:id})===true;
+   }else if(id==='boost_speed'&&massSim&&method.buff){
+    const recipient=capable[0],buffId='opening-'+id;
+    result=!!massSim.applySquadItemBuff(recipient,buffId,method.buff,24,0);
+    if(result)massWorker?.buffSquadItem?.(recipient,buffId,method.buff,24,0);
+   }else if(id==='block_advance'||id==='regroup'){
+    const order=id==='block_advance'?'defend':'retreat';
+    result=capable.some(sid=>issueTargetedPlatoon(sid,order)===true);
+   }
+   if(result)log('★ 第'+group+'隊：陣形追加作戦「'+method.name+'」を実行');
+   return result;
+  };
   // One chosen plan is applied to all job divisions before the first AI tick.
   if(THREE_TEAM_BATTLE)for(const group of [1,2,3]){
    const members=squadIds.filter(id=>Number(armyGroupBySquad[id])===group);
    if(!members.length)continue;
    const saved=storyRequest?.initialTeamPlans?.[String(group)];
-   const strategy=initialPlans[String(group)]||
+   let strategy=initialPlans[String(group)]||
     ({charge:'assault',defend:'defense',hold:'balanced',explore:'explore'}[saved?.order])||'assault';
+   if(STRATEGY_METHODS[strategy]){
+    if(applyOpeningAdditional(group,members,strategy))continue;
+    log('第'+group+'隊：追加作戦の対象を実行できないため基本バランス作戦に切替');
+    strategy='balanced';
+   }
    for(const [index,id] of members.entries()){
     const allowed=storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat','explore'];
     const preferred=strategy==='defense'?'defend':strategy==='balanced'?
