@@ -2367,6 +2367,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoCrownOuterMaxFraction:sadakoMaster?.016:null,
   sadakoCrownOuterOnlyAboveEar:sadakoMaster,
   sadakoEarRibbonWidthFactor:sadakoMaster?.90:null,
+  sadakoSideRibbonProfile:sadakoMaster?
+   'temple-crown-card-tapered-layers-no-flat-panels-v64':null,
+  sadakoSideRibbonGeometryOnly:sadakoMaster,
+  sadakoTempleWidthScale:sadakoMaster?.66:null,
+  sadakoCrownOverSideWidthScale:sadakoMaster?.83:null,
   sadakoCrownScalpFollow:sadakoMaster,
   sadakoRearBustSampler:sadakoMaster?rearBustSampler.source:null,
   sadakoRearBustVertexSamples:rearBustSampler.vertexSamples,
