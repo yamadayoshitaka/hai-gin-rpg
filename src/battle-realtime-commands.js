@@ -44,7 +44,7 @@ export function createRealtimeBattleCommands({
  getDeploymentTeams=null,getInitialTeamPlan=()=>({strategy:'assault'}),getRadarEnemies=null,
  battleTypeLabel='戦闘',victoryCondition='敵を撃破',requirePrebattleChoices=false,
  getRadarSquads=null,getRadarGroup=null,onRadarTeamCommand=null,
- getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
+ getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,previewDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onPrebattleMusic=()=>false,onMove=()=>false,onOrder=()=>false,
   onTargetOrder=()=>false,
  onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},onManageItems=()=>{},
@@ -67,6 +67,7 @@ export function createRealtimeBattleCommands({
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  let inspectedMapPin=null,mapInspectionPins=[],lastInspectionRefreshAt=-Infinity;
+  let deploymentTiles=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
   <div id="realtimeSquadRadar" hidden role="group" aria-label="中央部隊レーダー">
@@ -418,8 +419,10 @@ export function createRealtimeBattleCommands({
   }
   ctx.clearRect(0,0,w,h);
   const background=getMapBackground();
-  if(background)try{ctx.drawImage(background,0,0,w,h);}catch{}
-  ctx.fillStyle='rgba(7,27,45,.36)';ctx.fillRect(0,0,w,h);
+  if(background)try{
+   ctx.save();ctx.globalAlpha=started?.54:.88;ctx.drawImage(background,0,0,w,h);ctx.restore();
+  }catch{}
+  ctx.fillStyle=started?'rgba(7,27,45,.09)':'rgba(7,27,45,.22)';ctx.fillRect(0,0,w,h);
   ctx.strokeStyle='rgba(194,222,239,.17)';ctx.lineWidth=1;
   for(let k=1;k<4;k++){
    ctx.beginPath();ctx.moveTo(k*w/4,0);ctx.lineTo(k*w/4,h);ctx.stroke();
@@ -519,23 +522,35 @@ export function createRealtimeBattleCommands({
   centerX=minX+span/2;centerZ=minZ+span/2;
   ctx.clearRect(0,0,w,h);
   const background=getMapBackground();
-  if(background)ctx.drawImage(background,minX,minZ,span,span,0,0,w,h);
-  else{ctx.fillStyle='#24433e';ctx.fillRect(0,0,w,h);}
+  if(background){ctx.save();ctx.globalAlpha=mode==='inspect'?.56:1;
+   ctx.drawImage(background,minX,minZ,span,span,0,0,w,h);ctx.restore();}
+  else{ctx.fillStyle=mode==='inspect'?'rgba(36,67,62,.42)':'#24433e';ctx.fillRect(0,0,w,h);}
   ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
   for(let i=0;i<=8;i++){const v=i*w/8;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,h);ctx.stroke();}
   // Expanded radar uses the same real friendly and opposing team anchors
   // as the compact radar; no second independent 12-slot map representation.
+  deploymentTiles=[];
   if(mode==='deploy'){
-   // Sample the REAL terrain/deployment callbacks, not a misleading flat
-   // blue rectangle that includes blocked bridges, river and structures.
-   const cellStep=Math.max(6,Math.round(span/22));
+   // The same complete-team planner must approve both the cyan highlight
+   // and the click. Each tile stores its actual deployable anchor.
+   const cellStep=Math.max(8,Math.round(span/15));
    for(let z=Math.floor(minZ/cellStep)*cellStep;z<minZ+span;z+=cellStep){
     for(let x=Math.floor(minX/cellStep)*cellStep;x<minX+span;x+=cellStep){
-     const point=getLegalPoint(Math.round(x),Math.round(z),true);
-     const nearby=point&&Math.abs(point.x-x)<=2&&Math.abs(point.z-z)<=2;
-     const legal=canDeploy(x,z)&&nearby;
-     ctx.fillStyle=legal?'rgba(40,224,193,.34)':'rgba(176,56,70,.23)';
-     ctx.fillRect((x-minX)/span*w,(z-minZ)/span*h,cellStep/span*w+.5,cellStep/span*h+.5);
+     const sx=Math.max(minX,x),sz=Math.max(minZ,z);
+     const ex=Math.min(minX+span,x+cellStep),ez=Math.min(minZ+span,z+cellStep);
+     if(ex<=sx||ez<=sz)continue;
+     const sample={x:Math.round((sx+ex)/2),z:Math.round((sz+ez)/2)};
+     const point=getLegalPoint(sample.x,sample.z,true);
+     const nearby=point&&Math.abs(point.x-sample.x)<=cellStep*.5&&
+      Math.abs(point.z-sample.z)<=cellStep*.5;
+     const legal=Boolean(nearby&&canDeploy(point.x,point.z)&&
+      previewDeploy(selectedId,point));
+     deploymentTiles.push({left:(sx-minX)/span*w,top:(sz-minZ)/span*h,
+      right:(ex-minX)/span*w,bottom:(ez-minZ)/span*h,
+      x:point?.x,z:point?.z,legal});
+     ctx.fillStyle=legal?'rgba(35,173,255,.44)':'rgba(176,56,70,.23)';
+     ctx.fillRect((sx-minX)/span*w,(sz-minZ)/span*h,
+      (ex-sx)/span*w+.3,(ez-sz)/span*h+.3);
     }
    }
    ctx.strokeStyle='rgba(114,254,225,.90)';ctx.lineWidth=2;
@@ -1276,7 +1291,7 @@ export function createRealtimeBattleCommands({
   if(mode==='inspect')return false; // Expanded map is observation-only during battle.
   const squad=getSelected();
   if(!squad)return false;
-  const point=getLegalPoint(x,z,mode==='deploy');
+  const point=mode==='deploy'?{x,z}:getLegalPoint(x,z,false);
   if(!point||!Number.isInteger(point.x)||!Number.isInteger(point.z)){
    $('realtimeMapMessage').textContent='この地形は通行できません。別のマスを選択してください。';return false;
   }
@@ -1284,7 +1299,7 @@ export function createRealtimeBattleCommands({
    if(!canDeploy(point.x,point.z)){
     $('realtimeMapMessage').textContent='初期配置は味方陣地だけです。青い陣地内の安全な場所を選んでください。';return false;
    }
-   const applied=onDeploy(selectedId,point);
+   const applied=previewDeploy(selectedId,point)&&onDeploy(selectedId,point);
    $('realtimeMapMessage').textContent=applied?'配置を保存しました。別の隊も配置できます。':'配置場所が不足するか、建物・他隊に重なっています。';
    if(applied){
     const group=String(squad.groupId??squad.id);
@@ -1315,7 +1330,7 @@ export function createRealtimeBattleCommands({
  canvas.addEventListener('pointermove',e=>{
   if(!pointer||pointer.id!==e.pointerId)return;
   const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
-  if(Math.hypot(dx,dy)>10)pointer.pan=true;
+  if(Math.hypot(dx,dy)>(mode==='deploy'?22:10))pointer.pan=true;
   if(pointer.pan){
    const rect=canvas.getBoundingClientRect(),span=worldSize/zoom;
    centerX=pointer.baseX-dx/Math.max(1,rect.width)*span;
@@ -1336,7 +1351,17 @@ export function createRealtimeBattleCommands({
    else $('realtimeMapMessage').textContent='青・赤の隊番号をタップすると詳細を確認できます。';
    return;
   }
-  const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
+  if(mode==='deploy'){
+    const hit=deploymentTiles.find(tile=>
+     px*canvas.width>=tile.left&&px*canvas.width<tile.right&&
+     pz*canvas.height>=tile.top&&pz*canvas.height<tile.bottom);
+    if(!hit?.legal){
+     $('realtimeMapMessage').textContent='赤いマスは配置不可です。青いマスをタップしてください。';
+     return;
+    }
+    chooseMapCell(hit.x,hit.z);return;
+   }
+   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
  function activateRadarPin(px,py,{strategy=false}={}){

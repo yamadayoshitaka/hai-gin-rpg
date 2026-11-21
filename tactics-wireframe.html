@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-formation-animated-orders"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-transparent-deploy-floor1"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261121-formation-animated-orders">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -916,7 +916,8 @@ import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-formation-animated-orders';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-transparent-deploy-floor1';
+import {parseExplorationDestination,explorationDestination,buildingFloorChoices} from './src/battle-exploration-floor.js?v=20261121-floor1';
 import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
@@ -5892,11 +5893,30 @@ function tickAI(dt){
   const exploring=a.tacticalOrderUntil>elapsed?null:activeBuildingExplorations.get(squadOrderKey(a.team,a.squadId));
   if(exploring){
    if(elapsed-(exploring.lastTargetScan??-Infinity)>.6){
-    exploring.cachedTarget=selectedExplorationLoot(exploring.buildingId);
+    exploring.cachedTarget=selectedExplorationLoot(explorationDestination(exploring.buildingId,exploring.floor));
     exploring.lastTargetScan=elapsed;
    }
    const treasure=exploring.cachedTarget;
    if(treasure){
+    const wantedFloor=exploring.floor||1;
+    // Explicit building-floor selection enters through the REAL staircase.
+    // requestUnitFloor and updateUnitFloorTravel retain door, collision and
+    // upper-storey item pickup checks; no direct teleport to an upstairs tile.
+    if(!massSim&&wantedFloor>1&&(a.indoorFloor||1)<wantedFloor&&!a.floorTravel&&
+       elapsed>=(a._explorationFloorRetryAt??0)){
+     const permitted=exploring.building?.structure?.floors?.length>=wantedFloor;
+     const started=permitted&&requestUnitFloor(a,1,exploring.building,{forceStairs:true});
+     a._explorationFloorRetryAt=elapsed+(started?1.5:4);
+     if(started){
+      a.floorTravel.manualHighGroundTarget=true;
+      a.floorTravel.manualHighGroundGoal=wantedFloor;
+      a.floorTravel.manualHighGroundTargetId=
+       'explore:'+exploring.buildingId+':'+wantedFloor;
+      a.floorTravel.manualHighGroundAttack=true;
+      a._manualHighGroundAttack=true;
+      continue;
+     }
+    }
     const destination=cellPosition(treasure.x,treasure.z);
     const threat=nearestEnemy(a,CELL*3.2);
     if(!threat&&p.distanceTo(destination)>CELL*.55){
@@ -6797,7 +6817,9 @@ function createExplorationPicker(defaultIds=[]){
   (Number(b.building.data.z)||0)-origin.z)):null;
  const buildings=availableExplorationBuildings({all:true}).sort((a,b)=>
   (distance(a)??Infinity)-(distance(b)??Infinity)||a.index-b.index);
- const selected=new Set(defaultIds.map(String));
+ const defaults=defaultIds.map(parseExplorationDestination);
+ const selected=new Set(defaults.map(row=>row.buildingId));
+ const floors=new Map(defaults.map(row=>[row.buildingId,row.floor]));
  let maxRange=Number(exploreRangeBySquad.get(squad)||0);
  const allowed=b=>!maxRange||distance(b)!=null&&distance(b)<=maxRange;
  const root=document.createElement('div');
@@ -6824,22 +6846,41 @@ function createExplorationPicker(defaultIds=[]){
  label.style.cssText='display:block;color:#ffe2a5;font:11px/1.4 system-ui;white-space:normal';
  const position=b=>({x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0});
  const list=document.createElement('div');list.className='exploreBuildingList';
- const buttons=new Map();
+ const buttons=new Map(),floorSelectors=new Map();
  for(const b of buildings){
+  const holder=document.createElement('div');holder.className='exploreBuildingChoice';
   const button=document.createElement('button');button.type='button';
   button.setAttribute('aria-pressed',String(selected.has(b.id)));
   button.onclick=()=>{if(!allowed(b))return;
-   selected.has(b.id)?selected.delete(b.id):selected.add(b.id);redraw()};
-  list.append(button);buttons.set(b.id,button);
+   selected.has(b.id)?selected.delete(b.id):selected.add(b.id);redraw();};
+  holder.append(button);buttons.set(b.id,button);
+  const levels=buildingFloorChoices(b.building,{enableUpperFloors:!massSim});
+  if(levels.length>1){
+   const field=document.createElement('label');field.className='exploreFloorControl';
+   field.textContent='探索する階：';
+   const select=document.createElement('select');
+   select.setAttribute('aria-label',b.name+'の探索階数');
+   for(const floor of levels){
+    const option=document.createElement('option');option.value=String(floor);
+    option.textContent=floor+'階';select.append(option);
+   }
+   select.value=String(levels.includes(floors.get(b.id))?floors.get(b.id):1);
+   floors.set(b.id,Number(select.value));
+   select.onchange=()=>{floors.set(b.id,Number(select.value));selected.add(b.id);redraw();};
+   field.append(select);holder.append(field);floorSelectors.set(b.id,field);
+  }
+  list.append(holder);
  }
  function redraw(){
   let availableCount=0;
   for(const b of buildings){
    const node=buttons.get(b.id),visible=allowed(b),isSelected=selected.has(b.id);
-   node.hidden=!visible;
+   node.parentElement.hidden=!visible;
    if(visible)availableCount++;
+   const picker=floorSelectors.get(b.id);if(picker)picker.hidden=!isSelected;
+   const floor=floors.get(b.id)||1;
    node.textContent=b.name+'　'+(distance(b)==null?'距離不明':distance(b)+'マス')+
-    (b.treasure.length?' 🎁':'');
+    (b.treasure.length?' 🎁':'')+(floor>1?'｜'+floor+'階':'');
    node.classList.toggle('selected',isSelected);
    node.setAttribute('aria-pressed',String(isSelected));
   }
@@ -6880,7 +6921,7 @@ function createExplorationPicker(defaultIds=[]){
   const chosen=buildings.filter(b=>selected.has(b.id));
   summary.textContent='候補 '+availableCount+'/'+buildings.length+'件 · 選択 '+chosen.length+
    '件 · '+(maxRange?'半径'+maxRange+'マス以内':'距離制限なし');
-  label.textContent=chosen.length?'選択：'+chosen.map(b=>b.name+' ('+distance(b)+'マス)').join(' → '):
+  label.textContent=chosen.length?'選択：'+chosen.map(b=>b.name+' '+(floors.get(b.id)||1)+'階 ('+distance(b)+'マス)').join(' → '):
    '建物または地図をタップして探索先を選択';
  }
  distanceSelect.onchange=()=>{
@@ -6904,7 +6945,8 @@ function createExplorationPicker(defaultIds=[]){
  });
  root.append(controlsRow,summary,map,label,list);
  redraw();
- return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)&&allowed(b)).map(b=>b.id)};
+ return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)&&allowed(b))
+  .map(b=>explorationDestination(b.id,floors.get(b.id)||1))};
 }
 function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
  const key=squadOrderKey(team,id),choices=[...new Set(ids.map(String))]
@@ -6914,15 +6956,17 @@ function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
  explorationQueues.set(key,choices);
  return true;
 }
-function selectedExplorationLoot(buildingId){
- const b=townInstances.find(b=>b.model.uuid===String(buildingId));
+function selectedExplorationLoot(destination){
+ const {buildingId,floor}=parseExplorationDestination(destination);
+ const b=townInstances.find(b=>b.model.uuid===buildingId);
+ if(b&&floor>(b.structure?.floors?.length||1))return null;
  if(!b)return null;
  const treasure=roomItemRegistry.list({instanceId:b.model.uuid,state:'placed'});
- const loot=treasure.find(item=>item.floor===1)||treasure[0];
+ const loot=treasure.find(item=>item.floor===floor)||null;
  // An empty house is still an explorable building; it simply has no loot.
  const x=loot?Math.round((b.model.position.x+loot.x)/CELL+6):Math.round(b.data.x);
  const z=loot?Math.round((b.model.position.z+loot.z)/CELL+6):Math.round(b.data.z);
- return {building:b,loot,x,z,buildingName:BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物'};
+ return {building:b,buildingId,floor,loot,x,z,buildingName:BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物'};
 }
 function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={}){
  const id=String(squadId),side=Number(team);
@@ -6933,19 +6977,19 @@ function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={
  if(!target)return false;
  const troops=squadRoster.filter(u=>u.team===side&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
  if(!troops.length)return false;
- if(massSim&&!massSim.setSquadExploration(id,String(buildingId),target.x,target.z,side))return false;
- if(massWorker?.active)massWorker.setSquadExploration(id,String(buildingId),target.x,target.z,side);
+ if(massSim&&!massSim.setSquadExploration(id,target.buildingId,target.x,target.z,side))return false;
+ if(massWorker?.active)massWorker.setSquadExploration(id,target.buildingId,target.x,target.z,side);
  const key=squadOrderKey(side,id);
- activeBuildingExplorations.set(key,{buildingId:String(buildingId),...target});
- startingSquadOrders.set(key,{mode:'explore',buildingId:String(buildingId)});
+ activeBuildingExplorations.set(key,{...target});
+ startingSquadOrders.set(key,{mode:'explore',buildingId:target.buildingId,floor:target.floor});
  if(side===0){
-  squadOrderRegistry.set(id,{mode:'explore',buildingId:String(buildingId),
+  squadOrderRegistry.set(id,{mode:'explore',buildingId:target.buildingId,floor:target.floor,
    x:target.x,z:target.z,buildingName:target.buildingName});
   if(!beforeBattle){markRibbonOrderIssued(id);updateSquadTarget(id,target);refreshSquadOrderLabel();drawSquadMiniMap();}
  }
  if(!beforeBattle){
   battleDialogue.push({key:'explore:'+key+':'+Math.floor(elapsed),speaker:'伝令',kind:'info',priority:72,
-   squadId:side===0?id:null,text:(side===0?'味方':'敵')+squadName(id,side)+'：'+target.buildingName+'を探索開始'});
+   squadId:side===0?id:null,text:(side===0?'味方':'敵')+squadName(id,side)+'：'+target.buildingName+' '+target.floor+'階を探索開始'});
   if(side===0){
    queueBattleFocusCinematic((target.x-6)*CELL,(target.z-6)*CELL,{kind:'explore',priority:120});
    log(squadName(id)+'：'+target.buildingName+'の探索を指示');
@@ -7125,7 +7169,7 @@ function updateAllyAutoItemDecisions(){
 }
 function checkCompletedExplorations(){
  for(const [key,task] of activeBuildingExplorations){
-  if(roomItemRegistry.list({instanceId:task.buildingId,state:'placed'}).length)continue;
+  if(roomItemRegistry.list({instanceId:task.buildingId,floor:task.floor||1,state:'placed'}).length)continue;
   const parts=key.split(':'),team=Number(parts.shift()),id=parts.join(':');
   const pending=explorationQueues.get(key)||[];
   let nextStarted=false;
@@ -8274,7 +8318,7 @@ function buildSquadQuickCommands(){
  }else if(squadQuickPage==='explore'){
   heading('🔎 建物を複数選択・順番に探索');
   const task=activeBuildingExplorations.get(squadOrderKey(0,id));
-  const picker=createExplorationPicker(task?[task.buildingId]:[]);
+  const picker=createExplorationPicker(task?[explorationDestination(task.buildingId,task.floor)]:[]);
   const pickerArea=document.createElement('div');pickerArea.className='explorePickerArea';
   pickerArea.append(picker.element);squadQuickList.append(pickerArea);
   add('✓ 選択した建物を探索開始','explore',()=>{
@@ -11071,6 +11115,23 @@ function realtimeSharedItems(){
    usable:['heal','squad_buff'].includes(def?.kind)};
  }).sort((a,b)=>Number(b.usable)-Number(a.usable)||a.name.localeCompare(b.name,'ja'));
 }
+// The preview never mutates units. It uses exactly the same group formation
+// and collision checks as the eventual confirmation.
+function skirmishTeamDeploymentPlan(id,point){
+ if(!point||!Number.isInteger(point.x)||!Number.isInteger(point.z))return null;
+ const teamMembers=THREE_TEAM_BATTLE?
+  squadIds.filter(sid=>Number(armyGroupBySquad[sid])===Number(armyGroupBySquad[String(id)])):[id];
+ const formationCells=Object.fromEntries(teamMembers.map((sid,index)=>[
+  sid,Number.isInteger(storyRequest?.subdivisionMap?.[sid]?.formationCell)&&
+   storyRequest.subdivisionMap[sid].formationCell>=0?
+   storyRequest.subdivisionMap[sid].formationCell:4+index
+ ]));
+ const options={team:0,x:point.x,z:point.z,width:WORLD_SIZE,height:WORLD_SIZE,
+  passable:(x,z)=>traversableCell(x,z),homeRiverX:z=>riverAt(z)};
+ return THREE_TEAM_BATTLE?
+  planSkirmishGroupDeployment(actors,{...options,squadIds:teamMembers,formationCells}):
+  planSkirmishDeployment(actors,{...options,squadId:id});
+}
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
@@ -11158,26 +11219,20 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  },
  getLegalPoint:(x,z)=>turnLegalPoint(x,z),
  canDeploy:(x,z)=>x<=(massSim?.riverXAt(z)??riverAt(z))-9,
+ previewDeploy:(id,point)=>{
+  if(!point||!Number.isInteger(point.x)||!Number.isInteger(point.z)||
+      point.x>(massSim?.riverXAt(point.z)??riverAt(point.z))-9)return false;
+  return massSim?traversableCell(point.x,point.z):
+   Boolean(skirmishTeamDeploymentPlan(id,point));
+ },
  onDeploy:(id,point)=>{
   if(massSim){
    const applied=massSim.deploySquadBeforeBattle(id,point.x,point.z,0);
    if(applied&&massWorker?.active)massWorker.deploySquadBeforeBattle(id,point.x,point.z,0);
    return applied;
   }
-  // Ordinary 50v50 and story battles use real actors, not the mass grid.
-  // Move their physics occupancy, render root and mounted object together.
-  const teamMembers=THREE_TEAM_BATTLE?
-   squadIds.filter(sid=>Number(armyGroupBySquad[sid])===Number(armyGroupBySquad[String(id)])):[id];
-  const formationCells=Object.fromEntries(teamMembers.map((sid,index)=>[
-   sid,Number.isInteger(storyRequest?.subdivisionMap?.[sid]?.formationCell)&&
-    storyRequest.subdivisionMap[sid].formationCell>=0?
-    storyRequest.subdivisionMap[sid].formationCell:4+index
-  ]));
-  const options={team:0,x:point.x,z:point.z,width:WORLD_SIZE,height:WORLD_SIZE,
-   passable:(x,z)=>traversableCell(x,z),homeRiverX:z=>riverAt(z)};
-  const slots=THREE_TEAM_BATTLE?
-   planSkirmishGroupDeployment(actors,{...options,squadIds:teamMembers,formationCells}):
-   planSkirmishDeployment(actors,{...options,squadId:id});
+  // Both the highlighted tile and the actual placement use this plan.
+  const slots=skirmishTeamDeploymentPlan(id,point);
   if(!slots)return false;
   for(const {actor} of slots)occupiedCells.delete(cellKey(actor.cell.x,actor.cell.z));
   for(const {actor,x,z} of slots){
