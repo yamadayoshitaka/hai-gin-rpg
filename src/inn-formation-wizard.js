@@ -118,25 +118,37 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     button('data-inn-wizard-slot="'+index+'"',s?'変更':'選択')+'</div></div>';
   }).join('');
 
-  const eligible=Object.keys(SORTIE_FORMATIONS).filter(id=>inspectInnFormation(game,team.id,id).eligible);
-  const allCount=Object.keys(SORTIE_FORMATIONS).length,per=6;
-  const maxPage=Math.max(0,Math.ceil(eligible.length/per)-1);
+  const entries=Object.keys(SORTIE_FORMATIONS).map(id=>({
+   id,...inspectInnFormation(game,team.id,id)
+  }));
+  const usable=entries.filter(entry=>entry.eligible).length;
+  const allCount=entries.length,per=6;
+  const maxPage=Math.max(0,Math.ceil(allCount/per)-1);
   const currentPage=Math.max(0,Math.min(maxPage,Number(rosterFormationPage)||0));
-  const display=eligible.slice(currentPage*per,(currentPage+1)*per);
-  const previewId=eligible.includes(rosterPreviewId)?rosterPreviewId:
-   eligible.includes(team.formation)?team.formation:display[0];
+  const display=entries.slice(currentPage*per,(currentPage+1)*per);
+  const previewEntry=entries.find(entry=>entry.id===rosterPreviewId)||
+   display.find(entry=>entry.id===team.formation)||display[0];
+  const previewId=previewEntry?.id;
   const preview=previewId?SORTIE_FORMATIONS[previewId]:null;
   const plan=previewId?signatureStrategyFor(previewId):null;
+  const needLabel=entry=>{
+   if(entry.eligible)return '✓ 使用可能';
+   const peopleLeft=Math.max(0,(entry.requirements?.people||0)-entry.total);
+   return peopleLeft?'あと'+peopleLeft+'人':'職業・条件不足';
+  };
   body='<div class="innWizardRoster">'+rows+'</div>'+
-   '<small class="innWizardInfo">出撃予定 '+total+'/'+limit+'人 · 他隊との重複配属なし</small>'+
-   '<div class="innWizardRosterPreview" aria-label="現在の隊員で利用可能な陣形と動きの確認">'+
-    '<div class="trainingFormationHeading"><b>使用可能な陣形 '+eligible.length+' / '+allCount+'</b>'+
-    '<small>タップで動きを確認</small></div>'+
-    (eligible.length?
-     '<div class="trainingFormationList" role="group" aria-label="編成条件を満たした陣形一覧">'+
-      display.map(id=>button('data-inn-wizard-preview="'+esc(id)+'"',esc(SORTIE_FORMATIONS[id].name),id===previewId)).join('')+
-     '</div>':
-     '<small class="trainingFormationEmpty">使用可能な陣形はありません。人数・ジョブ・レアリティを調整してください。</small>')+
+   '<small class="innWizardInfo">出撃予定 '+total+'/'+limit+'人 · 人数を変えると陣形条件も即時更新</small>'+
+   '<div class="innWizardRosterPreview" aria-label="陣形の使用可否と不足人数">'+
+    '<div class="trainingFormationHeading"><b>陣形一覧　使用可 '+usable+' / '+allCount+'</b>'+
+    '<small>不足条件もタップで確認</small></div>'+
+    '<div class="trainingFormationList" role="group" aria-label="陣形一覧と残り必要人数">'+
+     display.map(entry=>{
+      const name=SORTIE_FORMATIONS[entry.id].name;
+      return button('data-inn-wizard-preview="'+esc(entry.id)+'" aria-label="'+esc(name+' '+needLabel(entry))+'"',
+       '<span>'+esc(name)+'</span><small>'+esc(needLabel(entry))+'</small>',entry.id===previewId)
+       .replace('class="','class="'+(entry.eligible?'trainingAvailable ':'trainingLocked '));
+     }).join('')+
+    '</div>'+
     (maxPage?'<div class="trainingFormationPager">'+
      button('data-inn-wizard-roster-formation-page="-1" '+(!currentPage?'disabled':''),'◀')+
      '<small>'+(currentPage+1)+' / '+(maxPage+1)+'</small>'+
@@ -144,6 +156,12 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
      '</div>':'')+
     (preview?
      '<div class="trainingFormationDemo"><b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+
+      '<small class="trainingFormationRequirements">'+
+       (previewEntry.eligible?'✓ 出撃条件達成':
+         '不足：'+(Math.max(0,(previewEntry.requirements?.people||0)-previewEntry.total)?'あと'+
+           Math.max(0,(previewEntry.requirements?.people||0)-previewEntry.total)+'人　':'')+
+         esc(previewEntry.reason))+
+      '</small>'+
       renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
       '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small></div>':'')+
    '</div>';
