@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
-import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=80';
+import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=81-natural-dental';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from './face-anatomy-rig-v80.js?v=80';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
