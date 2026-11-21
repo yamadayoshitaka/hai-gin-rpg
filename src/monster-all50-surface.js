@@ -80,6 +80,10 @@ function sample(kind,u,v){
   const hairs=wave(u+v*.27,73);
   h=.45+.15*follicles+.13*hairs+.16*n;
   rough=.82+.06*f;albedo=.91+.11*n;
+ }else if(kind==='keratin'){
+  const growth=wave(v+g*.019,67),striations=wave(u+v*.11,31);
+  h=.49+.21*growth+.14*striations+.10*n;
+  rough=.65+.07*f;albedo=.92+.08*g-.04*growth;
  }else if(kind==='necrotic'||kind==='hide'){
   const pores=Math.abs(f);
   h=.46+.17*n+.21*pores+.12*g;
@@ -172,12 +176,13 @@ export function decorateAll50MonsterSurface(material,{
  const profile=byId[speciesId];
  if(!profile||family&&profile.family!==family||detail==='low'||
    glow||translucent||!['skin','light','shadow','tailScale',
-     'seaDragonSkin','mortalSkin','constructBase','constructFacet',
+     'seaDragonSkin','bone','mortalSkin','constructBase','constructFacet',
      'constructDark','constructTrim','membrane','feather',
      'dragonScale','dragonRim'].includes(role))return false;
  if(preserveExisting&&(material.map||material.normalMap||material.bumpMap||
    material.roughnessMap))return false;
- const maps=atlas(profile.kind,detail);
+ const kind=role==='bone'?'keratin':profile.kind;
+ const maps=atlas(kind,detail);
  if(!maps)return false;
  material.map=maps.albedo;
  material.normalMap=maps.normal;
@@ -188,7 +193,7 @@ export function decorateAll50MonsterSurface(material,{
  material.metalness=Math.max(0,Math.min(.78,m));
  material.userData.all50Surface=MONSTER_ALL50_SURFACE_REVISION;
  material.userData.all50SurfaceSpecies=speciesId;
- material.userData.all50SurfaceKind=profile.kind;
+ material.userData.all50SurfaceKind=kind;
  material.needsUpdate=true;
  return true;
 }
