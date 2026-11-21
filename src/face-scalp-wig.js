@@ -2,7 +2,7 @@ export const FACE_HAIR_RUNTIME_BUILD='20261121-two-donor-unisex-catalog-v67';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67-v69';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67-v70';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-wig-coiffure-v74';
 
@@ -1226,10 +1226,10 @@ export function shapeRebuiltCatalogCurl(points,{
  return points;
 }
 /** v69 rebuilt salon guide edits. Original donor head/follicles unchanged. */
-export function shapeRebuiltStraightBangs(points,{box,rootIndex=0}={}){
+export function shapeRebuiltStraightBangs(points,{box,rootIndex=0,tipLevel=.786}={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  const d=box.getSize(new THREE.Vector3()),root=points[0].clone();
- const brow=box.min.y+d.y*(.786+.0015*Math.sin(rootIndex*.7));
+ const brow=box.min.y+d.y*(tipLevel+.0015*Math.sin(rootIndex*.7));
  const tipY=Math.min(root.y-d.y*.055,brow);
  for(let j=1;j<points.length;j++){
   const t=j/(points.length-1),blend=THREE.MathUtils.smoothstep(t,0,1);
@@ -1241,17 +1241,63 @@ export function shapeRebuiltStraightBangs(points,{box,rootIndex=0}={}){
  }
  return points;
 }
-/** Tuck one-length front locks behind the ear, leaving cheeks visible. */
+/** Face-facing locks must reach the ear BEFORE they descend over the eyes.
+ * v69 displaced only the lower 52% of medium hair, leaving a thick V-veil.
+ * Guide roots never move, while the scalp guide is routed along the temple. */
 export function shapeRebuiltEarTuck(points,{box,side=1}={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const root=points[0].clone();
  for(let j=1;j<points.length;j++){
-  const t=j/(points.length-1),tuck=THREE.MathUtils.smoothstep(t,.15,.52);
-  const p=points[j],earX=c.x+side*d.x*.37,earZ=c.z-d.z*.115;
-  p.x=THREE.MathUtils.lerp(p.x,earX,tuck*.96);
-  p.z=THREE.MathUtils.lerp(p.z,earZ,tuck*.88);
-  if(t<.20)p.x=THREE.MathUtils.lerp(root.x,p.x,t/.20);
+  const t=j/(points.length-1),tuck=THREE.MathUtils.smoothstep(t,.018,.23);
+  const p=points[j],earX=c.x+side*d.x*.396,earZ=c.z-d.z*.135;
+  p.x=THREE.MathUtils.lerp(p.x,earX,tuck*.985);
+  p.z=THREE.MathUtils.lerp(p.z,earZ,tuck*.96);
+  const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  // Anatomical eye-band clearance must depend on actual head HEIGHT,
+  // not percentage of total hairstyle. A long lock reaches eye height at
+  // t < .22 and previously crossed the eyes before the tuck engaged.
+  if(h>=.61&&h<=.86){
+   const lateral=side*(p.x-c.x),clear=d.x*.32;
+   if(lateral<clear)p.x=c.x+side*clear;
+   p.z=Math.min(p.z,c.z+d.z*.065);
+  }
+ }
+ return points;
+}
+/** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
+ * reuse a measured head donor for follicles, but NOT a female bob guide. */
+export function shapeRebuiltMaleGuide(points,{
+ box,zone='crown',side=1,part='center',long=false,bangsCut=false,
+ frontRoot=false
+}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const fringe=zone.startsWith('fringe'),temple=zone.startsWith('temple');
+ const back=zone.startsWith('back')||zone.startsWith('nape');
+ for(let j=1;j<points.length;j++){
+  const p=points[j],t=j/(points.length-1);
+  const sweep=THREE.MathUtils.smoothstep(t,.055,.30);
+  if((fringe||temple||(zone==='crown'&&frontRoot))&&!bangsCut){
+   const goalX=c.x+side*d.x*(temple?.37:part==='side'?.36:.32);
+   p.x=THREE.MathUtils.lerp(p.x,goalX,
+    sweep*(temple?.90:.78));
+   if(t>.20){
+    const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+    if(h>.56&&h<.89&&side*(p.x-c.x)<d.x*.275)
+     p.x=c.x+side*d.x*.275;
+   }
+   p.z=THREE.MathUtils.lerp(p.z,
+    c.z-d.z*(temple?.15:.055),sweep*(temple?.83:.59));
+  }
+  if(temple&&!long){
+   const taper=THREE.MathUtils.smoothstep(t,.40,.92);
+   p.y=Math.max(p.y,box.min.y+d.y*.51*taper);
+  }
+  if(back&&!long){
+   const taper=THREE.MathUtils.smoothstep(t,.47,.96);
+   p.y=Math.max(p.y,box.min.y+d.y*.32*taper);
+   p.z-=d.z*.035*taper;
+  }
  }
  return points;
 }
@@ -1485,8 +1531,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const rearBodyVolumeExtra=bodyCollisionResolver&&!style.shortCutKind?
   Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
  const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
- const sadakoWeights={
-  // Give the ear band dense vertical curtains while preserving the crown.
+ const sadakoWeights=style.maleGroom?{
+  // Men's independent top/side/nape population, not women's wide curtains.
+  crown:.36,fringeLeft:.09,fringeRight:.09,
+  templeLeft:.105,templeRight:.105,
+  backLeft:.09,backRight:.09,napeLeft:.035,napeRight:.035
+ }:{
   crown:.30,fringeLeft:.085,fringeRight:.085,
   templeLeft:.20,templeRight:.20,
   backLeft:.055,backRight:.055,napeLeft:.025,napeRight:.025
@@ -1692,7 +1742,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // crown guides: the other 5-in-6 covered the pupils in v65.
   const faceFrame=sadakoGravity&&(fringe||
    (zone==='crown'&&frontRoot&&midFace));
-  const bangsCut=sadakoVariant==='bangs'&&(fringe||overFace);
+  const bangsCut=sadakoVariant==='bangs'&&
+   (style.rebuiltBase==='sadako'?fringe:(fringe||overFace));
   if(overFace&&!sadakoGravity)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
@@ -1728,9 +1779,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    cutKind==='buzz'?(battleStableCoverage?.088:.032):
    cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
   const templeScale=zone.startsWith('temple')?
-   (style.catalogTempleRatio||1):1;
+   (style.catalogTempleRatio||1)*(style.maleGroom?.74:1):1;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618))*templeScale:
-   bangsCut?d.y*(.21+.024*fract(i*.618)):
+   bangsCut?d.y*(.21+.024*fract(i*.618)+(style.himeFringe?.055:0)):
    sadakoGravity?d.y*(longFactor+fract(i*.381966)*.13)*
     clamp(lengthScale,minLengthScale,1.5)*(style.styleLength||1)*templeScale:
    (fringe||overFace)?
@@ -1739,7 +1790,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
-  const baseTrimY=bangsCut?box.min.y+d.y*(.760+.008*Math.sin(i*.73)):
+  const baseTrimY=bangsCut?box.min.y+d.y*
+   ((style.himeFringe?.735:.760)+.004*Math.sin(i*.73)):
    sadakoGravity?wigRoot.y-length*1.04:cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
@@ -1807,19 +1859,25 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // Variant shape runs AFTER anatomical root-to-gravity grooming and
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
    if(style.rebuiltBase==='sadako'&&style.catalogFront==='bangs'){
-    if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i});
-    else if(faceFrame)shapeSadakoVariantGuide(shape,{
-     variant:'center',box,zone,side:partSide,rootIndex:i,
-     front:true,lateralScale:.20
-    });
+    if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i,
+     tipLevel:style.himeFringe?.752:.786});
+    else if(faceFrame||zone.startsWith('temple'))
+     shapeRebuiltEarTuck(shape,{box,side:partSide});
    }else if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
     variant:sadakoVariant,box,zone,side:partSide,
     rootIndex:i,front:faceFrame,bangsCut,
     lateralScale:style.rebuiltBase==='sadako'?.19:1
    });
-   if(style.catalogFront==='tucked'&&
+   // Every center/tucked woman's frontal lock clears the eyes EARLY;
+   // previous ear tuck only worked on lower ends below the whole face.
+   if(style.rebuiltBase==='sadako'&&style.gender==='female'&&
+      style.catalogFront!=='bangs'&&
       (faceFrame||zone.startsWith('temple')))
     shapeRebuiltEarTuck(shape,{box,side:partSide});
+   if(style.maleGroom)shapeRebuiltMaleGuide(shape,{
+    box,zone,side:partSide,part:style.part,
+    long:style.styleLength>.74,bangsCut,frontRoot
+   });
    // Face-parting and invisible-rod curls are INDEPENDENT components.
    // Earlier old styles used one variant switch and silently lost curls.
    if(style.catalogCurl&&style.catalogCurl!=='straight'&&!bangsCut)
@@ -1894,6 +1952,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   }
+  if(style.maleGroom&&style.rebuiltBase==='buzz')
+   shapeRebuiltMaleGuide(rest,{box,zone,side:partSide,part:style.part,
+    long:false,bangsCut:style.catalogFront==='bangs'&&fringe,frontRoot});
   // Natural grooming relaxes tangents, preserving the real root and cut tip.
   for(let pass=0;pass<(sadakoGravity?1:3);pass++){
    const filtered=rest.map(p=>p.clone());
@@ -2473,6 +2534,29 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // three interwoven strands and ponytails have a distinct tied root.
  const styled=makeStyleSpecificHair(styleId,box,rootColor,{scalpCandidates});
  styled.meshes.forEach(mesh=>root.add(mesh));
+ // A pair of subtle physical pins secures the one-length front locks at
+ // the temples. These are actual metallic 3D meshes, not a UI label/texture.
+ // They become draw groups of the same consolidated mesh in static studios.
+ const earClipMeshes=[];
+ if(style.gender==='female'&&style.rebuiltBase==='sadako'&&
+    style.catalogFront==='tucked'){
+  for(const side of [-1,1])for(let lane=0;lane<2;lane++){
+   const geoClip=new THREE.CapsuleGeometry(d.x*.0038,d.x*.061,3,6);
+   const matClip=new THREE.MeshStandardMaterial({
+    color:0xb9b9b4,metalness:.64,roughness:.35,
+    side:THREE.DoubleSide
+   });
+   const clipMesh=new THREE.Mesh(geoClip,matClip);
+   clipMesh.name=(side<0?'LEFT':'RIGHT')+'_TEMPLE_HAIRPIN_'+lane;
+   clipMesh.position.set(center.x+side*d.x*(.345+lane*.011),
+    box.min.y+d.y*(.817-lane*.009),
+    center.z+d.z*(.215-lane*.015));
+   clipMesh.rotation.z=side*(.32+lane*.05);
+   clipMesh.userData.styledHairGeometry=true;
+   clipMesh.userData.v70RealHairPin=true;
+   root.add(clipMesh);earClipMeshes.push(clipMesh);
+  }
+ }
  root.userData.v49StyledHair=styled.type;
   root.userData.v70FineFibreFlow=true;
  root.userData.v49StyledHairTriangles=styled.triangleCount;
@@ -2589,6 +2673,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
+   strands.filter(lock=>
+    (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&
+    lock.rest.some(p=>{
+     const yn=(p.y-box.min.y)/Math.max(d.y,1e-6);
+     return yn>.69&&yn<.83&&
+      Math.abs(p.x-center.x)<d.x*.215&&p.z>center.z+d.z*.090;
+    })).length:null,
+  v70HairPinMeshCount:earClipMeshes.length,
+  v70MasculineGroom:style.maleGroom||null,
+  v70HimeFringe:style.himeFringe||null,
+  v70EarTuckBeforeEyes:style.rebuiltBase==='sadako'&&
+   style.gender==='female'&&style.catalogFront!=='bangs',
   v65BatchedPonytailFiberCount:styled.meshes.find(m=>
    m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?.userData?.v65FiberCount||0,
   v65BatchedPonytailDrawMeshes:styled.meshes.some(m=>
