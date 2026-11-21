@@ -6,11 +6,11 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
+ from './monster-geometry.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
+ from './monster-animation.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
+ from './creature-game-model-routing.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';

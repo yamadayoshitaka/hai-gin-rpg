@@ -7,6 +7,7 @@
  * +Z is the creature's forward direction, Y is up.
  */
 import * as THREE from 'three';
+import {dragonCraniumProfile} from './dragon-cranium-profile.js';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -857,15 +858,8 @@ function addDragon(g,type,s,detail){
   // lengthen the sharp nasal bridge relative to the cranium. The jaw has
   // independent volume; small eyelids replace cartoon-like round orbs.
   // Long predatory skull, angular brow, tapered snout and a separate jaw.
-  profile('core',skin,[
-    [headZ-l*.37,headY-.035,.014,.044],
-    [headZ-l*.12,headY+.025,w*.385,h*.164],
-    [headZ+l*.11,headY+.03,w*.42,h*.172],
-    [headZ+l*.30,headY-.04,w*.34,h*.125],
-    [headZ+l*.52,headY-.104,w*.265,h*.092],
-    [headZ+l*.73,headY-.125,w*.194,h*.075],
-    [headZ+l*.84,headY-.126,.008,.020],
-  ],false,creatureFaceVolume(type));
+  profile('core',skin,dragonCraniumProfile(w,h,l,headY,headZ),
+    false,creatureFaceVolume(type));
   profile('jaw',shadow,[
     [headZ+l*.10,headY-.218,.014,.020],
     [headZ+l*.37,headY-.238,w*.29,h*.066],
