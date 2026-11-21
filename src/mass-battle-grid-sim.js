@@ -995,6 +995,21 @@ export class MassBattleGridSimulation {
     }
     return {added};
   }
+  /** Restores MP to living members of a single physical squad, with a finite per-person cap. */
+  restoreSquadMp(squadId,amount=35,team=0){
+    let restored=0;
+    for(const unit of this.units){
+      if(unit.team!==team||String(unit.squadId)!==String(squadId)||!unit.alive||unit.hp<=0)continue;
+      const current=Number(unit.mp)||0,max=Number(unit.maxMp)||0;
+      const gain=Math.max(0,Math.min(Math.max(0,Number(amount)||0),max-current));
+      if(gain){unit.mp=current+gain;restored+=gain;}
+    }
+    return restored;
+  }
+  /** Antidote clears active squad debuffs without changing beneficial rally buffs. */
+  cleanseSquad(squadId,team=0){
+    return this.squadDebuffs.delete(team+':'+String(squadId));
+  }
   /** Same capped healing budget in the Worker and main-thread mirrors. */
   healSquadFromItem(squadId,totalHp,team=0){
     if(this._squadDebuff({team,squadId},'heal_block')>=1)return false;
