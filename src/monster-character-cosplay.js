@@ -14,6 +14,11 @@ import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
 import {applySummonFootwearPBR,detachSummonFootwearPBR,
  SUMMON_FOOTWEAR_PBR_REVISION}
  from './summon-footwear-pbr.js?v=summon-leather-v2-20261122';
+import {applySeraphTailoredMaterial,isSeraphTailoredRole,
+ SERAPH_TAILORED_MATERIAL_REVISION}
+ from './seraph-celestial-materials.js?v=pearl-silk-v3-20261122';
+import {SERAPH_VESTMENT_REVISION}
+ from './seraph-celestial-wardrobe.js?v=tailored-angel-v3-20261122';
 import {buildMonsterNativeMotionVariants,selectMonsterMotionVariant,
  monsterMotionCoverage,MONSTER_LICENSED_MOTION_REVISION}
  from './monster-licensed-motion-variants.js?v=ual2-source-clips-v1-20261121';
@@ -242,13 +247,16 @@ function buildMonsterCostume(THREE,model,profile,detail){
    profile.id==='dragon_lord'?0x583a49:
    profile.sex==='female'?0x453243:0x302929),
   ivoryCloth:profile.costume==='seraph_female'?0xe8dfd2:0xd1c1ae,
+  seraphSatin:0xfaf7ef,seraphBrocade:0xf6f0e4,
+  seraphOrganza:0xfffaef,seraphLining:0xeee7db,
+  seraphGold:0xd2b377,seraphEmbroidery:0xe0c68f,
   gold:profile.costume==='seraph_female'?0xd9b96e:
    profile.costume==='forest_spirit_female'?0xb1a26a:0xa88152,
   dragonScale:0x665162,dragonRim:0x503e50,
   seraphWing:0xffffff,
   // Dyed photo-leather must not inherit the bright green foliage tint.
   summonBootLeather:profile.costume==='forest_spirit_female'?0xcabbaa:
-   profile.costume==='seraph_female'?0xc9c9c0:
+   profile.costume==='seraph_female'?0x696767:
    profile.costume?.startsWith('dragonkin')?0x8b7880:0xb09c8a,
   summonBootSole:0x33302b,
   dragonEye:0xe4b564
@@ -291,7 +299,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
    }
-   const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
+   const isSeraphPBR=profile.costume==='seraph_female'&&isSeraphTailoredRole(role);
+   const isMetal=role==='metal'||role==='gold';
+   const MaterialCtor=isSeraphPBR?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;
+   const m=new MaterialCtor({
     color:palette[role]??0x999999,
     vertexColors:role==='seraphWing',
     roughness:isMetal?.42:role==='bone'?.86:
@@ -309,6 +320,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
+   if(isSeraphPBR){
+    applySeraphTailoredMaterial(m,{role,detail});
+    materials.set(role,m);ownedMats.push(m);return m;
+   }
    // Guardian wings are FEATHERS, not sheets of linen.
    if(role==='seraphWing')applySummonHumanoidPBR(m,{
      id:profile.id,role,detail
@@ -720,6 +735,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinTone:profile.skinTone??null,
   summonPbrRevision:femaleSummon?SUMMON_HUMANOID_PBR_REVISION:null,
    summonFootwearRevision:femaleSummon?SUMMON_FOOTWEAR_PBR_REVISION:null,
+   seraphVestmentRevision:profile.costume==='seraph_female'?SERAPH_VESTMENT_REVISION:null,
+   seraphMaterialRevision:profile.costume==='seraph_female'?SERAPH_TAILORED_MATERIAL_REVISION:null,
   demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
