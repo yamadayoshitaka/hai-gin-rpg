@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import {sculptM024PoisonScarab} from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
 
 export const BEETLE_DONOR_ID='m024';
-export const BEETLE_LINEAGE_REVISION='m022-single-central-rhinoceros-horn-v2-20261121';
+export const BEETLE_LINEAGE_REVISION='m022-polished-rhinoceros-horn-v3-20261121';
 
 const BEETLE_VARIANTS=Object.freeze({
  m021:Object.freeze({theme:'iron',wingScale:.62,mandible:.73}),
@@ -53,9 +53,9 @@ function sculptBeetleSpeciesDetails(g,spec,profile){
  const s=side=>side<0?'L':'R';
  const palette=spec.colors;
  const horn=(parent,name,root,bend,tip,radius,{
-  shade=palette.highlight,surface='chitin'
+  shade=palette.highlight,surface='chitin',finish=null,heroKeratin=false
  }={})=>g.curvedHorn(parent,shade,root,bend,tip,radius,{
-  name:spec.id+'-'+name,capRoot:true,surface,
+  name:spec.id+'-'+name,capRoot:true,surface,finish,heroKeratin,
  });
  // No poisonous tusks/saliva on these three beetles. Each has a short,
  // articulated mandible pair inside the donor's original head+jaw joint.
@@ -77,15 +77,21 @@ function sculptBeetleSpeciesDetails(g,spec,profile){
   // small fork only at the tip; these branches are NOT independent horns.
   // Embed the two fork roots in the upper central stem to keep them
   // visually continuous from every camera angle.
+  // Same carapace tint and atlas as the glossy elytra. A continuous
+  // high-density cuticle stem avoids the old segmented matte cone.
+  const polishedHornTint='#'+new THREE.Color(palette.base)
+   .lerp(new THREE.Color(palette.highlight),.32).getHexString();
   horn(head,'central-rhinoceros-horn',[0,.19,.26],[0,.70,.51],
    [0,1.28,.49],.218,{
-    shade:palette.highlight,surface:'chitin',
+    shade:polishedHornTint,surface:'chitin',
+    finish:'polishedHorn',heroKeratin:true,
    });
   for(const side of [-1,1]){
    const v=(x,y,z)=>[x*side,y,z];
    horn(head,'central-horn-tip-'+s(side),
     [0,1.06,.48],v(.095,1.23,.50),v(.245,1.41,.53),.076,{
-     shade:palette.highlight,surface:'chitin',
+     shade:polishedHornTint,surface:'chitin',
+     finish:'polishedHorn',heroKeratin:true,
     });
   }
  }else if(spec.id==='m025'){
