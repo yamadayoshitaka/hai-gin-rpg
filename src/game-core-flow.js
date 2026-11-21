@@ -2,7 +2,7 @@
  * Single player session. Town is the only persistent save location.
  * On-map/battle changes live in sessionStorage until the player returns to town.
  */
-import {createCampaign,validateSavedCampaign} from './story-campaign.js';
+import {createCampaign,validateSavedCampaign,recruit,RARITIES,armyTroops,troopCount} from './story-campaign.js';
 import {CAMPAIGN_STAGE_BY_ID,stageUnlocked,nextCampaignStage} from './campaign-stage-plan.js';
 export const GAME_SAVE_KEY='hai-gin-core-slot-1';
 export const GAME_SESSION_KEY='hai-gin-core-active-v1';
@@ -108,6 +108,29 @@ export function markStageVictory(game,id,receipt){
  const next=nextCampaignStage(id);
  if(next?.kind==='town'&&!game.completedStages.includes(next.id))game.history.unshift('次の町「'+next.name+'」への道が開いた。');
  return next;
+}
+/** Preview the limits before making an irreversible paid hire. Counts include
+ * existing recruits and story characters, but exclude no roster members. */
+export function trainingHireCapacity(game,rarity='N',commanderId='player'){
+ if(!validGame(game))throw Error('ゲームデータが正しくありません。');
+ const state=game.campaign,unitCost=RARITIES[rarity]?.hire;
+ if(!unitCost)throw Error('雇用できない兵種です。');
+ const wallet=Math.max(0,Math.floor(Number(game.wallet)||0));
+ const armySpace=Math.max(0,1000-troopCount(state));
+ const commanderSpace=commanderId==='reserve'?armySpace:
+  Math.max(0,100-armyTroops(state,commanderId));
+ const affordable=Math.floor(wallet/unitCost);
+ const max=Math.max(0,Math.min(100,armySpace,commanderSpace,affordable));
+ return {unitCost,wallet,affordable,armySpace,commanderSpace,max,rarity};
+}
+/** Town training hires are paid only from wallet, never campaign treasury. */
+export function hireTownSoldiers(game,{job,rarity='N',count,commanderId='player',faceId=0}={}){
+ if(!validGame(game)||game.location!=='town')throw Error('兵士の雇用は軍訓練所で行ってください。');
+ const n=Number(count),capacity=trainingHireCapacity(game,rarity,commanderId);
+ if(!Number.isInteger(n)||n<1||n>capacity.max)
+  throw Error('雇用可能人数は最大'+capacity.max+'人です（所持金・部隊空き枠を確認）。');
+ const cost=recruit(game.campaign,{job,rarity,count:n,purpose:'前線',commanderId,faceId},game);
+ return {cost,count:n,remaining:trainingHireCapacity(game,rarity,commanderId),wallet:game.wallet};
 }
 export function buyTownItem(game,itemId,quantity=1){
  if(!validGame(game)||game.location!=='town')throw Error('買い物は町で行ってください。');
