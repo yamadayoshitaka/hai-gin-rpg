@@ -628,7 +628,12 @@
       document.getElementById('runButton').textContent='走行';
       for(const el of motionStrip.querySelectorAll('button'))
         el.setAttribute('aria-pressed',String(el===button));
-      startCreaturePose(previewObject,entry.pose,t);
+      // CreaturePoseFrame has no generic 'attack' enum: regular strikes
+      // use attackStartedAt/attackTarget, not the special-pose envelope.
+      if(entry.pose==='attack'){
+        previewObject.poseAction=null;
+        previewObject.poseStartedAt=null;
+      }else startCreaturePose(previewObject,entry.pose,t);
       // The same real bone rig receives distinct healing/revival/attack IDs.
       femaleSummonHandle?.start(entry.pose,t,entry.id);
       externalPreview?.play(entry.pose);
