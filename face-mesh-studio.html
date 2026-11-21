@@ -80,8 +80,8 @@ button{padding:9px 11px}
 <button id="female" aria-pressed="true" disabled>女性・美人ベース</button>
 <button id="male" aria-pressed="false" disabled>男性・美青年ベース</button>
 </div>
-<div class="controls" id="quickHairControl" aria-label="女性の髪型を3D実メッシュで切り替え">
-<label for="quickWigStyle">髪型を切り替え <select id="quickWigStyle" aria-label="女性の髪型を選択"></select></label>
+<div class="controls" id="quickHairControl" aria-label="男女それぞれの髪型を3D実メッシュで切り替え">
+<label for="quickWigStyle">髪型を切り替え <select id="quickWigStyle" aria-label="髪型を選択"></select></label>
 <label for="wigVolume">髪ボリューム（抑える／広げる）
 <select id="wigVolume" aria-label="髪を頭に密着させるか横に広げるか"></select></label>
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
@@ -370,18 +370,31 @@ if(v32PartMode){
    resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls,
   v32Parts.male.ageBand,manualFaceOverrides.male));
 }
-for(const style of listWigStyles('female')){
- const option=document.createElement('option');
- option.value=style.id;option.textContent=style.label;
- $('quickWigStyle').appendChild(option);
+// v72: one visible main combo, but separate catalogs and saved selections.
+function populateQuickHairStyles(sex){
+ const select=$('quickWigStyle');
+ const options=listWigStyles(sex);
+ select.replaceChildren();
+ for(const style of options){
+  const option=document.createElement('option');
+  option.value=style.id;option.textContent=style.label;
+  select.appendChild(option);
+ }
+ const chosen=synchronizeHeroHairSelection(sex,v32Parts[sex]);
+ select.value=chosen.styleId;
+ $('wigVolume').value=v32Parts[sex].hairVolume;
+ select.setAttribute('aria-label',(sex==='male'?'男性':'女性')+'の髪型を選択');
+ $('quickHairControl').setAttribute('aria-label',
+  (sex==='male'?'男性':'女性')+'専用髪型カタログ');
+ $('activeHairStyle').textContent='選択中：'+
+  (select.selectedOptions[0]?.textContent||chosen.styleId);
 }
 for(const [id,profile] of Object.entries(WIG_BASE_VOLUME_PROFILES)){
  const option=document.createElement('option');
  option.value=id;option.textContent=profile.label;
  $('wigVolume').appendChild(option);
 }
-$('quickWigStyle').value=wigStyleId;
-$('wigVolume').value=v32Parts.female.hairVolume;
+populateQuickHairStyles('female');
 if(v32PartMode)$('legacyWigColorLabel').hidden=true;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expressions=new Map();
@@ -542,7 +555,8 @@ function selectGender(next){
  $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=57':'./face-body-studio.html?v=57';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
- $('quickHairControl').hidden=next!=='female';
+ $('quickHairControl').hidden=false;
+ populateQuickHairStyles(next);
   $('v47AgeBand').value=v32Parts[gender].ageBand;
   $('v47BodyType').value=v32Parts[gender].bodyType;
   $('v46FemaleCast').parentElement.hidden=gender!=='female';
@@ -767,9 +781,12 @@ function rebuildWig(){
  const chosen=synchronizeHeroHairSelection('female',v32Parts.female,
   v32PartMode?null:wigStyleId);
  Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
- $('quickWigStyle').value=chosen.styleId;
- $('wigVolume').value=v32Parts.female.hairVolume;
- $('activeHairStyle').textContent='再生成：'+($('quickWigStyle').selectedOptions[0]?.textContent||chosen.styleId);
+ if(gender==='female'){
+  $('quickWigStyle').value=chosen.styleId;
+  $('wigVolume').value=v32Parts.female.hairVolume;
+  $('activeHairStyle').textContent='再生成：'+
+   ($('quickWigStyle').selectedOptions[0]?.textContent||chosen.styleId);
+ }
  performanceMetrics.wigRebuilds++;
  setHairHiddenScalp(models.get('female')?.face,false);
  const previous=wigs.get('female');
@@ -790,8 +807,9 @@ function rebuildWig(){
   models.get('female').face.add(wig.root);wigs.set('female',wig);
   setHairHiddenScalp(models.get('female').face,true,wig);
   updateHairRuntimeDiagnostics(wig);
-   $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
-    '／'+wig.getReport().rootCount+'束・'+(wig.getReport().closeCutFibreCount?wig.getReport().closeCutFibreCount+'本の実毛': '微細毛10倍');
+   if(gender==='female')
+    $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
+     '／'+wig.getReport().rootCount+'束・'+(wig.getReport().closeCutFibreCount?wig.getReport().closeCutFibreCount+'本の実毛': '微細毛10倍');
   persistHeroineFace();
   if(v32PartMode){
    const size=models.get('female').face.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -828,14 +846,22 @@ $('wigColor').addEventListener('change',()=>{
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 $('quickWigStyle').addEventListener('change',()=>{
- const chosen=synchronizeHeroHairSelection('female',v32Parts.female,$('quickWigStyle').value);
- Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
+ const chosen=synchronizeHeroHairSelection(gender,v32Parts[gender],
+  $('quickWigStyle').value);
+ Object.assign(v32Parts[gender],chosen.parts);
+ if(gender==='female')wigStyleId=chosen.styleId;
  wigOn=true;
- rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+ $('wig').setAttribute('aria-pressed','true');
+ $('wig').textContent='髪を隠す';
+ if(gender==='male'){rebuildMaleHair();persistMaleFace();}
+ else rebuildWig();
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 $('wigVolume').addEventListener('change',()=>{
- v32Parts.female.hairVolume=$('wigVolume').value;
- wigOn=true;rebuildWig();
+ v32Parts[gender].hairVolume=$('wigVolume').value;
+ wigOn=true;
+ if(gender==='male'){rebuildMaleHair();persistMaleFace();}
+ else rebuildWig();
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 function rebuildMaleHair(){
@@ -855,6 +881,9 @@ function rebuildMaleHair(){
  });
  models.get('male').face.add(hair.root);wigs.set('male',hair);
  setHairHiddenScalp(models.get('male').face,true,hair);
+ if(gender==='male')$('activeHairStyle').textContent='反映済：'+
+  (getWigStyle(chosen.styleId)?.label||chosen.styleId)+'／'+
+  hair.getReport().rootCount+'束（男性専用）';
  const size=models.get('male').face.geometry.boundingBox.getSize(new THREE.Vector3());
  hair.root.position.set(size.x*.008*v32Parts.male.hairX,
   size.y*.007*v32Parts.male.hairY,0);
@@ -1198,10 +1227,11 @@ $('exportWig').addEventListener('click',async()=>{
    exporter.parse(wig.root,resolve,reject,{binary:true,onlyVisible:true}));
   const url=URL.createObjectURL(new Blob([bin],{type:'model/gltf-binary'}));
   const a=document.createElement('a');
-  a.href=url;a.download='hai-gin-wig-'+wigStyleId+'.glb';
+  const exportStyle=wig.root.userData.hairStyleId;
+  a.href=url;a.download='hai-gin-wig-'+exportStyle+'.glb';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  $('status').textContent='独立ヅラ '+wigStyleId+' のGLBを書き出しました。';
+  $('status').textContent='独立ヅラ '+wig.root.userData.hairStyleId+' のGLBを書き出しました。';
  }catch(e){$('status').textContent='ヅラGLB出力失敗: '+String(e);}
  finally{$('exportWig').disabled=false;}
 });
@@ -1245,8 +1275,10 @@ if(v32PartMode){
      const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)modelChanges=nextControls;
      wigStyleId=synchronized.styleId;
-     $('quickWigStyle').value=wigStyleId;
-     $('wigVolume').value=v32Parts.female.hairVolume;
+     if(gender==='female'){
+      $('quickWigStyle').value=wigStyleId;
+      $('wigVolume').value=v32Parts.female.hairVolume;
+     }
      if(hairChanged){
      wigOn=true;
      $('wig').setAttribute('aria-pressed','true');
@@ -1280,12 +1312,15 @@ if(v32PartMode){
      }
     }
     if(ready){repaint();if(sex==='female')persistHeroineFace();}
-    if(sex===gender)syncFaceControlDisplays();
+    if(sex===gender){
+     populateQuickHairStyles(sex);
+     syncFaceControlDisplays();
+    }
     facePickerControls[sex]?.refresh(v32Parts[sex]);
    };
   partSelectionHandlers[sex]=onPartSelection;
   createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
-   {hideHairType:sex==='female',hideHairVolume:sex==='female'});
+   {hideHairType:true,hideHairVolume:true});
   facePickerControls[sex]=mountHeroFacePresetPicker(
    $('v45'+(sex==='female'?'Female':'Male')+'FacePresets'),{
     gender:sex,getParts:()=>v32Parts[sex],
@@ -1293,7 +1328,7 @@ if(v32PartMode){
      const picked=chooseHeroFacePreset(sex,index,v32Parts[sex]);
      onPartSelection(picked,true);
      createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
-   {hideHairType:sex==='female',hideHairVolume:sex==='female'});
+   {hideHairType:true,hideHairVolume:true});
      facePickerControls[sex].refresh(v32Parts[sex]);
      if(sex===gender)syncFaceControlDisplays();
     }
@@ -1323,8 +1358,9 @@ if(v32PartMode){
     $('v47BodyType').value=look.bodyType;
     wigOn=true;
     $('wig').setAttribute('aria-pressed','true');$('wig').textContent='髪を隠す';
+    if(sex===gender)populateQuickHairStyles(sex);
     createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
-   {hideHairType:sex==='female',hideHairVolume:sex==='female'});
+   {hideHairType:true,hideHairVolume:true});
     facePickerControls[sex].refresh(v32Parts[sex]);
     $('status').textContent=look.item.label+'：顔・髪の3Dモデルを選択';
     if(ready)repaint();
