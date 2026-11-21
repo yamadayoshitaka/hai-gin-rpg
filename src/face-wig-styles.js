@@ -3,7 +3,7 @@
  * Data belongs to the wig, NEVER to the face master or its saved sliders.
  * Each style can be exported as an independent GLB via face-mesh-studio.
  */
-import {REBUILT_HAIR_BLUEPRINTS,REBUILT_HAIR_CATALOG} from './hair-rebuilt-catalog-v67.js';
+import {REBUILT_HAIR_BLUEPRINTS,REBUILT_HAIR_CATALOG} from './hair-rebuilt-catalog-v67.js?v=69';
 const deepFreeze=value=>{
  if(value&&typeof value==='object'){
   for(const child of Object.values(value))deepFreeze(child);
