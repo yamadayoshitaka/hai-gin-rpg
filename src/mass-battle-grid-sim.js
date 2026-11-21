@@ -1808,9 +1808,14 @@ export class MassBattleGridSimulation {
          (u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
       const order=['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.team===0?(u.order||
         (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
-      if(order==='hold'&&!nearest&&!triageNeedsMovement){u.action='hold';continue;}
-      if(order==='defend'&&Math.abs(u.x-this.riverXAt(u.z))<=12&&!nearest&&
-         !triageNeedsMovement){u.action='hold';continue;}
+      // Guard is a stationary posture. Combat was resolved above, so do
+      // not wander towards an enemy outside attack range or chase a lost target.
+      // Move, exploration and mission commands override the fallback stance.
+      const guarding=squadCommand==='hold'||squadCommand==='defend'||
+        (!squadCommand&&(order==='hold'||order==='defend'));
+      if(guarding&&!triageNeedsMovement){
+        u.action='hold';u.vx=0;u.vz=0;u.blockedTicks=0;continue;
+      }
       const isNinja=u.jobId==='ninja';
       const defaultFlow=isNinja
         ?(order==='retreat'?(u.team===0?this.ninjaFlowWest:this.ninjaFlowEast):u.team===0?this.ninjaFlowEast:this.ninjaFlowWest)
@@ -1852,6 +1857,13 @@ export class MassBattleGridSimulation {
       if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       if(supporting&&!reachable&&flow===this.supportFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
+      // The target cell of a BFS is an arrival point, not a patrol loop.
+      // Healing, structure missions, exploration and stair routes can still
+      // adjust within their separate arrival areas.
+      const taskNeedsApproach=Boolean(triageNeedsMovement||mission||highFlow||exploration);
+      if(here===0&&!nearest&&!taskNeedsApproach){
+        u.action='hold';u.vx=0;u.vz=0;u.blockedTicks=0;continue;
+      }
       let next=null,score=Infinity;
       const preferred=nearest?{x:nearest.x,z:nearest.z}:chaseFlow?remembered:null;
       const squadIndex=u.team*this.squadCount+u.squadId;
@@ -1873,6 +1885,9 @@ export class MassBattleGridSimulation {
         if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1||
           !massDiagonalClear(u.x,u.z,dx,dz,this.width,isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
         const rawFlow=flow[z*this.width+x];
+        // Never take an equal-or-worse BFS step just to change formation
+        // offsets. Those plateau steps previously caused aimless wandering.
+        if(!nearest&&!taskNeedsApproach&&rawFlow>=here)continue;
         // A 2D detour around a stair core must not alternate between the
         // cell just visited and the current cell every AI tick. Backtracking
         // is valid only when a newly changed goal actually lowers the flow;
