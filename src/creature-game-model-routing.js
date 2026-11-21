@@ -9,7 +9,7 @@
  * still block unapproved external mesh replacement.
  */
 import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
-import {CONCEPT_TRIO_IDS,CONCEPT_TRIO_REVISION} from './monster-concept-trio-sculpt.js';
+import {CONCEPT_TRIO_IDS,CONCEPT_TRIO_REVISION} from './monster-concept-trio-sculpt-v2.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
