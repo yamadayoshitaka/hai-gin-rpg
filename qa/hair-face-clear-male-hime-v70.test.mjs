@@ -64,14 +64,15 @@ test('v70 actual female semilong carries visible metal hairpins and compact head
  const report=x.w.getReport();
  assert.equal(report.v70EarTuckBeforeEyes,true);
  assert.equal(report.v70EyeCurtainLocks,0,'no frontal eye-level hair veil in the actual 3D semilong');
- assert.equal(report.v70HairPinMeshCount,4);
+ assert.equal(report.v70HairPinMeshCount,2);
+ assert.equal(report.v72FringeOnlyPins,true);
  for(const side of ['LEFT','RIGHT']){
-  for(let i=0;i<2;i++){
-   const p=x.w.root.getObjectByName(side+'_TEMPLE_HAIRPIN_'+i);
-   assert.ok(p?.isMesh,'actual selectable geometry not a fake clip label');
-   assert.ok(p.material.metalness>.5);
-  }
+  const p=x.w.root.getObjectByName(side+'_TEMPLE_HAIRPIN_0');
+  assert.ok(p?.isMesh,'physical pin geometry must be present');
+  assert.ok(p.material.metalness>.5);
+  assert.ok(p.userData.pinSurfaceGap<.006,'pin must be fitted to a real strand');
  }
+ assert.equal(report.v72PinAnchors.length,2);
  assert.ok(WIG_BASE_VOLUME_PROFILES.full.spread<=-1);
  x.cleanup();
 });
