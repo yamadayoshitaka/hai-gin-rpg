@@ -258,7 +258,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  // Muscle channels can blend emotions, dialogue and presets without
  // adding floating expression meshes or permanently changing the donor.
  const channels=['brow','tilt','squint','smile','open','cheek',...FACS_CHANNELS_V80];
- let manualActionUnits=null;
+ let manualActionUnits=null,transition=null;
  const expressionFrame=()=>({
   ...FACE_EXPRESSIONS[state.expression],...(manualActionUnits||{})
  });
@@ -400,7 +400,20 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  };
  const update=dt=>{
   if(disposed)return;
-  elapsed+=Math.max(0,Math.min(.10,Number(dt)||0));
+  const step=Math.max(0,Math.min(.10,Number(dt)||0));
+  elapsed+=step;
+  if(transition){
+   transition.elapsed+=step;
+   const t=smooth(transition.elapsed/transition.duration);
+   if(t>=1||t-transition.lastApplied>=.13){
+    transition.lastApplied=t;
+    manualActionUnits=t>=1?null:Object.fromEntries(
+     channels.map(k=>[k,(transition.from[k]||0)*(1-t)+
+      (transition.to[k]||0)*t]));
+    if(t>=1)transition=null;
+    applyExpression();
+   }
+  }
   setBlink(forcedBlink===null?(state.autoBlink?blinkEnvelope(elapsed):0):forcedBlink);
   setMouthOpen(manualMouth!==null?manualMouth:
    state.speaking?speechEnvelope(elapsed):0);
@@ -408,6 +421,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const dispose=()=>{
   if(disposed)return;
   state.expression='neutral';
+  manualActionUnits=null;transition=null;
   applyExpression();
   setBlink(0);setMouthOpen(0);
   for(const side of sides){
@@ -426,12 +440,25 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   setExpression:id=>{
    if(!FACE_EXPRESSIONS[id])throw Error('Unknown 3D face expression: '+id);
    state.expression=id;
-   manualActionUnits=null;
+   manualActionUnits=null;transition=null;
    applyExpression();
    setBlink(blink);
    setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
   },
+  // Natural expression switching: six to eight shape updates over
+  // 0.28 s, not 60 heavy full-face normal recomputations per second.
+  transitionToExpression:(id,duration=.28)=>{
+   if(!FACE_EXPRESSIONS[id])throw Error('Unknown 3D face expression: '+id);
+   const from=expressionFrame(),to=FACE_EXPRESSIONS[id];
+   state.expression=id;
+   const seconds=THREE.MathUtils.clamp(Number(duration)||.28,.08,1);
+   transition={from,to,duration:seconds,elapsed:0,lastApplied:0};
+   manualActionUnits=Object.fromEntries(channels.map(k=>[k,Number(from[k])||0]));
+   applyExpression();setBlink(blink);
+   setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
+  },
   setActionUnits:values=>{
+   transition=null;
    manualActionUnits=values==null?null:Object.fromEntries(
     channels.filter(k=>Number.isFinite(Number(values[k]))).map(k=>[
      k,THREE.MathUtils.clamp(Number(values[k]),-1,1)
@@ -461,6 +488,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v80FACSChannels:FACS_CHANNELS_V80.length,
    v80MouthAnatomy:mouth?.oral.report||null,
    v80OralLandmarkFollowsAge:true,
+   v80SmoothMuscleTransitions:true,
+   v80TransitionProgress:transition?Number(smooth(
+    transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,
    elapsed:Number(elapsed.toFixed(3))})
  };
