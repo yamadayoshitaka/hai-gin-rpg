@@ -9,6 +9,7 @@ export function squadRadarPins(allies=[],enemies=[],worldSize=232,rows=[]){
    if(!Number.isFinite(squad.x)||!Number.isFinite(squad.z))continue;
    if(sideCount.has(team+':'+String(squad.id))&&sideCount.get(team+':'+String(squad.id))<=0)continue;
    result.push({team,id:String(squad.id),number:i+1,
+    inContact:Boolean(squad.inContact),
     x:Math.max(0,Math.min(1,squad.x/Math.max(1,worldSize-1))),
     y:Math.max(0,Math.min(1,squad.z/Math.max(1,worldSize-1)))});
   }
@@ -26,7 +27,7 @@ export function radarHitPin(pins=[],px=0,py=0,radius=.072){
 
 
 /** Visual radar only: group physical job squads into 1-3 command-team pins. */
-export function battleThreeTeamRadarSquads(squads=[],groupBySquad={}){
+export function battleThreeTeamRadarSquads(squads=[],groupBySquad={},engagementByGroup=null){
  const groups=new Map();
  for(const squad of squads){
   if(!squad||!(Number(squad.alive)>0)||
@@ -42,9 +43,22 @@ export function battleThreeTeamRadarSquads(squads=[],groupBySquad={}){
   group.x+=squad.x*weight;group.z+=squad.z*weight;group.weight+=weight;
   group.alive+=Number(squad.alive)||0;
   group.total+=Number(squad.total)||0;
+  if(squad.inContact&&squad.engagementPoint&&!group.engagementPoint)
+   group.engagementPoint=squad.engagementPoint;
  }
- return [...groups.values()].sort((a,b)=>a.groupId-b.groupId).map(group=>({
-  id:group.id,groupId:group.groupId,alive:group.alive,total:group.total,
-  x:group.x/group.weight,z:group.z/group.weight
- }));
+ return [...groups.values()].sort((a,b)=>a.groupId-b.groupId).map(group=>{
+  // During contact use the living frontline shared by the HUD, not the
+  // rear strategist or an averaged officer position.
+  const live=engagementByGroup instanceof Map?
+   (engagementByGroup.get(String(group.groupId))??engagementByGroup.get(group.groupId)):
+   engagementByGroup?.[String(group.groupId)];
+  const point=live||group.engagementPoint;
+  const contact=Number.isFinite(point?.x)&&Number.isFinite(point?.z);
+  return {
+   id:group.id,groupId:group.groupId,alive:group.alive,total:group.total,
+   x:contact?point.x:group.x/group.weight,
+   z:contact?point.z:group.z/group.weight,
+   inContact:contact
+  };
+ });
 }
