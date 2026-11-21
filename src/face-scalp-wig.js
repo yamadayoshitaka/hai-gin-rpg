@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-costume-mask-buzz-restored-v62';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-costume-neck-buzz-crown-v63';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1007,14 +1007,19 @@ export function createSadakoCrownFlow(cap,box,color){
   widthAxis.crossVectors(tangent,outward).normalize();
   const half=d.x*(.00135+.00035*((tri*.61803398875)%1));
   const length=d.y*(.024+.014*((tri*.75487766)%1));
-  const a=root.clone().addScaledVector(outward,d.x*.006);
+  // Stay in contact with the pigmented donor scalp: the previous raised
+  // microfibres formed a visibly separate dark halo on the crown seam.
+  const a=root.clone().addScaledVector(outward,d.x*.0047);
   const b=a.clone().addScaledVector(tangent,length)
    .addScaledVector(outward,d.x*.0012);
   const offset=strands*4;
   for(const [p,sign] of [[a,-1],[a,1],[b,-.7],[b,.7]]){
    const q=p.clone().addScaledVector(widthAxis,sign*half);
    points.push(q.x,q.y,q.z);
-   const shade=.91+.075*((tri*.41421356)%1);
+   // Blend exactly into the same pigment used by the scalp shell at
+   // t=0; do not introduce an independent dark microfibre band.
+   const donorTone=v63WigScalpTone(root.x,root.y,root.z,box);
+   const shade=donorTone*(sign===-.7||sign===.7?.982:1);
    shades.push(pigment.r*shade,pigment.g*shade,pigment.b*shade);
   }
   indices.push(offset,offset+1,offset+2,offset+1,offset+3,offset+2);
@@ -1025,8 +1030,10 @@ export function createSadakoCrownFlow(cap,box,color){
  geometry.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
  geometry.setIndex(indices);
  if(strands){geometry.computeVertexNormals();geometry.computeBoundingSphere();}
- const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.98,metalness:0,
+ const material=new THREE.MeshPhysicalMaterial({
+  color:0xffffff,vertexColors:true,roughness:.95,metalness:0,
+  clearcoat:0,clearcoatRoughness:1,sheen:.01,
+  sheenRoughness:1,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,polygonOffset:true,
   polygonOffsetFactor:-1,polygonOffsetUnits:-1
  });
