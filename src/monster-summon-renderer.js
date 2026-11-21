@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=concept-trio-v1-20261121';
+ from './monster-geometry.js?v=concept-trio-v2-20261121';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
