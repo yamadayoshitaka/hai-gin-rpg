@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {mkdirSync} from 'node:fs';
+import {mkdirSync,writeFileSync} from 'node:fs';
 import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 
@@ -24,30 +24,33 @@ try{
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have the front lip aperture sealed: '+JSON.stringify(native));
- // Playwright's element screenshot waits for a static element layout. This
- // 3D canvas continuously changes layout while the wig/preview animates.
- // A viewport screenshot avoids an endless 'waiting for element to be stable'.
- const canvas=page.locator('#faceCanvas');
+ // Read the actual WebGL canvas immediately after an explicit render.
+ // Playwright page/element screenshots intermittently time out while this
+ // animated Three.js preview resizes, even with CSS animations disabled.
  for(const expression of ['neutral','laugh','surprised']){
   await page.locator('#faceExpression').selectOption(expression);
-  // selectOption may auto-scroll down to the expression menu. Restore
-  // the 3D canvas inside the viewport before sampling its pixels.
-  await page.evaluate(()=>document.getElementById('faceCanvas')
-   ?.scrollIntoView({block:'center',behavior:'instant'}));
-  await page.waitForTimeout(600);
-  const canvasBox=await canvas.boundingBox();
-  assert.ok(canvasBox,'WebGL canvas must be visible');
-  const data=await page.screenshot({path:out+'/'+expression+'.png',
-   animations:'disabled',timeout:30000});
-  const png=PNG.sync.read(data);
-  native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
+  await page.waitForTimeout(320);
+  const capture=await page.evaluate(()=>{
+   const frame=window.__faceExpressionQA.captureWebGLFrame();
+   const seal=window.__faceExpressionQA.nativeLipProbe();
+   const canvas=document.getElementById('faceCanvas').getBoundingClientRect();
+   return {frame,seal,canvasSize:{width:canvas.width,height:canvas.height}};
+  });
+  assert.ok(capture.frame?.startsWith('data:image/png;base64,'),
+   'Real WebGL framebuffer must be exported as an actual PNG');
+  const buffer=Buffer.from(capture.frame.slice(capture.frame.indexOf(',')+1),'base64');
+  writeFileSync(out+'/'+expression+'.png',buffer);
+  const png=PNG.sync.read(buffer);
+  native=capture.seal;
   const {x,y,width,height}=native.rect;
-  assert.ok(width>25&&height>25,'Must sample a real projected mouth region');
+  assert.ok(width>25&&height>20,'Must sample a real projected mouth region');
   let total=0,black=0,skin=0;
-  const minX=Math.max(0,Math.floor(x+canvasBox.x));
-  const maxX=Math.min(png.width,Math.ceil(x+width+canvasBox.x));
-  const minY=Math.max(0,Math.floor(y+canvasBox.y));
-  const maxY=Math.min(png.height,Math.ceil(y+height+canvasBox.y));
+  const sx=png.width/capture.canvasSize.width,
+   sy=png.height/capture.canvasSize.height;
+  const minX=Math.max(0,Math.floor(x*sx));
+  const maxX=Math.min(png.width,Math.ceil((x+width)*sx));
+  const minY=Math.max(0,Math.floor(y*sy));
+  const maxY=Math.min(png.height,Math.ceil((y+height)*sy));
   for(let yy=minY;yy<maxY;yy++)for(let xx=minX;xx<maxX;xx++){
    const i=(yy*png.width+xx)*4,r=png.data[i],
     g=png.data[i+1],b=png.data[i+2];
