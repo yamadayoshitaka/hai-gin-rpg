@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-dense-fibres-v28';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-scalp-coverage-v30';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -712,18 +712,18 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
   }
   tangent.normalize();
   widthDir.crossVectors(up,tangent).normalize();
-  const width=d.x*(.00038+.00015*fract01(i*.381966));
-  const length=d.x*(.0035+.0025*fract01(i*.41421356));
-  const base=root.clone().addScaledVector(up,d.x*.0015);
+  const width=d.x*(.00085+.00030*fract01(i*.381966));
+  const length=d.x*(.010+.006*fract01(i*.41421356));
+  const base=root.clone().addScaledVector(up,d.x*.0032);
   const tip=base.clone().addScaledVector(tangent,length)
-   .addScaledVector(up,d.x*.0012);
+   .addScaledVector(up,d.x*.0038);
   const points=[
    base.clone().addScaledVector(widthDir,-width),
    base.clone().addScaledVector(widthDir,width),
    tip.clone().addScaledVector(widthDir,-width*.22),
    tip.clone().addScaledVector(widthDir,width*.22)
   ];
-  const tone=.53+.27*fract01((i+1)*.7320508);
+  const tone=.72+.18*fract01((i+1)*.7320508);
   for(let k=0;k<4;k++){
    const at=(i*4+k)*3;
    vertices[at]=points[k].x;vertices[at+1]=points[k].y;
@@ -1459,6 +1459,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Restore a dense fine-fibre underlayer beneath the original swept locks.
  // Neither mesh contains the opaque scalp shell.
  if(closeCutFibres)root.add(closeCutFibres);
+ // Legacy swept locks are oversized white dots on a buzz cut. Hide them
+ // without disposing the geometry so other styles remain unchanged.
+ if(style.shortCutKind==='buzz')locks.visible=false;
  // Buzz cut is a fibre layer on skin, not an opaque plastic helmet.
  // Keep the donor cap geometry for fibre-root sampling and diagnostics,
  // but do not render its solid white surface. Face/ear/neck are untouched.
@@ -1496,7 +1499,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // reintroducing its solid scalp cap. Native donor scalp is masked in
   // the studio along the contoured hairline, leaving face and ears.
   const nodes=style.shortCutKind==='buzz'
-   ?[locks,...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
+   ?[...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
