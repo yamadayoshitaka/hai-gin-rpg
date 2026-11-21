@@ -188,7 +188,7 @@ export const territoryOf = id => provinceById[id] || null;
 function ensurePlaying(state) { if (state.gameOver) throw new Error('この物語は終了しています。'); }
 function record(state, message) { state.log.unshift(message); state.log = state.log.slice(0, 40); }
 
-export function recruit(state, { job, rarity, count, purpose, commanderId = 'player', faceId = 0 }) {
+export function recruit(state, { job, rarity, count, purpose, commanderId = 'player', faceId = 0 }, walletGame = null) {
   ensurePlaying(state);
   const n = Number(count);
   if (!JOBS.includes(job) || !RARITIES[rarity] || !PURPOSES.includes(purpose) || !Number.isInteger(n) || n < 1 || n > 100) throw new Error('雇用条件を確認してください。');
@@ -197,13 +197,18 @@ export function recruit(state, { job, rarity, count, purpose, commanderId = 'pla
   const rule = RARITIES[rarity];
   if (state.commander.level < rule.level) throw new Error(rule.label + 'を雇用するには軍師レベル' + rule.level + 'が必要です。');
   const cost = n * rule.hire;
-  if (state.treasury < cost) throw new Error('雇用資金が不足しています。');
+  // Only the explicitly supplied town game may pay from personal gold.
+  if (walletGame !== null && (walletGame?.campaign !== state || walletGame?.location !== 'town' ||
+      !Number.isFinite(walletGame.wallet))) throw new Error('所持金での雇用は軍訓練所のみです。');
+  if ((walletGame ? walletGame.wallet : state.treasury) < cost)
+    throw new Error(walletGame ? '所持金が不足しています。' : '雇用資金が不足しています。');
   if (troopCount(state) + n > 1000) throw new Error('1軍の上限は1000人です。');
   if (assigned !== RESERVE_COMMANDER_ID && armyTroops(state, assigned) + n > 100) throw new Error('各軍師の部隊上限は100人です。新しい軍師を雇って別部隊を編成してください。');
   const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && squadFaceVariant(s) === faceId && s.count + n <= 100);
   if (candidate) candidate.count += n;
   else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, commanderId: assigned, faceId });
-  state.treasury -= cost;
+  if (walletGame) walletGame.wallet -= cost;
+  else state.treasury -= cost;
   record(state, job + ' ' + rule.label + ' ' + n + '人を' + cost + 'Gで雇用しました。');
   return cost;
 }

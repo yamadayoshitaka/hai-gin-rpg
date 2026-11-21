@@ -149,7 +149,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .forgePanel b{font-size:14px;color:#ffe0a2}.forgePanel small{font-size:11px;color:#d4e0e7}
 #panel .forgePanel button{background:#79552c;border-color:#d9ba7d;min-height:42px}
 </style>
-<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=training-roster-20261121b"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=training-wallet-20261122"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、軍訓練所、鍛冶屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -184,7 +184,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inn-formation-only-20261121';
-import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=training-roster-20261121b';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=training-wallet-20261122';
 import {setInnTeamItem} from './src/inn-team-items.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=roster-first-20261121';
 import {registerBattlePlan,selectBattlePlan,allBattlePlans} from './src/battle-plan-recommendations.js?v=20261116';
@@ -209,7 +209,7 @@ import {tavernQuestStages,runTavernSideQuest,tavernQuestBattleSettings} from './
 import {makeCoreBattleRequest,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
 import {createTownAudioDirector} from './src/town-audio-director.js';
 import {createStoryVoiceDirector} from './src/story-voice-director.js';
-import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,forgeSquadWeapon,MAX_WEAPON_FORGE_LEVEL,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
+import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,hireTownSoldiers,trainingHireCapacity,equipSquadItem,forgeSquadWeapon,MAX_WEAPON_FORGE_LEVEL,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
 import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,ensureMajorCharacterSquads,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
@@ -316,7 +316,7 @@ $('townDialogueNext').onclick=()=>{
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
 function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();tavernGachaResults=null;panel=which;
- townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){ensureMajorCharacterSquads(game.campaign);innWizardStep='teamPick';innWizardRosterPreviewId='';innWizardRosterFormationPage=0;sortieView='teamPick';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
+ townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){innWizardStep='teamPick';sortieView='teamPick';ensureMajorCharacterSquads(game.campaign);innWizardRosterPreviewId='';innWizardRosterFormationPage=0;sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  if(which==='tavern'){tavernSection='quests';sideQuestPage=Math.max(0,tavernQuestStages(game).length-1);tavernQuestIndex=0;}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){tavernGachaResults=null;$('facilityBackdrop').hidden=true;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
@@ -577,6 +577,12 @@ if(event.target.id==='equipSquadSelect'){selectedSquadId=Number(event.target.val
   const leader=String(innCommanderId)==='player'?game.campaign.commander:game.campaign.commanders.find(c=>String(c.id)===String(innCommanderId));
   if(leader){leader.specialty=key;persist();renderPanel();}
  }});
+$('panelContent').addEventListener('change',event=>{
+ if(panel!=='formation'||!event.target.matches('[data-training-hire-input]'))return;
+ const desired=Math.trunc(Number(event.target.value)||1);
+ trainingHireCount=Math.max(1,Math.min(100,desired));
+ renderPanel();
+});
 $('panelContent').onclick=event=>{
  if(panel==='formation'){
   const target=event.target.closest('button');
@@ -585,15 +591,17 @@ $('panelContent').onclick=event=>{
    const data=target.dataset,step=innWizardStep;
    const redraw=()=>{renderPanel();};
    const saveAndDraw=()=>{persist();redraw();};
-   if(target.hasAttribute('data-training-open')){innWizardStep='hire';redraw();return;}
+   if(target.hasAttribute('data-training-open')){trainingHireCount=1;innWizardStep='hire';redraw();return;}
     if(target.hasAttribute('data-training-hire-count')){
-     trainingHireCount=[1,5,10].includes(Number(data.trainingHireCount))?Number(data.trainingHireCount):1;
+     const maximum=trainingHireCapacity(game,'N','player').max;
+     trainingHireCount=Math.max(1,Math.min(100,Number(data.trainingHireCount)||1,maximum||1));
      redraw();return;
     }
     if(target.hasAttribute('data-training-hire')){
-     recruit(game.campaign,{job:data.trainingHire,rarity:'N',count:trainingHireCount,
-      purpose:'前線',commanderId:'player',faceId:0});
-     saveAndDraw();notice(data.trainingHire+'を'+trainingHireCount+'人雇用しました。隊員選択から配属できます。');return;
+     const hired=hireTownSoldiers(game,{job:data.trainingHire,rarity:'N',count:trainingHireCount,commanderId:'player'});
+     trainingHireCount=Math.max(1,Math.min(trainingHireCount,hired.remaining.max||1));
+     saveAndDraw();
+     notice(data.trainingHire+'を'+hired.count+'人補充しました（所持金 -'+hired.cost+'G／残り'+hired.wallet+'G）。');return;
     }
     if(target.hasAttribute('data-inn-wizard-roster-formation-page')){
      innWizardRosterFormationPage=Math.max(0,innWizardRosterFormationPage+Number(data.innWizardRosterFormationPage));
