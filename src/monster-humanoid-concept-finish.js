@@ -55,7 +55,9 @@ export function applyHumanlikeConceptFinish({THREE,profile,detail='high',frames,
  };
  const stroke=(frame,role,name,points,radius=.009)=>{
   if(!frame)return;
-  tube(frame,role,'concept-'+name,points,radius);
+  const mesh=tube(frame,role,'concept-'+name,points,radius);
+  if(mesh){mesh.userData.original2dConcept=profile.id;
+   mesh.userData.skeletalAttachment=true;}
   count++;
  };
  const ring=(frame,role,name,x,y,z,radius,tubeRadius=.009)=>{
