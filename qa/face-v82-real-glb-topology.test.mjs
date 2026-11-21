@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS}
+ from '../src/face-expression-animation-v48.js';
 import {integrateMouthIntoFace,poseIntegratedMouth}
  from '../src/face-integrated-mouth-v82.js';
 
@@ -89,4 +91,69 @@ test('V82 actual CC0 face is cut/stiched with all original 7 blendshapes',()=>{
  assert.equal(poseIntegratedMouth(face,{smile:1,open:1,cheek:.8}),false,
   'The mobile renderer avoids recomputing identical mouth poses');
  geo.dispose();face.material.dispose();
+});
+
+test('V84 actual GLB skin avoids mouth-triangle reversal for ALL 22 expressions',()=>{
+ const {geo}=sourceGeometry();
+ const face=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+ face.name='FEMALE_INDEPENDENT_CLAY_FACE';
+ geo.computeBoundingBox();
+ const bounds=geo.boundingBox.clone(),size=bounds.getSize(new THREE.Vector3());
+ const centerX=(bounds.min.x+bounds.max.x)/2;
+ const mouthY=bounds.min.y+size.y*.509;
+ face.userData.v83SafeOriginalMouthTopology=true;
+ face.userData.actualMouthCreaseY=mouthY;
+ const baseline=geo.getAttribute('position').array.slice();
+ const index=geo.getIndex().array;
+ const sensitive=[];
+ for(let k=0;k<index.length;k+=3){
+  const ids=[index[k],index[k+1],index[k+2]];
+  const cx=ids.reduce((s,i)=>s+baseline[i*3],0)/3;
+  const cy=ids.reduce((s,i)=>s+baseline[i*3+1],0)/3;
+  const cz=ids.reduce((s,i)=>s+baseline[i*3+2],0)/3;
+  if(Math.abs(cx-centerX)<size.x*.15 &&
+     Math.abs(cy-mouthY)<size.y*.065 &&
+     cz>bounds.min.z+size.z*.56)sensitive.push(ids);
+ }
+ assert.ok(sensitive.length>80,
+  'Safety test must cover the actual open-mouth region, not an empty mask');
+ const cross=(positions,[a,b,c])=>{
+  const i=a*3,j=b*3,k=c*3;
+  const ab=[positions[j]-positions[i],
+   positions[j+1]-positions[i+1],positions[j+2]-positions[i+2]];
+  const ac=[positions[k]-positions[i],
+   positions[k+1]-positions[i+1],positions[k+2]-positions[i+2]];
+  return [ab[1]*ac[2]-ab[2]*ac[1],
+   ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];
+ };
+ const animator=createFaceExpressionAnimator({face,parts:new THREE.Group()},
+  {autoBlink:false});
+ const pos=geo.getAttribute('position');
+ for(const expression of Object.keys(FACE_EXPRESSIONS)){
+  animator.setExpression(expression);
+  const state=animator.getState();
+  assert.equal(state.v84JawOpeningQuarantined,true);
+  assert.equal(state.v84OralSkinInversionGuard,true);
+  assert.equal(state.mouthOpen,0,
+   expression+' cannot advertise opening without a real lip aperture');
+  let reversed=0,checked=0,maxDelta=0;
+  for(const ids of sensitive){
+   const orig=cross(baseline,ids),current=cross(pos.array,ids);
+   const a2=orig.reduce((s,v)=>s+v*v,0);
+   const b2=current.reduce((s,v)=>s+v*v,0);
+   if(a2<1e-17||b2<1e-17)continue;
+   checked++;
+   if(orig.reduce((s,v,i)=>s+v*current[i],0)<0)reversed++;
+   for(const i of ids){
+    const dy=pos.getY(i)-baseline[i*3+1];
+    maxDelta=Math.max(maxDelta,Math.abs(dy));
+   }
+  }
+  assert.ok(checked>65);
+  assert.equal(reversed,0,
+   expression+' must not invert real donor mouth triangles');
+  assert.ok(maxDelta<size.y*.017,
+   expression+' must not yank original mouth into overlapping skin');
+ }
+ animator.dispose();geo.dispose();face.material.dispose();
 });
