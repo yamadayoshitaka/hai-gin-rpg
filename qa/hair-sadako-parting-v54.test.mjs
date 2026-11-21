@@ -75,6 +75,7 @@ test('real Sadako model has no broad rear plates and retains crown hair roots',(
  assert.equal(report.undercoatLockCount,0,'No 160 wide rear cardboard strips');
  assert.equal(report.sadakoSidePanelCount,0);
  assert.equal(report.layeredRibbonCount,2,'Two narrow card planes replace four stiff boards');
+ assert.match(report.hairCardStyle,/two-narrow-tangent-ribbons/);
  assert.equal(report.sadakoCenterParted,true);
  assert.equal(report.sadakoGravityDistanceBased,true);
  assert.ok(report.sadakoAreaZoneTriangles.crown>20);
