@@ -914,6 +914,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {formationAllowsTactic} from './src/formation-strategy-unlocks.js';
 import {availableFormationOpeningTactics} from './src/prebattle-opening-tactics.js';
 import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-signature-strategies.js';
+ import {formationSignatureProgress} from './src/formation-signature-progress.js?v=20261122-signature-stall2';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
@@ -7850,7 +7851,7 @@ function issueSquadOrder(mode,point=null){
  selectedSquadId=String(id);refreshSquadOrderLabel();
  return accepted;
 }
-function issueIndividualSquadOrder(mode,point=null,silent=false){
+function issueIndividualSquadOrder(mode,point=null,silent=false,{retainEnemyQueue=false}={}){
  const id=orderedSquad();if(id==null)return false;
 
  let accepted=true;
@@ -7877,6 +7878,11 @@ function issueIndividualSquadOrder(mode,point=null,silent=false){
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
  }
  if(!accepted)return false;
+ // Any accepted manual order supersedes old formation waypoints and queued
+ // targets, which must not seize the division back on the next AI update.
+ activeFormationSignatures.delete(String(id));
+ targetedArrivalOrders.delete(String(id));
+ if(!retainEnemyQueue)targetedEnemyQueues.delete(String(id));
  // Each order applies to the ENTIRE squad, not a selected soldier subset.
  // Clear obsolete partial-squad orders from any existing battle state.
  if(!massSim)for(const u of actors){
@@ -8569,11 +8575,10 @@ function expireSkirmishDebuffs(){
   }
  }
 }
-function issueTargetedPlatoon(squadId,mode,target=null){
- activeFormationSignatures.delete(String(squadId));
+function issueTargetedPlatoon(squadId,mode,target=null,{retainEnemyQueue=false}={}){
  const original=selectedSquadId;selectedSquadId=String(squadId);
  let accepted=false;
- try{accepted=issueIndividualSquadOrder(mode,target,true);}
+ try{accepted=issueIndividualSquadOrder(mode,target,true,{retainEnemyQueue});}
  finally{selectedSquadId=original;}
  return accepted;
 }
@@ -8596,7 +8601,7 @@ function signatureLegalPoint(goal){
 function issueFormationSignature({groupId,squadIds:requested=[]}){
  const group=String(groupId),formation=storyRequest?.formationIntegrity?.[group];
  const rule=signatureStrategyFor(formation?.formation);
- if(!THREE_TEAM_BATTLE||massSim||!battleReady||finished||battleCeremony.locked)
+ if(!THREE_TEAM_BATTLE||!battleReady||finished||battleCeremony.locked)
   return 'この戦闘モードでは陣形専用作戦を発令できません。';
  if(!formation?.active||!rule||brokenFormations.has(group))
   return '陣形が不成立です。宿屋の職業・人数・生存数を確認してください。';
@@ -8628,9 +8633,12 @@ function issueFormationSignature({groupId,squadIds:requested=[]}){
  let applied=0;
  for(const order of drafts){
   if(!issueTargetedPlatoon(order.id,'move',order.points[0]))continue;
+  const origin=centers.find(x=>x.id===order.id)?.point;
   activeFormationSignatures.set(order.id,{
    formation:formation.formation,name:rule.name,phase:0,points:order.points,
-   final:order.final,issuedAt:elapsed
+   final:order.final,issuedAt:elapsed,
+   closestDistance:origin?Math.hypot(origin.x-order.points[0].x,origin.z-order.points[0].z):Infinity,
+   lastProgressAt:elapsed
   });
   targetedArrivalOrders.delete(order.id);targetedEnemyQueues.delete(order.id);
   applied++;
@@ -8643,27 +8651,39 @@ function issueFormationSignature({groupId,squadIds:requested=[]}){
 }
 function advanceFormationSignatures(){
  for(const [id,plan] of activeFormationSignatures){
-  if(!squadRoster.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0)){
+  if(!squadRoster.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false)||
+     individualCommanderUnavailableReason(id)){
    activeFormationSignatures.delete(id);continue;
   }
-  const center=squadCenter(id,0),goal=plan.points[plan.phase];
-  if(!center||!goal){activeFormationSignatures.delete(id);continue;}
-  const arrived=Math.hypot(center.x-goal.x,center.z-goal.z)<5.5;
-  // Real pathfinding keeps trying a congested bridge; avoid deadlocked
-  // signature queues by proceeding to a legal next waypoint after 22s.
-  if(!arrived&&elapsed-plan.issuedAt<22)continue;
-  if(plan.phase===0){
-   if(issueTargetedPlatoon(id,'move',plan.points[1]))
-    activeFormationSignatures.set(id,{...plan,phase:1,issuedAt:elapsed});
-   continue;
+  const center=squadCenter(id,0);
+  if(!center){activeFormationSignatures.delete(id);continue;}
+  const progress=formationSignatureProgress(plan,center,elapsed);
+  if(progress.action==='wait'){
+   activeFormationSignatures.set(id,progress.plan);continue;
   }
-  if(issueTargetedPlatoon(id,plan.final)){
-   if(plan.final==='defend'){
-    const current=squadOrderRegistry.get(id);
-    if(current)squadOrderRegistry.set(id,{...current,signatureAnchor:plan.points[1]});
+  if(progress.action==='next'){
+   const nextGoal=plan.points[1];
+   if(issueTargetedPlatoon(id,'move',nextGoal)){
+    activeFormationSignatures.set(id,{...plan,phase:1,issuedAt:elapsed,
+     closestDistance:Math.hypot(center.x-nextGoal.x,center.z-nextGoal.z),lastProgressAt:elapsed});
+    continue;
    }
   }
+  // An unreachable waypoint ends the scripted march. Never interpret its
+  // timeout as arrival and send soldiers toward the next unreachable goal.
+  const activeEnemy=enemySquadIds.some(enemyId=>squadRoster.some(u=>u.team===1&&
+   String(u.squadId)===String(enemyId)&&u.hp>0&&u.alive!==false));
+  const final=plan.final==='charge'&&!activeEnemy?'hold':plan.final;
+  const applied=issueTargetedPlatoon(id,final);
+  if(applied&&final==='defend'){
+   const current=squadOrderRegistry.get(id);
+   const anchor=progress.action==='finish'?plan.points[1]:
+    {x:Math.round(center.x),z:Math.round(center.z)};
+   if(current)squadOrderRegistry.set(id,{...current,signatureAnchor:anchor});
+  }
   activeFormationSignatures.delete(id);
+  if(progress.action!=='finish')log(squadName(id)+'：陣形移動の停滞を検知。'+
+   (applied?'現在位置から基本行動へ切替':'進軍を停止')+'（経路再指定は手動で可能）');
  }
 }
 function targetedSubSquadJobs(id){
@@ -8859,7 +8879,8 @@ const targetedStrategyUi=createTargetedStrategyUi({
   for(const [index,id] of members.entries()){
    if(!squadIds.includes(String(id))||
       normalizeArmyGroup(armyGroupBySquad[String(id)])!==Number(groupId)||
-      individualCommanderUnavailableReason(id)||!canChangeSquadOrder(id))continue;
+      individualCommanderUnavailableReason(id))continue;
+   // Basics are immediate overrides; paused battle time freezes cooldowns.
    const allowed=storyRequest?.availableSquadOrders?.[String(id)]||
     ['charge','defend','hold','retreat','explore'];
    let accepted=false;
@@ -8869,16 +8890,15 @@ const targetedStrategyUi=createTargetedStrategyUi({
     else if(allowed.includes('explore')&&buildings.length)
      accepted=queueSquadExplorations(0,id,[buildings[0].id]);
    }else{
-    const proposed=strategy==='assault'?'charge':
-     strategy==='defense'?'defend':index%2===0?'charge':'defend';
-    const mode=allowed.includes(proposed)?proposed:
-     allowed.includes('defend')?'defend':allowed.includes('charge')?'charge':
-     allowed.includes('hold')?'hold':null;
+    // Stances are universal; only advanced skills require a particular job.
+    const mode=strategy==='assault'?'charge':strategy==='defense'?'defend':
+     index%2===0?'charge':'defend';
     if(mode)accepted=issueTargetedPlatoon(id,mode);
    }
-   if(accepted){success++;targetedArrivalOrders.delete(String(id));}
+   if(accepted){success++;activeFormationSignatures.delete(String(id));
+    targetedArrivalOrders.delete(String(id));targetedEnemyQueues.delete(String(id));}
   }
-  if(!success)return 'この隊の陣形・職業・軍師・命令間隔では実行できません。';
+  if(!success)return '生存中の兵士と軍師の状態、移動可能な目標を確認してください。';
   const names={assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索・制圧進軍'};
   log('📯 第'+groupId+'隊：'+(names[strategy]||strategy)+'を'+success+'分隊へ指示');
   refreshSquadOrderLabel();drawSquadMiniMap();return true;
@@ -9045,7 +9065,7 @@ const targetedOrderWatcher=setInterval(()=>{
   if(!next){targetedEnemyQueues.delete(id);continue;}
   const center=squadCenter(next,1);
   if(center)issueTargetedPlatoon(id,'mission',{type:'eliminate_squad',targetSquadId:next,
-   x:Math.round(center.x),z:Math.round(center.z)});
+   x:Math.round(center.x),z:Math.round(center.z)},{retainEnemyQueue:true});
  }
 },600);
 window.addEventListener('pagehide',()=>clearInterval(targetedOrderWatcher));
