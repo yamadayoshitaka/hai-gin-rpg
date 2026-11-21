@@ -37,8 +37,12 @@ test('buzz can be selected, replaced by Sadako, then selected again',()=>{
   'reparenting a wig must preserve scalp correction');
  assert.match(page,/buzzHairlineFractionAtPoint\(/,
   'native scalp clipping and the buzz root must share one anatomical contour');
+ assert.match(page,/sadakoCover=wig\?\.root\?\.userData\?\.hairStyleId==='sadako-straight-long'/,
+  'Sadako must clip the donor skin in the same way as buzzcut');
+ assert.match(page,/v53-sadako-matched-donor-clipping/,
+  'Sadako must report actual native scalp clipping, not the old no-op underlay mode');
  assert.match(page,/long-pigment-underlay/,
-  'long hair must report an opaque underlay instead of a misleading scalp clip');
+  'Other long hairstyles preserve the legacy untouched donor skin route');
 });
 
 test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
@@ -53,9 +57,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/sadako-scalp-first-gravity-v52/,
+ assert.match(page,/sadako-unified-scalp-area-roots-v53/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/sadako-scalp-first-gravity-v52/,
+ assert.match(read('face-body-studio.html'),/sadako-unified-scalp-area-roots-v53/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -84,7 +88,8 @@ test('v50 Sadako falls in front of the face without artificial centre parting',(
  const src=read('src/face-scalp-wig.js');
  assert.match(src,/const partGap=style.id==='sadako-straight-long'\?0:/);
  assert.match(src,/crownUnderlay=shortHair\|\|styleId==='sadako-straight-long'/);
- assert.match(src,/sadakoCrownFlow=style.id==='sadako-straight-long'/);
+ assert.match(src,/const sadakoCrownFlow=null;/,
+  'Do not hide missing long roots under synthetic short black stubble');
  assert.match(src,/node.userData\?\.styledHairGeometry/,
   'Crown fibres must be retained by single-mesh consolidation');
 });
