@@ -846,6 +846,7 @@
           legs.push({name:node.name,quaternion:node.quaternion.toArray().map(n=>+n.toFixed(5))});
       });
       return {requested:root?.userData?.action??null,
+        skillId:root?.userData?.previewSkillId??null,
         activeClip:motion?.active?.getClip?.()?.name??null,
         hasWalkClip:!!motion?.actions?.walk,
         position:root?{x:root.position.x,z:root.position.z}:null,
