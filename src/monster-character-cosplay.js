@@ -851,6 +851,11 @@ export function createCosplayedHumanoidMonster(spec,{
     action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
    // Play only source clips proven to target the SAME canonical skeleton.
    const eligible=['idle','walk','run','attack','guard','hit','dodge','leap'];
+   // A natural authored CC0 cast/ritual gesture for healing, resurrection
+   // and Dragon Lord's charged ultimate, only when the native donor rig
+   // contains a compatible clip. Missing clips fall back as before.
+   if(['forest_archer','seraph_guardian','dragon_lord'].includes(profile.id))
+     eligible.push('special');
    const variant=!theme&&eligible.includes(action)?
      selectMonsterMotionVariant(motion.monsterVariants,action,
        motionSequence-1):null;
