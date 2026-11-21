@@ -60,7 +60,7 @@
     "test:creature-articulation": "node qa/creature-articulation-quality.test.mjs",
     "test:creature-motion-fur": "node qa/creature-motion-fur-regression.test.mjs",
     "test:monster-leap-mummy": "node qa/monster-leap-mummy-quality.test.mjs",
-    "test:monster-realistic": "node qa/monster-realistic-remesh.test.mjs",
+    "test:monster-realistic": "node qa/monster-realistic-remesh.test.mjs && node --test qa/m023-mantis-sculpt.test.mjs",
     "test:creature-dragon-realism": "node qa/creature-dragon-realism-regression.test.mjs",
     "test:creature-face-mouth": "node qa/creature-face-mouth-saddle-regression.test.mjs",
     "test:dragonlord-seam": "node qa/dragonlord-cranium-jaw-seam.test.mjs",
