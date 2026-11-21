@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-locks-no-shell-v27';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-dense-fibres-v28';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -678,7 +678,7 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
  }
  if(!area)return null;
  const d=box.getSize(new THREE.Vector3());
- const strands=Math.min(9000,Math.max(4800,Math.round(hairCount)));
+ const strands=Math.min(24000,Math.max(18000,Math.round(hairCount*3)));
  const vertices=new Float32Array(strands*4*3);
  const colors=new Float32Array(strands*4*3);
  const indices=new Uint32Array(strands*6);
@@ -1456,8 +1456,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Their count is independently reported, not a fake 10x fibre label.
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
- // v27: old lock-based buzz style, not the v18 spike-fibre substitute.
- if(closeCutFibres){closeCutFibres.geometry.dispose();closeCutFibres.material.dispose();}
+ // Restore a dense fine-fibre underlayer beneath the original swept locks.
+ // Neither mesh contains the opaque scalp shell.
+ if(closeCutFibres)root.add(closeCutFibres);
  // Buzz cut is a fibre layer on skin, not an opaque plastic helmet.
  // Keep the donor cap geometry for fibre-root sampling and diagnostics,
  // but do not render its solid white surface. Face/ear/neck are untouched.
@@ -1495,7 +1496,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // reintroducing its solid scalp cap. Native donor scalp is masked in
   // the studio along the contoured hairline, leaving face and ears.
   const nodes=style.shortCutKind==='buzz'
-   ?[locks]
+   ?[locks,...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
