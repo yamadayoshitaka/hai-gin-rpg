@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head>
-<!-- Pages publication: v56 Sadako vertical ear curtain and crown outer layer 2026-11-21 -->
+<!-- Pages publication: v57 genuine crown-grown top-to-side overlayer 2026-11-21 -->
 <!-- Pages publication: v30 scalp coverage cdaab952; 2026-11-21 --><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -222,7 +222,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-sadako-ear-curtain-crown-over-v56';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-sadako-top-to-side-canopy-v57';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=54';
@@ -621,6 +621,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
   ' / 面積均等毛根: '+(report.sadakoAreaSampledRoots??'対象外')+
   ' / 耳被覆毛束: '+(report.sadakoEarCurtainLocks??'対象外')+
   ' / 頭頂部レイヤー: '+(report.sadakoCrownLayerOrder||'対象外')+
+  ' / 頭頂→横に覆う毛束: '+(report.sadakoCrownOverSideLocks??'対象外')+
   ' / 後ろ髪・胸像接触: '+(report.sadakoRearBustGuideContacts??0)+
   ' / 毛束: '+(report.rootCount??'未取得')+
   ' / 描画オブジェクト: '+meshCount+

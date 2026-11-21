@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-ear-curtain-crown-over-v56';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-top-to-side-canopy-v57';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -263,6 +263,20 @@ export function sadakoCrownSurfaceLayerOffset(zone,y,t,box){
  const rooted=THREE.MathUtils.smoothstep(t,0,.085);
  const returnToShape=1-THREE.MathUtils.smoothstep(t,.52,.76);
  return d.x*.038*upper*rooted*returnToShape;
+}
+
+/** True top-over-side overlay. Crown-grown guides sweep across the
+ * upper skull and down the outer temple surface before joining the long
+ * hanging hair. This remains distinct from the tiny near-root crown lift
+ * so the crown is visibly ON TOP of the side layer at ear height. */
+export function sadakoCrownSideOverlayOffset(zone,y,t,box,overlay=false){
+ if(zone!=='crown'||!overlay)return 0;
+ const d=box.getSize(new THREE.Vector3());
+ const yn=(y-box.min.y)/Math.max(d.y,1e-6);
+ const across=THREE.MathUtils.smoothstep(t,.02,.15);
+ const down=1-THREE.MathUtils.smoothstep(t,.49,.75);
+ const headBand=THREE.MathUtils.smoothstep(yn,.46,.59);
+ return d.x*.056*across*down*headBand;
 }
 
 /** Sample the real donor bust's REAR silhouette below the head.
@@ -1008,7 +1022,8 @@ export function scalpToGravityWeight(t,start=.15,end=.38){
 }
 export function createScalpFirstLongGuide({
  root,normal,box,zone='crown',whorl=null,length,trimY,
- targetX=root.x,targetZ=root.z,segments=18,volumeSpread=0,projectOutside=null
+ targetX=root.x,targetZ=root.z,segments=18,volumeSpread=0,
+ crownOverSide=false,projectOutside=null
 }={}){
  if(!root?.isVector3||!normal?.isVector3||!box?.isBox3||
   !Number.isFinite(length)||length<=0||segments<4)
@@ -1020,16 +1035,19 @@ export function createScalpFirstLongGuide({
  const back=zone.startsWith('back')||zone.startsWith('nape');
  const temple=zone.startsWith('temple');
  const side=root.x>=center.x?1:-1;
- const front=zone.startsWith('fringe')||temple||
-  (!back&&(root.z>=(whorl?.z??center.z-d.z*.04)));
+ const front=!crownOverSide&&(zone.startsWith('fringe')||temple||
+  (!back&&(root.z>=(whorl?.z??center.z-d.z*.04))));
  // Hair parts around the REAL whorl and follows the local skull to the
  // forehead, temples and occipital surface. Fixed outward vectors produced
  // the radial fan and pushed front locks away from their hairline.
  const relativeX=(root.x-(whorl?.x??center.x))/Math.max(d.x,1e-6);
  const relativeZ=(root.z-(whorl?.z??center.z-d.z*.04))/Math.max(d.z,1e-6);
- const rootSweepX=temple?side*.035:
+ // Crown overlay is its own scalp-rooted grooming route: sweep ACROSS
+ // the head first, then fall down the near side. Normal crown/fringe
+ // guides may still travel forward/backward and keep the central part.
+ const rootSweepX=crownOverSide?side*.94:temple?side*.035:
   THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
- const rootSweepZ=back?-1:zone.startsWith('fringe')?1:
+ const rootSweepZ=crownOverSide?-.065:back?-1:zone.startsWith('fringe')?1:
   relativeZ>-.025?1:-1;
  const flow=new THREE.Vector3(rootSweepX,-.17,rootSweepZ).normalize();
  const nRoot=normal.clone().normalize();
@@ -1047,10 +1065,15 @@ export function createScalpFirstLongGuide({
  // In v52 the gravity interval was a percentage of the ENTIRE uncut hair
  // length. With hair extending past the shoulders, 15% meant a horizontal
  // plate longer than the skull itself. Convert to anatomical head distance.
- const gravityStart=Math.min(.15,d.y*.075/length);
- const gravityEnd=Math.max(gravityStart+.015,
-  Math.min(.38,d.y*.26/length));
- const centerCurtain=front&&(zone.startsWith('fringe')||zone==='crown');
+ // Let the top layer cross the rounded crown to the sides BEFORE the
+ // hair falls. Only these top-grown overlay guides use the longer arc.
+ const gravityStart=crownOverSide?
+  Math.min(.32,d.y*.25/length):Math.min(.15,d.y*.075/length);
+ const gravityEnd=crownOverSide?
+  Math.max(gravityStart+.020,Math.min(.54,d.y*.54/length)):
+  Math.max(gravityStart+.015,Math.min(.38,d.y*.26/length));
+ const centerCurtain=!crownOverSide&&front&&
+  (zone.startsWith('fringe')||zone==='crown');
  const smooth=(t,a,b)=>THREE.MathUtils.smoothstep(t,a,b);
  const sweptPart=t=>centerCurtain?smooth(t,.018,.32)*d.x*.135:0;
  const spreadCurve=t=>smooth(t,.025,.40)*d.x*.075*volumeSpread;
@@ -1382,7 +1405,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // face forward. Otherwise they form a long curtain across both eyes.
   // Temple hair is a long face-framing layer, NEVER a short eyebrow bang.
   const sadakoGravity=style.id==='sadako-straight-long';
-  const overFace=!back&&!zone.startsWith('temple')&&frontRoot&&midFace;
+  // Five out of six crown follicles become an anatomical outer canopy.
+  // The remaining central crown guides preserve the front/rear parting.
+  const crownOverSide=sadakoGravity&&zone==='crown'&&i%6!==0;
+  const overFace=!crownOverSide&&!back&&!zone.startsWith('temple')&&
+   frontRoot&&midFace;
   if(overFace&&!sadakoGravity)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
@@ -1453,7 +1480,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // bald notch above the forehead centre. Keep a subtle parted silhouette
    // without pulling the actual rooted bangs entirely off the centreline.
    (style.fringeSweep||.025)*.28*Math.pow(1-centerDist,1.1));
-  const targetX=sadakoGravity?wigRoot.x+(wigRoot.x-center.x)*.025:
+  const targetX=sadakoGravity?
+   (crownOverSide?center.x+side*d.x*.34:
+    wigRoot.x+(wigRoot.x-center.x)*.025):
    (back?
    center.x+(wigRoot.x-center.x)*silhouette.rearWidth:
    fringe?wigRoot.x+curtainSweep:
@@ -1461,7 +1490,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     zone.startsWith('temple')?side*d.x*(.035+silhouette.sideFlare):
      side*d.x*(.010+silhouette.sideFlare*.55)))+
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
-  const targetZ=sadakoGravity?wigRoot.z+(back?-d.z*.035:
+  const targetZ=sadakoGravity?wigRoot.z+(crownOverSide?-d.z*.025:back?-d.z*.035:
    (fringe||overFace?d.z*.17:d.z*.045)):
    closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
@@ -1479,10 +1508,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // gravity blends in from 15–38%, never directly at the hair follicle.
    const shape=createScalpFirstLongGuide({
     root:wigRoot,normal:outward,box,zone,whorl,length,trimY,
-    targetX,targetZ,segments,
+    targetX,targetZ,segments,crownOverSide,
     volumeSpread:WIG_BASE_VOLUME_PROFILES[volumeProfile].spread||0,
-    projectOutside:(point,nearRoot,front)=>{
-     if(projectSadakoOutside(point,nearRoot,front))
+    projectOutside:(point,nearRoot,front,followScalp)=>{
+     if(projectSadakoOutside(point,nearRoot,front,followScalp))
       sadakoGuideScalpPushes++;
     }
    });
@@ -1546,7 +1575,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
      zone.startsWith('temple')))sadakoGuideScalpPushes++;
   for(let j=1;j<=segments;j++)points[j].copy(rest[j]);
-  strands.push({root:wigRoot,rest,points,vel,fringe,side,
+  strands.push({root:wigRoot,rest,points,vel,fringe,side,crownOverSide,
    zone,seedIndex:seed.index,trimY,overFace,partSide,
    gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*ribbonStride;
@@ -1762,7 +1791,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      // Preserve the requested top-over-sides layering near the hair roots.
      // Shift only crown ribbon vertices along the donor head's exterior.
      if(sadakoMaster&&strand.zone==='crown'){
-      const crownLift=sadakoCrownSurfaceLayerOffset(strand.zone,vy,t,box);
+      // This side-swept top layer remains outside the temple and fringe
+      // hair DOWN the upper side of the skull, not just at the whorl.
+      const crownLift=Math.max(
+       sadakoCrownSurfaceLayerOffset(strand.zone,vy,t,box),
+       sadakoCrownSideOverlayOffset(strand.zone,vy,t,box,
+        strand.crownOverSide));
       if(crownLift){
        const hx=vx-center.x,hz=vz-center.z;
        const hy=Math.max(0,(vy-center.y)*.85);
@@ -2147,7 +2181,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoEarCurtainLocks:sadakoMaster?strands.filter(s=>
    s.zone.startsWith('temple')).length:0,
   sadakoEarCoverageMethod:sadakoMaster?'lower-temple-rooted-vertical-curtain-v56':null,
-  sadakoCrownLayerOrder:sadakoMaster?'crown-outer-shell-over-temple-fringe-v56':null,
+  sadakoCrownLayerOrder:sadakoMaster?'top-grown-canopy-crosses-and-overlies-both-sides-v57':null,
+  sadakoCrownOverSideLocks:sadakoMaster?
+   strands.filter(s=>s.crownOverSide).length:0,
+  sadakoCrownOverSideOffset:sadakoMaster?.056:null,
+  sadakoCrownCanopyGroom:sadakoMaster?'root-crown-sweep-over-temples-then-gravity-v57':null,
   sadakoCrownOuterMaxFraction:sadakoMaster?.038:null,
   sadakoCrownOuterOnlyAboveEar:sadakoMaster,
   sadakoEarRibbonWidthFactor:sadakoMaster?.90:null,
@@ -2280,6 +2318,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    .slice(0,36).map(s=>({zone:s.zone,side:s.partSide,
     root:s.root.toArray(),tip:s.rest.at(-1).toArray(),
     gravityRestShape:s.gravityRestShape}));
+ },getCrownOverlaySamples(){
+  return strands.filter(s=>s.crownOverSide).slice(0,40).map(s=>({
+   zone:s.zone,side:s.side,root:s.root.toArray(),
+   stations:s.rest.slice(0,Math.min(10,s.rest.length)).map(p=>p.toArray())
+  }));
  },getStyleSamples(){
   return WIG_ZONE_WEIGHTS.map(([zone])=>strands.filter(s=>s.zone===zone)
    .slice(0,12).map(s=>({zone,root:s.root.toArray(),
