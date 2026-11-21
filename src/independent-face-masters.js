@@ -303,8 +303,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // the original face vertices, never disconnected wrinkle strips.
   const lowerLidBag=bell(Math.abs(xn),.30,.17)*bell(yn,.628,.029)*front;
   const lowerLidCrease=bell(Math.abs(xn),.32,.17)*bell(yn,.605,.018)*front;
+  const agedOralY=.509-.073*demo.age.sag;
   const smileCrease=bell(Math.abs(xn),.31,.068)*
-   bell(yn,.495,.095)*front;
+   bell(yn,agedOralY+.030,.095)*front;
   const ageLines=d.z*demo.age.wrinkles*
    (-.0090*foreheadLines+.0062*crowsFeet-.0105*smileCrease+
     .0070*lowerLidBag-.0052*lowerLidCrease-
