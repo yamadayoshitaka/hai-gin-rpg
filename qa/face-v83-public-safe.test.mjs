@@ -39,6 +39,10 @@ test('v83 production release never cuts facial mouth triangles or draws black ov
     animator.setExpression(expression);
     assert.equal(animator.getState().v83ProductionSafetyMode,true);
     assert.equal(animator.getState().v83ForegroundOverlaysDisabled,true);
+    assert.equal(animator.getState().v84JawOpeningQuarantined,true);
+    assert.equal(animator.getState().v84OralSkinInversionGuard,true);
+    assert.equal(animator.getState().mouthOpen,0,
+     'Closed donor topology cannot report a fake open mouth');
     assert.equal(animator.getState().v83OralCavityDeferredUntilTopologyValidated,true);
     assert.equal(face.getObjectByName('V48_3D_INNER_MOUTH'),undefined);
     assert.equal(face.getObjectByName('V80_INTRAORAL_ANATOMY'),undefined);
