@@ -20,20 +20,28 @@ test('normal body is lean, fat distributes volume and eight ages stay ordered',(
  const old=['forties','sixties','seventies','eightyPlus'].map(id=>AGE_PROFILES[id].wrinkles);
  for(let i=1;i<old.length;i++)assert.ok(old[i]>old[i-1]);
 });
-test('80+ face produces actual surface-fitted 3D creases; 20s stays smooth',()=>{
- const bounds=new THREE.Mesh(new THREE.SphereGeometry(1,32,28),
+test('80+ folds are integrated into the face geometry, without floating wrinkle ribbons',()=>{
+ const youngFace=new THREE.Mesh(new THREE.SphereGeometry(1,32,28),
   new THREE.MeshStandardMaterial());
- const young=attachAgeDetails(bounds,'twenties');
+ const youngRest=youngFace.geometry.getAttribute('position').array.slice();
+ const young=attachAgeDetails(youngFace,'twenties');
  assert.equal(young.count,0);
- const old=attachAgeDetails(bounds,'eightyPlus');
+ assert.deepEqual(youngFace.geometry.getAttribute('position').array,youngRest);
+ const oldFace=new THREE.Mesh(new THREE.SphereGeometry(1,32,28),
+  new THREE.MeshStandardMaterial());
+ const oldRest=oldFace.geometry.getAttribute('position').array.slice();
+ const old=attachAgeDetails(oldFace,'eightyPlus');
  assert.ok(old.count>=12);
- assert.ok(old.vertices>400);
- const actual=[];bounds.traverse(o=>{if(o.name.startsWith('V49_AGE_'))actual.push(o)});
- assert.equal(actual.length,old.count);
- for(const crease of actual){
-  assert.ok(crease.isMesh&&crease.geometry.getAttribute('position').count>20);
-  assert.equal(crease.userData.realFaceSurfaceAttached,true);
- }
+ assert.ok(old.vertices>0);
+ assert.equal(old.surfaceIntegrated,true);
+ assert.equal(old.detachedMeshCount,0);
+ assert.notDeepEqual(oldFace.geometry.getAttribute('position').array,oldRest);
+ const floating=[];oldFace.traverse(o=>{
+  if(o!==oldFace&&o.name.startsWith('V49_AGE_'))floating.push(o);
+ });
+ assert.equal(floating.length,0);
+ oldFace.geometry.dispose();youngFace.geometry.dispose();
+ oldFace.material.dispose();youngFace.material.dispose();
 });
 test('haircut name is backed by nonempty distinct 3D bun, braid, ponytail geometry',()=>{
  const box=new THREE.Box3(new THREE.Vector3(-.13,-.25,-.12),

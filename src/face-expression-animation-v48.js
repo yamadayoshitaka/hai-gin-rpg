@@ -241,6 +241,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const mouth=buildMouth(face,parts,size);
  let elapsed=0,blink=0,mouthOpen=0,manualMouth=null,forcedBlink=null,disposed=false;
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
+ // On sparse donor polygons large cheek displacement creates visible triangular
+ // folds. Retain part-rig motion while damping whole-skin deformation only.
+ const skinDeformationGain=.64;
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Keep smooth skin normals across blendshape expressions, including
  // split geometry vertices around UV seams (raw recompute causes facets).
@@ -279,10 +282,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:e});
    const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:e});
    facialAttr.array[k]=x;
-   facialAttr.array[k+1]=y+yd*(.018*e.smile*lipCorner+
+   facialAttr.array[k+1]=y+yd*skinDeformationGain*(.018*e.smile*lipCorner+
     .012*e.cheek*cheek+.008*e.brow*brow+
     .013*e.tilt*inner-.020*e.open*jaw+muscle.dy+micro.dy);
-   facialAttr.array[k+2]=z+depth*(.009*e.cheek*cheek+
+   facialAttr.array[k+2]=z+depth*skinDeformationGain*(.009*e.cheek*cheek+
     .008*Math.max(0,e.smile)*lipCorner+muscle.dz+micro.dz);
   }
   // Exact neutral restoration also preserves signed zeros / donor float32

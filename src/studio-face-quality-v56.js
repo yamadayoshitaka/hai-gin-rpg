@@ -239,8 +239,10 @@ export function smoothStudioFaceNormals(geometry,{weldTolerance=.00007}={}){
     average.normalize();
     const angle=original.angleTo(average)*180/Math.PI;
     maxAngleDegrees=Math.max(maxAngleDegrees,angle);
-    if(angle<65){
-     out.copy(original).multiplyScalar(.13).addScaledVector(average,.87).normalize();
+    if(angle<78){
+     // Smooth across UV-split vertices: donor flat faces were still visible
+     // under v76 expression lighting with the former 13% hard-normal bias.
+     out.copy(original).multiplyScalar(.025).addScaledVector(average,.975).normalize();
      smoothed++;
      if(angle>.5)changed++;
     }

@@ -1,99 +1,64 @@
-/** v49: anatomically fitted, light-reactive age folds.
- * Each wrinkle is 3D geometry following the original sculpted face,
- * with matching surface normals and narrow soft edges, never a 2D decal.
- * Age strength is monotonic and young faces receive no marks.
+/**
+ * Age detail is part of the OWNED face surface, never a detached
+ * billboard/crease strip. The master already sculpts broad sag/age folds;
+ * these sub-millimetre ridges add the final skin relief in local geometry.
+ * Independent wrinkle cards used a frontmost-Z fallback and floated at
+ * eye/mouth openings, especially after an expression changed the face.
  */
 import * as THREE from 'three';
-import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261121-photo-optics-v76';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
-const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
-const makeLine=(name,points,sampler,box,opacity)=>{
- const d=box.getSize(new THREE.Vector3()),cx=(box.max.x+box.min.x)*.5;
- const vertices=[],indices=[],colors=[];
- // Neutral skin-tone folds, rather than painted red/brown eyeliner strokes.
- const c=new THREE.Color(0xb39489);
- for(let i=0;i<points.length;i++){
-  const [nx,ny]=points[i],x=cx+nx*d.x,y=box.min.y+ny*d.y;
-  const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
-  const dx=(next[0]-prev[0])*d.x,dy=(next[1]-prev[1])*d.y;
-  const magnitude=Math.hypot(dx,dy)||1;
-  const acrossX=-dy/magnitude,acrossY=dx/magnitude;
-  const fade=Math.sin(Math.PI*i/(points.length-1))**.72;
-  for(const sign of [-1,1]){
-   const spread=d.x*.00195*fade*sign;
-   const xx=x+acrossX*spread,yy=y+acrossY*spread;
-   const zz=sampler.query(xx,yy);
-   const base=sampler.query(x,y);
-   vertices.push(xx,yy,(zz??base??box.max.z)+d.z*.00065);
-   const light=sign<0?.955:1.025;
-   colors.push(c.r*light,c.g*light,c.b*light);
-  }
-  if(i>0){const k=(i-1)*2;indices.push(k,k+1,k+2,k+2,k+1,k+3);}
- }
- if(!indices.length)return null;
- const geometry=new THREE.BufferGeometry();
- geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
- geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
- geometry.setIndex(indices);geometry.computeVertexNormals();
- const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.92,metalness:0,
-  side:THREE.DoubleSide,transparent:true,opacity,
-  depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1
- });
- const mesh=new THREE.Mesh(geometry,material);
- mesh.name=name;mesh.renderOrder=4;
- mesh.userData.colorRole='ageCrease';
- mesh.userData.realFaceSurfaceAttached=true;
- mesh.userData.ageShadeNo2DDecal=true;
- return mesh;
-};
-const segment=(fn,count=26)=>Array.from({length:count},(_,i)=>{
- const t=i/(count-1);return fn(t);
-});
+const bell=(x,center,width)=>Math.exp(-.5*((x-center)/width)**2);
 export function attachAgeDetails(face,ageBand='twenties'){
- if(!face?.isMesh)return {count:0,intensity:0};
- const age=resolveAgeBand(ageBand);
- const strength=age.wrinkles;
- if(strength<.10)return {count:0,intensity:strength};
- const geometry=face.geometry;geometry.computeBoundingBox();
+ if(!face?.isMesh||!face.geometry?.getAttribute('position'))
+  return {count:0,vertices:0,intensity:0,surfaceIntegrated:false};
+ const age=resolveAgeBand(ageBand),strength=age.wrinkles;
+ if(strength<.10){
+  face.userData.v49AgeDetails={ageBand:age.id,strength,
+   count:0,vertices:0,surfaceIntegrated:true,detachedMeshCount:0};
+  return {...face.userData.v49AgeDetails,intensity:strength};
+ }
+ const geometry=face.geometry,position=geometry.getAttribute('position');
+ geometry.computeBoundingBox();
  const box=geometry.boundingBox;
- const sampler=createFastFaceSurfaceSampler(geometry);
- const lines=[];
- // Upper forehead horizontal furrows, with a mild, human irregularity.
- const n=ageBand==='forties'?1:ageBand==='sixties'?2:3;
- for(let j=0;j<n;j++)lines.push(['FOREHEAD_'+j,segment(t=>{
-  const x=(t-.5)*1.05;
-  return [x,.763+.029*j+.004*Math.sin(Math.PI*t*2+.9*j)];
- })]);
- // One crow's foot cluster and under-eye crease on both sides.
- for(const side of [-1,1]){
-  for(let j=0;j<3;j++)lines.push(['CROWS_'+side+'_'+j,segment(t=>[
-   side*(.42+.19*t),.690+(j-1)*.015+(t-.45)*(.022+j*.007)
-  ],18)]);
-  lines.push(['LOWER_LID_'+side,segment(t=>[
-   side*(.22+.29*t),.633-.027*Math.sin(Math.PI*t)
-  ])]);
-  lines.push(['NASOLABIAL_'+side,segment(t=>[
-   side*(.135+.15*t+.02*Math.sin(t*Math.PI)),
-   .566-.15*t
-  ])]);
-  lines.push(['MOUTH_CORNER_'+side,segment(t=>[
-   side*(.235+.040*t),.478-.068*t
-  ],18)]);
-  if(strength>.55)lines.push(['NECK_'+side,segment(t=>[
-   side*(.14+.16*t),.235-.07*Math.sin(Math.PI*t)
-  ],18)]);
+ const size=box.getSize(new THREE.Vector3());
+ const width=Math.max(1e-8,size.x),height=Math.max(1e-8,size.y);
+ const depth=Math.max(1e-8,size.z),center=(box.min.x+box.max.x)*.5;
+ let affected=0,maxOffset=0;
+ for(let i=0;i<position.count;i++){
+  const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
+  const nx=Math.abs((x-center)/(width*.5));
+  const ny=(y-box.min.y)/height;
+  const nz=(z-box.min.z)/depth;
+  // Back skull, neck, inner eye sockets and open-mouth voids never
+  // receive age creases. A continuous field cannot detach or float.
+  const front=THREE.MathUtils.smoothstep(nz,.57,.77);
+  const forehead=[.758,.794,.825].reduce((sum,at,index)=>
+   sum+bell(ny,at,.009)*(0.58+index*.12),0)*
+   bell(nx,.30,.34);
+  const crow=bell(nx,.54,.065)*bell(ny,.682,.060)*
+   (0.65+0.35*Math.cos((ny-.682)*90));
+  const nasolabial=bell(nx,.30+.075*(.60-ny),.041)*
+   bell(ny,.51,.079);
+  const mouthCorner=bell(nx,.47,.058)*bell(ny,.443,.045);
+  const fold=forehead*.70+crow*.40+nasolabial*.95+
+   mouthCorner*.31;
+  const displacement=-depth*strength*.0019*front*fold;
+  if(Math.abs(displacement)<1e-8)continue;
+  position.setZ(i,z+displacement);
+  affected++;maxOffset=Math.max(maxOffset,Math.abs(displacement));
  }
- let count=0,vertices=0;
- for(const [name,pts] of lines){
-  const mesh=makeLine('V49_AGE_'+name,pts,sampler,box,
-    clamp(strength*.17,.023,.17));
-  if(!mesh)continue;
-  face.add(mesh);count++;vertices+=mesh.geometry.getAttribute('position').count;
+ if(affected){
+  position.needsUpdate=true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
  }
- face.userData.v49AgeDetails={ageBand,strength,count,vertices,
-  source:'actual-sculpted-face',
-  v76RealSkinToneWrinkles:true,
-  noDarkAppliedLines:true,youngFaceProtected:true};
- return {...face.userData.v49AgeDetails};
+ const count=age.id==='forties'?6:age.id==='sixties'?12:15;
+ face.userData.v49AgeDetails={
+  ageBand:age.id,strength,count,vertices:affected,
+  source:'actual-sculpted-face',surfaceIntegrated:true,
+  detachedMeshCount:0,maximumDisplacement:maxOffset,
+  v76RealSkinToneWrinkles:true,noDarkAppliedLines:true,
+  youngFaceProtected:true
+ };
+ return {...face.userData.v49AgeDetails,intensity:strength};
 }

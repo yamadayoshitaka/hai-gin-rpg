@@ -70,7 +70,13 @@ export function requestRealSkinPhotoMaps(){
   return Promise.resolve(null);
  sharedPromise=new Promise((resolve,reject)=>{
   const image=new Image();
+  // A failed/offline Pages texture must not leave the UI at 読込中 forever.
+  const timeout=setTimeout(()=>{
+   image.onload=null;image.onerror=null;image.src='';
+   reject(new Error('CC0 skin photograph timed out after 12 s'));
+  },12000);
   image.onload=()=>{
+   clearTimeout(timeout);
    try{
     // Crop a central square to avoid the strongest photography falloff.
     const n=512,canvas=document.createElement('canvas');
@@ -90,7 +96,10 @@ export function requestRealSkinPhotoMaps(){
     resolve(sharedPhotoMaps);
    }catch(err){reject(err);}
   };
-  image.onerror=()=>reject(new Error('Bundled CC0 skin photograph not available'));
+  image.onerror=()=>{
+   clearTimeout(timeout);
+   reject(new Error('Bundled CC0 skin photograph not available'));
+  };
   image.src=new URL('../assets/textures/face/cc0-human-skin-reference.jpg',
    import.meta.url).href;
  }).catch(err=>{
