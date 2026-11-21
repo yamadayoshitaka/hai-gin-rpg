@@ -253,10 +253,11 @@ export function createGargoylePbrMaterial(role,stoneTexture){
  const color=GARGOYLE_MATERIAL_ROLES[role];if(!color)throw Error('Unknown gargoyle surface '+role);
  const wing=role==='gargoyleMembrane',eye=role==='gargoyleEye';
  const rocky=!wing&&!eye;
+ const textured=!eye;
  const m=new THREE.MeshPhysicalMaterial({
   color,side:THREE.DoubleSide,flatShading:role==='gargoyleRidge',
-  map:rocky?stoneTexture:null,bumpMap:rocky?stoneTexture:null,
-  bumpScale:rocky?.010:0,
+  map:textured?stoneTexture:null,bumpMap:textured?stoneTexture:null,
+  bumpScale:wing?.004:rocky?.010:0,
   roughness:wing?.93:eye?.28:.83,
   metalness:rocky?.07:0,clearcoat:eye?.42:.05,
   emissive:eye?0x6c1805:0x000000,emissiveIntensity:eye?.55:0
