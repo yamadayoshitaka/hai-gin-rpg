@@ -10,7 +10,7 @@ const box=new THREE.Box3(new THREE.Vector3(-1,-1,-1),
  new THREE.Vector3(1,1,1));
 
 test('v54 uses skull distance for gravity; no sideways plate-length sweep',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v55$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v56$/);
  const sample=createScalpFirstLongGuide({
   root:new THREE.Vector3(0,1,0),
   normal:new THREE.Vector3(0,1,0),box,
