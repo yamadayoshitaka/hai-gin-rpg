@@ -912,6 +912,7 @@ import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoin
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {formationAllowsTactic} from './src/formation-strategy-unlocks.js';
+import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-signature-strategies.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
@@ -5951,7 +5952,7 @@ function tickAI(dt){
   }
  }
  if(a.job.role==='support'&&a.jobId!=='priest'&&a.jobId!=='summoner'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);actionVfx.emit('heal',{position:wounded.root.position,job:a.job.name});a.attackTimer=a.job.cooldown;continue}}}
- if(order==='defend'){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
+ if(order==='defend'){const home=squadDirective?.signatureAnchor?cellPosition(squadDirective.signatureAnchor.x,squadDirective.signatureAnchor.z):a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
  if(order==='retreat'){const home=a.home.clone();home.x+=(a.team===0?-9:9)*CELL;moveActor(a,home,.18,.6);continue}
  if(order==='hold'){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
@@ -8422,6 +8423,7 @@ function resolveMissionTarget(type,x,z){
  */
 let pendingTargetedMap=null;
 const targetedArrivalOrders=new Map(),targetedEnemyQueues=new Map();
+const activeFormationSignatures=new Map();
 const skirmishStrategicDebuffs=new Map();
 function applySkirmishDebuff(targetSquadId,stat,amount,duration=24){
  if(!['attack','defense','speed'].includes(stat)||!Number.isFinite(amount)||amount<=0)return false;
@@ -8457,11 +8459,101 @@ function expireSkirmishDebuffs(){
  }
 }
 function issueTargetedPlatoon(squadId,mode,target=null){
+ activeFormationSignatures.delete(String(squadId));
  const original=selectedSquadId;selectedSquadId=String(squadId);
  let accepted=false;
  try{accepted=issueIndividualSquadOrder(mode,target,true);}
  finally{selectedSquadId=original;}
  return accepted;
+}
+/** Execute the actual waypoint sequence shown in the inn demonstration.
+ * Job divisions keep their original soldiers and terrain A* pathfinding.
+ * Only the selected army group participates, with no teleports or fake buffs.
+ */
+function signatureLegalPoint(goal){
+ if(!goal)return null;
+ for(let radius=0;radius<=7;radius++){
+  for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+   if(radius&&Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+   const x=goal.x+dx,z=goal.z+dz;
+   if(x>=0&&z>=0&&x<WORLD_SIZE&&z<WORLD_SIZE&&traversableCell(x,z))
+    return {x,z};
+  }
+ }
+ return null;
+}
+function issueFormationSignature({groupId,squadIds:requested=[]}){
+ const group=String(groupId),formation=storyRequest?.formationIntegrity?.[group];
+ const rule=signatureStrategyFor(formation?.formation);
+ if(!THREE_TEAM_BATTLE||massSim||!battleReady||finished||battleCeremony.locked)
+  return 'この戦闘モードでは陣形専用作戦を発令できません。';
+ if(!formation?.active||!rule||brokenFormations.has(group))
+  return '陣形が不成立です。宿屋の職業・人数・生存数を確認してください。';
+ const allowedIds=new Set(squadIds.filter(sid=>String(armyGroupBySquad[sid])===group));
+ const members=[...new Set(requested.map(String))].filter(sid=>allowedIds.has(sid)&&
+  actors.some(a=>a.team===0&&String(a.squadId)===sid&&a.hp>0&&!a.defeated));
+ if(!members.length)return 'この隊には動ける兵士がいません。';
+ if(members.some(id=>individualCommanderUnavailableReason(id)||squadOrderCooldownSeconds(id)>0))
+  return '軍師の状態または命令間隔により発令できません。';
+ const centers=members.map(id=>({id,point:squadCenter(id,0)})).filter(x=>x.point);
+ if(!centers.length)return '部隊位置を取得できません。';
+ const center={x:centers.reduce((n,u)=>n+u.point.x,0)/centers.length,
+  z:centers.reduce((n,u)=>n+u.point.z,0)/centers.length};
+ const enemies=enemySquadIds.map(id=>({id,point:squadCenter(id,1)})).filter(u=>u.point);
+ enemies.sort((a,b)=>Math.hypot(a.point.x-center.x,a.point.z-center.z)-
+  Math.hypot(b.point.x-center.x,b.point.z-center.z));
+ const target=enemies[0]?.point??{x:center.x+16,z:center.z};
+ const cellOf=id=>storyRequest?.subdivisionMap?.[id]?.formationCell;
+ const cellRanks=[...new Set(members.map(cellOf).filter(Number.isInteger))].sort((a,b)=>a-b);
+ const drafts=members.map((id,index)=>{
+  const rank=Math.max(0,cellRanks.indexOf(cellOf(id)));
+  const role=Math.min(2,cellRanks.length?rank:index%3);
+  const points=formationSignatureWaypoints(formation.formation,center,target,role)
+   .map(signatureLegalPoint);
+  return {id,role,points,final:rule.final[role]};
+ });
+ if(drafts.some(d=>d.points.length!==2||d.points.some(p=>!p)))
+  return '地形により専用作戦の進軍経路を確保できません。';
+ let applied=0;
+ for(const order of drafts){
+  if(!issueTargetedPlatoon(order.id,'move',order.points[0]))continue;
+  activeFormationSignatures.set(order.id,{
+   formation:formation.formation,name:rule.name,phase:0,points:order.points,
+   final:order.final,issuedAt:elapsed
+  });
+  targetedArrivalOrders.delete(order.id);targetedEnemyQueues.delete(order.id);
+  applied++;
+ }
+ if(!applied)return '進軍可能な分隊がありません。';
+ log('★ 第'+group+'隊　'+rule.name+'：'+applied+'分隊が実際の隊列移動を開始');
+ battleDialogue.push({key:'signature:'+group+':'+Math.round(elapsed*10),
+  speaker:'軍師',kind:'info',priority:80,text:'第'+group+'隊：'+rule.name+'！ '+rule.steps.join(' → ')});
+ refreshSquadOrderLabel();drawSquadMiniMap();return true;
+}
+function advanceFormationSignatures(){
+ for(const [id,plan] of activeFormationSignatures){
+  if(!squadRoster.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0)){
+   activeFormationSignatures.delete(id);continue;
+  }
+  const center=squadCenter(id,0),goal=plan.points[plan.phase];
+  if(!center||!goal){activeFormationSignatures.delete(id);continue;}
+  const arrived=Math.hypot(center.x-goal.x,center.z-goal.z)<5.5;
+  // Real pathfinding keeps trying a congested bridge; avoid deadlocked
+  // signature queues by proceeding to a legal next waypoint after 22s.
+  if(!arrived&&elapsed-plan.issuedAt<22)continue;
+  if(plan.phase===0){
+   if(issueTargetedPlatoon(id,'move',plan.points[1]))
+    activeFormationSignatures.set(id,{...plan,phase:1,issuedAt:elapsed});
+   continue;
+  }
+  if(issueTargetedPlatoon(id,plan.final)){
+   if(plan.final==='defend'){
+    const current=squadOrderRegistry.get(id);
+    if(current)squadOrderRegistry.set(id,{...current,signatureAnchor:plan.points[1]});
+   }
+  }
+  activeFormationSignatures.delete(id);
+ }
 }
 function targetedSubSquadJobs(id){
  return new Set(squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0)
@@ -8681,6 +8773,16 @@ const targetedStrategyUi=createTargetedStrategyUi({
   refreshSquadOrderLabel();drawSquadMiniMap();return true;
  },
 
+ getSignatureStrategy:groupId=>{
+  const state=storyRequest?.formationIntegrity?.[String(groupId)];
+  const rule=signatureStrategyFor(state?.formation);
+  if(!state?.active||!rule)return null;
+  return {name:rule.name,description:rule.summary,
+   usable:!brokenFormations.has(String(groupId))&&
+    squadIds.some(id=>String(armyGroupBySquad[id])===String(groupId)&&
+     !individualCommanderUnavailableReason(id)&&squadOrderCooldownSeconds(id)===0)};
+ },
+ onSignatureStrategy:issueFormationSignature,
  getFormationId:groupId=>storyRequest?.formationIntegrity?.[String(groupId)]?.formation||storyRequest?.initialTeamPlans?.[String(groupId)]?.formation||'balanced',
  getFormationActive:groupId=>Boolean(storyRequest?.formationIntegrity?.[String(groupId)]?.active??(storyRequest?.initialTeamPlans?.[String(groupId)]?.formationActive!==false)),
  onMoveExecute:({groupId,squadIds:members,point})=>{
@@ -8817,6 +8919,7 @@ const targetedOrderWatcher=setInterval(()=>{
   }
  }
  expireSkirmishDebuffs();
+ advanceFormationSignatures();
  for(const [id,plan] of targetedArrivalOrders){
   const center=squadCenter(id,0);
   if(!center||Math.hypot(center.x-plan.point.x,center.z-plan.point.z)>5)continue;
