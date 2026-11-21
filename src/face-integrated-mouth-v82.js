@@ -70,6 +70,11 @@ export function integrateMouthIntoFace(face,{
  const attrItems=Object.fromEntries(Object.entries(oldAttributes).map(
   ([name,a])=>[name,{itemSize:a.itemSize,normalized:a.normalized,
    type:a.array.constructor,values:Array.from(a.array),old:a}]));
+ const morphItems=Object.fromEntries(Object.entries(geometry.morphAttributes||{})
+  .map(([key,list])=>[key,list.map(a=>({
+   old:a,itemSize:a.itemSize,normalized:a.normalized,
+   type:a.array.constructor,values:Array.from(a.array)
+  }))]));
  const vertices=new Map();
  const lipTintWeights=new Map();
  const pairs=[];
@@ -80,6 +85,11 @@ export function integrateMouthIntoFace(face,{
    const src=name==='position'?position:
     Array.from({length:item.itemSize},(_,k)=>item.old.array[base+k]);
    item.values.push(...src);
+  }
+  for(const list of Object.values(morphItems))for(const item of list){
+   const offset=baseIndex*item.itemSize;
+   for(let k=0;k<item.itemSize;k++)
+    item.values.push(item.old.array[offset+k]);
   }
   if(weight>0)lipTintWeights.set(idx,weight);
   return idx;
@@ -118,7 +128,18 @@ export function integrateMouthIntoFace(face,{
   newAttr.setUsage(item.old.usage);
   geometry.setAttribute(name,newAttr);
  }
+ for(const [key,list] of Object.entries(morphItems)){
+  geometry.morphAttributes[key]=list.map(item=>{
+   const result=new THREE.BufferAttribute(new item.type(item.values),
+    item.itemSize,item.normalized);
+   result.name=item.old.name;
+   return result;
+  });
+ }
  geometry.setIndex([...retained,...patches]);
+ // The original GLB may use geometry groups for separate donor materials,
+ // but this cloned face has one skin material and one unified index buffer.
+ geometry.clearGroups();
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();
  geometry.computeBoundingSphere();
