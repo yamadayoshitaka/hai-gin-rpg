@@ -913,7 +913,8 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-radar-placement-battle-strategy';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-formation-change-v1';
+import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
@@ -6285,6 +6286,78 @@ function issueCommanderRally(issuerSquadId,kind,targetIds=[]){
  battleCeremony.showOrder(type.name,targets.length+'隊に'+type.duration+'秒の強化号令');
  updateUI();return true;
 }
+/**
+ * An in-battle formation change is a commander order. Every physical division
+ * walks to its new cell, retaining its original fight/guard/mission directive.
+ * Never warp actors into a 4x4 arrangement or create duplicate soldiers.
+ */
+function issueInnFormationChange(issuerSquadId,formationId){
+ const id=String(issuerSquadId),group=String(armyGroupBySquad[id]||'');
+ if(!THREE_TEAM_BATTLE||!group||!storyRequest?.formationBattleOptions||
+  massSim||!battleReady||finished||battleCeremony.locked||
+  !hasSquadCommander(id)||brokenFormations.has(group)||rallyCycleStatus().phase!=='ready')return false;
+ const current=storyRequest.formationIntegrity?.[group];
+ const option=storyRequest.formationBattleOptions[group]?.find(x=>x.id===formationId);
+ if(!option||!current||option.id===current.formation)return false;
+ const live=actors.filter(a=>a.team===0&&String(a.armyGroupId)===group&&a.hp>0&&!a.defeated);
+ if(!battleFormationEligibility(option,live).eligible)return false;
+ const ids=squadIds.filter(sid=>String(armyGroupBySquad[sid])===group);
+ const cells=ids.map(sid=>{
+  const subdivision=storyRequest.subdivisionMap?.[sid];
+  const index=option.assignment.findIndex(x=>String(x)===String(subdivision?.sourceSquadId));
+  return {squadId:sid,cell:index>=0?option.cells?.[index]:null};
+ });
+ if(cells.some(item=>!Number.isInteger(item.cell)))return false;
+ const center={x:live.reduce((n,u)=>n+(u.cell?.x??0),0)/live.length,
+  z:live.reduce((n,u)=>n+(u.cell?.z??0),0)/live.length};
+ const points=battleFormationRegroupTargets(cells,center,(x,z)=>
+  x>=0&&z>=0&&x<WORLD_SIZE&&z<WORLD_SIZE&&traversableCell(x,z));
+ if(points.length!==cells.length)return false;
+ const bySquad=new Map(points.map(p=>[String(p.squadId),p]));
+ const bonus=option.bonus||{},before=current.bonus||{};
+ // Replace only the previous formation modifiers, retaining equipment and leader passives.
+ for(const actor of actors){
+  if(actor.team!==0||String(actor.armyGroupId)!==group)continue;
+  const base=actor.formationBaseStats;
+  const spot=bySquad.get(String(actor.squadId));
+  if(spot)actor.formationCell=spot.cell;
+  actor.formationType=option.id;
+  if(!base)continue;
+  const oldMax=actor.maxHp;
+  const newMax=Math.max(1,Math.round(base.hp*(1+Number(bonus.defense||0))));
+  actor.job={...actor.job,damage:Math.round(base.damage*(1+Number(bonus.attack||0))),
+   hp:newMax,speed:Math.max(.5,base.speed*(1+Number(bonus.mobility||0)))};
+  actor.speed=actor.job.speed;actor.maxHp=newMax;
+  if(actor.hp>0)actor.hp=Math.max(1,Math.min(newMax,Math.round(actor.hp*newMax/Math.max(1,oldMax))));
+ }
+ for(const {squadId,cell,x,z} of points){
+  if(storyRequest.subdivisionMap?.[squadId])
+   storyRequest.subdivisionMap[squadId].formationCell=cell;
+  const old=squadOrderRegistry.get(squadId);
+  const previous=old?.formationRegroup?liveFormationRegroups.get(squadId)?.previous||null:old||null;
+  squadOrderRegistry.set(squadId,{mode:'move',x,z,formationRegroup:true});
+  liveFormationRegroups.set(squadId,{previous,target:{x,z},until:elapsed+9});
+  updateSquadTarget(squadId,{x,z});
+ }
+ current.formation=option.id;
+ current.requiredSources=option.assignment.map(String);
+ current.minBySource=option.roleMinimums;
+ current.initialCount=live.length;
+ current.minSurvivors=Math.ceil(live.length/2);
+ current.bonus={...bonus};
+ storyRequest.formationBonuses[group]={...bonus};
+ for(const unit of storyRequest.units||[]){
+  if(String(unit.armyGroupId)!==group)continue;
+  unit.formationType=option.id;unit.formationBuff={...bonus};
+ }
+ // One team-wide order uses the same cool-down cycle as an ordinary commander rally.
+ rallyActiveUntil=elapsed+1;
+ rallyNextAllowedAt=rallyActiveUntil+RALLY_RECOVERY_SECONDS;
+ rallyCurrentName='陣形変更：'+option.name;
+ battleCeremony.showOrder('📐 第'+group+'隊：'+option.name,option.purpose+'｜'+option.movement);
+ log('第'+group+'隊、'+option.name+'へ陣形変更。隊列を組み直し中');
+ updateUI();return true;
+}
 function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=null,turnEnd=false,arrival=false}={}){
  // Healing item IDs are migration-safe reserve tokens, not personal potions.
  if(REINFORCEMENT_ITEMS.includes(itemId))
@@ -6472,6 +6545,7 @@ $('surrender').onclick=()=>{
 // team-coloured squad labels, so the enemy remains identifiable at a glance.
 const squadRoster=massSim?massSim.units:actors;
 const brokenFormations=new Set();
+const liveFormationRegroups=new Map();
 let lastFormationIntegrityCheck=-Infinity;
 function updateBattleFormationIntegrity(){
  if(!storyRequest?.formationIntegrity||TOWN_MODE||!battleReady||finished||paused)return;
@@ -6492,6 +6566,24 @@ function updateBattleFormationIntegrity(){
    if(a.hp>0)a.hp=Math.max(1,Math.min(a.maxHp,a.hp-Math.max(0,oldMax-a.maxHp)));
   }
   log('⚠ 第'+groupId+'班の陣形が崩壊。攻撃・防御・機動・回復バフ解除');
+ }
+}
+function updateBattleFormationRegroups(){
+ if(!battleReady||finished||paused||!liveFormationRegroups.size)return;
+ for(const [sid,entry] of liveFormationRegroups){
+  const living=actors.filter(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0&&!u.defeated);
+  const atGoal=living.length&&living.every(u=>u.cell&&
+   Math.hypot(u.cell.x-entry.target.x,u.cell.z-entry.target.z)<=4);
+  if(!atGoal&&elapsed<entry.until)continue;
+  // Resume the attack/guard/mission order that was active before regrouping.
+  const current=squadOrderRegistry.get(sid);
+  if(current?.formationRegroup){
+   if(entry.previous)squadOrderRegistry.set(sid,entry.previous);
+   else squadOrderRegistry.delete(sid);
+   const prior=entry.previous;
+   updateSquadTarget(sid,prior&&['move','mission'].includes(prior.mode)?prior:null);
+  }
+  liveFormationRegroups.delete(sid);
  }
 }
 const battleJobNameById=new Map(MASS_JOBS.map(job=>[job.id,job.name]));
@@ -10982,6 +11074,20 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }))
  }),
  onRally:(id,type,targets)=>issueCommanderRally(id,type,targets),
+ getFormationOptions:id=>{
+  if(!THREE_TEAM_BATTLE||!storyRequest?.formationBattleOptions)return [];
+  const group=String(armyGroupBySquad[String(id)]||'');
+  const live=(massSim?.units??actors).filter(u=>u.team===0&&String(u.armyGroupId)===group);
+  const ready=rallyCycleStatus().phase==='ready'&&hasSquadCommander(id)&&
+   !brokenFormations.has(group)&&!massSim;
+  return (storyRequest.formationBattleOptions[group]||[]).map(option=>{
+   const condition=battleFormationEligibility(option,live);
+   return {...option,current:option.id===storyRequest.formationIntegrity?.[group]?.formation,
+    eligible:ready&&condition.eligible,
+    reason:!ready?'軍師不在・命令間隔・大規模戦モードを確認':condition.reason};
+  });
+ },
+ onFormationChange:(id,formationId)=>issueInnFormationChange(id,formationId),
  getSpecialTargets:(id,action)=>realtimeSpecialTargets(id,action),
  onSpecial:(id,action,targetId,arrival=false,highGroundMode='attack')=>
   issueRealtimeSpecial(id,action,targetId,arrival,highGroundMode),
@@ -11788,6 +11894,7 @@ function animate(){
  let cpuPhaseAt=performance.now();
  battleCpuProfiler.record('ai',cpuPhaseAt-cpuFrameStart);
  updateBattleFormationIntegrity();
+ updateBattleFormationRegroups();
  if(!paused){updateActiveSquadBuffVfx();actionVfx.update(worldDt);}
  updateSquadMarkerPositions(dt);
  updateOverviewSquadPins(dt);
