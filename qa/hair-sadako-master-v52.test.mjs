@@ -7,7 +7,7 @@ import {scalpToGravityWeight,createScalpFirstLongGuide,
 import {WIG_STYLES} from '../src/face-wig-styles.js';
 
 test('v52 root tangent hugs scalp to 15%, then gravity blends until 38%',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v55$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v56$/);
  assert.equal(scalpToGravityWeight(0),0);
  assert.equal(scalpToGravityWeight(.15),0);
  assert.ok(Math.abs(scalpToGravityWeight(.265)-.5)<1e-8);
