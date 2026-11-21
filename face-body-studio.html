@@ -162,7 +162,8 @@ import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expressi
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=70';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261121-sadako-curved-dynamic-v59';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261121-sadako-mantle-crown-v60';
+import {createMantleHairCollision} from './src/face-mantle-hair-collision.js?v=20261121-v60';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
@@ -214,6 +215,19 @@ scene.userData.studioPreviewCamera=camera;
 const orbit=new OrbitControls(camera,canvas);
 orbit.enableDamping=true;orbit.dampingFactor=.10;orbit.minDistance=.17;orbit.maxDistance=12;
 let model=null,bodyAttachment=null,wig=null,wardrobe=null,battleCostume=null,ready=false;
+// The actual cloak is attached to a 65-bone animated outfit. Sample its
+// deformed triangles in the fitted head's coordinates after every pose tick.
+const mantleCollision=createMantleHairCollision({
+ getHead:()=>model?.face,
+ getMantle:()=>{
+  if(!outfitVisible)return null;
+  const clothing=battleCostume?.getOutfit();
+  if(!clothing?.visible)return null;
+  return clothing.getObjectByName('hero-protagonist-draped-mantle')||
+   clothing.getObjectByName('three-dimensional-back-and-side-cape');
+ }
+});
+let mantleRefreshFrame=0;
 let uncutScalpSource=null,neckCrop=null,sourceHead=null;
 const faceControls=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 const v32PartMode=new URLSearchParams(location.search).get('qa')!=='legacy';
@@ -482,6 +496,7 @@ function rebuildWig(){
  $('style').value=chosen.styleId;$('heroHairStyle').value=chosen.styleId;
  const hairSpec=resolveHeroHairSpec('female',v32BodyPart,chosen.styleId);
  if(wig){wig.root.removeFromParent();wig.dispose();wig=null;}
+ mantleCollision.refresh();
  wig=createScalpAnchoredWig(uncutScalpSource||model.face,{
   count:v32PartMode?1400:2000,lengthScale:hairSpec.lengthScale,styleId:hairSpec.styleId,
   gender:'female',
@@ -491,7 +506,8 @@ function rebuildWig(){
   volumeProfile:v32PartMode?v32BodyPart.hairVolume:'natural',
   color:Number('0x'+(v32PartMode?
    resolvePartSelection('female',v32BodyPart).hairHex:palette.hair).slice(1)),
-  bodyCollisionResolver:bodyAttachment.bodyCollider
+  bodyCollisionResolver:bodyAttachment.bodyCollider,
+  garmentCollisionResolver:mantleCollision
  });
  model.face.add(wig.root);wig.root.visible=wigVisible;
  if(v32PartMode){
@@ -954,6 +970,8 @@ function frame(){
  // Animate clothing first, then compute the hair's head/neck follow-through.
  if(battleCostume)battleCostume.update(dt);
  else wardrobe?.update(dt);
+ // Cloth skinning changes after the battle animation. Rebuild at 20Hz.
+ if(++mantleRefreshFrame%3===0)mantleCollision.refresh();
  wig?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
 }
@@ -1007,6 +1025,7 @@ frame();
    }).then(bridge=>{
     battleCostume=bridge;
     battleCostume.setDemographics(v32BodyPart.ageBand,v32BodyPart.bodyType);
+    mantleCollision.refresh();
     renderNativeActionButtons();
     bodyAttachment.root.visible=false;
     wardrobe?.setVisible(false);
