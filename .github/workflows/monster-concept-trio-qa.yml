@@ -12,6 +12,8 @@ on:
       - 'src/monster-construct-costume.js'
       - 'src/monster-mineral-limb-articulator.js'
       - 'src/monster-demon-cosmetics.js'
+      - 'src/monster-gargoyle-sculpt.js'
+      - 'qa/monster-gargoyle-species.test.mjs'
       - 'qa/monster-humanoid-armor-articulation.test.mjs'
       - 'qa/capture-monster-body-cdp.mjs'
       - 'src/monster-construct-anatomy-v3.js'
@@ -60,6 +62,8 @@ jobs:
           node --check src/monster-mineral-limb-articulator.js
           node --check src/monster-demon-cosmetics.js
           node qa/monster-humanoid-armor-articulation.test.mjs
+          node --check src/monster-gargoyle-sculpt.js
+          node qa/monster-gargoyle-species.test.mjs
           node qa/monster-16-cosplay-pigment-regression.test.mjs
 
       - name: Capture real Three.js monster visuals in headless browser
@@ -91,7 +95,7 @@ jobs:
         run: |
           mkdir -p qa-reports/golem-full-shell
           node --check qa/capture-monster-body-cdp.mjs
-          for selection in m038:idle m038:walk m042:idle m045:idle; do
+          for selection in m038:idle m038:walk m042:idle m042:walk m042:attack m045:idle; do
             IFS=: read -r id pose <<< "$selection"
             node qa/capture-monster-body-cdp.mjs "$id" "$pose" "qa-reports/golem-full-shell/${id}-${pose}.png"
           done

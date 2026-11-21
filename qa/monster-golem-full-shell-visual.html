@@ -56,7 +56,9 @@ try{
  // otherwise screenshots silently capture the imported bind (T) pose.
  for(const time of [.15,.30,.45,.60,.75,.90,1.05])handle.update(time);
  const shell=handle.metadata;
- if(!shell||shell.constructDonorMeshesConcealed<1||shell.fullBodyShellParts<45)
+ if(!shell||shell.constructDonorMeshesConcealed<1||shell.fullBodyShellParts<45||
+  (id==='m042'&&(!shell.gargoyleSculptEdition||shell.gargoyleWings!==2||
+    shell.gargoyleTalons!==14||!shell.gargoyleStoneTexture)))
   throw Error('Construct is not fully mineralized: '+JSON.stringify(shell));
  handle.root.updateMatrixWorld(true);
  const box=new THREE.Box3(),local=new THREE.Box3();
