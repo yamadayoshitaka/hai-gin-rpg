@@ -41,6 +41,10 @@ button{cursor:pointer}button:hover,button:focus-visible{background:#275a72}
 #actions button{flex:0 0 auto;white-space:nowrap;padding:8px 10px;
  min-height:40px;font-size:12px;background:#183b51}
 #actions button[aria-pressed=true]{background:#356a85;border-color:#e8cc86}
+#actions .action-mode-switch{position:sticky;left:0;z-index:2;
+ background:#263d4d;border-color:#c8a65f;font-weight:700}
+#actions .action-family-note{white-space:nowrap;flex:0 0 auto;
+ color:#e6d2ab;font-size:11px;padding:5px 1px}
 #viewToolbar .pushRight{margin-left:auto}
 main.catalogCollapsed{grid-template-columns:0 minmax(0,1fr)}
 main.catalogCollapsed>aside{display:none}
@@ -100,7 +104,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
     <button id="portraitCamera" type="button">顔・衣装</button>
     <button id="toggleTools" type="button" class="pushRight" aria-expanded="false" aria-controls="modelTools">⚙ 設定</button>
    </div>
-   <nav id="actions" aria-label="モンスターの基本モーションを直接選択"></nav>
+   <nav id="actions" aria-label="種族固有技と基本モーションを選択"></nav>
   </div>
   <section class="tools" id="modelTools" hidden>
    <div id="mobileTip">ドラッグ：回転 / ピンチ：拡大縮小。モデルは召喚獣と同じ3D方式で描画します。</div>
@@ -191,8 +195,11 @@ import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-mobile-
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=concept-trio-v2-20261121';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=m042-slender-talon-safe-sword-v3-20261121';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel}
+ from './src/monster-animation.js?v=monster-50-family-actions-v1-20261121';
+import {monsterThemeActionsFor,resolveMonsterThemeAction,
+ MONSTER_THEME_REVISION} from './src/monster-theme-actions.js?v=monster-50-family-actions-v1-20261121';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=monster-50-family-actions-v1-20261121';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
 import {beastfolkRecipeFor,BEASTFOLK_PROTOTYPE_IDS}
@@ -557,18 +564,7 @@ function selectSpecies(id){
  if(costumeHandle)costumeHandle.start('idle',clock.getElapsedTime());
  else startMonsterAction(model,'idle',clock.getElapsedTime());
  currentAction='idle';nextActionReplay=Infinity;
- const gargoyleActionNames={idle:'飛行待機',walk:'低速飛行',run:'飛行移動',
-  leap:'上昇',attack:'剣の斬撃',special:'石翼裂斬'};
- const phoenixActionNames={idle:'滞空',walk:'低速飛行',run:'高速飛行',
-  leap:'急上昇',attack:'急降下攻撃',special:'不死炎翼'};
- for(const button of byId('actions').querySelectorAll('button')){
-  button.setAttribute('aria-pressed',String(button.title==='idle'));
-  const entry=MONSTER_ACTIONS.find(([id])=>id===button.title);
-  button.textContent=id==='m013'?
-   (phoenixActionNames[button.title]||entry?.[1]||button.title):
-   id==='m042'?(gargoyleActionNames[button.title]||entry?.[1]||button.title):
-   (button.title==='special'?'魔法・固有技':entry?.[1]||button.title);
- }
+ renderMonsterActionButtons();
  loadEditor(m);
  byId('name').textContent=m.name+' ('+m.rarity+')';
  byId('description').textContent=m.description+' — '+m.skill;
@@ -799,29 +795,60 @@ byId('quality').addEventListener('change',()=>{
 });
 const actionDurations={attack:1.1,special:1.6,roar:1.3,guard:.9,
  dodge:.7,hit:.45,leap:1.25};
+let monsterActionMode='species';
 function playPreviewAction(action){
  if(!model)return;
  const time=clock.getElapsedTime();
+ const theme=resolveMonsterThemeAction(specimen(selected),action);
  if(costumeHandle)costumeHandle.start(action,time);
  else if(!externalHandle)startMonsterAction(model,action,time);
- externalHandle?.play(action,{restart:true});
+ // Approved external GLBs have native clips only. Map them to the
+ // licensed base motion; the 3D source & its provenance remain unchanged.
+ externalHandle?.play(theme?.base||action,{restart:true});
  currentAction=action;
  // Auto-replay finite gestures for hands-free inspection; defeat is terminal.
- nextActionReplay=Number.isFinite(actionDurations[action])?
-   time+actionDurations[action]+.35:Infinity;
+ const duration=theme?.duration??actionDurations[action];
+ nextActionReplay=Number.isFinite(duration)?time+duration+.35:Infinity;
 }
-for(const [id,title] of MONSTER_ACTIONS){
- const button=document.createElement('button');
- button.textContent=id==='special'?'魔法・固有技':title;
- button.title=id;button.type='button';
- button.setAttribute('aria-pressed',String(id==='idle'));
- button.onclick=()=>{
-   playPreviewAction(id);
-   byId('actions').querySelectorAll('button').forEach(other=>
-     other.setAttribute('aria-pressed',String(other===button)));
-   notice(specimen(selected).name+'：'+title+' を再生');
+function monsterActionLabel(id,title){
+ const special=selected==='m013'?{idle:'滞空',walk:'低速飛行',
+   run:'高速飛行',leap:'急上昇',attack:'急降下攻撃',special:'不死炎翼'}:
+  selected==='m042'?{idle:'飛行待機',walk:'低速飛行',
+   run:'飛行移動',leap:'上昇',attack:'剣の斬撃',special:'石翼裂斬'}:{};
+ return special[id]||(id==='special'?'魔法・固有技':title);
+}
+function renderMonsterActionButtons(){
+ const nav=byId('actions');nav.replaceChildren();
+ const toggle=document.createElement('button');
+ toggle.type='button';toggle.className='action-mode-switch';
+ toggle.textContent=monsterActionMode==='species'?'基本動作へ':'種族技へ';
+ toggle.title='アクション一覧の切り替え';
+ toggle.onclick=()=>{
+  monsterActionMode=monsterActionMode==='species'?'basic':'species';
+  renderMonsterActionButtons();nav.scrollLeft=0;
  };
- byId('actions').append(button);
+ nav.append(toggle);
+ const hint=document.createElement('span');
+ hint.className='action-family-note';
+ hint.textContent=monsterActionMode==='species'?'系統別・固有技':'基本11動作';
+ nav.append(hint);
+ const group=monsterActionMode==='species'?
+  monsterThemeActionsFor(specimen(selected)).map(t=>[t.id,t.label]):
+  MONSTER_ACTIONS;
+ for(const [id,title] of group){
+  const button=document.createElement('button');
+  button.textContent=monsterActionMode==='species'?title:
+   monsterActionLabel(id,title);
+  button.title=id;button.type='button';
+  button.setAttribute('aria-pressed',String(id===currentAction));
+  button.onclick=()=>{
+   playPreviewAction(id);
+   nav.querySelectorAll('button').forEach(other=>
+    other.setAttribute('aria-pressed',String(other===button)));
+   notice(specimen(selected).name+'：'+title+' を再生');
+  };
+  nav.append(button);
+ }
 }
 const resize=()=>{
  const width=view.clientWidth,height=view.clientHeight;
