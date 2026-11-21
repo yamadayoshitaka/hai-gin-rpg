@@ -6,9 +6,9 @@ import {STORY_STAGE_BEATS} from './story-stage-beats-v2.js';
 import {CHARACTER_MODEL_REGISTRY} from './character-model-registry.js';
 import {MODEL_FIRST_CATALOG} from './model-first-catalog.js';
 const keepers=Object.freeze({
- weapons:['武具屋の店主','この刃が誰を守るのか、買う前によく考えてくれ。','今は輸送が遅れ、鋼材にも戦の影がある。','weapons','male'],
+ weapons:['鍛冶屋の親方','この刃が誰を守るのか、買う前によく考えてくれ。','今は輸送が遅れ、鋼材にも戦の影がある。','weapons','male'],
  items:['道具屋の店主','薬草も一つの命だよ。持っていきな。','村人の願いを聞くなら、毒消しも忘れずにね。','items','female'],
- formation:['宿屋の主人','旅人と傭兵はここで出会う。彼らには帰る場所がある。','招集の鐘が鳴っても、無理に出征させないでくれ。','formation','male'],
+ formation:['ガラン・訓練教官','ここで隊を鍛え、陣形を学べ。命を無駄にするな。','軍資金で兵を雇える。酒場のガチャで得た仲間も編成できる。','formation','male'],
  tavern:['酒場の主人','戦の噂には、語られなかった人の名前がついて回る。','依頼主が正しいとは限らん。報酬の由来も調べな。','tavern','male'],
  save:['教会の司祭','死者の名を残すことも、祈りの一つです。','帳簿から消えた名が、今夜も聞こえる気がする。','save','male'],
  story:['王城の侍従','謁見の前に、王家が守れなかった民の声を聞いてください。','陛下も全てを知っているわけではありません。','story','female']
