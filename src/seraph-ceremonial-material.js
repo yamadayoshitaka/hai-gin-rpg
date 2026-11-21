@@ -23,7 +23,8 @@ const ROLES=Object.freeze({
  seraphSatin:{color:0xf4f0e7,rough:.49,metal:0,normal:.14,kind:'silk'},
  seraphBrocade:{color:0xf1e9d7,rough:.61,metal:0,normal:.15,kind:'brocade'},
  seraphGoldTrim:{color:0xc2a26d,rough:.31,metal:.78,normal:0,kind:'gold'},
- seraphLeatherInset:{color:0x332e2d,rough:.83,metal:0,normal:.13,kind:'leather'}
+ seraphLeatherInset:{color:0x332e2d,rough:.83,metal:0,normal:.13,kind:'leather'},
+ seraphCapeLining:{color:0x39373d,rough:.83,metal:0,normal:.07,kind:'silk'}
 });
 const cache=new Map();
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
