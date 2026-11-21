@@ -7,6 +7,8 @@
  * and aquatic creatures use clearcoat/translucency until water scans exist.
  */
 import * as THREE from 'three';
+import {salamanderLineageSurface,salamanderLineageSurfaceStats}
+ from './salamander-lineage-surface.js?v=m016-m017-salamander-quality-v21-20261121';
 import {m019VolcanicSurface,m019VolcanicTextureStats}
  from './m019-volcanic-surface.js?v=m019-volcanic-pbr-v19-20261120';
 
@@ -83,6 +85,28 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  if(!material||glow||role==='eye'||role==='bone'||role==='accent'||translucent){
    return material;
  }
+ // The m016 swamp skin and m017 steel scales share the anatomical
+ // quality of m019, not its volcanic pigment. Their real albedo, normal
+ // and micro-roughness maps must be present on the torso, shoulder fascia,
+ // articulated upper / shin and planted toes, NOT only the torso.
+ if((speciesId==='m016'||speciesId==='m017')&&
+    (role==='skin'||role==='light'||role==='shadow')){
+   const maps=salamanderLineageSurface(speciesId,detail);
+   const steel=speciesId==='m017';
+   material.map=maps.albedo;
+   material.normalMap=maps.normal;
+   material.normalScale=new THREE.Vector2(
+     steel?.38:.28,steel?.38:.28);
+   material.roughnessMap=maps.roughness;
+   material.roughness=steel?.78:.88;
+   material.metalness=steel?.12:.018;
+   material.userData.photoSurface=maps.variant;
+   material.userData.salamanderLineagePBR=speciesId;
+   material.userData.salamanderLineageSurface=maps.variant;
+   material.userData.salamanderLineageResolution=maps.resolution;
+   material.needsUpdate=true;
+   return material;
+ }
  // m019 previously only set a "volcanic" metadata tag and roughness:
  // there were NO real textures. The legs rendered as smooth light bars.
  // Bind genuine reusable PBR maps on the same existing torso/leg/foot meshes.
@@ -145,6 +169,7 @@ export function monsterPhotoCacheStats(){
  return Object.freeze({
    textures:textureCache.size,
    volcanicTextures:m019VolcanicTextureStats().textureMaps,
+   lineageTextures:salamanderLineageSurfaceStats().textureMaps,
    sources:Object.keys(CREATURE_SURFACE_SOURCES).length,
  });
 }
