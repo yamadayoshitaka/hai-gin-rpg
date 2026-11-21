@@ -15,7 +15,7 @@ test('v78 age/expressions are clearly labelled separately from v72 hair and actu
  assert.match(html,/v76RealSkinPhoto/);
  assert.match(html,/state==='CC0-real-photo-microrelief'\?'反映済'/);
  assert.match(html,/実写肌PBR：/);
- assert.match(html,/face-expression-animation-v48\.js\?v=78-laugh-jaw-rig/);
+ assert.match(html,/face-expression-animation-v48\.js\?v=79-dynamic-normal-muscle-rig/);
  assert.doesNotMatch(html,/<h1>顔・髪の編集 v75/);
 });
 test('16 complete face choices per sex are not cosmetic-only, retain existing hair',()=>{
@@ -43,7 +43,7 @@ test('16 complete face choices per sex are not cosmetic-only, retain existing ha
  assert.match(html,/if\(faceChanged\)rebuildFemale\(\)/);
  assert.match(html,/if\(faceChanged\)rebuildMale\(\)/);
 });
-test('3D facial expressions deform face without regenerating raw faceted normals',()=>{
+test('v79 3D expressions use live seam-welded normals and restore neutral',()=>{
  // Intentionally split the geometry: a recomputation would turn its
  // original smooth per-vertex normals into hard-lit per-triangle planes.
  const sphere=new THREE.SphereGeometry(.3,24,18);
@@ -58,13 +58,17 @@ test('3D facial expressions deform face without regenerating raw faceted normals
  const rest=split.getAttribute('position').array.slice();
  animator.setExpression('smile');
  assert.notDeepEqual(split.getAttribute('position').array,rest);
- assert.deepEqual(split.getAttribute('normal').array,normals,
-  'Smile must not expose individual triangle normals');
+ assert.notDeepEqual(split.getAttribute('normal').array,normals,
+  'The surface normals must follow the changed smile geometry');
  animator.setExpression('angry');
- assert.deepEqual(split.getAttribute('normal').array,normals);
+ assert.notDeepEqual(split.getAttribute('normal').array,normals);
+ animator.setActionUnits({smile:.5,brow:.2});
+ assert.equal(animator.getState().v79ActionUnitChannels,6);
+ assert.equal(animator.getState().v79ManualActionUnits.smile,.5);
  assert.equal(animator.getState().v76FacialSculptNormalsPreserved,true);
  assert.equal(animator.getState().v76ExpressionKeepsSmoothShading,true);
  animator.setExpression('neutral');
+ assert.deepEqual(split.getAttribute('normal').array,normals);
  assert.deepEqual(split.getAttribute('position').array,rest,
   'Returning to neutral must not accumulate facial distortion');
  animator.dispose();
