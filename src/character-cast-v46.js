@@ -22,27 +22,27 @@ export function resolveBodyShape(kind='average'){
 const rows=[
  // id, label, gender, storyStatus, reference, ageGroup, shape, faceIndex, styleId, hairColor, eyeType, clothingRole
  ['commander-female','女性主人公・軍師','female','canon-provisional',
-  'assets/story/characters/commander/female-master.webp','young','slim',0,'fringe-long','blonde','large','commander'],
+  'assets/story/characters/commander/female-master.webp','young','slim',0,'rb-f-long-bangs','blonde','large','commander'],
  ['commander-male','男性主人公・軍師','male','canon-scene-only',
-  'assets/story/panels/c01-s01-m01.webp','young','average',0,'male-comma','black','focused','commander'],
+  'assets/story/panels/c01-s01-m01.webp','young','average',0,'rb-m-comma','black','focused','commander'],
  ['lucia','リュシア・銀髪摂政','female','canon-master',
-  'assets/story/characters/lucia/master.webp','adult','slim',3,'female-low-bun','silver','elegant','regent'],
+  'assets/story/characters/lucia/master.webp','adult','slim',3,'rb-f-long','silver','elegant','regent'],
  ['garan','ガラン・老騎士','male','canon-provisional',
-  'assets/story-cinema/cast/garan.webp','elder','sturdy',9,'male-senior-sidepart','ash','narrow','knight'],
+  'assets/story-cinema/cast/garan.webp','elder','sturdy',9,'rb-m-seven-three','ash','narrow','knight'],
  ['iris','イリス・治癒師','female','canon-provisional',
-  'assets/story-cinema/cast/iris.webp','young','average',8,'female-half-up','platinum','gentle','healer'],
+  'assets/story-cinema/cast/iris.webp','young','average',8,'rb-f-bob-bangs','platinum','gentle','healer'],
  ['mina','ミナ・避難民の少女','female','canon-provisional',
-  'assets/story-cinema/cast/mina.webp','child','child',1,'female-twin-braids','brown','large','refugee'],
+  'assets/story-cinema/cast/mina.webp','child','child',1,'rb-f-bangs-short','brown','large','refugee'],
  ['town-innkeeper','宿屋主人・太めの中年男性','male','npc','',
-  'middle-aged','heavy',4,'male-senior-sidepart','darkBrown','narrow','inn'],
+  'middle-aged','heavy',4,'rb-m-seven-three','darkBrown','narrow','inn'],
  ['town-matron','宿屋女将・ふくよかな中年女性','female','npc','',
-  'middle-aged','full',8,'female-curly-bob','brown','narrow','inn'],
- ['town-elder-woman','町の老婆','female','npc','','elder','slim',7,'female-low-bun','silver','narrow','resident'],
- ['town-elder-man','町の長老','male','npc','','elder','slim',6,'male-senior-sidepart','white','narrow','resident'],
- ['town-merchant','肥満体の商人','male','npc','','middle-aged','heavy',4,'male-slick-back','chestnut','small','merchant'],
- ['town-craftswoman','細目の女性職人','female','npc','','adult','sturdy',4,'female-short-wolf','black','narrow','craft'],
- ['town-farmer','がっしり農夫','male','npc','','middle-aged','sturdy',8,'male-crew-cut','darkBrown','small','farmer'],
- ['town-librarian','細身の年配女性','female','npc','','elder','average',9,'female-pixie','ash','narrow','scholar']
+  'middle-aged','full',8,'rb-f-bob-wave','brown','narrow','inn'],
+ ['town-elder-woman','町の老婆','female','npc','','elder','slim',7,'rb-f-long','silver','narrow','resident'],
+ ['town-elder-man','町の長老','male','npc','','elder','slim',6,'rb-m-seven-three','white','narrow','resident'],
+ ['town-merchant','肥満体の商人','male','npc','','middle-aged','heavy',4,'rb-m-slickback','chestnut','small','merchant'],
+ ['town-craftswoman','細目の女性職人','female','npc','','adult','sturdy',4,'rb-f-wolf-medium','black','narrow','craft'],
+ ['town-farmer','がっしり農夫','male','npc','','middle-aged','sturdy',8,'rb-m-crew','darkBrown','small','farmer'],
+ ['town-librarian','細身の年配女性','female','npc','','elder','average',9,'rb-f-pixie','ash','narrow','scholar']
 ];
 // Rebuild characters against the v47 age/build system, preserving the
 // canonical scene/portrait references and not confusing anyone's identity.

@@ -19,11 +19,11 @@ test('six distinct chapter-one story identities use their own 3D face and hair p
  assert.equal(CHARACTER_CAST_BY_ID.lucia.hairColor,'silver');
  assert.equal(CHARACTER_CAST_BY_ID.garan.age,'elder');
 });
-test('24 unique hairstyle IDs are compatible with each gender, no princess haircut on men',()=>{
+test('v69 reconstructed hairstyles are gender-compatible without retired styles',()=>{
  for(const gender of ['male','female']){
   const ids=PART_CATALOG[gender].hair.map(x=>x.values.styleId);
-  assert.equal(ids.length,24);
-  assert.equal(new Set(ids).size,24);
+  assert.equal(ids.length,gender==='female'?32:20);
+  assert.equal(new Set(ids).size,ids.length);
   const visible=new Set(listWigStyles(gender).map(x=>x.id));
   for(const id of ids)assert.ok(visible.has(id),gender+' missing '+id);
  }

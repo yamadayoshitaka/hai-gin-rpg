@@ -15,11 +15,13 @@ const deepFreeze=value=>{
 // falling STRANDS away from/toward the head; it never raises the naked scalp
 // or creates a second floating fringe foundation.
 export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
- soft:{label:'髪を抑える（密着）',crown:.016,side:.008,spread:-1},
- natural:{label:'自然・標準',crown:0,side:0,spread:0},
- airy:{label:'少し広げる',crown:.034,side:.019,spread:.5},
- lifted:{label:'広げる',crown:.069,side:.013,spread:1},
- full:{label:'最大に広げる',crown:.086,side:.048,spread:1.5}
+ // v69: the PREVIOUS minimum is now an absolute maximum. No profile may
+ // create a wind-blown shell; spread is always negative (gravity-hugging).
+ soft:{label:'髪を抑える（密着）',crown:0,side:0,spread:-1.25},
+ natural:{label:'自然・標準',crown:.003,side:.0015,spread:-1.17},
+ airy:{label:'少し広げる',crown:.007,side:.003,spread:-1.09},
+ lifted:{label:'広げる',crown:.011,side:.005,spread:-1.03},
+ full:{label:'最大に広げる',crown:.016,side:.008,spread:-1}
 });
 export const DEFAULT_WIG_STYLE_ID='rb-f-long';
 export const SADAKO_FAMILY_STYLE_IDS=Object.freeze([

@@ -6,7 +6,8 @@
  *
  * tuple: id, label, base, length, face, curl, part, temple length ratio
  * base: buzz | sadako
- * face: center | bangs | straight (eyes visible with center/bangs)
+ * face: center (forehead open) | bangs (straight brow-above fringe) | tucked
+ *       (one-length hair held behind the ear, no face curtain)
  * curl: straight | inward | outward | sauvage (invisible salon rods)
  */
 const F=[
@@ -17,22 +18,22 @@ const F=[
  ['rb-f-center-short','センター分けショート','buzz',.23,'center','straight','center',.90],
  ['rb-f-wolf-short','ショートウルフ','buzz',.255,'center','outward','side',.72],
  ['rb-f-softperm-short','ショートパーマ','buzz',.245,'center','sauvage','side',.92],
- ['rb-f-bob-straight','ストレートボブ','sadako',.35,'center','straight','center',1],
+ ['rb-f-bob-straight','ストレートボブ','sadako',.35,'tucked','straight','center',1],
  ['rb-f-bob-bangs','前髪ありボブ','sadako',.38,'bangs','straight','center',1],
- ['rb-f-bob-in','内巻きボブ','sadako',.39,'center','inward','center',1],
- ['rb-f-bob-out','外ハネボブ','sadako',.40,'center','outward','center',1],
+ ['rb-f-bob-in','内巻きボブ','sadako',.39,'tucked','inward','center',1],
+ ['rb-f-bob-out','外ハネボブ','sadako',.40,'tucked','outward','center',1],
  ['rb-f-bob-wave','ウェーブボブ','sadako',.42,'bangs','sauvage','center',1],
- ['rb-f-medium','ミディアムストレート','sadako',.56,'center','straight','center',1],
+ ['rb-f-medium','ミディアムストレート','sadako',.56,'tucked','straight','center',1],
  ['rb-f-shoulder','眉丈前髪・肩丈','sadako',.61,'bangs','straight','center',1],
  ['rb-f-medium-out','外ハネミディアム','sadako',.63,'center','outward','side',1],
  ['rb-f-medium-wave','ウェーブミディアム','sadako',.64,'center','sauvage','center',1],
  ['rb-f-wolf-medium','ミディアムウルフ','sadako',.68,'center','outward','side',.72],
- ['rb-f-semilong','セミロング','sadako',.84,'center','straight','center',1],
+ ['rb-f-semilong','セミロング','sadako',.84,'tucked','straight','center',1],
  ['rb-f-layered','レイヤーロング','sadako',1.02,'center','inward','side',.86],
- ['rb-f-long','重力ストレートロング','sadako',1.24,'center','straight','center',1],
+ ['rb-f-long','重力ストレートロング','sadako',1.24,'tucked','straight','center',1],
  ['rb-f-long-bangs','眉丈前髪・ロング','sadako',1.23,'bangs','straight','center',1],
- ['rb-f-long-in','内巻きロング','sadako',1.22,'center','inward','center',1],
- ['rb-f-long-out','外巻きロング','sadako',1.22,'center','outward','center',1],
+ ['rb-f-long-in','内巻きロング','sadako',1.22,'tucked','inward','center',1],
+ ['rb-f-long-out','外巻きロング','sadako',1.22,'tucked','outward','center',1],
  ['rb-f-long-wave','ソバージュロング','sadako',1.23,'center','sauvage','center',1],
  ['rb-f-hime','姫カット風・眉丈前髪','sadako',1.18,'bangs','straight','center',.55]
 ];

@@ -1225,6 +1225,47 @@ export function shapeRebuiltCatalogCurl(points,{
  }
  return points;
 }
+/** v69 rebuilt salon guide edits. Original donor head/follicles unchanged. */
+export function shapeRebuiltStraightBangs(points,{box,rootIndex=0}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),root=points[0].clone();
+ const brow=box.min.y+d.y*(.786+.0015*Math.sin(rootIndex*.7));
+ const tipY=Math.min(root.y-d.y*.055,brow);
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),blend=THREE.MathUtils.smoothstep(t,0,1);
+  const p=points[j];
+  // Front bangs fall to one flat eyebrow-height line, never center-part.
+  p.y=THREE.MathUtils.lerp(root.y,tipY,blend);
+  p.x=THREE.MathUtils.lerp(p.x,root.x,blend*.96);
+  p.z=Math.max(p.z,root.z+d.z*.025*blend);
+ }
+ return points;
+}
+/** Tuck one-length front locks behind the ear, leaving cheeks visible. */
+export function shapeRebuiltEarTuck(points,{box,side=1}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const root=points[0].clone();
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),tuck=THREE.MathUtils.smoothstep(t,.15,.52);
+  const p=points[j],earX=c.x+side*d.x*.37,earZ=c.z-d.z*.115;
+  p.x=THREE.MathUtils.lerp(p.x,earX,tuck*.96);
+  p.z=THREE.MathUtils.lerp(p.z,earZ,tuck*.88);
+  if(t<.20)p.x=THREE.MathUtils.lerp(root.x,p.x,t/.20);
+ }
+ return points;
+}
+/** Compact silhouette across all rebuilt long hair, irrespective of volume. */
+export function shapeRebuiltNaturalContour(points,{box}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ for(let j=2;j<points.length;j++){
+  const p=points[j],yn=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  const cap=d.x*(.40+.075*(1-THREE.MathUtils.smoothstep(yn,.50,.83)));
+  p.x=THREE.MathUtils.clamp(p.x,c.x-cap,c.x+cap);
+ }
+ return points;
+}
 export function scalpToGravityWeight(t,start=.15,end=.38){
  const q=THREE.MathUtils.clamp((t-start)/Math.max(end-start,1e-5),0,1);
  return q*q*(3-2*q);
@@ -1232,7 +1273,7 @@ export function scalpToGravityWeight(t,start=.15,end=.38){
 export function createScalpFirstLongGuide({
  root,normal,box,zone='crown',whorl=null,length,trimY,
  targetX=root.x,targetZ=root.z,segments=18,volumeSpread=0,
- crownOverSide=false,projectOutside=null
+ crownOverSide=false,projectOutside=null,partSweepScale=1
 }={}){
  if(!root?.isVector3||!normal?.isVector3||!box?.isBox3||
   !Number.isFinite(length)||length<=0||segments<4)
@@ -1284,7 +1325,7 @@ export function createScalpFirstLongGuide({
  const centerCurtain=!crownOverSide&&front&&
   (zone.startsWith('fringe')||zone==='crown');
  const smooth=(t,a,b)=>THREE.MathUtils.smoothstep(t,a,b);
- const sweptPart=t=>centerCurtain?smooth(t,.018,.32)*d.x*.135:0;
+ const sweptPart=t=>centerCurtain?smooth(t,.018,.32)*d.x*.135*partSweepScale:0;
  const spreadCurve=t=>smooth(t,.025,.40)*d.x*.075*volumeSpread;
  const workNormal=new THREE.Vector3(),tan=new THREE.Vector3(),
   direction=new THREE.Vector3(),fall=new THREE.Vector3();
@@ -1640,7 +1681,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const sadakoGravity=isSadakoFamilyStyle(style.id);
   // Five out of six crown follicles become an anatomical outer canopy.
   // The remaining central crown guides preserve the front/rear parting.
-  const crownOverSide=sadakoGravity&&zone==='crown'&&i%6!==0;
+  // Rebuilt crown has 50% overlay rather than the original donor's 83%.
+  const crownOverSide=sadakoGravity&&zone==='crown'&&
+   (style.rebuiltBase==='sadako'?i%2===0:i%6!==0);
   // Keep posterior crown follicles on the rear of the shoulder/torso.
   const rearFacing=back||(zone==='crown'&&wigRoot.z<center.z-d.z*.03);
   const overFace=!crownOverSide&&!back&&!zone.startsWith('temple')&&
@@ -1754,6 +1797,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const shape=createScalpFirstLongGuide({
     root:wigRoot,normal:outward,box,zone,whorl,length,trimY,
     targetX,targetZ,segments,crownOverSide,
+    partSweepScale:style.rebuiltBase==='sadako'?.19:1,
     volumeSpread:WIG_BASE_VOLUME_PROFILES[volumeProfile].spread||0,
     projectOutside:(point,nearRoot,front,followScalp)=>{
      if(projectSadakoOutside(point,nearRoot,front,followScalp))
@@ -1762,17 +1806,27 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    });
    // Variant shape runs AFTER anatomical root-to-gravity grooming and
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
-   if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
+   if(style.rebuiltBase==='sadako'&&style.catalogFront==='bangs'){
+    if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i});
+    else if(faceFrame)shapeSadakoVariantGuide(shape,{
+     variant:'center',box,zone,side:partSide,rootIndex:i,
+     front:true,lateralScale:.20
+    });
+   }else if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
     variant:sadakoVariant,box,zone,side:partSide,
     rootIndex:i,front:faceFrame,bangsCut,
-    lateralScale:style.rebuiltBase==='sadako'?.26:1
+    lateralScale:style.rebuiltBase==='sadako'?.19:1
    });
+   if(style.catalogFront==='tucked'&&
+      (faceFrame||zone.startsWith('temple')))
+    shapeRebuiltEarTuck(shape,{box,side:partSide});
    // Face-parting and invisible-rod curls are INDEPENDENT components.
    // Earlier old styles used one variant switch and silently lost curls.
    if(style.catalogCurl&&style.catalogCurl!=='straight'&&!bangsCut)
     shapeRebuiltCatalogCurl(shape,{
      variant:style.catalogCurl,box,side:partSide,rootIndex:i
     });
+   if(style.rebuiltBase==='sadako')shapeRebuiltNaturalContour(shape,{box});
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
    }
@@ -1815,8 +1869,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       const scale=style.catalogCurl==='sauvage'?.45:.27;
       p.x+=bend.x*scale;p.y+=bend.y*scale;p.z+=bend.z*scale;
      }
-     if(style.catalogFront==='bangs'&&fringe)
-      p.y=Math.max(box.min.y+d.y*.762,p.y);
+     if(style.catalogFront==='bangs'&&fringe){
+      // Short pixie/mash "bangs" is an actual blunt fringe above eyebrows,
+      // not the original buzz donor's sideways cropped roof.
+      const blend=THREE.MathUtils.smoothstep(t,0,1);
+      const brow=box.min.y+d.y*.786;
+      p.y=THREE.MathUtils.lerp(wigRoot.y,
+       Math.min(brow,wigRoot.y-d.y*.035),blend);
+      p.x=THREE.MathUtils.lerp(p.x,wigRoot.x,blend*.92);
+      p.z=Math.max(p.z,wigRoot.z+d.z*.020*blend);
+     }
     }
    }
    if(j>0&&t<.65&&y>box.min.y+d.y*.60){
