@@ -4,6 +4,7 @@ import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
+import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=86';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -1164,6 +1165,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Both cheek and lip pigments live on OWNED real head mesh vertices.
  // No separate lipstick sticker can drift over the skin/chin.
  face.userData.actualMouthCreaseY=lipCenter;
+ // The original donor already contains an open lip slit. v83 removed the
+ // fake covers without sealing this native hole, exposing black inner skin.
+ // Use ONLY the existing lip ring: no removed head triangles, no overlays.
+ const originalOralSeal=face.userData.enableExperimentalOralSurgery===true?
+  {sealed:false,reason:'experimental-v82-path'}:
+  sealOriginalOralAperture(face);
+ face.userData.v86OralSealSummary={
+  sealed:!!originalOralSeal.sealed,
+  addedTriangles:originalOralSeal.addedTriangles||0,
+  ringVertexCount:originalOralSeal.ringVertexCount||0,
+  reason:originalOralSeal.reason||null
+ };
  const halfWidth=d.x*(female?.057:.044)*
   Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  // V83 emergency quarantine: v82's centroid-based cutting generated
