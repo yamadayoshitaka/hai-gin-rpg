@@ -98,6 +98,6 @@ test('face and body studios expose only one visible style/volume/density selecto
  assert.match(selector,/if\(!hideHairVolume\)panel\.append\(baseLabel\)/);
  assert.match(body,/hideHairType:true,hideHairVolume:true/);
  assert.match(body,/label\[for="v32HairDensity"\]/);
- assert.match(face,/sadako-mantle-crown-v60/);
- assert.match(body,/sadako-mantle-crown-v60/);
+ assert.match(face,/shared-scalp-angle-coverage-v61/);
+ assert.match(body,/shared-scalp-angle-coverage-v61/);
 });
