@@ -31,18 +31,18 @@ export function attachAgeDetails(face,ageBand='twenties'){
   const nz=(z-box.min.z)/depth;
   // Back skull, neck, inner eye sockets and open-mouth voids never
   // receive age creases. A continuous field cannot detach or float.
-  const front=THREE.MathUtils.smoothstep(nz,.57,.77);
+  const front=THREE.MathUtils.smoothstep(nz,.53,.75);
   const forehead=[.758,.794,.825].reduce((sum,at,index)=>
    sum+bell(ny,at,.009)*(0.58+index*.12),0)*
-   bell(nx,.30,.34);
-  const crow=bell(nx,.54,.065)*bell(ny,.682,.060)*
+   bell(nx,.23,.35);
+  const crow=bell(nx,.40,.080)*bell(ny,.676,.065)*
    (0.65+0.35*Math.cos((ny-.682)*90));
-  const nasolabial=bell(nx,.30+.075*(.60-ny),.041)*
+  const nasolabial=bell(nx,.17+.065*(.60-ny),.056)*
    bell(ny,.51,.079);
-  const mouthCorner=bell(nx,.47,.058)*bell(ny,.443,.045);
+  const mouthCorner=bell(nx,.15,.045)*bell(ny,.468,.045);
   const fold=forehead*.70+crow*.40+nasolabial*.95+
    mouthCorner*.31;
-  const displacement=-depth*strength*.0019*front*fold;
+  const displacement=-depth*strength*.0072*front*fold;
   if(Math.abs(displacement)<1e-8)continue;
   position.setZ(i,z+displacement);
   affected++;maxOffset=Math.max(maxOffset,Math.abs(displacement));
