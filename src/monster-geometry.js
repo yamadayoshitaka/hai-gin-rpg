@@ -31,7 +31,7 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw}
  from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
- sculptBasiliskFacePlates,SEA_DRAGON_REVISION,isSeaDragon,sculptSeaDragon} from './reptile-detail-sculpt.js';
+ sculptBasiliskFacePlates,seaDragonRevision,isSeaDragon,sculptSeaDragon} from './reptile-detail-sculpt.js';
 import {M050_CORAL_REVISION,sculptM050CoralBeast} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptHydraLeg,sculptM018Tail}
  from './m018-hydra-sculpt.js?v=m050-hydra-derived-coral-beast-v1-20261121';
@@ -3005,7 +3005,7 @@ if(spec.id==='m019'){
    g.root.userData.m019ModelFollowsFourView=true;
  }
  if(hasReptileDetail(spec.id))g.root.userData.gameModelRevision=REPTILE_DETAIL_REVISION;
- if(isSeaDragon(spec.id))g.root.userData.gameModelRevision=SEA_DRAGON_REVISION;
+ if(isSeaDragon(spec.id))g.root.userData.gameModelRevision=seaDragonRevision(spec.id);
  if(['m002','m007','m008','m009','m010'].includes(spec.id))
    g.root.beastFxThree=THREE;
  g.root.userData.speciesId=spec.id;

@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=sea-dragon-colossal-length-v4-20261121';
+ from './monster-geometry.js?v=leviathan-crown-tide-v5-20261121';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
@@ -19,7 +19,7 @@ import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=sea-dragon-colossal-length-v4-20261121';
+ from './creature-game-model-routing.js?v=leviathan-crown-tide-v5-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
 import {chooseCreatureLod} from './creature-master-library.js?v=m001-m005-m006-v3-20261118';
