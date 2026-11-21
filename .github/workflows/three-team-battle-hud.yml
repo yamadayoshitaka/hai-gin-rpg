@@ -28,6 +28,8 @@ on:
       - 'qa/battle-three-team-*'
       - 'qa/realtime-deployment-mobile-performance.test.mjs'
       - 'qa/battle-capture-objective.test.mjs'
+      - 'qa/battle-map-inspection.test.mjs'
+      - 'src/battle-map-inspection.js'
       - 'src/battle-capture-objective.js'
       - 'src/targeted-strategy-runtime.js'
       - '.github/workflows/three-team-battle-hud.yml'
@@ -43,6 +45,8 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check src/battle-portrait-identity.js && node --check src/battle-stage-identity.js && node --check src/battle-rpg-squad-source.js && node --check src/battle-rpg-squad-hud.js && node --check src/battle-realtime-commands.js && node --check src/battle-realtime-deployment.js && node --check src/three-team-core-bridge.js
+      - name: Verify read-only battle map inspection and squad pins
+        run: node --check src/battle-map-inspection.js && node --test qa/battle-map-inspection.test.mjs
       - name: Verify simplified commands and true capture victory
         run: node --check src/battle-capture-objective.js && node --check src/targeted-strategy-runtime.js && node --test qa/battle-capture-objective.test.mjs
       - name: Install lightweight DOM test dependency
