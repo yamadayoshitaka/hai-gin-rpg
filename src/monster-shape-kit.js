@@ -55,8 +55,8 @@ function cachedGeometry(key,make){
  return geometryCache.get(key);
 }
 function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
- surface=null}={},spec={},role='skin',detail='high'){
- const key=[spec.id,spec.family,role,detail,color,metal,rough,glow,translucent,surface].join(':');
+ surface=null,finish=null}={},spec={},role='skin',detail='high'){
+ const key=[spec.id,spec.family,role,detail,color,metal,rough,glow,translucent,surface,finish].join(':');
  let entry=materialCache.get(key);
  if(!entry){
    const wet=spec.family==='aquatic'&&translucent;
@@ -71,7 +71,9 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
      ...(wet?{clearcoat:.88,clearcoatRoughness:.085,ior:1.35,
        transmission:.14,thickness:.4}:{}),
    });
-   if(m024Surface)decorateM024PBRMaterial(mat,{surface,detail,speciesId:spec.id});
+   if(m024Surface)decorateM024PBRMaterial(mat,{
+     surface,detail,speciesId:spec.id,finish
+   });
    else if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
@@ -564,12 +566,15 @@ export function createSculpture(spec,detail='high'){
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
  const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{
-    name='beast-keratin',rough=.49,capRoot=false,surface=null}={})=>{
+    name='beast-keratin',rough=.49,capRoot=false,surface=null,
+    finish=null,heroKeratin=false}={})=>{
    const geo=createRootedCreatureHornGeometry({
-     root:rootPoint,elbow,tip,radius,capRoot,detail:detail==='low'?'low':'high'
+     root:rootPoint,elbow,tip,radius,capRoot,
+     detail:detail==='low'?'low':'high',heroKeratin
    });
-   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0,surface}));
+   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0,surface,finish}));
    mesh.userData.rootedKeratin=true;
+   if(heroKeratin)mesh.userData.polishedHeroHorn=true;
    return mesh;
  };
  /**
