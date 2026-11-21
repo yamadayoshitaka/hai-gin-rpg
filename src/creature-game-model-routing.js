@@ -17,7 +17,7 @@ import {M050_CORAL_REVISION} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION}
  from './m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {isBeetleLineage,BEETLE_LINEAGE_REVISION}
- from './scarab-beetle-lineage-sculpt.js?v=m022-single-central-rhinoceros-horn-v2-20261121';
+ from './scarab-beetle-lineage-sculpt.js?v=m022-polished-rhinoceros-horn-v3-20261121';
 import {M024_SCARAB_REVISION} from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
 import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {salamanderLineageFor} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';
