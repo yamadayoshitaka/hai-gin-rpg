@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=76';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
@@ -138,7 +139,7 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
    const lift=(upper?1:-1)*length*(.43*t+.57*t*t);
    const forward=eyeRadius*(upper?.09:.035)*t+
     eyeRadius*.23*curl*Math.pow(t,2.25);
-   const swing=side*spread*eyeRadius*.065*Math.pow(t,1.3);
+   const swing=side*spread*eyeRadius*.052*Math.pow(t,1.3);
    const center=baseCentre.clone().add(new THREE.Vector3(
     swing,lift,forward+eyeRadius*.018));
    const width=baseWidth*Math.pow(1-t,1.45)+eyeRadius*.00022;
@@ -157,7 +158,7 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
  const material=new THREE.MeshBasicMaterial({
   color:FACE_V7_PALETTE.lashes,side:THREE.DoubleSide,
-  transparent:true,opacity:upper?.97:.67,depthWrite:false
+  transparent:true,opacity:upper?.95:.64,depthWrite:false
  });
  const lash=new THREE.Mesh(geo,material);
  lash.name=name;lash.renderOrder=7;
@@ -582,8 +583,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const lidMat=mat(0xbcbfc5);
  const lipMat=new THREE.MeshPhysicalMaterial({
-  color:0xbfc3cb,roughness:.54,metalness:0,
-  clearcoat:.24,clearcoatRoughness:.27,side:THREE.DoubleSide
+  color:0xbfc3cb,roughness:.52,metalness:0,
+  clearcoat:.19,clearcoatRoughness:.32,side:THREE.DoubleSide,
+  normalMap:getLipVermilionNormalTexture(),
+  normalScale:new THREE.Vector2(.105,.085)
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
@@ -591,7 +594,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   clearcoat:.46,clearcoatRoughness:.075,ior:1.376,specularIntensity:.68
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
-  color:0x747a83,roughness:.21,metalness:0,
+  color:0x747a83,roughness:.22,metalness:0,
+  map:getFaceIrisStromaTexture(),
   clearcoat:.53,clearcoatRoughness:.085,ior:1.376,specularIntensity:.75
  });
  const pupilMat=new THREE.MeshPhysicalMaterial({
@@ -829,7 +833,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
-  iris.userData.opticalDetailVersion='v70-collagen-stroma-limbal-moisture';
+  iris.userData.opticalDetailVersion='v76-polar-crypt-stroma-limbal-photoreal';
+   iris.userData.v76PolarIrisMap=true;
+   iris.userData.v76CorneaMaterialsPreserved=true;
    iris.userData.v65MultiscaleIrisFibers=true;
   iris.userData.v63RadialCrypts=true;
   iris.userData.v63DualGlints=true;
@@ -864,14 +870,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
+   mesh.userData.v76SubtleSkinLidTransition=true;
    mesh.userData.v75MirroredAnatomicalCanthi=true;
    mesh.userData.colorRole='eyelid';
    root.add(mesh);
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
-     color:0x3b2b35,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?1:.55,depthWrite:false,depthTest:true,
+     color:0x3a2c32,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?.93:.43,depthWrite:false,depthTest:true,
      polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
@@ -1190,6 +1197,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisNotSquashedAtLids:true,
   v65CurvedIrisOpticalDetail:true,v65NoExtraEyeDrawCalls:true,
   irisGeometry:'true-round-circular-disk-fitted-inside-almond-opening',
+  v76IrisDetailMap:'actual-polar-UV-stroma-crypts-limbus',
+  v76LipFineNormalOnAnatomicalSurface:true,
+  v76EyelinerReducedThickness:true,
+  v76NoDetachedPhotoEyeCards:true,
   eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:anteriorGlobeRatio,
   anteriorEyeGlobeReconstructed:true,
   smoothCornealCore:true,
