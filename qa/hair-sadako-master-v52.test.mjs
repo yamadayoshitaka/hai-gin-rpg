@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {readFileSync} from 'node:fs';
 import {scalpToGravityWeight,createScalpFirstLongGuide,
- createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from '../src/face-scalp-wig.js';
+ createAreaWeightedScalpRootSampler,createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from '../src/face-scalp-wig.js';
 import {WIG_STYLES} from '../src/face-wig-styles.js';
 
 test('v52 root tangent hugs scalp to 15%, then gravity blends until 38%',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v52$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v53$/);
  assert.equal(scalpToGravityWeight(0),0);
  assert.equal(scalpToGravityWeight(.15),0);
  assert.ok(Math.abs(scalpToGravityWeight(.265)-.5)<1e-8);
@@ -46,6 +46,16 @@ test('v52 real Sadako ribbons resist penetrating the donor head from underneath'
  assert.deepEqual(report.sadakoGravityTransition,
   {scalpTo:.15,fullyGravity:.38,segments:18});
  assert.ok(report.pointCount>=80*19);
+ assert.equal(report.sadakoUnifiedScalpClipping,true);
+ assert.ok(report.sadakoAreaSampledRoots>=report.rootCount*.40,
+  'Area roots should replace concentrated photo-vertex sampling');
+ assert.ok(report.sadakoFollicleTriangles>15,
+  'Scalp surface triangles must be available for true area sampling');
+ const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ assert.equal(cap?.userData.unifiedBuzzContour,true);
+ assert.ok(cap?.userData.donorScalpVertexCount>40);
+ assert.equal(report.sadakoCrownFibreCount,0,
+  'Synthetic short crown stubble should not conceal uncovered long locks');
  assert.ok(Number.isFinite(report.sadakoGuideScalpPushes));
  assert.ok(Number.isFinite(report.sadakoRibbonScalpPushes));
  const locks=wig.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
@@ -94,5 +104,50 @@ test('Android studio provides a real one-tap underside hair view',()=>{
  assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
  assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
  assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
- assert.match(page,/sadako-scalp-first-gravity-v52/);
+ assert.match(page,/sadako-unified-scalp-area-roots-v53/);
+});
+
+test('v53 independent follicle sampling covers crown and front without topology density bias',()=>{
+ const geometry=new THREE.SphereGeometry(.5,40,30);
+ geometry.computeVertexNormals();geometry.computeBoundingBox();
+ const head=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+ const wig=createScalpAnchoredWig(head,{
+  count:420,color:0x73503b,styleId:'sadako-straight-long',
+  gender:'female',staticGroom:true,normalLayeredSingleMesh:false,
+  visualFiberMultiplier:1,fineFringeMultiplier:1
+ });
+ const rootSamples=wig.getRootSamples();
+ const stats=wig.getReport();
+ assert.ok(stats.sadakoAreaZoneTriangles.crown>20,
+  'There must be real donor crown triangles');
+ assert.ok(stats.sadakoAreaZoneTriangles.fringeLeft>0,
+  'Left forehead must contain front follicles');
+ assert.ok(stats.sadakoAreaZoneTriangles.fringeRight>0,
+  'Right forehead must contain front follicles');
+ assert.ok(stats.sadakoAreaSampledRoots>stats.rootCount*.6,
+  'Most roots must be distributed over area, not repeated vertex IDs');
+ assert.ok(rootSamples.some(s=>s.zone==='fringeLeft'));
+ assert.ok(rootSamples.some(s=>s.zone==='fringeRight'));
+ const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
+ const sampler=createAreaWeightedScalpRootSampler(cap,geometry.boundingBox);
+ for(const zone of ['crown','fringeLeft','fringeRight','templeLeft','templeRight']){
+  const points=Array.from({length:70},(_,i)=>sampler.sample(zone,i)).filter(Boolean);
+  assert.ok(points.length>20,zone+' must not have sparse unfilled donor roots');
+  const keys=new Set(points.map(p=>[p.p.x,p.p.y,p.p.z].map(v=>v.toFixed(4)).join(',')));
+  assert.ok(keys.size>points.length*.88,
+   'Roots must fill '+zone+' continuously, not reuse a few vertices');
+  assert.ok(points.every(p=>p.source==='donor-triangle-area-v53'));
+ }
+ wig.dispose();geometry.dispose();head.material.dispose();
+});
+
+test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged',()=>{
+ const page=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
+ const hair=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
+ assert.match(page,/sadakoCover=wig\?\.root\?\.userData\?\.hairStyleId==='sadako-straight-long'/);
+ assert.match(page,/if\(!wig\?\.root\?\.userData\?\.buzzFibreOnly&&!sadakoCover\)/);
+ assert.match(page,/v53-sadako-matched-donor-clipping/);
+ assert.match(hair,/if\(shortHair\|\|styleId==='sadako-straight-long'\)/);
+ assert.match(hair,/const sadakoCrownFlow=null/);
+ assert.match(page,/sadako-unified-scalp-area-roots-v53/);
 });
