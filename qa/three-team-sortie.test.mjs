@@ -134,7 +134,8 @@ const world=readFileSync(new URL('../world-map.html',import.meta.url),'utf8');
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.ok(!town.includes('data-sortie-size'));
 assert.match(town,/renderThreeTeamPlanner/);
-assert.match(world,/setSortieSlot\(game,stage,deploymentTeamId/);
+assert.doesNotMatch(world,/id="deploymentPicker"/);
+assert.match(world,/beginSortie\(stage\)/);
 assert.match(battleHtml,/createTargetedStrategyUi/);
 assert.match(battleHtml,/applySquadDebuff/);
 for(const [id,doc] of [['town',town],['world',world],['battle',battleHtml]]){
