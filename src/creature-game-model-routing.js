@@ -9,6 +9,7 @@
  * still block unapproved external mesh replacement.
  */
 import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
+import {CONCEPT_TRIO_IDS,CONCEPT_TRIO_REVISION} from './monster-concept-trio-sculpt.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
@@ -32,7 +33,8 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
  MONSTER_CATALOG.map(spec=>[spec.id,Object.freeze({
   speciesId:spec.id,name:spec.name,family:spec.family,
   model:'procedural:'+spec.id,
-  version:spec.id==='m001'?MODEL_REFERENCE_REVISION:
+  version:CONCEPT_TRIO_IDS.includes(spec.id)?CONCEPT_TRIO_REVISION:
+   spec.id==='m001'?MODEL_REFERENCE_REVISION:
    spec.id==='m005'?'m001-forest-wolf-mesh-v14-20261118':
    spec.id==='m006'?'m001-panther-skull-mini-nose-v14-20261118':
    firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
@@ -46,7 +48,8 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    spec.id==='m015'?'phoenix-master-tengu-feathers-v21-20261118':
    avianWave.has(spec.id)?'phoenix-master-bird-plumage-v21-20261118':
    'catalog-baseline',
-  stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
+  stage:CONCEPT_TRIO_IDS.includes(spec.id)?'2d-reference-sculpt-in-visual-review':
+   locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m018'?'existing-quadruped-with-three-long-dragon-necks-in-review':
    spec.id==='m050'?'hydra-derived-coral-sea-beast-in-review':

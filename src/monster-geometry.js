@@ -4,6 +4,7 @@
  * Each specimen is real 3D geometry, never an image billboard.
  */
 import * as THREE from 'three';
+import {sculptConceptTrio} from './monster-concept-trio-sculpt.js?v=concept-trio-v1-20261121';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
@@ -2992,11 +2993,11 @@ export function createMonsterModel(spec,{detail='high'}={}){
    case 'reptile':spec.id==='m020'?seaSerpent(g,spec):quadruped(g,spec,{reptile:true});break;
    case 'avian':bird(g,spec);break;
    case 'insect':isBeetleLineage(spec.id)?sculptBeetleLineage(g,spec):insect(g,spec);break;
-   case 'arachnid':insect(g,spec,{spider:true});break;
+   case 'arachnid':sculptConceptTrio(g,spec);break;
    case 'undead':upright(g,spec,{undead:true});break;
    case 'golem':upright(g,spec,{rock:true});break;
    case 'fiend':upright(g,spec,{demon:true});break;
-   case 'aquatic':aquatic(g,spec);break;
+   case 'aquatic':if(!sculptConceptTrio(g,spec))aquatic(g,spec);break;
    default:throw Error('Unknown anatomy: '+spec.family);
  }
  addNonhumanMonsterWardrobe(g,spec);
