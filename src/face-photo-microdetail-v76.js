@@ -8,14 +8,14 @@ import {ensureSkinUV} from './master-heroine-skin-pbr.js';
  * would make a face look blotchy and misplace freckles. Only high-frequency
  * pores and roughness from the real photo are transferred to the ORIGINAL
  * donor-derived face topology, preserving skin pigment, eyebrows and age.
- * 384² maps are mobile-safe, shared and GPU-mipmapped; no remote fetches.
+ * 512² maps are mobile-safe, shared and GPU-mipmapped; no remote fetches.
  */
 export const FACE_PHOTO_SOURCE_V76=Object.freeze({
  path:'assets/textures/face/cc0-human-skin-reference.jpg',
  canonical:'https://commons.wikimedia.org/wiki/File:Image_skin_texture.jpg',
  license:'CC0-1.0',kind:'photographic-human-skin',
  noFaceAlbedoReplacement:true,
- maxDerivedTextureSize:384
+ maxDerivedTextureSize:512
 });
 const clamp=(v,lo=0,hi=255)=>Math.max(lo,Math.min(hi,v));
 /** Pure deterministic postprocess: use REAL photographed local contrast,
@@ -73,7 +73,7 @@ export function requestRealSkinPhotoMaps(){
   image.onload=()=>{
    try{
     // Crop a central square to avoid the strongest photography falloff.
-    const n=384,canvas=document.createElement('canvas');
+    const n=512,canvas=document.createElement('canvas');
     canvas.width=canvas.height=n;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
     if(!ctx)throw Error('Canvas2D unavailable for CC0 skin photograph');
@@ -121,7 +121,7 @@ export function applyRealSkinPhotoToFace(face){
   }
   face.userData.v76RealSkinPhoto='CC0-real-photo-microrelief';
   face.userData.v76RealSkinPhotoLicense='CC0-1.0';
-  face.userData.v76PhotoDerivedMapSize=384;
+  face.userData.v76PhotoDerivedMapSize=512;
  });
  return {applied:true,photoRequested:true,source:FACE_PHOTO_SOURCE_V76.path,
   sourceCC0:true,faceAlbedoPreserved:true};
