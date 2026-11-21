@@ -12,6 +12,7 @@ import {deploymentForSquad,slotLane,slotRank} from './inn-deployment.js';
 import {commandSquadIds,resolvedCommanderDeployment} from './inn-commander-formation.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
+import {verifyTavernQuestBattle,settleTavernQuestBattle} from './town-side-quests.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
 export const CORE_BATTLE_RESULT_KEY='hai-gin-story-result-v1';
 const validStageId=id=>Boolean(CAMPAIGN_STAGE_BY_ID[id]);
@@ -106,6 +107,7 @@ export function settleCoreBattle(game,request,result){
   allowed.set(source,(allowed.get(source)||0)+1);
  }
  const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
+ const optionalQuest=verifyTavernQuestBattle(game,request);
  // Validate battle-consumed inn items against the launch reservation before changing stock.
  const townItemDeductions=[];
  for(const [teamId,items] of Object.entries(result.townItemsSpent||{})){
@@ -122,7 +124,7 @@ export function settleCoreBattle(game,request,result){
  for(const row of townItemDeductions)combined.set(row.itemId,(combined.get(row.itemId)||0)+row.used);
  if([...combined].some(([id,n])=>n>Number(game.inventory?.[id]||0)))
   throw Error('複数隊で持参品の在庫を超過しました。');
- if(result.victory&&(stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
+ if(result.victory&&(optionalQuest||stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
   throw Error('討伐したモンスター数を確認できませんでした。');
  let casualties=0;
  const seen=new Set(),changes=[];
@@ -154,29 +156,41 @@ export function settleCoreBattle(game,request,result){
  game.lastCoreBattleId=request.battleId;
  let next=null;
  if(victory){
-  const isMonster=stage.kind==='explore'||stage.kind==='boss';
+  const isMonster=Boolean(optionalQuest)||stage.kind==='explore'||stage.kind==='boss';
   const confirmedMonsterClear=isMonster?result.monstersRemaining===0:true;
   const objectiveCompleted=result.objectiveCompleted===true||
    (!isMonster&&result.victory===true);
-  next=markStageVictory(game,stage.id,{
-   verified:true,victory:true,
-   ...(isMonster?{monstersRemaining:result.monstersRemaining}:{objectiveCompleted}),
-   ...(!isMonster?{}:{objectiveCompleted:true})
-  });
-  if(['capture','siege'].includes(stage.kind)){
-   if(!Array.isArray(game.capturedAreas))game.capturedAreas=[];
-   if(!game.capturedAreas.includes(stage.id))game.capturedAreas.push(stage.id);
+  if(optionalQuest){
+   // A side quest never advances the 200-stage story or receives the main-stage reward.
+   // Only the actual battle's verified win can settle this pending tavern contract.
+   const reward=settleTavernQuestBattle(game,request,{victory:true,monstersRemaining:result.monstersRemaining});
+   gainExperience(game.campaign,reward.xp);
+   const treasure=verifiedBattleLoot(result.loot);
+   game.inventory??={};
+   for(const item of treasure)game.inventory[item.itemId]=(Number(game.inventory[item.itemId])||0)+item.quantity;
+   result.settledRewards={gold:reward.gold,xp:reward.xp,loot:treasure};
+  }else{
+   next=markStageVictory(game,stage.id,{
+    verified:true,victory:true,
+    ...(isMonster?{monstersRemaining:result.monstersRemaining}:{objectiveCompleted}),
+    ...(!isMonster?{}:{objectiveCompleted:true})
+   });
+   if(['capture','siege'].includes(stage.kind)){
+    if(!Array.isArray(game.capturedAreas))game.capturedAreas=[];
+    if(!game.capturedAreas.includes(stage.id))game.capturedAreas.push(stage.id);
+   }
+   if(!confirmedMonsterClear)throw Error('討伐結果を確認できませんでした。');
+   const reward=coreVictoryReward(stage);
+   game.wallet=(Number(game.wallet)||0)+reward.gold;
+   gainExperience(game.campaign,reward.xp);
+   const treasure=verifiedBattleLoot(result.loot);
+   game.inventory??={};
+   for(const item of treasure)game.inventory[item.itemId]=(Number(game.inventory[item.itemId])||0)+item.quantity;
+   result.settledRewards={...reward,loot:treasure};
   }
-  if(!confirmedMonsterClear)throw Error('討伐結果を確認できませんでした。');
-  const reward=coreVictoryReward(stage);
-  game.wallet=(Number(game.wallet)||0)+reward.gold;
-  gainExperience(game.campaign,reward.xp);
-  const treasure=verifiedBattleLoot(result.loot);
-  game.inventory??={};
-  for(const item of treasure)game.inventory[item.itemId]=(Number(game.inventory[item.itemId])||0)+item.quantity;
-  result.settledRewards={...reward,loot:treasure};
  }
- game.history.unshift(stage.name+'：'+(protagonistDead?'主人公戦死・GAME OVER':victory?'勝利':'敗北')+'。損害'+casualties+'人。');
+ if(optionalQuest&&!victory)settleTavernQuestBattle(game,request,{victory:false});
+ game.history.unshift((optionalQuest?optionalQuest.title:stage.name)+'：'+(protagonistDead?'主人公戦死・GAME OVER':victory?'勝利':'敗北')+'。損害'+casualties+'人。');
  game.history=game.history.slice(0,50);
  return {victory,playerCommanderDead:protagonistDead,gameOver:game.campaign.gameOver||null,casualties,stage,next,rewards:result.settledRewards||{gold:0,xp:0,loot:[]}};
 }

@@ -311,6 +311,20 @@ function completeReturnedBattle(){
   sessionStorage.removeItem(CORE_BATTLE_PENDING_KEY);
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   sessionStorage.removeItem('hai-gin-story-sortie-v1');
+  if(request.sideQuestId){
+   // Side quests must never launch story comics, unlock campaign stages, or grant main-stage rewards.
+   saveSession();
+   if(outcome.gameOver){message('任意依頼中に主人公が戦死しました。');showCampaignGameOver();return;}
+   stageAtTown(game,game.lastTown||'c01-s01');
+   saveSession();
+   const reward=outcome.rewards||{};
+   const status=outcome.victory
+    ?'任意依頼に勝利！ '+(reward.gold||0)+'G / '+(reward.xp||0)+'EXP獲得。'
+    :'任意依頼は敗北。報酬なし。酒場から再挑戦できます。';
+   sessionStorage.setItem('hai-gin-tavern-battle-return-v1',status);
+   location.replace('./town-hub.html?v='+Date.now()+'&from=quest');
+   return;
+  }
   // Do not skip the dedicated post-event comic when the protagonist dies.
   // This receipt is created only AFTER settleCoreBattle verifies the result.
   sessionStorage.setItem(POST_EVENT_PENDING_KEY,JSON.stringify({

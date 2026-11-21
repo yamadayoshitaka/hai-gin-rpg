@@ -125,6 +125,26 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .tavernQuestEntry .controls button{font-size:12px;min-height:38px;padding:7px 5px}
 #panel .tavernQuestEntry .controls button{max-width:none}
 @media(max-width:420px){#panel{gap:7px}.saveSlotActions{flex-direction:column}.saveSlotActions button{font-size:11px;padding:5px}}
+
+#facilityBackdrop{position:fixed;inset:0;z-index:10;pointer-events:none;overflow:hidden}
+#facilityBackdrop[hidden],#panelSceneBanner[hidden]{display:none!important}
+#facilityBackdrop img{width:100%;height:100%;object-fit:cover;object-position:center;filter:brightness(.68) saturate(.9)}
+#panelBackdrop{background:#030c1688;backdrop-filter:blur(1.5px)}
+#panel{background:linear-gradient(150deg,#1a2d42e9,#091727f0 76%);border-color:#dbc193}
+#panelSceneBanner{height:clamp(80px,11dvh,120px);min-height:74px;width:100%;flex-shrink:0;object-fit:cover;object-position:50% 55%;border:1px solid #bfa475;border-radius:8px}
+#panelKeeper{background:#0b1b2be5;border-color:#ae9373;min-height:77px}
+.keeperFace{width:74px;height:80px;object-fit:cover;object-position:center 18%;border:2px solid #dbc193;border-radius:9px;box-shadow:0 3px 14px #000b}
+#townDialoguePortrait .keeperFace{width:76px;height:84px}
+#panelKeeper b{font-size:15px;letter-spacing:.025em}
+.tavernQuestEntry{background:linear-gradient(145deg,#132638ed,#0b192be9);border-color:#aa8d64}
+.questStagePager{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.questStagePager span{font-size:11px;color:#efd7a7;text-align:center}
+.questStagePager button{min-width:48px}
+.questMissionNav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.questMissionNav button.active{background:#8a683c!important;border-color:#f1d39a!important}
+.questBattleTag{color:#f6d18a;font-size:12px;font-weight:700}
+#panel .questSortieActions button{max-width:none;background:#765a39;border-color:#d9bc83}
+@media(max-height:650px){#panelSceneBanner{height:70px}#panelKeeper{min-height:56px}.keeperFace{width:51px;height:55px}}
 </style>
 <link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=inn-items-one-page-20261121"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
@@ -150,9 +170,9 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
  <div id="townDialoguePortrait" hidden></div><div id="townDialogueName"></div><div id="townDialogueLine" aria-live="polite"></div>
  <div id="townDialogueActions"><span class="town-dialogue-hint">会話はここで進みます</span><button id="townDialogueService" type="button" hidden>施設を利用</button><button id="townDialogueNext" type="button">次へ ▶</button><button id="townDialogueClose" type="button" aria-label="会話を閉じる">✕</button></div>
 </section>
-<div id="panelBackdrop" hidden></div><section id="panel" role="dialog" aria-modal="true" aria-label="町のメニュー" hidden>
+<div id="facilityBackdrop" hidden><img id="facilityBackdropImage" alt=""></div><div id="panelBackdrop" hidden></div><section id="panel" role="dialog" aria-modal="true" aria-label="町のメニュー" hidden>
  <div class="toprow"><h2 id="panelTitle">町の施設</h2><button id="panelClose" type="button">閉じる ✕</button></div>
- <div id="panelSummary" class="stats"></div><div id="panelKeeper" hidden></div>
+ <div id="panelSummary" class="stats"></div><div id="panelKeeper" hidden></div><img id="panelSceneBanner" alt="施設の内部風景" hidden>
  <div id="panelContent"></div><div id="toast" role="status" aria-live="polite"></div>
 </section>
 <section id="townGuide" aria-label="町の施設案内地図" hidden><div id="townGuideCard"><div class="toprow"><h2>レヴナ施設案内</h2><button id="closeTownGuide" type="button">閉じる ✕</button></div>
@@ -182,7 +202,8 @@ import {continentForChapter} from './src/continent-campaign.js';
 import {drawRecruitGacha,RECRUIT_GACHA} from './src/town-recruit-gacha.js';
 import {drawTavernGacha,renderTavernGacha,renderTavernGachaResult} from './src/town-tavern-gacha.js?v=20261116a';
 import {resolveTownConversation} from './src/town-dialogue-catalog.js';
-import {tavernQuestStages,runTavernSideQuest} from './src/town-side-quests.js';
+import {tavernQuestStages,runTavernSideQuest,tavernQuestBattleSettings} from './src/town-side-quests.js';
+import {makeCoreBattleRequest,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
 import {createTownAudioDirector} from './src/town-audio-director.js';
 import {createStoryVoiceDirector} from './src/story-voice-director.js';
 import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
@@ -212,7 +233,7 @@ persistSession(game,sessionStorage);
 const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
 // The hub is a single illustration; no nested 3D runtime is loaded.
-let tavernGachaResults=null,tavernSection='quests',sideQuestPage=0;
+let tavernGachaResults=null,tavernSection='quests',sideQuestPage=0,tavernQuestIndex=0;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',innCommanderId='player',innPage='deployment',innSquadPage=0,innDeploymentSelected=null,innTemplateEditorOpen=false,narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let activeTalk=null,activeTalkIndex=0;
 let currentStoryPanelVoiceId=null;
@@ -259,7 +280,13 @@ const KEEPERS={
  save:['教会の司祭','旅の記録'],story:['王城の侍従','物語と謁見']
 };
 function keeperFace(kind){
- return '<svg class="keeperFace" viewBox="0 0 80 88" aria-hidden="true"><use href="./assets/town/shopkeeper-portraits.svg#'+kind+'"></use></svg>';
+ return '<img class="keeperFace" src="./assets/town/portraits/'+kind+'.svg" alt="" loading="eager">';
+}
+function facilityArt(kind){return KEEPERS[kind]?'./assets/town/facilities/'+kind+'.svg':'';}
+function setFacilityArt(kind){
+ const src=facilityArt(kind),backdrop=$('facilityBackdrop'),banner=$('panelSceneBanner');
+ backdrop.hidden=!src;banner.hidden=!src;
+ if(src){$('facilityBackdropImage').src=src;banner.src=src;banner.alt=KEEPERS[kind][0]+'がいる施設の室内';}
 }
 function keeperHeading(kind){
  const info=KEEPERS[kind];
@@ -287,9 +314,9 @@ $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
 function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();tavernGachaResults=null;panel=which;
  townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){innWizardStep='teamPick';sortieView='teamPick';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
- if(which==='tavern'){tavernSection='quests';sideQuestPage=Math.max(0,tavernQuestStages(game).length-1);}
+ if(which==='tavern'){tavernSection='quests';sideQuestPage=Math.max(0,tavernQuestStages(game).length-1);tavernQuestIndex=0;}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
-function closePanel(){tavernGachaResults=null;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
+function closePanel(){tavernGachaResults=null;$('facilityBackdrop').hidden=true;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
  townAudio.setScene(insideFacility==='formation'?'inn':insideFacility==='save'?'church':insideFacility==='story'?'castle':insideFacility==='tavern'?'tavern':insideFacility?'shop':'town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 // Direct buying from the top navigation is intentionally disabled.
@@ -453,9 +480,10 @@ function renderPanel(){
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
  $('panel').classList.toggle('tavern-gacha-ui',panel==='tavern');
  $('panel').classList.toggle('has-gacha-result',panel==='tavern'&&Boolean(tavernGachaResults));
- $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・陣形テンプレート',tavern:'酒場・ガチャ',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
+ $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・陣形テンプレート',tavern:'酒場・戦闘依頼',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
  const keeperKey=panel==='dialogue'?activeTalk?.panel:panel;
+ setFacilityArt(keeperKey);
  $('panelKeeper').hidden=!KEEPERS[keeperKey];
  $('panelKeeper').innerHTML=KEEPERS[keeperKey]?keeperHeading(keeperKey):'';
  if(panel==='dialogue'){
@@ -494,11 +522,14 @@ function renderPanel(){
   sideQuestPage=Math.min(Math.max(0,sideQuestPage),Math.max(0,unlocked.length-1));
   const group=unlocked[sideQuestPage];
   const tabs='<div class="controls"><button type="button" data-tavern-section="quests" '+(tavernSection==='quests'?'class="primary"':'')+'>任意依頼（'+unlocked.length*2+'件）</button><button type="button" data-tavern-section="recruit" '+(tavernSection==='recruit'?'class="primary"':'')+'>仲間募集</button></div>';
-  const questPanel=!group?'<p>最初の戦闘ステージをクリアすると、シナリオ以外の依頼が2件解放されます。</p>':
-    '<p>ステージを1つクリアするごとに任意依頼が2件増えます。報酬は各依頼1回のみです。</p>'+
-    '<div class="pager"><button type="button" data-tavern-quest-page="-1" '+(sideQuestPage===0?'disabled':'')+'>◀</button><span>'+escapeHtml(group.stage.name)+' · '+(sideQuestPage+1)+' / '+unlocked.length+'</span><button type="button" data-tavern-quest-page="1" '+(sideQuestPage===unlocked.length-1?'disabled':'')+'>▶</button></div>'+
-    group.quests.map(quest=>'<section class="tavernQuestEntry"><b>'+escapeHtml(quest.title)+(quest.completed?' ✓ 達成':'')+'</b><small>'+escapeHtml(quest.description)+'</small>'+
-       (quest.completed?'<small>報酬受取済み</small>':'<div class="controls">'+quest.choices.map((label,index)=>'<button type="button" data-tavern-quest="'+quest.id+'" data-choice="'+index+'">'+escapeHtml(label)+'</button>').join('')+'</div>')+'</section>').join('');
+  const quest=group?.quests[tavernQuestIndex]||null;
+  const questPanel=!quest?'<p>最初の戦闘ステージをクリアすると、シナリオ以外の戦闘依頼が2件解放されます。</p>':
+   '<p class="questBattleTag">⚔ 戦闘依頼：1ステージクリアで2件解放／勝利時のみ報酬</p>'+
+   '<div class="questStagePager"><button type="button" data-tavern-quest-page="-1" '+(sideQuestPage===0?'disabled':'')+'>◀</button><span>'+escapeHtml(group.stage.name)+'<small> · '+(sideQuestPage+1)+' / '+unlocked.length+' ステージ</small></span><button type="button" data-tavern-quest-page="1" '+(sideQuestPage===unlocked.length-1?'disabled':'')+'>▶</button></div>'+
+   '<div class="questMissionNav">'+group.quests.map((q,index)=>'<button type="button" data-tavern-quest-index="'+index+'" class="'+(index===tavernQuestIndex?'active':'')+'">依頼'+(index+1)+(q.completed?' ✓':'')+'</button>').join('')+'</div>'+
+   '<section class="tavernQuestEntry"><b>'+escapeHtml(quest.title)+(quest.completed?' ✓ 達成':'')+'</b><small>'+escapeHtml(quest.description)+'</small>'+
+   '<small>出撃先：'+escapeHtml(group.stage.name)+' ／ 勝利条件：敵の全滅</small>'+
+   (quest.completed?'<small>討伐完了・報酬受取済み</small>':'<div class="controls questSortieActions">'+quest.choices.map((label,index)=>'<button type="button" data-tavern-quest="'+quest.id+'" data-choice="'+index+'">⚔ '+escapeHtml(label)+'</button>').join('')+'</div>')+'</section>';
   $('panelContent').innerHTML=tabs+(tavernSection==='recruit'?renderTavernGacha(game):questPanel)+(tavernGachaResults?renderTavernGachaResult(tavernGachaResults):'');
  }else if(panel==='save'){
   $('panelContent').innerHTML='<p>教会で最大3つの記録を個別に保存できます。装備・編成・所持品・依頼達成状況を保存します。</p>'+
@@ -855,10 +886,27 @@ $('panelContent').onclick=event=>{
    tavernGachaResults=null;renderPanel();return;
   }
   if(target.hasAttribute('data-tavern-section')){tavernSection=target.dataset.tavernSection;renderPanel();return;}
-  if(target.hasAttribute('data-tavern-quest-page')){sideQuestPage+=Number(target.dataset.tavernQuestPage);renderPanel();return;}
+  if(target.hasAttribute('data-tavern-quest-page')){sideQuestPage+=Number(target.dataset.tavernQuestPage);tavernQuestIndex=0;renderPanel();return;}
+  if(target.hasAttribute('data-tavern-quest-index')){tavernQuestIndex=Number(target.dataset.tavernQuestIndex);renderPanel();return;}
   if(target.hasAttribute('data-tavern-quest')){
-   const result=runTavernSideQuest(game,target.dataset.tavernQuest,Number(target.dataset.choice));
-   persist();renderPanel();townAudio.effect('quest');notice('「'+result.quest.title+'」達成！ '+result.gold+'G獲得。'+result.message);return;
+   const battleId=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+   const {pending}=runTavernSideQuest(game,target.dataset.tavernQuest,Number(target.dataset.choice),battleId);
+   try{
+    game.location='map';
+    const request=makeCoreBattleRequest(game,pending.stageId,battleId);
+    Object.assign(request,tavernQuestBattleSettings(game,pending));
+    sessionStorage.setItem(CORE_BATTLE_PENDING_KEY,JSON.stringify(request));
+    sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
+    sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
+    persistSession(game,sessionStorage);
+    location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(request.stagePreset)+'&v='+Date.now();
+   }catch(error){
+    game.location='town';delete game.pendingTavernQuest;
+    sessionStorage.removeItem(CORE_BATTLE_PENDING_KEY);
+    sessionStorage.removeItem('hai-gin-story-sortie-v1');
+    persistSession(game,sessionStorage);throw error;
+   }
+   return;
   }
   if(target.hasAttribute('data-tavern-gacha')){
    if(tavernGachaResults)return;
@@ -1242,4 +1290,9 @@ $('skipPaper').onclick=closePaperStory;
 window.addEventListener('pagehide',()=>{stopNarration();townAudio.dispose();});
 document.body.classList.remove('town-loading');
 renderState();townAudio.setScene('town');if(paperPending)startPaperStory();
+const tavernReturn=sessionStorage.getItem('hai-gin-tavern-battle-return-v1');
+if(tavernReturn&&!paperPending){
+ sessionStorage.removeItem('hai-gin-tavern-battle-return-v1');
+ openPanel('tavern');notice(tavernReturn);
+}
 </script></body></html>
