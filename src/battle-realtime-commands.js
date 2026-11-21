@@ -46,6 +46,7 @@ export function createRealtimeBattleCommands({
  let lastInlineItemRefresh=-Infinity,lastInlineItemSignature='';
  const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  const initialTeamPlans=new Map(),placedTeams=new Set();
+ let deployStep='placement';
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
@@ -150,7 +151,7 @@ export function createRealtimeBattleCommands({
      <button type="button" id="realtimeMapNext" aria-label="次の味方隊">▶</button>
      <span id="realtimeMapPage" aria-label="選択中の隊番号">1/1</span>
     </div>
-    <div class="realtimeMapViewport">
+    <div class="realtimeMapViewport" id="realtimeMapViewport">
      <div class="realtimeMapZoom" aria-label="地図の拡大縮小">
       <button type="button" data-realtime-zoom="1" aria-label="地図を拡大">＋ 拡大</button>
       <button type="button" data-realtime-zoom="-1" aria-label="地図を縮小">－ 縮小</button>
@@ -267,6 +268,30 @@ export function createRealtimeBattleCommands({
   mapDrawPending=true;
   globalThis.requestAnimationFrame(()=>{mapDrawPending=false;drawMap();});
  }
+ /** Only one operation per prebattle page: actual placement OR initial order. */
+ function syncPrebattleScreen(){
+  if(started||mode!=='deploy')return;
+  const row=getSelected(),key=String(row?.groupId??row?.id??'1');
+  const placing=deployStep==='placement';
+  $('realtimeMapViewport').hidden=!placing;
+  $('realtimeInitialTeamPlanning').hidden=placing;
+  $('realtimeMapActionSheet').hidden=true;
+  $('realtimeStart').hidden=false;
+  $('realtimeMapTitle').textContent=placing?'① 第'+key+'隊の初期配置':'② 第'+key+'隊の初期作戦';
+  $('realtimeMapHelp').textContent=placing?
+   '味方陣地（青い範囲）をタップして隊を配置し、「次へ」で作戦を選択します。':
+   '配置済みの第'+key+'隊について、使用できる初期作戦を1つ選んでください。';
+  $('realtimeStart').textContent=placing?'配置を確定して作戦選択 ▶':
+   '作戦を保存して次の隊へ ▶';
+  if(!placing&&placedTeams.has(key)&&initialTeamPlans.get(key)){
+   const own=squads(),allReady=own.every(team=>{
+    const id=String(team.groupId??team.id);
+    return placedTeams.has(id)&&Boolean(initialTeamPlans.get(id));
+   });
+   if(allReady)$('realtimeStart').textContent='3隊の配置と作戦を確定して開戦 ▶';
+  }
+  $('realtimeMapPortrait').setAttribute('aria-label','第'+key+'隊のリーダー');
+ }
  function refreshOptions(){
   const own=squads();
   if(!own.length)return;
@@ -309,6 +334,7 @@ export function createRealtimeBattleCommands({
    setBattleJobPortrait(dockFace,portraitJob,portraitId,0);
    dockFace.dataset.signature=faceKey;
   }
+  syncPrebattleScreen();
  }
  function getSelected(){return squads().find(s=>String(s.id)===String(selectedId))||null;}
  function setSelected(id,{focus=false}={}){
@@ -1075,7 +1101,9 @@ export function createRealtimeBattleCommands({
    '移動先を指定しました。到着後の行動を選択できます。';
  }
  function openMap(next='move'){
-  hideActionSheet();mode=next;refreshOptions();
+  hideActionSheet();mode=next;
+  if(next==='deploy')deployStep='placement';
+  refreshOptions();
   if(started)enterPlanning();
   $('realtimeInitialTeamPlanning').hidden=next!=='deploy';
   $('realtimeMapActionSheet').hidden=next==='deploy';
@@ -1089,7 +1117,8 @@ export function createRealtimeBattleCommands({
   $('realtimeMapHelp').textContent=next==='deploy'?
    '①第1〜3隊を選ぶ → レーダーの味方陣地をタップして配置 → ②隊ごとに作戦を選ぶ → 開戦。宿屋の陣形を維持します。':
    '◀ ▶で移動する味方隊を選び、地図をタップ。戦闘はリアルタイムで進みます。';
-  $('realtimeMapMessage').textContent=next==='deploy'?'第1〜3隊を順番に選択して配置し、各隊の初期作戦を設定してください。':'';
+  $('realtimeMapMessage').textContent=next==='deploy'?'① 地図に隊を配置 → ② 次の画面で初期作戦を選択。各隊を順番に設定します。':'';
+  syncPrebattleScreen();
   root.querySelector('[data-action-after-move="support"]').hidden=next==='deploy';
   $('realtimeMapItemCategory').hidden=next==='deploy';
   root.querySelector('[data-action-after-move="special"]').hidden=next==='deploy';
@@ -1130,7 +1159,7 @@ export function createRealtimeBattleCommands({
     const group=String(squad.groupId??squad.id);
     placedTeams.add(group);
     invalidateSquadSnapshot();refreshOptions();drawMap();
-    $('realtimeMapMessage').textContent='第'+group+'隊を配置しました。初期作戦を選び、次の隊へ進んでください。';
+    $('realtimeMapMessage').textContent='第'+group+'隊の配置を保存しました。「配置を確定して作戦選択」を押してください。';
    }
    return applied;
   }
@@ -1362,6 +1391,7 @@ radarCanvas.addEventListener('keydown',event=>{
    if(requirePrebattleChoices&&(!placedTeams.has(key)||!selected)){
     selectedId=String(team.id);invalidateSquadSnapshot();refreshOptions();
     openMap('deploy');
+    deployStep=!placedTeams.has(key)?'placement':'strategy';syncPrebattleScreen();
     $('realtimeMapMessage').textContent='第'+key+'隊：'+
      (!placedTeams.has(key)?'レーダーの味方陣地をタップして配置してください。':'初期作戦を選んでください。');
     return false;
@@ -1381,7 +1411,36 @@ radarCanvas.addEventListener('keydown',event=>{
   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
   renderStatus();drawRadar(true);return true;
  }
- $('realtimeStart').onclick=()=>beginBattleWithPlans();
+ $('realtimeStart').onclick=()=>{
+  if(started||mode!=='deploy'){beginBattleWithPlans();return;}
+  const own=squads(),selected=getSelected(),key=String(selected?.groupId??selected?.id??'');
+  if(deployStep==='placement'){
+   if(!placedTeams.has(key)){
+    $('realtimeMapMessage').textContent='先に青い陣地内の配置先をタップしてください。';
+    return;
+   }
+   deployStep='strategy';syncPrebattleScreen();
+   $('realtimeMapMessage').textContent='初期作戦を選択し、次の隊へ進んでください。';
+   return;
+  }
+  if(!initialTeamPlans.get(key)){
+   $('realtimeMapMessage').textContent='この隊の初期作戦を選択してください。';
+   return;
+  }
+  const next=own.find(team=>{
+   const id=String(team.groupId??team.id);
+   return !placedTeams.has(id)||!initialTeamPlans.get(id);
+  });
+  if(next){
+   const nextKey=String(next.groupId??next.id);
+   deployStep=placedTeams.has(nextKey)?'strategy':'placement';
+   setSelected(next.id);syncPrebattleScreen();
+   $('realtimeMapMessage').textContent='第'+nextKey+'隊：'+
+    (deployStep==='placement'?'地図で配置先を選択してください。':'初期作戦を選択してください。');
+   return;
+  }
+  beginBattleWithPlans();
+ };
  $('realtimeRoster')?.addEventListener('click',()=>onRoster());
  $('realtimeMenu').onclick=()=>{closeSquadControls();onMenu();};
  const commandWizard=mountBattleCommandWizard({
@@ -1402,7 +1461,7 @@ radarCanvas.addEventListener('keydown',event=>{
  };
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
-  openDeployment(){started=false;mode='deploy';exitPlanning();commandWizard.reset();planningOwnsPause=false;
+  openDeployment(){started=false;mode='deploy';deployStep='placement';exitPlanning();commandWizard.reset();planningOwnsPause=false;
    initialTeamPlans.clear();placedTeams.clear();
    deploymentActions.clear();arrivalActions.clear();preferredActions.clear();
    invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;
