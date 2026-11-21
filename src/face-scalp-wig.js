@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-mantle-crown-v60';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-shared-scalp-angle-coverage-v61';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -481,7 +481,7 @@ export function uniqueHairFibreStations(segments=11){
   .sort((a,b)=>a-b);
 }
 
-export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='natural'){
+export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='natural',{includeTemples=false}={}){
  const attr=geo?.getAttribute?.('position'),normal=geo?.getAttribute?.('normal');
  if(!attr)throw Error('True 3D source head required');
  const idx=geo.getIndex?.(),n=idx?idx.count:attr.count;
@@ -497,11 +497,16 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
   const mid=points[0].clone().add(points[1]).add(points[2]).multiplyScalar(1/3);
   const highCrown=mid.y>=box.min.y+d.y*.84;
   const posterior=mid.z<c.z-d.z*.065;
-  const posteriorOrTemple=mid.z<=c.z+d.z*.015;
-  const minHeight=posterior?rearMinHeight:templeMinHeight;
+  const lateral=Math.abs(mid.x-c.x)/Math.max(d.x,1e-6);
+  // V60 only protected the middle of the head, leaving the side-temple
+  // junction visibly pale from an oblique angle in BOTH wigs.
+  const temple=includeTemples&&lateral>.23&&lateral<.49&&
+   mid.z<c.z+d.z*.12&&mid.y>box.min.y+d.y*.60;
+  const posteriorOrTemple=mid.z<=c.z+d.z*.015||temple;
+  const minHeight=posterior?rearMinHeight:temple?box.min.y+d.y*.60:templeMinHeight;
   if(mid.y<minHeight||
-   Math.abs(mid.x-c.x)>d.x*(highCrown?.35:(posterior?.35:.30))||
-   Math.abs(mid.z-c.z)>d.z*(highCrown?.36:.32)||
+   lateral>(includeTemples?.49:highCrown?.35:(posterior?.35:.30))||
+   Math.abs(mid.z-c.z)>d.z*(includeTemples?.43:highCrown?.36:.32)||
    (!highCrown&&!posteriorOrTemple))continue;
   // Every underlay vertex must remain above the local anatomical hairline.
   if(points.some(p=>p.y<minHeight-d.y*.035))continue;
@@ -550,7 +555,13 @@ export function buzzHairlineFractionAtPoint(v,box,size=null,center=null){
    const t=THREE.MathUtils.clamp((angle-a)/(b-a),0,1);
    boundary=THREE.MathUtils.lerp(y,z,t*t*(3-2*t));break;
   }
- return THREE.MathUtils.clamp(boundary,.495,.91);
+ // Both hairstyles use this one bilateral contour. Lowering the temple
+ // equally on both sides removes the bare-looking seam on profile turns.
+ const lateral=Math.abs(v.x-c.x)/Math.max(d.x,1e-6);
+ const backToEar=1-THREE.MathUtils.smoothstep(angle,.06,.63);
+ const temple=THREE.MathUtils.smoothstep(lateral,.19,.31)*
+  (1-THREE.MathUtils.smoothstep(lateral,.46,.54));
+ return THREE.MathUtils.clamp(boundary-.040*temple*backToEar,.48,.91);
 }
 
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural',battleStableCoverage=false,styleId=null}={}){
@@ -588,7 +599,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
    if(shortHair||styleId==='sadako-straight-long')
-    return buzzHairlineFractionAtPoint(v,box,d,center);
+    return Math.max(.465,buzzHairlineFractionAtPoint(v,box,d,center)-.021);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
@@ -691,9 +702,11 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // It fills isolated missing donor triangles visible as white crown wedges.
  // The two shells have different depth offsets, so they do not z-fight.
  const sourceDonorVertexCount=verts.length/3;
- const crownUnderlay=shortHair?
-  {triangles:0,source:'disabled-for-short-hair'}:
-  appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile);
+ // Real source triangles, inset below the primary colored scalp. This
+ // closes asymmetric viewing gaps, but never duplicates a floating cap.
+ const crownUnderlay=appendRealCrownUnderlay(
+  geo,box,verts,smoothNormals,volumeProfile,
+  {includeTemples:shortHair||styleId==='sadako-straight-long'});
  // Exclude rear decorative underlocks from follicle sampling. Only the
  // real source-donor scalp (plus compact repairs) may spawn new roots.
  const donorScalpVertexCount=sourceDonorVertexCount;
@@ -786,14 +799,19 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    smoothNormals.push(0,0,-1);
   }
  }
- const material=new THREE.MeshPhysicalMaterial({
+ // Short-pigment undercoat matches unlit 30k micro-fibres; angled PBR
+ // highlights on the old scalp previously resembled beige bald patches.
+ // Long locks retain their physically shaded foundation.
+ const material=shortHair?new THREE.MeshBasicMaterial({
+  color:new THREE.Color(color),vertexColors:true,side:THREE.DoubleSide,
+  toneMapped:true,depthTest:true,depthWrite:true,
+  polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1
+ }):new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color),vertexColors:true,
   roughness:.95,metalness:0,clearcoat:0,clearcoatRoughness:1,
   sheen:.01,sheenRoughness:1,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
-  transparent:false,opacity:1,depthWrite:true,
-  polygonOffset:shortHair,polygonOffsetFactor:shortHair?-2:0,
-  polygonOffsetUnits:shortHair?-2:0
+  transparent:false,opacity:1,depthWrite:true
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
@@ -809,7 +827,11 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
- if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
+ if(shortHair){
+  mesh.renderOrder=-1;mesh.castShadow=false;
+  mesh.userData.shortHairDepthPriority=false;
+  mesh.userData.buzzPigmentBelowFibres=true;
+ }
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.donorScalpVertexCount=donorScalpVertexCount;
  mesh.userData.unifiedBuzzContour=shortHair||styleId==='sadako-straight-long';
@@ -818,6 +840,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
  mesh.userData.v65CrownTopologyRepairTriangles=crownRepair.triangles;
  mesh.userData.v66RealCrownUnderlayTriangles=crownUnderlay.triangles;
+ mesh.userData.v61BilateralTempleUnderlay=shortHair||styleId==='sadako-straight-long';
+ mesh.userData.v61ScalpAndFibrePigmentAligned=shortHair;
  mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
@@ -1788,7 +1812,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // crown cards narrow prevents the interlocking square tiles visible
    // in the previous overhead screenshots.
    const rootProfile=sadakoMaster?
-    (.82+.18*THREE.MathUtils.smoothstep(t,0,.16)):
+    (.43+.57*THREE.MathUtils.smoothstep(t,0,.24)):
     (strand.fringe?.48:.28)+
     (strand.fringe?.52:.72)*THREE.MathUtils.smoothstep(t,0,.30);
    const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
@@ -2317,6 +2341,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoRearOriginBasedClearance:sadakoMaster,
   sadakoSkinnedMantleCollision:!!garmentCollisionResolver,
   sadakoCrownUnderlaySource:cap.userData.v66RealCrownUnderlayTriangles>0?'actual-donor-scalp':'unavailable',
+  bilateralTempleScalpCoverage:!!cap.userData.v61BilateralTempleUnderlay,
+  buzzScalpPigmentBelowFibres:!!cap.userData.buzzPigmentBelowFibres,
+  v61SeamBlend:'donor-bilateral-temple-pigment-and-gradual-crown-ribbon-root',
   sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
   sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
