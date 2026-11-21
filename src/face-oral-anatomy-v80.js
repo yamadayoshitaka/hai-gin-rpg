@@ -33,6 +33,17 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
  const midlineMat=new THREE.MeshStandardMaterial({
   color:0x8d4d56,roughness:.79
  });
+ // A recessed three-dimensional oral vestibule visible only through the
+ // actual head-mesh aperture. It is not a black panel over the face.
+ const throatMat=new THREE.MeshStandardMaterial({
+  color:0x432a30,roughness:.91,metalness:0,side:THREE.FrontSide
+ });
+ const throat=new THREE.Mesh(new THREE.SphereGeometry(1,36,20),throatMat);
+ throat.name='V82_RECESSED_ORAL_VESTIBULE';
+ throat.scale.set(width*.51,height*.049,depth*.085);
+ throat.position.set(0,-height*.005,-depth*.066);
+ throat.userData.v82BehindHeadAperture=true;
+ root.add(throat);
  const crownGeometry=new THREE.SphereGeometry(1,14,10);
  const gumGeometry=new THREE.SphereGeometry(1,22,12);
  const upper=new THREE.Group(),lower=new THREE.Group();
@@ -112,6 +123,7 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
   const teethVisible=open>.16;
   upper.visible=teethVisible;lower.visible=teethVisible;
   tongue.visible=open>.31;
+  throat.visible=open>.08;
   // Lateral molars are inside the cheek, not visible through the lips.
   for(const row of arches)for(const tooth of row){
    const axial=Math.abs(tooth.userData.archParameter);
@@ -135,6 +147,6 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
    upperTeeth:12,lowerTeeth:12,tongueMeshCount:2,gingivae:2,
    mandibleFollowsJaw:true,geometryIndependentOfLipMakeup:true,
    v81ShortBluntCrowns:true,v81RecessedDentalArcade:true,
-   v81FlattenedTongue:true
+   v81FlattenedTongue:true,v82CavityBehindFace:true
   })};
 }

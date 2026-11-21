@@ -8,7 +8,8 @@
 import * as THREE from 'three';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
-import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=81-natural-dental';
+import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=82-integrated-cavity';
+import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from './face-anatomy-rig-v80.js?v=80';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
@@ -180,6 +181,7 @@ function buildMouth(face,parts,headSize){
  const b=geou.boundingBox;
  const mid=new THREE.Vector3().addVectors(b.min,b.max).multiplyScalar(.5);
  const lipPos=geou.getAttribute('position'), n=Math.floor(lipPos.count/2);
+ const integrated=!!face.userData.v82IntegratedMouth?.integrated;
  const frontZ=Math.max(mid.z,lipPos.getZ(n))+headSize.z*.003;
  const material=new THREE.MeshStandardMaterial({
   color:0x43272d,roughness:.94,metalness:0,
@@ -189,25 +191,43 @@ function buildMouth(face,parts,headSize){
  cavity.name='V48_3D_INNER_MOUTH';
  cavity.position.set(mid.x,face.userData.actualMouthCreaseY??mid.y,frontZ);
  cavity.renderOrder=6;cavity.visible=false;
+ // A legacy handle for existing editor probes; the black foreground
+ // ball is NEVER drawn when the head owns a genuine oral aperture.
+ cavity.material.visible=!integrated;
+ cavity.userData.v82DisabledForegroundOralCover=integrated;
  cavity.frustumCulled=false;
  face.add(cavity);
  const oral=createFaceOralAnatomy(face,{
   x:mid.x,y:face.userData.actualMouthCreaseY??mid.y,
-  z:frontZ-headSize.z*.002,
+  z:integrated?(face.userData.v82IntegratedMouth.surfaceZ-headSize.z*.022):
+   frontZ-headSize.z*.002,
   width:Math.max(.0001,b.max.x-b.min.x),
   height:headSize.y,depth:headSize.z
  });
- oral.root.traverse(o=>{
-  if(!o.isMesh)return;
-  o.material.depthWrite=false;o.material.depthTest=false;
-  // Interior/gingiva behind crowns, with tongue below the dental edge.
-  o.renderOrder=/(?:TOOTH|TONGUE)/.test(o.name)?8:7;
- });
- for(const lip of [upper,lower]){
-  lip.material.depthTest=false;lip.material.depthWrite=false;
-  lip.renderOrder=9;
+ if(integrated){
+  // Proper depth-buffer occlusion through the real mouth opening.
+  // Teeth, tongue and palate can never paint over the cheeks.
+  oral.root.traverse(o=>{
+   if(!o.isMesh)return;
+   o.material.depthTest=true;
+   o.material.depthWrite=true;
+   o.renderOrder=0;
+  });
+  upper.visible=false;lower.visible=false;
+ }else{
+  // Compatibility fallback for exceptionally low-density donor meshes.
+  oral.root.traverse(o=>{
+   if(!o.isMesh)return;
+   o.material.depthWrite=false;o.material.depthTest=false;
+   o.renderOrder=/(?:TOOTH|TONGUE)/.test(o.name)?8:7;
+  });
+  for(const lip of [upper,lower]){
+   lip.material.depthTest=false;lip.material.depthWrite=false;
+   lip.renderOrder=9;
+  }
  }
- return {upper,lower,cavity,oral,restU:upper.position.y,restL:lower.position.y,
+ return {upper,lower,cavity,oral,integrated,
+  restU:upper.position.y,restL:lower.position.y,
   height:headSize.y,width:Math.max(.0001,b.max.x-b.min.x)};
 }
 /** Smooth low-frequency facial muscle fields: real cheek, nasal ala,
@@ -358,6 +378,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   // geometry, eliminating cumulative drift after repeated face changes.
   if(neutralPose)facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
+  if(mouth?.integrated)face.userData.v82IntegratedMouth.lastPoseKey=null;
   const normals=face.geometry.getAttribute('normal');
   if(neutralPose&&normals&&sculptNormalRest&&
      normals.array.length===sculptNormalRest.length){
@@ -409,7 +430,15 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   const delta=mouth.height*.053*mouthOpen;
   mouth.upper.position.y=mouth.restU+delta*.14;
   mouth.lower.position.y=mouth.restL-delta*.69;
-  poseLips(frame,delta);
+  if(mouth.integrated){
+   // These vertices are owned by the HEAD geometry; no mouth silhouette
+   // is drawn above the face and the same vertices carry lipstick.
+   const updated=poseIntegratedMouth(face,{
+    open:mouthOpen,smile:Number(frame.smile)||Number(frame.au12)||0,
+    cheek:Number(frame.cheek)||Number(frame.au06)||0
+   });
+   if(updated)smoothStudioFaceNormals(face.geometry,{weldTolerance:.00007});
+  }else poseLips(frame,delta);
   mouth.cavity.visible=mouthOpen>.025;
   const grin=clamp(Number(frame.smile)||Number(frame.au12)||0);
   mouth.cavity.position.y=(face.userData.actualMouthCreaseY??mouth.cavity.position.y)-
@@ -513,6 +542,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v81AnatomicalSmileEyeCoupling:true,
    v81LipstickFollowsVermilion:true,
    v81MouthCornersLiftAndSpread:true,
+   v82SingleHeadMouthTopology:!!face.userData.v82IntegratedMouth?.integrated,
+   v82NoForegroundMouthCover:!!mouth?.integrated,
+   v82LipPigmentDeformsWithFace:!!mouth?.integrated,
    v80TransitionProgress:transition?Number(smooth(
     transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,
