@@ -44,6 +44,7 @@ on:
       - 'src/mass-battle-grid-sim.js'
       - 'src/combat-action-runtime.js'
       - 'qa/realtime-deployment-mobile-performance.test.mjs'
+      - 'qa/mobile-prebattle-training-layout.test.mjs'
       - 'qa/battle-capture-objective.test.mjs'
       - 'qa/battle-map-inspection.test.mjs'
       - 'src/battle-map-inspection.js'
@@ -78,6 +79,8 @@ jobs:
         run: |
           node --check src/mass-battle-grid-sim.js
           node --test qa/battle-contact-and-recovery-regression.test.mjs qa/battle-radar-engagement-regression.test.mjs
+      - name: Verify small-screen opening strategy taps and training animation layout
+        run: node --test qa/mobile-prebattle-training-layout.test.mjs
       - name: Verify stage identity, one deployment and captain/species portraits
         run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
       - name: Verify formation-only inn and three-team stage handoff

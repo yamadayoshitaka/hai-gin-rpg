@@ -165,7 +165,12 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
      button('data-inn-wizard-roster-formation-page="1" '+(currentPage===maxPage?'disabled':''),'▶')+
      '</div>':'')+
     (preview?
-     '<div class="trainingFormationDemo"><b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+
+     '<div class="trainingFormationDemo" aria-label="選択した陣形の動作と補充見積り">'+
+      '<b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+
+      '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
+       renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
+      '</div>'+
+      '<small class="trainingFormationPurpose">'+esc(plan?.summary||purpose(previewId).movement)+'</small>'+
       '<small class="trainingFormationRequirements">'+
        (previewEntry.eligible?'✓ 出撃条件達成':
          '不足：'+(Math.max(0,(previewEntry.requirements?.people||0)-previewEntry.total)?'あと'+
@@ -180,9 +185,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
         (purchase?.possible?' ／ 支払後 '+(stock.wallet-(purchase.cost||0))+'G':' ／ '+esc(purchase?.reason||'編成不可'))+'</small>'+
        button('data-training-auto-formation="'+esc(previewId)+'" '+(!purchase?.possible?'disabled':''),
         purchase?.possible?'✓ '+(purchase.hireCount?'在庫＋雇用で配置する':'在庫兵だけで配置する')+'（'+purchase.cost+'G）':'条件不足：雇用・配置できません')+
-      '</div>'+
-      renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
-      '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small></div>':'')+
+      '</div></div>':'')+
    '</div>';
   back='teamPick';next='equipment';
  }else if(view==='rosterPick'){
