@@ -34,7 +34,7 @@ export function createRealtimeBattleCommands({
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
- getObjectiveCheckpoints=()=>[],onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
+ getObjectiveCheckpoints=()=>[],getVictoryObjective=()=>null,onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
  onRally=()=>false,getFormationOptions=()=>[],onFormationChange=()=>false,onMapOverview=()=>false
 }={}){
@@ -235,7 +235,12 @@ export function createRealtimeBattleCommands({
   const completed=checkpoints.filter(p=>p.status==='達成'||p.status==='地点到着').length;
   const initialSummary=[...initialTeamPlans].map(([group,strategy])=>
    '第'+group+'隊 '+({assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索'}[strategy]||strategy)).join('／');
-  const message='⚑ '+String(battleTypeLabel)+'｜'+(!last?(initialSummary?'勝利条件：'+String(victoryCondition)+'｜初期作戦：'+initialSummary:'勝利条件：'+String(victoryCondition)):
+  const goal=getVictoryObjective();
+  const captureMessage=goal?.kind==='capture'?
+   '🏁 陣地制圧｜敵本陣 X'+goal.x+' / Z'+goal.z+
+   '｜制圧 '+goal.progress+'%（'+goal.holdSeconds+'秒確保）'+
+   '｜範囲内：味方'+goal.allies+'人・敵'+goal.enemies+'人':null;
+  const message=captureMessage||'⚑ '+String(battleTypeLabel)+'｜'+(!last?(initialSummary?'勝利条件：'+String(victoryCondition)+'｜初期作戦：'+initialSummary:'勝利条件：'+String(victoryCondition)):
    (last.status==='達成'||last.status==='地点到着'?'✅ 目的達成：':
     last.status==='失敗'?'⚠ 作戦失敗：':'🎯 進行中：')+
     '第'+String(last.groupId||1)+'班 '+String(last.label||'目標')+
@@ -382,6 +387,14 @@ export function createRealtimeBattleCommands({
   }
   ctx.strokeStyle='rgba(232,239,229,.38)';ctx.lineWidth=1.4;
   ctx.strokeRect?.(.8,.8,w-1.6,h-1.6);
+  const victory=getVictoryObjective();
+  if(victory?.kind==='capture'){
+   const gx=victory.x/worldSize*w,gy=victory.z/worldSize*h;
+   ctx.strokeStyle='#ffe68c';ctx.lineWidth=3;
+   ctx.beginPath();ctx.arc(gx,gy,Math.max(6,victory.radius/worldSize*w),0,Math.PI*2);ctx.stroke();
+   ctx.fillStyle='#ffe68c';ctx.font='bold 22px system-ui';
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚑',gx,gy-9);
+  }
   for(const pin of radarPins){
    const focusedGroup=typeof getRadarGroup==='function'?Number(getRadarGroup(selectedId)):null;
    const x=pin.x*w,y=pin.y*h,focus=pin.team===0&&
@@ -449,6 +462,16 @@ export function createRealtimeBattleCommands({
    ctx.fillStyle='rgba(203,58,74,.16)';ctx.fillRect(w*.50,0,w*.50,h);
    ctx.strokeStyle='rgba(223,246,255,.42)';ctx.lineWidth=2;
    ctx.beginPath();ctx.moveTo(w*.50,0);ctx.lineTo(w*.50,h);ctx.stroke();
+  }
+  const goal=getVictoryObjective();
+  if(goal?.kind==='capture'){
+   const gx=(goal.x-minX)/span*w,gz=(goal.z-minZ)/span*h;
+   if(gx>=0&&gx<=w&&gz>=0&&gz<=h){
+    ctx.strokeStyle='#ffe68c';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(gx,gz,Math.max(8,goal.radius/span*w),0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#ffe68c';ctx.font='bold 22px system-ui';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚑',gx,gz-12);
+   }
   }
   const allies=squads(),enemies=mode==='deploy'?(getRadarEnemies?.()||[]):getEnemies();
   const markers=visibleBattleSquadPins(allies,enemies,'live');
