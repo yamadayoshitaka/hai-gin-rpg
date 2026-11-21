@@ -915,7 +915,8 @@ const motionByAction=Object.freeze({
 });
 
 export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel=null,onStatus=()=>{},
- jobId='knight',outfitId='job',actionId='idle',gender='female'}={}){
+ jobId='knight',outfitId='job',actionId='idle',gender='female',
+ onBeforeNeckRefit=null,onAfterNeckRefit=null}={}){
  if(!['female','male'].includes(gender))throw Error('Unknown studio gender');
  if(!scene?.add||!faceModel?.root||!faceModel.face)
   throw Error('Real scene and independent face are required');
@@ -925,6 +926,14 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
  let nativeCommand=null,nativeClip=null,bodyShapeId='average',ageBandId='twenties',bodyTypeId='normal';
  let hiddenBody=false,outfitShown=true,disposed=false,request=0,headReport=null,headFit=null,proportions=null,finishReport=null;
  let collarFitDirty=false;
+ // Outfit animation and demographic changes refit the REAL face neck.
+ // The previous full-body scalp mask is a disposable VIEW of that face:
+ // restore the source before welding, reapply after the final skin seam.
+ const withOriginalNeckSkin=fn=>{
+  onBeforeNeckRefit?.(face);
+  try{return fn();}
+  finally{onAfterNeckRefit?.(face);}
+ };
  const chosenOutfit=()=>currentOutfit==='job'?
   realBattleJob(currentJob):realBattleJob(currentOutfit);
  async function install(){
@@ -1058,12 +1067,16 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
     headDepth*HEROINE_STUDIO_HEAD_FORWARD/sz
   );
   // Bare torso dictates both anatomical cuts. Clothes are fitted last.
-  const headAlignment=alignStudioHeadToSkinnedTorso({
-   faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model});
-  const neckContinuity=fitStudioNeckContinuity({
-   faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model,
-   garmentRoot:outfit?.root});
-  const neckClearance=fitStudioCuirassBelowChin({faceMesh:face,wardrobeRoot:outfit?.root});
+  const {headAlignment,neckContinuity,neckClearance}=withOriginalNeckSkin(()=>{
+   const headAlignment=alignStudioHeadToSkinnedTorso({
+    faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model});
+   const neckContinuity=fitStudioNeckContinuity({
+    faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model,
+    garmentRoot:outfit?.root});
+   const neckClearance=fitStudioCuirassBelowChin({
+    faceMesh:face,wardrobeRoot:outfit?.root});
+   return {headAlignment,neckContinuity,neckClearance};
+  });
   collarFitDirty=true;
   proportions={...proportions,headAlignment,neckContinuity,neckClearance,bodyShape:bodyShapeId,
    ageBand:ageBandId,bodyType:bodyTypeId,
@@ -1111,14 +1124,17 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
   if(collarFitDirty&&outfit){
    // First animation frame can move the spine from its bind pose.
    // Refit once after skeletal matrices settle, never on every render frame.
-   const headAlignment=alignStudioHeadToSkinnedTorso({
-    faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model});
-   const neckContinuity=fitStudioNeckContinuity({
-    faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model,
-    garmentRoot:outfit.root});
-   proportions={...proportions,headAlignment,neckContinuity,
-    neckClearance:fitStudioCuirassBelowChin({
-     faceMesh:face,wardrobeRoot:outfit.root})};
+   const fitting=withOriginalNeckSkin(()=>{
+    const headAlignment=alignStudioHeadToSkinnedTorso({
+     faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model});
+    const neckContinuity=fitStudioNeckContinuity({
+     faceRoot:headRoot,faceMesh:face,wardrobeRoot:actor.model,
+     garmentRoot:outfit.root});
+    return {headAlignment,neckContinuity,
+     neckClearance:fitStudioCuirassBelowChin({
+      faceMesh:face,wardrobeRoot:outfit.root})};
+   });
+   proportions={...proportions,...fitting};
    collarFitDirty=false;
   }
   vfx?.update(dt);
