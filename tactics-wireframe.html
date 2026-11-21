@@ -7502,10 +7502,25 @@ function issueSquadOrder(mode,point=null){
  if(!canChangeSquadOrder(id))return false;
  const targets=commandGroupIds(id);
  const speaker=targets.find(sid=>!individualCommanderUnavailableReason(sid))||String(id);
+ // During movement, preserve the same 4x4 slot offsets chosen at the inn.
+ // Each physical job division has its own nearby destination instead of
+ // collapsing onto one point and destroying the army's formation spacing.
+ const cells=targets.map((sid,index)=>{
+  const raw=Number(storyRequest?.subdivisionMap?.[sid]?.formationCell);
+  return Number.isInteger(raw)&&raw>=0&&raw<16?raw:4+index;
+ });
+ const centerRow=cells.reduce((n,c)=>n+Math.floor(c/4),0)/Math.max(1,cells.length);
+ const centerCol=cells.reduce((n,c)=>n+c%4,0)/Math.max(1,cells.length);
  let accepted=false;
- for(const sid of targets){
+ for(const [index,sid] of targets.entries()){
   selectedSquadId=String(sid);
-  accepted=issueIndividualSquadOrder(mode,point,String(sid)!==String(speaker))||accepted;
+  let formationPoint=point;
+  if(THREE_TEAM_BATTLE&&mode==='move'&&point&&targets.length>1){
+   const candidate={x:Math.round(point.x-(Math.floor(cells[index]/4)-centerRow)*4),
+    z:Math.round(point.z+(cells[index]%4-centerCol)*4)};
+   if(traversableCell(candidate.x,candidate.z))formationPoint=candidate;
+  }
+  accepted=issueIndividualSquadOrder(mode,formationPoint,String(sid)!==String(speaker))||accepted;
  }
  selectedSquadId=String(id);refreshSquadOrderLabel();
  return accepted;
