@@ -239,6 +239,7 @@ export const WIG_STYLES=deepFreeze({
 // establish distinct back silhouettes without inflating the crown.
 export const WIG_SILHOUETTE_PROFILES=deepFreeze({
  'center-part-gravity-long':{fringeDrop:.052,rearWidth:.58,rearCutShift:-.018,sideFlare:.006,rearDepth:.016},
+ 'sadako-straight-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
  'salon-layered-long':{fringeDrop:.073,rearWidth:.68,rearCutShift:.025,sideFlare:.013,rearDepth:.034},
  'princess-long':{fringeDrop:.086,rearWidth:.56,rearCutShift:-.030,sideFlare:.006,rearDepth:.014},
  'curtain-bangs-long':{fringeDrop:.058,rearWidth:.76,rearCutShift:.010,sideFlare:.016,rearDepth:.025},
