@@ -43,6 +43,9 @@ import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  createRegalLimbGeometry,createRegalFootGeometry}
  from './monster-regal-garments.js?v=4.5.19';
 
+import {addGargoyleMonsterAnatomy,createGargoyleStoneTexture,
+ createGargoylePbrMaterial,GARGOYLE_SPECIES_REVISION}
+ from './monster-gargoyle-sculpt.js?v=m042-species-redesign-v1-20261121';
 import {createMineralLimbArticulator}
  from './monster-mineral-limb-articulator.js?v=bone-to-bone-20261121';
 import {applyHumanlikeConceptFinish}
@@ -192,8 +195,17 @@ function buildMonsterCostume(THREE,model,profile,detail){
   dragonEye:0xe4b564
  };
  const materials=new Map();
+ let gargoyleTexture=null;
  const mat=(role)=>{
   if(!materials.has(role)){
+   if(profile.id==='m042'&&role.startsWith('gargoyle')){
+    if(!gargoyleTexture){
+     gargoyleTexture=createGargoyleStoneTexture({size:detail==='low'?64:128});
+     ownedTextures.push(gargoyleTexture);
+    }
+    const m=createGargoylePbrMaterial(role,gargoyleTexture);
+    ownedMats.push(m);materials.set(role,m);return m;
+   }
    if(fullBody&&role.startsWith('construct')){
     // Mineral PBR is local, vivid and photograph-free. A donor's dark
     // velvet diffuse atlas must never turn purple crystal into black cloth.
@@ -372,10 +384,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(gothic&&!fullBody)addGothicMonsterSculpt({
    THREE,profile,detail,frames,attach,tube,torus
  });
- if(fullBody)addConstructMonsterCostume({
+ if(profile.id==='m042')addGargoyleMonsterAnatomy({
+   profile,detail,frames,attach,tube
+ });
+ else if(fullBody)addConstructMonsterCostume({
    THREE,profile,detail,frames,attach,tube
  });
- if(demonic&&(!fullBody||profile.id==='m042'))addDemonicFaceCosmetics({
+ if(demonic&&!fullBody)addDemonicFaceCosmetics({
    THREE,profile,detail,frames,attach,tube,
    wingTailOnly:fullBody
  });
@@ -577,7 +592,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   bands(frames.chest,'rune-hem',-.38,-.21,.23,.17,1.9,'accent');
  }
  const conceptFinish=fullBody?Object.freeze({id:profile.id,
-  revision:CONSTRUCT_FULL_SHELL_REVISION,
+  revision:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
+   CONSTRUCT_FULL_SHELL_REVISION,
   skeletonAnchored:true,visualApproved:false}):
   applyHumanlikeConceptFinish({THREE,profile,detail,frames,attach,tube});
  if(fullBody)model.userData.mineralArticulator=createMineralLimbArticulator({
@@ -588,7 +604,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
   humanConceptFinish:conceptFinish,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
-  constructSculptEdition:fullBody?CONSTRUCT_FULL_SHELL_REVISION:null,
+  constructSculptEdition:fullBody?(profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
+    CONSTRUCT_FULL_SHELL_REVISION):null,
+  gargoyleSculptEdition:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:null,
+  gargoyleWings:profile.id==='m042'?frames.chest.userData.gargoyleWingCount??0:0,
+  gargoyleTalons:profile.id==='m042'?frames.chest.userData.gargoyleClawCount??0:0,
+  gargoyleStoneTexture:profile.id==='m042'?!!gargoyleTexture:false,
   armourSourceHumanFaceHidden:fullBody&&concealedDonorMeshes.length>0,
   noHumanoidUnderwear:fullBody,
   anatomicalLimbFitting:fullBody?model.userData.mineralArticulator.revision:null,
@@ -600,7 +621,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinColor:profile.skin,skinMaterialIsolation:true,
   noBeard:profile.noBeard===true,beardSourceMeshesSuppressed:suppressedFacialHair,
   skinTone:profile.skinTone??null,
-  demonCosmeticsEdition:demonic?'horns-makeup-runes-v1':null,
+  demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
     profile.costume==='dragonkin_female'?
