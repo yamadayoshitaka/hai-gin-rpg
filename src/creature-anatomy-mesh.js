@@ -13,31 +13,50 @@ const blend=(a,b,t)=>a+(b-a)*t;
  * The root is intentionally embedded inside its parent skull.
  */
 export function createRootedCreatureHornGeometry({
-  root,elbow,tip,radius=.12,detail='high',ridges=9,capRoot=false
+  root,elbow,tip,radius=.12,detail='high',ridges=9,capRoot=false,
+  heroKeratin=false
 }={}){
  if(![root,elbow,tip].every(v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite))||
     !Number.isFinite(radius)||radius<=0)throw Error('Invalid anatomical horn');
  const curve=new THREE.QuadraticBezierCurve3(V(root),V(elbow),V(tip));
- const segments=detail==='high'?10:6,around=detail==='high'?8:5;
+ // Giant beetle forehead horns occupy a large screen area. The generic
+ // 10x8 rings create visible faceting and a striped, wooden appearance.
+ // Use a much smoother profile ONLY when explicitly requested.
+ const segments=heroKeratin?(detail==='high'?32:14):(detail==='high'?10:6);
+ const around=heroKeratin?(detail==='high'?24:12):(detail==='high'?8:5);
+ const frames=heroKeratin?curve.computeFrenetFrames(segments,false):null;
  const points=[],uv=[],indices=[];
  for(let row=0;row<=segments;row++){
    const t=row/segments,center=curve.getPoint(t);
-   const tangent=curve.getTangent(t).normalize();
-   const guide=Math.abs(tangent.y)>.88?
+   // The old frame switched suddenly from Y-up to X-up at tangent.y=.88.
+   // That made the huge m022 horn visibly twist/corrugate between rings.
+   // Stable parallel-transport frames avoid that discontinuity.
+   const tangent=heroKeratin?frames.tangents[row]:curve.getTangent(t).normalize();
+   const guide=heroKeratin?null:Math.abs(tangent.y)>.88?
      new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
-   const x=guide.addScaledVector(tangent,-guide.dot(tangent)).normalize();
-   const z=new THREE.Vector3().crossVectors(tangent,x).normalize();
+   const x=heroKeratin?frames.normals[row]:
+     guide.addScaledVector(tangent,-guide.dot(tangent)).normalize();
+   const z=heroKeratin?frames.binormals[row]:
+     new THREE.Vector3().crossVectors(tangent,x).normalize();
    // The root stays broad inside the bone; the tip ends in a fine point.
-   const basal=radius*Math.pow(Math.max(0,1-t),.85)*
-       (1+.20*Math.sin(Math.PI*Math.min(1,t*3)));
+   const basal=heroKeratin?
+       radius*Math.pow(Math.max(0,1-t),.78)*
+         (1+.09*Math.sin(Math.PI*Math.min(1,t*1.5))):
+       radius*Math.pow(Math.max(0,1-t),.85)*
+         (1+.20*Math.sin(Math.PI*Math.min(1,t*3)));
    for(let col=0;col<=around;col++){
      const u=col/around,angle=u*Math.PI*2;
-     const grain=1+.045*Math.sin(angle*ridges+t*11)*
-       Math.sin(Math.PI*Math.min(1,t*4));
+     const grain=heroKeratin?
+       1+.009*Math.sin(angle*3+t*2.1)*Math.sin(Math.PI*t):
+       1+.045*Math.sin(angle*ridges+t*11)*
+         Math.sin(Math.PI*Math.min(1,t*4));
      const r=Math.max(.0008,basal*grain);
      const p=center.clone().addScaledVector(x,Math.cos(angle)*r)
        .addScaledVector(z,Math.sin(angle)*r);
-     points.push(p.x,p.y,p.z);uv.push(u,t);
+     points.push(p.x,p.y,p.z);
+     // A large horn maps fewer micro-detail repeats along its length
+     // than a tiny claw; this prevents visible horizontal banding.
+     uv.push(u,heroKeratin?t*.43:t);
    }
  }
  for(let row=0;row<segments;row++)for(let col=0;col<around;col++){
@@ -54,7 +73,10 @@ export function createRootedCreatureHornGeometry({
  geo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geo.setIndex(indices);geo.computeVertexNormals();
- geo.userData={kind:'curved-keratin-horn',root,tip};
+ geo.userData={kind:'curved-keratin-horn',root,tip,
+  ...(heroKeratin?{heroKeratin:true,radialSegments:around,
+    axialSegments:segments,parallelTransport:true}:{}),
+ };
  return geo;
 }
 
