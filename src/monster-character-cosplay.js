@@ -22,6 +22,8 @@ import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js?v=4.5.11';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
+import {decorateAll50MonsterSurface}
+ from './monster-all50-surface.js?v=all50-species-materials-v1-20261121';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
  from './monster-cosplay-pigmentation.js?v=4.5.21';
 import {addConstructMonsterCostume,isConstructCostume,
@@ -261,7 +263,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
     });
     m.userData={golemMaterial:true,photographicHumanAlbedo:false,
      species:profile.id,role};
-    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
+    decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
+   enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
    }
    const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
@@ -319,6 +322,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
      m.userData.forestVisibleGreen=true;
      m.userData.forestColorRole=role;
    }
+   decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
    materials.set(role,m);ownedMats.push(m);
   }
