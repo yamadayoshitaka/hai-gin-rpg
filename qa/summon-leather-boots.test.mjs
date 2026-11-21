@@ -49,3 +49,29 @@ test('non-boot materials cannot be overwritten; low LOD never loads remote maps'
  detachSummonFootwearPBR(boot);
  skin.dispose();boot.dispose();
 });
+
+test('Seraph alone uses charcoal matte leather instead of chocolate photo diffuse',()=>{
+ const angel=new THREE.MeshStandardMaterial({color:0xc0b9a1});
+ angel.userData.seraphFootwear=true;
+ const other=new THREE.MeshStandardMaterial({color:0xc0b9a1});
+ assert.equal(applySummonFootwearPBR(angel,{
+  role:'summonBootLeather',detail:'low'}),true);
+ assert.equal(applySummonFootwearPBR(other,{
+  role:'summonBootLeather',detail:'low'}),true);
+ assert.equal(angel.map,null,'brown furniture diffuse must not color angel boots');
+ assert.equal(angel.color.getHex(),0x554b4a);
+ assert.equal(angel.roughness,.87);
+ assert.equal(angel.metalness,0);
+ assert.ok(angel.normalMap?.isTexture);
+ assert.ok(angel.roughnessMap?.isTexture);
+ assert.equal(angel.userData.seraphMatteLeather,true);
+ assert.notEqual(other.color.getHex(),angel.color.getHex(),
+  'other summon footwear retains its original approved leather colors');
+ assert.equal(other.userData.seraphMatteLeather,undefined);
+ const runtime=readFileSync(new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
+ assert.match(runtime,/profile\.costume==='seraph_female'&&role==='summonBootLeather'/);
+ assert.match(runtime,/m\.userData\.seraphFootwear=true/);
+ detachSummonFootwearPBR(angel);
+ detachSummonFootwearPBR(other);
+ angel.dispose();other.dispose();
+});

@@ -13,7 +13,7 @@ import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
  from './summon-humanoid-pbr.js?v=summons-pbr-v1-20261121';
 import {applySummonFootwearPBR,detachSummonFootwearPBR,
  SUMMON_FOOTWEAR_PBR_REVISION}
- from './summon-footwear-pbr.js?v=summon-leather-v2-20261122';
+ from './summon-footwear-pbr.js?v=seraph-matte-leather-v4-20261122';
 import {applySeraphTailoredMaterial,isSeraphTailoredRole,
  SERAPH_TAILORED_MATERIAL_REVISION}
  from './seraph-celestial-materials.js?v=pearl-silk-v3-20261122';
@@ -365,6 +365,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
    // only for angel wings, leaving most summon costume parts flat.
    applySummonHumanoidPBR(m,{id:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
+   if(profile.costume==='seraph_female'&&role==='summonBootLeather')
+    m.userData.seraphFootwear=true;
    applySummonFootwearPBR(m,{role,detail});
    materials.set(role,m);ownedMats.push(m);
   }
