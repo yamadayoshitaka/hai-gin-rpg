@@ -1,3 +1,4 @@
+import {sealOriginalOralAperture} from '../src/face-mouth-seal-v86.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -237,4 +238,71 @@ test('V85 public CC0 face preserves original mouth geometry and neutralises laug
   if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());
   else o.material?.dispose();
  });
+});
+
+
+test('V86: real CC0 donor native 38-vertex lip fissure is safely sealed, no black hole',()=>{
+ const {geo}=sourceGeometry();
+ const face=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+ const originalIndices=Array.from(geo.getIndex().array);
+ const originalPositions=Array.from(geo.getAttribute('position').array);
+ const originalMorphCounts=geo.morphAttributes.position.map(p=>p.count);
+ const r=sealOriginalOralAperture(face);
+ assert.equal(r.sealed,true,
+  'The real GLB has an existing lip opening; it must be capped: '+JSON.stringify(r));
+ assert.ok(r.ringVertexCount>=32&&r.ringVertexCount<=48,
+  'Only the small front lip ring must be selected');
+ assert.ok(r.addedTriangles>=60&&r.addedTriangles<130,
+  'Both native lip slit and wider oral opening need surface triangles: '+JSON.stringify(r));
+ assert.ok(r.outerPatchTriangles>=30,
+  'Large lip boundary must be closed too, not just the tiny inner slit');
+ assert.equal(r.addedVertices,0,'Never replace head/eye/morph vertices');
+ assert.deepEqual(Array.from(geo.getAttribute('position').array),originalPositions,
+  'The original skin positions must be preserved');
+ assert.deepEqual(geo.morphAttributes.position.map(p=>p.count),originalMorphCounts);
+ assert.equal(geo.getIndex().count,originalIndices.length+3*r.addedTriangles);
+ assert.deepEqual(Array.from(geo.getIndex().array).slice(0,originalIndices.length),
+  originalIndices,'No original face triangles may be deleted');
+ assert.equal(geo.groups.length,0,'One skin material must render the new seal');
+ assert.ok(geo.getAttribute('normal').array.every(Number.isFinite));
+ assert.equal(face.userData.v86SourceMouthHoleClosed,true);
+ assert.equal(face.userData.v86NoForegroundOralOverlay,true);
+ // Preserve original eye, cheek and scalp rims and refuse double-sealing.
+ const second=sealOriginalOralAperture(face);
+ assert.equal(second.sealed,false,'Never duplicate mouth cap triangles');
+ geo.dispose();face.material.dispose();
+});
+
+test('V86: actual independent male/female head has no exposed original lip hole',()=>{
+ for(const gender of ['female','male']){
+  const {geo}=sourceGeometry();
+  const root=new THREE.Group();
+  const donor=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+  donor.name='CC0_SOURCE_GEO-head_animation_realistic';
+  root.add(donor);
+  const model=makeIndependentFaceMaster(root,gender,{
+   femaleControls:{ageBand:'twenties'},
+   maleControls:{ageBand:'twenties'}
+  });
+  const summary=model.face.userData.v86OralSealSummary;
+  assert.equal(summary.sealed,true,
+   gender+' should seal native lip opening: '+JSON.stringify(summary));
+  assert.ok(summary.addedTriangles>=60,
+   gender+' must seal both nested oral loops: '+JSON.stringify(summary));
+  assert.equal(model.face.userData.v83SafeOriginalMouthTopology,true);
+  const animator=createFaceExpressionAnimator({face:model.face,parts:model.parts},
+    {autoBlink:false});
+  for(const id of ['neutral','laugh','shout','surprised']){
+   animator.setExpression(id);
+   assert.equal(animator.getState().mouthOpen,0);
+   assert.ok(model.face.geometry.getAttribute('position').array.every(Number.isFinite));
+  }
+  animator.dispose();
+  model.root.traverse(o=>{
+   if(!o.isMesh)return;
+   o.geometry?.dispose();
+   for(const mat of (Array.isArray(o.material)?o.material:[o.material]))
+    mat?.dispose?.();
+  });
+ }
 });

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-source-oral-rest-v85';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-native-mouth-seal-v86';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=81-nasolabial';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -175,6 +175,11 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  if(d.x<.02||d.y<.02||d.z<.02)throw Error('Invalid real head geometry bounds');
  const p=geometry.getAttribute('position');
  const originalPoints=p.array.slice();
+ // V86: preserve the donor's topological lip-loop coordinates. Later
+ // nose/cheek/age sculpt can fold the XY projection of the outer mouth
+ // ring even though its vertex indices are unchanged. Triangulate the
+ // ORIGINAL donor silhouette, then apply the triangles to current skin.
+ face.userData.v86OriginalDonorPositions=originalPoints;
  const demo=resolveDemographicProfile(controls.ageBand,controls.bodyType);
  const cx=(b.min.x+b.max.x)/2;
  let changed=0,cheekDelta=0,chinDelta=0;
