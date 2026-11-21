@@ -19,6 +19,9 @@ assert.match(source,/const royalOutfit=fullBody\?null:wardrobeFor\(profile\)/);
 assert.match(source,/wingTailOnly:fullBody/);
 assert.match(source,/createMineralLimbArticulator/);
 assert.match(source,/mineralArticulator\?\.update\(action\)/);
+const fitterSource=readFileSync(new URL('../src/monster-mineral-limb-articulator.js',import.meta.url),'utf8');
+assert.match(fitterSource,/findByName\(model,'hips'\)\|\|findByName\(model,'pelvis'\)/,
+ 'Real Quaternius character uses pelvis, not hips');
 assert.match(gothic,/if\(kind==='skeleton'\|\|kind==='death_knight'\|\|kind==='dark_knight'\)/,
  'Original skull-face plate source must be skipped by the runtime fullBody gate');
 const ids=['m036','m037','m038','m039','m040','m042','m045'];
