@@ -186,8 +186,10 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  }
  outerCandidates.sort((a,b)=>b.area-a.area);
  let outerPatchCount=0,outerRingSize=0,outerPatchReason=null;
+ let outerTriangulated=0,outerAreaRatio=0,outerSelectedSize=0;
  if(outerCandidates.length>=1){
   const selected=outerCandidates[0];
+  outerSelectedSize=selected.candidate.length;
   // Earcut handles this wider, non-X-monotone lip rim, unlike the very
   // narrow 38-edge slit that needs the zipper strip above.
   const ears=THREE.ShapeUtils.triangulateShape(selected.contour,[]);
@@ -202,6 +204,8 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
    else fill.push(a,b,c);
    covered+=Math.abs(cross)*.5;
   }
+  outerTriangulated=fill.length/3;
+  outerAreaRatio=selected.area>0?covered/selected.area:0;
   if(fill.length>=selected.candidate.length*1.75&&
    Math.abs(covered-selected.area)<=selected.area*.20){
    patch.push(...fill);
@@ -225,6 +229,10 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   outerRingVertexCount:outerRingSize,
   outerPatchTriangles:outerPatchCount,
   outerPatchReason,
+  outerCandidateCount:outerCandidates.length,
+  outerSelectedSize,
+  outerTriangulated,
+  outerAreaRatio:Number(outerAreaRatio.toFixed(4)),
   area:projectedArea,
   originalBoundaryLoops:loops.length,
   lipRing: ring.slice(),
