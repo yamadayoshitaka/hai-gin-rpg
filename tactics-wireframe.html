@@ -6792,10 +6792,15 @@ function updateEnemyTacticalDecisions(){
  const allies=indexed.allies,friendlyArmy=indexed.enemies;
  if(!allies.length)return;
  let availableBuildings=null;
- for(const id of enemySquadIds){
-  const own=indexed.roster(1,id),living=indexed.living(1,id);
+ const enemyCommands=THREE_TEAM_BATTLE?[1,2,3].map(group=>
+  enemySquadIds.filter(id=>Number(enemyGroupBySquad[id])===group)).filter(group=>group.length):
+  enemySquadIds.map(id=>[id]);
+ for(const groupIds of enemyCommands){
+  const id=groupIds[0];
+  const own=groupIds.flatMap(sid=>indexed.roster(1,sid));
+  const living=groupIds.flatMap(sid=>indexed.living(1,sid));
   if(!living.length)continue;
-  if(massSim&&!indexed.livingStrategists[1].has(id))continue;
+  if(massSim&&!groupIds.some(sid=>indexed.livingStrategists[1].has(sid)))continue;
   const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
   // The ordinary command cooldown is preserved except for defending squads
   // whose whole army now decisively outnumbers the opponent.
@@ -6822,15 +6827,20 @@ function updateEnemyTacticalDecisions(){
     if(nearest){mode='explore';buildingId=nearest.id;}
    }
   }
-  if(mode===previous)continue;
-  const success=mode==='explore'
-   ?issueBuildingExploration(1,id,buildingId,{beforeBattle:true})
-   :setStartingSquadOrder(1,id,mode);
-  if(!success)continue;
-  lastEnemyTacticalOrderAt.set(id,elapsed);
+  if(mode===previous&&groupIds.every(sid=>
+   startingSquadOrders.get(squadOrderKey(1,sid))?.mode===mode))continue;
+  let successful=0;
+  for(const sid of groupIds){
+   const success=mode==='explore'
+    ?issueBuildingExploration(1,sid,buildingId,{beforeBattle:true})
+    :setStartingSquadOrder(1,sid,mode);
+   if(success){successful++;lastEnemyTacticalOrderAt.set(sid,elapsed);}
+  }
+  if(!successful)continue;
   battleDialogue.push({key:'enemy-tactical:'+id+':'+Math.floor(elapsed),speaker:'斥候',
-   kind:'warning',priority:67,text:squadName(id,1)+'が'+(INITIAL_ORDER_LABELS[mode]||mode)+
-   'に変更：'+choice.reason});
+   kind:'warning',priority:67,text:(THREE_TEAM_BATTLE?
+    '敵第'+enemyGroupBySquad[id]+'隊':squadName(id,1))+'が'+
+    (INITIAL_ORDER_LABELS[mode]||mode)+'に変更：'+choice.reason});
  }
 }
 /** Enemy squads spend their own collected supplies under the same finite rules. */
