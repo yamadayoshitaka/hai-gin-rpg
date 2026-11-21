@@ -7,6 +7,8 @@
  * and aquatic creatures use clearcoat/translucency until water scans exist.
  */
 import * as THREE from 'three';
+import {decorateAll50MonsterSurface,monsterAll50SurfaceStats}
+ from './monster-all50-surface.js?v=all50-species-materials-v1-20261121';
 import {salamanderLineageSurface,salamanderLineageSurfaceStats}
  from './salamander-lineage-surface.js?v=m016-m017-salamander-quality-v21-20261121';
 import {m019VolcanicSurface,m019VolcanicTextureStats}
@@ -43,9 +45,12 @@ export const CREATURE_SURFACE_SOURCES=Object.freeze({
   }),
 });
 export const CREATURE_FAMILY_SURFACE=Object.freeze({
-  beast:'fur', feline:'fur', avian:null, reptile:'scales',
-  insect:'scales', arachnid:'scales', undead:'linen', golem:'steel',
-  fiend:'leather', aquatic:null,
+  // Photos are only reused on anatomically matching coats and true scales.
+  // Chitin, arachnid hairs, feathers, stone and living skin get dedicated
+  // microstructure atlases instead of misleading dragon scales/steel/linen.
+  beast:'fur', feline:null, avian:null, reptile:'scales',
+  insect:null, arachnid:null, undead:null, golem:null,
+  fiend:null, aquatic:null,
 });
 
 // Each texture is uploaded to the GPU at most once regardless of monster
@@ -141,7 +146,12 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
    (family==='undead'||family==='fiend')?null:
    (family==='golem'&&speciesId==='m036')?null:
    CREATURE_FAMILY_SURFACE[family];
- if(!surfaceId)return material;
+ if(!surfaceId){
+   decorateAll50MonsterSurface(material,{
+     speciesId,family,role,detail,glow,translucent
+   });
+   return material;
+ }
  const src=CREATURE_SURFACE_SOURCES[surfaceId];
  if(!src)return material;
  const albedo=texture(src.albedo,true),normal=texture(src.normal,false);
@@ -172,5 +182,6 @@ export function monsterPhotoCacheStats(){
    volcanicTextures:m019VolcanicTextureStats().textureMaps,
    lineageTextures:salamanderLineageSurfaceStats().textureMaps,
    sources:Object.keys(CREATURE_SURFACE_SOURCES).length,
+   all50Surfaces:monsterAll50SurfaceStats(),
  });
 }
