@@ -52,7 +52,7 @@ export function attachAgeDetails(face,ageBand='twenties'){
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
  }
- const count=age.id==='forties'?6:age.id==='sixties'?12:15;
+ const count=age.id==='forties'?6:age.id==='fifties'?9:age.id==='sixties'?12:15;
  face.userData.v49AgeDetails={
   ageBand:age.id,strength,count,vertices:affected,
   source:'actual-sculpted-face',surfaceIntegrated:true,
