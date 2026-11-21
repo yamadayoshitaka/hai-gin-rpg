@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-safe-face-v84';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-source-oral-rest-v85';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=81-nasolabial';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -184,6 +184,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  let outerContourXError=0,outerContourSamples=0;
  let localizedNoseAndMouthSamples=0;
  let oralMotionSum=0,oralMotionWeight=0;
+ let v85OralSourceRestored=0;
  // A continuous low-amplitude sculpt, not many stacked portrait morphs.
  // Refill sunken cheeks and soften the jaw without shifting nose, scalp,
  // rear skull, or the neck attachment. Male retains slightly stronger brow.
@@ -311,7 +312,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     .0070*lowerLidBag-.0052*lowerLidCrease-
     .0035*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.036)*front);
   ny+=faceAgeY;
-  const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
+  let nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz
@@ -348,6 +349,17 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
      Math.abs((nx-demographicWidthDelta)-x));
    }
   }
+  // V85: preserve the original donor oral surface to stop geometric
+  // intersection from multiple stacked sculpt and age fields.
+  // It is a closed manifold, not a validated opening, so do not cut it.
+  const mouthProtected=(1-smooth(.20,.43,Math.abs(xn)))*
+   (1-smooth(.032,.102,Math.abs(yn-.509)))*smooth(.54,.78,zn);
+  if(mouthProtected>0){
+   nx=x+(nx-x)*(1-mouthProtected);
+   ny=y+(ny-y)*(1-mouthProtected);
+   nz=z+(nz-z)*(1-mouthProtected);
+   if(mouthProtected>.97)v85OralSourceRestored++;
+  }
   // Mouth accessories follow the anatomically deformed lower midface.
   const oralWeight=bell(xn,0,.22)*bell(yn,.48,.047)*front;
   oralMotionSum+=(ny-y)*oralWeight;
@@ -364,6 +376,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  const oralMotion=oralMotionWeight>1e-8?oralMotionSum/oralMotionWeight:0;
  face.userData.v79MouthLandmarkY=b.min.y+d.y*.509+oralMotion-d.y*.073*demo.age.sag;
  face.userData.v79MouthLandmarkMotion=oralMotion;
+ face.userData.v85SourceOralGeometryProtected=true;
+ face.userData.v85RestoredOralVertices=v85OralSourceRestored;
  face.material=new THREE.MeshStandardMaterial({
   color:0xbfc3cb,roughness:.70,metalness:0,
   side:THREE.FrontSide,flatShading:false

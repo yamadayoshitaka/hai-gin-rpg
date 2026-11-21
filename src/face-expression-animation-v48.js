@@ -380,7 +380,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    // Do not tear or invert the lip/philtrum/chin triangles of an intact
    // face. Retain cheek and eyelid expressions outside the guard.
    const oralGuard=safeOriginalMouth?
-    1-.94*fall(ax,.105,.20)*fall(ny,mouthY-.010,.072)*front:1;
+    1-(1-THREE.MathUtils.smoothstep(ax,.18,.44))*
+      (1-THREE.MathUtils.smoothstep(Math.abs(ny-mouthY),.018,.105))*
+      THREE.MathUtils.smoothstep(front,.55,.99):1;
    const skinGain=skinDeformationGain*oralGuard;
    facialAttr.array[k]=x+xd*skinGain*
     Math.sign(x-centerX)*anatomical.dxOut;
@@ -577,6 +579,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
     !!face.userData.v83SafeOriginalMouthTopology,
    v84JawOpeningQuarantined:!!face.userData.v83SafeOriginalMouthTopology,
    v84OralSkinInversionGuard:!!face.userData.v83SafeOriginalMouthTopology,
+   v85BuildSignature:'face-v85-source-mouth-restored-closed-20261122',
+   v85SourceOralGeometryProtected:!!face.userData.v85SourceOralGeometryProtected,
+   v85RestoredOralVertices:face.userData.v85RestoredOralVertices||0,
    v80TransitionProgress:transition?Number(smooth(
     transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,

@@ -399,3 +399,27 @@ jobs:
           done
           echo '::error::Deployed Pages did not serve the current maintenance center/PR preview for this SHA.'
           exit 1
+
+      - name: Confirm public face studio really loads the v85 safe mouth code
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            url="https://yamadayoshitaka.github.io/hai-gin-rpg/face-mesh-studio.html?face_verify=${GITHUB_SHA:0:12}-${attempt}"
+            js="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-expression-animation-v48.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
+            html_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-studio.html -w '%{http_code}' "${url}" || true)
+            js_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-expression.js -w '%{http_code}' "${js}" || true)
+            if [[ "${html_code}" == 200 && "${js_code}" == 200 ]] &&
+               grep -Fq '顔品質 v85' /tmp/public-face-studio.html &&
+               grep -Fq 'v=85-oral-source-protection' /tmp/public-face-studio.html &&
+               grep -Fq 'v85BuildSignature' /tmp/public-face-expression.js &&
+               grep -Fq 'v85SourceOralGeometryProtected' /tmp/public-face-expression.js; then
+              echo "PASS: public face viewer and its runtime JavaScript are both v85 (${GITHUB_SHA})"
+              exit 0
+            fi
+            echo "::warning::Face v85 not publicly visible: HTML ${html_code} JS ${js_code} (attempt ${attempt}/18)"
+            sleep 5
+          done
+          echo '::error::Pages still serves stale face HTML or facial animation JS; PR merge alone is not a successful release'
+          exit 1

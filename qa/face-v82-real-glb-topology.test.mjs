@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
+import {makeIndependentFaceMaster} from '../src/independent-face-masters.js';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS}
  from '../src/face-expression-animation-v48.js';
 import {integrateMouthIntoFace,poseIntegratedMouth}
@@ -22,19 +23,40 @@ function sourceGeometry(){
  const glb=bytes;
  const primitive=gltf.meshes[0].primitives[0];
  const readAccessor=id=>{
-  const a=gltf.accessors[id],view=gltf.bufferViews[a.bufferView];
+  const a=gltf.accessors[id];
   const width=({SCALAR:1,VEC2:2,VEC3:3,VEC4:4})[a.type];
-  const componentBytes=({5121:1,5123:2,5125:4,5126:4})[a.componentType];
+  const bytesFor={5121:1,5123:2,5125:4,5126:4};
+  const componentBytes=bytesFor[a.componentType];
   assert.ok(width&&componentBytes);
-  const stride=view.byteStride||width*componentBytes;
-  const start=bufferOffset+(view.byteOffset||0)+(a.byteOffset||0);
-  const values=[];
-  for(let i=0;i<a.count;i++)for(let k=0;k<width;k++){
-   const at=start+i*stride+k*componentBytes;
-   values.push(a.componentType===5126?glb.readFloatLE(at):
-    a.componentType===5125?glb.readUInt32LE(at):
-    a.componentType===5123?glb.readUInt16LE(at):
-    glb.readUInt8(at));
+  const read=(type,at)=>type===5126?glb.readFloatLE(at):
+   type===5125?glb.readUInt32LE(at):
+   type===5123?glb.readUInt16LE(at):glb.readUInt8(at);
+  // Real GLB morph accessors can be entirely sparse, with NO base
+  // bufferView. Our previous test crashed before checking anything.
+  const values=new Array(a.count*width).fill(0);
+  if(a.bufferView!==undefined){
+   const view=gltf.bufferViews[a.bufferView];
+   const stride=view.byteStride||width*componentBytes;
+   const start=bufferOffset+(view.byteOffset||0)+(a.byteOffset||0);
+   for(let i=0;i<a.count;i++)for(let k=0;k<width;k++)
+    values[i*width+k]=read(a.componentType,
+     start+i*stride+k*componentBytes);
+  }
+  if(a.sparse){
+   const sparse=a.sparse,idxView=gltf.bufferViews[sparse.indices.bufferView],
+    valueView=gltf.bufferViews[sparse.values.bufferView];
+   const idxType=sparse.indices.componentType;
+   const idxStart=bufferOffset+(idxView.byteOffset||0)+
+    (sparse.indices.byteOffset||0);
+   const valueStart=bufferOffset+(valueView.byteOffset||0)+
+    (sparse.values.byteOffset||0);
+   for(let i=0;i<sparse.count;i++){
+    const index=read(idxType,idxStart+i*bytesFor[idxType]);
+    assert.ok(index>=0&&index<a.count);
+    for(let k=0;k<width;k++)
+     values[index*width+k]=read(a.componentType,
+      valueStart+(i*width+k)*componentBytes);
+   }
   }
   return {array:values,width,count:a.count,componentType:a.componentType};
  };
@@ -50,6 +72,7 @@ function sourceGeometry(){
  // Seven real facial blendshapes from the source Blender head.
  const morphs=primitive.targets?.map(target=>
   readAccessor(target.POSITION))||[];
+ geo.morphTargetsRelative=true;
  geo.morphAttributes.position=morphs.map(m=>
   new THREE.Float32BufferAttribute(m.array,3));
  return {geo,morphs:morphs.length,glbVertexCount:position.count};
@@ -156,4 +179,62 @@ test('V84 actual GLB skin avoids mouth-triangle reversal for ALL 22 expressions'
    expression+' must not yank original mouth into overlapping skin');
  }
  animator.dispose();geo.dispose();face.material.dispose();
+});
+
+test('V85 public CC0 face preserves original mouth geometry and neutralises laugh folds',()=>{
+ const {geo}=sourceGeometry();
+ const positions=geo.getAttribute('position').array.slice();
+ geo.computeBoundingBox();
+ const box=geo.boundingBox.clone(),size=box.getSize(new THREE.Vector3());
+ const originalCount=geo.getAttribute('position').count;
+ const root=new THREE.Group();
+ const head=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+ head.name='CC0_SOURCE_GEO-head_animation_realistic';
+ root.add(head);
+ const model=makeIndependentFaceMaster(root,'female',{
+  femaleControls:{ageBand:'twenties'}
+ });
+ const face=model.face,rest=face.geometry.getAttribute('position');
+ assert.ok(face.userData.v85SourceOralGeometryProtected);
+ assert.ok(face.userData.v85RestoredOralVertices>10,
+  'On a real GLB many mouth vertices should be restored to the donor');
+ let examined=0;
+ for(let i=0;i<originalCount;i++){
+  const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2];
+  const xn=(x-(box.min.x+box.max.x)/2)/(size.x*.5);
+  const yn=(y-box.min.y)/size.y,zn=(z-box.min.z)/size.z;
+  if(Math.abs(xn)<.17&&Math.abs(yn-.509)<.028&&zn>.84){
+   examined++;
+   for(let axis=0;axis<3;axis++)
+    assert.ok(Math.abs(rest.array[i*3+axis]-positions[i*3+axis])<2e-7,
+     'Production oral donor vertex must not inherit unstable cosmetic sculpt');
+  }
+ }
+ assert.ok(examined>=8,'Must exercise genuine face oral donor vertices');
+ const animator=createFaceExpressionAnimator({
+  face:model.face,parts:model.parts
+ },{autoBlink:false});
+ const neutral=face.geometry.getAttribute('position').array.slice();
+ for(const id of ['neutral','smile','laugh','shout','surprised']){
+  animator.setExpression(id);
+  const state=animator.getState();
+  assert.equal(state.v85BuildSignature,'face-v85-source-mouth-restored-closed-20261122');
+  assert.equal(state.v85SourceOralGeometryProtected,true);
+  assert.equal(state.mouthOpen,0);
+  const posed=face.geometry.getAttribute('position').array;
+  for(let i=0;i<originalCount;i++){
+   const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2];
+   const xn=(x-(box.min.x+box.max.x)/2)/(size.x*.5);
+   const yn=(y-box.min.y)/size.y,zn=(z-box.min.z)/size.z;
+   if(Math.abs(xn)<.14&&Math.abs(yn-.509)<.015&&zn>.84)
+    assert.ok(Math.abs(posed[i*3+1]-neutral[i*3+1])<.00012,
+     id+' cannot tear the protected inner mouth skin');
+  }
+ }
+ animator.dispose();
+ model.root.traverse(o=>{if(!o.isMesh)return;
+  o.geometry?.dispose();
+  if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());
+  else o.material?.dispose();
+ });
 });
