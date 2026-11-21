@@ -2,7 +2,7 @@ import {M018_BATTLE_LENGTH_CELLS} from './m018-battle-size.js';
 
 const BATTLE_LENGTH_CELLS=Object.freeze({
  m018:M018_BATTLE_LENGTH_CELLS,
- m020:12,
+ m020:14,
  m048:10,
 });
 
