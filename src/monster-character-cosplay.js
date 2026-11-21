@@ -44,8 +44,9 @@ import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  from './monster-regal-garments.js?v=4.5.19';
 
 import {addGargoyleMonsterAnatomy,createGargoyleStoneTexture,
- createGargoylePbrMaterial,GARGOYLE_SPECIES_REVISION}
- from './monster-gargoyle-sculpt.js?v=m042-slim-sword-flight-v2-20261121';
+ createGargoylePbrMaterial,GARGOYLE_SPECIES_REVISION,
+ poseGargoyleSwordClearance}
+ from './monster-gargoyle-sculpt.js?v=m042-slender-talon-safe-sword-v3-20261121';
 import {createMineralLimbArticulator}
  from './monster-mineral-limb-articulator.js?v=bone-to-bone-20261121';
 import {applyHumanlikeConceptFinish}
@@ -129,6 +130,11 @@ function updateCanonicalGargoyleFlight(root,host,visual,action,time,elapsed){
  }
  if(flying)for(const leg of visual?.userData?.gargoyleFlightLegBones||[])
   if(leg)leg.rotation.x+=.35;
+ poseGargoyleSwordClearance({
+  swordPivot:visual?.userData?.gargoyleSwordPivot,
+  chest:visual?.userData?.gargoyleChestFrame,body:visual,
+  action,progress:clamp(elapsed/(TIME_LIMITS[action]||1),0,1)
+ });
 }
 /** Convert a visible canonical human rig bone into an anatomical world-metre
  * attachment frame, inherited by every subsequent skeletal animation pose. */
@@ -632,6 +638,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(profile.id==='m042'){
   model.userData.gargoyleWingPivots=frames.chest.userData.gargoyleWingPivots;
   model.userData.gargoyleFlightLegBones=joints.legs.filter(Boolean);
+  model.userData.gargoyleSwordPivot=frames.chest.userData.gargoyleSwordPivot;
+  model.userData.gargoyleChestFrame=frames.chest;
  }
  model.userData.monsterCostume={
   id:profile.id,kind:costume,heroSource:profile.modelId,
@@ -644,6 +652,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gargoyleWings:profile.id==='m042'?frames.chest.userData.gargoyleWingCount??0:0,
   gargoyleTalons:profile.id==='m042'?frames.chest.userData.gargoyleClawCount??0:0,
   gargoyleSword:profile.id==='m042'?frames.chest.userData.gargoyleSwordCount===4:false,
+  gargoyleSwordClashAvoidance:profile.id==='m042',
+  gargoyleToeRootsEmbedded:profile.id==='m042',
   gargoyleFlight:profile.id==='m042',
   gargoyleStoneTexture:profile.id==='m042'?!!gargoyleTexture:false,
   armourSourceHumanFaceHidden:fullBody&&concealedDonorMeshes.length>0,
@@ -691,6 +701,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
  };
  return ()=>{
   delete model.userData.mineralArticulator;
+  delete model.userData.gargoyleSwordPivot;
+  delete model.userData.gargoyleChestFrame;
+  delete model.userData.gargoyleFlightLegBones;
+  delete model.userData.gargoyleWingPivots;
   for(const {node,visible} of concealedDonorMeshes){
    node.visible=visible;delete node.userData.constructDonorConcealed;
   }
