@@ -906,7 +906,7 @@ body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261121-quick-order-capture';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261121-three-team-item-target';
 import {createBattleCaptureObjective} from './src/battle-capture-objective.js?v=20261121-capture-goal';
 import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
@@ -8682,10 +8682,30 @@ const targetedStrategyUi=createTargetedStrategyUi({
   return [...byId.values()];
  },
  onItemExecute:({groupId,issuerSquadId,targetSquadId,itemId})=>{
-  const accepted=useSquadBattleItemForSource(itemId,targetSquadId,issuerSquadId);
+  // The command UI shows only three teams. Resolve the selected team to the
+  // most suitable living physical subdivision; one item still costs one stock.
+  const teamMatch=/^team:([1-3])$/.exec(String(targetSquadId));
+  const targetIds=teamMatch?
+   squadIds.filter(id=>normalizeArmyGroup(armyGroupBySquad[id])===Number(teamMatch[1])):
+   [String(targetSquadId)];
+  const kind=ROOM_ITEM_TYPES[itemId]?.kind;
+  const units=massSim?.units??actors;
+  const ranked=targetIds.map(id=>{
+   const alive=units.filter(u=>u.team===0&&String(u.squadId)===String(id)&&
+    u.hp>0&&u.alive!==false);
+   const missingHp=alive.reduce((n,u)=>n+Math.max(0,Number(u.maxHp||0)-Number(u.hp||0)),0);
+   const missingMp=alive.reduce((n,u)=>n+Math.max(0,Number(u.maxMp||0)-Number(u.mp||0)),0);
+   const value=kind==='heal'?missingHp:kind==='mp_restore'?missingMp:
+    kind==='cleanse'?(massSim?.squadDebuffs?.has('0:'+id)?alive.length:0):
+    kind==='squad_buff'?alive.length:0;
+   return {id:String(id),value};
+  }).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);
+  if(!ranked.length)return '選択した隊には、このアイテムを使用できる分隊がありません。';
+  const recipient=ranked[0].id;
+  const accepted=useSquadBattleItemForSource(itemId,recipient,issuerSquadId);
   if(accepted===true)objectiveCheckpoints.register({groupId,mode:'item',squadIds:[issuerSquadId],
-   targetIds:[targetSquadId],itemId});
-  return accepted||'所持数・対象のHP・使用条件を確認してください';
+   targetIds:[recipient],itemId});
+  return accepted||'所持数・対象のHP・軍師の命令間隔を確認してください';
  },
  onMapPick:point=>{
   const plan=pendingTargetedMap;
