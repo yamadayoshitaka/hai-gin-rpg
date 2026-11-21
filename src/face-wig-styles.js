@@ -4,6 +4,7 @@
  * Each style can be exported as an independent GLB via face-mesh-studio.
  */
 import {REBUILT_HAIR_BLUEPRINTS,REBUILT_HAIR_CATALOG} from './hair-rebuilt-catalog-v67.js?v=70';
+import {HAIR_SHAPE_CATALOG_V71} from './hair-shape-catalog-v71.js?v=71';
 const deepFreeze=value=>{
  if(value&&typeof value==='object'){
   for(const child of Object.values(value))deepFreeze(child);
@@ -54,6 +55,7 @@ const REBUILT_STYLE_RECORDS=Object.fromEntries(
   sadakoVariant:r.front==='bangs'?'bangs':'center',
   catalogCurl:r.curl,catalogFront:r.front,rebuiltBase:'sadako',
   styleLength:r.length,catalogTempleRatio:r.templeRatio,
+  catalogShape:HAIR_SHAPE_CATALOG_V71[r.id],
   maleGroom:r.gender==='male'?'tailored-male-v70':null,
   himeFringe:r.id==='rb-f-hime'?'glabella-long-v70':null
  }:{
@@ -67,6 +69,7 @@ const REBUILT_STYLE_RECORDS=Object.fromEntries(
   shortCutKind:'short',styleLength:r.length,
   rebuiltShortLength:r.length,catalogCurl:r.curl,
   catalogFront:r.front,catalogTempleRatio:r.templeRatio,
+  catalogShape:HAIR_SHAPE_CATALOG_V71[r.id],
   maleGroom:r.gender==='male'?'tailored-male-v70':null,
   templeVolume:0,strandWave:0,wigType:'independent-3d-asset',
   collisions:['scalp','face','neck','shoulder','chest']
