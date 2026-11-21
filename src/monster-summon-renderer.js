@@ -12,11 +12,12 @@ import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battl
 import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=concept-trio-v2-20261121';
 import {createCosplayedHumanoidMonster}
- from './monster-character-cosplay.js?v=m042-unique-stone-gargoyle-v1-20261121';
+ from './monster-character-cosplay.js?v=monster-50-family-actions-v1-20261121';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
+import {resolveMonsterThemeAction,defaultMonsterThemeAttack} from './monster-theme-actions.js';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
+ from './monster-animation.js?v=monster-50-family-actions-v1-20261121';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js?v=beetle-four-reference-sculpt-v1-20261121';
@@ -286,15 +287,19 @@ export function createMonsterSummonRenderer(scene,{
     actionTime-o.attackStartedAt>=0&&actionTime-o.attackStartedAt<.95;
    const moving=!!o.moving||Math.hypot(safe(o.x)-safe(node.lastX),safe(o.z)-safe(node.lastZ))>.001;
    let action=o.poseAction;
-   if(!['guard','dodge','hit','leap','defeat','special','roar'].includes(action)||
+   const theme=resolveMonsterThemeAction(spec,action);
+   if(!theme&&!['guard','dodge','hit','leap','defeat','special','roar'].includes(action)||
       actionTime-safe(o.poseStartedAt,-Infinity)>2)action=null;
-   action=action||(pulse?'attack':moving?(o.previewWalk?'walk':'run'):'idle');
+   // A genuine themed strike in battle, not only in the catalogue viewer.
+   action=action||(pulse?defaultMonsterThemeAttack(spec):
+     moving?(o.previewWalk?'walk':'run'):'idle');
    const actionAt=action===o.poseAction?o.poseStartedAt:
      action==='attack'?o.attackStartedAt:time;
    if(node.lastAction!==action||(
       action==='attack'&&node.lastAttack!==o.attackStartedAt)||
       (action===o.poseAction&&node.lastPose!==o.poseStartedAt)){
-    if(node.externalHandle)node.externalHandle.play(action);
+    if(node.externalHandle)node.externalHandle.play(
+      resolveMonsterThemeAction(spec,action)?.base||action);
     else if(node.costumeHandle)node.costumeHandle.start(action,Number.isFinite(actionAt)?actionAt:time);
     else startMonsterAction(node.actor,action,Number.isFinite(actionAt)?actionAt:time);
     node.lastAction=action;
