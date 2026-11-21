@@ -18,7 +18,7 @@ export const TOWN_SHOP=Object.freeze([
  Object.freeze({id:'potion',name:'回復薬',price:30,category:'道具',description:'HPの回復に使う基本の薬'}),
  Object.freeze({id:'ether',name:'魔力水',price:65,category:'道具',description:'MPを補充する魔力水'}),
  Object.freeze({id:'antidote',name:'解毒薬',price:20,category:'道具',description:'毒を取り除く'}),
- Object.freeze({id:'iron_sword',name:'鉄の剣',price:120,category:'武器',description:'隊列の攻撃力+14%（常時）',attack:.14,jobs:['騎士','盾騎士']}),
+ Object.freeze({id:'iron_sword',name:'鉄の剣',price:120,category:'武器',description:'隊列の攻撃力+14%（常時）',attack:.14,jobs:['騎士','盾騎士','剣士']}),
  Object.freeze({id:'short_blade',name:'忍びの短刀',price:150,category:'武器',description:'隊列の攻撃力+12%（常時）',attack:.12,jobs:['忍者','シーフ']}),
  Object.freeze({id:'combat_wraps',name:'武闘拳帯',price:125,category:'武器',description:'隊列の攻撃力+10%（常時）',attack:.10,jobs:['格闘家']}),
  Object.freeze({id:'oak_staff',name:'樫の杖',price:95,category:'武器',description:'隊列の攻撃力+12%（常時）',attack:.12,jobs:['僧侶','魔法使い','召喚士']}),
@@ -129,8 +129,29 @@ export function squadEquipmentBonus(squad){
  const gear=squad?.equipment||{};
  const weapon=TOWN_SHOP.find(item=>item.id===gear.weapon&&item.category==='武器');
  const armor=TOWN_SHOP.find(item=>item.id===gear.armor&&item.category==='防具');
- return {attack:weapon?.jobs&&squad?.job&&!weapon.jobs.includes(squad.job)?0:weapon?.attack||0,
-  defense:armor?.defense||0,weapon:weapon?.id||null,armor:armor?.id||null};
+ const legalWeapon=Boolean(weapon&&(!weapon.jobs||!squad?.job||weapon.jobs.includes(squad.job)));
+ const forgeLevel=legalWeapon?Math.max(0,Math.min(5,Math.trunc(Number(squad?.weaponForgeLevels?.[weapon.id])||0))):0;
+ return {attack:legalWeapon?(weapon.attack||0)+forgeLevel*.05:0,
+  defense:armor?.defense||0,weapon:weapon?.id||null,armor:armor?.id||null,forgeLevel};
+}
+export const MAX_WEAPON_FORGE_LEVEL=5;
+/** Strengthen a real squad's equipped weapon, paying gold and retaining a per-squad bonus. */
+export function forgeSquadWeapon(game,squadId){
+ if(!validGame(game)||game.location!=='town')throw Error('鍛冶屋で武器を鍛えてください。');
+ const squad=game.campaign.squads.find(s=>s.id===Number(squadId)&&s.count>0);
+ if(!squad)throw Error('鍛える対象の隊列を選択してください。');
+ const item=TOWN_SHOP.find(i=>i.id===squad.equipment?.weapon&&i.category==='武器');
+ if(!item)throw Error('先に武器を装備してください。');
+ if(item.jobs&&!item.jobs.includes(squad.job))throw Error('この武器は'+squad.job+'には装備できません。');
+ const level=Math.max(0,Math.min(MAX_WEAPON_FORGE_LEVEL,Math.trunc(Number(squad.weaponForgeLevels?.[item.id])||0)));
+ if(level>=MAX_WEAPON_FORGE_LEVEL)throw Error('これ以上の鍛錬はできません（最大＋5）。');
+ const cost=(level+1)*100;
+ if(game.wallet<cost)throw Error('鍛錬には'+cost+'G必要です。');
+ game.wallet-=cost;
+ squad.weaponForgeLevels={...(squad.weaponForgeLevels||{}),[item.id]:level+1};
+ game.history.unshift('鍛冶屋：'+item.name+'を＋'+(level+1)+'まで鍛錬（-'+cost+'G）。');
+ game.history=game.history.slice(0,50);
+ return {squad,item,level:level+1,cost,bonus:squadEquipmentBonus(squad)};
 }
 export function equipSquadItem(game,squadId,itemId,category){
  if(!validGame(game)||game.location!=='town')throw Error('装備変更は町で行ってください。');
