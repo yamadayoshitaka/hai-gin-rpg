@@ -5,7 +5,7 @@ import * as THREE from 'three';
  * separate black pupil, the curved cornea, and eye expressions.
  * These supplementary details are deterministic, license-free generated
  * maps; the separately bundled skin microrelief is an authentic CC0 photo. */
-export function deriveIrisPolarDetail(width=384,height=128){
+export function deriveIrisPolarDetail(width=512,height=128){
  if(width<16||height<16)throw Error('Iris map too small');
  const data=new Uint8Array(width*height*4);
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
@@ -64,7 +64,7 @@ export function getLipVermilionNormalTexture(){
  return lip;
 }
 export const FACE_OPTICS_V76=Object.freeze({
- irisTexture:'polar-stroma-crypt-limbal-384x128',
+ irisTexture:'polar-stroma-crypt-limbal-512x128',
  lipNormal:'fine-vermilion-microfold-128x128',
  sclera:'natural-wet-lid-shadow',eyeGeometry:'face-conforming-corneal-dome',
  lipstickAsGeometry:true,photoIrisClaim:false
