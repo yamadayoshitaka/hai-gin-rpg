@@ -9,7 +9,7 @@ export const MONSTER_LIMB_FIT_REVISION='bone-to-bone-shell-20261121-v1';
 const down=new THREE.Vector3(0,-1,0);
 const worldStart=new THREE.Vector3(),worldEnd=new THREE.Vector3();
 const delta=new THREE.Vector3(),target=new THREE.Vector3();
-const lastQ=new THREE.Quaternion(),parentQ=new THREE.Quaternion(),
+const candidateQ=new THREE.Quaternion(),parentQ=new THREE.Quaternion(),
  correctionQ=new THREE.Quaternion(),modelQ=new THREE.Quaternion();
 const epsilon=.055;
 const pairs=[
@@ -45,9 +45,8 @@ function aimBone(bone,next,model,side,{strength=.92,forearm=false}={}){
  correctionQ.setFromUnitVectors(source,dest);
  const qParent=bone.parent.getWorldQuaternion(parentQ).clone();
  const localCorrection=qParent.invert().multiply(correctionQ).multiply(qParent);
- lastQ.copy(bone.quaternion);
- bone.quaternion.premultiply(localCorrection);
- bone.quaternion.copy(lastQ).slerp(bone.quaternion,strength);
+ candidateQ.copy(bone.quaternion).premultiply(localCorrection);
+ bone.quaternion.slerp(candidateQ,strength);
  bone.updateWorldMatrix(true,false);
  return true;
 }
