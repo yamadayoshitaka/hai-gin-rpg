@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-contour-v23';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-fibre-only-v24';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1457,6 +1457,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
  if(closeCutFibres)root.add(closeCutFibres);
+ // Buzz cut is a fibre layer on skin, not an opaque plastic helmet.
+ // Keep the donor cap geometry for fibre-root sampling and diagnostics,
+ // but do not render its solid white surface. Face/ear/neck are untouched.
+ if(style.shortCutKind==='buzz'){
+  cap.visible=false;
+  cap.userData.buzzOpaqueShellDisabled=true;
+  root.userData.buzzFibreOnly=true;
+ }
  // Characteristic coiffure sections must have their OWN REAL GEOMETRY.
  // A bun is not short straight hair with a "bun" label; plaits contain
  // three interwoven strands and ponytails have a distinct tied root.
