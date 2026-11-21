@@ -13,7 +13,12 @@ import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
  from './summon-humanoid-pbr.js?v=summons-pbr-v1-20261121';
 import {applySummonFootwearPBR,detachSummonFootwearPBR,
  SUMMON_FOOTWEAR_PBR_REVISION}
- from './summon-footwear-pbr.js?v=summon-leather-v2-20261122';
+ from './summon-footwear-pbr.js?v=seraph-leather-v3-20261122';
+import {addSeraphCeremonialRegalia,SERAPH_REGALIA_REVISION}
+ from './seraph-ceremonial-regalia.js?v=seraph-regalia-v3-20261122';
+import {applySeraphCeremonialMaterial,detachSeraphCeremonialMaterial,
+ SERAPH_CEREMONIAL_MATERIAL_REVISION}
+ from './seraph-ceremonial-material.js?v=seraph-satin-v3-20261122';
 import {buildMonsterNativeMotionVariants,selectMonsterMotionVariant,
  monsterMotionCoverage,MONSTER_LICENSED_MOTION_REVISION}
  from './monster-licensed-motion-variants.js?v=ual2-source-clips-v1-20261121';
@@ -248,7 +253,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   seraphWing:0xffffff,
   // Dyed photo-leather must not inherit the bright green foliage tint.
   summonBootLeather:profile.costume==='forest_spirit_female'?0xcabbaa:
-   profile.costume==='seraph_female'?0xc9c9c0:
+   profile.costume==='seraph_female'?0x5a5150:
    profile.costume?.startsWith('dragonkin')?0x8b7880:0xb09c8a,
   summonBootSole:0x33302b,
   dragonEye:0xe4b564
@@ -309,6 +314,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
+   // Dedicated ivory-satin/gold materials bypass old bandage/steel photos.
+   if(applySeraphCeremonialMaterial(m,{role,detail})){
+    materials.set(role,m);ownedMats.push(m);return m;
+   }
    // Guardian wings are FEATHERS, not sheets of linen.
    if(role==='seraphWing')applySummonHumanoidPBR(m,{
      id:profile.id,role,detail
@@ -350,6 +359,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
    // only for angel wings, leaving most summon costume parts flat.
    applySummonHumanoidPBR(m,{id:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
+   if(profile.costume==='seraph_female'&&role==='summonBootLeather')
+    m.userData.seraphFootwear=true;
    applySummonFootwearPBR(m,{role,detail});
    materials.set(role,m);ownedMats.push(m);
   }
@@ -497,9 +508,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Structural garment layers are essential: the canonical full-body donor
  // wears little clothing. A cape or set of wings is not an outfit.
  const royalOutfit=fullBody||skeletal?null:wardrobeFor(profile);
- if(royalOutfit)addRegalHumanoidOutfit({
-   profile,detail,frames,attach,tube
- });
+ if(royalOutfit){
+  if(profile.costume==='seraph_female')
+   addSeraphCeremonialRegalia({profile,detail,frames,attach,tube});
+  else addRegalHumanoidOutfit({profile,detail,frames,attach,tube});
+ }
  // Mummies and the five constructs already own species-specific torso
  // sculpting. Close all exposed donor legs without placing a second gown
  // over bandages, crystal or rock armour. Every plate follows the source rig.
@@ -720,6 +733,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   skinTone:profile.skinTone??null,
   summonPbrRevision:femaleSummon?SUMMON_HUMANOID_PBR_REVISION:null,
    summonFootwearRevision:femaleSummon?SUMMON_FOOTWEAR_PBR_REVISION:null,
+  seraphOutfitRevision:profile.costume==='seraph_female'?SERAPH_REGALIA_REVISION:null,
+  seraphMaterialRevision:profile.costume==='seraph_female'?
+   SERAPH_CEREMONIAL_MATERIAL_REVISION:null,
   demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
@@ -772,6 +788,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   for(const texture of ownedTextures)texture.dispose();
   for(const material of ownedMats){
    detachSummonFootwearPBR(material);
+   detachSeraphCeremonialMaterial(material);
    detachMonsterPhotoMaterial(material);
    material.dispose();
   }
