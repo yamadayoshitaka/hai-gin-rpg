@@ -1084,8 +1084,9 @@ export function sadakoInvisiblePermRodOffset(variant,t,{
   const start=.56,span=1-start;
   if(u<=start)return {x:0,y:0,z:0};
   const pct=THREE.MathUtils.clamp((u-start)/span,0,1);
-  // Lower 44% wraps just over three quarters of a full rod turn:
-  // downward curve, outward apex, then a visible UP-TURNED tip.
+  // The invisible cylinder is sampled as a 1.5π turn. The guide's
+  // lower stations are actually ROUTED onto this arc, not offset from
+  // a full-length straight rest (which concealed the old tiny curl).
   const angle=1.54*Math.PI*pct;
   const radius=width*(variant==='inward'?.174:.205);
   const direction=variant==='inward'?-side:side;
@@ -1142,12 +1143,31 @@ export function shapeSadakoVariantGuide(points,{variant='straight',
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  if(variant==='straight')return points;
  const d=box.getSize(new THREE.Vector3()),root=points[0];
+ // Each lower hair clump is temporarily wrapped around an invisible
+ // salon perm rod. Only its final sampled centreline becomes a hair mesh.
+ const rolled=variant==='inward'||variant==='outward';
+ const rodStart=.56,station=Math.min(points.length-2,
+  Math.max(1,Math.round((points.length-1)*rodStart)));
+ const rodAnchor=rolled?points[station].clone():null;
  for(let j=1;j<points.length;j++){
   const t=j/(points.length-1),p=points[j];
   // Unseen perm-rod cross-section is sampled into the visible hair guide.
   const delta=sadakoVariantGuideOffset(variant,t,{
    side,front,zone,rootIndex,width:d.x,depth:d.z});
-  p.x+=delta.x;p.y+=delta.y;p.z+=delta.z;
+  if(rolled&&j>=station){
+   const f=(t-rodStart)/(1-rodStart);
+   const tail=Math.max(0,Math.min(1,f));
+   // Real wound geometry: a curled strand does not keep dropping as
+   // though it were straight below the hidden cylinder.
+   p.copy(rodAnchor).add(new THREE.Vector3(
+    delta.x,-d.y*.24*tail+delta.y,delta.z));
+  }else{
+   p.x+=delta.x;p.y+=delta.y;p.z+=delta.z;
+  }
+  if(variant==='sauvage'&&t>.28){
+   // An S-wave absorbs length when salon rods are removed.
+   p.y+=d.y*.11*THREE.MathUtils.smoothstep(t,.28,.9);
+  }
   if(variant==='bangs'&&bangsCut){
    const browY=box.min.y+d.y*(.767+.007*Math.sin(rootIndex*.73));
    const tipY=Math.min(root.y-d.y*.055,browY);
