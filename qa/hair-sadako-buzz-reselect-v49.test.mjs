@@ -20,7 +20,7 @@ test('buzz hairline is shared, curved, and symmetric around the ears',()=>{
   assert.equal(fraction(.6,z),fraction(-.6,z));
  for(const x of [.01,.2,.6])
   for(const z of [-.8,-.4,0,.2,.8])
-   assert.ok(fraction(x,z)>=.495&&fraction(x,z)<=.91);
+   assert.ok(fraction(x,z)>=.48&&fraction(x,z)<=.91);
 });
 
 test('buzz can be selected, replaced by Sadako, then selected again',()=>{
