@@ -9,11 +9,24 @@ import {createBattleTapChoices} from './battle-tap-choices.js?v=20261119-mobile-
 import {eligibleEnemyBattleTargets,battleAttackNeedsEnemy} from './battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
+import {renderFormationSignaturePreview,signatureStrategyFor} from './formation-signature-strategies.js';
+import {formationUnlockLabels} from './formation-strategy-unlocks.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=three-team-radar2-20261120';
 import {findBattleMapPin,formatBattleMapPercent} from './battle-map-inspection.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const PREBATTLE_FORMATION_IDS=Object.freeze({
+ '前進陣形':'attack','標準陣形':'balanced','後衛陣形':'support','防壁陣形':'wall',
+ '槍衾陣形':'spear','弓月陣形':'arrow','楔形陣形':'wedge','包囲陣形':'pincer',
+ '円環陣形':'circle','伏兵陣形':'ambush','十字陣形':'cross','鉄壁陣形':'fortress',
+ '龍牙陣形':'dragon','星鐘陣形':'constellation','自由陣形':'free'
+});
+const formationPreviewId=plan=>String(plan?.formationId||
+ PREBATTLE_FORMATION_IDS[plan?.formation]||plan?.formation||'balanced');
+const PREBATTLE_TACTIC_NAMES=Object.freeze({
+ assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索'
+});
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
  const px=(clientX-rect.left)/rect.width,pz=(clientY-rect.top)/rect.height;
@@ -178,6 +191,7 @@ export function createRealtimeBattleCommands({
       <option value="balanced">⚖ バランス・攻防連携</option>
       <option value="explore">🔎 探索・目的遂行</option>
      </select>
+     <div id="realtimeInitialFormationPreview" class="realtimeInitialFormationPreview" aria-label="宿屋で選んだ陣形のアニメーション"></div>
      <small id="realtimeInitialFormationStatus" role="status"></small>
     </div>
     <div class="realtimeMapActionSheet" id="realtimeMapActionSheet" role="group" aria-label="初期配置時の行動を選択">
@@ -324,12 +338,27 @@ export function createRealtimeBattleCommands({
    }
    chooser.value=strategy||'';chooser.disabled=false;
    $('realtimeInitialStrategyLabel').textContent='② 第'+key+'隊の初期作戦';
+   const formationId=formationPreviewId(defaults),formationRule=signatureStrategyFor(formationId);
+   const preview=$('realtimeInitialFormationPreview'),active=defaults.formationActive!==false;
+   const previewKey=key+'|'+formationId+'|'+active;
+   if(preview.dataset.previewKey!==previewKey){
+    const name=escape(defaults.formation||'標準陣形');
+    const unlocked=formationUnlockLabels(formationId,active);
+    preview.innerHTML='<strong>第'+escape(key)+'隊｜'+name+
+     (formationRule?'｜★ '+escape(formationRule.name):'')+'</strong>'+
+     (renderFormationSignaturePreview(formationId)||
+      '<small>この陣形は専用の動作アニメーションがありません。</small>')+
+     '<small>使用可能な追加作戦：'+escape(unlocked.join('・')||'基本作戦のみ')+'</small>';
+    preview.dataset.previewKey=previewKey;
+   }
    $('realtimeInitialFormationStatus').textContent=
     (requirePrebattleChoices?(placedTeams.has(key)?'✅ 配置済み｜':'📍 配置先を選択｜')+
-    (strategy?'✅ 作戦：'+strategy+'｜':'⚠ 作戦未選択｜'):'')+
+    (strategy?'✅ 作戦：'+(PREBATTLE_TACTIC_NAMES[strategy]||strategy)+'｜':'⚠ 作戦未選択｜'):'')+
     '陣形：'+String(defaults.formation||'標準')+
     (defaults.formationActive===false?'（未成立：基本作戦のみ使用可能）':'（戦闘中も維持）')+
-    (defaults.reason?'｜'+String(defaults.reason):'')+(strategy?'':'｜有効な作戦がありません');
+    (defaults.reason?'｜'+String(defaults.reason):'')+
+    '｜選べる作戦：'+allowed.map(id=>PREBATTLE_TACTIC_NAMES[id]||id).join('・')+
+    (strategy?'':'｜有効な作戦がありません');
   }
   const captain=getInitialTeamPlan(own[index])?.captain||null;
   const portraitJob=captain?.job||own[index]?.job,portraitId=captain?.id||own[index]?.id;
