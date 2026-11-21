@@ -8,7 +8,7 @@ import {decorateM024PBRMaterial,isScarabPBRSpecies}
  from './m024-scarab-pbr-surface.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {enhanceMonsterReferenceMaterial} from './monster-reference-finish.js';
+import {enhanceMonsterReferenceMaterial,referenceFinishProfile} from './monster-reference-finish.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
@@ -27,7 +27,10 @@ export const MONSTER_DETAIL_LEVELS=Object.freeze({
 export function monsterResolutionFor(spec,detail='high'){
  const base=MONSTER_DETAIL_LEVELS[detail];
  if(!base)throw Error('Unknown sculpture resolution: '+detail);
- const stage=detail==='low'?0:nonhumanMonsterStage(spec);
+ // Reference masters retain their approved topology. The other 22
+ // nonhuman species gain one extra bounded high/source curvature pass.
+ const stage=detail==='low'?0:
+   nonhumanMonsterStage(spec)+(referenceFinishProfile(spec,detail)?1:0);
  if(!stage)return base;
  return {
    sphere:[base.sphere[0]+stage*(detail==='source'?2:1),
