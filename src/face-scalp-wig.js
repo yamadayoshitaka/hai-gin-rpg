@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-parting-volume-curved-v54';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-ear-crown-bust-v55';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -248,6 +248,49 @@ function createHeadEnvelope(geometry,box){
  };
  return {radius,radialCenter:center,angularCells:angular,axialCells:axial};
 }
+/** Sample the real donor bust's REAR silhouette below the head.
+ * A bare face preview has no full-body collider: old shoulder capsules
+ * missed the back of the neck and the nape locks intersected the bust.
+ * Store a small regular grid so querying each rendered hair-card corner
+ * costs at most a few cells instead of rescanning thousands of triangles. */
+export function createRearBustDepthSampler(geometry,box){
+ const pos=geometry?.getAttribute?.('position');
+ if(!pos)throw Error('Real donor head/bust mesh required');
+ const size=box.getSize(new THREE.Vector3()),nx=34,ny=32;
+ const minima=new Float32Array(nx*ny);
+ minima.fill(Infinity);
+ let samples=0;
+ for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const yn=(y-box.min.y)/Math.max(size.y,1e-6);
+  if(yn<.065||yn>.64)continue;
+  const xi=THREE.MathUtils.clamp(
+   Math.floor((x-box.min.x)/Math.max(size.x,1e-6)*(nx-1)),0,nx-1);
+  const yi=THREE.MathUtils.clamp(Math.floor(yn*(ny-1)),0,ny-1);
+  const index=yi*nx+xi;
+  minima[index]=Math.min(minima[index],z);
+  samples++;
+ }
+ function query(x,y){
+  const yn=(y-box.min.y)/Math.max(size.y,1e-6);
+  if(yn<.065||yn>.64||!samples)return null;
+  const xi=THREE.MathUtils.clamp(
+   Math.round((x-box.min.x)/Math.max(size.x,1e-6)*(nx-1)),0,nx-1);
+  const yi=THREE.MathUtils.clamp(Math.round(yn*(ny-1)),0,ny-1);
+  let sum=0,weight=0;
+  for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++){
+   const xx=xi+ox,yy=yi+oy;
+   if(xx<0||xx>=nx||yy<0||yy>=ny)continue;
+   const z=minima[yy*nx+xx];
+   if(!Number.isFinite(z))continue;
+   const w=1/(1+ox*ox*1.1+oy*oy*1.5);
+   sum+=z*w;weight+=w;
+  }
+  return weight?sum/weight:null;
+ }
+ return {query,vertexSamples:samples,source:'real-bust-rear-depth-v55'};
+}
+
 function hairCutY(zone,box,lengthScale,seed,normalizedX=0,minLengthScale=.55){
  const d=box.getSize(new THREE.Vector3()),scale=clamp(lengthScale,minLengthScale,1.5);
  // A salon U-shaped long layer: center-back hangs longest, sides end a
@@ -977,6 +1020,13 @@ export function createScalpFirstLongGuide({
  if(nRoot.dot(outwards)<0)nRoot.negate();
  const result=[root.clone()];
  let last=root.clone();
+ // Temple strands should lie just outside the actual ear silhouette and
+ // descend in front of the pinna, not separate into a bald side part.
+ const earBandAt=y=>{
+  const yn=(y-box.min.y)/Math.max(d.y,1e-6);
+  return THREE.MathUtils.smoothstep(yn,.50,.63)*
+   (1-THREE.MathUtils.smoothstep(yn,.77,.90));
+ };
  // In v52 the gravity interval was a percentage of the ENTIRE uncut hair
  // length. With hair extending past the shoulders, 15% meant a horizontal
  // plate longer than the skull itself. Convert to anatomical head distance.
@@ -1018,7 +1068,18 @@ export function createScalpFirstLongGuide({
    if(radial.lengthSq()>1e-8)next.addScaledVector(radial.normalize(),volumeDelta);
   }
   next.y=Math.max(trimY,next.y);
-  if(projectOutside)projectOutside(next,j===1,front);
+  if(temple){
+   const earCover=earBandAt(next.y);
+   const earFrontZ=center.z+d.z*.092;
+   if(next.z<earFrontZ)
+    next.z+= (earFrontZ-next.z)*earCover*.72;
+   const earOuterX=d.x*.445;
+   const sideOffset=side*(next.x-center.x);
+   if(sideOffset<earOuterX)
+    next.x+=side*(earOuterX-sideOffset)*earCover*.70;
+  }
+  if(projectOutside)projectOutside(next,j===1,front,
+   j*length/segments<=d.y*.27);
   result.push(next);
   last=next;
  }
@@ -1048,6 +1109,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const center=box.getCenter(new THREE.Vector3());
  const {pools,all:scalpCandidates}=actualScalpCandidates(head.geometry,box);
  const surfaceSampler=createFastFaceSurfaceSampler(head.geometry);
+ const rearBustSampler=createRearBustDepthSampler(head.geometry,box);
  // Crown whorl uses an ACTUAL real-head scalp vertex, not a free cap.
  const whorlTarget=f3(center.x+style.whorl.x*d.x,
   box.min.y+style.whorl.y*d.y,center.z+style.whorl.z*d.z);
@@ -1110,9 +1172,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
  const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
  const sadakoWeights={
-  crown:.27,fringeLeft:.09,fringeRight:.09,
-  templeLeft:.10,templeRight:.10,
-  backLeft:.13,backRight:.13,napeLeft:.045,napeRight:.045
+  crown:.26,fringeLeft:.095,fringeRight:.095,
+  templeLeft:.145,templeRight:.145,
+  backLeft:.105,backRight:.105,napeLeft:.033, napeRight:.033
  };
  const weightedZones=WIG_ZONE_WEIGHTS.map(([name,originalWeight])=>{
   const weight=sadakoMaster?sadakoWeights[name]:originalWeight;
@@ -1164,10 +1226,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const rootLift=d.x*(style.shortCutKind==='buzz'?.013:style.shortCutKind?.010:.0125);
  const sadakoHeadDirection=new THREE.Vector3(),sadakoRenderCorner=new THREE.Vector3();
  let sadakoGuideScalpPushes=0,sadakoRibbonScalpPushes=0;
+ let sadakoRearBustGuideContacts=0,sadakoRearBustRibbonContacts=0;
  /** True exterior projection for the guide AND rendered ribbon corners.
   * A finite 0.035-width nudge left long-hair points inside the donor skull,
   * especially visible from underneath, so this projects all the way out. */
- function projectSadakoOutside(point,nearRoot=false,front=false){
+ function projectSadakoOutside(point,nearRoot=false,front=false,followScalp=false){
   if(!sadakoMaster)return false;
   const yn=(point.y-box.min.y)/Math.max(d.y,1e-6);
   if(yn<.40||yn>1.004)return false;
@@ -1187,6 +1250,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     point.x=origin.x+dx/radius*safe;
     point.z=origin.z+dz/radius*safe;
     changed=true;
+   }else if(followScalp&&yn>.70&&yn<.985&&(!front||yn>.875)){
+    // Keep the first head-length of crown/rear hair draped against the
+    // scalp. A fully radial guide without this attraction floats like a
+    // hard helmet above the rounded crown.
+    const excess=radius-safe;
+    if(excess>d.x*.015&&excess<d.x*.16){
+     const pull=Math.min(excess-d.x*.015,d.x*.042)*.58;
+     point.x-=dx/radius*pull;
+     point.z-=dz/radius*pull;
+     changed=true;
+    }
    }
   }
   if(front&&yn<.93&&point.z>=center.z+d.z*.005){
@@ -1197,6 +1271,29 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
   }
   return changed;
+ }
+ /** Correct the back of the nape/shoulder for both the full-body
+  * triangle collider and the face-only sculpted BUST. The latter is what
+  * the reported screenshot shows; it previously had no rear triangle test. */
+ function projectSadakoRearBust(point,zone){
+  if(!sadakoMaster)return false;
+  const rearZone=zone.startsWith('back')||zone.startsWith('nape')||
+   (zone==='crown'&&point.z<center.z-d.z*.03);
+  if(!rearZone)return false;
+  const yn=(point.y-box.min.y)/Math.max(d.y,1e-6);
+  if(yn>.64||yn<.065)return false;
+  const realBodyDepth=bodyCollisionResolver?.query?.(point.x,point.y)?.rear;
+  const donorDepth=rearBustSampler.query(point.x,point.y);
+  const rear=Number.isFinite(realBodyDepth)?realBodyDepth:donorDepth;
+  if(!Number.isFinite(rear))return false;
+  // Gentle fade above the actual neck; full clearance through shoulders.
+  const strength=1-THREE.MathUtils.smoothstep(yn,.48,.63);
+  const safeZ=rear-d.x*.026;
+  if(point.z>safeZ&&strength>.0001){
+   point.z=THREE.MathUtils.lerp(point.z,safeZ,strength);
+   return true;
+  }
+  return false;
  }
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
@@ -1542,6 +1639,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(sadakoMaster&&projectSadakoOutside(p,false,
     zone.startsWith('fringe')||zone.startsWith('temple')||overFace))
    sadakoGuideScalpPushes++;
+  if(projectSadakoRearBust(p,zone))
+   sadakoRearBustGuideContacts++;
   // Gentle drape attraction around lower neck and shoulders: keep a small
   // silhouette gap from the ACTUAL imported torso, never cross the surface.
   // This corrects the floating shell visible from top/side without letting
@@ -1686,6 +1785,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       if(renderBodyCollider.resolve(ribbonCollisionPoint,{side})){
        vx=ribbonCollisionPoint.x;vy=ribbonCollisionPoint.y;
        vz=ribbonCollisionPoint.z;ribbonBodyContacts++;
+      }
+     }
+     if(sadakoMaster&&j>0&&vy<box.min.y+d.y*.65){
+      ribbonCollisionPoint.set(vx,vy,vz);
+      if(projectSadakoRearBust(ribbonCollisionPoint,strand.zone)){
+       vx=ribbonCollisionPoint.x;vy=ribbonCollisionPoint.y;
+       vz=ribbonCollisionPoint.z;
+       sadakoRearBustRibbonContacts++;
       }
      }
      vertices[at]=vx;
@@ -1991,6 +2098,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoCenterParted:sadakoMaster,
   sadakoHairVolumeSpread:sadakoMaster?WIG_BASE_VOLUME_PROFILES[volumeProfile].spread||0:null,
   sadakoGravityDistanceBased:sadakoMaster,
+  sadakoEarCurtainLocks:sadakoMaster?strands.filter(s=>
+   s.zone.startsWith('temple')).length:0,
+  sadakoCrownScalpFollow:sadakoMaster,
+  sadakoRearBustSampler:sadakoMaster?rearBustSampler.source:null,
+  sadakoRearBustVertexSamples:rearBustSampler.vertexSamples,
   sadakoAreaSampledRoots:sadakoMaster?sadakoAreaSampledRoots:null,
   sadakoFollicleTriangles:sadakoFollicles?.donorTriangles||0,
   sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
@@ -2104,6 +2216,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    realBodyContactEvents:realBodyContacts,
    ribbonBodyContactEvents:ribbonBodyContacts,
    shoulderDrapeContactEvents:drapeContactEvents,
+   sadakoRearBustGuideContacts,sadakoRearBustRibbonContacts,
    glabellaClearanceEvents,scalpVertexCorrections};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
