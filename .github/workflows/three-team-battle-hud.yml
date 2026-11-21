@@ -13,6 +13,10 @@ on:
       - 'qa/battle-rpg-squad-hud.test.mjs'
       - 'qa/battle-stage-deployment-portraits.test.mjs'
       - 'qa/inn-strategy-three-team-wizard.test.mjs'
+      - 'qa/inn-roster-first-formation.test.mjs'
+      - 'src/inn-formation-wizard.js'
+      - 'src/inn-formation-rules.js'
+      - 'src/sortie-formation-template-rules.js'
       - 'qa/formation-minimum-deployment-radar.test.mjs'
       - 'qa/three-team-sortie.test.mjs'
       - 'src/three-team-sortie-ui.js'
@@ -42,3 +46,5 @@ jobs:
         run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
       - name: Verify formation-only inn and three-team stage handoff
         run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs
+      - name: Verify roster-first inn, equipment, captain and high-tier eligibility
+        run: node --experimental-vm-modules qa/inn-roster-first-formation.test.mjs
