@@ -15,7 +15,7 @@ import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from '.
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=sea-dragon-summon-silhouette-v3-20261121';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=monster-all50-pbr-v1-20261121';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[112,80],rock:4,rod:28,tube:[64,16],torus:[16,72]}),
