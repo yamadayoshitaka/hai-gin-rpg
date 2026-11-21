@@ -123,7 +123,7 @@ export function sweepVolume(g,parent,points,{
  const frames=curve.computeFrenetFrames(rings,false);
  const colA=new THREE.Color(color),colB=new THREE.Color(light);
  const xyz=[],rgba=[],uv=[],indices=[];
- const radiusAt=t=>radius*(.15+(1-.15)*(1-t)**.40)*(1-(1-taper)*t**2);
+ const radiusAt=t=>radius*Math.max(.014,(1-(1-taper)*t*t)*(1-.045*t));
  for(let i=0;i<=rings;i++){
   const t=i/rings,pos=curve.getPoint(t);
   const a=radiusAt(t);
