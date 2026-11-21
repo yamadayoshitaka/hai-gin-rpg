@@ -12,6 +12,7 @@ import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
+import {M050_CORAL_REVISION} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION}
  from './m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
@@ -34,6 +35,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    firstWave.has(spec.id)?'m001-compact-wolf-mouth-v10-20261117':
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
    spec.id==='m018'?M018_HYDRA_REVISION:
+   spec.id==='m050'?M050_CORAL_REVISION:
    spec.id==='m019'?M019_HERO_REVISION:
    salamanderLineageFor(spec.id)?SALAMANDER_LINEAGE_REVISION:
    spec.id==='m015'?'phoenix-master-tengu-feathers-v21-20261118':
@@ -42,6 +44,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
   stage:locked.has(spec.id)?'m001-source-derivative-external-locked':
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m018'?'existing-quadruped-with-three-long-dragon-necks-in-review':
+   spec.id==='m050'?'hydra-derived-coral-sea-beast-in-review':
    spec.id==='m019'?'m001-derived-owner-approved-2d-in-visual-review':
    salamanderLineageFor(spec.id)?'m019-anatomy-derivative-visual-review':
    spec.id==='m001'?'reference-implementation':

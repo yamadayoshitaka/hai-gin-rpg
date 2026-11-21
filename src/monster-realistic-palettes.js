@@ -14,6 +14,8 @@ export const MONSTER_REALISTIC_PALETTE=Object.freeze({
    accent:'#9d54c8',bone:'#bdae97',eye:'#ef7eff'}),
  m019:Object.freeze({skin:'#30292a',light:'#49393b',accent:'#ff792b',
    bone:'#514141',eye:'#ffbb55',shadow:'#151316'}),
+ m050:Object.freeze({skin:'#2c6767',light:'#9ab8a8',shadow:'#22484f',
+   accent:'#ed9d80',bone:'#e4c9a4',eye:'#80f2d8',metal:'#9a8259'}),
  m031:Object.freeze({skin:'#777b72',light:'#a6a89a',bone:'#d2c5ab',
    hair:'#302b29',fabric:'#463e3c',mortalSkin:'#828479',eye:'#493e32'}),
  m032:Object.freeze({skin:'#59634d',light:'#879177',bone:'#b8aa8c',

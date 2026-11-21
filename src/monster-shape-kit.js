@@ -6,13 +6,13 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=m050-hydra-derived-coral-beast-v1-20261121';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=m016-m017-salamander-quality-v21-20261121';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=m050-hydra-derived-coral-beast-v1-20261121';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[112,80],rock:4,rod:28,tube:[64,16],torus:[16,72]}),
@@ -923,7 +923,8 @@ export function createSculpture(spec,detail='high'){
    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
    geo.setIndex(indices);geo.computeVertexNormals();
-   return own(attach(parent,geo,shade,{rough:.61,translucent:options.translucent??false}));
+   return own(attach(parent,geo,shade,{name:options.name,rough:options.rough??.61,
+     translucent:options.translucent??false}));
  };
  const eyes=(parent,z=.34,y=.03,width=.19,size=.05)=>{
    const organic=nonhumanMonsterStage(spec)>0;

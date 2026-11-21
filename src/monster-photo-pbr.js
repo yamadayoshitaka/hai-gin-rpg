@@ -137,6 +137,7 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
    role==='fabric'?'velvet':
    role==='metal'?'steel':
    role==='leather'?'leather':
+   speciesId==='m050'&&role==='skin'?'scales':
    (family==='undead'||family==='fiend')?null:
    (family==='golem'&&speciesId==='m036')?null:
    CREATURE_FAMILY_SURFACE[family];
