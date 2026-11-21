@@ -162,8 +162,10 @@ import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expressi
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=70';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261121-shared-scalp-angle-coverage-v61';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261121-costume-mask-buzz-restored-v62';
 import {createMantleHairCollision} from './src/face-mantle-hair-collision.js?v=20261121-v60';
+import {setCostumeHairScalpMask,releaseCostumeHairScalpMask}
+ from './src/face-costume-scalp-mask.js?v=20261121-v62';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
@@ -488,6 +490,14 @@ function fitCamera(){
  setActive(['full','portrait'],zoomMode);
  setActive(['front','side','back','crown'],view);
 }
+function syncCostumeScalpMask(){
+ if(!model?.face)return;
+ // Do not clip before the real battle head is fitted, or its fitting
+ // bounding box would omit the donor's crown and shrink the entire face.
+ if(v32PartMode&&!battleCostume)return;
+ return setCostumeHairScalpMask(model.face,
+  wig?.root?.userData?.hairStyleId,{wigVisible:wigVisible&&!!wig});
+}
 function rebuildWig(){
  if(!model||!bodyAttachment)return;
 
@@ -515,7 +525,7 @@ function rebuildWig(){
   wig.root.position.set(h.x*.008*v32BodyPart.hairX,h.y*.007*v32BodyPart.hairY,0);
   wig.root.rotation.z=THREE.MathUtils.degToRad(v32BodyPart.hairAngle);
  }
- refreshWigBase();applyHairOnlyView();
+ refreshWigBase();syncCostumeScalpMask();applyHairOnlyView();
  counter.wigBuilds++;$('metrics').textContent=JSON.stringify(metrics(),null,2);
 }
 // Eye and lip controls rebuild ONLY the independent face. The imported body,
@@ -550,6 +560,9 @@ function rebuildFaceOnBody(){
   headCutY:bodyAttachment.report.neckSeamY+height*.028,
   bodyCutY:bodyAttachment.report.neckSeamY
  });
+ // The former fitted face owns a reversible donor copy. Release it
+ // before destroying that mesh; new face keeps its OWN uncut scalp.
+ releaseCostumeHairScalpMask(previous.face);
  previous.root.removeFromParent();scene.add(next.root);
  previous.root.traverse(obj=>{
   if(!obj.isMesh)return;
@@ -563,6 +576,7 @@ function rebuildFaceOnBody(){
  refreshExpression();
  wardrobe?.attachActor(next.root);
  battleCostume?.attachFace(next);
+ syncCostumeScalpMask();
  applyHairOnlyView();
  camera.position.copy(savedCameraPosition);
  camera.up.copy(savedCameraUp);
@@ -911,6 +925,7 @@ $('wigDensity').addEventListener('change',()=>{
 $('toggleWig').addEventListener('click',()=>{
  wigVisible=!wigVisible;
  if(wig)wig.root.visible=hairOnly||wigVisible;
+ syncCostumeScalpMask();
  $('toggleWig').setAttribute('aria-pressed',String(wigVisible));
  $('toggleWig').textContent=wigVisible?'髪を隠す':'髪を表示';
 });
@@ -1010,6 +1025,7 @@ frame();
    bodyCutY:bodyAttachment.report.neckSeamY
   });
   ready=true;
+  if(!v32PartMode)syncCostumeScalpMask();
   refreshExpression();
   for(const id of ['full','portrait','front','side','back','crown','toggleWig','hairOnly','toggleWigBase','toggleOutfit','style','wigDensity','saveGlb','saveWig','resetFaceControls'])
    $(id).disabled=false;
@@ -1025,6 +1041,7 @@ frame();
    }).then(bridge=>{
     battleCostume=bridge;
     battleCostume.setDemographics(v32BodyPart.ageBand,v32BodyPart.bodyType);
+    syncCostumeScalpMask();
     mantleCollision.refresh();
     renderNativeActionButtons();
     bodyAttachment.root.visible=false;
