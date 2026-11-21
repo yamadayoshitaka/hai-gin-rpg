@@ -515,7 +515,7 @@ export function createRealtimeBattleCommands({
  }
  function drawMap(){
   if($('realtimeBattleMapOverlay').hidden||!ctx)return;
-  const w=canvas.width,h=canvas.height;
+  const w=canvas.width||464,h=canvas.height||464;
   const span=worldSize/zoom;
   const minX=clamp(centerX-span/2,0,worldSize-span);
   const minZ=clamp(centerZ-span/2,0,worldSize-span);
@@ -1353,8 +1353,8 @@ export function createRealtimeBattleCommands({
   }
   if(mode==='deploy'){
     const hit=deploymentTiles.find(tile=>
-     px*canvas.width>=tile.left&&px*canvas.width<tile.right&&
-     pz*canvas.height>=tile.top&&pz*canvas.height<tile.bottom);
+     px*(canvas.width||464)>=tile.left&&px*(canvas.width||464)<tile.right&&
+     pz*(canvas.height||464)>=tile.top&&pz*(canvas.height||464)<tile.bottom);
     if(!hit?.legal){
      $('realtimeMapMessage').textContent='赤いマスは配置不可です。青いマスをタップしてください。';
      return;
