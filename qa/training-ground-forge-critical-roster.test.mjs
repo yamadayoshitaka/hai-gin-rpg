@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createNewGame,forgeSquadWeapon,squadEquipmentBonus,trainingHireCapacity,hireTownSoldiers} from '../src/game-core-flow.js';
 import {ensureMajorCharacterSquads,recruit} from '../src/story-campaign.js';
 import {renderInnFormationWizard} from '../src/inn-formation-wizard.js';
+import {ensureSortiePlan} from '../src/three-team-sortie.js';
 import {makeCoreBattleRequest,settleCoreBattle} from '../src/core-battle-bridge.js';
 
 test('training roster includes exactly one named strategist-swordsman and Garan',()=>{
@@ -54,7 +55,9 @@ test('training hires spend wallet (not treasury) and show precise money and army
 });
 test('formation selection shows all presets, remaining headcount and missing rarity or job rules',()=>{
  const game=createNewGame('陣形不足QA');
- const plan=game.sortiePlan||null;
+ ensureSortiePlan(game);
+ const team=game.sortiePlan.teams[0];
+ team.slots=[null,null,null];team.counts={};team.divisions={};team.grid=Array(16).fill(null);team.formation='free';
  const preview=renderInnFormationWizard({game,view:'roster',teamId:1,rosterFormationPage:2,rosterPreviewId:'dragon'});
  assert.match(preview,/陣形一覧/);
  assert.match(preview,/龍牙陣形/);
@@ -63,7 +66,6 @@ test('formation selection shows all presets, remaining headcount and missing rar
  assert.match(preview,/不足：/);
  assert.match(preview,/R以上|必要な職業|軍師Lv/);
  assert.match(preview,/signaturePreview/);
- assert.ok(plan===null||typeof plan==='object');
 });
 test('blacksmith charges gold, remembers a specific weapon +1 and changes real battle buff',()=>{
  const game=createNewGame('鍛冶QA');
