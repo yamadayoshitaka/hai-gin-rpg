@@ -57,9 +57,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/sadako-mantle-crown-v60/,
+ assert.match(page,/shared-scalp-angle-coverage-v61/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/sadako-mantle-crown-v60/,
+ assert.match(read('face-body-studio.html'),/shared-scalp-angle-coverage-v61/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -130,7 +130,7 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/sadako-mantle-crown-v60/);
- assert.match(body,/sadako-mantle-crown-v60/);
+ assert.match(studio,/shared-scalp-angle-coverage-v61/);
+ assert.match(body,/shared-scalp-angle-coverage-v61/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });
