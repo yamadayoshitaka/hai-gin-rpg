@@ -2,8 +2,8 @@ export const FACE_HAIR_RUNTIME_BUILD='20261121-two-donor-unisex-catalog-v67';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67-v71';
-import {selectCatalogCutLevel} from './hair-shape-catalog-v71.js?v=71';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67-v72';
+import {selectCatalogCutLevel} from './hair-shape-catalog-v71.js?v=72';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-wig-coiffure-v74';
 
