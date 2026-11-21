@@ -158,6 +158,16 @@ export const WIG_STYLES=deepFreeze({
    shortCutKind:'buzz',wigType:'independent-3d-asset',
    collisions:['scalp','face','neck']
   },
+  'sadako-straight-long':{
+   id:'sadako-straight-long',label:'貞子風・重力ストレートロング（試作）',part:'center',
+   whorl:{x:0,y:.965,z:-.08},partWidth:.001,fringeSweep:0,
+   gravityMps2:9.81,gravityScale:1.1,scalpClearance:.002,
+   faceClearance:.006,faceAvoidanceX:.014,backSweep:0,
+   restFallExponent:1.18,cut:'soft-u-layered',longLayers:true,
+   styleLength:1.28,templeVolume:0,strandWave:0,
+   wigType:'independent-3d-asset',
+   collisions:['scalp','face','neck','shoulder','chest']
+  },
   'soft-wave-long':{
    id:'soft-wave-long',label:'ゆるウェーブ・ロング',part:'side',
    whorl:{x:-.052,y:.965,z:-.08},partWidth:.008,fringeSweep:.045,
