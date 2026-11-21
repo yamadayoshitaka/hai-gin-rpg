@@ -8,8 +8,9 @@ import * as THREE from 'three';
 import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=concept-trio-v2-20261121';
+import {resolveMonsterThemeAction} from './monster-theme-actions.js';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
+ from './monster-animation.js?v=monster-50-family-actions-v1-20261121';
 import {resolveRegisteredMonsterModel}
  from './creature-game-model-routing.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
@@ -88,10 +89,11 @@ export function createRegisteredBattleMonster(spec,{
  }
  function update(time=0,action='idle'){
   if(disposed)return false;
-  const next=['idle','walk','run','attack','special','roar','dodge',
+  const technique=resolveMonsterThemeAction(spec,action);
+  const next=technique||['idle','walk','run','attack','special','roar','dodge',
     'hit','leap','defeat','guard'].includes(action)?action:'idle';
   if(next!==lastAction){
-   if(external)external.play(next);
+   if(external)external.play(technique?.base||next);
    else if(native)startMonsterAction(native,next,time);
    lastAction=next;
   }
