@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {buzzHairlineFractionAtPoint} from './face-scalp-wig.js';
-import {isSadakoFamilyStyle} from './face-wig-styles.js?v=65';
+import {isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67';
 
 /**
  * Hide ONLY the native skin underneath the independent wig in the full-body
@@ -19,7 +19,7 @@ export function setCostumeHairScalpMask(face,styleId,{
  if(face.geometry!==donor){
   face.geometry.dispose();face.geometry=donor;
  }
- const useMask=wigVisible&&(styleId==='buzz-cut'||isSadakoFamilyStyle(styleId));
+ const useMask=wigVisible&&(isBuzzFamilyStyle(styleId)||isSadakoFamilyStyle(styleId));
  data.costumeScalpMaskActive=false;
  data.costumeScalpMaskRemovedTriangles=0;
  data.costumeScalpMaskClippedTriangles=0;
@@ -41,7 +41,7 @@ export function setCostumeHairScalpMask(face,styleId,{
  // Never use a hemisphere threshold, which cuts a visible horizontal line.
  const distance=p=>p[1]-box.min.y-sz.y*(
   buzzHairlineFractionAtPoint({x:p[0],y:p[1],z:p[2]},box,sz,center)+
-  (styleId==='buzz-cut' ? -.012 : -.018));
+  (isBuzzFamilyStyle(styleId) ? -.012 : -.018));
  // Only crop the actual face donor. The lower collar is a second sewn
  // surface and must NEVER become a clipped hairline polygon.
  const originalStitchedVertices=donor.userData?.studioOriginalFaceVertexCount;

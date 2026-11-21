@@ -3,6 +3,7 @@
  * Data belongs to the wig, NEVER to the face master or its saved sliders.
  * Each style can be exported as an independent GLB via face-mesh-studio.
  */
+import {REBUILT_HAIR_BLUEPRINTS,REBUILT_HAIR_CATALOG} from './hair-rebuilt-catalog-v67.js';
 const deepFreeze=value=>{
  if(value&&typeof value==='object'){
   for(const child of Object.values(value))deepFreeze(child);
@@ -20,12 +21,15 @@ export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
  lifted:{label:'広げる',crown:.069,side:.013,spread:1},
  full:{label:'最大に広げる',crown:.086,side:.048,spread:1.5}
 });
-export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
+export const DEFAULT_WIG_STYLE_ID='rb-f-long';
 export const SADAKO_FAMILY_STYLE_IDS=Object.freeze([
  'sadako-straight-long','sadako-inward-long','sadako-outward-long',
  'sadako-sauvage-long','sadako-center-part-long','sadako-bangs-long'
 ]);
-export const isSadakoFamilyStyle=id=>SADAKO_FAMILY_STYLE_IDS.includes(id);
+export const isSadakoFamilyStyle=id=>SADAKO_FAMILY_STYLE_IDS.includes(id)||
+ REBUILT_HAIR_BLUEPRINTS[id]?.base==='sadako';
+export const isBuzzFamilyStyle=id=>id==='buzz-cut'||
+ REBUILT_HAIR_BLUEPRINTS[id]?.base==='buzz';
 // All descendants retain the original rooted scalp, hair collision and
 // long-guide parameters; each style changes only the approved free ends.
 const SADAKO_MASTER_STYLE=Object.freeze({
@@ -39,7 +43,41 @@ const SADAKO_MASTER_STYLE=Object.freeze({
  wigType:'independent-3d-asset',
  collisions:['scalp','face','neck','shoulder','chest']
 });
+// New catalog records are generated from two known-good mesh generators.
+const REBUILT_STYLE_RECORDS=Object.fromEntries(
+ Object.values(REBUILT_HAIR_BLUEPRINTS).map(r=>[
+ r.id,r.base==='sadako'?{
+  ...SADAKO_MASTER_STYLE,id:r.id,label:r.label,gender:r.gender,
+  part:r.part,partWidth:r.part==='side'?.024:.008,
+  sadakoVariant:r.front==='bangs'?'bangs':'center',
+  catalogCurl:r.curl,catalogFront:r.front,rebuiltBase:'sadako',
+  styleLength:r.length,catalogTempleRatio:r.templeRatio
+ }:{
+  id:r.id,label:r.label,gender:r.gender,rebuiltBase:'buzz',
+  groomMaster:'buzz-cut',part:r.part,
+  whorl:{x:r.part==='side'?-0.068:0,y:.965,z:-.08},
+  partWidth:r.part==='side'?.018:.004,fringeSweep:.016,
+  gravityMps2:9.81,gravityScale:1.01,scalpClearance:.002,
+  faceClearance:.006,faceAvoidanceX:.016,backSweep:0,
+  restFallExponent:1.04,cut:'rebuilt-buzz-short',longLayers:false,
+  shortCutKind:'short',styleLength:r.length,
+  rebuiltShortLength:r.length,catalogCurl:r.curl,
+  catalogFront:r.front,catalogTempleRatio:r.templeRatio,
+  templeVolume:0,strandWave:0,wigType:'independent-3d-asset',
+  collisions:['scalp','face','neck','shoulder','chest']
+ }
+ ]));
+const REBUILT_SILHOUETTE_RECORDS=Object.fromEntries(
+ Object.values(REBUILT_HAIR_BLUEPRINTS).map(r=>[
+ r.id,{
+  fringeDrop:r.front==='bangs'?.068:.04,
+  rearWidth:r.base==='buzz'?.92:.74,
+  rearCutShift:r.base==='buzz'?.33:-.04,
+  sideFlare:0,rearDepth:r.base==='buzz'?0:.028
+ }
+ ]));
 export const WIG_STYLES=deepFreeze({
+ ...REBUILT_STYLE_RECORDS,
  'center-part-gravity-long':{
   id:'center-part-gravity-long',
   label:'つむじ・センター分け（重力ロング）',
@@ -275,6 +313,7 @@ export const WIG_STYLES=deepFreeze({
 // Fringe drops can reach the brow and upper eyelid; rear width and cut line
 // establish distinct back silhouettes without inflating the crown.
 export const WIG_SILHOUETTE_PROFILES=deepFreeze({
+ ...REBUILT_SILHOUETTE_RECORDS,
  'center-part-gravity-long':{fringeDrop:.052,rearWidth:.58,rearCutShift:-.018,sideFlare:.006,rearDepth:.016},
  'sadako-straight-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
  'sadako-inward-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
@@ -324,18 +363,21 @@ export const WIG_SILHOUETTE_PROFILES=deepFreeze({
  "female-curly-bob":{"fringeDrop":0.09,"rearWidth":0.9,"rearCutShift":0.23,"sideFlare":0.065,"rearDepth":0.05600000000000001},
  "female-side-ponytail":{"fringeDrop":0.087,"rearWidth":0.81,"rearCutShift":-0.01,"sideFlare":0.047,"rearDepth":0.010000000000000002}
 });
-const FEMALE_ONLY_LEGACY_STYLES=new Set([
- 'princess-long','curtain-bangs-long','knight-long','mature-layer-long',
- 'fringe-long','shag-long','rounded-bob','soft-wave-long',
- 'full-fringe-straight','airy-shoulder-layers',
- 'sadako-straight-long','sadako-inward-long','sadako-outward-long',
- 'sadako-sauvage-long','sadako-center-part-long','sadako-bangs-long'
-]);
+/**
+ * The formerly displayed pre-v67 styles stay in WIG_STYLES so that saved
+ * model imports and historical QA remain readable. They are RETIRED from
+ * every live selector; only these two verified donor families are listed.
+ */
+const APPROVED_DONORS=new Set(['buzz-cut',...SADAKO_FAMILY_STYLE_IDS]);
 export function listWigStyles(gender=null){
  return Object.values(WIG_STYLES)
+  .filter(style=>style.rebuiltBase||APPROVED_DONORS.has(style.id))
   .filter(style=>!gender||style.gender===gender||
-   (!style.gender&&(gender==='female'||!FEMALE_ONLY_LEGACY_STYLES.has(style.id))))
-  .map(({id,label,part,cut,gender})=>({id,label,part,cut,gender:gender||'shared'}));
+   (gender==='female'&&SADAKO_FAMILY_STYLE_IDS.includes(style.id))||
+   style.id==='buzz-cut')
+  .map(({id,label,part,cut,gender,rebuiltBase})=>({
+   id,label,part,cut,gender:gender||'shared',
+   base:rebuiltBase||(id==='buzz-cut'?'buzz':'sadako')}));
 }
 export function getWigStyle(id=DEFAULT_WIG_STYLE_ID){
  const style=WIG_STYLES[id];

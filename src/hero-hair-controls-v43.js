@@ -3,8 +3,8 @@
  * and full-body editors. Each of the 16 catalog entries must resolve to a
  * finite guide length. No silently undefined length when indexes reach 13-15.
  */
-import {PART_CATALOG,normalizePartSelection} from './face-part-catalog-v32.js?v=65';
-import {getWigStyle} from './face-wig-styles.js?v=65';
+import {PART_CATALOG,normalizePartSelection} from './face-part-catalog-v32.js?v=67';
+import {getWigStyle} from './face-wig-styles.js?v=67';
 
 export const MALE_HAIR_LENGTH_V43=Object.freeze({
  'center-part-gravity-long':.57,'salon-layered-long':.33,
@@ -43,7 +43,10 @@ export function resolveHeroHairSpec(gender,rawParts={},requestedStyleId=null){
  const styleId=requested||catalog[selection.hair].values.styleId;
  const hairIndex=catalog.findIndex(row=>row.values.styleId===styleId);
  const style=getWigStyle(styleId);
- const lengthScale=gender==='male'?MALE_HAIR_LENGTH_V43[styleId]:1;
+ // New catalog lengths are baked into the buzz/Sadako donor recipe.
+ // Old saved male IDs still use the v43 scale table for compatibility.
+ const lengthScale=gender==='male'?
+  (style.rebuiltBase?1:MALE_HAIR_LENGTH_V43[styleId]):1;
  if(!Number.isFinite(lengthScale)||lengthScale<=0)throw Error('Undefined hair length for '+gender+': '+styleId);
  return Object.freeze({gender,styleId,hairIndex,lengthScale,
   shortCutKind:style.shortCutKind||null,

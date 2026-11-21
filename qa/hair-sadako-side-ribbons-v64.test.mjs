@@ -96,10 +96,10 @@ test('root pigment of Sadako side strands blends longer into donor scalp',()=>{
 });
 
 test('both previews and CI use v64 while keeping full-body mantle collision',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-invisible-perm-rods-v66$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/two-donor-unisex-catalog-v67$/);
  const body=read('face-body-studio.html'),face=read('face-mesh-studio.html');
  for(const html of [body,face])
-  assert.match(html,/20261121-sadako-invisible-perm-rods-v66/);
+  assert.match(html,/20261121-two-donor-unisex-catalog-v67/);
  assert.match(body,/garmentCollisionResolver:mantleCollision/);
  assert.match(body,/wig\?\.update\(dt\)/);
  assert.match(read('.github/workflows/hair-reselect-regression.yml'),

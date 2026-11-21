@@ -7,7 +7,7 @@ import {scalpToGravityWeight,createScalpFirstLongGuide,
 import {WIG_STYLES} from '../src/face-wig-styles.js';
 
 test('v52 root tangent hugs scalp to 15%, then gravity blends until 38%',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v66$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v67$/);
  assert.equal(scalpToGravityWeight(0),0);
  assert.equal(scalpToGravityWeight(.15),0);
  assert.ok(Math.abs(scalpToGravityWeight(.265)-.5)<1e-8);
@@ -104,7 +104,7 @@ test('Android studio provides a real one-tap underside hair view',()=>{
  assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
  assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
  assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
- assert.match(page,/sadako-invisible-perm-rods-v66/);
+ assert.match(page,/two-donor-unisex-catalog-v67/);
 });
 
 test('v53 independent follicle sampling covers crown and front without topology density bias',()=>{
@@ -145,9 +145,9 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  const page=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const hair=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
  assert.match(page,/sadakoCover=isSadakoFamilyStyle\(wig\?\.root\?\.userData\?\.hairStyleId\)/);
- assert.match(page,/if\(!wig\?\.root\?\.userData\?\.buzzFibreOnly&&!sadakoCover\)/);
+ assert.match(page,/if\(!isBuzzFamilyStyle\(wig\?\.root\?\.userData\?\.hairStyleId\)&&!sadakoCover\)/);
  assert.match(page,/v53-sadako-matched-donor-clipping/);
  assert.match(hair,/if\(shortHair\)return buzzHairlineFractionAtPoint/);
  assert.match(hair,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/);
- assert.match(page,/sadako-invisible-perm-rods-v66/);
+ assert.match(page,/two-donor-unisex-catalog-v67/);
 });

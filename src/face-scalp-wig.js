@@ -1,8 +1,8 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-invisible-perm-rods-v66';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-two-donor-unisex-catalog-v67';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle} from './face-wig-styles.js?v=65';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-wig-coiffure-v74';
 
@@ -1638,12 +1638,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const cutKind=style.shortCutKind||null;
   // Do not make all battle buzz cuts visually bald. Actual crop length
   // remains short, without changing studio/editor style definitions.
-  const shortLength=cutKind==='buzz'?(battleStableCoverage?.088:.032):
+  const shortLength=style.rebuiltBase==='buzz'?style.rebuiltShortLength:
+   cutKind==='buzz'?(battleStableCoverage?.088:.032):
    cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
-  const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618)):
+  const templeScale=zone.startsWith('temple')?
+   (style.catalogTempleRatio||1):1;
+  const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618))*templeScale:
    bangsCut?d.y*(.21+.024*fract(i*.618)):
    sadakoGravity?d.y*(longFactor+fract(i*.381966)*.13)*
-    clamp(lengthScale,minLengthScale,1.5)*(style.styleLength||1):
+    clamp(lengthScale,minLengthScale,1.5)*(style.styleLength||1)*templeScale:
    (fringe||overFace)?
     Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
     d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,minLengthScale,1.5)*
@@ -1720,6 +1723,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     variant:sadakoVariant,box,zone,side:partSide,
     rootIndex:i,front:faceFrame,bangsCut
    });
+   // Face-parting and invisible-rod curls are INDEPENDENT components.
+   // Earlier old styles used one variant switch and silently lost curls.
+   if(style.catalogCurl&&style.catalogCurl!=='straight'&&!bangsCut)
+    shapeSadakoVariantGuide(shape,{
+     variant:style.catalogCurl,box,zone,side:partSide,
+     rootIndex:i,front:false,bangsCut:false
+    });
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
    }
@@ -1752,6 +1762,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      t,zone,partSide,front:closeToFace,rootIndex:i
     });
     p.x+=d.x*groom.x;p.y+=d.y*groom.y;p.z+=d.z*groom.z;
+    // Short styles have the genuine buzz-cut scalp and stubble. Their
+    // grown top hair is shaped from the SAME attached follicles.
+    if(style.rebuiltBase==='buzz'){
+     if(style.part==='back'&&frontRoot)p.z-=d.z*.15*t;
+     if(style.catalogCurl&&style.catalogCurl!=='straight'){
+      const bend=sadakoInvisiblePermRodOffset(style.catalogCurl,t,{
+       side:partSide,rootIndex:i,width:d.x,depth:d.z});
+      const scale=style.catalogCurl==='sauvage'?.45:.27;
+      p.x+=bend.x*scale;p.y+=bend.y*scale;p.z+=bend.z*scale;
+     }
+     if(style.catalogFront==='bangs'&&fringe)
+      p.y=Math.max(box.min.y+d.y*.762,p.y);
+    }
    }
    if(j>0&&t<.65&&y>box.min.y+d.y*.60){
     const direction=f3(p.x-scalpCenter.x,0,p.z-scalpCenter.z);
@@ -2320,7 +2343,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // across the REAL pigmented scalp. Keep the helper for standalone QA.
  const sadakoCrownFlow=sadakoMaster?createSadakoCrownFlow(cap,box,color):null;
  if(sadakoCrownFlow)root.add(sadakoCrownFlow);
- const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
+ const closeCutFibres=isBuzzFamilyStyle(style.id)?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
  // Restore a dense fine-fibre underlayer beneath the original swept locks.
  // Neither mesh contains the opaque scalp shell.
@@ -2520,6 +2543,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoScalpDoubleLayerDisabled:sadakoMaster,
   sadakoFacePartingDisabled:sadakoMaster&&sadakoVariant!=='center',
   sadakoVariant:sadakoMaster?sadakoVariant:null,
+  rebuiltHairBase:style.rebuiltBase||null,
+  rebuiltHairCatalogV67:!!style.rebuiltBase,
+  rebuiltHairRecipe:style.rebuiltBase?{
+   length:style.styleLength,front:style.catalogFront,
+   curl:style.catalogCurl,part:style.part,
+   templeRatio:style.catalogTempleRatio
+  }:null,
   sadakoVisibleEyes:sadakoMaster&&(sadakoVariant==='center'||sadakoVariant==='bangs'),
   sadakoCurlShape:sadakoMaster?({
    straight:'gravity-straight',
