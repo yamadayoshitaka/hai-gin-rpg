@@ -1,0 +1,49 @@
+name: Town facilities and optional battle contracts
+on:
+  pull_request:
+    paths:
+      - 'town-hub.html'
+      - 'game.html'
+      - 'world-map.html'
+      - 'tactics-wireframe.html'
+      - 'src/game-core-flow.js'
+      - 'src/core-battle-bridge.js'
+      - 'src/town-side-quests.js'
+      - 'assets/town/portraits/**'
+      - 'assets/town/facilities/**'
+      - 'qa/town-saves-optional-quests.test.mjs'
+      - '.github/workflows/town-services.yml'
+  workflow_dispatch:
+jobs:
+  town-services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check src/town-side-quests.js
+          node --check src/core-battle-bridge.js
+          node --check qa/town-saves-optional-quests.test.mjs
+      - name: Validate all original facility image assets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          for category in ('portraits','facilities'):
+            for name in ('tavern','weapons','items','formation','save','story'):
+              path=Path('assets/town')/category/(name+'.svg')
+              ET.parse(path)
+              print('SVG valid:',path)
+          PY
+      - name: Test real optional battle rewards and saves
+        run: node qa/town-saves-optional-quests.test.mjs
+      - name: Validate original story-stage battle and squad gear
+        run: |
+          node --experimental-vm-modules qa/game-core-contract.test.mjs
+          node qa/town-facility-squad-gear.test.mjs
+      - name: Town flow regression
+        run: node qa/town-visit-experience.test.mjs
