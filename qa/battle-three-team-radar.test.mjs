@@ -42,7 +42,7 @@ test('public radar and team HUD use the same group source, while job controls st
  assert.match(html,/getRadarGroup:id=>THREE_TEAM_BATTLE/);
  assert.match(html,/onRadarTeamCommand:groupId=>/);
  assert.match(html,/targetedStrategyUi\.open\(groupId,\{startAtRecommendations:true,groupOnly:true\}\)/);
- assert.match(realtime,/const own=squads\(\),enemies=getEnemies\(\)/);
+ assert.match(realtime,/const own=squads\(\),enemies=typeof getRadarEnemies==='function'/);
  assert.match(realtime,/radarPins=squadRadarPins\(visibleAllies,enemies,worldSize,currentRows\)/);
  assert.match(realtime,/pin\.number=group;pin\.groupId=group/);
  assert.match(realtime,/onRadarTeamCommand\(pin\.groupId,pin\.id\)/);
