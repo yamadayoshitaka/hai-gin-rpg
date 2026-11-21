@@ -82,6 +82,8 @@ button{padding:9px 11px}
 </div>
 <div class="controls" id="quickHairControl" aria-label="女性の髪型を3D実メッシュで切り替え">
 <label for="quickWigStyle">髪型を切り替え <select id="quickWigStyle" aria-label="女性の髪型を選択"></select></label>
+<label for="wigVolume">髪ボリューム（抑える／広げる）
+<select id="wigVolume" aria-label="髪を頭に密着させるか横に広げるか"></select></label>
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
 <div class="previewStage" id="previewStage"><button type="button" id="hairForceReload" style="display:block;margin:8px 0;padding:9px 12px;border:1px solid #78bdb1;border-radius:8px;background:#196354;color:#fff;font-weight:700" onclick="location.replace(location.pathname+'?hair_reload='+Date.now())">最新版を再読込（キャッシュ回避）</button>
@@ -157,12 +159,11 @@ button{padding:9px 11px}
 <input type="range" id="wigDensity" min="480" max="2400" step="120" value="1800"></label>
 <label for="wigLength">女性の髪の長さ <output id="wigLengthValue">1×</output>
 <input type="range" id="wigLength" min="0.6" max="1.5" step="0.05" value="1"></label>
-<label for="wigColor">髪色<select id="wigColor">
+<label for="wigColor" id="legacyWigColorLabel">髪色<select id="wigColor">
 <option value="blonde" selected>ゴールド・ブロンド</option>
 <option value="ash">アッシュブロンド</option><option value="brown">ブラウン</option>
 <option value="black">黒髪</option></select></label>
-<label for="wigStyle">固有の髪型（取り外し可能なヅラ）
-<select id="wigStyle" aria-label="ヅラの髪型を選択"></select></label>
+
 </div><div class="controls"><button id="resetPreset" disabled>ライブラリ保存の標準値に戻す</button></div></details>
 <details id="maleAdjustments" hidden open>
 <summary>男性顔の3D調整・ヒゲ</summary>
@@ -221,10 +222,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-sadako-unified-scalp-area-roots-v53';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-sadako-parting-volume-curved-v54';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
-import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=45';
+import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES} from './src/face-wig-styles.js?v=54';
 import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=46';
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset,HERO_FACE_PRESETS} from './src/hero-face-presets-v45.js?v=64';
 import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from './src/character-cast-v46.js?v=64';
@@ -372,11 +373,16 @@ if(v32PartMode){
 for(const style of listWigStyles('female')){
  const option=document.createElement('option');
  option.value=style.id;option.textContent=style.label;
- $('wigStyle').appendChild(option);
- $('quickWigStyle').appendChild(option.cloneNode(true));
+ $('quickWigStyle').appendChild(option);
 }
-$('wigStyle').value=wigStyleId;
+for(const [id,profile] of Object.entries(WIG_BASE_VOLUME_PROFILES)){
+ const option=document.createElement('option');
+ option.value=id;option.textContent=profile.label;
+ $('wigVolume').appendChild(option);
+}
 $('quickWigStyle').value=wigStyleId;
+$('wigVolume').value=v32Parts.female.hairVolume;
+if(v32PartMode)$('legacyWigColorLabel').hidden=true;
 const performanceMetrics={headRebuilds:0,wigRebuilds:0,fastLipstickRepaints:0};
 const expressionPrefs={autoBlink:true,speaking:false,expression:'neutral'},expressions=new Map();
 if(new URLSearchParams(location.search).get('qa')==='expression'){
@@ -757,9 +763,10 @@ function rebuildWig(){
  const chosen=synchronizeHeroHairSelection('female',v32Parts.female,
   v32PartMode?null:wigStyleId);
  Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
- $('wigStyle').value=chosen.styleId;
  $('quickWigStyle').value=chosen.styleId;
- $('activeHairStyle').textContent='再生成：'+($('wigStyle').selectedOptions[0]?.textContent||chosen.styleId);
+ $('quickWigStyle').value=chosen.styleId;
+ $('wigVolume').value=v32Parts.female.hairVolume;
+ $('activeHairStyle').textContent='再生成：'+($('quickWigStyle').selectedOptions[0]?.textContent||chosen.styleId);
  performanceMetrics.wigRebuilds++;
  setHairHiddenScalp(models.get('female')?.face,false);
  const previous=wigs.get('female');
@@ -774,7 +781,7 @@ function rebuildWig(){
     visualFiberMultiplier:10,staticGroom:true,
    normalLayeredSingleMesh:v32PartMode,gender:'female',
    styleId:chosen.styleId,
-   volumeProfile:v32PartMode?v32Parts.female.hairVolume:'natural',
+   volumeProfile:v32Parts.female.hairVolume,
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
@@ -818,14 +825,15 @@ $('wigColor').addEventListener('change',()=>{
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 $('quickWigStyle').addEventListener('change',()=>{
- $('wigStyle').value=$('quickWigStyle').value;
- $('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
-});
-$('wigStyle').addEventListener('change',()=>{
- const chosen=synchronizeHeroHairSelection('female',v32Parts.female,$('wigStyle').value);
+ const chosen=synchronizeHeroHairSelection('female',v32Parts.female,$('quickWigStyle').value);
  Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
  wigOn=true;
  rebuildWig();$('metrics').textContent=JSON.stringify(metrics(),null,2);
+});
+$('wigVolume').addEventListener('change',()=>{
+ v32Parts.female.hairVolume=$('wigVolume').value;
+ wigOn=true;rebuildWig();
+ $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 function rebuildMaleHair(){
  const chosen=synchronizeHeroHairSelection('male',v32Parts.male);
@@ -1116,7 +1124,7 @@ setupAdjustTabs('faceGroupTabs',[
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
  ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
  ['カラコン',['contactPreset','contactColor']],
- ['髪',['wigStyle','wigDensity','wigLength','wigColor']]
+ ['髪',['wigDensity','wigLength','wigColor']]
 ]);
 setupAdjustTabs('maleGroupTabs',[
  ['顎・輪郭',['maleJawSharpness']],
@@ -1233,7 +1241,8 @@ if(v32PartMode){
      const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
      if(facePartChanged)modelChanges=nextControls;
      wigStyleId=synchronized.styleId;
-     $('wigStyle').value=wigStyleId;
+     $('quickWigStyle').value=wigStyleId;
+     $('wigVolume').value=v32Parts.female.hairVolume;
      if(hairChanged){
      wigOn=true;
      $('wig').setAttribute('aria-pressed','true');
@@ -1271,14 +1280,16 @@ if(v32PartMode){
     facePickerControls[sex]?.refresh(v32Parts[sex]);
    };
   partSelectionHandlers[sex]=onPartSelection;
-  createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
+  createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
+   {hideHairType:sex==='female',hideHairVolume:sex==='female'});
   facePickerControls[sex]=mountHeroFacePresetPicker(
    $('v45'+(sex==='female'?'Female':'Male')+'FacePresets'),{
     gender:sex,getParts:()=>v32Parts[sex],
     onPick:index=>{
      const picked=chooseHeroFacePreset(sex,index,v32Parts[sex]);
      onPartSelection(picked,true);
-     createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
+     createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
+   {hideHairType:sex==='female',hideHairVolume:sex==='female'});
      facePickerControls[sex].refresh(v32Parts[sex]);
      if(sex===gender)syncFaceControlDisplays();
     }
@@ -1293,7 +1304,8 @@ if(v32PartMode){
     if(sex==='female'){
      const part=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
      modelChanges=normalizeFemaleFaceControls({...part.controls,...look.controls});
-     wigStyleId=look.styleId;$('wigStyle').value=look.styleId;
+     wigStyleId=look.styleId;$('quickWigStyle').value=look.styleId;
+     $('wigVolume').value=v32Parts.female.hairVolume;
      if(ready){rebuildFemale();rebuildWig();persistHeroineFace();}
     }else{
      const part=resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT);
@@ -1307,7 +1319,8 @@ if(v32PartMode){
     $('v47BodyType').value=look.bodyType;
     wigOn=true;
     $('wig').setAttribute('aria-pressed','true');$('wig').textContent='髪を隠す';
-    createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection);
+    createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
+   {hideHairType:sex==='female',hideHairVolume:sex==='female'});
     facePickerControls[sex].refresh(v32Parts[sex]);
     $('status').textContent=look.item.label+'：顔・髪の3Dモデルを選択';
     if(ready)repaint();
@@ -1319,7 +1332,8 @@ if(v32PartMode){
     ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
    partSelectionHandlers[gender](picked,false);
    createPartSelectorUI($('v32'+(gender==='female'?'Female':'Male')+'Choices'),
-    gender,v32Parts[gender],partSelectionHandlers[gender]);
+    gender,v32Parts[gender],partSelectionHandlers[gender],
+    {hideHairType:gender==='female',hideHairVolume:gender==='female'});
    $('status').textContent=AGE_PROFILES[picked.ageBand].label+'・'+
     BODY_PROFILES[picked.bodyType].label+'の3D顔を再生成';
   });
@@ -1339,8 +1353,8 @@ if(v32PartMode){
    const host=$('v45'+(sex==='female'?'Female':'Male')+'FacePresets');
    host?.querySelector('button[data-preset-index="'+m.faceIndex+'"]')?.click();
   }
-  if(m.hair&&[...$('wigStyle').options].some(o=>o.value===m.hair)){
-   $('wigStyle').value=m.hair;$('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
+  if(m.hair&&[...$('quickWigStyle').options].some(o=>o.value===m.hair)){
+   $('quickWigStyle').value=m.hair;$('quickWigStyle').dispatchEvent(new Event('change',{bubbles:true}));
   }
   if(FACE_EXPRESSIONS[m.expression]){
    $('faceExpression').value=m.expression;
@@ -1431,8 +1445,8 @@ async function init(){
   }
   if(query.has('hair')){
    const style=query.get('hair');
-   if([...$('wigStyle').options].some(o=>o.value===style)){
-    $('wigStyle').value=style;$('wigStyle').dispatchEvent(new Event('change',{bubbles:true}));
+   if([...$('quickWigStyle').options].some(o=>o.value===style)){
+    $('quickWigStyle').value=style;$('quickWigStyle').dispatchEvent(new Event('change',{bubbles:true}));
    }
   }
   if(FACE_EXPRESSIONS[query.get('expression')]){
