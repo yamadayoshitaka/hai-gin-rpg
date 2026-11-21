@@ -8,14 +8,14 @@ import * as THREE from 'three';
 
 export const GARGOYLE_SPECIES_REVISION='m042-gothic-gargoyle-v1-20261121';
 export const GARGOYLE_MATERIAL_ROLES=Object.freeze({
- gargoyleStone:0x797f84,
- gargoyleRidge:0x9b9994,
- gargoyleShadow:0x34373b,
+ gargoyleStone:0x5b5c63,
+ gargoyleRidge:0x77767a,
+ gargoyleShadow:0x27262b,
  gargoyleHorn:0x494b50,
  gargoyleClaw:0xa19b91,
- gargoyleMembrane:0x514149,
- gargoyleWingVein:0x837078,
- gargoyleEye:0xd15f39
+ gargoyleMembrane:0x382630,
+ gargoyleWingVein:0x626069,
+ gargoyleEye:0xed5836
 });
 const far=detail=>detail==='low'||detail==='medium';
 const ringSides=detail=>detail==='low'?8:detail==='medium'?12:22;
@@ -81,6 +81,37 @@ export function createGargoyleHeadGeometry({detail='high'}={}){
   {y:-.189,rx:.053,rz:.065,z:-.047}
  ],detail,{kind:'gargoyle-angular-demonic-face',ridge:.031,grain:.037});
 }
+
+/**
+ * Inset pectoral / intercostal fascia: irregular folded plate on the main
+ * chest surface, no bulbous spheres or separate breast protrusions.
+ */
+export function createGargoyleRibPlateGeometry({detail='high',side=1}={}){
+ const rows=far(detail)?5:11,cols=far(detail)?5:10;
+ const pts=[],uv=[],indices=[];
+ for(let r=0;r<=rows;r++){
+  const t=r/rows;
+  for(let c=0;c<=cols;c++){
+   const u=c/cols;
+   const x=side*(.035+u*(.233-.055*t));
+   const y=.265-t*.365+.020*u;
+   const stone=-.192-.024*Math.sin(u*Math.PI)
+    -.014*Math.cos(t*Math.PI)+.007*Math.sin(u*14+t*17);
+   pts.push(x,y,stone);
+   uv.push(u,t);
+   if(r<rows&&c<cols){
+    const a=r*(cols+1)+c,b=a+cols+1;
+    indices.push(a,b,a+1,a+1,b,b+1);
+   }
+  }
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setIndex(indices);geo.computeVertexNormals();
+ geo.userData={kind:'gargoyle-fitted-pectoralis-fascia',detail,side};
+ return geo;
+}
 export function createGargoyleLimbGeometry({detail='high',part='upperArm'}={}){
  const sizes={
   upperArm:[.405,.145,.137,.098],
@@ -132,13 +163,16 @@ export function createGargoyleWingGeometry({detail='high',side=1}={}){
  const pts=[],uv=[],indices=[];
  for(let i=0;i<=columns;i++){
   const u=i/columns;
-  const upper=.27+(.83*Math.sin(u*Math.PI*.67))+.16*u;
-  const scallop=.16*Math.cos(u*Math.PI*7)+.07*Math.cos(u*Math.PI*11);
-  const lower=.10-.35*u+scallop*(u>.11?1:0);
+  const upper=.31+.87*Math.sin(u*Math.PI*.69)+.13*u;
+  const scallop=.15*Math.cos(u*Math.PI*7)+.05*Math.cos(u*Math.PI*11);
+  const spread=.10-.33*u+scallop*(u>.11?1:0);
+  // Compress the outermost membrane to a pointed wing finger rather than
+  // ending in the giant vertical rectangular panel seen on the last build.
+  const lower=spread*(1-Math.pow(u,4.2))+upper*Math.pow(u,4.2);
   for(let j=0;j<=rows;j++){
    const v=j/rows;
    const span=.132+1.22*u;
-   const folded=.036*Math.sin(u*Math.PI*13)*Math.sin(v*Math.PI);
+   const folded=.085*Math.sin(u*Math.PI*9)*Math.sin(v*Math.PI);
    pts.push(side*span,upper*(1-v)+lower*v,
     .35+.48*u+folded+.06*Math.sin(u*3)*v);
    uv.push(u*2,v*2);
@@ -263,7 +297,7 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   return mesh;
  };
  const gem=(frame,name,role,p,scale)=>{
-  const g=new THREE.IcosahedronGeometry(1,near?1:0);
+  const g=new THREE.OctahedronGeometry(1,0);
   g.scale(...scale);return add(frame,g,role,name,p);
  };
  const horn=(frame,name,role,p,{height=.18,width=.04,curve=.09,side=1,rotation=[0,0,0]}={})=>{
@@ -285,10 +319,12 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   const i=side<0?0:1;
   gem(frames.head,'high-cheekbone-'+i,'gargoyleRidge',
    [side*.107,-.032,-.090],[.072,.066,.072]);
-  gem(frames.head,'sunken-eye-'+i,'gargoyleShadow',
-   [side*.070,.046,-.151],[.047,.026,.015]);
-  gem(frames.head,'ember-pupil-'+i,'gargoyleEye',
-   [side*.069,.048,-.166],[.021,.009,.010]);
+  add(frames.head,new THREE.BoxGeometry(.080,.019,.014),
+   'gargoyleShadow','sunken-eye-'+i,
+   [side*.071,.047,-.154],[0,0,side*.19]);
+  add(frames.head,new THREE.BoxGeometry(.037,.006,.011),
+   'gargoyleEye','ember-pupil-'+i,
+   [side*.071,.047,-.170],[0,0,side*.19]);
   horn(frames.head,'recurved-temple-horn-'+i,'gargoyleHorn',
    [side*.125,.155,.012],{height:.27,width:.061,curve:.145,side,
     rotation:[0,0,side*.24]});
@@ -306,10 +342,8 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   horn(frames.head,'short-carved-fang-'+i,'gargoyleClaw',
    [side*.052,-.116,-.136],{height:.075,width:.014,curve:.009,
     side,rotation:[Math.PI,0,0]});
-  gem(frames.chest,'stone-pectoral-'+i,'gargoyleRidge',
-   [side*.147,.17,-.177],[.128,.109,.073]);
-  gem(frames.chest,'upper-rib-muscle-'+i,'gargoyleStone',
-   [side*.171,-.016,-.178],[.094,.13,.049]);
+  add(frames.chest,createGargoyleRibPlateGeometry({detail,side}),
+   'gargoyleRidge','fitted-chiseled-pectoral-'+i);
   line(frames.chest,'gargoyleShadow','sternum-fissure-'+i,[
    [side*.115,.28,-.153],[side*.206,.165,-.199],
    [side*.111,.012,-.22],[side*.144,-.218,-.18]
@@ -332,12 +366,14 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   const side=i===0?-1:1;
   const upper=frames.arms[i],fore=frames.forearms[i],hand=frames.hands[i];
   const thigh=frames.legs[i],calf=frames.calves[i],foot=frames.feet[i];
-  gem(upper,'organic-shoulder-shell-'+i,'gargoyleStone',
-   [0,-.007,0],[.142,.155,.136]);
+  add(upper,createGargoyleSpireGeometry({detail,height:.18,
+    width:.09,curve:.04,side}),
+   'gargoyleRidge','angular-shoulder-crest-'+i,
+   [side*.035,.09,-.023],[0,0,side*.67]);
   add(upper,createGargoyleLimbGeometry({detail,part:'upperArm'}),
    'gargoyleStone','upper-arm-shell-'+i);
   gem(fore,'sinewy-elbow-'+i,'gargoyleRidge',
-   [0,0,0],[.109,.086,.115]);
+   [0,0,0],[.092,.073,.100]);
   add(fore,createGargoyleLimbGeometry({detail,part:'forearm'}),
    'gargoyleStone','forearm-shell-'+i);
   gem(hand,'sculpted-talon-palm-'+i,'gargoyleStone',
@@ -349,17 +385,17 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
      rotation:[Math.PI,0,side*.07]});clawCount++;
   }
   gem(thigh,'pelvis-side-muscle-'+i,'gargoyleStone',
-   [0,-.01,0],[.144,.146,.143]);
+   [0,-.01,0],[.119,.125,.115]);
   add(thigh,createGargoyleLimbGeometry({detail,part:'thigh'}),
    'gargoyleStone','thigh-shell-'+i);
   gem(calf,'angular-kneecap-'+i,'gargoyleRidge',
-   [0,0,-.041],[.126,.103,.131]);
+   [0,0,-.041],[.099,.087,.102]);
   add(calf,createGargoyleLimbGeometry({detail,part:'shin'}),
    'gargoyleStone','shin-shell-'+i);
   gem(foot,'stone-ankle-'+i,'gargoyleStone',
    [0,.008,0],[.092,.084,.096]);
   gem(foot,'long-demon-paw-'+i,'gargoyleStone',
-   [0,-.076,-.114],[.132,.097,.211]);
+   [0,-.076,-.114],[.115,.075,.199]);
   for(let toe=0;toe<3;toe++){
    horn(foot,'raptor-stone-toe-'+i+'-'+toe,'gargoyleClaw',
     [(toe-1)*.081,-.105,-.277],
@@ -382,27 +418,45 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   add(frames.chest,createGargoyleWingGeometry({detail,side}),
    'gargoyleMembrane','scalloped-leather-stone-wing-'+i);
   wingCount++;
+  // Raised wing finger bones follow the SAME sweep as the real membrane.
+  // Previously these were straight, floating rods far in front of the wing.
+  const wingTop=u=>.31+.87*Math.sin(u*Math.PI*.69)+.13*u;
+  const wingBase=u=>{
+   const scallop=.15*Math.cos(u*Math.PI*7)+.05*Math.cos(u*Math.PI*11);
+   const spread=.10-.33*u+scallop*(u>.11?1:0);
+   return spread*(1-Math.pow(u,4.2))+wingTop(u)*Math.pow(u,4.2);
+  };
+  const wingPoint=(u,v)=>[
+   side*(.132+1.22*u),
+   wingTop(u)*(1-v)+wingBase(u)*v,
+   .35+.48*u+.085*Math.sin(u*Math.PI*9)*Math.sin(v*Math.PI)+
+    .06*Math.sin(u*3)*v
+  ];
   for(let k=0;k<(near?4:3);k++){
-   const reach=.48+k*.22;
+   const reach=.42+k*.17;
+   const v=.12+k*.13;
    line(frames.chest,'gargoyleWingVein','wing-articulated-rib-'+i+'-'+k,[
-    [side*.14,.26,.33],
-    [side*(reach*.67),.48+k*.125,.54],
-    [side*reach,.41+k*.12,.64+k*.05]
-   ],near?.013:.021);
+    wingPoint(.015,.12),wingPoint(reach*.55,v*.6),
+    wingPoint(reach,v)
+   ],near?.011:.018);
   }
   line(frames.chest,'gargoyleRidge','wing-root-to-shoulder-'+i,[
-   [side*.22,.28,.16],[side*.37,.42,.33],
-   [side*.56,.55,.45]],.020);
+   wingPoint(0,.20),wingPoint(.21,.09),
+   wingPoint(.42,.04)],.016);
  }
  add(frames.pelvis,createGargoyleTailGeometry({detail}),
   'gargoyleStone','long-jointed-stone-tail');
+ const endX=.20*Math.sin(4.7),endZ=1.15+.16*Math.sin(3.4);
  horn(frames.pelvis,'tail-arrow-tip','gargoyleHorn',
-  [.20,-.81,1.31],{height:.18,width:.042,curve:.07,
+  [endX,-.815,endZ],{height:.135,width:.033,curve:.045,
    side:1,rotation:[Math.PI*.40,0,.37]});
- if(near)for(let j=0;j<5;j++)
+ if(near)for(let j=0;j<5;j++){
+  const t=(j+1)/7;
   horn(frames.pelvis,'tail-dorsal-spike-'+j,'gargoyleRidge',
-   [.026*Math.sin(j),-.15-j*.12,.39+j*.14],
-   {height:.06,width:.025,curve:.02,rotation:[.65,0,0]});
+   [.20*t*t*Math.sin(t*4.7),.065-.88*t,
+    .15+t+.16*Math.sin(t*3.4)],
+   {height:.045,width:.016,curve:.016,rotation:[.65,0,0]});
+ }
  frames.chest.userData.golemFullShellRevision=GARGOYLE_SPECIES_REVISION;
  frames.chest.userData.golemShellParts=count;
  frames.chest.userData.gargoyleMeshCount=count;
