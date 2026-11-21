@@ -54,6 +54,19 @@ export function applyMonsterMaterialPigment(material,role,profile){
  }
  if(role==='cloth'){
   tinted.roughness=Math.max(.79,tinted.roughness??.8);
+  if(profile.costume==='seraph_female'&&
+     !tinted.transparent&&!tinted.alphaMap){
+   // Change only the INSTANCE-CLONED donor garment. A dark, baked source
+   // albedo was still poking through the ivory bodice as brown/black patches.
+   // Leave the actor's skin, eyes and wing textures completely untouched.
+   tinted.map=null;
+   tinted.color.setHex(0xf0ebe2);
+   tinted.roughness=.67;
+   tinted.metalness=0;
+   tinted.userData={...tinted.userData,
+    seraphDonorGarmentNeutralised:true,sourceMaterialUnmodified:true};
+   tinted.needsUpdate=true;
+  }
   if(profile.forestGreen){
    // Some imported ranger outfits bake BLACK cloth directly into their
    // baseColor map. Multiplying the new emerald tint by that black albedo
