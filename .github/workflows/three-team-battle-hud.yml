@@ -80,7 +80,7 @@ jobs:
       - name: Verify formation-only inn and three-team stage handoff
         run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs
       - name: Verify compatible formation opening tactics and enlarged training preview
-        run: node --check src/prebattle-opening-tactics.js && node --check src/battle-realtime-commands.js && node --test qa/prebattle-additional-tactics.test.mjs
+        run: node --check src/prebattle-opening-tactics.js && node --check src/battle-realtime-commands.js && node --experimental-vm-modules --test qa/prebattle-additional-tactics.test.mjs
       - name: Verify roster-first inn, equipment, captain and high-tier eligibility
         run: node --experimental-vm-modules qa/inn-roster-first-formation.test.mjs
       - name: Verify training ground, forge upgrades, gacha preservation and story-critical losses
