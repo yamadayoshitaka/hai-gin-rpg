@@ -3,7 +3,7 @@ import {sculptArticulatedReptileTail} from './m018-hydra-sculpt.js';
 
 export const REPTILE_DETAIL_REVISION='reptile-sculpture-v2-20261121';
 export const hasReptileDetail=id=>['m016','m017','m019'].includes(id);
-export const SEA_DRAGON_REVISION='sea-dragon-summon-silhouette-v3-20261121';
+export const SEA_DRAGON_REVISION='sea-dragon-colossal-length-v4-20261121';
 export const isSeaDragon=id=>id==='m020'||id==='m048';
 
 
@@ -122,12 +122,12 @@ function sculptMarineFace(g,head,id){
 }
 
 const SEA_SPINE=[
- [-.31,3.07,1.13],[-.45,2.91,.79],[-.65,2.39,.56],[-.67,1.68,.43],
- [-.39,1.09,.17],[.22,.78,-.43],[.93,.78,-1.14],[1.10,.94,-1.91],
- [.76,1.15,-2.61],[.055,1.24,-3.20],[-.57,1.40,-3.66],[-.83,1.66,-4.12],
+ [-.31,3.30,1.31],[-.49,3.12,.87],[-.74,2.57,.61],[-.78,1.82,.42],
+ [-.53,1.16,.13],[.25,.82,-.58],[1.14,.82,-1.58],[1.39,.98,-2.73],
+ [1.07,1.19,-3.85],[.23,1.29,-4.82],[-.63,1.46,-5.60],[-1.15,1.83,-6.45],
 ];
-const SHELL_RADII=[[0,.182],[.13,.265],[.31,.346],[.43,.370],
- [.59,.317],[.73,.226],[.87,.143],[1,.026]];
+const SHELL_RADII=[[0,.182],[.13,.270],[.31,.366],[.43,.402],
+ [.59,.340],[.73,.238],[.87,.153],[1,.026]];
 
 function radiusAlong(t,ice){
  for(let i=1;i<SHELL_RADII.length;i++){
@@ -205,10 +205,10 @@ function sculptSeaBodyFins(g,curve,joints,radius,id,low){
   g.curvedHorn(owner,ice?'bone':'light',root.toArray(),bend.toArray(),end.toArray(),
    Math.min(.087,r*.44),{capRoot:true,name:id+'-dorsal-keel-'+i});
  }
- const breast=curve.getPointAt(.393);
+ const breast=curve.getPointAt(.348);
  for(const side of [-1,1]){
   const suffix=side<0?'L':'R';
-  const reach=ice?.68:1.05;
+  const reach=ice?.74:1.16;
   const root=[breast.x+side*.12,breast.y+.035,breast.z];
   const rays=[[side*reach,ice?.33:.64,-.50],[side*(reach+.15),.25,-.94],
    [side*(reach-.04),-.19,-1.03],[side*.35,-.24,-.76]]
@@ -231,7 +231,7 @@ export function sculptSeaDragon(g,spec){
  const radius=t=>radiusAlong(t,ice);
  const tube=g.tube(torso,'seaDragonSkin',path,radius(0),{
   name:id+'-marine-serpent-skin',capEnds:true,radiusProfile:radius,
-  tubularSegments:low?37:72,radialSegments:low?11:20,rough:.66,
+  tubularSegments:low?42:80,radialSegments:low?11:20,rough:.66,
  });
  const curve=tube.geometry.parameters.path;
  sculptSeaScales(tube,curve,ice);
