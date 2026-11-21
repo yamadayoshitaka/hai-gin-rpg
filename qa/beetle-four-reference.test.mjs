@@ -46,7 +46,7 @@ for(const detail of ['low','high'])for(const id of BEETLE_CONCEPT_SPECIES)
     assert.ok(Math.abs(tip.geometry.userData.root[0])<.001,
      'fork must grow from same central horn stem');
     assert.ok(p['wing'+side]&&p['leg'+side+'0']&&p['leg'+side+'2'],
-     'beetle's rig must preserve three pairs of legs and flapping wings');
+     'beetle rig must preserve three pairs of legs and flapping wings');
     const wing=byName(id+'-upper-translucent-wing-'+side);
     assert.ok(wing?.isMesh&&wing.material.alphaMap?.isDataTexture,
      'must retain genuine veined translucent membranes');
