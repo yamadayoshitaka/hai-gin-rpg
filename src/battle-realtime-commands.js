@@ -279,8 +279,10 @@ export function createRealtimeBattleCommands({
     (defaults.formationActive===false?'（未成立：基本作戦のみ使用可能）':'（戦闘中も維持）')+
     (defaults.reason?'｜'+String(defaults.reason):'')+(strategy?'':'｜有効な作戦がありません');
   }
-  const face=$('realtimeMapPortrait'),faceKey=String(own[index]?.job)+'|'+String(own[index]?.id);
-  if(face.dataset.signature!==faceKey){setBattleJobPortrait(face,own[index]?.job,own[index]?.id,0);face.dataset.signature=faceKey;}
+  const captain=getInitialTeamPlan(own[index])?.captain||null;
+  const portraitJob=captain?.job||own[index]?.job,portraitId=captain?.id||own[index]?.id;
+  const face=$('realtimeMapPortrait'),faceKey=String(portraitJob)+'|'+String(portraitId);
+  if(face.dataset.signature!==faceKey){setBattleJobPortrait(face,portraitJob,portraitId,0);face.dataset.signature=faceKey;}
   $('realtimeMapPage').textContent=(index+1)+'/'+own.length;
   $('realtimeMapPrev').disabled=index<=0;
   $('realtimeMapNext').disabled=index>=own.length-1;
@@ -290,7 +292,7 @@ export function createRealtimeBattleCommands({
   $('realtimeDockPage').textContent=(index+1)+'/'+own.length;
   const dockFace=$('realtimeDockPortrait');
   if(dockFace.dataset.signature!==faceKey){
-   setBattleJobPortrait(dockFace,own[index]?.job,own[index]?.id,0);
+   setBattleJobPortrait(dockFace,portraitJob,portraitId,0);
    dockFace.dataset.signature=faceKey;
   }
  }
