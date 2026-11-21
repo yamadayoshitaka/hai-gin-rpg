@@ -75,7 +75,7 @@ export function applyHumanlikeConceptFinish({THREE,profile,detail='high',frames,
  };
  // Every 2D design gets a true contoured metal/cloth relief at the chest:
  // one physical surface, not a flat decal or texture-only placeholder.
- const reliefRole=constructed?'metal':armored.has(kind)?'metal':
+ const reliefRole=constructed.has(kind)?'metal':armored.has(kind)?'metal':
   kind==='linen'?'linen':kind==='bone'?'bone':
   kind==='feather'?'cloth':kind==='velvet'||kind==='amethyst'?'gold':'rune';
  const chest=frames.chest;
@@ -176,7 +176,7 @@ export function applyHumanlikeConceptFinish({THREE,profile,detail='high',frames,
  }else if(kind==='silver'){
   ring(frames.head,'gold','guardian-sanctified-halo',
    0,.21,.08,.135,.014);
- }else if(kind==='imp'||kind==='stonewing'){
+ }else if(kind==='imp'){
   for(const side of [-1,1])
    ring(frames.head,kind==='imp'?'rune':'metal',
     'demonic-horn-collar-'+side,side*.085,.16,-.03,.029,.008);
@@ -186,6 +186,9 @@ export function applyHumanlikeConceptFinish({THREE,profile,detail='high',frames,
     [side*.10,.22,-.175],[side*.09,-.04,-.22],
     [0,-.24,-.20]],.011);
  }
+ if(kind==='stonewing')for(const side of [-1,1])
+  ring(frames.head,'metal','gargoyle-rooted-horn-ring-'+side,
+   side*.095,.16,-.028,.035,.008);
  // A signature may be generic in the low crowd LOD, but no decorative mesh
  // changes the rig, source material, attack timings, or species stats.
  return Object.freeze({id:profile.id,revision:HUMANLIKE_CONCEPT_REVISION,
