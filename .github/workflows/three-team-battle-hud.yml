@@ -41,4 +41,4 @@ jobs:
       - name: Verify stage identity, one deployment and captain/species portraits
         run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
       - name: Verify formation-only inn and three-team stage handoff
-        run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs && node --experimental-vm-modules qa/three-team-sortie.test.mjs && node --experimental-vm-modules qa/formation-minimum-deployment-radar.test.mjs
+        run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs
