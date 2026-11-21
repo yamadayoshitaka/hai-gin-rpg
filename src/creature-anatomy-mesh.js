@@ -13,7 +13,7 @@ const blend=(a,b,t)=>a+(b-a)*t;
  * The root is intentionally embedded inside its parent skull.
  */
 export function createRootedCreatureHornGeometry({
-  root,elbow,tip,radius=.12,detail='high',ridges=9
+  root,elbow,tip,radius=.12,detail='high',ridges=9,capRoot=false
 }={}){
  if(![root,elbow,tip].every(v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite))||
     !Number.isFinite(radius)||radius<=0)throw Error('Invalid anatomical horn');
@@ -43,6 +43,12 @@ export function createRootedCreatureHornGeometry({
  for(let row=0;row<segments;row++)for(let col=0;col<around;col++){
    const a=row*(around+1)+col,b=a+around+1;
    indices.push(a,b,a+1,a+1,b,b+1);
+ }
+ if(capRoot){
+   const center=points.length/3;
+   points.push(...root);
+   uv.push(.5,0);
+   for(let col=0;col<around;col++)indices.push(center,col,col+1);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));

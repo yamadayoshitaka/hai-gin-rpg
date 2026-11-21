@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m018-continuous-tail-venom-blades-v25-20261121';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
@@ -211,11 +211,14 @@ export function createSculpture(spec,detail='high'){
        const last=positions.length/3;positions.push(...curve.getPointAt(1).toArray());uv.push(.5,1);
        const end=segments*(radial+1);
        for(let j=0;j<radial;j++){
-         index.push(first,j+1,j);
-         index.push(last,end+j,end+j+1);
+         index.push(first,j,j+1);
+         index.push(last,end+j+1,end+j);
        }
        geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
        geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+       // Three reuses a preexisting normal buffer instead of resizing it.
+       // The new cap vertices need normals too, or WebGL rejects the draw.
+       geo.deleteAttribute('normal');
        geo.setIndex(index);
      }else p.needsUpdate=true;
      geo.computeVertexNormals();
@@ -554,9 +557,9 @@ export function createSculpture(spec,detail='high'){
    return skin;
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
- const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin',rough=.49}={})=>{
+ const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin',rough=.49,capRoot=false}={})=>{
    const geo=createRootedCreatureHornGeometry({
-     root:rootPoint,elbow,tip,radius,detail:detail==='low'?'low':'high'
+     root:rootPoint,elbow,tip,radius,capRoot,detail:detail==='low'?'low':'high'
    });
    const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
    mesh.userData.rootedKeratin=true;
