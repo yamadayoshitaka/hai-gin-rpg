@@ -5585,7 +5585,7 @@ function syncMassBattleSnapshot(){
   }
  }
  const [ally,foe]=massSim.live;
- if(!ally||!foe)completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
+ if(!ally||(!foe&&!captureObjective))completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
 }
 // Runtime pickup is distinct from the upper-floor pathfinding pickup.
 // Checking the ACTUAL room/position prevents items from being collected
@@ -5951,7 +5951,7 @@ function tickAI(dt){
  }
  }
  if(skirmishActions)emitCombatEvents(skirmishActions.events);
- const [ally,foe]=teamCounts();if(!ally||!foe)completeBattle(Boolean(ally),{
+ const [ally,foe]=teamCounts();if(!ally||(!foe&&!captureObjective))completeBattle(Boolean(ally),{
  detail:(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒'});
 }
 // A 2000-unit battle cannot label every head without hiding the battle.
@@ -8571,7 +8571,7 @@ const captureObjective=(storyRequest?.stageKind||selectedStage?.kind)==='capture
   radius:11,holdSeconds:8}):null;
 const readCaptureGoal=()=>{
  if(!captureObjective)return null;
- return captureObjective.ensure(enemySquadIds.map(id=>squadCenter(id,1)).filter(Boolean));
+ return captureObjective.snapshot()||captureObjective.ensure(enemySquadIds.map(id=>squadCenter(id,1)).filter(Boolean));
 };
 let centralStrategyPreviousPause=null;
 $('topStrategy').onclick=()=>{
