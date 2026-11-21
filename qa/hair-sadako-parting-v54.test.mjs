@@ -98,6 +98,6 @@ test('face and body studios expose only one visible style/volume/density selecto
  assert.match(selector,/if\(!hideHairVolume\)panel\.append\(baseLabel\)/);
  assert.match(body,/hideHairType:true,hideHairVolume:true/);
  assert.match(body,/label\[for="v32HairDensity"\]/);
- assert.match(face,/sadako-ear-crown-bust-v55/);
- assert.match(body,/sadako-ear-crown-bust-v55/);
+ assert.match(face,/sadako-ear-curtain-crown-over-v56/);
+ assert.match(body,/sadako-ear-curtain-crown-over-v56/);
 });
