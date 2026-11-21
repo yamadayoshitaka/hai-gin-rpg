@@ -162,7 +162,7 @@ import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expressi
 import {FEMALE_V7_DEFAULTS,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,FACE_SLIDER_RANGES,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls} from './src/face-v7-controls.js';
 import {applyFaceColorMode} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=70';
-import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261121-sadako-headhug-rear-drape-v58';
+import {createScalpAnchoredWig} from './src/face-scalp-wig.js?v=20261121-sadako-curved-dynamic-v59';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG} from './src/face-part-catalog-v32.js?v=41';
 import {attachIndependentHeadToBody,removeHeadBustBelowNeck,createSealedNeckBridge} from './src/face-body-assembly.js';
@@ -487,7 +487,7 @@ function rebuildWig(){
   gender:'female',
   normalLayeredSingleMesh:v32PartMode,
   fineFringeMultiplier:3,visualFiberMultiplier:Number($('wigDensity').value),
-  staticGroom:true,
+  staticGroom:hairSpec.styleId!=='sadako-straight-long',
   volumeProfile:v32PartMode?v32BodyPart.hairVolume:'natural',
   color:Number('0x'+(v32PartMode?
    resolvePartSelection('female',v32BodyPart).hairHex:palette.hair).slice(1)),
@@ -951,9 +951,10 @@ function frame(){
  requestAnimationFrame(frame);
  const dt=clock.getDelta();
  expressionAnimator?.update(dt);
- // Static groom: baked mesh and no per-frame hair physics.
+ // Animate clothing first, then compute the hair's head/neck follow-through.
  if(battleCostume)battleCostume.update(dt);
  else wardrobe?.update(dt);
+ wig?.update(dt);
  resize();orbit.update();renderer.render(scene,camera);
 }
 frame();
