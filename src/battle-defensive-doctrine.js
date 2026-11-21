@@ -43,3 +43,27 @@ export function defensiveDamageMultiplier(target,element='physical'){
  const reduction=physical?target.defendPhysicalReduction:target.defendElementalReduction;
  return 1-clamp(Number.isFinite(reduction)?reduction:0,0,.4);
 }
+
+
+/**
+ * Decide whether a defending skirmish soldier may pursue a target.
+ * Distances are measured in grid cells so the policy is independent of
+ * scene/world scale. Hysteresis prevents an enemy near the defensive edge
+ * from pulling troops repeatedly away from and back to their own post.
+ *
+ * Defenders always attack enemies already within weapon range; pursuing
+ * enemies beyond the guarded perimeter is not an implicit assault order.
+ */
+export function resolveDefensiveGuardIntent({
+ distanceFromPost=0,enemyDistanceFromPost=Infinity,enemyDistance=Infinity,
+ attackRange=0,returning=false,guardRadius=5,returnRadius=3.2
+}={}){
+ const distance=Number.isFinite(distanceFromPost)?Math.max(0,distanceFromPost):0;
+ const mustReturn=returning?distance>returnRadius:distance>guardRadius+1;
+ const canAttack=Number.isFinite(enemyDistance)&&enemyDistance<=attackRange;
+ // Do not take a step outward at the edge of the guarded zone. The
+ // opponent must enter this perimeter before defenders give chase.
+ const canPursue=!mustReturn&&Number.isFinite(enemyDistanceFromPost)&&
+   enemyDistanceFromPost<=guardRadius&&distance<guardRadius-.5;
+ return {returnToPost:mustReturn,allowPursuit:canAttack||canPursue};
+}
