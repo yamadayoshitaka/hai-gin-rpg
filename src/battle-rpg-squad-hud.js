@@ -185,7 +185,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     if(state.textContent!==value)state.textContent=value;
     state.title=rpgHudStatus(row);
     const engaged=previous.querySelector('.rpgSquadEngaged');
-    if(engaged)engaged.hidden=!row.inContact;
+    if(engaged)engaged.hidden=!row.inContact||value==='⚔';
     for(const [type,current,max] of [['hp',row.hp,row.maxHp],['mp',row.mp,row.maxMp]]){
      const meter=previous.querySelector('.rpgSquadMeter-'+type);
      if(!meter)continue;
