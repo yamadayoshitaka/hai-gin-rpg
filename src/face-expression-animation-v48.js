@@ -97,9 +97,12 @@ function buildSide(parts,side,headSize){
  const brow=parts.getObjectByName(side+'_BROW_ANGLE_CONTROL');
  const browRest=brow?{y:brow.position.y,z:brow.rotation.z}:null;
  const upperLash=parts.getObjectByName(side+'_UPPER_LASH_MESH');
+ const lowerLash=parts.getObjectByName(side+'_LOWER_LASH_MESH');
  const lashRestY=upperLash?.position.y??0;
+ const lowerLashRestY=lowerLash?.position.y??0;
  const cover=makeClosure(upper,lower,side,headSize);
- return {a,b,cover,eye,iris,pupil,decorations,upperLash,lashRestY,brow,browRest,side};
+ return {a,b,cover,eye,iris,pupil,decorations,upperLash,lashRestY,
+  lowerLash,lowerLashRestY,brow,browRest,side};
 }
 function moveGrid({attr,rest},otherRest,openness,upper){
  const cols=28,rows=4;
@@ -135,6 +138,10 @@ function moveDecorations(side,blink){
   const center=14*3;
   const gap=b.rest[center+1]-a.rest[center+1];
   side.upperLash.position.y=side.lashRestY+gap*.89*blink;
+ }
+ if(side.lowerLash){
+  const center=14*3,gap=a.rest[center+1]-b.rest[center+1];
+  side.lowerLash.position.y=side.lowerLashRestY+gap*.11*blink;
  }
 }
 function coverEye(side,blink,headSize){
@@ -200,6 +207,30 @@ export function v65ExpressionMuscleDelta({ax,ny,front,expression={}}={}){
    .0011*anger*glabella};
 }
 
+/** v76 small anatomically localized skin-muscle response. Eyebrow raise,
+ * nasal ala, glabella, cheek and nasolabial compression share the existing
+ * owned head vertices. Never add fake wrinkle cards or replace the donor. */
+export function v76ExpressionMuscleDelta({ax,ny,front,expression={}}={}){
+ const bell=(x,c,w)=>Math.exp(-.5*Math.pow((x-c)/w,2));
+ const smile=Math.max(0,Number(expression.smile)||0);
+ const frown=Math.max(0,-(Number(expression.brow)||0));
+ const raised=Math.max(0,Number(expression.brow)||0);
+ const squint=Math.max(0,Number(expression.squint)||0);
+ const open=Math.max(0,Number(expression.open)||0);
+ const nasalAla=bell(ax,.105,.035)*bell(ny,.552,.037)*front;
+ const nasolabial=bell(ax,.20,.048)*bell(ny,.526,.047)*front;
+ const forehead=bell(ax,.21,.23)*bell(ny,.802,.049)*front;
+ const glabella=bell(ax,.07,.045)*bell(ny,.739,.035)*front;
+ const cheekLift=bell(ax,.34,.077)*bell(ny,.606,.047)*front;
+ const canthus=bell(ax,.42,.073)*bell(ny,.675,.042)*front;
+ return {
+  dy:.0020*smile*cheekLift+.0011*raised*forehead-
+   .0012*frown*glabella-.0012*open*nasalAla,
+  dz:.0021*smile*cheekLift-.0016*(smile+squint)*nasolabial+
+   .0010*(smile+squint)*canthus+.0012*frown*glabella+
+   .0007*open*nasalAla
+ };
+}
 export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=false,expressionIntensity=1}={}){
  const face=model?.face,parts=model?.parts;
  if(!face?.geometry||!parts?.getObjectByName)throw Error('Real anatomical face model required');
@@ -239,12 +270,13 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const jaw=fall(ax,.12,.23)*fall(ny,.28,.095)*front;
    const inner=fall(ax,.16,.10)*fall(ny,.745,.05)*front;
    const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:e});
+   const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:e});
    facialAttr.array[k]=x;
    facialAttr.array[k+1]=y+yd*(.018*e.smile*lipCorner+
     .012*e.cheek*cheek+.008*e.brow*brow+
-    .013*e.tilt*inner-.020*e.open*jaw+muscle.dy);
+    .013*e.tilt*inner-.020*e.open*jaw+muscle.dy+micro.dy);
    facialAttr.array[k+2]=z+depth*(.009*e.cheek*cheek+
-    .008*Math.max(0,e.smile)*lipCorner+muscle.dz);
+    .008*Math.max(0,e.smile)*lipCorner+muscle.dz+micro.dz);
   }
   facialAttr.needsUpdate=true;
   face.geometry.computeVertexNormals();face.geometry.computeBoundingSphere();
@@ -337,6 +369,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    blink:Number(blink.toFixed(3)),mouthOpen:Number(mouthOpen.toFixed(3)),
    blinkEyes:sides.length,mouthIs3D:!!mouth,sourceMeshUnchanged:true,
    v65NasalCheekMuscleCoupling:true,
+   v76FineForeheadNasalNasolabialAndCanthusMuscles:true,
+   v76BothLashesTrackBlinkClosure:true,
    expressionIntensity:strength,
    elapsed:Number(elapsed.toFixed(3))})
  };
