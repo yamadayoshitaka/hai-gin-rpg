@@ -256,10 +256,13 @@ export function sadakoCrownSurfaceLayerOffset(zone,y,t,box){
  if(zone!=='crown')return 0;
  const d=box.getSize(new THREE.Vector3());
  const yn=(y-box.min.y)/Math.max(d.y,1e-6);
- const upper=THREE.MathUtils.smoothstep(yn,.735,.87);
- const rooted=THREE.MathUtils.smoothstep(t,0,.095);
- const returnToShape=1-THREE.MathUtils.smoothstep(t,.18,.42);
- return d.x*.016*upper*rooted*returnToShape;
+ // Top hair is the outside layer over *all* adjacent forehead and
+ // temple hair until it leaves the skull. Layering is anatomical: keep
+ // rooted mesh points attached and decay before the loose long ends.
+ const upper=THREE.MathUtils.smoothstep(yn,.64,.83);
+ const rooted=THREE.MathUtils.smoothstep(t,0,.085);
+ const returnToShape=1-THREE.MathUtils.smoothstep(t,.52,.76);
+ return d.x*.038*upper*rooted*returnToShape;
 }
 
 /** Sample the real donor bust's REAR silhouette below the head.
@@ -1096,12 +1099,15 @@ export function createScalpFirstLongGuide({
    // farther out than the pinna. Constrain only the ear-height band;
    // above it, crown roots still follow their unmodified scalp path.
    const yn=(next.y-box.min.y)/Math.max(d.y,1e-6);
-   const pinnaBand=THREE.MathUtils.smoothstep(yn,.45,.53)*
-    (1-THREE.MathUtils.smoothstep(yn,.84,.92));
+   // Cap the ear-height silhouette relative to this lock's real follicle.
+   // The previous .445 * full-head WIDTH was almost the entire half head
+   // (on the test skull x=.89), so it still formed a horizontal wing.
+   // Keep side hair near its true source while it drops past both ears.
    const sideDistance=side*(next.x-center.x);
-   const maxEarOut=d.x*.445;
-   if(sideDistance>maxEarOut&&pinnaBand>0){
-    next.x-=side*(sideDistance-maxEarOut)*pinnaBand;
+   const maxEarOut=Math.max(d.x*.29,
+    side*(root.x-center.x)+d.x*.035);
+   if(yn>=.49&&yn<=.90&&sideDistance>maxEarOut){
+    next.x-=side*(sideDistance-maxEarOut);
    }
   }
   if(projectOutside)projectOutside(next,j===1,front,
@@ -1718,8 +1724,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
      (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
     (strand.zone.startsWith('fringe')?.52:
-     strand.zone.startsWith('temple')?.93:
-     strand.zone==='crown'?.81:
+     strand.zone.startsWith('temple')?.90:
+     strand.zone==='crown'?1.10:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -2141,7 +2147,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoEarCurtainLocks:sadakoMaster?strands.filter(s=>
    s.zone.startsWith('temple')).length:0,
   sadakoEarCoverageMethod:sadakoMaster?'lower-temple-rooted-vertical-curtain-v56':null,
-  sadakoCrownLayerOrder:sadakoMaster?'crown-outside-fringe-temple-render-ribbons-v56':null,
+  sadakoCrownLayerOrder:sadakoMaster?'crown-outer-shell-over-temple-fringe-v56':null,
+  sadakoCrownOuterMaxFraction:sadakoMaster?.038:null,
+  sadakoCrownOuterOnlyAboveEar:sadakoMaster,
   sadakoEarRibbonWidthFactor:sadakoMaster?.93:null,
   sadakoCrownScalpFollow:sadakoMaster,
   sadakoRearBustSampler:sadakoMaster?rearBustSampler.source:null,
