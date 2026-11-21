@@ -399,7 +399,12 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    .multiplyScalar(s*(1+naturalEyeMakeup.lowerLift+.037*noseBridgeHighlight));
   // Pigment is on the NEW vertices of the SAME face mesh as the mouth rim.
   // There is no stationary skin lipstick underneath a floating lip layer.
-  const lipWeight=mouthTopology?.lipTintWeights?.get(i)||0;
+  // The uncut head's own lip-region vertices carry pigment. Its
+  // position/makeup moves together under FACS deformation, so there
+  // is no stationary lipstick patch or separate lip plane.
+  const lipWeight=mouthTopology?.integrated?
+   (mouthTopology.lipTintWeights.get(i)||0):
+   (face.userData.v83SafeOriginalMouthTopology?lipMask:0);
   if(lipWeight>0){
    const painted=lipNatural.clone().lerp(lipstick,
     gender==='male'?0:clamp(cosmeticOpacity(.23)*lipWeight,0,1));
@@ -413,7 +418,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.facePigmentControls={...settings};
  face.userData.activeMakeupType=gender==='female'?Math.max(0,Math.min(9,Math.round(Number(makeupType)||0))):null;
  face.userData.mouthPigmentSource=mouthTopology?.integrated?
-  'integrated-head-mouth-vertices-v82':'deforming-vermilion-vertices-v81';
+  'integrated-head-mouth-vertices-v82':'original-head-animated-vertex-colors-v83';
  face.userData.v81NoStaticLipstickGhost=true;
  face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
@@ -1161,10 +1166,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  face.userData.actualMouthCreaseY=lipCenter;
  const halfWidth=d.x*(female?.057:.044)*
   Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
- const mouthTopology=integrateMouthIntoFace(face,{
+ // V83 emergency quarantine: v82's centroid-based cutting generated
+ // disconnected boundary edges on the REAL CC0 head (black shards).
+ // Never alter production head indices/vertices until a visual manifold
+ // topology gate exists. Keep an explicit opt-in for isolated QA only.
+ const experimental=face.userData.enableExperimentalOralSurgery===true;
+ const mouthTopology=experimental?integrateMouthIntoFace(face,{
   centerX:cx,centerY:lipCenter,halfWidth,
   headHeight:d.y,surfaceZ:surfaceAt(cx,lipCenter)
- });
+ }):{integrated:false,reason:'v83-production-topology-quarantine',
+  removedTriangles:0,boundaryEdges:0,stitchedTriangleCount:0};
+ face.userData.v83SafeOriginalMouthTopology=!experimental;
+ face.userData.v83OralSurgeryQuarantined=!experimental;
  face.userData.v82MouthTopologyReport={
   integrated:!!mouthTopology.integrated,
   removedTriangles:mouthTopology.removedTriangles,
@@ -1200,8 +1213,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   mesh.userData.v81PigmentBoundToAnimatedLip=true;
   // Compatibility geometry for old editor tools; NEVER rendered on the
   // face if the single-head aperture topology was integrated.
-  mesh.visible=!mouthTopology.integrated;
-  mesh.userData.v82HiddenLegacyLipStrip=!!mouthTopology.integrated;
+  // No overpainted lips on the public renderer, including when the
+  // destructive mouth cut is quarantined. The actual face owns all tint.
+  mesh.visible=false;
+  mesh.userData.v82HiddenLegacyLipStrip=true;
+  mesh.userData.v83HiddenOverlayMouth=true;
   actualLips.set(upper,mesh);
   root.add(mesh);
  }

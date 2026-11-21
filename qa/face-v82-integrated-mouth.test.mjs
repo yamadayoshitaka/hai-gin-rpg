@@ -12,6 +12,9 @@ test('V82 the visible mouth is a hole stitched into ONE head mesh, not an overla
   new THREE.MeshStandardMaterial()
  );
  face.name='FEMALE_INDEPENDENT_CLAY_FACE';
+ // Experimental surgery is quarantined from production. This test
+ // deliberately exercises the old topology algorithm for comparison.
+ face.userData.enableExperimentalOralSurgery=true;
  const originalFaceCount=face.geometry.getAttribute('position').count;
  const {root}=createAnatomicalFaceParts(face,{gender:'female',
   controls:{ageBand:'sixties'}});

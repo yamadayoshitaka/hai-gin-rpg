@@ -41,6 +41,8 @@ test('FACS action units couple cheeks, smile grooves, jaw and eyelids',()=>{
 test('real eye contains lacrimal caruncle and blinking wet rim',()=>{
  const face=new THREE.Mesh(new THREE.SphereGeometry(.20,52,38),
   new THREE.MeshStandardMaterial());
+ // This legacy dental test exercises the experimental topology only.
+ face.userData.enableExperimentalOralSurgery=true;
  const built=createAnatomicalFaceParts(face,{gender:'female',
   controls:{ageBand:'fifties'}});
  face.add(built.root);
@@ -86,6 +88,8 @@ test('v81 lipstick lives on deforming lip mesh without static head ghost',()=>{
  const face=new THREE.Mesh(new THREE.SphereGeometry(.2,52,38),
   new THREE.MeshStandardMaterial());
  face.name='FEMALE_INDEPENDENT_CLAY_FACE';
+ // This legacy dental test exercises the experimental topology only.
+ face.userData.enableExperimentalOralSurgery=true;
  const built=createAnatomicalFaceParts(face,{
   gender:'female',controls:{ageBand:'seventies'}
  });
@@ -137,6 +141,8 @@ test('v81 lipstick lives on deforming lip mesh without static head ghost',()=>{
 test('v81 dental crowns are short rounded enamel, tongue is low and recessed',()=>{
  const face=new THREE.Mesh(new THREE.SphereGeometry(.2,52,38),
   new THREE.MeshStandardMaterial());
+ // This legacy dental test exercises the experimental topology only.
+ face.userData.enableExperimentalOralSurgery=true;
  const built=createAnatomicalFaceParts(face,{gender:'female'});
  face.add(built.root);
  const animator=createFaceExpressionAnimator({face,parts:built.root},{autoBlink:false});

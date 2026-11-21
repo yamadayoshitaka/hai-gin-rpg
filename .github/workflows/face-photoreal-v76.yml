@@ -18,6 +18,7 @@ on:
       - 'qa/face-photoreal-v76.test.mjs'
       - 'qa/face-v80-anatomy.test.mjs'
       - 'qa/face-v82-integrated-mouth.test.mjs'
+      - 'qa/face-v83-public-safe.test.mjs'
       - 'qa/face-v82-real-glb-topology.test.mjs'
       - 'qa/face-v76-visible-preset-smooth.test.mjs'
       - 'face-mesh-studio.html'
@@ -43,6 +44,7 @@ on:
       - 'qa/face-photoreal-v76.test.mjs'
       - 'qa/face-v80-anatomy.test.mjs'
       - 'qa/face-v82-integrated-mouth.test.mjs'
+      - 'qa/face-v83-public-safe.test.mjs'
       - 'qa/face-v82-real-glb-topology.test.mjs'
       - 'qa/face-v76-visible-preset-smooth.test.mjs'
       - 'face-mesh-studio.html'
@@ -71,7 +73,8 @@ jobs:
           node --check src/face-expression-animation-v48.js
           node --check src/face-integrated-mouth-v82.js
           node --check qa/face-v82-integrated-mouth.test.mjs
-          node --check qa/face-v82-real-glb-topology.test.mjs
+          node --check qa/face-v83-public-safe.test.mjs
+          node --check qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs
           node --check src/face-anatomy-rig-v80.js
           node --check src/face-oral-anatomy-v80.js
           node --check qa/face-v80-anatomy.test.mjs
