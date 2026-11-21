@@ -57,9 +57,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/sadako-curved-dynamic-v59/,
+ assert.match(page,/sadako-mantle-crown-v60/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/sadako-curved-dynamic-v59/,
+ assert.match(read('face-body-studio.html'),/sadako-mantle-crown-v60/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -87,7 +87,7 @@ test('Sadako v50 crown microfibres are a stable real-donor matte mesh',()=>{
 test('v50 Sadako falls in front of the face without artificial centre parting',()=>{
  const src=read('src/face-scalp-wig.js');
  assert.match(src,/const partGap=style.id==='sadako-straight-long'\?0:/);
- assert.match(src,/crownUnderlay=shortHair\|\|styleId==='sadako-straight-long'/);
+ assert.match(src,/const crownUnderlay=shortHair\?/);
  assert.match(src,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/,
   'Do not hide missing long roots under synthetic short black stubble');
  assert.match(src,/node.userData\?\.styledHairGeometry/,
@@ -126,11 +126,11 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  const hair=read('src/face-scalp-wig.js');
  const studio=read('face-mesh-studio.html');
  const body=read('face-body-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v59$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v60$/);
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/sadako-curved-dynamic-v59/);
- assert.match(body,/sadako-curved-dynamic-v59/);
+ assert.match(studio,/sadako-mantle-crown-v60/);
+ assert.match(body,/sadako-mantle-crown-v60/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });
