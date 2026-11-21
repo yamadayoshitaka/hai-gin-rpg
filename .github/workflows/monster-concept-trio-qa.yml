@@ -7,6 +7,7 @@ on:
       - 'src/monster-catalog.js'
       - 'src/creature-game-model-routing.js'
       - 'qa/monster-concept-trio.test.mjs'
+      - 'qa/monster-concept-v2-visual.html'
       - '.github/workflows/monster-concept-trio-qa.yml'
   workflow_dispatch:
 permissions:
@@ -48,6 +49,12 @@ jobs:
               "http://127.0.0.1:8765/qa/monster-concept-v2-visual.html?id=${id}" \
               2>/tmp/monster-v2-chrome.log
             test -s "qa-reports/monster-concept-v2/${id}.png"
+            bytes=$(stat -c%s "qa-reports/monster-concept-v2/${id}.png")
+            if [ "$bytes" -lt 40000 ]; then
+              echo "FAILED: Headless screenshot is too small (${bytes} bytes); possibly blank WebGL canvas" >&2
+              tail -60 /tmp/monster-v2-chrome.log >&2
+              exit 1
+            fi
             echo "CONCEPT-V2-SCREENSHOT:${id}:BEGIN"
             base64 -w 2048 "qa-reports/monster-concept-v2/${id}.png" | sed 's/^/CONCEPT-V2-B64:/'
             echo "CONCEPT-V2-SCREENSHOT:${id}:END"
