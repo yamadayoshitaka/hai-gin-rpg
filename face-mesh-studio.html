@@ -122,6 +122,7 @@ button{padding:9px 11px}
 <label for="v46MaleCast" hidden>主要キャラクター／モブ（男性）
 <select id="v46MaleCast" aria-label="男性キャラクター選択"></select></label>
 <div id="v45FemaleFacePresets"></div><div id="v45MaleFacePresets" hidden></div>
+<p id="facePresetApplied" role="status" aria-live="polite" class="v45Hint">完成顔を選択すると3Dメッシュを再生成します。</p>
 <details id="v45AdvancedParts" open><summary>髪型・髪色とパーツの個別調整</summary>
 <div id="v32FemaleChoices"></div><div id="v32MaleChoices" hidden></div></details>
 <button id="heroineBeautyV43" type="button" disabled>女性主人公を美少女寄りに補正（瞳・目元・頬・唇）</button></section>
@@ -1284,8 +1285,10 @@ if(v32PartMode){
      const nextControls=resolveEditedFaceControls('female',selected.controls,
       v32Parts.female.ageBand,v32Parts.female.bodyType,
       manualFaceOverrides.female,facePolishMode.female);
-     const faceChanged=facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls);
-     if(facePartChanged)modelChanges=nextControls;
+     // Preset buttons always regenerate, even after prior manual adjustments.
+     const faceChanged=completeFace||
+      (facePartChanged&&JSON.stringify(modelChanges)!==JSON.stringify(nextControls));
+     if(facePartChanged||completeFace)modelChanges=nextControls;
      wigStyleId=synchronized.styleId;
      if(gender==='female'){
       $('quickWigStyle').value=wigStyleId;
@@ -1309,8 +1312,9 @@ if(v32PartMode){
      const nextControls=resolveEditedFaceControls('male',selected.controls,
       v32Parts.male.ageBand,v32Parts.male.bodyType,
       manualFaceOverrides.male,facePolishMode.male);
-     const faceChanged=facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls);
-     if(facePartChanged)maleChanges=normalizeMaleFaceControls(
+     const faceChanged=completeFace||
+      (facePartChanged&&JSON.stringify(maleChanges)!==JSON.stringify(nextControls));
+     if(facePartChanged||completeFace)maleChanges=normalizeMaleFaceControls(
       youngHeroMaleControls(nextControls,v32Parts.male.ageBand,manualFaceOverrides.male));
      if(hairChanged){
      wigOn=true;
@@ -1342,7 +1346,14 @@ if(v32PartMode){
      createPartSelectorUI(selectorHost,sex,v32Parts[sex],onPartSelection,
    {hideHairType:true,hideHairVolume:true});
      facePickerControls[sex].refresh(v32Parts[sex]);
-     if(sex===gender)syncFaceControlDisplays();
+     if(sex===gender){
+      syncFaceControlDisplays();
+      const selected=HERO_FACE_PRESETS[sex][index];
+      $('facePresetApplied').textContent='反映済：'+selected.label+
+       '｜3D顔メッシュ再生成 '+performanceMetrics.headRebuilds+'回｜髪型は保持';
+      $('status').textContent='完成顔「'+selected.label+'」を3Dへ反映しました';
+      $('metrics').textContent=JSON.stringify(metrics(),null,2);
+     }
     }
    });
   castSelections[sex]=mountCharacterCastSelect(
@@ -1385,7 +1396,7 @@ if(v32PartMode){
    partSelectionHandlers[gender](picked,false);
    createPartSelectorUI($('v32'+(gender==='female'?'Female':'Male')+'Choices'),
     gender,v32Parts[gender],partSelectionHandlers[gender],
-    {hideHairType:gender==='female',hideHairVolume:gender==='female'});
+    {hideHairType:true,hideHairVolume:true});
    $('status').textContent=AGE_PROFILES[picked.ageBand].label+'・'+
     BODY_PROFILES[picked.bodyType].label+'の3D顔を再生成';
   });
@@ -1516,7 +1527,13 @@ async function init(){
   console.error(e);
  }
 }
+let lastFaceRuntimeState='';
 function frame(){
+ const photo=facePhotoRuntimeStatus()+'|'+gender;
+ if(photo!==lastFaceRuntimeState){
+  lastFaceRuntimeState=photo;
+  updateHairRuntimeDiagnostics(wigs.get(gender));
+ }
  const dt=faceClock.getDelta();
  expressions.get(gender)?.update(dt);
  if(wigOn&&models.get('female')?.root.visible)wigs.get('female')?.update(dt);
