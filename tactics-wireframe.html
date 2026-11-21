@@ -6370,6 +6370,10 @@ function issueInnFormationChange(issuerSquadId,formationId){
   updateSquadTarget(squadId,{x,z});
  }
  current.formation=option.id;
+ if(storyRequest.initialTeamPlans?.[group]){
+  storyRequest.initialTeamPlans[group].formation=option.id;
+  storyRequest.initialTeamPlans[group].formationActive=true;
+ }
  current.requiredSources=option.assignment.map(String);
  current.minBySource=option.roleMinimums;
  current.initialCount=live.length;
@@ -8415,7 +8419,7 @@ function issueTargetedPlan({groupId,mode,squadIds:members,targetIds,tacticId=nul
  if(!battleReady||finished)return '戦闘開始後に選択してください。';
  const method=tacticId?STRATEGY_METHODS[tacticId]:null;
  if(tacticId&&(!method||method.mode!==mode))return '未対応の作戦です。';
- const savedFormation=storyRequest?.initialTeamPlans?.[String(groupId)]||{};
+ const savedFormation=storyRequest?.formationIntegrity?.[String(groupId)]||storyRequest?.initialTeamPlans?.[String(groupId)]||{};
  if(tacticId&&!formationAllowsTactic(savedFormation.formation||'balanced',tacticId,savedFormation.formationActive!==false))
   return '現在の陣形ではこの作戦は未解放です。';
  const valid=members.filter(id=>squadIds.includes(String(id))&&
@@ -8477,7 +8481,7 @@ function issueTargetedMapCommand(point){
  for(const id of plan.squadIds){
   const assigned=plan.plans?.find(entry=>entry.squadIds.includes(String(id)));
   const orderMode=assigned?.mode||plan.mode,tactic=STRATEGY_METHODS[assigned?.tacticId];
-  const formation=storyRequest?.initialTeamPlans?.[String(plan.groupId)]||{};
+  const formation=storyRequest?.formationIntegrity?.[String(plan.groupId)]||storyRequest?.initialTeamPlans?.[String(plan.groupId)]||{};
   if(tactic&&!formationAllowsTactic(formation.formation||'balanced',tactic.id,formation.formationActive!==false))continue;
   const allowed=storyRequest?.availableSquadOrders?.[String(id)]||[];
   if(!allowed.includes(orderMode)||individualCommanderUnavailableReason(id))continue;
@@ -8584,8 +8588,8 @@ const targetedStrategyUi=createTargetedStrategyUi({
  },
  getRadarCanvas:()=>miniBase,
  getMapSize:()=>WORLD_SIZE,
- getFormationId:groupId=>storyRequest?.initialTeamPlans?.[String(groupId)]?.formation||'balanced',
- getFormationActive:groupId=>storyRequest?.initialTeamPlans?.[String(groupId)]?.formationActive!==false,
+ getFormationId:groupId=>storyRequest?.formationIntegrity?.[String(groupId)]?.formation||storyRequest?.initialTeamPlans?.[String(groupId)]?.formation||'balanced',
+ getFormationActive:groupId=>Boolean(storyRequest?.formationIntegrity?.[String(groupId)]?.active??(storyRequest?.initialTeamPlans?.[String(groupId)]?.formationActive!==false)),
  onMoveExecute:({groupId,squadIds:members,point})=>{
   if(!battleReady||finished||!traversableCell(point.x,point.z))return '移動できない地点です。';
   let applied=0;
