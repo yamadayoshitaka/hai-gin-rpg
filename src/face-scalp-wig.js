@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-pigment-sadako-gravity-v48';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-hairline-reselect-sadako-matte-v49';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -380,7 +380,23 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  return {triangles,source:'real-source-head',sameDrawMesh:true};
 }
 
-function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural',battleStableCoverage=false}={}){
+/** Shared hairline ensures native donor clipping matches buzz fibres. */
+export function buzzHairlineFractionAtPoint(v,box){
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const angle=Math.atan2((v.z-c.z)/Math.max(d.z,1e-6),
+  Math.abs(v.x-c.x)/Math.max(d.x,1e-6));
+ const stations=[[-Math.PI/2,.495],[-1.18,.505],[-.78,.575],[-.43,.685],
+  [-.18,.705],[.02,.625],[.20,.755],[.46,.855],[Math.PI/2,.885]];
+ let boundary=stations[stations.length-1][1];
+ for(let k=1;k<stations.length;k++)if(angle<=stations[k][0]){
+  const [a,y]=stations[k-1],[b,z]=stations[k];
+  const t=THREE.MathUtils.clamp((angle-a)/(b-a),0,1);
+  boundary=THREE.MathUtils.lerp(y,z,t*t*(3-2*t));break;
+ }
+ return THREE.MathUtils.clamp(boundary,.495,.91);
+}
+
+function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural',battleStableCoverage=false,styleId=null}={}){
  const src=geo.getAttribute('position'),idx=geo.index;
  const n=idx?idx.count:src.count,d=box.getSize(new THREE.Vector3());
  const normals=geo.getAttribute('normal'),verts=[],smoothNormals=[],sourceScalpVerts=[];
@@ -414,46 +430,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    };
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
-   if(shortHair){
-    // Extend the back/side donor cap toward the nape while keeping the
-    // front hairline high enough to leave the forehead and eyes visible.
-    // The former .53 rear boundary covered the ear and neck like a
-    // helmet. Raise the cut line and trim lateral ear/temple coverage.
-    // Anatomical contour rather than a horizontal helmet cut.
-    // Lower the center nape, curve upward around the mastoid/ear,
-    // and transition continuously to a higher temple/forehead.
-    // v32: one continuous anatomical boundary for scalp clipping AND fibre sampling.
-    // Rear nape descends at the midline, rises toward the mastoid behind the ears.
-    // Temple and forehead stay exposed; avoid the straight buzz-cap silhouette.
-    // v35: continuous anatomical perimeter in normalized donor-head space.
-    // Front, temple, sideburn, behind-ear and nape landmarks are separate
-    // stations of ONE contour. Interpolate around the head rather than
-    // blending unrelated front/back planes into a helmet-shaped edge.
-    const angle=Math.atan2(zn,xn); // 0: lateral, PI/2: forehead, -PI/2: nape
-    const stations=[
-     [-Math.PI/2,.495], // substantially lower, rounded central nape
-     [-1.18,.505],      // fuller lower occipital coverage
-     [-.78,.575],       // descend behind the ear
-     [-.43,.685],       // fuller coverage above and behind ear
-     [-.18,.705],       // lower front-ear contour
-     [.02,.625],        // pronounced sideburn below the temple
-     [.20,.755],        // smooth return to the temple
-     [.46,.855],        // keep forehead corner
-     [Math.PI/2,.885]   // keep forehead skin visible
-    ];
-    let boundary=stations[stations.length-1][1];
-    for(let k=1;k<stations.length;k++){
-     if(angle<=stations[k][0]){
-      const [a,y]=stations[k-1], [b,z]=stations[k];
-      const t=smooth(0,1,(angle-a)/(b-a));
-      boundary=THREE.MathUtils.lerp(y,z,t);
-      break;
-     }
-    }
-    // The contour is evaluated on both mirrored sides of the donor.
-    // Keep the front clean, without adding a fringe of isolated strands.
-    return THREE.MathUtils.clamp(boundary,.52,.91);
-   }
+   if(shortHair)return buzzHairlineFractionAtPoint(v,box);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
@@ -510,6 +487,15 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     ).normalize();
     const outward=n.dot(radial)<.25?radial:n.clone().add(radial).normalize();
     v.addScaledVector(outward,d.x*.003);
+    smoothNormals.push(outward.x,outward.y,outward.z);
+   }else if(styleId==='sadako-straight-long'){
+    // Colour-matched skin overlay must stay above the donor mesh at the crown.
+    const radial=new THREE.Vector3(
+     (v.x-center.x)/Math.max(d.x*.5,1e-6),
+     (v.y-(box.min.y+d.y*.48))/Math.max(d.y*.52,1e-6),
+     (v.z-center.z)/Math.max(d.z*.5,1e-6)).normalize();
+    const outward=n.dot(radial)<.35?radial:n.clone().add(radial).normalize();
+    v.addScaledVector(outward,d.x*.0035);
     smoothNormals.push(outward.x,outward.y,outward.z);
    }else{
     v.addScaledVector(n,d.x*.0012);
@@ -633,8 +619,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  }
  const material=new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color),vertexColors:true,
-  roughness:.80,metalness:0,clearcoat:.023,clearcoatRoughness:.76,
-  sheen:.12,sheenRoughness:.75,sheenColor:new THREE.Color(color).multiplyScalar(.50),
+  roughness:.95,metalness:0,clearcoat:0,clearcoatRoughness:1,
+  sheen:.01,sheenRoughness:1,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
   transparent:false,opacity:1,depthWrite:true,
   polygonOffset:shortHair,polygonOffsetFactor:shortHair?-2:0,
@@ -847,7 +833,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.whorlPosition=whorl.toArray();
  const cap=scalpShell(head.geometry,box,color,{
   fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
-  battleStableCoverage,volumeProfile});root.add(cap);
+  battleStableCoverage,volumeProfile,styleId:style.id});root.add(cap);
  const baseCount=clamp(Math.round(count),48,2400),segments=11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
@@ -955,8 +941,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // face forward. Otherwise they form a long curtain across both eyes.
   // Temple hair is a long face-framing layer, NEVER a short eyebrow bang.
   const sadakoGravity=style.id==='sadako-straight-long';
-  const overFace=!sadakoGravity&&!back&&!zone.startsWith('temple')&&frontRoot&&midFace;
-  if(overFace)faceTrimmedStrands++;
+  const overFace=!back&&!zone.startsWith('temple')&&frontRoot&&midFace;
+  if(overFace&&!sadakoGravity)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
   const torsoExtension=bodyCollisionResolver&&
@@ -990,6 +976,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const shortLength=cutKind==='buzz'?(battleStableCoverage?.088:.032):
    cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618)):
+   sadakoGravity?d.y*(longFactor+fract(i*.381966)*.13)*
+    clamp(lengthScale,minLengthScale,1.5)*(style.styleLength||1):
    (fringe||overFace)?
     Math.max(d.y*.008,Math.min(bangLength,wigRoot.y-browLimit)):
     d.y*(longFactor+fract(i*.381966)*.13)*clamp(lengthScale,minLengthScale,1.5)*
@@ -1032,7 +1020,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     zone.startsWith('temple')?side*d.x*(.035+silhouette.sideFlare):
      side*d.x*(.010+silhouette.sideFlare*.55)))+
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
-  const targetZ=sadakoGravity?wigRoot.z+(back?-d.z*.035:d.z*.015):
+  const targetZ=sadakoGravity?wigRoot.z+(back?-d.z*.035:
+   (fringe||overFace?d.z*.17:d.z*.045)):
    closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
    back?Math.min(wigRoot.z-d.z*((style.backSweep??.035)+silhouette.rearDepth),
@@ -1125,9 +1114,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geo.setIndex(indices);
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,vertexColors:true,roughness:.57,metalness:0,
-  clearcoat:.045,clearcoatRoughness:.62,
-  sheen:.34,sheenRoughness:.53,sheenColor:new THREE.Color(color).multiplyScalar(.52),
+  color:0xffffff,vertexColors:true,roughness:.90,metalness:0,
+  clearcoat:0,clearcoatRoughness:1,
+  sheen:.025,sheenRoughness:.98,sheenColor:new THREE.Color(color).multiplyScalar(.52),
   side:THREE.DoubleSide
  });
  const locks=new THREE.Mesh(geo,mat);
@@ -1471,9 +1460,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
   const fineMat=new THREE.MeshPhysicalMaterial({
-   color:0xffffff,vertexColors:true,roughness:.60,metalness:0,
-   clearcoat:.035,clearcoatRoughness:.60,
-   sheen:.23,sheenRoughness:.58,sheenColor:new THREE.Color(color).multiplyScalar(.48),
+   color:0xffffff,vertexColors:true,roughness:.91,metalness:0,
+   clearcoat:0,clearcoatRoughness:1,
+   sheen:.02,sheenRoughness:.98,sheenColor:new THREE.Color(color).multiplyScalar(.48),
    side:THREE.DoubleSide
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
