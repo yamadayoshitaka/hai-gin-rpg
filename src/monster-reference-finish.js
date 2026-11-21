@@ -127,4 +127,38 @@ export function enhanceMonsterReferenceMaterial(material,{spec,detail='high',rol
  material.needsUpdate=true;
  return true;
 }
+/**
+ * Optional additive microrelief for the 16 GLB-rigged humanoid MONSTER
+ * costumes. Never edits donor head, naked skin, eyes, hair, skeleton or native
+ * shader materials; this only touches freshly created, instance-owned
+ * stone/cloth/metal/bone costume materials. Approved gargoyle bump stays first.
+ */
+export function enhanceMonsterHumanoidCostumeMaterial(material,{
+ profile,role,detail='high'
+}={}){
+ if(!profile?.id||!material||detail==='low'||material.normalMap||
+   material.bumpMap||!/^m0(15|3[1-9]|4[0-5])$/.test(profile.id))return false;
+ let family=null,normalScale=.12;
+ if(role.startsWith('construct')){
+  if(role==='constructCore')return false;
+  family='insect';normalScale=.23;
+ }else if(['metal','gold','edge','dragonScale','dragonRim'].includes(role)){
+  family='insect';normalScale=.13;
+ }else if(['bandage','velvet','lining','linen','ivoryCloth','cloth',
+   'membrane','leaf','forestMint','forestDeep'].includes(role)){
+  family='avian';normalScale=.095;
+ }else if(['bone','ivory','gargoyleHorn','gargoyleClaw'].includes(role)){
+  family='reptile';normalScale=.13;
+ }
+ if(!family)return false;
+ const key='costume-'+profile.id+'-'+role;
+ const texture=getMonsterReferenceNormalMap({id:key,family},detail);
+ if(!texture)return false;
+ material.normalMap=texture;
+ material.normalScale=new THREE.Vector2(normalScale,normalScale);
+ material.userData.monsterCostumeMicrorelief=true;
+ material.userData.monsterCostumeMicroreliefRole=role;
+ material.needsUpdate=true;
+ return true;
+}
 export const monsterReferenceFinishCacheStats=()=>Object.freeze({normalMaps:cache.size});
