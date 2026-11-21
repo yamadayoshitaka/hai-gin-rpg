@@ -92,15 +92,29 @@ export function createTargetedStrategyUi({
    .filter(mode=>mode==='explore'||mode==='destroy'))];
   return [...new Map(modes.flatMap(mode=>getObjects(mode)).map(x=>[String(x.id),x])).values()];
  };
- const allyTargets=()=>getAllyTargets().filter(t=>liveSquads(grouped().find(g=>
-   String(g.id)===String(t.groupId))?.plan||{}).some(s=>String(s.id)===String(t.id)));
+ // Item targeting is at team level. The physical job subdivisions stay
+ // internal, so a 3-team sortie never shows ten old "squads" as targets.
+ const itemTeamTargets=()=>{
+  const allies=getAllyTargets();
+  return grouped().map(g=>{
+   const members=liveSquads(g.plan);
+   const ids=new Set(members.map(s=>String(s.id)));
+   const points=allies.filter(t=>ids.has(String(t.id))&&
+    Number.isFinite(Number(t.x))&&Number.isFinite(Number(t.z)));
+   if(!members.length||!points.length)return null;
+   return {id:'team:'+g.id,groupId:g.id,team:'ally',
+    label:'第'+g.id+'隊 · '+members.reduce((n,s)=>n+Number(s.soldiers||0),0)+'人',
+    x:points.reduce((n,t)=>n+Number(t.x),0)/points.length,
+    z:points.reduce((n,t)=>n+Number(t.z),0)/points.length};
+  }).filter(Boolean);
+ };
  const selectableRadarTargets=()=>{
   if(step==='scope'){
    const details=new Map(getAllyTargets().map(x=>[String(x.id),x]));
    return allSquadGroups().map(s=>({...details.get(String(s.id)),...s,
     team:'ally',label:'第'+s.groupId+'班 '+(s.label||details.get(String(s.id))?.label||'味方分隊')}));
   }
-   if(chosenItem)return allyTargets();
+   if(chosenItem)return itemTeamTargets();
   return targets();
  };
  const stepText={quick:'初期作戦とアイテム',menu:'① 指示の種類',scope:'① 指示する単位',family:'② 作戦を選択',intent:'③ 目的を選択',method:'④ 実行方法を選択',target:'⑤ 対象を選択',confirm:'⑥ 作戦内容の確認',items:'② アイテムを選択',moveTarget:'② 移動先を指定',moveConfirm:'③ 移動を確定'};
@@ -213,9 +227,9 @@ export function createTargetedStrategyUi({
    const isItem=Boolean(chosenItem),typeName=isItem?'ally':kind;
    html='<div class="centerStep">⑤ '+(typeName==='enemy'?'敵部隊を選択（複数可）':
     typeName==='map'?'大型レーダーで地点を選択':
-    typeName==='object'?'対象オブジェクトを選択（複数可）':'アイテムを使う味方分隊を選択')+'</div>'+
+    typeName==='object'?'対象オブジェクトを選択（複数可）':'アイテムを使う味方隊を選択（最大3隊）')+'</div>'+
     radarMarkup(typeName==='enemy'?'🔴 敵部隊の赤いマーカーをタップ（複数可）':
-      typeName==='ally'?'🔵 味方分隊の青いマーカーをタップ':
+      typeName==='ally'?'🔵 アイテムを届ける味方の隊（3隊）をタップ':
       typeName==='object'?'🟡 オブジェクトをレーダーから選択':
       '🗺 マップ上の地点をタップして指定')+
     (typeName==='map'?'':'<div class="centerTargetGrid" aria-label="レーダーで選択しづらい場合は一覧でも選べます">'+
@@ -223,7 +237,7 @@ export function createTargetedStrategyUi({
        selectedTargets.has(String(x.id)))).join('')+'</div>')+
     '<small class="centerHelp">'+(typeName==='enemy'?'複数の敵を選ぶと分隊を割り当てて攻撃します。':
     typeName==='map'?'青＝味方・赤＝敵。タップした地点は確定するまで移動先になりません。':
-    typeName==='ally'?'アイテムは1回につき1分隊へ使用します。':'探索・破壊できる対象のみ選択します。')+'</small>'+
+    typeName==='ally'?'1回につき1隊を選び、隊内の適切な分隊に自動支給します。':'探索・破壊できる対象のみ選択します。')+'</small>'+
     controls('◀ 方法へ戻る','次へ','内容を確認',typeName==='map'?!mapPoint:!selectedTargets.size);
   }else if(step==='confirm'){
    const isItem=Boolean(chosenItem),kindName=isItem?'味方部隊':kind==='enemy'?'敵部隊':
@@ -235,7 +249,7 @@ export function createTargetedStrategyUi({
       activeMethod.map(m=>esc(m.name)).join('・'))+'</div>'+
     '<div>'+kindName+'：'+(mapPoint?'('+mapPoint.x+', '+mapPoint.z+')':
        [...selectedTargets].map(id=>esc((chosenItem?
-       grouped().flatMap(g=>liveSquads(g.plan)):targets()).find(x=>String(x.id)===id)?.label||id)).join('、'))+'</div></div>'+
+       itemTeamTargets():targets()).find(x=>String(x.id)===id)?.label||id)).join('、'))+'</div></div>'+
     '<small class="centerHelp">確定後に指示を発行し、戦闘を再開します。</small>'+
     controls('◀ 対象を選び直す','作戦を実行','✓ 確定して再開',false);
   }
@@ -283,7 +297,8 @@ export function createTargetedStrategyUi({
   const allyMeta=new Map(allSquadGroups().map(x=>[String(x.id),x]));
   const enemyMeta=new Map(getEnemyTargets().map((x,i)=>[String(x.id),i+1]));
   const side=step==='scope'||chosenItem?'ally':type()==='enemy'?'enemy':type()==='object'?'object':'none';
-  const radarAll=[...getRadarTargets(),...options.map(x=>({...x,team:x.team??side}))];
+  const radarAll=[...(chosenItem?getRadarTargets().filter(x=>x.team!=='ally'):getRadarTargets()),
+   ...options.map(x=>({...x,team:x.team??side}))];
   const combined=[...new Map(radarAll.map(x=>[String(x.team??'object')+':'+String(x.id),x])).values()];
   const placements=[],hotspots=[];
   for(const t of combined){
@@ -332,7 +347,7 @@ export function createTargetedStrategyUi({
     ctx.arc(px,py,21,0,Math.PI*2);ctx.stroke();}
    ctx.restore();
    const n=group==='enemy'?'敵'+(enemyMeta.get(String(t.id))||''):
-    group==='ally'?(meta?meta.groupId+'-'+meta.rank:'味'):'物';
+    group==='ally'?(chosenItem?'第'+String(t.groupId||'?')+'隊':meta?meta.groupId+'-'+meta.rank:'味'):'物';
    ctx.fillStyle='#09202d';ctx.font='bold 10px system-ui';ctx.textAlign='center';
    ctx.textBaseline='middle';ctx.fillText(n,px,py);
    if(selectable)hotspots.push({id:String(t.id),groupId:meta?.groupId,
