@@ -36,6 +36,15 @@ test('80+ folds are integrated into the face geometry, without floating wrinkle 
  assert.equal(old.surfaceIntegrated,true);
  assert.equal(old.detachedMeshCount,0);
  assert.notDeepEqual(oldFace.geometry.getAttribute('position').array,oldRest);
+ // At 80+, actual facial creases must have appreciable relief, not the
+ // former 0.19% depth shifts which were invisible on a mobile viewport.
+ assert.ok(old.maximumDisplacement>.004,
+  '80+ skin furrows need visible depth relative to the head');
+ const sixtiesFace=new THREE.Mesh(new THREE.SphereGeometry(1,32,28),
+  new THREE.MeshStandardMaterial());
+ const sixties=attachAgeDetails(sixtiesFace,'sixties');
+ assert.ok(sixties.maximumDisplacement<old.maximumDisplacement);
+ sixtiesFace.geometry.dispose();sixtiesFace.material.dispose();
  const floating=[];oldFace.traverse(o=>{
   if(o!==oldFace&&o.name.startsWith('V49_AGE_'))floating.push(o);
  });
