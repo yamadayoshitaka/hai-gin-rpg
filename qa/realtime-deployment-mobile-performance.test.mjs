@@ -154,7 +154,8 @@ test('map controls and roster aggregation retain real 3D movement and squad iden
  assert.match(css,/\.realtimeMapActionSheet[\s\S]*?display:flex/);
  assert.match(js,/squadSnapshotAt/);
  assert.match(js,/scheduleMapDraw/);
- assert.match(js,/mode==='move'&&!\$\('realtimeBattleMapOverlay'\)\.hidden/);
+ assert.match(js,/\(mode==='move'\|\|mode==='inspect'\)&&!\$\('realtimeBattleMapOverlay'\)\.hidden/);
+ assert.match(js,/if\(mode==='inspect'\)return false; \/\/ Expanded map is observation-only/);
  assert.match(battle,/const groups=new Map\(squadIds\.map\(id=>/);
  assert.match(battle,/buildBattleSquadLeaderPins\(squadRoster/);
 });

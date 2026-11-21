@@ -915,7 +915,7 @@ import {formationAllowsTactic} from './src/formation-strategy-unlocks.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-capture-marker';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-readonly-inspect';
 import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
@@ -11150,6 +11150,78 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   getMoveTargets:(kind,id)=>realtimeMoveTargets(kind,id),
   getSharedItems:()=>realtimeSharedItems(),
  getObjectiveCheckpoints:()=>objectiveCheckpoints.snapshot(),
+ getSquadDetails:(team,id,groupId=null)=>{
+  // The expanded map inspects the real 1–3 command teams (and their subdivisions).
+  // It must never change orders, targets, coordinates, pause state, or combat AI.
+  const side=Number(team)===1?1:0;
+  const map=side===0?armyGroupBySquad:enemyGroupBySquad;
+  const validIds=side===0?squadIds:enemySquadIds;
+  const group=Number(groupId??map[String(id)]);
+  const ids=THREE_TEAM_BATTLE&&Number.isInteger(group)&&group>=1&&group<=3?
+   validIds.filter(sid=>Number(map[String(sid)])===group):validIds.filter(sid=>String(sid)===String(id));
+  const units=(massSim?.units??actors).filter(u=>u.team===side&&ids.includes(String(u.squadId)));
+  const alive=units.filter(u=>u.hp>0&&u.alive!==false&&!u.defeated);
+  const sum=(arr,key)=>arr.reduce((n,u)=>n+Math.max(0,Number(u[key])||0),0);
+  const jobs=new Map();
+  for(const u of alive){
+   if(u.isStrategist)continue;
+   const name=battleUnitJobName(u);
+   jobs.set(name,(jobs.get(name)||0)+1);
+  }
+  const formations={attack:'前進陣形',balanced:'標準陣形',support:'後衛陣形',wall:'防壁陣形',
+   spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
+   circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
+   dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
+  const formationId=side===0?(storyRequest?.formationIntegrity?.[String(group)]?.formation||
+   storyRequest?.initialTeamPlans?.[String(group)]?.formation):null;
+  const divisions=ids.map(sid=>{
+   const members=units.filter(u=>String(u.squadId)===String(sid));
+   const living=members.filter(u=>u.hp>0&&u.alive!==false&&!u.defeated);
+   const directive=squadEffectiveOrder(sid,side);
+   const intent=squadIntent(sid,side);
+   return {label:squadName(sid,side),alive:living.length,total:members.length,
+    mode:directive.mode,order:intent.order||directive.mode,objective:intent.purpose||''};
+  }).filter(row=>row.total>0);
+  const orders=[...new Set(divisions.filter(row=>row.alive).map(row=>row.order))];
+  const objectives=[...new Set(divisions.filter(row=>row.alive).map(row=>row.objective).filter(Boolean))];
+  const modes=new Set(divisions.filter(row=>row.alive).map(row=>row.mode));
+  const state=modes.has('move')?'移動中':modes.has('mission')?'目的遂行中':
+   modes.has('explore')?'探索中':modes.has('charge')?'交戦中':
+   modes.has('defend')?'守備中':modes.has('hold')?'待機中':
+   alive.length?'行動中':'戦闘不能';
+  const stats={attack:'攻撃',defense:'防御',speed:'機動力',heal_block:'回復阻止',buff_block:'強化阻止'};
+  const buffs=[],debuffs=[];
+  if(massSim){
+   for(const sid of ids){
+    const active=(side===0?massSim.squadItemBuffs:massSim.enemySquadItemBuffs)?.get(String(sid))||[];
+    for(const effect of active.filter(x=>Number(x.until)>Number(massSim.time))){
+     const text=Object.entries(stats).filter(([key])=>Number(effect[key])>0)
+      .map(([key,name])=>name+'+'+Math.round(Number(effect[key])*100)+'%').join('・');
+     if(text)buffs.push(text);
+    }
+    const effects=massSim.squadDebuffs?.get(side+':'+String(sid));
+    if(effects&&Number(effects.until)>Number(massSim.time)){
+     const text=Object.entries(stats).filter(([key])=>Number(effects[key])>0)
+      .map(([key,name])=>name+(key.endsWith('_block')?'':'-')+
+       Math.round(Number(effects[key])*100)+'%').join('・');
+     if(text)debuffs.push(text);
+    }
+   }
+  }
+  const effectsFor=ids.filter(sid=>side===0&&
+   !!activeCommanderOrder(squadCommanderId(sid))).
+   map(sid=>activeCommanderOrder(squadCommanderId(sid))?.name).filter(Boolean);
+  buffs.push(...effectsFor);
+  return {label:(THREE_TEAM_BATTLE&&Number.isInteger(group)?'第'+group+'隊':
+    side===0?squadName(id):squadName(id,1)),
+   job:[...jobs].map(([name,count])=>name+count+'人').join('・')||'該当者なし',
+   alive:alive.length,total:units.length,hp:sum(alive,'hp'),maxHp:sum(units,'maxHp'),
+   mp:sum(alive,'mp'),maxMp:sum(units,'maxMp'),
+   formation:formationId?(formations[formationId]||formationId):'未確認',
+   order:orders.join('／')||'指示なし',objective:objectives.join('／')||'指定なし',
+   state,buffs:[...new Set(buffs)],debuffs:[...new Set(debuffs)],divisions};
+ },
+
  getOrderState:id=>{
   const squad=String(id),order=squadEffectiveOrder(squad,0);
   const intent=squadIntent(squad,0),cooldown=squadOrderCooldownSeconds(squad);

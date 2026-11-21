@@ -12,6 +12,7 @@ import {battleAttackCommand} from './battle-attack-choices.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=three-team-radar2-20261120';
+import {findBattleMapPin,formatBattleMapPercent} from './battle-map-inspection.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
@@ -34,7 +35,7 @@ export function createRealtimeBattleCommands({
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
- getObjectiveCheckpoints=()=>[],getVictoryObjective=()=>null,onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
+ getObjectiveCheckpoints=()=>[],getVictoryObjective=()=>null,getSquadDetails=()=>null,onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
  onRally=()=>false,getFormationOptions=()=>[],onFormationChange=()=>false,onMapOverview=()=>false
 }={}){
@@ -49,6 +50,7 @@ export function createRealtimeBattleCommands({
  let deployStep='placement';
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
+ let inspectedMapPin=null,mapInspectionPins=[],lastInspectionRefreshAt=-Infinity;
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
   <div id="realtimeSquadRadar" hidden role="group" aria-label="中央部隊レーダー">
@@ -145,7 +147,7 @@ export function createRealtimeBattleCommands({
      <span id="realtimeMapPlanningClock" hidden>作戦選択中</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
-    <div class="realtimeMapSquadPager" role="group" aria-label="配置する味方隊をページ切替">
+    <div class="realtimeMapSquadPager" id="realtimeMapSquadPager" role="group" aria-label="配置する味方隊をページ切替">
      <button type="button" id="realtimeMapPrev" aria-label="前の味方隊">◀</button>
      <span class="realtimeMapPortrait" id="realtimeMapPortrait" aria-hidden="true"></span><strong id="realtimeMapSquadName" aria-live="polite">味方隊</strong>
      <button type="button" id="realtimeMapNext" aria-label="次の味方隊">▶</button>
@@ -161,6 +163,7 @@ export function createRealtimeBattleCommands({
      <canvas id="realtimeBattleCanvas" width="464" height="464"
       aria-label="味方隊を選択して初期配置する地図" tabindex="0"></canvas>
     </div>
+    <section id="realtimeMapDetail" class="realtimeMapDetail" hidden aria-label="選択した隊の詳しい状態"></section>
     <div class="realtimeMapMessage" id="realtimeMapMessage" role="status"></div>
     <div id="realtimeInitialTeamPlanning" role="group" aria-label="隊ごとの初期作戦">
      <label for="realtimeInitialStrategy" id="realtimeInitialStrategyLabel">② この隊の初期作戦</label>
@@ -442,6 +445,34 @@ export function createRealtimeBattleCommands({
    centerZ=clamp(s.z||worldSize/2,0,worldSize);
   }
  }
+ function renderMapInspectionDetail(){
+  if(mode!=='inspect')return;
+  const detail=$('realtimeMapDetail');detail.hidden=false;
+  const pin=inspectedMapPin;
+  if(!pin){detail.textContent='🔵 味方・🔴 敵の番号をタップすると、人数・HP/MP・作戦・行動状態・強化/弱体を表示します。';return;}
+  const data=getSquadDetails(pin.team,pin.id,pin.groupId)||{};
+  const escape=value=>String(value??'—').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+  const num=(value,max)=>Number.isFinite(Number(max))&&Number(max)>0?
+   Math.round(Number(value)||0)+'/'+Math.round(Number(max))+'（'+formatBattleMapPercent(Number(value)||0,Number(max))+'%）':'—';
+  const faction=pin.team===0?'🔵 味方':'🔴 敵';
+  const groupLabel=pin.groupId!=null?'第'+pin.groupId+'隊':'第'+(data.number||pin.id)+'隊';
+  const rows=Array.isArray(data.divisions)?data.divisions:[];
+  const buffs=Array.isArray(data.buffs)?data.buffs:[];
+  const debuffs=Array.isArray(data.debuffs)?data.debuffs:[];
+  detail.innerHTML='<strong>'+faction+' '+escape(data.label||groupLabel)+'｜詳細状態</strong>'+
+   '<div class="realtimeMapDetailStats"><span>兵数：'+escape(data.alive??'—')+'/'+escape(data.total??'—')+'</span>'+
+   '<span>HP：'+num(data.hp,data.maxHp)+'</span><span>MP：'+num(data.mp,data.maxMp)+'</span></div>'+
+   '<div>ジョブ：'+escape(data.job||'未確認')+'</div>'+
+   '<div>陣形：'+escape(data.formation||'未確認')+'</div>'+
+   '<div>現在の作戦：'+escape(data.order||'自動交戦')+'</div>'+
+   '<div>目的：'+escape(data.objective||'現在の交戦対象を索敵中')+'</div>'+
+   '<div>行動状態：'+escape(data.state||'情報なし')+'</div>'+
+   '<div>バフ：'+escape(buffs.length?buffs.join('・'):'確認できる効果なし')+'</div>'+
+   '<div>デバフ：'+escape(debuffs.length?debuffs.join('・'):'確認できる効果なし')+'</div>'+
+   (rows.length?'<div class="realtimeMapDivisionList">内訳：'+rows.map(row=>
+    escape(row.label)+' '+escape(row.alive)+'/'+escape(row.total)+'人'+
+    (row.order?'｜'+escape(row.order):'')).join(' ／ ')+'</div>':'');
+ }
  function drawMap(){
   if($('realtimeBattleMapOverlay').hidden||!ctx)return;
   const w=canvas.width,h=canvas.height;
@@ -473,15 +504,24 @@ export function createRealtimeBattleCommands({
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚑',gx,gz-12);
    }
   }
-  const allies=squads(),enemies=mode==='deploy'?(getRadarEnemies?.()||[]):getEnemies();
+  const sourceAllies=squads();
+  const allies=mode==='inspect'&&typeof getRadarSquads==='function'?
+   getRadarSquads(sourceAllies):sourceAllies;
+  const enemies=mode==='deploy'||mode==='inspect'&&typeof getRadarEnemies==='function'?
+   (getRadarEnemies?.()||getEnemies()):getEnemies();
   const markers=visibleBattleSquadPins(allies,enemies,'live');
+  mapInspectionPins=[];
   for(const s of markers){
    if(!Number.isFinite(s.x)||!Number.isFinite(s.z))continue;
    const x=(s.x-minX)/span*w,z=(s.z-minZ)/span*h;
    if(x<0||x>w||z<0||z>h)continue;
    const own=s.team!==1,number=(own?allies:enemies)
     .findIndex(pin=>String(pin.id)===String(s.id))+1;
-   const highlighted=own&&String(s.id)===String(selectedId);
+   if(mode==='inspect')mapInspectionPins.push({id:String(s.id),team:own?0:1,
+    groupId:s.groupId??null,px:x,py:z});
+   const highlighted=mode==='inspect'?
+    inspectedMapPin?.team===(own?0:1)&&String(inspectedMapPin.id)===String(s.id):
+    own&&String(s.id)===String(selectedId);
    // One numbered dot per squad. Never render individual soldier positions.
    ctx.beginPath();ctx.arc(x,z,number>=10?10:9,0,Math.PI*2);
    ctx.fillStyle=own?'#5bc8ef':'#ff858a';ctx.fill();
@@ -492,6 +532,7 @@ export function createRealtimeBattleCommands({
    ctx.fillText(String(number),x,z);
   }
   $('realtimeMapScale').textContent=Math.round(zoom*100)+'%';
+  if(mode==='inspect')renderMapInspectionDetail();
   lastMapRedrawAt=nowMs();
  }
 
@@ -1127,6 +1168,25 @@ export function createRealtimeBattleCommands({
   hideActionSheet();mode=next;
   if(next==='deploy')deployStep='placement';
   refreshOptions();
+  if(next==='inspect'&&started){
+   inspectedMapPin=null;mapInspectionPins=[];lastInspectionRefreshAt=-Infinity;
+   $('realtimeBattleMapOverlay').hidden=false;
+   $('realtimeMapClose').hidden=false;$('realtimeMapClose').textContent='✕ 戻る';
+   $('realtimeMapTitle').textContent='⛶ 戦場マップ';
+   $('realtimeMapHelp').textContent='＋／－で拡大縮小。青い味方隊・赤い敵隊をタップすると、作戦と詳細状態を確認できます。';
+   $('realtimeMapSquadPager').hidden=true;
+   $('realtimeInitialTeamPlanning').hidden=true;
+   $('realtimeMapActionSheet').hidden=true;
+   $('realtimeStart').hidden=true;
+   $('realtimeMapPlanningClock').hidden=true;
+   $('realtimeMapViewport').hidden=false;
+   $('realtimeMapDetail').hidden=false;
+   $('realtimeMapMessage').textContent='';
+   zoom=1;centerX=centerZ=worldSize/2;
+   drawMap();return;
+  }
+  $('realtimeMapSquadPager').hidden=false;$('realtimeMapDetail').hidden=true;
+
   if(started)enterPlanning();
   $('realtimeInitialTeamPlanning').hidden=next!=='deploy';
   $('realtimeMapActionSheet').hidden=next==='deploy';
@@ -1166,6 +1226,7 @@ export function createRealtimeBattleCommands({
   return {x:Math.round(minX+px*span),z:Math.round(minZ+pz*span)};
  }
  function chooseMapCell(x,z){
+  if(mode==='inspect')return false; // Expanded map is observation-only during battle.
   const squad=getSelected();
   if(!squad)return false;
   const point=getLegalPoint(x,z,mode==='deploy');
@@ -1222,6 +1283,12 @@ export function createRealtimeBattleCommands({
   const rect=canvas.getBoundingClientRect();
   const px=(e.clientX-rect.left)/rect.width,pz=(e.clientY-rect.top)/rect.height;
   if(px<0||px>1||pz<0||pz>1)return;
+  if(mode==='inspect'){
+   const pin=findBattleMapPin(mapInspectionPins,px*canvas.width,pz*canvas.height,{radius:26});
+   if(pin){inspectedMapPin={...pin};$('realtimeMapMessage').textContent='';drawMap();}
+   else $('realtimeMapMessage').textContent='青・赤の隊番号をタップすると詳細を確認できます。';
+   return;
+  }
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  });
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
@@ -1245,7 +1312,7 @@ $('realtimeRadarTitle').onclick=()=>{
  if(!started){openMap('deploy');return;}
  onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
 };
-$('realtimeRadarExpand').onclick=()=>openMap(started?'move':'deploy');
+$('realtimeRadarExpand').onclick=()=>openMap(started?'inspect':'deploy');
 radarCanvas.addEventListener('click',event=>{
  if(!started){openMap('deploy');return;}
  const rect=radarCanvas.getBoundingClientRect();
@@ -1429,7 +1496,7 @@ radarCanvas.addEventListener('keydown',event=>{
   for(const [group,strategy] of Object.entries(plans))initialTeamPlans.set(group,strategy);
   started=true;mode='live';invalidateSquadSnapshot();hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;
   $('realtimeRadarExpand').textContent='⛶ 地図';
-  $('realtimeRadarExpand').setAttribute('aria-label','レーダーを拡大して移動先を確認');
+  $('realtimeRadarExpand').setAttribute('aria-label','戦場マップを拡大して隊の状態を確認');
   $('realtimeRadarSetupPrompt').hidden=true;
   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
   renderStatus();drawRadar(true);return true;
@@ -1490,7 +1557,7 @@ radarCanvas.addEventListener('keydown',event=>{
    invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;
    // The small, real in-battle radar is the only entry point to positioning.
    // The player explicitly selects ⛶ 拡大; no forced fullscreen modal.
-   $('realtimeBattleMapOverlay').hidden=true;
+   $('realtimeBattleMapOverlay').hidden=true;inspectedMapPin=null;
    $('realtimeSquadRadar').hidden=false;
    $('realtimeRadarSetupPrompt').hidden=false;
    $('realtimeRadarExpand').textContent='⛶ 拡大';
@@ -1539,7 +1606,7 @@ radarCanvas.addEventListener('keydown',event=>{
    if(planningDeadline)updatePlanningCountdown();
    // No physical positions change while initial deployment is paused.
    // Live map pins need only about 3 updates/sec, never every UI tick.
-   if(mode==='move'&&!$('realtimeBattleMapOverlay').hidden&&
+   if((mode==='move'||mode==='inspect')&&!$('realtimeBattleMapOverlay').hidden&&
       nowMs()-lastMapRedrawAt>=330)scheduleMapDraw();
   },
   get started(){return started;},
