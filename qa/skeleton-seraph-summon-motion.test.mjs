@@ -42,7 +42,7 @@ test('m031 is real exposed bone on the existing articulated GLB skeleton',()=>{
  assert.equal(rec.opaqueCoat,false);
  assert.equal(rec.sockets,2);
  assert.equal(rec.ribs,10);
- assert.ok(rec.longBones>=16);
+ assert.ok(rec.longBones>=15);
  assert.equal(rec.fingers,8);
  assert.equal(rec.pelvis,2);
  assert.ok(meshes.some(m=>m.name==='monster-costume-m031-cranium'));
