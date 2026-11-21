@@ -133,7 +133,10 @@ export function createTargetedStrategyUi({
   if(step==='quick'){
    const objective=getVictoryObjective(),counts=groupInfo.map(g=>liveSquads(g.plan).reduce((n,s)=>n+Number(s.soldiers||0),0));
    const allowed=new Set(liveSquads(plan).flatMap(s=>s.allowed||plan.allowed||[]));
-   const canAssault=allowed.has('charge'),canDefend=allowed.has('defend')||allowed.has('hold');
+   // Stances are universal. The command screen pauses the battle, so a
+   // cooldown or job-specific optional-order restriction cannot disable basics.
+   const hasTroops=liveSquads(plan).length>0;
+   const canAssault=hasTroops,canDefend=hasTroops;
    const canExplore=allowed.has('explore')||(objective?.kind==='capture'&&allowed.has('charge'));
    const formation=formationFor(),activeFormation=isFormationActive();
    const formationName=SORTIE_FORMATIONS[formation]?.name||formation;
@@ -167,7 +170,7 @@ export function createTargetedStrategyUi({
      !getItems(String(groupId)).some(x=>Number(x.quantity)>0))+'</div>'+
     (unlocked.length?'<small class="centerHelp">追加：'+
      esc(formationUnlockLabels(formation,activeFormation).join('・'))+'</small>':'')+
-    '<small class="centerHelp">選択すると確定して実行。暗いボタンは現在使用できません。</small>'+
+    '<small class="centerHelp">基本作戦は陣形専用作戦の途中でも即時上書き可能です。暗いボタンは現在使用できません。</small>'+
     '</section></div>'+
     (objective?.kind==='capture'?
      '<div class="centerQuota centerQuickObjective"><b>🏁 '+esc(objective.label)+'</b>'+
