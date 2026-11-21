@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 
-export const M024_PBR_REVISION='m024-shared-beetle-chitin-pbr-v3-20261121';
+export const M024_PBR_REVISION='m024-shared-beetle-chitin-pbr-v3b-20261121';
 export const SCARAB_PBR_SPECIES=Object.freeze(['m021','m022','m024','m025']);
 export const isScarabPBRSpecies=id=>SCARAB_PBR_SPECIES.includes(id);
 const kinds=new Set(['chitin','crystal','wing','eye','enamel']);
@@ -57,31 +57,31 @@ function palette(kind,u,v){
  if(kind==='chitin'){
   // Fine cuticle striations, cool iridescent bands and darker plate seams.
   const shimmer=.5+.5*Math.sin(7*u+11*v+g*.5);
-  return [byte(.82+.10*g-.065*shimmer),
-   byte(.79+.055*g+.032*shimmer),
-   byte(.85+.075*g+.045*shimmer)];
+  return [clamp(.82+.10*g-.065*shimmer),
+   clamp(.79+.055*g+.032*shimmer),
+   clamp(.85+.075*g+.045*shimmer)];
  }
  if(kind==='crystal'){
   const layers=crystalStrata(u,v),core=.5+.5*Math.sin(v*11+u*8);
-  return [byte(.81+.16*layers),
-   byte(.87+.12*layers+.04*core),
-   byte(.70+.17*layers+.045*core)];
+  return [clamp(.81+.16*layers),
+   clamp(.87+.12*layers+.04*core),
+   clamp(.70+.17*layers+.045*core)];
  }
  if(kind==='wing'){
   // Interference and physical venation, not a uniform opaque purple fin.
   const lines=wingVeins(u,v),interference=Math.sin(u*30-v*19);
-  return [byte(.83-.18*lines+.07*interference),
-   byte(.81-.14*lines-.04*interference),
-   byte(.93-.055*lines+.025*interference)];
+  return [clamp(.83-.18*lines+.07*interference),
+   clamp(.81-.14*lines-.04*interference),
+   clamp(.93-.055*lines+.025*interference)];
  }
  if(kind==='eye'){
   const facets=hexFacet(u,v),glitter=.5+.5*Math.sin(u*28+v*9);
-  return [byte(.43+.10*glitter-.16*facets),
-   byte(.37+.06*glitter-.11*facets),
-   byte(.54+.13*glitter-.19*facets)];
+  return [clamp(.43+.10*glitter-.16*facets),
+   clamp(.37+.06*glitter-.11*facets),
+   clamp(.54+.13*glitter-.19*facets)];
  }
  const enamel=.5+.5*Math.sin(u*97+v*5);
- return [byte(.95-.06*enamel),byte(.93-.07*enamel),byte(.85-.10*enamel)];
+ return [clamp(.95-.06*enamel),clamp(.93-.07*enamel),clamp(.85-.10*enamel)];
 }
 
 function roughness(kind,u,v){
