@@ -12324,7 +12324,7 @@ async function finishBattleLoading(){
   // Each allied squad can be positioned once, before the first AI tick.
   // Unassigned squads stay on hold until initial planning is confirmed.
   // Explicit hold, defend or movement orders still override this per squad.
-  for(const id of squadIds)setStartingSquadOrder(0,id,'hold');
+  for(const id of squadIds)setStartingSquadOrder(0,id,THREE_TEAM_BATTLE?'hold':'charge');
   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
   // Initialize the camera at squad 1, matching the highlighted first HUD row.
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
