@@ -1628,9 +1628,10 @@ export class MassBattleGridSimulation {
       // Independent medic duty: all formations may rescue injured allies.
       // Scan one tenth of the priests per tick to preserve 1000v1000 FPS;
       // no squad order, original formation or commander command is replaced.
-      const canTriage=u.jobId==='priest'&&!mission&&!healTarget&&
-        !this.explorationOrders.has(u.team+':'+String(u.squadId))&&
-        availableCombatSkills('priest',u.rarity).some(skill=>skill.kind==='heal'&&u.mp>=skill.mp);
+      const usableHeals=u.jobId==='priest'?
+        availableCombatSkills('priest',u.rarity).filter(skill=>skill.kind==='heal'&&u.mp>=skill.mp):[];
+      const canTriage=usableHeals.length>0&&!mission&&!healTarget&&
+        !this.explorationOrders.has(u.team+':'+String(u.squadId));
       if(canTriage&&this.tickCount%10===u.id%10){
         const injured=this.actions.nearby(u.team,u.x,u.z,22)
           .filter(v=>v.id!==u.id&&v.alive&&v.hp>0&&v.maxHp>0&&
@@ -1643,7 +1644,12 @@ export class MassBattleGridSimulation {
       const triageTarget=patient?.alive&&patient.hp>0&&patient.hp/patient.maxHp<.9&&
         Math.hypot(patient.x-u.x,patient.z-u.z)<=24?patient:null;
       u.healTargetSquadId=healTarget??triageTarget?.squadId??null;
-      const triageNeedsMovement=triageTarget&&Math.hypot(triageTarget.x-u.x,triageTarget.z-u.z)>7;
+      // N rarity heal reaches only four tiles. Never stop an N priest at
+      // the seven-tile range used for higher-tier group healing.
+      const healingRange=usableHeals.reduce((max,skill)=>Math.max(max,skill.range),0);
+      const healingStop=Math.max(2,Math.min(7,healingRange-1));
+      const triageNeedsMovement=triageTarget&&
+        Math.hypot(triageTarget.x-u.x,triageTarget.z-u.z)>healingStop;
       // An explicit squad-healing order is actionable, not merely a move
       // marker. At spell range, priests must cast on the nominated wounded
       // squad before the generic combat AI selects a different target.
