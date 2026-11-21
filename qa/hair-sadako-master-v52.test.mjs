@@ -7,7 +7,7 @@ import {scalpToGravityWeight,createScalpFirstLongGuide,
 import {WIG_STYLES} from '../src/face-wig-styles.js';
 
 test('v52 root tangent hugs scalp to 15%, then gravity blends until 38%',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v57$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v58$/);
  assert.equal(scalpToGravityWeight(0),0);
  assert.equal(scalpToGravityWeight(.15),0);
  assert.ok(Math.abs(scalpToGravityWeight(.265)-.5)<1e-8);
@@ -42,9 +42,9 @@ test('v52 real Sadako ribbons resist penetrating the donor head from underneath'
   visualFiberMultiplier:1,fineFringeMultiplier:1
  });
  const report=wig.getReport();
- assert.equal(report.sadakoMasterGroom,'sadako-scalp-first-master-v52');
+ assert.equal(report.sadakoMasterGroom,'sadako-scalp-first-headhug-rear-v58');
  assert.deepEqual(report.sadakoGravityTransition,
-  {scalpTo:.15,fullyGravity:.38,segments:18});
+  {scalpTo:.12,fullyGravity:.32,segments:18});
  assert.ok(report.pointCount>=80*19);
  assert.equal(report.sadakoUnifiedScalpClipping,true);
  assert.ok(report.sadakoAreaSampledRoots>=report.rootCount*.40,
@@ -104,7 +104,7 @@ test('Android studio provides a real one-tap underside hair view',()=>{
  assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
  assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
  assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
- assert.match(page,/sadako-top-to-side-canopy-v57/);
+ assert.match(page,/sadako-headhug-rear-drape-v58/);
 });
 
 test('v53 independent follicle sampling covers crown and front without topology density bias',()=>{
@@ -149,5 +149,5 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  assert.match(page,/v53-sadako-matched-donor-clipping/);
  assert.match(hair,/if\(shortHair\|\|styleId==='sadako-straight-long'\)/);
  assert.match(hair,/const sadakoCrownFlow=null/);
- assert.match(page,/sadako-top-to-side-canopy-v57/);
+ assert.match(page,/sadako-headhug-rear-drape-v58/);
 });

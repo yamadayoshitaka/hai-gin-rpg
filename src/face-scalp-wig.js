@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-top-to-side-canopy-v57';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-headhug-rear-drape-v58';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1045,7 +1045,7 @@ export function createScalpFirstLongGuide({
  // Crown overlay is its own scalp-rooted grooming route: sweep ACROSS
  // the head first, then fall down the near side. Normal crown/fringe
  // guides may still travel forward/backward and keep the central part.
- const rootSweepX=crownOverSide?side*.94:temple?side*.035:
+ const rootSweepX=crownOverSide?side*.62:temple?side*.035:
   THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
  const rootSweepZ=crownOverSide?-.065:back?-1:zone.startsWith('fringe')?1:
   relativeZ>-.025?1:-1;
@@ -1068,9 +1068,9 @@ export function createScalpFirstLongGuide({
  // Let the top layer cross the rounded crown to the sides BEFORE the
  // hair falls. Only these top-grown overlay guides use the longer arc.
  const gravityStart=crownOverSide?
-  Math.min(.32,d.y*.25/length):Math.min(.15,d.y*.075/length);
+  Math.min(.18,d.y*.12/length):Math.min(.15,d.y*.075/length);
  const gravityEnd=crownOverSide?
-  Math.max(gravityStart+.020,Math.min(.54,d.y*.54/length)):
+  Math.max(gravityStart+.020,Math.min(.34,d.y*.32/length)):
   Math.max(gravityStart+.015,Math.min(.38,d.y*.26/length));
  const centerCurtain=!crownOverSide&&front&&
   (zone.startsWith('fringe')||zone==='crown');
@@ -1133,8 +1133,16 @@ export function createScalpFirstLongGuide({
     next.x-=side*(sideDistance-maxEarOut);
    }
   }
+  if(crownOverSide){
+   // Crown-born strands follow the cranium, not a radial umbrella.
+   const headY=(next.y-box.min.y)/Math.max(d.y,1e-6);
+   const lateral=side*(next.x-center.x);
+   const maxLateral=d.x*(.255+.078*(1-smooth(headY,.60,.94)));
+   if(headY>.57&&lateral>maxLateral)
+    next.x-=side*(lateral-maxLateral);
+  }
   if(projectOutside)projectOutside(next,j===1,front,
-   j*length/segments<=d.y*.27);
+   next.y>box.min.y+d.y*.59);
   result.push(next);
   last=next;
  }
@@ -1311,8 +1319,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // scalp. A fully radial guide without this attraction floats like a
     // hard helmet above the rounded crown.
     const excess=radius-safe;
-    if(excess>d.x*.015&&excess<d.x*.16){
-     const pull=Math.min(excess-d.x*.015,d.x*.042)*.58;
+    if(excess>d.x*.012){
+     const pull=Math.min(excess-d.x*.012,d.x*.20)*.85;
      point.x-=dx/radius*pull;
      point.z-=dz/radius*pull;
      changed=true;
@@ -1331,9 +1339,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  /** Correct the back of the nape/shoulder for both the full-body
   * triangle collider and the face-only sculpted BUST. The latter is what
   * the reported screenshot shows; it previously had no rear triangle test. */
- function projectSadakoRearBust(point,zone){
+ function projectSadakoRearBust(point,zone,rearFacing=false){
   if(!sadakoMaster)return false;
-  const rearZone=zone.startsWith('back')||zone.startsWith('nape')||
+  const rearZone=rearFacing||zone.startsWith('back')||zone.startsWith('nape')||
    (zone==='crown'&&point.z<center.z-d.z*.03);
   if(!rearZone)return false;
   const yn=(point.y-box.min.y)/Math.max(d.y,1e-6);
@@ -1408,6 +1416,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Five out of six crown follicles become an anatomical outer canopy.
   // The remaining central crown guides preserve the front/rear parting.
   const crownOverSide=sadakoGravity&&zone==='crown'&&i%6!==0;
+  // Keep posterior crown follicles on the rear of the shoulder/torso.
+  const rearFacing=back||(zone==='crown'&&wigRoot.z<center.z-d.z*.03);
   const overFace=!crownOverSide&&!back&&!zone.startsWith('temple')&&
    frontRoot&&midFace;
   if(overFace&&!sadakoGravity)faceTrimmedStrands++;
@@ -1575,7 +1585,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
      zone.startsWith('temple')))sadakoGuideScalpPushes++;
   for(let j=1;j<=segments;j++)points[j].copy(rest[j]);
-  strands.push({root:wigRoot,rest,points,vel,fringe,side,crownOverSide,
+  strands.push({root:wigRoot,rest,points,vel,fringe,side,crownOverSide,rearFacing,
    zone,seedIndex:seed.index,trimY,overFace,partSide,
    gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*ribbonStride;
@@ -1640,7 +1650,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Real head-surface collision. The original giant ellipsoid forced
  // every strand out to an artificial spherical helmet around the ears.
  // Only points INSIDE the actual head silhouette are nudged outward.
- function resolveCollision(p,zone='crown',overFace=false,allowDrapeAttraction=false){
+ function resolveCollision(p,zone='crown',overFace=false,allowDrapeAttraction=false,rearFacing=false){
   // Explicit contact with the ACTUAL front facial triangles. For hair
   // falling over the central eye/cheek region, first part it outwards.
   const yNorm=(p.y-box.min.y)/d.y;
@@ -1692,7 +1702,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    sadakoGuideScalpPushes++;
   // This must be LAST: proxy shoulder capsules must not push a corrected
   // strand back inside the real female body geometry.
-  const contactSide=(zone.startsWith('back')||zone.startsWith('nape'))?
+  const contactSide=(rearFacing||zone.startsWith('back')||zone.startsWith('nape'))?
    'rear':(zone.startsWith('fringe')||zone.startsWith('temple')||overFace)?
    'front':'nearest';
   if(bodyCollisionResolver?.resolve?.(p,{side:contactSide})){
@@ -1701,7 +1711,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(sadakoMaster&&projectSadakoOutside(p,false,
     zone.startsWith('fringe')||zone.startsWith('temple')||overFace))
    sadakoGuideScalpPushes++;
-  if(projectSadakoRearBust(p,zone))
+  if(projectSadakoRearBust(p,zone,rearFacing))
    sadakoRearBustGuideContacts++;
   // Gentle drape attraction around lower neck and shoulders: keep a small
   // silhouette gap from the ACTUAL imported torso, never cross the surface.
@@ -1859,7 +1869,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      // clothing. Resolve actual rendered corners, without unrooting j=0.
      if(renderBodyCollider&&j>0&&vy<box.min.y+d.y*.72){
       ribbonCollisionPoint.set(vx,vy,vz);
-      const side=(strand.zone.startsWith('back')||strand.zone.startsWith('nape'))?
+      const side=(strand.rearFacing||strand.zone.startsWith('back')||strand.zone.startsWith('nape'))?
        'rear':(strand.fringe||strand.zone.startsWith('temple')||strand.overFace)?
        'front':'nearest';
       if(renderBodyCollider.resolve(ribbonCollisionPoint,{side})){
@@ -1869,7 +1879,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      }
      if(sadakoMaster&&j>0&&vy<box.min.y+d.y*.65){
       ribbonCollisionPoint.set(vx,vy,vz);
-      if(projectSadakoRearBust(ribbonCollisionPoint,strand.zone)){
+      if(projectSadakoRearBust(ribbonCollisionPoint,strand.zone,strand.rearFacing)){
        vx=ribbonCollisionPoint.x;vy=ribbonCollisionPoint.y;
        vz=ribbonCollisionPoint.z;
        sadakoRearBustRibbonContacts++;
@@ -1908,12 +1918,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     v.y-=step*d.y*.55*style.gravityScale;
     p.addScaledVector(v,step);
     p.x+=wind;
-    resolveCollision(p,s.zone,s.overFace);
+    resolveCollision(p,s.zone,s.overFace,false,s.rearFacing);
     const prev=s.points[j-1],target=s.rest[j].distanceTo(s.rest[j-1]);
     const gap=p.clone().sub(prev),length=gap.length();
     if(length>target*1.055&&length>0)
      p.copy(prev).addScaledVector(gap,target*1.055/length);
-    resolveCollision(p,s.zone,s.overFace);
+    resolveCollision(p,s.zone,s.overFace,false,s.rearFacing);
     if(p.y<s.trimY){p.y=s.trimY;v.y=Math.max(0,v.y);}
    }
   }
@@ -1923,7 +1933,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // the real cheek, forehead and shoulder surfaces. Use resolved contacts
  // as the spring rest shape, rather than pulling hair through the face.
  for(const s of strands)for(let j=1;j<=segments;j++){
-  resolveCollision(s.points[j],s.zone,s.overFace,true);
+  resolveCollision(s.points[j],s.zone,s.overFace,true,s.rearFacing);
   s.points[j].y=Math.max(s.points[j].y,s.trimY);
   s.rest[j].copy(s.points[j]);
  }
@@ -1974,6 +1984,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      for(const sign of [-1,1]){
       const q=p.clone().addScaledVector(across,offset+sign*width)
        .addScaledVector(normal,shell);
+      // Microfibres were added after ribbon collision; keep their tips
+      // outside the actual shoulders/back as well.
+      if(sadakoMaster&&strand.rearFacing&&j>0&&
+         q.y<box.min.y+d.y*.65){
+       if(renderBodyCollider)renderBodyCollider.resolve(q,{
+        side:'rear',surfaceOffset:d.x*.008});
+       projectSadakoRearBust(q,strand.zone,true);
+      }
       coords.push(q.x,q.y,q.z);
       // Multi-scale pigment, fine discontinuous glints, darker roots:
       // hair reads as individual fibers rather than a glossy plastic sheet.
@@ -2185,7 +2203,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoCrownOverSideLocks:sadakoMaster?
    strands.filter(s=>s.crownOverSide).length:0,
   sadakoCrownOverSideOffset:sadakoMaster?.056:null,
-  sadakoCrownCanopyGroom:sadakoMaster?'root-crown-sweep-over-temples-then-gravity-v57':null,
+  sadakoCrownCanopyGroom:sadakoMaster?'scalp-following-crown-to-temple-then-gravity-v58':null,
   sadakoCrownOuterMaxFraction:sadakoMaster?.038:null,
   sadakoCrownOuterOnlyAboveEar:sadakoMaster,
   sadakoEarRibbonWidthFactor:sadakoMaster?.90:null,
@@ -2197,8 +2215,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
   sadakoUnifiedScalpClipping:sadakoMaster&&cap.userData.unifiedBuzzContour,
 
-  sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-master-v52':null,
-  sadakoGravityTransition:sadakoMaster?{scalpTo:.15,fullyGravity:.38,segments}:null,
+  sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-headhug-rear-v58':null,
+  sadakoRearOriginBasedClearance:sadakoMaster,
+  sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
   sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
   sadakoFacePartingDisabled:style.id==='sadako-straight-long',

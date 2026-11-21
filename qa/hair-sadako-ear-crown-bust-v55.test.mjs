@@ -11,7 +11,7 @@ const headBox=new THREE.Box3(new THREE.Vector3(-1,-1,-1),
  new THREE.Vector3(1,1,1));
 
 test('v55 temple hair covers both ear sides as the locks descend',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v57$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v58$/);
  for(const side of [-1,1]){
   const root=new THREE.Vector3(side*.40,.87,-.075);
   const normal=new THREE.Vector3(side*.45,.80,.12).normalize();
@@ -88,9 +88,9 @@ test('both face and full-body editors load v55 collision geometry',()=>{
  const face=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const body=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
  const scalp=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
- assert.match(face,/20261121-sadako-top-to-side-canopy-v57/);
- assert.match(body,/20261121-sadako-top-to-side-canopy-v57/);
- assert.match(scalp,/projectSadakoRearBust\(ribbonCollisionPoint,strand.zone\)/);
- assert.match(scalp,/projectSadakoRearBust\(p,zone\)/);
+ assert.match(face,/20261121-sadako-headhug-rear-drape-v58/);
+ assert.match(body,/20261121-sadako-headhug-rear-drape-v58/);
+ assert.match(scalp,/projectSadakoRearBust\(ribbonCollisionPoint,strand.zone,strand.rearFacing\)/);
+ assert.match(scalp,/projectSadakoRearBust\(p,zone,rearFacing\)/);
  assert.match(face,/耳被覆毛束/);
 });
