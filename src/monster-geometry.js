@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m018-armored-four-cell-hydra-v24-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m018-continuous-tail-venom-blades-v25-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -31,7 +31,7 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
  from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptM018Leg,sculptM018Tail}
- from './m018-hydra-sculpt.js?v=m018-armored-four-cell-hydra-v24-20261121';
+ from './m018-hydra-sculpt.js?v=m018-continuous-tail-venom-blades-v25-20261121';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
@@ -2492,7 +2492,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    sculptSalamanderLineageBack(g,torso,{id:s.id,detail:coatDetail});
    sculptSalamanderSurface(g,torso,head,{id:s.id,detail:coatDetail});
  }else if(hydra){
-   sculptM018HydraThorns(g,torso,{detail:coatDetail});
+   sculptM018HydraThorns(g,torso,bodyStations,{detail:coatDetail});
  }else{
    for(let i=0;i<12+v*3;i++){
      const z=-.65+i*.12;
@@ -3126,5 +3126,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m018-armored-four-cell-hydra-v24-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m018-continuous-tail-venom-blades-v25-20261121';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m016-m017-salamander-quality-v21-20261121';

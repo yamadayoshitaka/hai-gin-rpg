@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m018-armored-four-cell-hydra-v24-20261121';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=m018-continuous-tail-venom-blades-v25-20261121';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
@@ -60,14 +60,14 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},s
    const M=wet?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;
    const mat=new M({
      color,roughness:wet?.13:rough,metalness:wet?0:metal,
-     side:THREE.DoubleSide,
+     side:THREE.DoubleSide,vertexColors:role==='tailScale',
      emissive:glow?color:0x000000,emissiveIntensity:glow?.46:0,
      transparent:translucent,opacity:translucent?.82:1,
      depthWrite:!translucent,
      ...(wet?{clearcoat:.88,clearcoatRoughness:.085,ior:1.35,
        transmission:.14,thickness:.4}:{}),
    });
-   if(role==='skin'||role==='light'||role==='fabric'||role==='bandage'||
+   if(role==='skin'||role==='light'||role==='tailScale'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
@@ -183,7 +183,7 @@ export function createSculpture(spec,detail='high'){
  };
  const tube=(parent,shade,points,radius=.04,{
    name=null,capEnds=false,taper=1,glow=false,
-   tubularSegments=null,radialSegments=null
+   tubularSegments=null,radialSegments=null,radiusProfile=null,rough=.69
  }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
    const [defaultSegments,defaultRadial]=resolution.tube;
@@ -192,11 +192,11 @@ export function createSculpture(spec,detail='high'){
    const geo=new THREE.TubeGeometry(curve,segments,radius,radial,false);
    // Skinned tails and organic necks are NOT open pipes. Rebuild tapered
    // rings in place, then add real triangles closing both extremities.
-   if(capEnds||taper!==1){
+   if(capEnds||taper!==1||radiusProfile){
      const p=geo.getAttribute('position');
      for(let row=0;row<=segments;row++){
        const t=row/segments,center=curve.getPointAt(t);
-       const width=1+(taper-1)*(t*t*(3-2*t));
+       const width=radiusProfile?radiusProfile(t)/radius:1+(taper-1)*(t*t*(3-2*t));
        for(let j=0;j<=radial;j++){
          const i=row*(radial+1)+j;
          p.setXYZ(i,center.x+(p.getX(i)-center.x)*width,
@@ -221,13 +221,49 @@ export function createSculpture(spec,detail='high'){
      geo.computeVertexNormals();
      geo.computeBoundingSphere();
    }
-   const mesh=own(attach(parent,geo,shade,{name:name||shade,glow}));
+   const mesh=own(attach(parent,geo,shade,{name:name||shade,glow,rough}));
    if(capEnds){
      mesh.userData.cappedTubularSkin=true;
      mesh.userData.endCapTriangles=radial*2;
      mesh.userData.tailTaper=taper;
    }
    return mesh;
+ };
+ /** Blend tube rings over the existing moving joints without visible caps. */
+ const skinAxialTube=(tubeMesh,joints)=>{
+   const geo=tubeMesh.geometry,{tubularSegments,radialSegments}=geo.parameters;
+   const index=[],weights=[];
+   const stride=radialSegments+1,sideCount=(tubularSegments+1)*stride;
+   for(let i=0;i<geo.getAttribute('position').count;i++){
+     // Capped tubes append one center vertex at each endpoint.
+     const ring=i<sideCount?Math.floor(i/stride):i===sideCount?0:tubularSegments;
+     const t=ring/tubularSegments;
+     let a=0;
+     while(a<joints.length-2&&t>joints[a+1].at+joints[a+1].blend)a++;
+     const {at,blend}=joints[a+1];
+     const u=THREE.MathUtils.smoothstep(t,at-blend,at+blend);
+     index.push(a,a+1,0,0);
+     weights.push(1-u,u,0,0);
+   }
+   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(index,4));
+   geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
+   const bones=joints.map(({pivot})=>{
+     const bone=new THREE.Bone();
+     pivot.add(bone);
+     return bone;
+   });
+   const skin=new THREE.SkinnedMesh(geo,tubeMesh.material);
+   skin.name=tubeMesh.name;
+   skin.castShadow=tubeMesh.castShadow;
+   skin.receiveShadow=tubeMesh.receiveShadow;
+   skin.userData=tubeMesh.userData;
+   // A swept tail extends beyond the bind-pose bounds during its whip.
+   skin.frustumCulled=false;
+   tubeMesh.parent.add(skin);
+   tubeMesh.removeFromParent();
+   root.updateMatrixWorld(true);
+   skin.bind(new THREE.Skeleton(bones));
+   return skin;
  };
  /** Smooth continuous tapered joint between shoulder and skull; bury the
   * broad end in the body and the narrow end inside the head.
@@ -924,7 +960,7 @@ export function createSculpture(spec,detail='high'){
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
  root.userData.detail=detail;
- return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,bridge,
+ return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,skinAxialTube,bridge,
    axialLoft,limbLoft,felineContinuousLimb,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){

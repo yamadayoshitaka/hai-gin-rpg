@@ -10,7 +10,7 @@ export const MONSTER_REALISTIC_PALETTE=Object.freeze({
    shadow:'#283e34',bone:'#4a5341',eye:'#dfc67a'}),
  m017:Object.freeze({skin:'#4a6066',light:'#65777a',
    shadow:'#303f45',bone:'#819091',metal:'#73868a',eye:'#e2b46b'}),
- m018:Object.freeze({skin:'#39453c',light:'#686859',shadow:'#241832',
+ m018:Object.freeze({skin:'#39453c',light:'#686859',shadow:'#241832',tailScale:'#72806b',
    accent:'#9d54c8',bone:'#bdae97',eye:'#ef7eff'}),
  m019:Object.freeze({skin:'#30292a',light:'#49393b',accent:'#ff792b',
    bone:'#514141',eye:'#ffbb55',shadow:'#151316'}),
