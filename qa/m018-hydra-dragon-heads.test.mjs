@@ -5,7 +5,7 @@ import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {M018_HYDRA_REVISION} from
- '../src/m018-hydra-sculpt.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
+ '../src/m018-hydra-sculpt.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 
 for(const detail of ['low','high']){
  test('m018 '+detail+' retains base body and four planted limbs while creating 3 long dragon heads',()=>{
@@ -17,7 +17,7 @@ for(const detail of ['low','high']){
    assert.equal(root.userData.gameModelRevision,M018_HYDRA_REVISION);
    assert.equal(root.userData.m018HydraRevision,M018_HYDRA_REVISION);
    assert.equal(root.userData.m018DragonHeadCount,3);
-   assert.equal(root.userData.m018LongestNeck,1.76);
+   assert.equal(root.userData.m018LongestNeck,2.17);
    assert.equal(root.userData.m018ExistingTorsoLegsTailPreserved,true);
    assert.equal(root.userData.m018PhysicalDragonHeads,true);
    assert(piv.torso&&piv.tail&&piv.tailMid,'preserve original rig');
@@ -47,15 +47,20 @@ for(const detail of ['low','high']){
     assert.equal(neckPivot.userData.m018IndependentNeck,true);
     assert.equal(skull.userData.m018DragonFace,true);
     assert.equal(jaw.userData.m018DragonMandible,true);
-    const length=suffix==='C'?1.76:1.36;
+    const length=suffix==='C'?2.17:1.54;
     assert.equal(neckPivot.userData.m018NeckLength,length);
-    assert.equal(skull.position.y,length,'neck must be extended at least 1.36 units');
+    assert.equal(skull.position.y,length,'neck must be extended at least 1.54 units');
     const throat=root.getObjectByName('m018-long-neck-'+suffix);
     assert(throat?.isMesh&&throat.parent===neckPivot);
     assert(throat.visible&&throat.material.visible);
     assert(throat.userData.cappedTubularSkin);
     assert.equal(throat.userData.m018ContinuousNeck,true);
     assert.equal(throat.userData.m018NeckSource,'m018-existing-torso');
+    const scute=root.getObjectByName('m018-throat-scute-'+suffix);
+    assert.equal(scute?.parent,neckPivot);
+    const spine=root.getObjectByName('m018-neck-venom-spine-'+suffix);
+    assert.equal(spine?.parent,neckPivot);
+    assert(spine.material.color.b>spine.material.color.g,'violet venom spines match the design');
     const cranium=root.getObjectByName('m018-dragon-cranium-'+suffix);
     assert.equal(cranium.userData.m018DragonWedge,true);
     assert.equal(cranium.parent,skull);
@@ -82,6 +87,8 @@ for(const detail of ['low','high']){
    // Side heads and mandibles are animated alongside the center's real jaw.
    startMonsterAction(root,'roar',0);
    animateMonsterModel(root,.23);
+   assert.equal(piv.hydraSkullL.rotation.y,-.48);
+   assert.equal(piv.hydraSkullR.rotation.y,.48);
    assert(piv.hydraJawL.rotation.x>.1);
    assert(piv.hydraJawR.rotation.x>.1);
    assert(Math.abs(piv.hydraHeadL.rotation.y)>.02);

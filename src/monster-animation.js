@@ -168,6 +168,8 @@ export function animateMonsterModel(model,time=0){
    }else if(name==='jaw'){
      part.rotation.x=(action==='roar'?.55:pulse*.42)+
        Math.sin(motionTime*3)*.022+dying*.08;
+   }else if(name.startsWith('hydraSkull')){
+     part.rotation.y=part.userData.restYaw;
    }else if(name==='hydraJawL'||name==='hydraJawR'){
       // Additional dragon jaws follow the same attack as the center head.
       const side=name.endsWith('L')?-1:1;

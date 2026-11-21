@@ -9,16 +9,16 @@
  */
 import * as THREE from 'three';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
+ from './monster-geometry.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
+ from './monster-animation.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=salamander-m016-m017-m019-lineage-v2-20261119';
+ from './creature-game-model-routing.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
 import {chooseCreatureLod} from './creature-master-library.js?v=m001-m005-m006-v3-20261118';
