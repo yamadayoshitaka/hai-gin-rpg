@@ -263,6 +263,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
     });
     m.userData={golemMaterial:true,photographicHumanAlbedo:false,
      species:profile.id,role};
+    if(profile.id==='m036'&&['constructBase','constructFacet',
+      'constructDark'].includes(role)){
+      decorateMonsterPhotoMaterial(m,{speciesId:profile.id,
+        family:'golem',role:'skin',detail});
+    }
     decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
