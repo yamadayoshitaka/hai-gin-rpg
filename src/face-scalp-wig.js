@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-shared-scalp-angle-coverage-v61';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-costume-mask-buzz-restored-v62';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -555,13 +555,10 @@ export function buzzHairlineFractionAtPoint(v,box,size=null,center=null){
    const t=THREE.MathUtils.clamp((angle-a)/(b-a),0,1);
    boundary=THREE.MathUtils.lerp(y,z,t*t*(3-2*t));break;
   }
- // Both hairstyles use this one bilateral contour. Lowering the temple
- // equally on both sides removes the bare-looking seam on profile turns.
- const lateral=Math.abs(v.x-c.x)/Math.max(d.x,1e-6);
- const backToEar=1-THREE.MathUtils.smoothstep(angle,.06,.63);
- const temple=THREE.MathUtils.smoothstep(lateral,.19,.31)*
-  (1-THREE.MathUtils.smoothstep(lateral,.46,.54));
- return THREE.MathUtils.clamp(boundary-.064*temple*backToEar,.48,.91);
+ // Restore the original close-cut contour. Its side sparseness was
+ // intentional; the bald PATCH appeared only after the wardrobe's native
+ // face depth-tested in front of the wig.
+ return THREE.MathUtils.clamp(boundary,.495,.91);
 }
 
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural',battleStableCoverage=false,styleId=null}={}){
@@ -598,7 +595,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    };
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
-   if(shortHair||styleId==='sadako-straight-long')
+   if(shortHair)return buzzHairlineFractionAtPoint(v,box,d,center);
+   if(styleId==='sadako-straight-long')
     return Math.max(.465,buzzHairlineFractionAtPoint(v,box,d,center)-.021);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
@@ -704,9 +702,12 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  const sourceDonorVertexCount=verts.length/3;
  // Real source triangles, inset below the primary colored scalp. This
  // closes asymmetric viewing gaps, but never duplicates a floating cap.
- const crownUnderlay=appendRealCrownUnderlay(
-  geo,box,verts,smoothNormals,volumeProfile,
-  {includeTemples:shortHair||styleId==='sadako-straight-long'});
+ // Do NOT restore a second opaque scalp helmet on buzz cuts. The previous
+ // approved sparse buzz uses only its donor cap + authentic fine fibres.
+ const crownUnderlay=shortHair?
+  {triangles:0,source:'disabled-for-short-hair'}:
+  appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile,
+   {includeTemples:styleId==='sadako-straight-long'});
  // Exclude rear decorative underlocks from follicle sampling. Only the
  // real source-donor scalp (plus compact repairs) may spawn new roots.
  const donorScalpVertexCount=sourceDonorVertexCount;
@@ -799,19 +800,16 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    smoothNormals.push(0,0,-1);
   }
  }
- // Short-pigment undercoat matches unlit 30k micro-fibres; angled PBR
- // highlights on the old scalp previously resembled beige bald patches.
- // Long locks retain their physically shaded foundation.
- const material=shortHair?new THREE.MeshBasicMaterial({
-  color:new THREE.Color(color),vertexColors:true,side:THREE.DoubleSide,
-  toneMapped:true,depthTest:true,depthWrite:true,
-  polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1
- }):new THREE.MeshPhysicalMaterial({
+ // Exact pre-v61 shading for the short crop, rather than a solid painted
+ // helmet. The garment fix belongs to the COSTUME face, not this material.
+ const material=new THREE.MeshPhysicalMaterial({
   color:new THREE.Color(color),vertexColors:true,
   roughness:.95,metalness:0,clearcoat:0,clearcoatRoughness:1,
   sheen:.01,sheenRoughness:1,sheenColor:new THREE.Color(color).multiplyScalar(.50),
   side:THREE.DoubleSide,
-  transparent:false,opacity:1,depthWrite:true
+  transparent:false,opacity:1,depthWrite:true,
+  polygonOffset:shortHair,polygonOffsetFactor:shortHair?-2:0,
+  polygonOffsetUnits:shortHair?-2:0
  });
  const buffer=new THREE.BufferGeometry();
  buffer.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
@@ -820,7 +818,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   // Stable continuous pigment on the short cap: adjacent donor triangles
   // must not receive visibly different tint at the same scalp boundary.
   // Match cap pigment to the unlit close-cut fibres on all camera angles.
-  const shade=shortHair?.955:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
+  const shade=shortHair?1.0:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
   melanin.push(shade,shade*.995,shade*.988);
  }
  buffer.setAttribute('color',new THREE.Float32BufferAttribute(melanin,3));
@@ -828,11 +826,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
   new THREE.Float32BufferAttribute(smoothNormals,3));
  const mesh=new THREE.Mesh(buffer,material);
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
- if(shortHair){
-  mesh.renderOrder=-1;mesh.castShadow=false;
-  mesh.userData.shortHairDepthPriority=false;
-  mesh.userData.buzzPigmentBelowFibres=true;
- }
+ if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.donorScalpVertexCount=donorScalpVertexCount;
  mesh.userData.unifiedBuzzContour=shortHair||styleId==='sadako-straight-long';
@@ -841,8 +835,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
  mesh.userData.v65CrownTopologyRepairTriangles=crownRepair.triangles;
  mesh.userData.v66RealCrownUnderlayTriangles=crownUnderlay.triangles;
- mesh.userData.v61BilateralTempleUnderlay=shortHair||styleId==='sadako-straight-long';
- mesh.userData.v61ScalpAndFibrePigmentAligned=shortHair;
+ mesh.userData.v61BilateralTempleUnderlay=styleId==='sadako-straight-long';
+ mesh.userData.v61ScalpAndFibrePigmentAligned=false;
  mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
  mesh.userData.v33RaisedWigBase=true;
@@ -2345,7 +2339,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoSkinnedMantleCollision:!!garmentCollisionResolver,
   sadakoCrownUnderlaySource:cap.userData.v66RealCrownUnderlayTriangles>0?'actual-donor-scalp':'unavailable',
   bilateralTempleScalpCoverage:!!cap.userData.v61BilateralTempleUnderlay,
-  buzzScalpPigmentBelowFibres:!!cap.userData.buzzPigmentBelowFibres,
+  buzzScalpPigmentBelowFibres:false,
+  buzzSparseApprovedLookRestored:!!style.shortCutKind,
   v61SeamBlend:'donor-bilateral-temple-pigment-and-gradual-crown-ribbon-root',
   sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
