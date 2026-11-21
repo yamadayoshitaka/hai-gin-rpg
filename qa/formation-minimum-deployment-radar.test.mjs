@@ -63,12 +63,13 @@ assert.ok(request.initialSquadOrders);
 assert.ok(Object.values(request.initialSquadOrders).every(order=>order==='hold'),
  'initial order selection is retired: everyone starts with neutral hold');
 const world=readFileSync(new URL('../world-map.html',import.meta.url),'utf8');
-assert.match(world,/id="deploymentRadarBoard"/);
-assert.match(world,/data-deployment-position=/);
-assert.match(world,/setSortieSlot\(game,stage,deploymentTeamId/);
-assert.match(world,/prebattle-deployment-radar\.css/);
-assert.doesNotMatch(world,/id="deploymentPositions"/,'no legacy text-only position grid');
-assert.match(world,/ここでは初期号令・作戦は選びません/);
+assert.doesNotMatch(world,/id="deploymentRadarBoard"/,'no second world map deployment UI');
+assert.doesNotMatch(world,/id="deploymentPicker"/);
+assert.match(world,/beginSortie\(stage\)/);
+const radar=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+assert.match(radar,/id="realtimeRadarExpand"/);
+assert.match(radar,/placedTeams\.add\(group\)/);
+assert.match(radar,/requirePrebattleChoices/);
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battleHtml,/Story mode has already locked its initial positions on the FULL radar/);
 assert.match(battleHtml,/if\(storyRequest\?\.sortieTeamCount\|\|directBattlePreview\)\{\s*for\(const id of squadIds\)/,
