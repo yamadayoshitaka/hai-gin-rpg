@@ -7,6 +7,8 @@ import {MONSTER_FAMILY_ACTIONS,MONSTER_FAMILY_QUALITY_CONTRACT,
  monsterActionQualityPlan,MONSTER_THEME_ACTIONS_PER_SPECIES} from '../src/monster-theme-actions.js';
 import {MONSTER_THEME_MOTION_REVISION} from '../src/monster-theme-motion.js';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
+import {nonhumanMonsterStage,NONHUMAN_QUALITY_PROGRESS} from '../src/nonhuman-model-quality.js';
+import {monsterResolutionFor} from '../src/monster-shape-kit.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {humanoidMonsterCostumeFor} from '../src/monster-character-cosplay-manifest.js';
 import {readFileSync} from 'node:fs';
@@ -47,6 +49,22 @@ test('all 50 family action catalogs and 50 unique signature descriptions',()=>{
  assert.equal(covered,50);
  assert.equal(ids.size,40);
  assert.equal(MONSTER_THEME_MOTION_REVISION,'50-theme-bone-poses-v1-20261121');
+});
+test('all seven nonhuman families increase geometry density without heavier mass-battle low LOD',()=>{
+ const families=['beast','feline','avian','reptile','insect','arachnid','aquatic'];
+ for(const family of families){
+  const m=MONSTER_CATALOG.find(x=>x.family===family&&x.id!=='m015');
+  assert.ok(m,family);
+  assert.equal(nonhumanMonsterStage(m),2,'high quality stage '+family);
+  const hi=monsterResolutionFor(m,'high'),lo=monsterResolutionFor(m,'low');
+  assert.ok(hi.sphere[0]>lo.sphere[0]);
+  assert.ok(hi.tube[0]>lo.tube[0]);
+  assert.deepEqual(lo.sphere,[14,10],
+   '50vs50 and 1000vs1000 low LOD must not grow');
+ }
+ assert.equal(nonhumanMonsterStage(MONSTER_BY_ID.m015),0);
+ assert.equal(nonhumanMonsterStage(MONSTER_BY_ID.m042),0);
+ assert.equal(NONHUMAN_QUALITY_PROGRESS.canineCoat,2);
 });
 test('quality plan is fully grouped with zero missing species or mobility families',()=>{
  const plans=monsterActionQualityPlan();
