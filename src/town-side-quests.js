@@ -63,6 +63,14 @@ export function verifyTavernQuestBattle(game,request){
   throw Error('任意依頼の戦闘記録を照合できません。');
  return quest;
 }
+export function tavernQuestBattleReward(request){
+ const stage=CAMPAIGN_STAGE_BY_ID[request?.stageId];
+ if(!stage||!validId(request?.sideQuestId)||!stage.id.startsWith(request.sideQuestId.slice(0,7)))
+  throw Error('任意依頼の報酬情報が正しくありません。');
+ const troops=Array.isArray(request.units)?request.units.length:0;
+ const gold=35+stage.chapter*15+stage.slot*7+(request.sideQuestChoice===1?Math.min(35,Math.floor(troops/10)):0);
+ return {gold,xp:18+stage.chapter*5+stage.slot*2};
+}
 export function settleTavernQuestBattle(game,request,result){
  const quest=verifyTavernQuestBattle(game,request);
  if(!quest)throw Error('任意依頼の出撃情報がありません。');
@@ -70,11 +78,7 @@ export function settleTavernQuestBattle(game,request,result){
   throw Error('依頼先の魔物を討伐できていません。');
  delete game.pendingTavernQuest;
  if(!result.victory)return {quest,completed:false,gold:0,xp:0};
- const stage=CAMPAIGN_STAGE_BY_ID[quest.stageId];
- const choice=request.sideQuestChoice;
- const troops=(request.units||[]).length;
- const gold=35+stage.chapter*15+stage.slot*7+(choice===1?Math.min(35,Math.floor(troops/10)):0);
- const xp=18+stage.chapter*5+stage.slot*2;
+ const {gold,xp}=tavernQuestBattleReward(request);
  game.tavernSideQuestDone??={};
  game.tavernSideQuestDone[quest.id]={completedAt:new Date().toISOString(),choice,gold,xp,battleId:request.battleId};
  game.wallet=(Number(game.wallet)||0)+gold;
