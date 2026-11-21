@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=20261120-shield-cover3';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=20261122-anti-wander1';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js?v=4.6.64';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
