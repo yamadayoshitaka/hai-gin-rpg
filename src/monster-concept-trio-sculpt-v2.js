@@ -87,6 +87,7 @@ function armoredSpider(g,s){
  animatePlateHighlight(g,abdomen,z,sz,p,'venom');
  // The eye sockets are embedded in a broad carapace face, not stick-on googly eyes.
  const head=g.group('head',[0,1.38,.53]);
+ const jaws=g.group('jaw',[0,1.19,.90]);
  texturedEllipsoid(g,head,{
   name:'armored-spider-face',center:[0,0,.13],
   radii:[.42,.34,.42],color:p.deep,light:p.skin,
@@ -113,7 +114,6 @@ function armoredSpider(g,s){
     [r*.12,r*.09,r*.075],{name:'chitin-eye-glint',rough:.10});
   }
   // Rooted multi-segment curved fangs with tips pointing inward.
-  const jaws=g.root.userData.conceptJaws??(g.root.userData.conceptJaws=g.group('jaw',[0,1.19,.90]));
   texturedEllipsoid(g,jaws,{
    name:'mandible-fang-socket',center:[side*.19,0,.0],
    radii:[.14,.19,.17],role:'spider-fang-socket-'+(side<0?'l':'r'),
