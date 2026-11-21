@@ -1226,10 +1226,10 @@ export function shapeRebuiltCatalogCurl(points,{
  return points;
 }
 /** v69 rebuilt salon guide edits. Original donor head/follicles unchanged. */
-export function shapeRebuiltStraightBangs(points,{box,rootIndex=0}={}){
+export function shapeRebuiltStraightBangs(points,{box,rootIndex=0,tipLevel=.786}={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  const d=box.getSize(new THREE.Vector3()),root=points[0].clone();
- const brow=box.min.y+d.y*(.786+.0015*Math.sin(rootIndex*.7));
+ const brow=box.min.y+d.y*(tipLevel+.0015*Math.sin(rootIndex*.7));
  const tipY=Math.min(root.y-d.y*.055,brow);
  for(let j=1;j<points.length;j++){
   const t=j/(points.length-1),blend=THREE.MathUtils.smoothstep(t,0,1);
@@ -1241,17 +1241,59 @@ export function shapeRebuiltStraightBangs(points,{box,rootIndex=0}={}){
  }
  return points;
 }
-/** Tuck one-length front locks behind the ear, leaving cheeks visible. */
+/** Face-facing locks must reach the ear BEFORE they descend over the eyes.
+ * v69 displaced only the lower 52% of medium hair, leaving a thick V-veil.
+ * Guide roots never move, while the scalp guide is routed along the temple. */
 export function shapeRebuiltEarTuck(points,{box,side=1}={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
- const root=points[0].clone();
  for(let j=1;j<points.length;j++){
-  const t=j/(points.length-1),tuck=THREE.MathUtils.smoothstep(t,.15,.52);
-  const p=points[j],earX=c.x+side*d.x*.37,earZ=c.z-d.z*.115;
-  p.x=THREE.MathUtils.lerp(p.x,earX,tuck*.96);
-  p.z=THREE.MathUtils.lerp(p.z,earZ,tuck*.88);
-  if(t<.20)p.x=THREE.MathUtils.lerp(root.x,p.x,t/.20);
+  const t=j/(points.length-1),tuck=THREE.MathUtils.smoothstep(t,.018,.23);
+  const p=points[j],earX=c.x+side*d.x*.396,earZ=c.z-d.z*.135;
+  p.x=THREE.MathUtils.lerp(p.x,earX,tuck*.985);
+  p.z=THREE.MathUtils.lerp(p.z,earZ,tuck*.96);
+  const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  if(t>=.22&&h>=.52&&h<=.91){
+   const lateral=side*(p.x-c.x),clear=d.x*.32;
+   if(lateral<clear)p.x=c.x+side*clear;
+   p.z=Math.min(p.z,c.z+d.z*.065);
+  }
+ }
+ return points;
+}
+/** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
+ * reuse a measured head donor for follicles, but NOT a female bob guide. */
+export function shapeRebuiltMaleGuide(points,{
+ box,zone='crown',side=1,part='center',long=false,bangsCut=false
+}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const fringe=zone.startsWith('fringe'),temple=zone.startsWith('temple');
+ const back=zone.startsWith('back')||zone.startsWith('nape');
+ for(let j=1;j<points.length;j++){
+  const p=points[j],t=j/(points.length-1);
+  const sweep=THREE.MathUtils.smoothstep(t,.055,.30);
+  if((fringe||temple||zone==='crown')&&!bangsCut){
+   const goalX=c.x+side*d.x*(temple?.37:part==='side'?.36:.32);
+   p.x=THREE.MathUtils.lerp(p.x,goalX,
+    sweep*(temple?.90:.78));
+   if(t>.20){
+    const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+    if(h>.56&&h<.89&&side*(p.x-c.x)<d.x*.275)
+     p.x=c.x+side*d.x*.275;
+   }
+   p.z=THREE.MathUtils.lerp(p.z,
+    c.z-d.z*(temple?.15:.055),sweep*(temple?.83:.59));
+  }
+  if(temple&&!long){
+   const taper=THREE.MathUtils.smoothstep(t,.40,.92);
+   p.y=Math.max(p.y,box.min.y+d.y*.51*taper);
+  }
+  if(back&&!long){
+   const taper=THREE.MathUtils.smoothstep(t,.47,.96);
+   p.y=Math.max(p.y,box.min.y+d.y*.32*taper);
+   p.z-=d.z*.035*taper;
+  }
  }
  return points;
 }
