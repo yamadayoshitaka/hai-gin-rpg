@@ -149,7 +149,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .forgePanel b{font-size:14px;color:#ffe0a2}.forgePanel small{font-size:11px;color:#d4e0e7}
 #panel .forgePanel button{background:#79552c;border-color:#d9ba7d;min-height:42px}
 </style>
-<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=training-animation-after-list-20261122"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=no-scroll-roster-gear-20261122"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、軍訓練所、鍛冶屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -184,7 +184,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inn-formation-only-20261121';
-import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=training-animation-after-list-20261122';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=no-scroll-roster-gear-20261122';
 import {purchaseAndArrangeTrainingFormation} from './src/training-formation-purchase.js?v=training-stock-by-job-20261122';
 import {setInnTeamItem} from './src/inn-team-items.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=roster-first-20261121';
@@ -614,10 +614,13 @@ $('panelContent').onclick=event=>{
     }
     if(target.hasAttribute('data-inn-wizard-roster-formation-page')){
      innWizardRosterFormationPage=Math.max(0,innWizardRosterFormationPage+Number(data.innWizardRosterFormationPage));
-     redraw();return;
+     innWizardRosterPreviewId='';redraw();return;
     }
     if(target.hasAttribute('data-inn-wizard-preview')){
      innWizardRosterPreviewId=data.innWizardPreview;redraw();return;
+    }
+    if(target.hasAttribute('data-inn-wizard-quote')){
+     innWizardRosterPreviewId=data.innWizardQuote;innWizardStep='rosterQuote';redraw();return;
     }
     if(target.hasAttribute('data-inn-wizard-team')){
     sortieTeamId=Number(data.innWizardTeam);innWizardStep='roster';innWizardSlot=0;
@@ -669,7 +672,7 @@ $('panelContent').onclick=event=>{
     return;
    }
    if(target.hasAttribute('data-inn-wizard-back')){
-    innWizardStep=({roster:'teamPick',rosterPick:'roster',equipment:'roster',
+    innWizardStep=({roster:'teamPick',rosterQuote:'roster',rosterPick:'roster',equipment:'roster',
      equipmentPick:'equipment',items:'equipment',leader:'items',formation:'leader',review:'formation'})[step]||'teamPick';
     redraw();return;
    }
@@ -679,7 +682,7 @@ $('panelContent').onclick=event=>{
     if(!sourceIds.length)throw Error('先に隊員を1人以上配置してください。');
     if(step==='leader'&&!sourceIds.includes(String(team.captainId)))
      throw Error('この隊のリーダーを選んでください。');
-    innWizardStep=({roster:'equipment',equipment:'items',items:'leader',leader:'formation'})[step]||step;
+    innWizardStep=({roster:'equipment',rosterQuote:'equipment',equipment:'items',items:'leader',leader:'formation'})[step]||step;
     redraw();return;
    }
   }catch(error){renderPanel();notice(error.message||String(error));return;}
