@@ -29,3 +29,41 @@ export function formationCapacityStatus(team,squads,stageLimit=50){
  return {spec,rarity,total,capacity,valid:total<=capacity&&!excess,
  error:total>capacity?'総人数上限'+capacity+'人を超過':excess?excess+'は最大'+spec.rarityCaps[excess]+'人':''};
 }
+
+
+/**
+ * Higher-impact formations require a larger coordinated force and elite troops.
+ * These are deployment minima; existing rarityCaps remain maxima.
+ */
+export const FORMATION_ENTRY_REQUIREMENTS=Object.freeze({
+ attack:{people:3,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ balanced:{people:5,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ support:{people:6,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ wall:{people:8,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ spear:{people:10,rPlus:1,srPlus:0,ssrPlus:0,ur:0},
+ arrow:{people:12,rPlus:1,srPlus:0,ssrPlus:0,ur:0},
+ wedge:{people:14,rPlus:2,srPlus:0,ssrPlus:0,ur:0},
+ pincer:{people:16,rPlus:3,srPlus:0,ssrPlus:0,ur:0},
+ circle:{people:18,rPlus:3,srPlus:1,ssrPlus:0,ur:0},
+ ambush:{people:20,rPlus:4,srPlus:2,ssrPlus:0,ur:0},
+ cross:{people:22,rPlus:5,srPlus:3,ssrPlus:0,ur:0},
+ fortress:{people:24,rPlus:5,srPlus:3,ssrPlus:1,ur:0},
+ dragon:{people:28,rPlus:6,srPlus:4,ssrPlus:2,ur:0},
+ constellation:{people:32,rPlus:8,srPlus:5,ssrPlus:3,ur:1}
+});
+export const FORMATION_BATTLE_PURPOSES=Object.freeze({
+ attack:{purpose:'前線を押し上げ、近接部隊が先行する',movement:'前衛先行・遠隔後続'},
+ balanced:{purpose:'前衛・支援・後衛の距離を維持して進軍',movement:'三層を保った連携前進'},
+ support:{purpose:'回復・魔法部隊を後方に守る',movement:'後衛中心・護衛追従'},
+ wall:{purpose:'盾役が先頭で突破を防ぐ',movement:'防御線維持・低速進軍'},
+ spear:{purpose:'前列を揃えて敵の突進を迎撃',movement:'縦列を保ち槍衾を形成'},
+ arrow:{purpose:'射撃部隊を中核に挟撃射線を確保',movement:'遠隔優先・側面展開'},
+ wedge:{purpose:'先頭の攻撃力を集中して敵陣を突破',movement:'楔形で中央突破'},
+ pincer:{purpose:'左右の遊撃部隊で敵を包み込む',movement:'両翼展開・側面包囲'},
+ circle:{purpose:'全方向から味方の中心を守る',movement:'防衛円環を維持'},
+ ambush:{purpose:'発見を避け機動力で背後に回る',movement:'分散接近・奇襲'},
+ cross:{purpose:'中心を守りつつ四方向に対処',movement:'十字隊列を維持'},
+ fortress:{purpose:'盾役を重ねて前線の損耗を防ぐ',movement:'密集防御・緩慢前進'},
+ dragon:{purpose:'先鋒と翼の攻撃を連携して敵を崩す',movement:'先鋒突破・両翼追撃'},
+ constellation:{purpose:'近接・回復・遠隔が一体で機能',movement:'全方向連携・距離維持'}
+});
