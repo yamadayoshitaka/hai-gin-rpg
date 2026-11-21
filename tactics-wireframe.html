@@ -942,6 +942,7 @@ import {AdaptiveBattleResolution} from './src/adaptive-battle-resolution.js?v=20
 import {TACTICAL_STRATEGIES,TACTICAL_ORDERS,orderEffect,strategyEffect} from './src/tactical-command-descriptions.js?v=1';
 import {coreVictoryReward,territoryVictoryReward,verifiedBattleLoot} from './src/battle-victory-rewards.js?v=2.2';
 import {CAMPAIGN_STAGE_BY_ID} from './src/campaign-stage-plan.js';
+import {tavernQuestBattleReward} from './src/town-side-quests.js';
 import {TERRITORIES} from './src/story-campaign.js';
 import {installBattleTacticalUI,createPreBattleTacticalSummary} from './src/tactical-command-battle-ui.js?v=20261117-recommend2';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
@@ -2465,7 +2466,7 @@ function showBattleVictoryRewards(victory){
  const stage=storyRequest?.origin==='game-core'?CAMPAIGN_STAGE_BY_ID[storyRequest.stageId]:null;
  const territory=storyRequest?.origin!=='game-core'?
   TERRITORIES.find(item=>item.id===storyRequest?.territoryId):null;
- const reward=stage?coreVictoryReward(stage):territory?territoryVictoryReward(territory):{gold:0,xp:0};
+ const reward=storyRequest?.sideQuestId?tavernQuestBattleReward(storyRequest):stage?coreVictoryReward(stage):territory?territoryVictoryReward(territory):{gold:0,xp:0};
  const loot=battleTreasureReceipt();
  const label=storyRequest?'帰還時に報酬を確定・所持品へ反映':'模擬戦のため所持金と経験値は加算されません';
  panel.replaceChildren();
@@ -2615,7 +2616,7 @@ if(storyRequest){
   log(leader.name+'の号令：'+order.name+'／'+buff);refreshCommanderOrderOptions();};
  // Options are refreshed after group membership is initialized.
  const replay=$('endScreen').querySelector('button');if(replay)replay.hidden=true;
- const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href=storyRequest?.origin==='game-core'?'./world-map.html?v=core-1':'./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
+ const back=document.createElement('button');back.id='returnStory';back.textContent=storyRequest?.sideQuestId?'🍺 酒場へ戻る':'📜 ストーリーへ戻る';back.onclick=()=>{location.href=storyRequest?.origin==='game-core'?'./world-map.html?v=core-1':'./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
 }else{
  $('squadTacticsCommanderSlot').textContent='単体戦闘の戦術号令は、選択した部隊にのみ適用されます。';
 }
