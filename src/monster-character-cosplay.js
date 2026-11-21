@@ -9,6 +9,8 @@
 import * as THREE from 'three';
 import {isFacialHairSourceMesh,SERAPH_NO_BEARD_REVISION}
  from './seraph-facial-hair-guard.js?v=seraph-nobeard-v2-20261121';
+import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
+ from './summon-humanoid-pbr.js?v=summons-pbr-v1-20261121';
 import {resolveMonsterThemeAction} from './monster-theme-actions.js';
 import {enhanceMonsterHumanoidCostumeMaterial} from './monster-reference-finish.js';
 import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
@@ -274,6 +276,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
         family:'golem',role:'skin',detail});
     }
     decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
+   applySummonHumanoidPBR(m,{id:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
    }
@@ -295,17 +298,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
-   // Use the original Guardian's own bundled linen photograph on the
-   // borrowed feather geometry, with its existing vertex-colour gradients.
-   if(role==='seraphWing'&&typeof document!=='undefined'){
-    const wingMap=new THREE.TextureLoader().load(
-     new URL('../assets/textures/outfits/linen.jpg',import.meta.url).href);
-    wingMap.colorSpace=THREE.SRGBColorSpace;
-    wingMap.wrapS=wingMap.wrapT=THREE.RepeatWrapping;
-    wingMap.repeat.set(1.8,1.8);
-    wingMap.anisotropy=4;
-    m.map=wingMap;m.needsUpdate=true;ownedTextures.push(wingMap);
-   }
+   // Guardian wings are FEATHERS, not sheets of linen.
+   if(role==='seraphWing')applySummonHumanoidPBR(m,{
+     id:profile.id,role,detail
+   });
    // Reuse the exact bundled photographic texture cache that already serves
    // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
    const surfaceRole={
@@ -319,9 +315,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
     cloth:profile.forestGreen?'bandage':'fabric',
     edge:'metal',membrane:'leather'
    }[role];
-   if(surfaceRole)decorateMonsterPhotoMaterial(m,{
-     family:'undead',speciesId:profile.id,role:surfaceRole,detail
-   });
+   if(surfaceRole&&!(profile.id==='forest_archer'&&
+       ['leaf','forestMint','forestDeep'].includes(role))&&
+       !(profile.id==='dragon_lord'&&role==='membrane')&&
+       !(profile.id==='seraph_guardian'&&role==='gold'))
+     decorateMonsterPhotoMaterial(m,{
+       family:'undead',speciesId:profile.id,role:surfaceRole,detail
+     });
    if(profile.forestGreen&&
       ['leaf','forestMint','forestDeep','cloth'].includes(role)){
      // The neutral linen detail retains folds, unlike a dark velvet map.
@@ -701,6 +701,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   noBeard:profile.noBeard===true,beardSourceMeshesSuppressed:suppressedFacialHair,
   beardGuardRevision:profile.noBeard===true?SERAPH_NO_BEARD_REVISION:null,
   skinTone:profile.skinTone??null,
+  summonPbrRevision:femaleSummon?SUMMON_HUMANOID_PBR_REVISION:null,
   demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
