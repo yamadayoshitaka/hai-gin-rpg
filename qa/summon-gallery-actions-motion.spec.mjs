@@ -44,8 +44,11 @@ test('forest spirit actually walks and runs with animated skinned legs, and has 
  await page.locator('.speciesSkill[data-skill="forest_rejuvenation"]').click();
  expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).selectedSkill)
   .toBe('forest_rejuvenation');
- expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).canonicalMovement.requested)
-  .toBe('special');
+ // A special gesture automatically recovers to idle after 1.6 seconds.
+ // Keep the last actual canonical skill ID instead of requiring that a
+ // screenshot/CPU-heavy test always samples inside that short envelope.
+ expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).canonicalMovement.skillId)
+  .toBe('forest_rejuvenation');
  await page.locator('.speciesSkill[data-skill="spirit_arrow"]').click();
  expect((await page.evaluate(()=>window.__summonGalleryLayoutQA())).selectedSkill)
   .toBe('spirit_arrow');
