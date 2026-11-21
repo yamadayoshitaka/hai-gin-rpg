@@ -4522,6 +4522,23 @@ function recoverBlockedActor(a,goal){
   }
   const route=stableActorRouteStep(a,target);
   if(route.next&&startCellMove(a,route.next.x,route.next.z))return true;
+  if(route.state?.search)return false;
+  // When an otherwise clear corridor is occupied for several seconds,
+  // yield to a legal side cell. Never sidestep through walls, water, stairs
+  // or another soldier; doorway queues still wait for their real route.
+  const detour=chooseBlockedMovementDetour({
+   x:a.cell.x,z:a.cell.z,goalX:target.x,goalZ:target.z,
+   previousX:a._lastRecoveryFromX,previousZ:a._lastRecoveryFromZ,
+   neighbors:legal.filter(cell=>!routeOccludedByTerrain(cell,target,a)),
+   maxWorsening:1
+  });
+  if(detour){
+   const origin={x:a.cell.x,z:a.cell.z};
+   if(startCellMove(a,detour.x,detour.z)){
+    a._lastRecoveryFromX=origin.x;a._lastRecoveryFromZ=origin.z;
+    a._stableMovementPath=null;return true;
+   }
+  }
   // A jammed one-tile doorway is a queue, not a random walk.
   return false;
 }
@@ -4687,7 +4704,10 @@ function moveActor(a,goal,dt,stop){
    const route=stableActorRouteStep(a,pathGoal);
    if(route.arrived)return;
    if(route.next)choice=route.next;
-   else{a.poseMoving=false;return;}
+   else{
+    if(!route.state?.search)recoverBlockedActor(a,goal);
+    a.poseMoving=false;return;
+   }
   }else a._stableMovementPath=null;
   // A local greedy step is legal only if it actually decreases the target
   // distance. The former reverse options made troops oscillate endlessly.
@@ -4710,6 +4730,7 @@ function moveActor(a,goal,dt,stop){
    choice=route.next;
   }
   if(!choice||!startCellMove(a,choice.x,choice.z)){
+   recoverBlockedActor(a,goal);
    a.poseMoving=false;return;
   }
   const from=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),to=unitGroundY(a,(choice.x-6)*CELL,(choice.z-6)*CELL);
