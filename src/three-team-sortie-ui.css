@@ -495,40 +495,38 @@
 }
 
 
-/* Training-ground inventory / atomic formation purchase, compact portrait mode. */
-.trainingStockOverview{flex:none;display:grid;gap:2px;border:1px solid #476d7e;
- background:#102a3b;border-radius:7px;padding:4px 6px;min-width:0}
-.trainingStockOverview>b{font-size:11px;line-height:1.2;color:#ffde9f}
-.trainingStockOverview>small{font-size:9px;line-height:1.2;color:#d0e5ee}
-.trainingStockJobs{display:flex;flex-wrap:wrap;gap:2px 4px;max-height:38px;overflow:hidden}
-.trainingStockJobs span{color:#e7f1ef;background:#214255;border-radius:3px;
- font-size:9px;padding:1px 4px;white-space:nowrap}
+/* Bigger battle-linked formation animation, with no redundant inventory strip. */
 .trainingFormationQuote{display:grid;gap:2px;padding:4px 6px;background:#132e3d;
  border:1px solid #b7a27f;border-radius:7px;flex-shrink:0}
 .trainingFormationQuote>b{font-size:11px;color:#f6dfac}
 .trainingFormationQuote>small{font-size:9px;line-height:1.25;color:#d8e8f1;
  white-space:normal;max-height:27px;overflow:hidden}
 #panel.formation-command-ui .trainingFormationQuote button{
- width:100%;min-height:33px!important;padding:4px!important;
+ width:100%;min-height:35px!important;padding:4px!important;
  background:#496d4a!important;border-color:#c9d3a0!important;
  color:#fff4dc;font-weight:750;font-size:12px!important}
 #panel.formation-command-ui .trainingFormationQuote button:disabled{
  background:#354453!important;border-color:#657584!important;opacity:.8}
-#panel.formation-command-ui:has(.trainingStockOverview) .innWizardRoster{flex-basis:133px}
-#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo{gap:1px}
-#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePreview svg{
- height:clamp(47px,8dvh,75px)}
-#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo>small{
- font-size:9px;line-height:1.12;-webkit-line-clamp:1}
-#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePhaseCaptions{
- gap:2px}
-#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePhaseCaptions span{
- padding:1px;font-size:7px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRoster{
+ flex:0 0 clamp(113px,16dvh,144px);grid-template-rows:repeat(3,minmax(0,1fr))}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .trainingFormationDemo{
+ flex:1 1 auto;min-height:0;gap:3px;align-content:start}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .trainingFormationDemo .signaturePreview{
+ min-height:0;display:grid;gap:3px;max-width:100%;width:100%;justify-items:stretch}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .trainingFormationDemo .signaturePreview svg{
+ width:100%;height:clamp(122px,21dvh,200px);max-height:100%}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .trainingFormationDemo .signaturePhaseCaptions span{
+ font-size:9px;padding:3px 1px}
+#panel.formation-command-ui .trainingHireJobs button{
+ flex-direction:column;align-items:stretch;text-align:left;justify-content:center;gap:2px}
+.trainingHireJobLabel{display:grid;gap:2px}
+.trainingHireJobLabel small{display:block;font-size:10px;line-height:1.2}
 @media(max-height:700px){
- #panel.formation-command-ui:has(.trainingStockOverview) .innWizardRoster{flex-basis:117px}
- .trainingStockOverview{padding:3px 5px}
- .trainingStockJobs{max-height:22px}
- #panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePreview svg{
- height:43px}
+ #panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRoster{
+  flex-basis:clamp(102px,16dvh,125px)}
+ #panel.formation-command-ui:has(.innWizardRosterPreview) .trainingFormationDemo .signaturePreview svg{
+  height:clamp(100px,18dvh,152px)}
+ #panel.formation-command-ui:has(.innWizardRosterPreview) .trainingFormationDemo .signaturePhaseCaptions span{
+  font-size:8px;padding:2px 1px}
  .trainingFormationQuote{padding:3px 4px}
 }
