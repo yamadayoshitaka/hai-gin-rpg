@@ -10691,7 +10691,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
    circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
    dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
-  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',
+  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',captain:saved.captain||null,
    formationActive:saved.formationActive!==false,
    allowedStrategies:strategies.length?strategies:['assault','defense','balanced'],
    reason:saved.formationActive===false?'陣形補正なし':''};
@@ -10734,7 +10734,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    const stat=groups.get(String(id)),leader=leaders.get(String(id));
    // Resolve the engine's 盾戦士/盗賊 aliases before checking special skills.
    const job=squadPrimaryJob(id);
-   return {team:0,id,label:squadName(id),job,
+   return {team:0,id,label:squadName(id),job,groupId:Number(armyGroupBySquad[String(id)])||1,
     x:leader?.x??NaN,z:leader?.z??NaN,leaderId:leader?.leaderId??null,
     alive:stat.alive,total:stat.total,hp:stat.hp,maxHp:stat.maxHp};
   });
