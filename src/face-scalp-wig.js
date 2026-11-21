@@ -2012,7 +2012,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
-  hairCardStyle:staticGroom&&normalLayeredSingleMesh?
+  hairCardStyle:sadakoMaster?
+   'two-narrow-tangent-ribbons-single-layer-centre-part-v54':
+   staticGroom&&normalLayeredSingleMesh?
    'normal-offset-identical-strand-mesh-layers-one-render-object':
    'four-stacked-thick-ribbon-layers-with-real-depth',
   v33ShortCutKind:style.shortCutKind||'long',
@@ -2061,7 +2063,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   wigBaseMaterialOpacity:normalLayeredSingleMesh?null:0,
   wigBaseNeverWritesDepth:true,
   transparentBaseRemoved:!!normalLayeredSingleMesh,
-  normalLayerCount:staticGroom&&normalLayeredSingleMesh?3:1,
+  normalLayerCount:staticGroom&&normalLayeredSingleMesh?
+   (sadakoMaster?1:clamp(Math.trunc(normalLayerCount),1,3)):1,
   consolidatedHairMesh:staticGroom?consolidatedHair?.name:null,
   rootScalpLiftFraction:.0125,
   trueScalpRibbonVertexCollision:true,
