@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-age-pigment-v78';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-oral-eye-v79';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=78-visible-aging';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
