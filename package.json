@@ -81,6 +81,7 @@
     "test:summon-source-hybrid": "node qa/summon-source-hybrid-colors-scale.test.mjs",
     "test:forest-spirit-emerald": "node qa/forest-spirit-emerald-regression.test.mjs",
     "test:monster-summon-catalog": "node qa/monster-summon-bestiary-regression.test.mjs",
-    "test:battle-lods": "node qa/battle-lod-pipeline.test.mjs"
+    "test:battle-lods": "node qa/battle-lod-pipeline.test.mjs",
+    "test:monster-concept-trio": "node --test qa/monster-concept-trio.test.mjs"
   }
 }
