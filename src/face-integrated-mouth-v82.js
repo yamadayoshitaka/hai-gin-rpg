@@ -143,6 +143,10 @@ export function poseIntegratedMouth(face,{smile=0,open=0,cheek=0}={}){
  const s=clamp(Number(smile)||0,0,1);
  const o=clamp(Number(open)||0,0,1);
  const c=clamp(Number(cheek)||0,0,1);
+ const poseKey=[Math.round(s*100),Math.round(o*50),
+  Math.round(c*100)].join(':');
+ if(data.lastPoseKey===poseKey)return false;
+ data.lastPoseKey=poseKey;
  const aperture=data.headHeight*.053*o;
  for(const item of data.pairs){
   const {outer,mid,inner,t,sign,arch,restZ}=item;
