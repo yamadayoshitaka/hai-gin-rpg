@@ -18,6 +18,7 @@ import {CREATURE_MASTER_BY_ID,MASTER_RENDER_TIERS} from './creature-master-libra
 import {subdivideDedicatedSource} from './creature-source-subdivision.js';
 export {subdivideDedicatedSource} from './creature-source-subdivision.js';
 
+import {resolveMonsterThemeAction} from './monster-theme-actions.js';
 const SUPPORTED_ACTIONS=new Set(['idle','walk','run','attack','roar','hit','defeat']);
 const DEFAULT_FEMALE_SPEC=Object.freeze({
  size:1,variant:0,colors:Object.freeze({
@@ -141,7 +142,7 @@ export function createCreatureMaster(id,{tier='master'}={}){
  let disposed=false,action='idle',actionAt=0;
  const start=(next,time=0)=>{
   if(disposed)return;
-  action=SUPPORTED_ACTIONS.has(next)?next:'idle';
+  action=SUPPORTED_ACTIONS.has(next)||resolveMonsterThemeAction(entry.baseId,next)?next:'idle';
   actionAt=time;
   if(cosplayHandle)cosplayHandle.start(action,time);
   else if(!root.userData.isMasterDedicated)startMonsterAction(root,action,time);
