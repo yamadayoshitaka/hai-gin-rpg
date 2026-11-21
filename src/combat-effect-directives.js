@@ -5,6 +5,11 @@ export function combatEffectDirective(event){
   // Native bestiary summons keep their original elemental identities:
   // Leviathan's sea surge is water, Hydra's toxic flora is nature and
   // Basilisk's stony gaze is earth, instead of generic sword slashes.
+  // Only impact events render the royal six-tile-wide area attack.
+  if(event.type==='objectAttack'&&event.attackType==='royal_starflare')
+    return {kind:'area',element:'arcane',radius:Math.min(6,Math.max(1,event.radius||6))};
+  if(event.type==='skill'&&['forest_rejuvenation','seraph_blessing'].includes(event.skillId))
+    return {kind:'healArea',element:'nature',radius:Math.min(4,Math.max(1,event.radius||2.5))};
   if(event.type==='objectAttack'&&/^summon_m\d{3}$/.test(event.objectType||'')){
     const element=event.effect==='physical'?'heavy':event.effect||'arcane';
     return {kind:'area',element,radius:Math.min(2.4,Math.max(.5,(event.radius||2)*.3))};
