@@ -6,6 +6,10 @@ on:
       - 'src/nonhuman-model-quality.js'
       - 'src/creature-master-runtime.js'
       - 'monster-manager.html'
+      - 'summon-showcase.html'
+      - 'src/female-summon-costumes.js'
+      - 'qa/demon-female-summon-mobile-viewer.test.mjs'
+      - 'qa/summon-gallery-mobile.spec.mjs'
       - 'qa/monster-all-50-theme-actions.test.mjs'
       - 'qa/m023-mantis-sculpt.test.mjs'
       - 'qa/monster-kraken-reference-parity.test.mjs'
@@ -41,5 +45,7 @@ jobs:
         run: node --test qa/m023-mantis-sculpt.test.mjs
       - name: Verify skeleton faces, angel material and CC0 native animations
         run: node --test qa/skeleton-seraph-summon-motion.test.mjs
+      - name: Verify angel face has no whisker tubes and Dragon Lord original is default
+        run: node qa/demon-female-summon-mobile-viewer.test.mjs
       - name: Verify Kraken and beetle parity without altering approved masters
         run: node --test qa/monster-kraken-reference-parity.test.mjs

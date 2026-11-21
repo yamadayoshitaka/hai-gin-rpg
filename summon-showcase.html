@@ -111,13 +111,13 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣57種・軍馬 3D鑑賞 v4.6.91</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣57種・軍馬 3D鑑賞 v4.6.92</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
       <option value="dragon">古竜</option>
       <option value="elder_dragon">天竜</option>
-      <option value="dragon_lord">竜王（新型・二足ドラゴン）</option>
+      <option value="dragon_lord">竜王（本来のドラゴン）</option>
       <option value="forest_archer" selected>森の精霊弓士（NEW）</option>
       <option value="seraph_guardian">光翼の守護天使（NEW）</option>
       <option value="horse">軍馬</option>
@@ -182,8 +182,8 @@
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM,MALE_DRAGON_LORD_HUMAN_FORM} from './src/female-summon-forms.js?v=4.6.91';
-    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=m042-unique-stone-gargoyle-v1-20261121';
+    import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM,MALE_DRAGON_LORD_HUMAN_FORM} from './src/female-summon-forms.js?v=dragon-original-default-20261121';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=seraph-no-face-whiskers-v3-20261121';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.6.51';
     import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES} from './src/monster-catalog.js';
     import {loadSpeciesSourceComposite} from './src/monster-source-composite.js?v=4.6.92';
@@ -420,14 +420,13 @@
       const previousSpecies=selected;
       selected=select.value;
       const femaleAvailable=FEMALE_SUMMON_FORM_IDS.includes(selected);
-      // New Dragon Lord is a male humanoid by default. Original winged
-      // dragon remains selectable, female trial stays out of the UI.
+      // Dragon Lord always starts as the ORIGINAL DRAGON. Dragonkin and
+      // human alternate forms are opt-in only, never selected automatically.
       femaleMode.querySelector('[value="female"]').hidden=selected==='dragon_lord';
       femaleMode.querySelector('[value="male"]').hidden=selected!=='dragon_lord';
       femaleMode.querySelector('[value="human"]').hidden=selected!=='dragon_lord';
       if(!preserveMode||previousSpecies!==selected)
-        femaleMode.value=selected==='dragon_lord'?
-          (adoptedCreatureMesh('dragon_lord')!=='legacy'?'original':'male'):'female';
+        femaleMode.value=selected==='dragon_lord'?'original':'female';
       femaleModeLabel.hidden=!femaleAvailable;
       femaleMode.disabled=!femaleAvailable;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;

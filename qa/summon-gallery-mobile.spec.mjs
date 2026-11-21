@@ -170,6 +170,10 @@ test('male Dragon Lord: canonical male GLB, battleplate and original creature to
  await page.goto('/summon-showcase.html?v=4.5.19',
   {waitUntil:'domcontentloaded',timeout:65000});
  await page.locator('#type').selectOption('dragon_lord');
+ await expect(page.locator('#humanoidForm')).toHaveValue('original');
+ // Keep the original dragon as the default; this separate test explicitly
+ // opts in to the male dragonkin preview for legacy feature coverage.
+ await page.locator('#humanoidForm').selectOption('male');
  await expect.poll(()=>page.evaluate(()=>
   window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
  const state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
@@ -227,10 +231,17 @@ test('dragon lord three distinct canonical forms and white beardless seraph visu
   waitUntil:'domcontentloaded',timeout:65000
  });
  await page.locator('#type').selectOption('dragon_lord');
- await expect(page.locator('#humanoidForm')).toHaveValue('male');
+ await expect(page.locator('#humanoidForm')).toHaveValue('original');
+ let state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ expect(state.dragonLordForm).toBe('original');
+ expect(state.dragonLordCostume).toBe(null);
+ await page.screenshot({path:'test-results/dragon-lord-original-dragon-default.png',
+  animations:'disabled',timeout:20000});
+ // Alternate dragonkin appearance is now an explicit user choice.
+ await page.locator('#humanoidForm').selectOption('male');
  await expect.poll(()=>page.evaluate(()=>
   window.__summonGalleryLayoutQA?.()?.femaleReady),{timeout:110000}).toBe(true);
- let state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
+ state=await page.evaluate(()=>window.__summonGalleryLayoutQA());
  expect(state.dragonLordForm).toBe('male');
  expect(state.dragonLordCostume).toBe('dragonkin_male');
  await page.screenshot({path:'test-results/dragon-lord-dragonkin.png',
