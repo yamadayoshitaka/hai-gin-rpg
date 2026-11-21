@@ -7,11 +7,11 @@
 import * as THREE from 'three';
 import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=beetle-wing-membrane-low-lod-v4-20261121';
+ from './monster-geometry.js?v=m022-single-central-rhinoceros-horn-v2-20261121';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=beetle-wing-membrane-low-lod-v4-20261121';
+ from './creature-game-model-routing.js?v=m022-single-central-rhinoceros-horn-v2-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';
