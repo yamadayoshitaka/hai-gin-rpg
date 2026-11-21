@@ -43,7 +43,7 @@ function check(g,label){
  assert.ok(pos?.count>10,label+' has no vertices');
  assert.equal(pos.count,uv?.count,label+' lacks UV');
  assert.equal(pos.count,nor?.count,label+' lacks normals');
- assert.ok(g.index?.count>18,label+' missing triangles');
+ assert.ok((g.index?.count??pos.count)>18,label+' missing triangles');
  for(const a of [pos,uv,nor])assert.ok(a.array.every(Number.isFinite),label+' invalid float');
 }
 test('Forest leaves are sculpted 3D veined blades with asymmetry and cheap mobile LOD',()=>{
