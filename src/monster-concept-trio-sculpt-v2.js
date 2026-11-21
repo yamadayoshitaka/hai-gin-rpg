@@ -44,8 +44,8 @@ function animatePlateHighlight(g,par,z,dimensions,c,role){
    const xx=x*(1+.18*Math.sin(j*1.3+k));
    points.push([xx,y(xx,dz)+.185,dz+z]);
   }
-  g.tube(par,k===1?'light':'accent',points,.013+(k===1?.003:0),{
-   name:'organic-energy-fissure',glow:true,rough:.2,
+  g.tube(par,k===1?'#af49bc':'#8125aa',points,.016+(k===1?.003:0),{
+   name:'organic-energy-fissure',glow:false,rough:.24,
    tubularSegments:conceptDensity(g,34,23,14,8)
   });
  }
@@ -168,9 +168,16 @@ function armoredSpider(g,s){
    ridges:.26,roughness:.40,metalness:.25
   });
   const patella=g.group(name+'Patella',knee,femur);
-  addBoss(g,patella,[0,0,0],[.145,.145,.15],'light','knee-joint-socket');
-  addBoss(g,patella,[side*.035,.062,.00],[.12,.074,.12],
-    'light','knee-overlapping-scutum');
+  texturedEllipsoid(g,patella,{
+   name:'knee-joint-socket',center:[0,0,0],radii:[.152,.141,.151],
+   role:'spider-knee-chitin',color:p.deep,light:p.plate,
+   roughness:.41,metalness:.18,deform:.02
+  });
+  texturedEllipsoid(g,patella,{
+   name:'knee-overlapping-scutum',center:[side*.034,.065,0],
+   radii:[.110,.075,.127],role:'spider-knee-overlap',
+   color:p.skin,light:p.plate,roughness:.36,metalness:.23,deform:.01
+  });
   const distal=[foot[0]-knee[0],foot[1]-knee[1],foot[2]-knee[2]];
   const tibia=g.group(name+'Tibia',[0,0,0],patella);
   sweepVolume(g,tibia,[
@@ -256,9 +263,9 @@ function crystalSlime(g,s){
  }
  // Luminous central core: three concentric volumes and coiling currents.
  const core=g.group('core',[0,.76,.03],torso);
- g.sphere(core,'accent',[0,0,0],[.27,.27,.25],
+ g.sphere(core,'accent',[0,0,0],[.21,.21,.20],
   {name:'slime-internal-core',rough:.14,glow:true});
- g.sphere(core,'light',[0,0,.04],[.19,.19,.18],
+ g.sphere(core,'light',[0,0,.04],[.13,.13,.125],
   {name:'slime-inner-vortex',rough:.07,glow:true});
  const helixCount=conceptDensity(g,3,3,2,1);
  for(let arm=0;arm<helixCount;arm++){
@@ -356,7 +363,7 @@ function abyssalOctopus(g,s){
       1-(x2/.67)**2-dz*dz))+.052;
     pts.push([x2,yy,z]);
    }
-   g.tube(mantle,'accent',pts,.016,{
+   g.tube(mantle,'#2fbdc4',pts,.013,{
     name:'bioluminescent-mantle-line',glow:true,rough:.16,
     tubularSegments:conceptDensity(g,42,28,16,8)
    });
@@ -365,9 +372,9 @@ function abyssalOctopus(g,s){
   const eyeX=side*.275;
   addBoss(g,head,[eyeX,.15,.490],[.165,.12,.067],
    'shadow','deep-eye-orbit');
-  addBoss(g,head,[eyeX,.15,.535],[.085,.077,.035],
+  addBoss(g,head,[eyeX,.15,.535],[.074,.057,.030],
    '#eabd5e','predatory-golden-eye');
-  addBoss(g,head,[eyeX,.152,.570],[.020,.062,.010],
+  addBoss(g,head,[eyeX,.152,.564],[.015,.053,.010],
    'shadow','vertical-cephalopod-pupil');
   sweepVolume(g,head,[
     [side*.13,.31,.48],[side*.28,.34,.54],
