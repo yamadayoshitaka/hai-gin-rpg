@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {renderInnFormationWizard} from '../src/inn-formation-wizard.js';
 import {
  createNewGame,buyTownItem,equipSquadItem,squadEquipmentBonus,
  acceptTownEvent,claimTownEvent,leaveTown
@@ -39,4 +41,34 @@ const battle=makeCoreBattleRequest(fresh,'c01-s02','qa-passive-gear');
 const equipped=battle.units.filter(u=>u.equipmentBuff?.attack===.14);
 assert.ok(equipped.length>0,'active squad equipment must reach the actual battle units');
 assert.ok(equipped.every(u=>u.equipmentBuff.defense===.10));
+// Phone-sized training roster stays paged; the optional quote lives on its own
+// screen and weapon / armor selection is one explicit next-step action.
+const roster=renderInnFormationWizard({game,view:'roster',teamId:1});
+assert.match(roster,/data-inn-wizard-quote=/);
+assert.match(roster,/data-inn-wizard-preview=/);
+assert.match(roster,/trainingFormationAnimation/);
+assert.match(roster,/次へ：武器・防具/);
+assert.match(roster,/武器・防具は次の画面/);
+assert.match(roster,/⚔/);
+assert.equal((roster.match(/data-inn-wizard-preview=/g)||[]).length,3,
+ 'formation list should have just one row of three options');
+assert.doesNotMatch(roster,/class="trainingFormationQuote"/,
+ 'purchase quote should not force the troop roster to scroll');
+const chosen=roster.match(/data-inn-wizard-quote="([^"]+)"/)?.[1];
+assert.ok(chosen,'selected preview must be reachable');
+const quote=renderInnFormationWizard({game,view:'rosterQuote',teamId:1,rosterPreviewId:chosen});
+assert.match(quote,/class="trainingFormationQuote"/);
+assert.match(quote,/data-training-auto-formation=/);
+assert.match(quote,/trainingFormationAnimation/);
+const equipment=renderInnFormationWizard({game,view:'equipment',teamId:1});
+assert.match(equipment,/data-inn-wizard-gear-source=/);
+assert.match(equipment,/武器：/);
+assert.match(equipment,/防具：/);
+const css=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
+assert.match(css,/#panel\.formation-command-ui:has\(\.innWizardRosterPreview\) \.innWizardBody\{[\s\S]*?overflow:hidden!important/);
+const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
+assert.match(town,/data-inn-wizard-quote/);
+assert.match(town,/rosterQuote:'roster'/);
+assert.match(town,/rosterQuote:'equipment'/);
+
 console.log('town facility contracts, squad equipment inventory and battle passives: PASS');
