@@ -30,7 +30,9 @@ function horn(g,parent,id,name,root,bend,tip,radius,shade,finish){
 }
 function trace(g,parent,id,name,points,width,shade,finish){
  return g.tube(parent,shade,points,width,{
-  name:id+'-concept-'+name,surface:'chitin',finish,rough:.27,
+  name:id+'-concept-'+name,
+  surface:finish==='toxicGlass'?'crystal':'chitin',
+  finish,rough:.27,
   tubularSegments:12,radialSegments:6
  });
 }
