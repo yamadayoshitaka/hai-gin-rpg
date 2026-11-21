@@ -38,25 +38,29 @@ export function sculptSalamanderLineageLimb(g,leg,knee,name,{
  id='m016',side=1,fore=true,detail='high'
 }={}){
  if(id!=='m016'&&id!=='m017')throw Error('Only derived four-leg salamanders');
- const variant=SALAMANDER_LINEAGE[id];
  const low=detail==='low',sign=side<0?-1:1;
- const z=fore?-.013:.023;
- const quality={
-  longitudinalSegments:low?12:24,
-  radialSegments:low?10:16
- };
- const upper=g.bridge(leg,'light',
-  [0,.065,z],[sign*.235,-.43,z+.032],
-  id==='m016'?.175:.187,id==='m016'?.126:.135,quality);
+ const z=fore?-.013:.023,steel=id==='m017';
+ const shoulder=steel?.188:.174;
+ const upper=g.limbLoft(leg,'light',[
+  {x:0,y:.101,z,rx:.118,rz:.135},
+  {x:sign*.042,y:.025,z:z+.012,rx:shoulder,rz:shoulder*.99},
+  {x:sign*.105,y:-.14,z:z+.016,rx:shoulder*.96,rz:shoulder*1.02},
+  {x:sign*.193,y:-.323,z:z+.023,rx:.130,rz:.140},
+  {x:sign*.235,y:-.485,z:z+.034,rx:.110,rz:.118},
+ ]);
  upper.name=id+'-organic-upper-'+name;
  upper.frustumCulled=false;
  upper.receiveShadow=false;
  upper.userData.salamanderSingleVisibleLimb=true;
  upper.userData.salamanderAnatomy='shoulder-to-elbow';
  const shinLength=id==='m016'?.83:.93;
- const shin=g.bridge(knee,'light',
-  [0,.035,0],[sign*.019,-shinLength,.098],
-  id==='m016'?.132:.141,id==='m016'?.085:.090,quality);
+ const shin=g.limbLoft(knee,'light',[
+  {x:0,y:.137,z:0,rx:.099,rz:.107},
+  {x:0,y:-.032,z:.011,rx:steel?.137:.129,rz:.131},
+  {x:sign*.012,y:-.265,z:.039,rx:.114,rz:.120},
+  {x:sign*.019,y:-shinLength*.76,z:.069,rx:.071,rz:.084},
+  {x:sign*.019,y:-shinLength,z:.098,rx:.087,rz:.093},
+ ]);
  shin.name=id+'-organic-shin-'+name;
  shin.frustumCulled=false;
  shin.receiveShadow=false;
@@ -128,23 +132,23 @@ export function sculptSalamanderLineageEye(g,head,side,{
  if(id==='m019')return sculptMagmaSalamanderEye(g,head,side,{detail});
  if(!salamanderLineageFor(id))throw Error('Unsupported salamander eye '+id);
  const suffix=side<0?'L':'R';
- const x=id==='m016'?.315:.307;
+ const x=id==='m016'?.271:.231,z=.270;
  // The socket, iris, vertical pupil, brow and blinking membrane all share
  // the animated head parent; do not position them in world coordinates.
- g.sphere(head,'shadow',[side*x,.088,.330],[.078,.050,.089],
+ g.sphere(head,'shadow',[side*x,.088,z],[.031,.039,.059],
   {name:id+'-inset-orbit-'+suffix,rough:.87});
- g.sphere(head,'eye',[side*(x+.024),.090,.349],[.040,.042,.047],
+ g.sphere(head,'eye',[side*(x+.019),.089,z+.008],[.020,.027,.034],
   {name:id+'-iris-'+suffix,rough:.29});
- g.sphere(head,'shadow',[side*(x+.063),.090,.365],[.006,.032,.014],
+ g.sphere(head,'shadow',[side*(x+.037),.089,z+.014],[.005,.020,.010],
   {name:id+'-vertical-pupil-'+suffix,rough:.25});
- g.sphere(head,'skin',[side*(x-.010),.152,.319],[.103,.033,.110],
+ g.sphere(head,'skin',[side*(x-.017),.128,z-.017],[.058,.026,.085],
   {name:id+'-upper-eyelid-'+suffix,rough:.77});
- g.sphere(head,'skin',[side*(x-.006),.026,.326],[.088,.024,.095],
+ g.sphere(head,'skin',[side*(x-.013),.053,z-.009],[.052,.018,.069],
   {name:id+'-lower-eyelid-'+suffix,rough:.79});
- const lid=g.group('eyelid'+suffix,[side*(x+.020),.177,.338],head);
+ const lid=g.group('eyelid'+suffix,[side*(x+.010),.147,z+.002],head);
  lid.userData.restY=lid.position.y;
- lid.userData.blinkTravel=.070;
- g.sphere(lid,'skin',[0,0,0],[.066,.018,.061],
+ lid.userData.blinkTravel=.062;
+ g.sphere(lid,'skin',[0,0,0],[.036,.016,.038],
   {name:id+'-nictitating-lid-'+suffix,rough:.78});
 }
 

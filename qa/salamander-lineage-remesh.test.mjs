@@ -1,3 +1,4 @@
+import {REPTILE_DETAIL_REVISION} from '../src/reptile-detail-sculpt.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -56,8 +57,7 @@ for(const id of ids){
     assert.equal(root.userData.salamanderConnectedLimbs,4);
     assert.equal(root.userData.salamanderLegReach,
      SALAMANDER_LINEAGE[id].legReach);
-    assert.equal(root.userData.gameModelRevision,
-     id==='m019'?MAGMA_SALAMANDER_REVISION:SALAMANDER_LINEAGE_REVISION);
+    assert.equal(root.userData.gameModelRevision,REPTILE_DETAIL_REVISION);
     assert(piv.head&&piv.jaw&&piv.torso&&piv.tail&&piv.tailMid);
     assert.equal(piv.jaw.parent,piv.head,'mandible must turn with skull');
     assert.equal(piv.tail.parent,piv.torso,'tail must pitch with torso');
@@ -74,8 +74,9 @@ for(const id of ids){
     assert(nameSet.has(id+'-grand-horn-R'));
     assert(nameSet.has(id+'-vertical-pupil-L'));
     assert(nameSet.has(id+'-vertical-pupil-R'));
-    assert(nameSet.has(id+'-closed-caudal-root'));
-    assert(nameSet.has(id+'-closed-caudal-mid'));
+    const caudal=root.getObjectByName(id+'-continuous-caudal-skin');
+    assert(caudal.isSkinnedMesh&&caudal.userData.cappedTubularSkin);
+    assert.equal(caudal.parent,piv.tail);
     assert(meshes.some(m=>m.name.startsWith(id==='m019'?
       'm019-lava-ridge-':id+'-rooted-dorsal-crest-')));
     assert(!meshes.some(m=>/wolf-mane|canine-fur/.test(m.name)));
@@ -110,8 +111,7 @@ for(const id of ids){
   const registered=registeredMonsterModel(id);
   const summon=registeredMonsterModel('summon_'+id);
   assert.equal(registered,summon);
-  assert.equal(registered.version,id==='m019'?
-   MAGMA_SALAMANDER_REVISION:SALAMANDER_LINEAGE_REVISION);
+  assert.equal(registered.version,REPTILE_DETAIL_REVISION);
   assert.equal(registered.mobileVisualApproved,false,'visual signoff not inferred');
   assert.equal(resolveRegisteredMonsterModel(id,{
    storage:{getItem:()=>null},detail:'low',allowExternal:true

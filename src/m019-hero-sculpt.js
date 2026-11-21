@@ -313,26 +313,3 @@ export function sculptM019Paw(g,distal,name,{side=1,detail='high'}={}){
  }
  return toe;
 }
-
-export function sculptM019TailTip(g,tailTip,{detail='high'}={}){
- const tip=g.axialLoft(tailTip,'skin',[
-  {z:.180,y:-.016,rx:.040,ry:.037},
-  {z:.080,y:-.012,rx:.039,ry:.036},
-  {z:-.105,y:.022,rx:.033,ry:.030},
-  {z:-.290,y:.108,rx:.024,ry:.024},
-  {z:-.480,y:.302,rx:.015,ry:.016},
-  {z:-.625,y:.526,rx:.004,ry:.006}
- ],{name:'m019-continuous-tail-tip',rough:.84,
-    ribbing:.004,capEnds:true});
- tip.userData.m019ClosedTaperedTail=true;
- tip.userData.m019UpcurledTip=true;
- // A fine molten seam grows with the curved tail tip; no screen-space VFX.
- const seam=g.tube(tailTip,'accent',[
-  [.014,.025,.080],[.010,.061,-.100],
-  [.009,.137,-.280],[.007,.329,-.475],[.002,.532,-.610]
- ],detail==='low'?.005:.009,{
-  name:'m019-molten-tail-tip',glow:detail!=='low'
- });
- seam.userData.m019SurfaceHeatChannel=true;
- return tip;
-}
