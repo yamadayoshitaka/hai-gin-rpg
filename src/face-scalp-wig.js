@@ -1296,6 +1296,20 @@ export function shapeRebuiltFaceFrame(points,{box,side=1}={}){
  }
  return points;
 }
+/** A strictly local eye-band safety guard AFTER all haircut length edits.
+ * Stops the few fringe/temple ribbons which still cross pupils after their
+ * cut height shifts. Only X moves sideways; never pull the whole hair back. */
+export function shapeRebuiltEyeBand(points,{box,side=1}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ for(let j=1;j<points.length;j++){
+  const p=points[j],h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  if(h>.685&&h<.84&&p.z>c.z+d.z*.08&&
+     side*(p.x-c.x)<d.x*.255)
+   p.x=c.x+side*d.x*.255;
+ }
+ return points;
+}
 /** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
  * reuse a measured head donor for follicles, but NOT a female bob guide. */
 export function shapeRebuiltMaleGuide(points,{
@@ -1978,6 +1992,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    if(style.rebuiltBase==='sadako')shapeRebuiltNaturalContour(shape,{box});
    if(Number.isFinite(salonCutY))
     shapeCatalogLengthGuide(shape,{box,tipY:salonCutY,rootIndex:i});
+   // v72: update eye clearance AFTER length/curl reshaping, not before.
+   // Only the fringe/face-frame guides are affected; loose side/back
+   // sections retain their natural forward volume and fall.
+   if(style.rebuiltBase==='sadako'&&style.gender==='female'&&
+      style.catalogFront==='tucked'&&
+      (fringe||faceFrame||zone.startsWith('temple')))
+    shapeRebuiltEyeBand(shape,{box,side:partSide});
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
    }
