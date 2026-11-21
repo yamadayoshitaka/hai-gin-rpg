@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-ear-crown-bust-v55';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-ear-curtain-crown-over-v56';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -134,7 +134,9 @@ export function createAreaWeightedScalpRootSampler(cap,box){
   if(yn>.82&&Math.abs(nx)<.46)add('crown',t,area);
   if(yn>.835&&nz>.005&&Math.abs(nx)<.37)
    add('fringe'+side,t,area);
-  if(yn>.74&&yn<.975&&nz>-.14&&Math.abs(nx)>.13)
+  // Ear-level follicles, not upper crown side fans. Keep real scalp roots.
+  if(yn>.65&&yn<.94&&nz>-.23&&nz<.44&&
+   Math.abs(nx)>.205&&Math.abs(nx)<.515)
    add('temple'+side,t,area);
   if(yn>.615&&nz<-.04)add('back'+side,t,area);
   if(yn>.525&&yn<.81&&nz<-.045)add('nape'+side,t,area);
@@ -248,6 +250,18 @@ function createHeadEnvelope(geometry,box){
  };
  return {radius,radialCenter:center,angularCells:angular,axialCells:axial};
 }
+/** Crown is the OUTER layer: the donor roots remain fixed while near-
+ * scalp crown ribbons overlap side/fringe cards without raising the cap. */
+export function sadakoCrownSurfaceLayerOffset(zone,y,t,box){
+ if(zone!=='crown')return 0;
+ const d=box.getSize(new THREE.Vector3());
+ const yn=(y-box.min.y)/Math.max(d.y,1e-6);
+ const upper=THREE.MathUtils.smoothstep(yn,.735,.87);
+ const rooted=THREE.MathUtils.smoothstep(t,0,.095);
+ const returnToShape=1-THREE.MathUtils.smoothstep(t,.18,.42);
+ return d.x*.016*upper*rooted*returnToShape;
+}
+
 /** Sample the real donor bust's REAR silhouette below the head.
  * A bare face preview has no full-body collider: old shoulder capsules
  * missed the back of the neck and the nape locks intersected the bust.
@@ -1010,7 +1024,7 @@ export function createScalpFirstLongGuide({
  // the radial fan and pushed front locks away from their hairline.
  const relativeX=(root.x-(whorl?.x??center.x))/Math.max(d.x,1e-6);
  const relativeZ=(root.z-(whorl?.z??center.z-d.z*.04))/Math.max(d.z,1e-6);
- const rootSweepX=temple?side*.34:
+ const rootSweepX=temple?side*.035:
   THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
  const rootSweepZ=back?-1:zone.startsWith('fringe')?1:
   relativeZ>-.025?1:-1;
@@ -1073,10 +1087,11 @@ export function createScalpFirstLongGuide({
    const earFrontZ=center.z+d.z*.092;
    if(next.z<earFrontZ)
     next.z+= (earFrontZ-next.z)*earCover*.72;
-   const earOuterX=d.x*.445;
+   // Stay just outside the pinna, instead of spreading in a wide fan.
+   const earOuterX=d.x*.385;
    const sideOffset=side*(next.x-center.x);
    if(sideOffset<earOuterX)
-    next.x+=side*(earOuterX-sideOffset)*earCover*.70;
+    next.x+=side*(earOuterX-sideOffset)*earCover*.62;
   }
   if(projectOutside)projectOutside(next,j===1,front,
    j*length/segments<=d.y*.27);
@@ -1172,9 +1187,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
  const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
  const sadakoWeights={
-  crown:.26,fringeLeft:.095,fringeRight:.095,
-  templeLeft:.145,templeRight:.145,
-  backLeft:.105,backRight:.105,napeLeft:.033, napeRight:.033
+  // Give the ear band dense vertical curtains while preserving the crown.
+  crown:.30,fringeLeft:.085,fringeRight:.085,
+  templeLeft:.20,templeRight:.20,
+  backLeft:.055,backRight:.055,napeLeft:.025,napeRight:.025
  };
  const weightedZones=WIG_ZONE_WEIGHTS.map(([name,originalWeight])=>{
   const weight=sadakoMaster?sadakoWeights[name]:originalWeight;
@@ -1562,7 +1578,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Finer groomed layers: 4 overlapped cards remain, but individual
  // panels no longer read as wide flat white ribbons in side view.
  // Reduce plate-like white ribbons; 10x individual fibre mesh replaces width.
- const half=d.x*(sadakoMaster?.0068:.0100);
+ const half=d.x*(sadakoMaster?.0074:.0100);
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -1691,8 +1707,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
      (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
     (strand.zone.startsWith('fringe')?.52:
-     strand.zone.startsWith('temple')?.65:
-     strand.zone==='crown'?.70:
+     strand.zone.startsWith('temple')?.93:
+     strand.zone==='crown'?.81:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -1726,6 +1742,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      let vx=p.x+sway+scale*(wx*(1-blend)+sx*blend)+nx*(thickness+strandSurface);
      let vy=p.y+scale*(wy*(1-blend)+sy*blend);
      let vz=p.z+scale*(wz*(1-blend)+sz*blend)+nz*(thickness+strandSurface);
+     // Preserve the requested top-over-sides layering near the hair roots.
+     // Shift only crown ribbon vertices along the donor head's exterior.
+     if(sadakoMaster&&strand.zone==='crown'){
+      const crownLift=sadakoCrownSurfaceLayerOffset(strand.zone,vy,t,box);
+      if(crownLift){
+       const hx=vx-center.x,hz=vz-center.z;
+       const hy=Math.max(0,(vy-center.y)*.85);
+       const radius=Math.hypot(hx,hy,hz)||1;
+       vx+=hx/radius*crownLift;
+       vy+=hy/radius*crownLift;
+       vz+=hz/radius*crownLift;
+      }
+     }
      // Hair must clear the TRUE copied skull even when the guide centre
      // is legal. Broad vertices used to disappear under the visible
      // scalp because only shoulder/clothing collisions were checked.
@@ -2100,6 +2129,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoGravityDistanceBased:sadakoMaster,
   sadakoEarCurtainLocks:sadakoMaster?strands.filter(s=>
    s.zone.startsWith('temple')).length:0,
+  sadakoEarCoverageMethod:sadakoMaster?'lower-temple-rooted-vertical-curtain-v56':null,
+  sadakoCrownLayerOrder:sadakoMaster?'crown-outside-fringe-temple-render-ribbons-v56':null,
+  sadakoEarRibbonWidthFactor:sadakoMaster?.93:null,
   sadakoCrownScalpFollow:sadakoMaster,
   sadakoRearBustSampler:sadakoMaster?rearBustSampler.source:null,
   sadakoRearBustVertexSamples:rearBustSampler.vertexSamples,
