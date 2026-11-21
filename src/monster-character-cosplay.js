@@ -757,7 +757,8 @@ export function createCosplayedHumanoidMonster(spec,{
    }
    const delta=lastTime===null?0:clamp(time-lastTime,0,.13);
    lastTime=time;motion.mixer.update(delta);
-   combatMotion?.update(action,clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
+   combatMotion?.update(profile.id==='m042'&&action==='attack'?'idle':action,
+    clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
    // Source mesh is hidden for mineral/armoured creatures: fit shells
    // between each moving pair of joints AFTER the native animation mixer.
    visual?.userData.mineralArticulator?.update(action);
