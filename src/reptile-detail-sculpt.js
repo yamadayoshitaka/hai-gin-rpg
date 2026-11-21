@@ -4,7 +4,7 @@ import {sculptArticulatedReptileTail} from './m018-hydra-sculpt.js';
 export const REPTILE_DETAIL_REVISION='reptile-sculpture-v2-20261121';
 export const hasReptileDetail=id=>['m016','m017','m019'].includes(id);
 export const SEA_DRAGON_REVISION='sea-dragon-colossal-length-v4-20261121';
-export const LEVIATHAN_REVISION='leviathan-crown-tide-v5-20261121';
+export const LEVIATHAN_REVISION='leviathan-abyssal-sea-wyrm-v6-20261121';
 export const seaDragonRevision=id=>id==='m020'?LEVIATHAN_REVISION:SEA_DRAGON_REVISION;
 export const isSeaDragon=id=>id==='m020'||id==='m048';
 
@@ -69,7 +69,7 @@ export function sculptBasiliskFacePlates(g,head){
 
 function sculptMarineFace(g,head,id){
  const ice=id==='m048',low=g.root.userData.detail==='low';
- const width=ice?.62:.74,length=ice?.82:.95;
+ const width=ice?.62:.86,length=ice?.82:1.04;
  const rings=dragonCraniumProfile(width,ice?1.18:1.30,length,.04,.17)
   .reverse().map(([z,y,rx,ry])=>({z,y,rx,ry}));
  Object.assign(rings.at(-1),{rx:.12,ry:.118});
@@ -93,9 +93,10 @@ function sculptMarineFace(g,head,id){
   g.sphere(head,ice?'eye':'#9ef2dc',s(x+.025,.094,.286),[.021,.028,.041],{name:id+'-serpent-eye-'+sign,glow:true});
   g.sphere(head,'shadow',s(x+.045,.094,.292),[.005,.022,.012],{name:id+'-serpent-pupil-'+sign});
   g.sphere(head,'shadow',s(.119,-.036,.847),[.021,.012,.023],{name:id+'-nostril-'+sign});
+  // Pronounced, rooted dragon horns visible above the dorsal silhouette.
   g.curvedHorn(head,ice?'bone':'#d2ded8',s(.123,.125,.042),
-   s(ice?.274:.318,ice?.382:.71,-.18),s(ice?.38:.58,ice?.51:.94,ice?-.54:-1.03),
-   ice?.086:.115,{name:id+'-rooted-horn-'+sign,capRoot:true});
+   s(ice?.274:.405,ice?.382:.83,-.18),s(ice?.38:.805,ice?.51:1.32,ice?-.54:-1.29),
+   ice?.086:.151,{name:id+'-rooted-horn-'+sign,capRoot:true});
   const root=s(.154,.012,.031);
   const rays=[
    s(ice?.47:.72,ice?.17:.42,ice?-.31:-.44),
@@ -116,8 +117,10 @@ function sculptMarineFace(g,head,id){
   g.curvedHorn(head,'light',s(.079,.192,.268),s(.146,.283,.16),
    s(.218,.406,-.045),.052,{capRoot:true,name:id+'-cranial-crest-'+sign});
   if(!ice){
-   g.curvedHorn(head,'#599fae',s(.148,.202,.075),s(.295,.422,-.27),
-    s(.865,.63,-.82),.095,{capRoot:true,name:'m020-swept-crown-'+sign});
+   g.curvedHorn(head,'#599fae',s(.148,.202,.075),s(.344,.51,-.27),
+     s(1.05,.86,-1.02),.119,{capRoot:true,name:'m020-swept-crown-'+sign});
+   g.curvedHorn(head,'#a5d6ce',s(.210,.183,-.12),s(.40,.43,-.45),
+     s(.63,.55,-.89),.067,{capRoot:true,name:'m020-temple-antler-'+sign});
    g.curvedHorn(head,'#c4b9a2',s(.165,.063,.72),s(.404,.119,.48),
     s(.61,.185,.004),.038,{capRoot:true,name:'m020-muzzle-crest-'+sign});
    g.tube(head,'#8dd4d7',[
@@ -142,8 +145,17 @@ const SEA_SPINE=[
  [-.53,1.16,.13],[.25,.82,-.58],[1.14,.82,-1.58],[1.39,.98,-2.73],
  [1.07,1.19,-3.85],[.23,1.29,-4.82],[-.63,1.46,-5.60],[-1.15,1.83,-6.45],
 ];
-const SHELL_RADII=[[0,.182],[.13,.270],[.31,.366],[.43,.402],
- [.59,.340],[.73,.238],[.87,.153],[1,.026]];
+// m048 keeps the smaller serpent geometry. m020 has its own upright neck,
+ // long S-curved armored body and distant tapering tail.
+ const LEVIATHAN_SPINE=[
+  [-.36,4.24,1.98],[-.62,4.06,1.48],[-.95,3.54,1.00],
+  [-1.04,2.65,.69],[-.79,1.76,.30],[-.16,1.27,-.38],
+  [.90,1.19,-1.33],[1.72,1.26,-2.60],[1.75,1.39,-4.03],
+  [1.03,1.53,-5.53],[-.22,1.60,-6.94],[-1.38,1.79,-8.36],
+  [-1.88,2.09,-9.79],[-1.60,2.40,-11.17],
+ ];
+ const SHELL_RADII=[[0,.182],[.13,.270],[.31,.366],[.43,.402],
+  [.59,.340],[.73,.238],[.87,.153],[1,.026]];
 
 function radiusAlong(t,ice){
  for(let i=1;i<SHELL_RADII.length;i++){
@@ -151,7 +163,8 @@ function radiusAlong(t,ice){
   if(t>end)continue;
   const [start,previous]=SHELL_RADII[i-1];
   const u=(t-start)/(end-start);
-  return (previous+(radius-previous)*u*u*(3-2*u))*(ice?.83:1);
+  const base=previous+(radius-previous)*u*u*(3-2*u);
+   return ice?base*.83:base*(1.12+.17*Math.sin(Math.PI*t));
  }
  return .026;
 }
@@ -213,8 +226,8 @@ function sculptLeviathanCrest(g,torso,path,joints,radius,low){
   across.crossVectors(tangent,up).normalize();
   const root=radius(t)*.70;
   const envelope=Math.min(1,t/.095,(1-t)/.16);
-  const scallop=Math.pow(.5+.5*Math.cos((t-.087)*18*Math.PI),.73);
-  const height=radius(t)*.20+envelope*(.16+.52*scallop)*(1-t*.57);
+  const scallop=Math.pow(.5+.5*Math.cos((t-.087)*22*Math.PI),.72);
+  const height=radius(t)*.23+envelope*(.21+.70*scallop)*(1-t*.49);
   for(let col=0;col<=radial;col++){
    const angle=col/radial*2*Math.PI,u=(1+Math.cos(angle))*.5;
    point.copy(center).addScaledVector(up,root+height*u)
@@ -233,7 +246,7 @@ function sculptSeaBodyFins(g,curve,joints,radius,id,low){
  const ice=id==='m048';
  // Detail roots follow the nearest joint and sit well below the convex skin.
  const locations=ice?(low?[.16,.29,.48,.64,.80]:[.10,.16,.23,.30,.38,.46,.54,.63,.72,.81,.89]):
-  (low?[.14,.36,.58,.80]:[.138,.25,.36,.47,.58,.69,.80,.91]);
+  (low?[.15,.34,.56,.77,.91]:[.13,.20,.27,.34,.41,.49,.57,.65,.73,.81,.89,.95]);
  const center=new Map(joints.map(({at,pivot})=>[pivot,curve.getPointAt(at)]));
  const torso=joints.find(({pivot})=>pivot.name==='torso').pivot;
  center.get(torso).set(0,0,0);
@@ -246,7 +259,7 @@ function sculptSeaBodyFins(g,curve,joints,radius,id,low){
   const tangent=curve.getTangentAt(t);
   const rear=tangent.clone().set(0,1,-.65);
   rear.addScaledVector(tangent,-rear.dot(tangent)).normalize();
-  const r=radius(t),height=(ice?.199:.343)*(1-t*.67);
+  const r=radius(t),height=(ice?.199:.475)*(1-t*.54);
   const root=point.clone().addScaledVector(rear,r*.60);
   const end=point.clone().addScaledVector(rear,r+height)
    .addScaledVector(tangent,height*.63);
@@ -254,10 +267,34 @@ function sculptSeaBodyFins(g,curve,joints,radius,id,low){
   g.curvedHorn(owner,ice?'bone':'light',root.toArray(),bend.toArray(),end.toArray(),
    Math.min(.087,r*.44),{capRoot:true,name:id+'-dorsal-keel-'+i});
  }
+ // Surface armor sits partly embedded in the skin, and each scute follows
+ // its nearest animation joint instead of floating in the wake.
+ if(!ice){
+  const count=low?5:12;
+  for(const side of [-1,1])for(let i=0;i<count;i++){
+   const t=.24+(i+.5)*.67/count;
+   const {pivot}=joints.reduce((best,joint)=>
+    Math.abs(joint.at-t)<Math.abs(best.at-t)?joint:best);
+   const body=curve.getPointAt(t).sub(center.get(pivot));
+   const tangent=curve.getTangentAt(t);
+   const lateral=tangent.clone().set(1,0,0)
+    .addScaledVector(tangent,-tangent.x).normalize().multiplyScalar(side);
+   const r=radius(t),rise=.13*(1-t*.5);
+   const root=body.clone().addScaledVector(lateral,r*.87);
+   const bend=root.clone().addScaledVector(lateral,rise*.62)
+    .addScaledVector(tangent,-.11);
+   const tip=root.clone().addScaledVector(lateral,rise)
+    .addScaledVector(tangent,-.30);
+   g.curvedHorn(pivot,i%3===0?'#83c8cc':'#317f9c',
+    root.toArray(),bend.toArray(),tip.toArray(),low?.029:.041,{
+     name:'m020-flank-scute-'+(side<0?'L':'R')+'-'+i,capRoot:true,
+    });
+  }
+ }
  const breast=curve.getPointAt(.348);
  for(const side of [-1,1]){
   const suffix=side<0?'L':'R';
-  const reach=ice?.74:1.43;
+  const reach=ice?.74:1.77;
   const root=[breast.x+side*.12,breast.y+.035,breast.z];
   const outline=ice?[[reach,.33,-.50],[reach+.15,.25,-.94],
    [reach-.04,-.19,-1.03],[.35,-.24,-.76]]:
@@ -278,11 +315,12 @@ function sculptSeaBodyFins(g,curve,joints,radius,id,low){
 export function sculptSeaDragon(g,spec){
  const id=spec.id,ice=id==='m048',low=g.root.userData.detail==='low';
  const torso=g.group('torso');
- const path=ice?SEA_SPINE.map(([x,y,z])=>[x*.71,y*.81,z*.91]):SEA_SPINE;
+ const path=ice?SEA_SPINE.map(([x,y,z])=>[x*.71,y*.81,z*.91]):LEVIATHAN_SPINE;
  const radius=t=>radiusAlong(t,ice);
  const tube=g.tube(torso,'seaDragonSkin',path,radius(0),{
   name:id+'-marine-serpent-skin',capEnds:true,radiusProfile:radius,
-  tubularSegments:low?42:80,radialSegments:low?11:20,rough:.66,
+  tubularSegments:low?(ice?42:64):(ice?80:126),
+   radialSegments:low?12:(ice?20:26),rough:.58,
  });
  const curve=tube.geometry.parameters.path;
  sculptSeaScales(tube,curve,ice);
@@ -311,11 +349,29 @@ export function sculptSeaDragon(g,spec){
    const end=[root.x+side*.38,root.y+(side<0?-.36:.56),root.z-.44];
    g.fin(tip,'accent',root.toArray(),end,.122,{name,rough:.58});
   }else{
-   const outline=[[side*.24,side*.44,-.55],[side*.56,side*.68,-.80],
-    [side*.34,side*.21,-.64],[side*.23,side*.08,-.81]]
+   // Broad split caudal sails, with arched rays on the animated tip.
+   const outline=[[side*.29,side*.50,-.52],[side*.82,side*.81,-1.13],
+    [side*.69,side*.35,-1.31],[side*.42,side*.08,-1.23],
+    [side*.27,-side*.22,-1.07]]
     .map(([x,y,z])=>[root.x+x,root.y+y,root.z+z]);
-   g.fanFin(tip,'#358ead',root.toArray(),outline,{name,camber:.045});
+   g.fanFin(tip,'#358ead',root.toArray(),outline,{name,camber:.105});
+   for(const [i,end] of outline.entries()){
+    if(low&&i%2===1)continue;
+    const middle=root.clone().lerp({x:end[0],y:end[1],z:end[2]},.56);
+    g.curvedHorn(tip,i%2?'#7abdc6':'light',root.toArray(),
+     middle.toArray(),end,Math.max(.016,.054-i*.008),{
+      name:'m020-caudal-spar-'+(side<0?'L':'R')+'-'+i,capRoot:true,
+     });
+   }
   }
+ }
+ if(!ice){
+  const end=curve.getPointAt(.96).sub(curve.getPointAt(.892));
+  g.curvedHorn(tip,'bone',end.toArray(),
+   [end.x,end.y+.14,end.z-.48],
+   [end.x,end.y+.31,end.z-.98],.070,{
+    name:'m020-caudal-keel-stinger',capRoot:true,
+   });
  }
  g.root.userData.seaDragonSilhouette=true;
  g.root.scale.setScalar(spec.size*.87);
