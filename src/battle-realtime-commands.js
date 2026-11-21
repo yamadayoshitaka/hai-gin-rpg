@@ -1327,7 +1327,7 @@ radarCanvas.addEventListener('keydown',event=>{
   startFromPreparedDeployment(){
    started=false;mode='deploy';exitPlanning();commandWizard.reset();planningOwnsPause=false;
    initialTeamPlans.clear();deploymentActions.clear();arrivalActions.clear();preferredActions.clear();
-   invalidateSquadSnapshot();$('realtimeBattleMapOverlay').hidden=true;
+   invalidateSquadSnapshot();refreshOptions();$('realtimeBattleMapOverlay').hidden=true;
    $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=true;
    return beginBattleWithPlans();
   },
