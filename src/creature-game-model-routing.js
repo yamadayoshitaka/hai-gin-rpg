@@ -16,6 +16,7 @@ import {hasReptileDetail,REPTILE_DETAIL_REVISION,isSeaDragon,seaDragonRevision} 
 import {M050_CORAL_REVISION} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION}
  from './m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
+import {M024_SCARAB_REVISION} from './m024-poison-scarab-sculpt.js?v=m024-purple-venom-armored-scarab-v1-20261121';
 import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {salamanderLineageFor} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';
 
@@ -36,6 +37,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
    spec.id==='m018'?M018_HYDRA_REVISION:
    spec.id==='m050'?M050_CORAL_REVISION:
+   spec.id==='m024'?M024_SCARAB_REVISION:
    isSeaDragon(spec.id)?seaDragonRevision(spec.id):
    hasReptileDetail(spec.id)?REPTILE_DETAIL_REVISION:
    spec.id==='m015'?'phoenix-master-tengu-feathers-v21-20261118':
@@ -45,6 +47,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    humanoids.has(spec.id)?'separate-humanoid-pipeline':
    spec.id==='m018'?'existing-quadruped-with-three-long-dragon-necks-in-review':
    spec.id==='m050'?'hydra-derived-coral-sea-beast-in-review':
+   spec.id==='m024'?'concept-based-poison-scarab-3d-review':
    spec.id==='m019'?'m001-derived-owner-approved-2d-in-visual-review':
    salamanderLineageFor(spec.id)?'m019-anatomy-derivative-visual-review':
    spec.id==='m001'?'reference-implementation':
