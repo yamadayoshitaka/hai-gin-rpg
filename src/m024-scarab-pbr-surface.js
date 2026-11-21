@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 
-export const M024_PBR_REVISION='m024-shared-beetle-chitin-pbr-v3b-20261121';
+export const M024_PBR_REVISION='m022-polished-horn-surface-v4-20261121';
 export const SCARAB_PBR_SPECIES=Object.freeze(['m021','m022','m024','m025']);
 export const isScarabPBRSpecies=id=>SCARAB_PBR_SPECIES.includes(id);
 const kinds=new Set(['chitin','crystal','wing','eye','enamel']);
@@ -157,7 +157,9 @@ function surfaceAtlas(kind,detail){
  * Called only from the shared material cache for explicitly tagged
  * m024 meshes. The material remains cache-owned; no clones or leaks.
  */
-export function decorateM024PBRMaterial(material,{surface,detail='high',speciesId='m024'}={}){
+export function decorateM024PBRMaterial(material,{
+ surface,detail='high',speciesId='m024',finish=null
+}={}){
  if(!isScarabPBRSpecies(speciesId))
   throw Error('Only registered scarab species may inherit the m024 PBR atlas');
  const maps=surfaceAtlas(surface,detail);
@@ -191,6 +193,23 @@ export function decorateM024PBRMaterial(material,{surface,detail='high',speciesI
    surface==='crystal'?.09:surface==='wing'?.18:.22;
   material.ior=surface==='wing'?1.35:surface==='crystal'?1.49:1.46;
   if(surface==='crystal')material.thickness=.36;
+ }
+ // m022's giant forehead horn previously used the same rough, strongly
+ // bump-mapped material as the tiny joint spikes. Its rings looked like
+ // stacked wood rather than polished cuticle next to glossy elytra.
+ // Reuse the SAME real PBR maps as the shell, but reduce the normal amplitude
+ // and put a bright, continuous clearcoat over the smooth hero geometry.
+ // Do not mutate the shared texture or other beetle materials.
+ if(finish==='polishedHorn'){
+  if(speciesId!=='m022'||surface!=='chitin')
+   throw Error('Polished forehead horn is exclusive to m022 chitin');
+  material.roughness=.70;
+  material.metalness=.24;
+  material.clearcoat=.93;
+  material.clearcoatRoughness=.105;
+  material.ior=1.48;
+  if(material.normalScale)material.normalScale.set(.095,.095);
+  material.userData.polishedBeetleHorn=true;
  }
  material.userData.m024PBR=surface;
  material.userData.scarabPBRDonorId='m024';
