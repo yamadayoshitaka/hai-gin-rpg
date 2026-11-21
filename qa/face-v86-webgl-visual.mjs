@@ -19,7 +19,7 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v86確認済');
+   ?.includes('実行JS：v87確認済');
  },{timeout:120000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
