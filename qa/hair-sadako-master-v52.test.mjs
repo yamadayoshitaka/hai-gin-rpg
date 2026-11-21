@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {readFileSync} from 'node:fs';
 import {scalpToGravityWeight,createScalpFirstLongGuide,
  createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from '../src/face-scalp-wig.js';
 import {WIG_STYLES} from '../src/face-wig-styles.js';
@@ -85,4 +86,13 @@ test('v52 changing to buzz still takes the independent short-cut path',()=>{
  assert.equal(report.closeCutPaletteMatched,true);
  assert.equal(report.closeCutSelfShadowDisabled,true);
  short.dispose();geometry.dispose();head.material.dispose();
+});
+
+test('Android studio provides a real one-tap underside hair view',()=>{
+ const page=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
+ assert.match(page,/id="underside"[^>]*>頭皮の下面<\/button>/);
+ assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
+ assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
+ assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
+ assert.match(page,/sadako-scalp-first-gravity-v52/);
 });
