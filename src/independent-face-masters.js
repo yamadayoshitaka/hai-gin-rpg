@@ -22,7 +22,7 @@ const smooth=(a,b,v)=>{
  * Zero outside the mouth neighbourhood. Protect nose, eyes, cheeks, jaws.
  */
 export function v87AnatomicalMouthWidthDelta({
- xn,yn,zn,faceWidth,mouthWidth=1.24
+ xn,yn,zn,faceWidth,mouthWidth=.85
 }={}){
  if(![xn,yn,zn,faceWidth,mouthWidth].every(Number.isFinite)||
     faceWidth<=0)return 0;
