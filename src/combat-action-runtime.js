@@ -615,6 +615,11 @@ export class CombatActionRuntime {
     const assignedWounded = actor.healTargetSquadId == null ? [] : nearbyWounded.filter(u => String(u.squadId) === String(actor.healTargetSquadId));
     const wounded = (assignedWounded.length ? assignedWounded : nearbyWounded)
       .sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0] || null;
+    // Restore HP before offensive magic when an ally is genuinely injured,
+    // regardless of whether the priest's squad is assaulting or defending.
+    // Preserve rarity and MP gating; never fabricate a healing effect.
+    if (jobId === 'priest' && wounded && wounded.hp / Math.max(1,wounded.maxHp) < .85)
+      skills.sort((a,b)=>Number(b.kind==='heal')-Number(a.kind==='heal'));
     const fallen = jobId === 'priest' && actor.rarity === 'UR' && Math.floor(this.time * 10) % 30 === 0
       ? units.find(u => u.team === actor.team && !isAlive(u) && distance(actor, u) <= 6 && u.hp === 0) : null;
     for (const s of skills) {
@@ -636,7 +641,8 @@ export class CombatActionRuntime {
       if (s.kind === 'mobility' && (!enemy || distance(actor, enemy) <= 2)) continue;
       const chantSeconds=LONG_CAST_SECONDS[jobId]||0;
       if(s.animation==='cast'&&chantSeconds>0){
-        if(s.kind==='heal'&&(!target||target.hp>=target.maxHp))continue;
+        if(s.kind==='heal'&&(!target||target.hp>=target.maxHp||
+          distance(actor,target)>s.range))continue;
         if(s.kind==='revive'&&(!target||isAlive(target)))continue;
         if(s.kind==='damage'&&!target)continue;
         actor._pendingCast={skill:s,targetId:target?.id??actor.id,until:this.time+chantSeconds};
