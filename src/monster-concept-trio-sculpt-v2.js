@@ -42,7 +42,7 @@ function animatePlateHighlight(g,par,z,dimensions,c,role){
   for(let j=0;j<6;j++){
    const dz=from+(to-from)*j/5;
    const xx=x*(1+.18*Math.sin(j*1.3+k));
-   points.push([xx,y(xx,dz)+.045,dz+z]);
+   points.push([xx,y(xx,dz)+.185,dz+z]);
   }
   g.tube(par,k===1?'light':'accent',points,.013+(k===1?.003:0),{
    name:'organic-energy-fissure',glow:true,rough:.2,
@@ -67,14 +67,14 @@ function armoredSpider(g,s){
   color:p.deep,light:p.skin,role:'spider-abdomen',
   deform:.028,roughness:.39,metalness:.20
  });
- const plates=conceptDensity(g,13,10,7,4);
+ const plates=conceptDensity(g,9,7,6,4);
  const len=sz[2]*1.65,start=z-len/2,each=len/plates;
  for(let j=0;j<plates;j++){
   const from=start+j*each,to=from+each*.93;
   conformalCarapace(g,abdomen,{
    center:[0,0,z],radii:sz,start:from-z,end:to-z,
-   color:p.skin,light:p.plate,role:'spider-dorsal-plates',
-   crest:.13*big,wing:.86,lift:.034
+   color:p.deep,light:p.skin,role:'spider-dorsal-plates',
+   crest:.065*big,wing:.86,lift:.030
   });
   for(const side of [-1,1]){
    const x=side*sz[0]*.53,zz=(from+to)/2;
@@ -114,9 +114,11 @@ function armoredSpider(g,s){
   for(const [x,y,zz,r] of eyePattern){
    g.sphere(head,'shadow',[side*x,y,zz-.018],
     [r*1.38,r*1.17,r*.47],{name:'chitinous-ocular-crest',rough:.60});
-   g.sphere(head,'accent',[side*x,y,zz+.009],
-    [r*.87,r*.83,r*.40],
-    {name:'faceted-glowing-ocellus',glow:true,rough:.15,metal:.18});
+   g.sphere(head,'#7c24bc',[side*x,y,zz+.009],
+    [r*.79,r*.79,r*.37],
+    {name:'faceted-glowing-ocellus',glow:false,rough:.17,metal:.10});
+   g.sphere(head,'#cf63ef',[side*x,y,zz+.026],
+    [r*.34,r*.34,r*.20],{name:'ocellus-inner-reflection',glow:true,rough:.15});
    g.sphere(head,'bone',[side*(x-r*.17),y+r*.22,zz+r*.27],
     [r*.12,r*.09,r*.075],{name:'chitin-eye-glint',rough:.10});
   }
@@ -166,7 +168,7 @@ function armoredSpider(g,s){
    ridges:.26,roughness:.40,metalness:.25
   });
   const patella=g.group(name+'Patella',knee,femur);
-  addBoss(g,patella,[0,0,0],[.135,.135,.143],'skin','knee-joint-socket');
+  addBoss(g,patella,[0,0,0],[.145,.145,.15],'light','knee-joint-socket');
   addBoss(g,patella,[side*.035,.062,.00],[.12,.074,.12],
     'light','knee-overlapping-scutum');
   const distal=[foot[0]-knee[0],foot[1]-knee[1],foot[2]-knee[2]];
@@ -195,8 +197,8 @@ function armoredSpider(g,s){
    const lift=.065*(1-t);
    g.spike(tibia,j%3===0?'accent':'light',
     [center[0],center[1]+lift,center[2]],
-    [center[0]+side*(.09+.035*(j%2)),
-     center[1]+lift+.10,center[2]-.08],.028*(1-t*.3));
+    [center[0]+side*(.15+.05*(j%2)),
+     center[1]+lift+.17,center[2]-.10],.042*(1-t*.3));
   }
  }
  g.root.scale.setScalar(s.size*.89*big);
@@ -215,13 +217,13 @@ function crystalSlime(g,s){
  slimeMembrane(g,torso,{name:'translucent-main-gel'});
  const head=g.group('head',[0,0,0]);
  // Contrasting frontal dark jaw silhouette matches the open-mouthed concept.
- addBoss(g,head,[0,.78,.711],[.30,.20,.055],
-   'shadow','slime-mouth-recess');
+ addBoss(g,head,[0,.78,.744],[.255,.158,.042],
+   '#164b70','slime-mouth-recess');
  const lipPoints=[
   [-.30,.86,.74],[-.20,.70,.76],[-.09,.72,.775],
   [0,.66,.79],[.09,.72,.775],[.20,.70,.76],[.30,.86,.74]
  ];
- g.tube(head,'light',lipPoints,.037,{
+ g.tube(head,'skin',lipPoints,.016,{
   name:'jagged-fluid-mouth-rim',rough:.10,
   translucent:true,capEnds:true
  });
@@ -237,10 +239,12 @@ function crystalSlime(g,s){
     transparent:true,opacity:.59
   });
   const eyeX=side*.23;
-  addBoss(g,head,[eyeX,1.10,.615],[.17,.10,.041],
-   'shadow','slime-inset-eye-aperture');
-  addBoss(g,head,[eyeX,1.105,.652],[.105,.057,.016],
-   'accent','slime-luminous-eye');
+  const slit=g.sphere(head,'#105373',[eyeX,1.12,.622],
+   [.134,.050,.024],{name:'slime-inset-eye-aperture',rough:.19});
+  slit.rotation.z=-side*.25;
+  const luminous=g.sphere(head,'#26dade',[eyeX,1.12,.650],
+   [.094,.030,.013],{name:'slime-luminous-eye',rough:.15,glow:false});
+  luminous.rotation.z=-side*.25;
   // Brow projects a little and tapers to an angry outer corner.
   sweepVolume(g,head,[
    [side*.085,1.19,.629],[side*.20,1.21,.655],
@@ -301,13 +305,18 @@ function abyssalOctopus(g,s){
  const p=elements[s.id],kraken=s.id==='m049';
  const head=g.group('head',[0,1.48,.18]);
  const torso=g.group('torso');
- const mantle=g.group('mantle',[0,.42,-.54],head);
+ const mantle=g.group('mantle',[0,.26,-.38],head);
  // Head and mantle use two parts only because their true anatomy differs:
  // mantle is notably oversized and pushed backward, just like reference.
  texturedEllipsoid(g,head,{
   name:'cephalopod-head',center:[0,-.02,.12],
   radii:[.46,.43,.51],role:'octopus-cephalic-face',
   color:p.deep,light:p.skin,roughness:.31,metalness:.10,deform:.063
+ });
+ texturedEllipsoid(g,head,{
+  name:'mantle-neck-organic-transition',center:[0,.19,-.26],
+  radii:[.43,.39,.48],role:'octopus-mantle-neck',
+  color:p.deep,light:p.skin,roughness:.33,deform:.030
  });
  texturedEllipsoid(g,mantle,{
   name:'bulbous-octopus-mantle',center:[0,.14,-.34],
@@ -354,11 +363,11 @@ function abyssalOctopus(g,s){
   }
   // Golden predatory almond eyes, black slitted pupil and buried orbit.
   const eyeX=side*.275;
-  addBoss(g,head,[eyeX,.15,.504],[.169,.15,.085],
+  addBoss(g,head,[eyeX,.15,.490],[.165,.12,.067],
    'shadow','deep-eye-orbit');
-  addBoss(g,head,[eyeX,.15,.551],[.115,.103,.061],
+  addBoss(g,head,[eyeX,.15,.535],[.085,.077,.035],
    '#eabd5e','predatory-golden-eye');
-  addBoss(g,head,[eyeX,.152,.610],[.026,.088,.014],
+  addBoss(g,head,[eyeX,.152,.570],[.020,.062,.010],
    'shadow','vertical-cephalopod-pupil');
   sweepVolume(g,head,[
     [side*.13,.31,.48],[side*.28,.34,.54],
@@ -386,14 +395,14 @@ function abyssalOctopus(g,s){
  for(let i=0;i<8;i++){
   const a=armRoots[i].phase,x=Math.sin(a),z=Math.cos(a);
   const key='tentacle'+i,root=g.group(key,[x*.35,1.17,z*.35]);
-  const r=kraken?.195:.172;
+  const r=kraken?.213:.190;
   addBoss(g,root,[0,0,0],[r*1.22,r*1.20,r*1.25],
    'skin','continuous-octopus-arm-root');
   const p1=[x*(.71+i%2*.09),-.29,z*(.70+i%3*.04)];
   const mid=g.group(key+'Mid',p1,root);
   const p2=[x*(.79+(i%3)*.08),-.60,z*(.91+(i%2)*.10)];
   const tip=g.group(key+'Tip',p2,mid);
-  const height=armRoots[i].rise;
+  const height=armRoots[i].rise+(i%3===0?.34:0);
   // Tip makes an upturned curl instead of simply ending in a straight rod.
   const tipPoints=[
    [0,0,0],[x*.24,-.12,z*.28],
@@ -415,11 +424,8 @@ function abyssalOctopus(g,s){
     radius:width,taper,color:p.deep,light:p.plate,
     roughness:.29,metalness:.07,ridges:.13
    });
-   if(j<2){
-    const end=pts.at(-1);
-    addBoss(g,parent,end,[width*.96,width*.95,width*.96],
-      'skin','seamless-octopus-tentacle-joint');
-   }
+   // No disconnected spherical ball at the segment seams: the matched
+   // tapered cross-sections overlap naturally across the same real pivots.
    suckerCount+=mergedSuckerRows(g,parent,sweep,{
     count:conceptDensity(g,14,11,7,3),rows:2,
     rolePrefix:'octopus-sucker',
@@ -430,7 +436,7 @@ function abyssalOctopus(g,s){
     const path=[];
     for(let k=0;k<8;k++){
      const t=k/7,point=sweep.curve.getPoint(t);
-     path.push([point.x,point.y+sweep.radiusAt(t)*.84,
+     path.push([point.x,point.y+sweep.radiusAt(t)*1.04,
        point.z]);
     }
     g.tube(parent,'accent',path,.012+(kraken?.002:0),{
