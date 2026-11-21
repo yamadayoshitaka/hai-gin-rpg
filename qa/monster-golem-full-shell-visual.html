@@ -54,7 +54,7 @@ try{
  handle.start(pose,0);
  handle.update(pose==='idle'?.12:.48);
  const shell=handle.metadata;
- if(!shell||shell.constructDonorMeshesConcealed<1||shell.constructShellParts<45)
+ if(!shell||shell.constructDonorMeshesConcealed<1||shell.fullBodyShellParts<45)
   throw Error('Construct is not fully mineralized: '+JSON.stringify(shell));
  handle.root.updateMatrixWorld(true);
  const box=new THREE.Box3(),local=new THREE.Box3();
