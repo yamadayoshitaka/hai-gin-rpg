@@ -2530,6 +2530,29 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // three interwoven strands and ponytails have a distinct tied root.
  const styled=makeStyleSpecificHair(styleId,box,rootColor,{scalpCandidates});
  styled.meshes.forEach(mesh=>root.add(mesh));
+ // A pair of subtle physical pins secures the one-length front locks at
+ // the temples. These are actual metallic 3D meshes, not a UI label/texture.
+ // They become draw groups of the same consolidated mesh in static studios.
+ const earClipMeshes=[];
+ if(style.gender==='female'&&style.rebuiltBase==='sadako'&&
+    style.catalogFront==='tucked'){
+  for(const side of [-1,1])for(let lane=0;lane<2;lane++){
+   const geoClip=new THREE.CapsuleGeometry(d.x*.0038,d.x*.061,3,6);
+   const matClip=new THREE.MeshStandardMaterial({
+    color:0xb9b9b4,metalness:.64,roughness:.35,
+    side:THREE.DoubleSide
+   });
+   const clipMesh=new THREE.Mesh(geoClip,matClip);
+   clipMesh.name=(side<0?'LEFT':'RIGHT')+'_TEMPLE_HAIRPIN_'+lane;
+   clipMesh.position.set(center.x+side*d.x*(.345+lane*.011),
+    box.min.y+d.y*(.817-lane*.009),
+    center.z+d.z*(.215-lane*.015));
+   clipMesh.rotation.z=side*(.32+lane*.05);
+   clipMesh.userData.styledHairGeometry=true;
+   clipMesh.userData.v70RealHairPin=true;
+   root.add(clipMesh);earClipMeshes.push(clipMesh);
+  }
+ }
  root.userData.v49StyledHair=styled.type;
   root.userData.v70FineFibreFlow=true;
  root.userData.v49StyledHairTriangles=styled.triangleCount;
@@ -2646,6 +2669,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v70HairPinMeshCount:earClipMeshes.length,
+  v70MasculineGroom:style.maleGroom||null,
+  v70HimeFringe:style.himeFringe||null,
+  v70EarTuckBeforeEyes:style.rebuiltBase==='sadako'&&
+   style.gender==='female'&&style.catalogFront!=='bangs',
   v65BatchedPonytailFiberCount:styled.meshes.find(m=>
    m.name==='PONYTAIL_MICROFIBER_BUNDLE_V65')?.userData?.v65FiberCount||0,
   v65BatchedPonytailDrawMeshes:styled.meshes.some(m=>
