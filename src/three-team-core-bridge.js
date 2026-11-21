@@ -110,7 +110,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   availableSquadOrders:allowed,subdivisionMap,sortieLevel:level,
   formationBonuses:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].bonus])),
   squadDebuffProfiles:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?sortieDebuffTypes(game,t.id):[]])),
-  sortieTacticTemplate:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?t.tactics||[]:[]])),
+  // Old inn strategies remain in saved data for compatibility, but must not
+  // be silently applied. Every team's battle plan is chosen on the radar.
+  sortieTacticTemplate:Object.fromEntries(teams.map(t=>[String(t.id),[]])),
   initialTeamPlans:Object.fromEntries(teams.map(t=>[String(t.id),{
    order:t.initialOrder||'charge',formation:formationIntegrity[String(t.id)].formation,
    captain:(()=>{const captain=captainById.get(t.id);return captain?{
@@ -120,7 +122,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   }])),
   battlePlanStage:battleStageContext(stage),
   battlePlanRecommendations:Object.fromEntries(teams.map(t=>[String(t.id),recommendBattlePlans(game,stage,t.id,{limit:7})])),
-  battlePlanSelected:Object.fromEntries(teams.map(t=>[String(t.id),game.activeBattlePlanByTeam?.[String(t.id)]||null])),
+  battlePlanSelected:Object.fromEntries(teams.map(t=>[String(t.id),null])),
   tacticalTemplate:null,
   totalReserves:reserveTroops(game.campaign),sortieTeamCount:teams.length
  };

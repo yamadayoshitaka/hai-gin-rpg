@@ -58,7 +58,7 @@ header nav{gap:4px}header nav button{padding:7px 5px;min-height:35px;font-size:1
 .deploymentActions button{min-height:42px}
 .deploymentActions button.primary{background:#77552e;border-color:#e4c68d;font-weight:bold}
 @media(max-height:500px){#deploymentPickerCard{gap:4px;padding:7px}.deploymentPositions button{min-height:27px;padding:3px}.deploymentGroups button{padding:4px}.deploymentActions button{min-height:31px}}
-</style><link rel="stylesheet" href="./src/prebattle-deployment-radar.css?v=20261121-single-deployment"></head><body>
+</style></head><body>
 <main id="world"><header><div><strong>大陸全図・戦記</strong><small id="summary">領地とステージを選択</small></div><nav><button id="worldBgm" aria-label="ワールドマップBGMのオン・オフ" aria-pressed="true">♪</button><button id="homeTown">🏘 町へ戻る</button><button id="storyMaintenance" type="button">物語フロー</button><button id="toTitle">☰ タイトル</button></nav></header>
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
 <section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
@@ -67,19 +67,7 @@ header nav{gap:4px}header nav button{padding:7px 5px;min-height:35px;font-size:1
 <div id="stageGrid" role="group" aria-label="選択した章の全10ステージ"></div>
 <div id="selectedInfo"><div><strong id="stageTitle"></strong><small id="stageRequirement"></small></div><button id="sortie" type="button">出撃 ▶</button></div>
 <div id="feedback" role="status" aria-live="polite"></div></section></main>
-<section id="deploymentPicker" role="dialog" aria-modal="true" aria-label="戦闘前の出撃地点設定" hidden>
- <div id="deploymentPickerCard">
-  <h2 id="deploymentTitle">出撃位置の設定</h2>
-  <p id="deploymentHelp">未制圧は入口から、制圧済みは自由に配置できます。</p>
-  <div class="deploymentGroups" id="deploymentGroups"></div>
-  <div id="deploymentRadar" aria-label="戦場レーダーから初期配置を選択">
-   <div id="deploymentRadarLegend"><span>🔴 敵陣 ↑</span><span>🔵 味方陣地 ↓</span></div>
-   <div id="deploymentRadarBoard" role="group" aria-label="レーダーに表示した12か所から初期位置を選択"></div>
-   <p id="deploymentSummary" aria-live="polite"></p>
-  </div>
-  <div class="deploymentActions"><button type="button" id="deploymentCancel">戻る</button><button class="primary" type="button" id="deploymentConfirm">この配置で出撃 ▶</button></div>
- </div>
-</section>
+
 <script type="module">
 import {STORY_CHAPTERS} from './src/story-chapters.js';
 import {storyCastForChapter} from './src/story-cinematic.js';
@@ -91,7 +79,7 @@ import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked,stageDeploymentLimit} from './src/campaign-stage-plan.js';
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
 import {makeCoreBattleRequest,settleCoreBattle,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js?v=leader-identity-wincondition-20261121';
-import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieSquadCap,setSortieSlot,allowedSortieSlots,resolvedSortieSlot,stageIsControlled,sortieFormationStatus,SORTIE_FORMATIONS} from './src/three-team-sortie.js';
+
 import {battleStageType,battleStageObjective} from './src/battle-stage-identity.js';
 import {storyDecisionForStage,setStoryDecision,availableStoryRoutes,selectStoryRoute,currentStoryRoute,storyStageContext,availableStoryEndings,chooseStoryEnding} from './src/story-narrative-flow.js';
 import {storyVoiceText} from './src/story-pronunciations.js';
@@ -290,76 +278,10 @@ function launchSelectedStage(stageId){
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   saveSession();
   location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v=three-team-stage-type-single-deploy-20261121';
- }catch(error){stageLaunching=false;$('deploymentPicker').hidden=true;message(error.message||String(error));}
+ }catch(error){stageLaunching=false;message(error.message||String(error));}
 }
-let stageLaunching=false,deploymentTeamId=1;
-// Browser back-forward cache can restore this document after a previous
-// sortie began; the old transition flag must never disable the next tap.
-window.addEventListener('pageshow',event=>{
- stageLaunching=false;
- if(event.persisted){$('deploymentPicker').hidden=true;render();}
-});
-function renderDeploymentPicker(stage){
- const teams=sortieTeams(game).filter(t=>sortieTeamCount(t)>0);
- const active=teams.find(t=>t.id===deploymentTeamId)||teams[0];
- if(!active)throw Error('宿屋でジョブを編成してから出撃してください。');
- deploymentTeamId=active.id;
- const allowed=allowedSortieSlots(game,stage);
- $('deploymentTitle').textContent='初期配置｜'+battleStageType(stage.kind)+' · '+stage.name;
- const planned=teams.reduce((n,t)=>n+sortieTeamCount(t),0);
- $('deploymentHelp').textContent='勝利条件：'+battleStageObjective(stage.kind,stage.winCondition)+'。出撃上限 '+stageDeploymentLimit(stage)+
-  '人／配置予定 '+planned+'人。'+(stageIsControlled(game,stage)?
-  '制圧済み：レーダーの全12か所から選択。':'未制圧：レーダー下部の入口3か所を選択。')+
-  ' 宿屋で設定した陣形と初期作戦を使用します。';
- $('deploymentGroups').innerHTML=teams.map(t=>
-  '<button type="button" data-deployment-group="'+t.id+'" class="'+(t.id===active.id?'selected':'')+'">'+
-  '第'+t.id+'班<small>'+sortieTeamCount(t)+'人・'+(t.slots?.filter(Boolean).length||0)+'/'+(SORTIE_FORMATIONS[t.formation]?.slots||sortieSquadCap(game))+'隊</small></button>').join('');
- const rows=['前衛','中衛','後衛','入口'],lanes=['北','中央','南'];
- $('deploymentRadarBoard').innerHTML=Array.from({length:4},(_,rank)=>
-  '<div class="deploymentRadarRow" role="group" aria-label="'+rows[rank]+'">'+
-  Array.from({length:3},(_,lane)=>{
-   const i=rank*3+lane;
-   const stationed=teams.find(t=>resolvedSortieSlot(game,stage,t)===i);
-   const occupied=stationed&&stationed.id!==active.id;
-   const blocked=!allowed.includes(i)||Boolean(occupied);
-   const selected=resolvedSortieSlot(game,stage,active)===i;
-   const marker=stationed?'🔵 '+stationed.id:'＋';
-   const label=stationed?'第'+stationed.id+'班':rows[rank]+' '+lanes[lane];
-   return '<button type="button" class="deploymentRadarCell'+(selected?' selected':'')+
-    (stationed?' occupied':'')+'" data-deployment-position="'+i+'" '+(blocked?'disabled':'')+
-    ' aria-label="'+rows[rank]+'・'+lanes[lane]+(stationed?' 第'+stationed.id+'班':' 配置可能')+'">'+
-    '<span class="radarMarker'+(stationed?' occupied':'')+'">'+marker+'</span>'+
-    '<small>'+label+'</small></button>';
-  }).join('')+'</div>').join('');
- const status=sortieFormationStatus(game,active.id);
- $('deploymentSummary').textContent='第'+active.id+'班：'+
-  (status.valid?'陣形成立':'陣形バフなし')+' · '+status.reason+
-  '。レーダーの配置先をタップしてから出撃します。';
-}
-function openDeploymentPicker(stage){
- ensureSortiePlan(game);
- deploymentTeamId=sortieTeams(game).find(t=>sortieTeamCount(t)>0)?.id||1;
- renderDeploymentPicker(stage);
- $('deploymentPicker').hidden=false;
-}
-$('deploymentPicker').addEventListener('click',event=>{
- const btn=event.target.closest('button');
- if(!btn)return;
- if(btn.id==='deploymentCancel'){$('deploymentPicker').hidden=true;return;}
- const stage=CAMPAIGN_STAGE_BY_ID[selected];
- if(btn.hasAttribute('data-deployment-group')){
-  deploymentTeamId=Number(btn.dataset.deploymentGroup);renderDeploymentPicker(stage);return;
- }
- if(btn.hasAttribute('data-deployment-position')){
-  try{setSortieSlot(game,stage,deploymentTeamId,Number(btn.dataset.deploymentPosition));saveSession();renderDeploymentPicker(stage);}
-  catch(error){message(error.message||String(error));}
-  return;
- }
- if(btn.id==='deploymentConfirm'){
-  $('deploymentPicker').hidden=true;
-  beginSortie(stage);
- }
-});
+let stageLaunching=false;
+window.addEventListener('pageshow',()=>{stageLaunching=false;});
 function beginSortie(stage){
  stageLaunching=true;
  const seen=Boolean(game.storyFlags?.stageMangaSeen?.[stage.id]||
@@ -391,10 +313,8 @@ $('sortie').onclick=()=>{
  if(stage.chapter>=13&&stage.kind!=='town'&&!currentStoryRoute(game)){
   message('第13章の協力先を選択してから進んでください。');return;
  }
- if(stage.kind!=='town'){
-  try{openDeploymentPicker(stage);}catch(error){message(error.message||String(error));}
-  return;
- }
+ // Only the battle's expandable radar handles position and per-team tactics.
+ // The world map never shows a second 12-slot deployment dialog.
  beginSortie(stage);
 };
 

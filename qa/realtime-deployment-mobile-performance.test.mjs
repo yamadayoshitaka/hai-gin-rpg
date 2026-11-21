@@ -60,6 +60,11 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
   onOrder:(id,mode)=>{seen.push(['order',id,mode]);return true}
  });
  command.openDeployment();
+ assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,true,
+  'the battle begins on the compact radar, without a large popup');
+ assert.equal(dom.root.querySelector('#realtimeSquadRadar').hidden,false);
+ dom.root.querySelector('#realtimeRadarExpand').onclick();
+ assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,false);
  assert.match(dom.root.innerHTML,/class="realtimeMapViewport"/);
  assert.ok(dom.root.innerHTML.indexOf('data-realtime-zoom="1"')<
   dom.root.innerHTML.indexOf('id="realtimeBattleCanvas"'));
@@ -92,6 +97,46 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.equal(seen.some(x=>x[0]==='move'),false,
   'deployment does not dispatch a live move without a confirmed action and target');
 });
+test('three teams must each be placed and given an initial strategy on the enlarged battle radar',()=>{
+ const dom=mockDocument(),began=[];
+ const teams=[1,2,3].map(n=>({id:'team'+n,groupId:n,label:'第'+n+'隊',
+  job:'騎士',alive:4,total:4,hp:400,maxHp:400,x:65+n*2,z:90+n*5}));
+ const ui=createRealtimeBattleCommands({documentRef:dom.document,worldSize:232,
+  requirePrebattleChoices:true,battleTypeLabel:'魔物殲滅戦',
+  victoryCondition:'全モンスター討伐',
+  getDeploymentTeams:()=>teams,getSquads:()=>teams,
+  getInitialTeamPlan:()=>({strategy:null,formation:'標準陣形',
+   allowedStrategies:['assault','defense','balanced','explore']}),
+  getLegalPoint:(x,z)=>({x,z}),canDeploy:()=>true,
+  onDeploy:(id,point)=>true,
+  onStart:details=>{began.push(details);return true}
+ });
+ ui.openDeployment();
+ assert.equal(ui.started,false,'opening the small radar never starts combat');
+ dom.root.querySelector('#realtimeRadarExpand').onclick();
+ assert.equal(ui.isMapOpen,true,'enlarging radar opens the one prebattle setup');
+ dom.root.querySelector('#realtimeStart').onclick();
+ assert.equal(began.length,0,'cannot begin before placing the teams');
+ const map=dom.root.querySelector('#realtimeBattleCanvas');
+ for(let n=1;n<=3;n++){
+  ui.selectSquad('team'+n);
+  map.tap('pointerdown',{pointerId:n,clientX:36+n*17,clientY:98+n*18});
+  map.tap('pointerup',{pointerId:n,clientX:36+n*17,clientY:98+n*18});
+  const selector=dom.root.querySelector('#realtimeInitialStrategy');
+  selector.value=['assault','defense','explore'][n-1];
+  selector.onchange();
+  if(n===1){
+   dom.root.querySelector('#realtimeStart').onclick();
+   assert.equal(began.length,0,'team 2 and 3 still need their own selections');
+  }
+ }
+ dom.root.querySelector('#realtimeStart').onclick();
+ assert.equal(began.length,1);
+ assert.deepEqual(began[0].initialPlans,{'1':'assault','2':'defense','3':'explore'});
+ assert.equal(ui.started,true);
+ assert.equal(ui.isMapOpen,false,'enlarged radar closes when combat starts');
+});
+
 test('map controls and roster aggregation retain real 3D movement and squad identities',()=>{
  const js=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');

@@ -709,3 +709,50 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 #realtimeBattleMapOverlay #realtimeInitialTeamPlanning select{width:100%;min-height:43px;padding:7px;border:1px solid #98c1d5;border-radius:7px;background:#143b54;color:#fff;font-size:13px}
 #realtimeBattleMapOverlay #realtimeInitialTeamPlanning small{font:11px/1.5 system-ui;color:#bfdce6;max-height:3em;overflow:auto}
 #realtimeBattleMapOverlay #realtimeMapActionSheet[hidden]{display:none!important}
+
+/* 2026-11-21: original battle radar is the only prebattle placement UI.
+   Tap ⛶ on the small radar to expand, place all three teams, and choose plans. */
+#realtimeSquadRadar .realtimeRadarHeader{min-width:0;white-space:normal}
+#realtimeRadarTitle{flex:1 1 auto;min-width:0;font:800 9px/1.25 system-ui;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+#battleRealtimeControls #realtimeRadarExpand{
+ min-height:25px!important;min-width:53px!important;flex:0 0 auto;
+ padding:3px 4px!important;border:1px solid #e3c384!important;
+ border-radius:6px!important;background:#355a69!important;
+ color:#fff1be!important;font:800 10px/1.1 system-ui!important
+}
+#realtimeRadarSetupPrompt{padding:3px 1px 2px;text-align:center;white-space:normal;
+ font:750 10px/1.35 system-ui;color:#ffe9ad}
+#realtimeRadarSetupPrompt[hidden]{display:none!important}
+#realtimeBattleMapOverlay .realtimeMapCard{width:min(calc(100vw - 12px),520px);
+ max-height:calc(100dvh - 12px);min-height:0;overflow-y:auto;overscroll-behavior:contain}
+#realtimeBattleMapOverlay .realtimeMapCard header{
+ display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:0
+}
+#realtimeBattleMapOverlay #realtimeMapTitle{font:800 16px/1.25 system-ui}
+#realtimeBattleMapOverlay #realtimeMapBattleType{font:700 11px/1.25 system-ui;
+ color:#cce3f3;flex:1 1 100%;min-width:0}
+#realtimeBattleMapOverlay #realtimeMapClose{min-height:31px;padding:3px 8px}
+#realtimeBattleMapOverlay .realtimeMapViewport{min-height:0;flex-shrink:1}
+#realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas{
+ width:min(calc(100% - 70px),42dvh,420px);max-height:42dvh;min-width:0;
+ aspect-ratio:1;object-fit:contain
+}
+#realtimeBattleMapOverlay #realtimeInitialTeamPlanning{flex-shrink:0;min-height:0}
+#realtimeBattleMapOverlay #realtimeMapMessage{flex:0 0 auto;min-height:0;font-size:11px}
+#realtimeBattleMapOverlay #realtimeStart{flex:0 0 auto;font:800 13px/1.3 system-ui}
+@media(max-width:600px){
+ #realtimeBattleMapOverlay .realtimeMapCard{gap:5px;padding:8px}
+ #realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas{
+  width:min(calc(100% - 65px),39dvh,355px);max-height:39dvh
+ }
+ #realtimeRadarTitle{font-size:8.5px}
+ #battleRealtimeControls #realtimeRadarExpand{font-size:9px!important;min-width:45px!important}
+}
+@media(max-height:690px){
+ #realtimeBattleMapOverlay .realtimeMapViewport #realtimeBattleCanvas{
+  width:min(calc(100% - 62px),31dvh,290px);max-height:31dvh
+ }
+ #realtimeBattleMapOverlay .realtimeMapHelp{font-size:11px;line-height:1.3}
+ #realtimeBattleMapOverlay .realtimeMapCard{gap:3px}
+}

@@ -12,6 +12,11 @@ on:
       - 'world-map.html'
       - 'qa/battle-rpg-squad-hud.test.mjs'
       - 'qa/battle-stage-deployment-portraits.test.mjs'
+      - 'qa/inn-strategy-three-team-wizard.test.mjs'
+      - 'qa/formation-minimum-deployment-radar.test.mjs'
+      - 'qa/three-team-sortie.test.mjs'
+      - 'src/three-team-sortie-ui.js'
+      - 'town-hub.html'
       - 'src/three-team-core-bridge.js'
       - 'tactics-wireframe.html'
       - 'qa/battle-three-team-*'
@@ -35,3 +40,5 @@ jobs:
         run: node --test qa/battle-rpg-squad-hud.test.mjs qa/battle-three-team-hud-dom.test.mjs qa/battle-three-team-radar.test.mjs qa/battle-three-team-prebattle.test.mjs qa/realtime-deployment-mobile-performance.test.mjs
       - name: Verify stage identity, one deployment and captain/species portraits
         run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
+      - name: Verify formation-only inn and three-team stage handoff
+        run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs

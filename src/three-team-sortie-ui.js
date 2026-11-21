@@ -22,18 +22,26 @@ const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class=
  * Primary inn flow: one decision per screen, with a single three-team
  * formation template saved for each battle strategy.
  */
-function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
+function renderThreeTeamStrategyWizard({game,teamId,view,templatePage,formationOnly=false}){
  const strategy=selectedThreeTeamStrategy(game),rule=THREE_TEAM_STRATEGY_TYPES[strategy];
  const teams=sortieTeams(game),cap=sortiePlanningLimit(game);
  const total=teams.reduce((n,t)=>n+sortieTeamCount(t),0);
  const current=teams[Math.max(0,Math.min(2,Number(teamId)-1))];
- const step=view==='strategy'?1:view==='review'?5:current.id+1;
- const header='<div class="sortieWizardHeader"><small>作戦別・3隊陣形テンプレート　'+step+' / 5</small>'+
-  '<strong>'+(view==='strategy'?'どの作戦で戦う？':view==='review'?'3隊の編成を確認':rule.name+'：第'+current.id+'隊の陣形は？')+'</strong>'+
-  '<span>'+(view==='strategy'?'作戦を1つ選ぶと、第1隊から順番に設定します。':
-   view==='review'?'この組み合わせを「'+esc(rule.name)+'」のテンプレートとして保存します。':
-   '第'+current.id+'隊は最大3ジョブ。陣形を1つ選ぶと次の隊へ進みます。')+'</span></div>';
- const back=view==='strategy'?'':button('data-sortie-plan-back="1"',view==='review'?'◀ 第3隊へ戻る':current.id===1?'◀ 作戦を選び直す':'◀ 第'+(current.id-1)+'隊へ戻る');
+ const step=formationOnly?(view==='review'?4:current.id):view==='strategy'?1:view==='review'?5:current.id+1;
+ const header=formationOnly?
+  '<div class="sortieWizardHeader"><small>宿屋｜3隊の陣形　'+step+' / 4</small>'+
+   '<strong>'+(view==='review'?'3隊の陣形を確認':'第'+current.id+'隊の陣形を選択')+'</strong>'+
+   '<span>'+(view==='review'?'陣形は宿屋で保存。作戦は戦闘画面で隊ごとに選択します。':
+    '従来の陣形を選択します。各隊の作戦は戦闘開始時に指定します。')+'</span></div>':
+  '<div class="sortieWizardHeader"><small>作戦別・3隊陣形テンプレート　'+step+' / 5</small>'+
+   '<strong>'+(view==='strategy'?'どの作戦で戦う？':view==='review'?'3隊の編成を確認':rule.name+'：第'+current.id+'隊の陣形は？')+'</strong>'+
+   '<span>'+(view==='strategy'?'作戦を1つ選ぶと、第1隊から順番に設定します。':
+    view==='review'?'この組み合わせを「'+esc(rule.name)+'」のテンプレートとして保存します。':
+    '第'+current.id+'隊は最大3ジョブ。陣形を1つ選ぶと次の隊へ進みます。')+'</span></div>';
+ const back=formationOnly?
+  (view==='review'?button('data-sortie-plan-back="1"','◀ 第3隊へ戻る'):
+   current.id===1?'':button('data-sortie-plan-back="1"','◀ 第'+(current.id-1)+'隊へ戻る')):
+  view==='strategy'?'':button('data-sortie-plan-back="1"',view==='review'?'◀ 第3隊へ戻る':current.id===1?'◀ 作戦を選び直す':'◀ 第'+(current.id-1)+'隊へ戻る');
  let content='';
  if(view==='strategy'){
   content='<div class="sortieWizardChoices" role="group" aria-label="作戦を1つ選択">'+
@@ -47,10 +55,10 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
      '<small>'+(saved?'保存済み：':'推奨：')+esc(names)+'</small></span>');
    }).join('')+'</div>';
  }else if(view==='formationPick'){
-  const ids=orderedThreeTeamFormations(game,strategy),limit=4;
+  const ids=formationOnly?Object.keys(SORTIE_FORMATIONS):orderedThreeTeamFormations(game,strategy),limit=4;
   const pages=Math.max(1,Math.ceil(ids.length/limit));
   const page=Math.max(0,Math.min(pages-1,Number(templatePage)||0));
-  const suggestions=new Set(rule.recommended.flat());
+  const suggestions=formationOnly?new Set():new Set(rule.recommended.flat());
   content='<div class="sortieWizardTeamState">現在：<b>'+esc(SORTIE_FORMATIONS[current.formation]?.name||'自由陣形')+
    '</b><small>第'+current.id+'隊 '+sortieTeamCount(current)+'人</small></div>'+
    '<div class="sortieWizardFormationChoices" role="group" aria-label="従来の陣形一覧から第'+current.id+'隊を選択">'+
@@ -80,7 +88,7 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
     button('data-sortie-template-page="'+(page+1)+'" '+(page===pages-1?'disabled':''),'次の陣形 ▶')+
    '</div><small class="sortieWizardHelp">旧陣形の4×4配置図と補正を表示しています。選択すると次の隊へ進みます。</small>';
  }else{
-  const saved=savedThreeTeamStrategy(game,strategy);
+  const saved=formationOnly?null:savedThreeTeamStrategy(game,strategy);
   content='<div class="sortieWizardReview">'+teams.map(t=>{
    const f=SORTIE_FORMATIONS[t.formation],status=sortieFormationStatus(game,t.id),buff=sortieFormationBuff(game,t.id);
    return '<div class="sortieWizardReviewTeam"><div><b>第'+t.id+'隊　'+esc(f?.name||'自由陣形')+'</b>'+
@@ -92,19 +100,22 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
   }).join('')+'</div>'+
    '<div class="sortieWizardSummary">出撃予定 <b>'+total+' / '+cap+'人</b>'+
    '<small>条件未達の隊は陣形補正が有効になりません。兵士は複製されません。</small></div>'+
-   button('data-sortie-plan-save="1"','この3隊を「'+esc(rule.name)+'」用に保存')+
-   (saved?'<small class="sortieWizardSaved">この作戦の保存済みテンプレートがあります。保存すると上書きします。</small>':'')+
-   '<details class="sortieWizardAdvanced"><summary>人数・ジョブ・固有作戦を細かく調整</summary>'+
+   button('data-sortie-plan-save="1"',formationOnly?'3隊の陣形を保存':'この3隊を「'+esc(rule.name)+'」用に保存')+
+   (!formationOnly&&saved?'<small class="sortieWizardSaved">この作戦の保存済みテンプレートがあります。保存すると上書きします。</small>':'')+
+   '<details class="sortieWizardAdvanced"><summary>'+(formationOnly?'人数・ジョブ・隊長を調整':'人数・ジョブ・固有作戦を細かく調整')+'</summary>'+
    '<p>必要なときだけ既存の詳細編成画面へ進めます。</p>'+
    button('data-sortie-view="setup"','詳細調整を開く')+'</details>';
  }
- return '<section class="sortiePlanner sortieWizard" aria-label="作戦ごとに3隊の陣形を設定">'+
+ return '<section class="sortiePlanner sortieWizard" aria-label="'+(formationOnly?'宿屋の3隊陣形を設定':'作戦ごとに3隊の陣形を設定')+'">'+
    header+'<div class="sortieWizardBody">'+content+'</div>'+
-   '<footer class="sortieWizardFooter">'+back+(view==='review'?button('data-sortie-view="strategy"','別の作戦を選ぶ'):'')+'</footer></section>';
+   '<footer class="sortieWizardFooter">'+back+(!formationOnly&&view==='review'?button('data-sortie-view="strategy"','別の作戦を選ぶ'):'')+'</footer></section>';
 }
 
 export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',jobPage=0,templatePage=0,strategyFamily='attack',strategyIntent='melee'}){
  ensureSortiePlan(game);
+ if(['formationOnly','formationReview'].includes(view))return renderThreeTeamStrategyWizard({
+  game,teamId,view:view==='formationOnly'?'formationPick':'review',templatePage,formationOnly:true
+ });
  if(['strategy','formationPick','review'].includes(view))return renderThreeTeamStrategyWizard({game,teamId,view,templatePage});
  const teams=sortieTeams(game),team=teams.find(t=>t.id===Number(teamId))||teams[0];
  const sources=game.campaign.squads.filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
@@ -158,7 +169,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  }).join('');
  const main='<div class="sortieBar">'+
   button('data-sortie-view="templates"','陣形：'+esc(team.formation==='free'?FREE_FORMATION_NAME:SORTIE_FORMATIONS[team.formation]?.name||'標準陣形')+' ▾')+
-  button('data-sortie-view="orders"','作戦 '+(team.tactics||[]).length+'件選択 ▸')+
+  '<small>作戦は戦闘画面で各隊ごとに選択</small>'+
   '</div><div class="sortieGridHint"><b>第'+team.id+'隊・最大3ジョブ</b><small>陣形を先に選択してから配置</small></div>'+
   '<div class="sortieFormationGrid" role="group" aria-label="最大3ジョブの配置枠">'+cells+'</div>'+
   '<div class="sortieGridFooter"><small>陣形：'+quota.spec.slots+'ジョブ · '+esc(status.reason)+'</small>'+

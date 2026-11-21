@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-three-team-initial3"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-radar-placement-battle-strategy"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -913,7 +913,7 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-single-deployment-type';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-radar-placement-battle-strategy';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
@@ -10664,6 +10664,7 @@ function realtimeSharedItems(){
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
+ requirePrebattleChoices:THREE_TEAM_BATTLE,
  battleTypeLabel:battleStageType(storyRequest?.stageKind,storyRequest?.enemyMode),
  victoryCondition:battleStageObjective(storyRequest?.stageKind,storyRequest?.winCondition),
  getDeploymentTeams:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
@@ -10691,7 +10692,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
    circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
    dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
-  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',captain:saved.captain||null,
+  return {strategy:THREE_TEAM_BATTLE?null:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',captain:saved.captain||null,
    formationActive:saved.formationActive!==false,
    allowedStrategies:strategies.length?strategies:['assault','defense','balanced'],
    reason:saved.formationActive===false?'陣形補正なし':''};
@@ -12374,12 +12375,9 @@ async function finishBattleLoading(){
   loading.hidden=true;
   initialCommanderCinematicPending=null;
   document.body.classList.add('battle-realtime-clean');
-  // The campaign already chose one of twelve real spawn slots on world-map.
-  // Never show a second, competing initial-deployment map in combat.
-  if(storyRequest?.origin==='game-core'){
-   if(realtimeCommandUI?.startFromPreparedDeployment()===false)
-    showRuntimeError('宿屋・ワールドマップの配置を適用しましたが、戦闘開始に失敗しました。');
-  }else realtimeCommandUI?.openDeployment();
+  // Entry is the ordinary in-battle radar. The player explicitly expands it
+  // to position each real squad and choose every initial team strategy.
+  realtimeCommandUI?.openDeployment();
   clock.getDelta();
   log('開戦前：初期配置を決めてからリアルタイム戦闘を開始します');
   updateUI();animate();
