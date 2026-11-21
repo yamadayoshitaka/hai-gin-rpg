@@ -582,6 +582,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v85BuildSignature:'face-v85-source-mouth-restored-closed-20261122',
    v85SourceOralGeometryProtected:!!face.userData.v85SourceOralGeometryProtected,
    v85RestoredOralVertices:face.userData.v85RestoredOralVertices||0,
+   v86BuildSignature:'face-v86-native-front-lip-loop-seal-20261122',
+   v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
+   v86OralSealTriangles:face.userData.v86OralSealSummary?.addedTriangles||0,
+   v86OralSealFailure:face.userData.v86OralSealSummary?.reason||null,
    v80TransitionProgress:transition?Number(smooth(
     transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,

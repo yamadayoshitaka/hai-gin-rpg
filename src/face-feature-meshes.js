@@ -4,6 +4,7 @@ import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
+import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=86';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -317,6 +318,9 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const softEyeshadow=new THREE.Color(gender==='female'?makeup[1]:0xa48087);
  const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
+ // Never pass NaN makeup multipliers to Three.js: undefined vertex-color
+ // channels render jet black and formerly mimicked an open mouth.
+ let repairedPigmentVertices=0;
  const mouthTopology=face.userData.v82IntegratedMouth;
  const lipNatural=new THREE.Color(gender==='male'?0xb8867c:0xce9597);
  let actualLipTintVertices=0,actualCheekTintVertices=0;
@@ -411,9 +415,23 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    rgb.lerp(painted,clamp(.64+lipWeight*.36,0,1));
    actualLipTintVertices++;
   }
-  colors.push(rgb.x,rgb.y,rgb.z);
+  // Some legacy donor+makeup combinations generate non-finite colors
+  // on mouth boundary vertices. Keep the original geometry and use
+  // a neutral skin multiplier instead of passing NaNs to the GPU.
+  if(!Number.isFinite(rgb.x)||!Number.isFinite(rgb.y)||
+     !Number.isFinite(rgb.z)){
+   repairedPigmentVertices++;
+   colors.push(1,1,1);
+  }else colors.push(
+   THREE.MathUtils.clamp(rgb.x,.28,1.32),
+   THREE.MathUtils.clamp(rgb.y,.28,1.32),
+   THREE.MathUtils.clamp(rgb.z,.28,1.32));
  }
+ if(colors.length!==positions.count*3)
+  throw Error('Face makeup attribute size differs from head positions');
  setVertexMakeup(face,colors);
+ face.userData.v87RepairedNonFinitePigment=repairedPigmentVertices;
+ face.userData.v87PigmentVerticesValidated=positions.count;
  colorizedMakeup(face,mode==='color');
  face.userData.facePigmentControls={...settings};
  face.userData.activeMakeupType=gender==='female'?Math.max(0,Math.min(9,Math.round(Number(makeupType)||0))):null;
@@ -1164,6 +1182,22 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Both cheek and lip pigments live on OWNED real head mesh vertices.
  // No separate lipstick sticker can drift over the skin/chin.
  face.userData.actualMouthCreaseY=lipCenter;
+ // The original donor already contains an open lip slit. v83 removed the
+ // fake covers without sealing this native hole, exposing black inner skin.
+ // Use ONLY the existing lip ring: no removed head triangles, no overlays.
+ const originalOralSeal=face.userData.enableExperimentalOralSurgery===true?
+  {sealed:false,reason:'experimental-v82-path'}:
+  sealOriginalOralAperture(face);
+ face.userData.v86OralSealSummary={
+  sealed:!!originalOralSeal.sealed,
+  addedTriangles:originalOralSeal.addedTriangles||0,
+  ringVertexCount:originalOralSeal.ringVertexCount||0,
+  outerRingVertexCount:originalOralSeal.outerRingVertexCount||0,
+  outerPatchTriangles:originalOralSeal.outerPatchTriangles||0,
+  outerPatchReason:originalOralSeal.outerPatchReason||null,
+  outerCandidateCount:originalOralSeal.outerCandidateCount||0,
+  reason:originalOralSeal.reason||null
+ };
  const halfWidth=d.x*(female?.057:.044)*
   Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  // V83 emergency quarantine: v82's centroid-based cutting generated

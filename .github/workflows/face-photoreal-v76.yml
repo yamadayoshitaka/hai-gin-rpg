@@ -5,6 +5,7 @@ on:
       - 'src/face-photo-microdetail-v76.js'
       - 'src/face-optics-v76.js'
       - 'src/face-feature-meshes.js'
+      - 'src/face-mouth-seal-v86.js'
       - 'src/face-expression-animation-v48.js'
       - 'src/face-integrated-mouth-v82.js'
       - 'src/face-anatomy-rig-v80.js'
@@ -31,6 +32,7 @@ on:
       - 'src/face-photo-microdetail-v76.js'
       - 'src/face-optics-v76.js'
       - 'src/face-feature-meshes.js'
+      - 'src/face-mouth-seal-v86.js'
       - 'src/face-expression-animation-v48.js'
       - 'src/face-integrated-mouth-v82.js'
       - 'src/face-anatomy-rig-v80.js'
@@ -69,6 +71,7 @@ jobs:
           node --check src/face-photo-microdetail-v76.js
           node --check src/face-optics-v76.js
           node --check src/face-feature-meshes.js
+          node --check src/face-mouth-seal-v86.js
           node --check src/independent-face-masters.js
           node --check src/face-expression-animation-v48.js
           node --check src/face-integrated-mouth-v82.js
