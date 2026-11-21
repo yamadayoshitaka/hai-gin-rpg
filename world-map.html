@@ -42,22 +42,6 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;bac
 .pin.current-location:after{content:'● 現在地';display:block;color:#8af5ff;font-size:9px;white-space:nowrap;margin-top:3px}
 header nav{gap:4px}header nav button{padding:7px 5px;min-height:35px;font-size:11px}
 
-#deploymentPicker[hidden]{display:none!important}
-#deploymentPicker{position:fixed;inset:0;z-index:170;background:#030a16e9;display:grid;place-items:center;padding:12px}
-#deploymentPickerCard{width:min(97vw,610px);max-height:95dvh;overflow:hidden;border:2px solid #c8aa72;border-radius:12px;background:linear-gradient(150deg,#283b52,#101e2e);padding:12px;display:grid;gap:10px}
-#deploymentPickerCard h2{font-size:18px;color:#ffe1a4;margin:0}
-#deploymentPickerCard p{margin:0;font-size:12px;color:#d7e5e8}
-.deploymentGroups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.deploymentGroups button,.deploymentPositions button,.deploymentActions button{border:1px solid #829ca8;background:#203b50;border-radius:7px;padding:9px 5px;min-width:0;font-size:12px}
-.deploymentGroups button.selected,.deploymentPositions button.selected{background:#785a30;border:2px solid #f4d89f}
-.deploymentGroups button small,.deploymentPositions button small{display:block;color:#dce7ec;font-size:10px}
-.deploymentPositions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-.deploymentPositions button{min-height:42px}
-.deploymentPositions button:disabled{opacity:.33}
-.deploymentActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.deploymentActions button{min-height:42px}
-.deploymentActions button.primary{background:#77552e;border-color:#e4c68d;font-weight:bold}
-@media(max-height:500px){#deploymentPickerCard{gap:4px;padding:7px}.deploymentPositions button{min-height:27px;padding:3px}.deploymentGroups button{padding:4px}.deploymentActions button{min-height:31px}}
 </style></head><body>
 <main id="world"><header><div><strong>大陸全図・戦記</strong><small id="summary">領地とステージを選択</small></div><nav><button id="worldBgm" aria-label="ワールドマップBGMのオン・オフ" aria-pressed="true">♪</button><button id="homeTown">🏘 町へ戻る</button><button id="storyMaintenance" type="button">物語フロー</button><button id="toTitle">☰ タイトル</button></nav></header>
 <section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
