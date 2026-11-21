@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-three-team-initial3"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261120-three-team-hud2"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-three-team-initial3"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -913,15 +913,16 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-three-team-initial3';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-single-deployment-type';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
 import {planSkirmishDeployment,planSkirmishGroupDeployment} from './src/battle-realtime-deployment.js?v=20261121-three-team-initial3';
-import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261121-three-team-initial3';
-import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from './src/battle-rpg-squad-source.js?v=20261121-three-team-initial3';
+import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261121-captain-monster-icons';
+import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from './src/battle-rpg-squad-source.js?v=20261121-species-captain-identity';
+import {battleStageType,battleStageObjective} from './src/battle-stage-identity.js';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -9398,6 +9399,14 @@ function refreshBattleRpgSquadHud(sums){
  const rows=makeBattleRpgStatusRows({
   sums,units:massSim?.units??actors,allyIds:squadIds,enemyIds:enemySquadIds,
   getJob:(id,team)=>squadPrimaryJob(id,team,sums),
+  getMonster:(id,team,index)=>{
+   if(team!==1)return null;
+   const current=actors.find(actor=>actor.team===1&&String(actor.squadId)===String(id)&&actor.monsterSpec)?.monsterSpec;
+   const ids=storyRequest?.enemyMonsterIds||[];
+   const species=current||(ids.length?MONSTER_CATALOG.find(m=>m.id===ids[index%ids.length]):null);
+   return species?{id:species.id,name:species.name,family:species.family}:
+    storyRequest?.enemyMode==='monsters'?{id:'',name:'モンスター',family:''}:null;
+  },
   getMode:(id,team)=>squadEffectiveOrder(id,team).mode,
   mass:Boolean(massSim),now:elapsed,simTime:massSim?.time??elapsed,
   itemTypes:ROOM_ITEM_TYPES,auras:activeSquadBuffVfx,skirmishBuffs:skirmishSquadItemBuffs,
@@ -9406,8 +9415,13 @@ function refreshBattleRpgSquadHud(sums){
  });
  // Aggregate only the campaign presentation. Live commands, MP and AI still
  // read the original per-job rows, never a synthetic three-team HUD row.
+ const captainByGroup=Object.fromEntries([1,2,3].map(group=>{
+  const saved=storyRequest?.initialTeamPlans?.[String(group)]?.captain;
+  const fallback=storyRequest?.units?.find(unit=>Number(unit.armyGroupId)===group&&unit.captain)?.captain;
+  return [String(group),saved||fallback||null];
+ }));
  battleRpgHud.update(THREE_TEAM_BATTLE?
-  aggregateBattleRpgTeams(rows,armyGroupBySquad,enemyGroupBySquad):rows,
+  aggregateBattleRpgTeams(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup):rows,
   {show:battleReady&&!finished&&!battleCeremony.locked});
  realtimeCommandUI?.update(rows);
 }
@@ -10650,6 +10664,8 @@ function realtimeSharedItems(){
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
+ battleTypeLabel:battleStageType(storyRequest?.stageKind,storyRequest?.enemyMode),
+ victoryCondition:battleStageObjective(storyRequest?.stageKind,storyRequest?.winCondition),
  getDeploymentTeams:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
   squadIds.map(id=>{
    const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
@@ -10675,7 +10691,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
    circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
    dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
-  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',
+  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',captain:saved.captain||null,
    formationActive:saved.formationActive!==false,
    allowedStrategies:strategies.length?strategies:['assault','defense','balanced'],
    reason:saved.formationActive===false?'陣形補正なし':''};
@@ -10718,7 +10734,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    const stat=groups.get(String(id)),leader=leaders.get(String(id));
    // Resolve the engine's 盾戦士/盗賊 aliases before checking special skills.
    const job=squadPrimaryJob(id);
-   return {team:0,id,label:squadName(id),job,
+   return {team:0,id,label:squadName(id),job,groupId:Number(armyGroupBySquad[String(id)])||1,
     x:leader?.x??NaN,z:leader?.z??NaN,leaderId:leader?.leaderId??null,
     alive:stat.alive,total:stat.total,hp:stat.hp,maxHp:stat.maxHp};
   });
@@ -12358,7 +12374,12 @@ async function finishBattleLoading(){
   loading.hidden=true;
   initialCommanderCinematicPending=null;
   document.body.classList.add('battle-realtime-clean');
-  realtimeCommandUI?.openDeployment();
+  // The campaign already chose one of twelve real spawn slots on world-map.
+  // Never show a second, competing initial-deployment map in combat.
+  if(storyRequest?.origin==='game-core'){
+   if(realtimeCommandUI?.startFromPreparedDeployment()===false)
+    showRuntimeError('宿屋・ワールドマップの配置を適用しましたが、戦闘開始に失敗しました。');
+  }else realtimeCommandUI?.openDeployment();
   clock.getDelta();
   log('開戦前：初期配置を決めてからリアルタイム戦闘を開始します');
   updateUI();animate();

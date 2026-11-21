@@ -41,6 +41,7 @@ jobs:
           node --experimental-vm-modules qa/level99-targeted-strategy.test.mjs
           node --experimental-vm-modules qa/formation-and-three-step-strategy.test.mjs
           node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs
+          node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
           node --experimental-vm-modules qa/formation-stage-collapse.test.mjs
           node --experimental-vm-modules qa/formation-template-rarity-quotas.test.mjs
           node --experimental-vm-modules qa/central-battle-orders.test.mjs

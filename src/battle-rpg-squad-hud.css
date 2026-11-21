@@ -516,3 +516,15 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
 #battleRpgSquadHud .rpgTeamSummary{border-color:#e2c181;background:#27465be5}
 #battleRpgSquadHud .rpgJobDivision{margin-left:8px;width:calc(100% - 8px);border-left:3px solid #7db5d1;background:#102e43e8}
 #battleRpgSquadHud .rpgJobDivision .rpgSquadRowTitle strong{font-size:8px;color:#d6efff}
+
+/* Species and leader identities override the generic profession portrait. */
+#battleRpgSquadHud .rpgSquadJobIcon.rpgMonsterPortrait{
+ display:flex!important;align-items:center;justify-content:center;
+ background-image:none!important;background-position:center!important;
+ background-color:#34313a;border:1px solid #ba8794;border-radius:5px;
+ font:normal 18px/1 system-ui!important;overflow:visible;text-shadow:0 1px 2px #111;
+}
+#battleRpgSquadHud .rpgSquadJobIcon.rpgCaptainPortrait{
+ border:1px solid #e2c184!important;border-radius:4px;
+ box-shadow:0 0 0 1px #583c17;overflow:hidden;
+}

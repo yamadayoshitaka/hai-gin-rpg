@@ -4,11 +4,32 @@
  * Only the selected page is rendered; no per-frame worker/GPU work.
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
+import {battleSquadPortraitChoice} from './battle-portrait-identity.js';
 export const RPG_HUD_JOB_ICON=Object.freeze({
  '剣士':'⚔','魔法使い':'✦','僧侶':'✚','弓使い':'🏹','弓兵':'🏹','盾騎士':'🛡',
  '騎士':'♞','忍者':'◆','シーフ':'◇','格闘家':'✊','召喚士':'◈'
 });
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+/** The icon is selected by character/species identity, not by a synthetic group job. */
+export function setBattleSquadHudPortrait(element,row,team=0){
+ const choice=battleSquadPortraitChoice(row,team);
+ const signature=JSON.stringify(choice);
+ if(element.dataset.portraitSignature===signature)return choice;
+ element.dataset.portraitSignature=signature;
+ element.classList.toggle('rpgMonsterPortrait',choice.kind==='monster');
+ element.classList.toggle('rpgCaptainPortrait',choice.kind==='captain');
+ if(choice.kind==='monster'){
+  element.style.backgroundImage='none';element.style.backgroundPosition='';
+  element.textContent=choice.glyph;
+  element.title=choice.name+'（モンスター）';
+ }else{
+  element.textContent='';
+  setBattleJobPortrait(element,choice.job,choice.id,team);
+  element.title=(choice.kind==='captain'?'宿屋の隊長：':'')+choice.name;
+ }
+ element.setAttribute('aria-label',element.title);
+ return choice;
+}
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export function rpgHudIcon(job=''){
@@ -157,6 +178,8 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     if(previous.getAttribute('aria-label')!==summary){
      previous.setAttribute('aria-label',summary);previous.title=summary;
     }
+    const portrait=previous.querySelector('.rpgSquadJobIcon');
+    if(portrait)setBattleSquadHudPortrait(portrait,row,team);
     const state=previous.querySelector('.rpgSquadState');
     const value=rpgHudStateIcon(row);
     if(state.textContent!==value)state.textContent=value;
@@ -207,7 +230,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    button.onclick=()=>handleSquadTap(team,row.id);
    const heading=doc.createElement('div');heading.className='rpgSquadRowTitle';
    const job=doc.createElement('span');job.className='rpgSquadJobIcon';
-   setBattleJobPortrait(job,row.job,row.id,team);
+   setBattleSquadHudPortrait(job,row,team);
    job.setAttribute('role','button');
    job.setAttribute('tabindex','0');
    job.setAttribute('aria-label',team===0?
@@ -293,7 +316,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(!visible)return;
   const next=Array.isArray(nextRows)?nextRows:[];
   const nextSig=JSON.stringify(next.map(r=>[r.team,r.id,r.alive,r.total,r.hp,r.maxHp,r.name,r.job,
-   r.mode,r.inContact,r.effects,r.attackPercent,r.mp,r.maxMp,
+   r.mode,r.inContact,r.effects,r.attackPercent,r.mp,r.maxMp,r.monster,r.captain,
    r.members?.map(member=>[member.id,member.alive,member.hp,member.mp,member.effects])]));
   if(nextSig===root.dataset.signature)return;
   root.dataset.signature=nextSig;
