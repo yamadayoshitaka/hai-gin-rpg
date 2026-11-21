@@ -1264,7 +1264,8 @@ export function shapeRebuiltEarTuck(points,{box,side=1}={}){
 /** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
  * reuse a measured head donor for follicles, but NOT a female bob guide. */
 export function shapeRebuiltMaleGuide(points,{
- box,zone='crown',side=1,part='center',long=false,bangsCut=false
+ box,zone='crown',side=1,part='center',long=false,bangsCut=false,
+ frontRoot=false
 }={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
@@ -1273,7 +1274,7 @@ export function shapeRebuiltMaleGuide(points,{
  for(let j=1;j<points.length;j++){
   const p=points[j],t=j/(points.length-1);
   const sweep=THREE.MathUtils.smoothstep(t,.055,.30);
-  if((fringe||temple||zone==='crown')&&!bangsCut){
+  if((fringe||temple||(zone==='crown'&&frontRoot))&&!bangsCut){
    const goalX=c.x+side*d.x*(temple?.37:part==='side'?.36:.32);
    p.x=THREE.MathUtils.lerp(p.x,goalX,
     sweep*(temple?.90:.78));
@@ -1872,7 +1873,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     shapeRebuiltEarTuck(shape,{box,side:partSide});
    if(style.maleGroom)shapeRebuiltMaleGuide(shape,{
     box,zone,side:partSide,part:style.part,
-    long:style.styleLength>.74,bangsCut
+    long:style.styleLength>.74,bangsCut,frontRoot
    });
    // Face-parting and invisible-rod curls are INDEPENDENT components.
    // Earlier old styles used one variant switch and silently lost curls.
@@ -1950,7 +1951,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   }
   if(style.maleGroom&&style.rebuiltBase==='buzz')
    shapeRebuiltMaleGuide(rest,{box,zone,side:partSide,part:style.part,
-    long:false,bangsCut:style.catalogFront==='bangs'&&fringe});
+    long:false,bangsCut:style.catalogFront==='bangs'&&fringe,frontRoot});
   // Natural grooming relaxes tangents, preserving the real root and cut tip.
   for(let pass=0;pass<(sadakoGravity?1:3);pass++){
    const filtered=rest.map(p=>p.clone());
