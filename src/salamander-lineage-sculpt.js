@@ -10,7 +10,7 @@ import {magmaSkullFromWolfKing,magmaTorsoFromWolfKing,
  sculptMagmaSalamanderEye,sculptMagmaSalamanderHorn,
  sculptMagmaSalamanderBack} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 
-export const SALAMANDER_LINEAGE_REVISION='m019-source-salamander-lineage-v2-20261119';
+export const SALAMANDER_LINEAGE_REVISION='m016-m017-salamander-surface-limbs-v21-20261121';
 export const SALAMANDER_LINEAGE=Object.freeze({
  m016:Object.freeze({id:'m016',archetype:'swamp-salamander',headWidth:1.09,
   snoutLength:1.12,bodyWidth:.92,bodyDepth:.94,legReach:.76,
@@ -23,6 +23,84 @@ export const SALAMANDER_LINEAGE=Object.freeze({
   bodyDrop:.38,tailLength:2.20,hornHeight:1,crestHeight:1})
 });
 export const salamanderLineageFor=id=>SALAMANDER_LINEAGE[id]||null;
+
+/**
+ * m016/m017 inherit m019's FOUR-LEG construction lessons without
+ * inheriting m019's lava pigment or the m019-specific body silhouette.
+ *
+ * The original derivative drew a thigh ball, a second shin ball, a knee
+ * sphere, another shoulder sphere and a fixed foot: detached stone sticks.
+ * Instead give each animated shoulder and knee exactly one rounded oriented
+ * bridge, plus a single attached toe pivot and small true curved claws.
+ * No skinning, opacity masks, double-overlays or per-frame CPU updates.
+ */
+export function sculptSalamanderLineageLimb(g,leg,knee,name,{
+ id='m016',side=1,fore=true,detail='high'
+}={}){
+ if(id!=='m016'&&id!=='m017')throw Error('Only derived four-leg salamanders');
+ const variant=SALAMANDER_LINEAGE[id];
+ const low=detail==='low',sign=side<0?-1:1;
+ const z=fore?-.013:.023;
+ const quality={
+  longitudinalSegments:low?12:24,
+  radialSegments:low?10:16
+ };
+ const upper=g.bridge(leg,'light',
+  [0,.065,z],[sign*.235,-.43,z+.032],
+  id==='m016'?.175:.187,id==='m016'?.126:.135,quality);
+ upper.name=id+'-organic-upper-'+name;
+ upper.frustumCulled=false;
+ upper.receiveShadow=false;
+ upper.userData.salamanderSingleVisibleLimb=true;
+ upper.userData.salamanderAnatomy='shoulder-to-elbow';
+ const shinLength=id==='m016'?.83:.93;
+ const shin=g.bridge(knee,'light',
+  [0,.035,0],[sign*.019,-shinLength,.098],
+  id==='m016'?.132:.141,id==='m016'?.085:.090,quality);
+ shin.name=id+'-organic-shin-'+name;
+ shin.frustumCulled=false;
+ shin.receiveShadow=false;
+ shin.userData.salamanderSingleVisibleLimb=true;
+ shin.userData.salamanderAnatomy='knee-to-ankle';
+ const toe=g.group('toe'+name,[sign*.019,-shinLength,.098],knee);
+ toe.userData.salamanderGroundedPaw=true;
+ toe.userData.salamanderToeCount=low?3:4;
+ toe.userData.salamanderSharedSurface=id;
+ const pad=g.sphere(toe,'light',[0,-.022,.050],
+  [id==='m016'?.143:.151,.043,.133],{
+   name:id+'-organic-metatarsal-'+name,rough:id==='m016'?.82:.77
+  });
+ pad.userData.salamanderAnatomicalFootpad=true;
+ const count=toe.userData.salamanderToeCount;
+ for(let digit=0;digit<count;digit++){
+  const x=(digit-(count-1)/2)*(low?.061:.053);
+  const spread=x*.23;
+  const finger=g.tube(toe,'light',[
+   [x*.68,-.022,.050],[x,-.026,.101],
+   [x+spread*.3,-.029,.149],[x+spread,-.040,.183]
+  ],low?.023:.027,{
+   name:id+'-organic-digit-'+name+'-'+digit,
+   capEnds:true,taper:.74
+  });
+  finger.userData.salamanderContinuousDigit=true;
+  const root=[x+spread*.3,-.009,.153];
+  const mid=[x+spread*.7,.005,.206];
+  const tip=[x+spread*1.2,-.049,.252];
+  const claw=g.curvedHorn(toe,'bone',root,mid,tip,
+   low?.017:.019,{
+    name:id+'-rooted-claw-'+name+'-'+digit,
+    rough:id==='m016'?.83:.66
+   });
+  claw.userData.salamanderRootedClaw=true;
+ }
+ leg.userData.salamanderDerivedPhysicalLimbs=true;
+ leg.userData.salamanderDerivative=id;
+ g.root.userData.salamanderVisibleLimbSegments=
+   (g.root.userData.salamanderVisibleLimbSegments||0)+2;
+ g.root.userData.salamanderWearingSpeciesSkin=id;
+ return {upper,shin,toe};
+}
+
 
 /** Morph all eleven canonical cranium sections; do not mutate the donor. */
 export function salamanderSkullFromMagma(m001Rings,id){
