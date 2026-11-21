@@ -107,6 +107,31 @@ export function createCampaign(commanderName, appearance = {}) {
   };
 }
 
+/** Ensure the protagonist (strategist/swordsman) and Garan are selectable as
+ * real one-person combatants, including on saves created before this rule. */
+export function ensureMajorCharacterSquads(state){
+ if(!state||!Array.isArray(state.squads)||state.gameOver)return [];
+ const defs=[
+  {characterId:'commander-'+(state.commander?.gender==='female'?'female':'male'),
+   characterName:state.commander?.name||'主人公',job:'剣士',rarity:'N',purpose:'前線'},
+  {characterId:'garan',characterName:'ガラン',job:'騎士',rarity:'R',purpose:'前線'}
+ ];
+ const added=[];
+ for(const def of defs){
+  const existing=state.squads.find(s=>s.characterId===def.characterId||
+   (def.characterId.startsWith('commander-')&&String(s.characterId||'').startsWith('commander-')));
+  if(existing){existing.criticalCharacter=true;continue;}
+  const id=Math.max(Number(state.nextSquadId)||1,
+   ...state.squads.map(s=>(Number(s.id)||0)+1));
+  state.nextSquadId=id+1;
+  const squad={id,job:def.job,rarity:def.rarity,count:1,purpose:def.purpose,
+   commanderId:'player',characterId:def.characterId,characterName:def.characterName,
+   criticalCharacter:true,faceId:0};
+  state.squads.push(squad);added.push(squad);
+ }
+ return added;
+}
+
 export const troopCount = state => state.squads.reduce((sum, squad) => sum + squad.count, 0);
 export const monthlyIncome = state => TERRITORIES.filter(t => state.owners[t.id] === 'player').reduce((sum, t) => sum + t.income, 0);
 export const monthlyWages = state => state.squads.reduce((sum, squad) => sum + squad.count * RARITIES[squad.rarity].wage, 0) + state.commanders.length * 35;
