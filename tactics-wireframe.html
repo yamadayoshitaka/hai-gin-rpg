@@ -11341,7 +11341,9 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
     if(result)massWorker?.buffSquadItem?.(recipient,buffId,method.buff,24,0);
    }else if(id==='block_advance'||id==='regroup'){
     const order=id==='block_advance'?'defend':'retreat';
-    result=capable.some(sid=>issueTargetedPlatoon(sid,order)===true);
+    let applied=0;
+    for(const sid of capable)if(issueTargetedPlatoon(sid,order)===true)applied++;
+    result=applied>0;
    }
    if(result)log('★ 第'+group+'隊：陣形追加作戦「'+method.name+'」を実行');
    return result;
