@@ -412,14 +412,14 @@ jobs:
             html_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-studio.html -w '%{http_code}' "${url}" || true)
             js_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-expression.js -w '%{http_code}' "${js}" || true)
             if [[ "${html_code}" == 200 && "${js_code}" == 200 ]] &&
-               grep -Fq '顔品質 v86' /tmp/public-face-studio.html &&
-               grep -Fq 'v=86-native-mouth-seal' /tmp/public-face-studio.html &&
-               grep -Fq 'v86BuildSignature' /tmp/public-face-expression.js &&
+               grep -Fq '顔品質 v87' /tmp/public-face-studio.html &&
+               grep -Fq 'v=87-mouth-width' /tmp/public-face-studio.html &&
+               grep -Fq 'v87BuildSignature' /tmp/public-face-expression.js &&
                grep -Fq 'v86OralSealed' /tmp/public-face-expression.js; then
-              echo "PASS: public face viewer and its runtime JavaScript are both v86 (${GITHUB_SHA})"
+              echo "PASS: public face viewer and its runtime JavaScript are both v87 (${GITHUB_SHA})"
               exit 0
             fi
-            echo "::warning::Face v86 not publicly visible: HTML ${html_code} JS ${js_code} (attempt ${attempt}/18)"
+            echo "::warning::Face v87 not publicly visible: HTML ${html_code} JS ${js_code} (attempt ${attempt}/18)"
             sleep 5
           done
           echo '::error::Pages still serves stale face HTML or facial animation JS; PR merge alone is not a successful release'
