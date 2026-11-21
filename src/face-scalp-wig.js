@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-anatomical-perimeter-v35';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-soft-perimeter-v36';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -431,13 +431,13 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     // blending unrelated front/back planes into a helmet-shaped edge.
     const angle=Math.atan2(zn,xn); // 0: lateral, PI/2: forehead, -PI/2: nape
     const stations=[
-     [-Math.PI/2,.535], // central nape: gently lower
-     [-1.18,.605],      // occipital taper
+     [-Math.PI/2,.615], // rounded central nape: avoid a pointed V
+     [-1.18,.625],      // soft occipital taper
      [-.78,.715],       // behind-ear clearance
      [-.43,.815],       // ear upper rim
      [-.18,.815],       // ear front rim
-     [.02,.695],        // narrow sideburn in front of ear
-     [.20,.775],        // temple above sideburn
+     [.02,.755],        // short, rounded sideburn rather than a sharp point
+     [.20,.795],        // gentle temple transition
      [.46,.855],        // forehead corner
      [Math.PI/2,.885]   // forehead center: leave skin visible
     ];
