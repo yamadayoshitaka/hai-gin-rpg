@@ -125,10 +125,10 @@ test('finished 3D meshes differ between straight, curled, waved and eye-clear cu
  }
 });
 test('studio builds use v66 model and keep dynamic physics, original buzz and mantle',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-invisible-perm-rods-v66$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/two-donor-unisex-catalog-v67$/);
  const salon=read('face-mesh-studio.html'),body=read('face-body-studio.html');
  for(const html of [salon,body])
-  assert.match(html,/20261121-sadako-invisible-perm-rods-v66/);
+  assert.match(html,/20261121-two-donor-unisex-catalog-v67/);
  assert.match(salon,/staticGroom:!isSadakoFamilyStyle\(chosen.styleId\)/);
  assert.match(body,/staticGroom:!isSadakoFamilyStyle\(hairSpec.styleId\)/);
  assert.match(body,/garmentCollisionResolver:mantleCollision/);
