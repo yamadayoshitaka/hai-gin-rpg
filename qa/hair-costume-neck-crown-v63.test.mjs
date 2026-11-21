@@ -109,6 +109,8 @@ test('full body attaches real neck first and remasks after animated update',()=>
  const studio=read('face-body-studio.html');
  const mask=read('src/face-costume-scalp-mask.js');
  assert.match(bridge,/withOriginalNeckSkin/);
+ assert.match(bridge,/onBeforeNeckRefit\?\.\(face\);\s*enhanceHeroineFaceSurface\(face\)/,
+  'new outfits must release the old masked head BEFORE fitting skull bounds');
  assert.match(bridge,/onBeforeNeckRefit\?\.\(face\)/);
  assert.match(bridge,/onAfterNeckRefit\?\.\(face\)/);
  assert.match(studio,/onBeforeNeckRefit:\(fittedFace\)=>releaseCostumeHairScalpMask\(fittedFace\)/);
