@@ -18,7 +18,7 @@ function sculptArmoredBody(g,torso,low){
   {z:-.78,y:1.33,rx:.66,ry:.51},
   {z:-1.16,y:1.32,rx:.47,ry:.38},
   {z:-1.48,y:1.30,rx:.14,ry:.16},
- ],{name:'m024-segmented-armored-thorax',rough:.55,ribbing:.025});
+ ],{name:'m024-segmented-armored-thorax',rough:.55,ribbing:.025,capEnds:true});
  g.sphere(torso,'#25152f',[0,1.08,-.31],[.56,.33,.84],
   {name:'m024-banded-underbelly',metal:.13,rough:.68});
  for(let i=0;i<(low?4:8);i++){
@@ -37,7 +37,7 @@ function sculptArmoredBody(g,torso,low){
    {z:-.15,y:.13,rx:.37,ry:.17},
    {z:-.52,y:.11,rx:.31,ry:.14},
    {z:-.89,y:.02,rx:.15,ry:.055}
-  ],{name:'m024-elytra-shell-'+sideName,rough:.34,ribbing:.016});
+  ],{name:'m024-elytra-shell-'+sideName,rough:.34,ribbing:.016,capEnds:true});
   const count=low?3:6;
   for(let i=0;i<count;i++){
    const z=.34-i*.218;
@@ -65,7 +65,7 @@ function sculptHeadAndVenom(g,torso,low){
   {z:.10,y:.055,rx:.40,ry:.29},
   {z:-.23,y:.03,rx:.32,ry:.26},
   {z:-.43,y:-.04,rx:.13,ry:.14},
- ],{name:'m024-engraved-beetle-head',rough:.41,faceSculpt:true});
+ ],{name:'m024-engraved-beetle-head',rough:.41,faceSculpt:true,capEnds:true});
  g.sphere(head,'#4e2862',[0,.16,-.01],[.36,.16,.29],
   {name:'m024-frontal-armor-cap',metal:.23,rough:.37});
  const jaw=g.group('jaw',[0,-.16,.28],head);
@@ -73,6 +73,12 @@ function sculptHeadAndVenom(g,torso,low){
   {name:'m024-recessed-mouth'});
  g.sphere(jaw,'#b4d76c',[0,-.045,.23],[.10,.025,.09],
   {name:'m024-toxic-saliva',glow:!low});
+ if(!low)for(const side of leftRight){
+  g.tube(jaw,'#a7e476',[
+   [side*.075,-.085,.20],[side*.106,-.16,.34],
+   [side*.14,-.22,.46],[side*.17,-.28,.56]
+  ],.015,{name:'m024-venom-flow-'+suffix(side),glow:true,taper:.40,capEnds:true});
+ }
  for(const side of leftRight){
   const n=suffix(side),p=(x,y,z)=>[side*x,y,z];
   // Recessed predatory compound eye beneath a continuous hard brow.
