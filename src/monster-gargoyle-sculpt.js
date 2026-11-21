@@ -95,9 +95,9 @@ export function createGargoyleRibPlateGeometry({detail='high',side=1}={}){
   const t=r/rows;
   for(let c=0;c<=cols;c++){
    const u=c/cols;
-   const x=side*(.035+u*(.233-.055*t));
+   const x=side*(.030+u*(.173-.039*t));
    const y=.265-t*.365+.020*u;
-   const stone=-.192-.024*Math.sin(u*Math.PI)
+   const stone=-.148-.018*Math.sin(u*Math.PI)
     -.014*Math.cos(t*Math.PI)+.007*Math.sin(u*14+t*17);
    pts.push(x,y,stone);
    uv.push(u,t);
@@ -382,22 +382,22 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   add(frames.chest,createGargoyleRibPlateGeometry({detail,side}),
    'gargoyleRidge','fitted-chiseled-pectoral-'+i);
   line(frames.chest,'gargoyleShadow','sternum-fissure-'+i,[
-   [side*.115,.28,-.153],[side*.206,.165,-.199],
-   [side*.111,.012,-.22],[side*.144,-.218,-.18]
+   [side*.090,.28,-.125],[side*.160,.165,-.165],
+   [side*.088,.012,-.176],[side*.114,-.218,-.148]
   ],.007);
   for(let k=0;k<(near?3:2);k++)
    line(frames.chest,'gargoyleRidge','layered-rib-chisel-'+i+'-'+k,[
-    [side*.045,.055-k*.096,-.219],
-    [side*.155,.049-k*.096,-.203],
-    [side*.237,.020-k*.096,-.147]
+    [side*.035,.055-k*.096,-.175],
+    [side*.123,.049-k*.096,-.167],
+    [side*.182,.020-k*.096,-.121]
    ],.009);
  }
  gem(frames.head,'angular-chin-point','gargoyleRidge',
   [0,-.168,-.092],[.053,.062,.078]);
  for(let k=0;k<3;k++)
   line(frames.chest,'gargoyleShadow','carved-abdominals-'+k,[
-   [-.13,-.09-k*.096,-.19],[0,-.085-k*.096,-.217],
-   [.13,-.09-k*.096,-.19]
+   [-.11,-.09-k*.096,-.150],[0,-.085-k*.096,-.172],
+   [.11,-.09-k*.096,-.150]
   ],.007);
  for(let i=0;i<2;i++){
   const side=i===0?-1:1;
