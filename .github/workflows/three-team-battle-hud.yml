@@ -26,6 +26,9 @@ on:
       - 'src/three-team-core-bridge.js'
       - 'tactics-wireframe.html'
       - 'qa/battle-three-team-*'
+      - 'qa/battle-formation-autonomy-regression.test.mjs'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/combat-action-runtime.js'
       - 'qa/realtime-deployment-mobile-performance.test.mjs'
       - 'qa/battle-capture-objective.test.mjs'
       - 'qa/battle-map-inspection.test.mjs'
@@ -63,3 +66,5 @@ jobs:
         run: node --test qa/mobile-formation-command-items.test.mjs
       - name: Verify battle-time formation changes and regrouping
         run: node --experimental-vm-modules qa/battle-formation-switch.test.mjs
+      - name: Verify formation-aware healing, bridge routing and emergency enemy decisions
+        run: node --check src/combat-action-runtime.js && node --check src/mass-battle-grid-sim.js && node --test qa/battle-formation-autonomy-regression.test.mjs

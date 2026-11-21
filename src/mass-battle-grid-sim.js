@@ -1625,7 +1625,31 @@ export class MassBattleGridSimulation {
       const personalOrderActive=u.tacticalOrderUntil>this.time&&Boolean(u.tacticalOrder);
       const mission=u.team===0&&!personalOrderActive?this.squadMissions.get(String(u.squadId)):null;
       const healTarget=u.team===0&&!personalOrderActive?this.squadHealTargets.get(String(u.squadId)):null;
-      u.healTargetSquadId=healTarget??null;
+      // Independent medic duty: all formations may rescue injured allies.
+      // Scan one tenth of the priests per tick to preserve 1000v1000 FPS;
+      // no squad order, original formation or commander command is replaced.
+      const usableHeals=u.jobId==='priest'?
+        availableCombatSkills('priest',u.rarity).filter(skill=>skill.kind==='heal'&&u.mp>=skill.mp):[];
+      const canTriage=usableHeals.length>0&&!mission&&!healTarget&&
+        !this.explorationOrders.has(u.team+':'+String(u.squadId));
+      if(canTriage&&this.tickCount%10===u.id%10){
+        const injured=this.actions.nearby(u.team,u.x,u.z,22)
+          .filter(v=>v.id!==u.id&&v.alive&&v.hp>0&&v.maxHp>0&&
+            v.hp/v.maxHp<.82&&this._squadDebuff(v,'heal_block')<1)
+          .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||
+            Math.hypot(a.x-u.x,a.z-u.z)-Math.hypot(b.x-u.x,b.z-u.z));
+        u._triagePatientId=injured[0]?.id??-1;
+      }
+      const patient=canTriage?this.units[u._triagePatientId]:null;
+      const triageTarget=patient?.alive&&patient.hp>0&&patient.hp/patient.maxHp<.9&&
+        Math.hypot(patient.x-u.x,patient.z-u.z)<=24?patient:null;
+      u.healTargetSquadId=healTarget??triageTarget?.squadId??null;
+      // N rarity heal reaches only four tiles. Never stop an N priest at
+      // the seven-tile range used for higher-tier group healing.
+      const healingRange=usableHeals.reduce((max,skill)=>Math.max(max,skill.range),0);
+      const healingStop=Math.max(2,Math.min(7,healingRange-1));
+      const triageNeedsMovement=triageTarget&&
+        Math.hypot(triageTarget.x-u.x,triageTarget.z-u.z)>healingStop;
       // An explicit squad-healing order is actionable, not merely a move
       // marker. At spell range, priests must cast on the nominated wounded
       // squad before the generic combat AI selects a different target.
@@ -1784,8 +1808,9 @@ export class MassBattleGridSimulation {
          (u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
       const order=['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.team===0?(u.order||
         (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
-      if(order==='hold'&&!nearest){u.action='hold';continue;}
-      if(order==='defend'&&Math.abs(u.x-this.riverXAt(u.z))<=12&&!nearest){u.action='hold';continue;}
+      if(order==='hold'&&!nearest&&!triageNeedsMovement){u.action='hold';continue;}
+      if(order==='defend'&&Math.abs(u.x-this.riverXAt(u.z))<=12&&!nearest&&
+         !triageNeedsMovement){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';
       const defaultFlow=isNinja
         ?(order==='retreat'?(u.team===0?this.ninjaFlowWest:this.ninjaFlowEast):u.team===0?this.ninjaFlowEast:this.ninjaFlowWest)
@@ -1812,11 +1837,13 @@ export class MassBattleGridSimulation {
       const highRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase===0?
         this.highGroundRoutes[u.highGroundRouteIndex]:null;
       const highFlow=highRoute&&this._highGroundFlows[u.highGroundRouteIndex];
+      const healingRoute=triageNeedsMovement?this._pursuitFlow(triageTarget,u.jobId):null;
+      const triageFlow=healingRoute&&healingRoute[cell]<0x3fffffff?healingRoute:null;
       const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
-        reachable?assignedFlow:supporting?this.supportFlow:
-        chaseFlow||(globalChase?enemyFlow:defaultFlow);
-      if(!highFlow&&reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
-      if(supporting&&!reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
+        triageFlow|| (reachable?assignedFlow:supporting?this.supportFlow:
+        chaseFlow||(globalChase?enemyFlow:defaultFlow));
+      if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
+      if(supporting&&!reachable&&flow===this.supportFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
       const preferred=nearest?{x:nearest.x,z:nearest.z}:chaseFlow?remembered:null;
@@ -1824,7 +1851,7 @@ export class MassBattleGridSimulation {
       // Maintain a rectangular advance on open terrain. Bridges, walls and
       // enemy contact take precedence, so squads can naturally funnel into
       // columns at chokepoints and re-form on the far side.
-      const formationActive=!nearest&&!reachable&&!globalChase&&
+      const formationActive=!nearest&&!reachable&&!globalChase&&!triageFlow&&
         Math.abs(u.x-this.riverXAt(u.z))>24&&
         NEIGHBORS.every(([dx,dz])=>this._walkable(u.x+dx,u.z+dz,u.jobId))&&
         formationCount[squadIndex]>1;

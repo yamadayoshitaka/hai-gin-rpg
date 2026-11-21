@@ -4459,6 +4459,7 @@ function crossingWaypoint(actor,worldGoal){
   const viable=bridges.filter(b=>!b.destroyed);
   let chosen=null,best=Infinity;
   for(const b of viable){
+   if(actor._bridgeAvoidUntil>elapsed&&actor._bridgeAvoid===b)continue;
    const center=riverX(b.row),x=center+currentSide*12;
    const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-x)*.3;
    // Exclude bridges whose approach is blocked by scenery or destroyed.
@@ -4467,6 +4468,12 @@ function crossingWaypoint(actor,worldGoal){
    if(score<best){best=score;chosen=b}
   }
   if(chosen)actor.crossing={bridge:chosen,fromSide:currentSide};
+  else {
+   // A full bridge is a queue, not a license to run into river water.
+   // Wait on traversable bank tiles and retry another crossing next tick.
+   const bankX=riverX(current.z)+currentSide*18;
+   return {x:bankX,z:current.z};
+  }
  }
  if(!actor.crossing)return null;
  const {bridge,fromSide}=actor.crossing;
@@ -4596,12 +4603,22 @@ function moveActor(a,goal,dt,stop){
      const direction=-a.crossing.fromSide;
      const nextX=a.cell.x+direction;
      if(nextX>=laneStart&&nextX<=laneEnd&&availableCell(nextX,a.cell.z,a)){
-      if(startCellMove(a,nextX,a.cell.z)){a.jumping=false;return}
+      if(startCellMove(a,nextX,a.cell.z)){a._bridgeLaneBlockedAt=null;a.jumping=false;return}
      }
      // Never sidestep into river water. But a soldier already on the
      // opposite BANK may exit the congested bridge lane onto a legal
      // adjacent land cell, leaving room for the following soldiers.
      if(nextX>=laneStart&&nextX<=laneEnd){
+      // At the entrance, a prolonged blockage permits another surviving
+      // bridge; never abandon the lane while already over the water.
+      if(a._bridgeLaneBlockedAt==null)a._bridgeLaneBlockedAt=elapsed;
+      const onOwnBank=(a.cell.x-center)*a.crossing.fromSide>=10;
+      const alternatives=bridges.some(b=>b!==activeBridge&&!b.destroyed);
+      if(onOwnBank&&alternatives&&elapsed-a._bridgeLaneBlockedAt>3.5){
+       a._bridgeAvoid=activeBridge;a._bridgeAvoidUntil=elapsed+7;
+       a.crossing=null;a._exitRoute=null;a._bridgeLaneBlockedAt=null;
+       return;
+      }
       if((a.cell.x-center)*a.crossing.fromSide<=-10){
        const sideOrder=a.id%2?[1,-1]:[-1,1];
        for(const dz of sideOrder){
@@ -5796,7 +5813,13 @@ function tickAI(dt){
     .sort((b,c)=>b.hp/b.maxHp-c.hp/c.maxHp)[0];
    if(wounded){
     a.healTargetSquadId=healingTargetId;
-    if(a.root.position.distanceTo(wounded.root.position)>CELL*7){moveActor(a,wounded.root.position,.16,CELL*5);continue;}
+    const healReach=availableCombatSkills('priest',a.rarity)
+      .filter(skill=>skill.kind==='heal'&&a.mp>=skill.mp)
+      .reduce((max,skill)=>Math.max(max,skill.range),0);
+    const healStop=Math.max(2,Math.min(6,healReach-1));
+    if(healReach>0&&a.root.position.distanceTo(wounded.root.position)>CELL*healStop){
+     moveActor(a,wounded.root.position,.16,CELL*(healStop-.5));continue;
+    }
    }else skirmishHealingRequests.delete(String(a.squadId));
   }else a.healTargetSquadId=null;
   if(squadDirective?.mode==='mission'){
@@ -5868,6 +5891,14 @@ function tickAI(dt){
    }
   }
   if(order==='retreat'){const home=a.home.clone();home.x+=(a.team===0?-9:9)*CELL;moveActor(a,home,.18,.6);continue}
+  // Healing works even without a visible enemy or during an assault.
+  // The previous enemy-free early return prevented the priest's cast.
+  if(a.jobId==='priest'&&a.attackTimer<=0&&skirmishActions?.tryAutoAction(a,enemy,actors)){
+   a.attackTimer=.95;
+   a.attackPoseUntil=elapsed+(a._pendingCast?
+    Math.max(.6,a._pendingCast.until-(skirmishActions?.time||0)):.60);
+   continue;
+  }
   if(!enemy&&squadDirective?.mode!=='move'){
    // If all opponents went upstairs, the ground army still approaches their
    // buildings; line-of-sight validation remains in the attack branch.
@@ -5882,7 +5913,7 @@ function tickAI(dt){
    }
    continue;
   }
-  if(a.attackTimer<=0&&skirmishActions?.tryAutoAction(a,enemy,actors)){
+  if(a.jobId!=='priest'&&a.attackTimer<=0&&skirmishActions?.tryAutoAction(a,enemy,actors)){
    a.attackTimer=.95;a.attackPoseUntil=elapsed+(a._pendingCast?Math.max(.6,a._pendingCast.until-(skirmishActions?.time||0)):.60);continue;
   }
   // Creatures and mounts have their own HP. Nearby enemies can destroy them
@@ -6959,7 +6990,13 @@ function updateEnemyTacticalDecisions(){
   const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
   // The ordinary command cooldown is preserved except for defending squads
   // whose whole army now decisively outnumbers the opponent.
-  const secondsUntilReissue=enemyOrderRefreshSeconds(previous,friendlyArmy.length,allies.length);
+  const casualties=own.filter(u=>!u.isStrategist).length-living.length;
+  const casualtyRatio=casualties/Math.max(1,own.filter(u=>!u.isStrategist).length);
+  const averageHp=living.reduce((n,u)=>n+u.hp/Math.max(1,u.maxHp),0)/living.length;
+  const critical=(casualtyRatio>.55||averageHp<.35);
+  // A collapsing enemy team must not wait 120 seconds in its old stance.
+  const secondsUntilReissue=critical?8:
+   enemyOrderRefreshSeconds(previous,friendlyArmy.length,allies.length);
   if(elapsed-(lastEnemyTacticalOrderAt.get(id)??-Infinity)<secondsUntilReissue)continue;
   const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
   const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
@@ -7129,15 +7166,26 @@ function updateSkirmishSquadStrategies(){
     if(supportId===id||targetId===id)skirmishHealingRequests.delete(supportId);
    continue;
   }
-  if(!fighters.length||directive&&!directive.autoStrategy)continue;
-  const objective=['defend','hold','retreat'].includes(squadEffectiveOrder(id).mode)?'recovery':'eliminate';
-  if(objective==='recovery'){
-   if(!fighters.some(u=>u.jobId==='priest'))continue;
-   const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.hp<u.maxHp);
-   wounded.sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
-   if(wounded[0])skirmishHealingRequests.set(id,String(wounded[0].squadId));
-   continue;
-  }
+  if(!fighters.length){skirmishHealingRequests.delete(id);continue;}
+  // Triage is a job duty, not a replacement for the inn's formation/order:
+  // priests in assault, defense and balanced teams heal nearby casualties.
+  const medic=fighters.find(u=>u.jobId==='priest'&&
+   availableCombatSkills('priest',u.rarity).some(skill=>skill.kind==='heal'&&u.mp>=skill.mp));
+  if(medic){
+   const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.alive!==false&&
+     u.maxHp>0&&u.hp/u.maxHp<.82&&
+     Math.hypot(u.cell.x-medic.cell.x,u.cell.z-medic.cell.z)<28)
+    .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||
+      Math.hypot(a.cell.x-medic.cell.x,a.cell.z-medic.cell.z)-
+      Math.hypot(b.cell.x-medic.cell.x,b.cell.z-medic.cell.z));
+   if(wounded.length)skirmishHealingRequests.set(id,String(wounded[0].squadId));
+   else if(directive?.mode!=='heal')skirmishHealingRequests.delete(id);
+  }else if(directive?.mode!=='heal')skirmishHealingRequests.delete(id);
+  if(directive&&!directive.autoStrategy)continue;
+  const objective=previous==='environment_prepare'?'environment_prepare':
+   previous==='recovery'||['defend','hold','retreat'].includes(squadEffectiveOrder(id).mode)?
+    'recovery':'eliminate';
+  if(objective==='recovery')continue;
   if(objective!=='environment_prepare')continue;
   // Same environment strategy: reinforcement of our doors first, then
   // enemy infiltration; only a thief may attempt a street-level lock.
