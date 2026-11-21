@@ -9,13 +9,89 @@ import {planStrategyDistribution} from './targeted-strategy-runtime.js';
 import {battleTeamParameters,BATTLE_TRAIT_LABELS,recommendBattlePlans,battleStageContext} from './battle-plan-recommendations.js';
 import {TACTICAL_ORDERS} from './tactical-command-descriptions.js';
 import {THREE_TEAM_AUTO_MODES} from './three-team-auto-composition.js';
+import {THREE_TEAM_STRATEGY_TYPES,savedThreeTeamStrategy,selectedThreeTeamStrategy,orderedThreeTeamFormations,suggestedThreeTeamFormations} from './three-team-strategy-presets.js';
 const FOUR_STRATEGY_FAMILIES=Object.freeze({attack:STRATEGY_TREE.attack,defense:STRATEGY_TREE.defense,
  balanced:{name:'バランス',intents:{...STRATEGY_TREE.support.intents,...STRATEGY_TREE.weaken.intents}},
  explore:{name:'探索',intents:{...STRATEGY_TREE.explore.intents,...STRATEGY_TREE.environment.intents}}});
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class="'+(selected?'selected':'')+'">'+title+'</button>';
+
+/**
+ * Primary inn flow: one decision per screen, with a single three-team
+ * formation template saved for each battle strategy.
+ */
+function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
+ const strategy=selectedThreeTeamStrategy(game),rule=THREE_TEAM_STRATEGY_TYPES[strategy];
+ const teams=sortieTeams(game),cap=sortiePlanningLimit(game);
+ const total=teams.reduce((n,t)=>n+sortieTeamCount(t),0);
+ const current=teams[Math.max(0,Math.min(2,Number(teamId)-1))];
+ const step=view==='strategy'?1:view==='review'?5:current.id+1;
+ const header='<header class="sortieWizardHeader"><small>作戦別・3隊陣形テンプレート　'+step+' / 5</small>'+
+  '<strong>'+(view==='strategy'?'どの作戦で戦う？':view==='review'?'3隊の編成を確認':rule.name+'：第'+current.id+'隊の陣形は？')+'</strong>'+
+  '<span>'+(view==='strategy'?'作戦を1つ選ぶと、第1隊から順番に設定します。':
+   view==='review'?'この組み合わせを「'+esc(rule.name)+'」のテンプレートとして保存します。':
+   '第'+current.id+'隊は最大3ジョブ。陣形を1つ選ぶと次の隊へ進みます。')+'</span></header>';
+ const back=view==='strategy'?'':button('data-sortie-plan-back="1"',view==='review'?'◀ 第3隊へ戻る':current.id===1?'◀ 作戦を選び直す':'◀ 第'+(current.id-1)+'隊へ戻る');
+ let content='';
+ if(view==='strategy'){
+  content='<div class="sortieWizardChoices" role="group" aria-label="作戦を1つ選択">'+
+   Object.entries(THREE_TEAM_STRATEGY_TYPES).map(([id,entry])=>{
+    const saved=savedThreeTeamStrategy(game,id);
+    const names=(saved?.teams?.map(t=>SORTIE_FORMATIONS[t.formation]?.name||'未設定')||
+     suggestedThreeTeamFormations(game,id).map(key=>SORTIE_FORMATIONS[key]?.name||'未設定')).join(' / ');
+    return button('data-sortie-plan-strategy="'+id+'"',
+     '<b>'+esc(entry.name)+'</b><small>'+esc(entry.description)+'</small>'+
+     '<small>'+(saved?'保存済み：':'推奨：')+esc(names)+'</small>');
+   }).join('')+'</div>';
+ }else if(view==='formationPick'){
+  const ids=orderedThreeTeamFormations(game,strategy),limit=4;
+  const pages=Math.max(1,Math.ceil(ids.length/limit));
+  const page=Math.max(0,Math.min(pages-1,Number(templatePage)||0));
+  const suggestions=new Set(rule.recommended.flat());
+  content='<div class="sortieWizardTeamState">現在：<b>'+esc(SORTIE_FORMATIONS[current.formation]?.name||'自由陣形')+
+   '</b><small>第'+current.id+'隊 '+sortieTeamCount(current)+'人</small></div>'+
+   '<div class="sortieWizardChoices" role="group" aria-label="第'+current.id+'隊の陣形を1つ選択">'+
+   ids.slice(page*limit,(page+1)*limit).map(id=>{
+    const f=SORTIE_FORMATIONS[id],enabled=f.level<=sortieLevel(game);
+    const jobs=FORMATION_ROLES[id].slice(0,f.slots).map(x=>ROLE_NAMES[x]).join('・');
+    return button('data-sortie-plan-formation="'+id+'" '+(!enabled?'disabled':''),
+     '<b>'+esc(f.name)+(suggestions.has(id)?' <em>推奨</em>':'')+'</b>'+
+     '<small>'+f.slots+'ジョブ・'+esc(jobs)+' · Lv.'+f.level+(!enabled?' 未解放':'')+'</small>'+
+     '<small>攻撃 '+Math.round((f.attack||0)*100)+'% / 防御 '+Math.round((f.defense||0)*100)+
+     '% / 移動 '+Math.round((f.mobility||0)*100)+'%</small>',current.formation===id);
+   }).join('')+'</div>'+
+   '<div class="sortieWizardPager">'+
+    button('data-sortie-template-page="'+(page-1)+'" '+(!page?'disabled':''),'◀ 前の陣形')+
+    '<small>'+(page+1)+' / '+pages+'</small>'+
+    button('data-sortie-template-page="'+(page+1)+'" '+(page===pages-1?'disabled':''),'次の陣形 ▶')+
+   '</div>';
+ }else{
+  const saved=savedThreeTeamStrategy(game,strategy);
+  content='<div class="sortieWizardReview">'+teams.map(t=>{
+   const f=SORTIE_FORMATIONS[t.formation],status=sortieFormationStatus(game,t.id),buff=sortieFormationBuff(game,t.id);
+   return '<div class="sortieWizardReviewTeam"><div><b>第'+t.id+'隊　'+esc(f?.name||'自由陣形')+'</b>'+
+    '<small>'+sortieTeamCount(t)+'人・'+sortieTeamSquads(game,t.id).length+'ジョブ · '+
+    (status.valid?'陣形成立':'陣形条件未達')+'</small>'+
+    '<small>攻撃 '+Math.round(buff.attack*100)+'% / 防御 '+Math.round(buff.defense*100)+'% / 魔法 '+
+    Math.round((buff.magic||0)*100)+'%</small></div>'+
+    button('data-sortie-plan-edit="'+t.id+'"','変更')+'</div>';
+  }).join('')+'</div>'+
+   '<div class="sortieWizardSummary">出撃予定 <b>'+total+' / '+cap+'人</b>'+
+   '<small>条件未達の隊は陣形補正が有効になりません。兵士は複製されません。</small></div>'+
+   button('data-sortie-plan-save="1"','この3隊を「'+esc(rule.name)+'」用に保存')+
+   (saved?'<small class="sortieWizardSaved">この作戦の保存済みテンプレートがあります。保存すると上書きします。</small>':'')+
+   '<details class="sortieWizardAdvanced"><summary>人数・ジョブ・固有作戦を細かく調整</summary>'+
+   '<p>必要なときだけ既存の詳細編成画面へ進めます。</p>'+
+   button('data-sortie-view="setup"','詳細調整を開く')+'</details>';
+ }
+ return '<section class="sortiePlanner sortieWizard" aria-label="作戦ごとに3隊の陣形を設定">'+
+   header+'<div class="sortieWizardBody">'+content+'</div>'+
+   '<footer class="sortieWizardFooter">'+back+(view==='review'?button('data-sortie-view="strategy"','別の作戦を選ぶ'):'')+'</footer></section>';
+}
+
 export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',jobPage=0,templatePage=0,strategyFamily='attack',strategyIntent='melee'}){
  ensureSortiePlan(game);
+ if(['strategy','formationPick','review'].includes(view))return renderThreeTeamStrategyWizard({game,teamId,view,templatePage});
  const teams=sortieTeams(game),team=teams.find(t=>t.id===Number(teamId))||teams[0];
  const sources=game.campaign.squads.filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
  const byId=new Map(sources.map(s=>[String(s.id),s]));
