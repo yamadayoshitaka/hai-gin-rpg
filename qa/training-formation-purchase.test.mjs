@@ -18,8 +18,12 @@ test('training stock exposes unassigned troops, ranks and wallet independently',
  assert.equal(stock.unassigned+stock.reserve+stock.assigned,
   game.campaign.squads.reduce((n,s)=>n+s.count,0));
  const html=renderInnFormationWizard({game,view:'roster',teamId:1});
- for(const label of ['在庫兵','所持金','追加雇用','trainingFormationQuote',
+ for(const label of ['所持金','追加雇用','trainingFormationQuote',
   'data-training-auto-formation'])assert.ok(html.includes(label),label);
+ const hire=renderInnFormationWizard({game,view:'hire',teamId:1});
+ assert.match(hire,/trainingHireJobs/);
+ assert.match(hire,/在庫兵 \d+人/);
+ assert.doesNotMatch(html,/trainingStockOverview/);
 });
 
 test('formation preview hires only the exact deficit then places real soldiers',()=>{
@@ -84,8 +88,8 @@ test('town click, cached module version and compact layout remain wired',()=>{
  const css=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
  assert.match(html,/data-training-auto-formation/);
  assert.match(html,/purchaseAndArrangeTrainingFormation/);
- assert.match(html,/training-auto-formation-20261122/);
- assert.match(css,/trainingStockOverview/);
+ assert.match(html,/training-stock-by-job-20261122/);
+ assert.match(css,/trainingHireJobLabel/);
  assert.match(css,/trainingFormationQuote/);
  assert.match(css,/overflow:hidden!important/);
 });
