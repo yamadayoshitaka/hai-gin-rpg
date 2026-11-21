@@ -192,27 +192,28 @@ export function addConstructMonsterCostume({
    [side*.012,-.012,0],[.195,.204,.188]);
   add(upper,createConstructMineralLimb({detail,part:'upperArm'}),
    'constructBase','upper-arm-shell-'+i);
-  poly(upper,'constructTrim','upper-elbow-overlap-'+i,
-   [0,-.409,0],[.157,.107,.147]);
+  poly(lower,'constructTrim','upper-elbow-overlap-'+i,
+   [0,0,0],[.157,.107,.147]);
   add(lower,createConstructMineralLimb({detail,part:'forearm'}),
    'constructFacet','forearm-shell-'+i);
-  poly(lower,'constructBase','full-mineral-hand-'+i,
-   [0,-.454,.018],[.149,.140,.143]);
+  const wrist=frames.hands?.[i]??lower;
+  poly(wrist,'constructBase','full-mineral-hand-'+i,
+   [0,-.065,.018],[.149,.140,.143]);
   for(let j=0;j<3;j++){
    const x=(j-1)*.083;
-   poly(lower,'constructFacet','finger-knuckle-'+i+'-'+j,
-    [x,-.556,-.068],[.049,.076,.055]);
+   poly(wrist,'constructFacet','finger-knuckle-'+i+'-'+j,
+    [x,-.156,-.068],[.049,.076,.055]);
   }
   poly(thigh,'constructTrim','hip-connector-'+i,
    [0,-.008,0],[.181,.155,.168]);
   add(thigh,createConstructMineralLimb({detail,part:'thigh'}),
    'constructBase','thigh-shell-'+i);
-  poly(thigh,'constructFacet','knee-guard-'+i,
-   [0,-.494,-.044],[.181,.134,.188]);
+  poly(shin,'constructFacet','knee-guard-'+i,
+   [0,0,-.044],[.181,.134,.188]);
   add(shin,createConstructMineralLimb({detail,part:'shin'}),
    'constructBase','shin-shell-'+i);
-  poly(shin,'constructTrim','ankle-connector-'+i,
-   [0,-.481,0],[.145,.105,.138]);
+  poly(foot,'constructTrim','ankle-connector-'+i,
+   [0,0,0],[.145,.105,.138]);
   poly(foot,'constructFacet','complete-arched-foot-'+i,
    [0,-.063,-.097],[.180,.113,.245]);
   // Elemental/geological signature integrated in the armour, not loose
