@@ -9403,7 +9403,7 @@ function refreshBattleRpgSquadHud(sums){
    if(team!==1)return null;
    const current=actors.find(actor=>actor.team===1&&String(actor.squadId)===String(id)&&actor.monsterSpec)?.monsterSpec;
    const ids=storyRequest?.enemyMonsterIds||[];
-   const species=current||MONSTER_CATALOG.find(m=>m.id===ids.length?ids[index%ids.length]:null);
+   const species=current||(ids.length?MONSTER_CATALOG.find(m=>m.id===ids[index%ids.length]):null);
    return species?{id:species.id,name:species.name,family:species.family}:
     storyRequest?.enemyMode==='monsters'?{id:'',name:'モンスター',family:''}:null;
   },
