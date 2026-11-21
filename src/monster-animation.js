@@ -68,7 +68,9 @@ function animateWolfKingPerformance(p,action,progress,time,gait){
  }
 }
 export function startMonsterAction(model,action,time=0){
- if(!Object.prototype.hasOwnProperty.call(durations,action))throw Error('Unknown monster action: '+action);
+ if(!Object.prototype.hasOwnProperty.call(durations,action)&&
+    !resolveMonsterThemeAction(model?.userData?.speciesId,action))
+  throw Error('Unknown monster action: '+action);
  model.userData.action=action;model.userData.actionAt=time;
  return model;
 }
