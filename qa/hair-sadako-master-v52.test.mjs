@@ -54,8 +54,8 @@ test('v52 real Sadako ribbons resist penetrating the donor head from underneath'
  const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
  assert.equal(cap?.userData.unifiedBuzzContour,true);
  assert.ok(cap?.userData.donorScalpVertexCount>40);
- assert.equal(report.sadakoCrownFibreCount,0,
-  'Synthetic short crown stubble should not conceal uncovered long locks');
+ assert.ok(report.sadakoCrownFibreCount>0,
+  'Real donor tangential crown fibres need to cover polygon seams');
  assert.ok(Number.isFinite(report.sadakoGuideScalpPushes));
  assert.ok(Number.isFinite(report.sadakoRibbonScalpPushes));
  const locks=wig.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
