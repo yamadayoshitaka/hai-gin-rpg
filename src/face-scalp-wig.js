@@ -1,8 +1,8 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-side-ribbon-blend-v64';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-five-variants-v65';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES} from './face-wig-styles.js?v=47';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle} from './face-wig-styles.js?v=65';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-wig-coiffure-v74';
 
@@ -617,7 +617,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
    if(shortHair)return buzzHairlineFractionAtPoint(v,box,d,center);
-   if(styleId==='sadako-straight-long')
+   if(isSadakoFamilyStyle(styleId))
     return Math.max(.465,buzzHairlineFractionAtPoint(v,box,d,center)-.021);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
@@ -676,7 +676,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     const outward=n.dot(radial)<.25?radial:n.clone().add(radial).normalize();
     v.addScaledVector(outward,d.x*.003);
     smoothNormals.push(outward.x,outward.y,outward.z);
-   }else if(styleId==='sadako-straight-long'){
+   }else if(isSadakoFamilyStyle(styleId)){
     // Colour-matched skin overlay must stay above the donor mesh at the crown.
     const radial=new THREE.Vector3(
      (v.x-center.x)/Math.max(d.x*.5,1e-6),
@@ -704,7 +704,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // microOnly rejects wide boundary loops to avoid flat scalp fans.
  const crownRepair=repairRealCrownScalpHoles(
   sourceScalpVerts,donorNormals,box,
-   {microOnly:shortHair||styleId==='sadako-straight-long'});
+   {microOnly:shortHair||isSadakoFamilyStyle(styleId)});
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -728,7 +728,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  const crownUnderlay=shortHair?
   {triangles:0,source:'disabled-for-short-hair'}:
   appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile,
-   {includeTemples:styleId==='sadako-straight-long'});
+   {includeTemples:isSadakoFamilyStyle(styleId)});
  // Exclude rear decorative underlocks from follicle sampling. Only the
  // real source-donor scalp (plus compact repairs) may spawn new roots.
  const donorScalpVertexCount=sourceDonorVertexCount;
@@ -751,7 +751,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // Sadako owns one head-hugging long layer; legacy 160 broad rear panels
  // were the visible sideways "board" in the user's profile screenshot.
  const undercoatStrips=!fullBody&&!shortHair&&
-  styleId!=='sadako-straight-long'&&rearCandidates.length?160:0;
+  !isSadakoFamilyStyle(styleId)&&rearCandidates.length?160:0;
  const stripSegments=12,stripWidths=[],tipHeights=[];
  for(let k=0;k<undercoatStrips;k++){
   const u=(k+.5)/undercoatStrips,side=u<.5?-1:1;
@@ -850,13 +850,13 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
  mesh.userData.donorScalpVertexCount=donorScalpVertexCount;
- mesh.userData.unifiedBuzzContour=shortHair||styleId==='sadako-straight-long';
+ mesh.userData.unifiedBuzzContour=shortHair||isSadakoFamilyStyle(styleId);
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
  mesh.userData.v65CrownTopologyRepairTriangles=crownRepair.triangles;
  mesh.userData.v66RealCrownUnderlayTriangles=crownUnderlay.triangles;
- mesh.userData.v61BilateralTempleUnderlay=styleId==='sadako-straight-long';
+ mesh.userData.v61BilateralTempleUnderlay=isSadakoFamilyStyle(styleId);
  mesh.userData.v61ScalpAndFibrePigmentAligned=false;
  mesh.userData.v63VertexColorCount=melanin.length/3;
  mesh.userData.hairRootColor='#'+new THREE.Color(color).getHexString();
@@ -1266,7 +1266,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.hairStyleName=style.label;
  root.userData.part=style.part;
  root.userData.whorlPosition=whorl.toArray();
- const sadakoMaster=style.id==='sadako-straight-long';
+ const sadakoMaster=isSadakoFamilyStyle(style.id);
+ const sadakoVariant=style.sadakoVariant||'straight';
  const cap=scalpShell(head.geometry,box,color,{
   fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
   battleStableCoverage,volumeProfile,styleId:style.id});root.add(cap);
@@ -1275,7 +1276,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const sadakoFollicles=sadakoMaster?
   createAreaWeightedScalpRootSampler(cap,box):null;
  const baseCount=clamp(Math.round(count),48,2400),
-  segments=style.id==='sadako-straight-long'?18:11;
+  segments=isSadakoFamilyStyle(style.id)?18:11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
  const fringeMultiplier=clamp((Number(fineFringeMultiplier)||1)*EVOLUTION_PROFILE.hair.fringeRootScale,1,4);
@@ -1480,7 +1481,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Even non-fringe CROWN roots must be cut above the eyebrows if they
   // face forward. Otherwise they form a long curtain across both eyes.
   // Temple hair is a long face-framing layer, NEVER a short eyebrow bang.
-  const sadakoGravity=style.id==='sadako-straight-long';
+  const sadakoGravity=isSadakoFamilyStyle(style.id);
   // Five out of six crown follicles become an anatomical outer canopy.
   // The remaining central crown guides preserve the front/rear parting.
   const crownOverSide=sadakoGravity&&zone==='crown'&&i%6!==0;
@@ -1736,7 +1737,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const yNorm=(p.y-box.min.y)/d.y;
   if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.82){
    const contactSide=Math.sign(p.x-whorl.x)||1;
-   const partGap=style.id==='sadako-straight-long'?0:
+   const partGap=(sadakoMaster&&sadakoVariant!=='center')?0:
     yNorm>.75?d.x*.034:d.x*.055;
    if(yNorm<.815&&Math.abs(p.x-center.x)<partGap){
     p.x=center.x+contactSide*partGap;
@@ -2390,8 +2391,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v61SeamBlend:'donor-bilateral-temple-pigment-and-gradual-crown-ribbon-root',
   sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
-  sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
-  sadakoFacePartingDisabled:style.id==='sadako-straight-long',
+  sadakoScalpDoubleLayerDisabled:sadakoMaster,
+  sadakoFacePartingDisabled:sadakoMaster&&sadakoVariant!=='center',
+  sadakoVariant:sadakoMaster?sadakoVariant:null,
+  sadakoVisibleEyes:sadakoMaster&&(sadakoVariant==='center'||sadakoVariant==='bangs'),
+  sadakoCurlShape:sadakoMaster?({
+   straight:'gravity-straight',inward:'inward-tail-curl',
+   outward:'outward-tail-flip',sauvage:'middle-to-tip-s-wave',
+   center:'eye-clear-center-part',bangs:'short-brow-fringe'
+  })[sadakoVariant]:null,
   closeCutFibreCount:closeCutFibres?.userData.fibreCount||0,
   closeCutPigmentHex:closeCutFibres?.userData.selectedPigmentHex||null,
   closeCutFibreShadeRange:closeCutFibres?.userData.fibreShadeRange||null,
