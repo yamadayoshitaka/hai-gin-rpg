@@ -12,7 +12,7 @@ import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
-import {hasReptileDetail,REPTILE_DETAIL_REVISION,isSeaDragon,seaDragonRevision} from './reptile-detail-sculpt.js';
+import {hasReptileDetail,REPTILE_DETAIL_REVISION,isSeaDragon,seaDragonRevision} from './reptile-detail-sculpt.js?v=leviathan-abyssal-sea-wyrm-v6-20261121';
 import {M050_CORAL_REVISION} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION}
  from './m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
