@@ -48,7 +48,7 @@ test('battle inspector fades the 3D backdrop and exposes building floor controls
  assert.match(source,/globalAlpha=mode==='inspect'\?\.38:1/);
  assert.match(source,/getMapBuildings=\(\)=>\[\]/);
  assert.match(source,/inspectedBuilding\.floor=Number\(selection\.value\)/);
- assert.match(source,/detail\.dataset\.inspectorKey===detailKey/);
+ assert.ok(source.includes('detail.dataset?.inspectorKey===detailKey'));
  assert.match(world,/getMapBuildings:\(\)=>availableExplorationBuildings\(\{all:true\}\)/);
 });
 
@@ -68,6 +68,7 @@ test('mobile map accepts click without pointerup and does not double-deploy on b
   getBoundingClientRect(){return {left:0,top:0,width:240,height:240};},
   setPointerCapture(){},getContext(){return ctx;},
   replaceChildren(...children){this.children=children;},
+  remove(){},
   append(...children){this.children.push(...children);},
   tap(type,data={}){return this.events.get(type)?.(data);}
  });
