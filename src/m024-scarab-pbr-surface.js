@@ -9,7 +9,9 @@
  */
 import * as THREE from 'three';
 
-export const M024_PBR_REVISION='m024-chitin-crystal-wing-eye-pbr-v2-20261121';
+export const M024_PBR_REVISION='m024-shared-beetle-chitin-pbr-v3-20261121';
+export const SCARAB_PBR_SPECIES=Object.freeze(['m021','m022','m024','m025']);
+export const isScarabPBRSpecies=id=>SCARAB_PBR_SPECIES.includes(id);
 const kinds=new Set(['chitin','crystal','wing','eye','enamel']);
 const atlases=new Map();
 const clamp=(v,min=0,max=1)=>Math.max(min,Math.min(max,v));
@@ -155,7 +157,9 @@ function surfaceAtlas(kind,detail){
  * Called only from the shared material cache for explicitly tagged
  * m024 meshes. The material remains cache-owned; no clones or leaks.
  */
-export function decorateM024PBRMaterial(material,{surface,detail='high'}={}){
+export function decorateM024PBRMaterial(material,{surface,detail='high',speciesId='m024'}={}){
+ if(!isScarabPBRSpecies(speciesId))
+  throw Error('Only registered scarab species may inherit the m024 PBR atlas');
  const maps=surfaceAtlas(surface,detail);
  material.map=maps.albedo;
  material.roughnessMap=maps.rough;
@@ -172,9 +176,13 @@ export function decorateM024PBRMaterial(material,{surface,detail='high'}={}){
   material.alphaMap=maps.alpha;
   material.alphaTest=.035;
  }else if(surface==='crystal'){
-  material.emissive=new THREE.Color('#4b9229');
-  material.emissiveMap=maps.emit;
-  material.emissiveIntensity=maps.emit?.28:0;
+  // The donor's green poison emission is never carried into steel beetles.
+  // Fire gets ember orange, divine gets warm gold and m024 stays green.
+  material.emissive=new THREE.Color(speciesId==='m022'?'#da6420':
+   speciesId==='m025'?'#e6c64f':'#4b9229');
+  material.emissiveMap=speciesId==='m021'?null:maps.emit;
+  material.emissiveIntensity=speciesId==='m021'?0:
+   maps.emit?(speciesId==='m025'?.38:.28):0;
  }
  if(material.isMeshPhysicalMaterial){
   material.clearcoat=surface==='wing'?.31:
@@ -185,6 +193,8 @@ export function decorateM024PBRMaterial(material,{surface,detail='high'}={}){
   if(surface==='crystal')material.thickness=.36;
  }
  material.userData.m024PBR=surface;
+ material.userData.scarabPBRDonorId='m024';
+ material.userData.scarabPBRSpeciesId=speciesId;
  material.userData.m024SurfaceRevision=M024_PBR_REVISION;
  material.userData.m024TextureResolution=maps.size;
  material.userData.m024TextureOrigin='bundled-deterministic-DataTexture';
