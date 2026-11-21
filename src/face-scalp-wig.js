@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-curved-dynamic-v59';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-mantle-crown-v60';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -687,12 +687,16 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // posterior underlay over the same donor triangles causes overlapping
  // surfaces (z-fighting), polygon-shaped shade patches and hard seams.
  // Retain the underlay only for longer styles with sparse hair coverage.
- const crownUnderlay=shortHair||styleId==='sadako-straight-long'?
-  {triangles:0,source:shortHair?'disabled-for-short-hair':'sadako-no-overlapping-crown'}:
+ // Keep a second donor-backed pigment layer BELOW the main scalp shell.
+ // It fills isolated missing donor triangles visible as white crown wedges.
+ // The two shells have different depth offsets, so they do not z-fight.
+ const sourceDonorVertexCount=verts.length/3;
+ const crownUnderlay=shortHair?
+  {triangles:0,source:'disabled-for-short-hair'}:
   appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile);
  // Exclude rear decorative underlocks from follicle sampling. Only the
  // real source-donor scalp (plus compact repairs) may spawn new roots.
- const donorScalpVertexCount=verts.length/3;
+ const donorScalpVertexCount=sourceDonorVertexCount;
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -1153,7 +1157,7 @@ export function createScalpFirstLongGuide({
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,garmentCollisionResolver=null,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -1358,6 +1362,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    return true;
   }
   return false;
+ }
+ // Resolve against actual deforming cloak panels AFTER body/bust collision.
+ // Bare-body triangles never include the skinned outfit's mantle.
+ let mantleContactCount=0;
+ function projectSadakoMantle(point,zone,rearFacing=false){
+  if(!sadakoMaster||!garmentCollisionResolver?.resolve||
+     point.y>box.min.y+d.y*.75)return false;
+  const posterior=rearFacing||zone.startsWith('back')||
+   zone.startsWith('nape')||
+   (zone==='crown'&&point.z<center.z-d.z*.035);
+  if(!posterior)return false;
+  const collided=garmentCollisionResolver.resolve(point,{
+   side:'rear',surfaceOffset:d.x*.012});
+  if(collided)mantleContactCount++;
+  return collided;
  }
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
@@ -1721,6 +1740,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    sadakoGuideScalpPushes++;
   if(projectSadakoRearBust(p,zone,rearFacing))
    sadakoRearBustGuideContacts++;
+  projectSadakoMantle(p,zone,rearFacing);
   // Gentle drape attraction around lower neck and shoulders: keep a small
   // silhouette gap from the ACTUAL imported torso, never cross the surface.
   // This corrects the floating shell visible from top/side without letting
@@ -1893,6 +1913,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
        sadakoRearBustRibbonContacts++;
       }
      }
+     if(sadakoMaster&&j>0){
+      ribbonCollisionPoint.set(vx,vy,vz);
+      if(projectSadakoMantle(ribbonCollisionPoint,
+        strand.zone,strand.rearFacing)){
+       vx=ribbonCollisionPoint.x;vy=ribbonCollisionPoint.y;
+       vz=ribbonCollisionPoint.z;
+      }
+     }
      vertices[at]=vx;
      vertices[at+1]=vy;
      vertices[at+2]=vz;
@@ -1904,13 +1932,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const fibrePositions=dynamicFibres.geometry.getAttribute('position');
    const original=dynamicFibres.original;
    const owner=dynamicFibres.owner,station=dynamicFibres.station;
+   const fibreCorner=new THREE.Vector3();
    for(let k=0;k<owner.length;k++){
     const lock=strands[owner[k]],j=station[k];
     const point=lock.points[j],restPoint=lock.rest[j],at=k*3;
-    fibrePositions.setXYZ(k,
-     original[at]+point.x-restPoint.x,
+    fibreCorner.set(original[at]+point.x-restPoint.x,
      original[at+1]+point.y-restPoint.y,
      original[at+2]+point.z-restPoint.z);
+    if(lock.rearFacing)projectSadakoMantle(fibreCorner,lock.zone,true);
+    fibrePositions.setXYZ(k,fibreCorner.x,fibreCorner.y,fibreCorner.z);
    }
    fibrePositions.needsUpdate=true;
    if(meshUpdates%6===0)dynamicFibres.geometry.computeBoundingSphere();
@@ -2049,6 +2079,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
        if(renderBodyCollider)renderBodyCollider.resolve(q,{
         side:'rear',surfaceOffset:d.x*.008});
        projectSadakoRearBust(q,strand.zone,true);
+       projectSadakoMantle(q,strand.zone,true);
       }
       coords.push(q.x,q.y,q.z);
       if(!staticGroom){fibreOwner.push(i);fibreStation.push(j);}
@@ -2279,8 +2310,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
   sadakoUnifiedScalpClipping:sadakoMaster&&cap.userData.unifiedBuzzContour,
 
-  sadakoMasterGroom:sadakoMaster?'sadako-scalp-curved-dynamic-v59':null,
+  sadakoMasterGroom:sadakoMaster?'sadako-crown-donor-underlay-and-mantle-v60':null,
   sadakoRearOriginBasedClearance:sadakoMaster,
+  sadakoSkinnedMantleCollision:!!garmentCollisionResolver,
+  sadakoCrownUnderlaySource:cap.userData.v66RealCrownUnderlayTriangles>0?'actual-donor-scalp':'unavailable',
   sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
   sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
@@ -2392,6 +2425,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    ribbonBodyContactEvents:ribbonBodyContacts,
    shoulderDrapeContactEvents:drapeContactEvents,
    sadakoRearBustGuideContacts,sadakoRearBustRibbonContacts,
+   mantleContactCount,
    glabellaClearanceEvents,scalpVertexCorrections};
  },resolvePoint(point){
   const p=point.clone();resolveCollision(p);return p;
