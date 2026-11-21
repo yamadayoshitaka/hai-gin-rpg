@@ -5813,7 +5813,13 @@ function tickAI(dt){
     .sort((b,c)=>b.hp/b.maxHp-c.hp/c.maxHp)[0];
    if(wounded){
     a.healTargetSquadId=healingTargetId;
-    if(a.root.position.distanceTo(wounded.root.position)>CELL*7){moveActor(a,wounded.root.position,.16,CELL*5);continue;}
+    const healReach=availableCombatSkills('priest',a.rarity)
+      .filter(skill=>skill.kind==='heal'&&a.mp>=skill.mp)
+      .reduce((max,skill)=>Math.max(max,skill.range),0);
+    const healStop=Math.max(2,Math.min(6,healReach-1));
+    if(healReach>0&&a.root.position.distanceTo(wounded.root.position)>CELL*healStop){
+     moveActor(a,wounded.root.position,.16,CELL*(healStop-.5));continue;
+    }
    }else skirmishHealingRequests.delete(String(a.squadId));
   }else a.healTargetSquadId=null;
   if(squadDirective?.mode==='mission'){
