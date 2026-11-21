@@ -1175,6 +1175,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   sealed:!!originalOralSeal.sealed,
   addedTriangles:originalOralSeal.addedTriangles||0,
   ringVertexCount:originalOralSeal.ringVertexCount||0,
+  outerRingVertexCount:originalOralSeal.outerRingVertexCount||0,
+  outerPatchTriangles:originalOralSeal.outerPatchTriangles||0,
+  outerPatchReason:originalOralSeal.outerPatchReason||null,
+  outerCandidateCount:originalOralSeal.outerCandidateCount||0,
   reason:originalOralSeal.reason||null
  };
  const halfWidth=d.x*(female?.057:.044)*
