@@ -173,6 +173,10 @@ function coverEye(side,blink,headSize){
  cover.visible=blink>.012;
 }
 function buildMouth(face,parts,headSize){
+ // V83 public safety mode: a closed original face must never render a
+ // fake foreground mouth, protruding teeth or black sphere. The full
+ // facial mesh still deforms for smile, jaw, cheeks and brow.
+ if(face.userData.v83SafeOriginalMouthTopology)return null;
  const upper=parts.getObjectByName('UPPER_3D_VERMILION_LIP');
  const lower=parts.getObjectByName('LOWER_3D_VERMILION_LIP');
  if(!upper||!lower)return null;
@@ -545,6 +549,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v82SingleHeadMouthTopology:!!face.userData.v82IntegratedMouth?.integrated,
    v82NoForegroundMouthCover:!!mouth?.integrated,
    v82LipPigmentDeformsWithFace:!!mouth?.integrated,
+   v83ProductionSafetyMode:!!face.userData.v83SafeOriginalMouthTopology,
+   v83ForegroundOverlaysDisabled:!!face.userData.v83SafeOriginalMouthTopology,
+   v83OralCavityDeferredUntilTopologyValidated:
+    !!face.userData.v83SafeOriginalMouthTopology,
    v80TransitionProgress:transition?Number(smooth(
     transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,
