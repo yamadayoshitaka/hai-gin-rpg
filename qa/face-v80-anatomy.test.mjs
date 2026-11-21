@@ -92,28 +92,41 @@ test('v81 lipstick lives on deforming lip mesh without static head ghost',()=>{
  face.add(built.root);
  applyFaceColorMode(face,'color',{makeupType:2});
  assert.equal(face.userData.v81NoStaticLipstickGhost,true);
- assert.equal(face.userData.mouthPigmentSource,'deforming-vermilion-vertices-v81');
+ assert.ok([
+  'deforming-vermilion-vertices-v81','integrated-head-mouth-vertices-v82'
+ ].includes(face.userData.mouthPigmentSource));
  const lip=built.root.getObjectByName('UPPER_3D_VERMILION_LIP');
  assert.equal(lip.userData.v81PigmentBoundToAnimatedLip,true);
  assert.equal(lip.userData.lipstickOnSourceHead,false);
- const before=lip.geometry.getAttribute('position').array.slice();
+ const integrated=!!face.userData.v82IntegratedMouth?.integrated;
+ const visible=integrated?face.geometry:lip.geometry;
+ const before=visible.getAttribute('position').array.slice();
  const skinPigment=face.geometry.getAttribute('color').array.slice();
  const animator=createFaceExpressionAnimator({face,parts:built.root},{autoBlink:false});
  animator.setExpression('laugh');
- const after=lip.geometry.getAttribute('position').array;
- const corner=0,mid=16*3;
- assert.ok(after[corner+1]>before[corner+1],
-  'Smile muscle must raise the corner of the top lip');
- assert.ok(Math.abs(after[corner]-before[corner])>0,
-  'Laughter spreads the commissure out, not just lowering the jaw');
- assert.ok(after[corner+1]-before[corner+1]>
-  after[mid+1]-before[mid+1],
-  'The oral corner must lift more than the upper-lip centre');
- assert.deepEqual(face.geometry.getAttribute('color').array,skinPigment,
-  'Old lipstick must not remain behind on the cheek/philtrum');
+ const after=visible.getAttribute('position').array;
+ if(integrated){
+  const pairs=face.userData.v82IntegratedMouth.pairs;
+  const corner=pairs.find(p=>p.sign>0&&Math.abs(p.t)>.8);
+  const middle=pairs.find(p=>p.sign>0&&Math.abs(p.t)<.40);
+  assert.ok(corner&&middle);
+  assert.equal(lip.visible,false,'No static lip overlay on integrated skin');
+  assert.ok(after[corner.inner*3+1]>before[corner.inner*3+1]);
+  assert.ok(after[corner.inner*3+1]-before[corner.inner*3+1]>
+   after[middle.inner*3+1]-before[middle.inner*3+1]);
+ }else{
+  const corner=0,mid=16*3;
+  assert.ok(after[corner+1]>before[corner+1]);
+  assert.ok(Math.abs(after[corner]-before[corner])>0);
+  assert.ok(after[corner+1]-before[corner+1]>
+   after[mid+1]-before[mid+1]);
+ }
+ assert.deepEqual(face.geometry.getAttribute('color').array,skinPigment);
  animator.setExpression('neutral');
- assert.deepEqual(lip.geometry.getAttribute('position').array,before,
-  'Lip colour belongs to geometry that returns to the neutral pose');
+ const reset=visible.getAttribute('position').array;
+ if(integrated)
+  assert.ok(reset.every((v,i)=>Math.abs(v-before[i])<1e-5));
+ else assert.deepEqual(reset,before);
  animator.dispose();
  built.root.traverse(o=>{
   if(o.isMesh){o.geometry.dispose();o.material?.dispose?.();}
