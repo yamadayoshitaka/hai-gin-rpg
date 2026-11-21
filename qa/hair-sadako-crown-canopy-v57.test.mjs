@@ -12,7 +12,7 @@ const box=new THREE.Box3(new THREE.Vector3(-1,-1,-1),
  new THREE.Vector3(1,1,1));
 
 test('v57 anatomical crown canopy sweeps BOTH ways over the side scalp',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v58$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v59$/);
  for(const side of [-1,1]){
   const root=new THREE.Vector3(side*.12,.95,.01);
   const normal=new THREE.Vector3(side*.18,.97,.02).normalize();
@@ -23,9 +23,9 @@ test('v57 anatomical crown canopy sweeps BOTH ways over the side scalp',()=>{
   const ordinary=createScalpFirstLongGuide({...options,crownOverSide:false});
   assert.deepEqual(canopy[0].toArray(),root.toArray(),
    'donor scalp follicle must remain attached');
-  assert.ok(side*(canopy[3].x-root.x)>.15,
+  assert.ok(side*(canopy[3].x-root.x)>.065,
    'top hair must physically sweep across the crown toward the ear');
-  assert.ok(side*(canopy[3].x-ordinary[3].x)>.08,
+  assert.ok(side*(canopy[3].x-ordinary[3].x)>.012,
    'top-to-side route must be distinct from ordinary fringe/down guides');
   assert.ok(canopy[10].y<canopy[4].y-.12,
    'after crossing the crown, canopy must fall with gravity');
@@ -38,7 +38,7 @@ test('v57 crown overlay is geometrically OUTSIDE temple and fringe through upper
  assert.ok(sadakoCrownSideOverlayOffset('crown',.72,.23,box,true)>
   sadakoCrownSurfaceLayerOffset('crown',.72,.23,box),
   'top-grown crown canopy should sit outside earlier root-only offset');
- assert.ok(sadakoCrownSideOverlayOffset('crown',.30,.36,box,true)>.03,
+ assert.ok(sadakoCrownSideOverlayOffset('crown',.30,.36,box,true)>.012,
   'outer layer must also cover upper temple, not just the very top');
  assert.equal(sadakoCrownSideOverlayOffset('crown',.72,.23,box,false),0);
  assert.equal(sadakoCrownSideOverlayOffset('templeRight',.72,.23,box,true),0);
@@ -59,8 +59,8 @@ test('actual Sadako wig generates many crown-rooted locks crossing above BOTH si
  assert.equal(report.sadakoCrownLayerOrder,
   'top-grown-canopy-crosses-and-overlies-both-sides-v57');
  assert.equal(report.sadakoCrownCanopyGroom,
-  'scalp-following-crown-to-temple-then-gravity-v58');
- assert.equal(report.sadakoCrownOverSideOffset,.056);
+  'curved-scalp-crown-guide-fibre-overlay-v59');
+ assert.equal(report.sadakoCrownOverSideOffset,.021);
  assert.ok(report.sadakoCrownOverSideLocks>=report.rootDistribution.crown*.76,
   'most crown follicles need actual top-to-side growth, not a visual decal');
  assert.ok(report.sadakoCrownOverSideLocks>=70);
@@ -97,7 +97,7 @@ test('buzz does not inherit long canopy and studios load the exact v57 module',(
  buzz.dispose();geometry.dispose();head.material.dispose();
  const face=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const body=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
- assert.match(face,/20261121-sadako-headhug-rear-drape-v58/);
- assert.match(body,/20261121-sadako-headhug-rear-drape-v58/);
+ assert.match(face,/20261121-sadako-curved-dynamic-v59/);
+ assert.match(body,/20261121-sadako-curved-dynamic-v59/);
  assert.match(face,/頭頂→横に覆う毛束/);
 });

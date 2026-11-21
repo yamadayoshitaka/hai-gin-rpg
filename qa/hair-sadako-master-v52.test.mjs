@@ -7,7 +7,7 @@ import {scalpToGravityWeight,createScalpFirstLongGuide,
 import {WIG_STYLES} from '../src/face-wig-styles.js';
 
 test('v52 root tangent hugs scalp to 15%, then gravity blends until 38%',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v58$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v59$/);
  assert.equal(scalpToGravityWeight(0),0);
  assert.equal(scalpToGravityWeight(.15),0);
  assert.ok(Math.abs(scalpToGravityWeight(.265)-.5)<1e-8);
@@ -42,7 +42,7 @@ test('v52 real Sadako ribbons resist penetrating the donor head from underneath'
   visualFiberMultiplier:1,fineFringeMultiplier:1
  });
  const report=wig.getReport();
- assert.equal(report.sadakoMasterGroom,'sadako-scalp-first-headhug-rear-v58');
+ assert.equal(report.sadakoMasterGroom,'sadako-scalp-curved-dynamic-v59');
  assert.deepEqual(report.sadakoGravityTransition,
   {scalpTo:.12,fullyGravity:.32,segments:18});
  assert.ok(report.pointCount>=80*19);
@@ -54,8 +54,8 @@ test('v52 real Sadako ribbons resist penetrating the donor head from underneath'
  const cap=wig.root.getObjectByName('REAL_SCALP_TRIANGLE_HAIR_CAP');
  assert.equal(cap?.userData.unifiedBuzzContour,true);
  assert.ok(cap?.userData.donorScalpVertexCount>40);
- assert.equal(report.sadakoCrownFibreCount,0,
-  'Synthetic short crown stubble should not conceal uncovered long locks');
+ assert.ok(report.sadakoCrownFibreCount>0,
+  'Real donor tangential crown fibres need to cover polygon seams');
  assert.ok(Number.isFinite(report.sadakoGuideScalpPushes));
  assert.ok(Number.isFinite(report.sadakoRibbonScalpPushes));
  const locks=wig.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
@@ -104,7 +104,7 @@ test('Android studio provides a real one-tap underside hair view',()=>{
  assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
  assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
  assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
- assert.match(page,/sadako-headhug-rear-drape-v58/);
+ assert.match(page,/sadako-curved-dynamic-v59/);
 });
 
 test('v53 independent follicle sampling covers crown and front without topology density bias',()=>{
@@ -148,6 +148,6 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  assert.match(page,/if\(!wig\?\.root\?\.userData\?\.buzzFibreOnly&&!sadakoCover\)/);
  assert.match(page,/v53-sadako-matched-donor-clipping/);
  assert.match(hair,/if\(shortHair\|\|styleId==='sadako-straight-long'\)/);
- assert.match(hair,/const sadakoCrownFlow=null/);
- assert.match(page,/sadako-headhug-rear-drape-v58/);
+ assert.match(hair,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/);
+ assert.match(page,/sadako-curved-dynamic-v59/);
 });

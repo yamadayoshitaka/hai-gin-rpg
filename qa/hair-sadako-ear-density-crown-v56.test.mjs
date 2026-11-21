@@ -11,7 +11,7 @@ import {
 const box=new THREE.Box3(new THREE.Vector3(-1,-1,-1),new THREE.Vector3(1,1,1));
 
 test('v56 ears: scalp-root sampling reaches lower temples instead of only top-of-head',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v58$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v59$/);
  const sphere=new THREE.SphereGeometry(.5,48,36).toNonIndexed();
  sphere.computeVertexNormals();sphere.computeBoundingBox();
  const cap=new THREE.Mesh(sphere,new THREE.MeshStandardMaterial());
@@ -51,9 +51,9 @@ test('v56 crown layer is OUTSIDE front and temple cards, never floats off donor 
  const upperY=.85;
  assert.equal(sadakoCrownSurfaceLayerOffset('crown',upperY,0,box),0,
   'donor scalp follicles must remain attached');
- assert.ok(sadakoCrownSurfaceLayerOffset('crown',upperY,.12,box)>.035,
+ assert.ok(sadakoCrownSurfaceLayerOffset('crown',upperY,.12,box)>.012,
   'head-top crown must be the outermost 3D hair surface, not hidden by side/front cards');
- assert.ok(sadakoCrownSurfaceLayerOffset('crown',upperY,.34,box)>.03,
+ assert.ok(sadakoCrownSurfaceLayerOffset('crown',upperY,.34,box)>.010,
   'outer crown overlap must persist over the frontal and side scalp arcs');
  assert.equal(sadakoCrownSurfaceLayerOffset('templeLeft',upperY,.12,box),0);
  assert.equal(sadakoCrownSurfaceLayerOffset('fringeRight',upperY,.12,box),0);
@@ -74,7 +74,7 @@ test('actual Sadako mesh allocates dense ear curtains AND an upper crown layer',
  const r=w.getReport();
  assert.equal(r.sadakoEarCoverageMethod,'lower-temple-rooted-vertical-curtain-v56');
  assert.equal(r.sadakoCrownLayerOrder,'top-grown-canopy-crosses-and-overlies-both-sides-v57');
- assert.equal(r.sadakoCrownOuterMaxFraction,.038);
+ assert.equal(r.sadakoCrownOuterMaxFraction,.016);
  assert.equal(r.sadakoCrownOuterOnlyAboveEar,true);
  assert.ok(r.sadakoEarCurtainLocks>=r.rootCount*.33,
   'ear coverage needs actual rooted long-hair guides, not forced outward width');
@@ -102,8 +102,8 @@ test('actual Sadako mesh allocates dense ear curtains AND an upper crown layer',
 test('both game hair editors use v56 and can inspect crown from above',()=>{
  const face=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const body=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
- assert.match(face,/20261121-sadako-headhug-rear-drape-v58/);
- assert.match(body,/20261121-sadako-headhug-rear-drape-v58/);
+ assert.match(face,/20261121-sadako-curved-dynamic-v59/);
+ assert.match(body,/20261121-sadako-curved-dynamic-v59/);
  assert.match(face,/id="crown"/);
  assert.match(face,/頭頂部レイヤー/);
 });

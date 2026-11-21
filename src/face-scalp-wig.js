@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-headhug-rear-drape-v58';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-curved-dynamic-v59';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -262,7 +262,7 @@ export function sadakoCrownSurfaceLayerOffset(zone,y,t,box){
  const upper=THREE.MathUtils.smoothstep(yn,.64,.83);
  const rooted=THREE.MathUtils.smoothstep(t,0,.085);
  const returnToShape=1-THREE.MathUtils.smoothstep(t,.52,.76);
- return d.x*.038*upper*rooted*returnToShape;
+ return d.x*.016*upper*rooted*returnToShape;
 }
 
 /** True top-over-side overlay. Crown-grown guides sweep across the
@@ -276,7 +276,7 @@ export function sadakoCrownSideOverlayOffset(zone,y,t,box,overlay=false){
  const across=THREE.MathUtils.smoothstep(t,.02,.15);
  const down=1-THREE.MathUtils.smoothstep(t,.49,.75);
  const headBand=THREE.MathUtils.smoothstep(yn,.46,.59);
- return d.x*.056*across*down*headBand;
+ return d.x*.021*across*down*headBand;
 }
 
 /** Sample the real donor bust's REAR silhouette below the head.
@@ -989,7 +989,7 @@ export function createSadakoCrownFlow(cap,box,color){
   for(const [p,sign] of [[a,-1],[a,1],[b,-.7],[b,.7]]){
    const q=p.clone().addScaledVector(widthAxis,sign*half);
    points.push(q.x,q.y,q.z);
-   const shade=.76+.10*((tri*.41421356)%1);
+   const shade=.91+.075*((tri*.41421356)%1);
    shades.push(pigment.r*shade,pigment.g*shade,pigment.b*shade);
   }
   indices.push(offset,offset+1,offset+2,offset+1,offset+3,offset+2);
@@ -1045,9 +1045,9 @@ export function createScalpFirstLongGuide({
  // Crown overlay is its own scalp-rooted grooming route: sweep ACROSS
  // the head first, then fall down the near side. Normal crown/fringe
  // guides may still travel forward/backward and keep the central part.
- const rootSweepX=crownOverSide?side*.62:temple?side*.035:
+ const rootSweepX=crownOverSide?side*.24:temple?side*.035:
   THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
- const rootSweepZ=crownOverSide?-.065:back?-1:zone.startsWith('fringe')?1:
+ const rootSweepZ=crownOverSide?-.13:back?-1:zone.startsWith('fringe')?1:
   relativeZ>-.025?1:-1;
  const flow=new THREE.Vector3(rootSweepX,-.17,rootSweepZ).normalize();
  const nRoot=normal.clone().normalize();
@@ -1137,7 +1137,7 @@ export function createScalpFirstLongGuide({
    // Crown-born strands follow the cranium, not a radial umbrella.
    const headY=(next.y-box.min.y)/Math.max(d.y,1e-6);
    const lateral=side*(next.x-center.x);
-   const maxLateral=d.x*(.255+.078*(1-smooth(headY,.60,.94)));
+   const maxLateral=d.x*(.240+.064*(1-smooth(headY,.60,.94)));
    if(headY>.57&&lateral>maxLateral)
     next.x-=side*(lateral-maxLateral);
   }
@@ -1352,7 +1352,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(!Number.isFinite(rear))return false;
   // Gentle fade above the actual neck; full clearance through shoulders.
   const strength=1-THREE.MathUtils.smoothstep(yn,.48,.63);
-  const safeZ=rear-d.x*.026;
+  const safeZ=rear-d.x*.052;
   if(point.z>safeZ&&strength>.0001){
    point.z=THREE.MathUtils.lerp(point.z,safeZ,strength);
    return true;
@@ -1634,13 +1634,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Finer groomed layers: 4 overlapped cards remain, but individual
  // panels no longer read as wide flat white ribbons in side view.
  // Reduce plate-like white ribbons; 10x individual fibre mesh replaces width.
- const half=d.x*(sadakoMaster?.0074:.0100);
+ const half=d.x*(sadakoMaster?.0059:.0100);
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
  const guideCount=Math.ceil(lockCount/guideStride);
  let collisions=0,faceContacts=0,bodyContacts=0,realBodyContacts=0,accumulator=0,elapsed=0;
  let meshUpdates=0;
+ // Dense fine fibres follow the deforming source guides, not a frozen mesh.
+ let dynamicFibres=null;
+ const previousHairWorldPosition=new THREE.Vector3();
+ const currentHairWorldPosition=new THREE.Vector3();
+ const previousHairWorldRotation=new THREE.Quaternion();
+ const currentHairWorldRotation=new THREE.Quaternion();
+ const lastHeadDisplacement=new THREE.Vector3();
+ let motionInitialized=false;
  // Vertex edges as well as centre guides must respect imported torso triangles.
  // Only the single-character face/body preview supplies this optional solver.
  const renderBodyCollider=bodyCollisionResolver?.resolve?bodyCollisionResolver:null;
@@ -1764,7 +1772,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
     (strand.zone.startsWith('fringe')?.52:
      strand.zone.startsWith('temple')?.90:
-     strand.zone==='crown'?1.10:
+     strand.zone==='crown'?.49:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -1892,6 +1900,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
   }
   attr.needsUpdate=true;
+  if(dynamicFibres&&meshUpdates%2===0){
+   const fibrePositions=dynamicFibres.geometry.getAttribute('position');
+   const original=dynamicFibres.original;
+   const owner=dynamicFibres.owner,station=dynamicFibres.station;
+   for(let k=0;k<owner.length;k++){
+    const lock=strands[owner[k]],j=station[k];
+    const point=lock.points[j],restPoint=lock.rest[j],at=k*3;
+    fibrePositions.setXYZ(k,
+     original[at]+point.x-restPoint.x,
+     original[at+1]+point.y-restPoint.y,
+     original[at+2]+point.z-restPoint.z);
+   }
+   fibrePositions.needsUpdate=true;
+   if(meshUpdates%6===0)dynamicFibres.geometry.computeBoundingSphere();
+  }
   // Mobile optimization: 1440 ribbons do not need a full normal/tangent
   // rebuild on EVERY physics tick. Their shaded normals are stable enough
   // to refresh at ~7Hz while positions sway at 20Hz.
@@ -1900,22 +1923,45 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(meshUpdates===1||meshUpdates%6===0)geo.computeBoundingSphere();
  }
  function update(dt=.016){
-  // v28 uses baked groomed ribbons. No spring, gravity or wind simulation
-  // runs per frame. All collisions are solved ONCE at construction.
   if(staticGroom)return;
   accumulator+=Math.min(Math.max(0,dt),.05);
   if(accumulator<1/20)return;
   const step=Math.min(accumulator,.05);accumulator=0;elapsed+=step;
+  // The root is head-attached, while long ends react to head translation
+  // and rotation in local space. Teleports must not whip the hair.
+  root.updateWorldMatrix(true,false);
+  root.getWorldPosition(currentHairWorldPosition);
+  root.getWorldQuaternion(currentHairWorldRotation);
+  const localTravel=new THREE.Vector3();
+  if(motionInitialized){
+   localTravel.copy(currentHairWorldPosition).sub(previousHairWorldPosition);
+   localTravel.applyQuaternion(currentHairWorldRotation.clone().invert());
+   if(localTravel.length()>d.x*.70)localTravel.set(0,0,0);
+   const relativeRotation=previousHairWorldRotation.clone().invert()
+    .multiply(currentHairWorldRotation);
+   const angle=2*Math.acos(clamp(Math.abs(relativeRotation.w),0,1));
+   if(angle<.65&&angle>1e-4){
+    localTravel.x+=relativeRotation.y*d.x*.11;
+    localTravel.z-=relativeRotation.x*d.x*.11;
+   }
+  }
+  previousHairWorldPosition.copy(currentHairWorldPosition);
+  previousHairWorldRotation.copy(currentHairWorldRotation);
+  motionInitialized=true;
+  lastHeadDisplacement.copy(localTravel);
   for(let i=0;i<strands.length;i++){
    if(i%guideStride)continue;
    const s=strands[i];
    s.points[0].copy(s.root);
    for(let j=1;j<=segments;j++){
     const p=s.points[j],v=s.vel[j],goal=s.rest[j];
-    const wind=Math.sin(elapsed*.65+Math.floor(i/12)*.12+j*.045)*
-     d.x*.000035*(j/segments);
-    v.multiplyScalar(.82).addScaledVector(goal.clone().sub(p),step*13);
-    v.y-=step*d.y*.55*style.gravityScale;
+    const flex=Math.pow(j/segments,1.65);
+    const wind=Math.sin(elapsed*1.45+Math.floor(i/12)*.12+j*.045)*
+     d.x*(sadakoMaster?.00032:.000035)*flex;
+    v.multiplyScalar(.83).addScaledVector(goal.clone().sub(p),step*14);
+    v.x-=lastHeadDisplacement.x*flex*.38;
+    v.z-=lastHeadDisplacement.z*flex*.38;
+    v.y-=step*d.y*.20*style.gravityScale;
     p.addScaledVector(v,step);
     p.x+=wind;
     resolveCollision(p,s.zone,s.overFace,false,s.rearFacing);
@@ -1925,6 +1971,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      p.copy(prev).addScaledVector(gap,target*1.055/length);
     resolveCollision(p,s.zone,s.overFace,false,s.rearFacing);
     if(p.y<s.trimY){p.y=s.trimY;v.y=Math.max(0,v.y);}
+   }
+  }
+  // All high-density strands follow one of the simulated clump guides.
+  // Roots are fixed to the scalp, only free segments receive motion.
+  if(guideStride>1)for(let i=0;i<strands.length;i++){
+   if(i%guideStride===0)continue;
+   const lock=strands[i],driver=strands[i-(i%guideStride)];
+   for(let j=1;j<=segments;j++){
+    const p=lock.points[j],sample=driver.points[j],reference=driver.rest[j];
+    p.copy(lock.rest[j]).addScaledVector(sample.clone().sub(reference),.72);
+    resolveCollision(p,lock.zone,lock.overFace,false,lock.rearFacing);
    }
   }
   writeGeometry();
@@ -1944,6 +2001,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  let microFibreCount=0,microFibreTriangles=0;
  if(fiberMultiplier>1&&!style.shortCutKind){
   const extra=fiberMultiplier-1,coords=[],shades=[],tris=[];
+  const fibreOwner=[],fibreStation=[];
   // Unique coarse hair stations avoid zero-area tip triangles from an
   // accidentally repeated last point. Moving guides still use 12 points;
   // the static sample retains the low mobile geometry budget.
@@ -1993,6 +2051,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
        projectSadakoRearBust(q,strand.zone,true);
       }
       coords.push(q.x,q.y,q.z);
+      if(!staticGroom){fibreOwner.push(i);fibreStation.push(j);}
       // Multi-scale pigment, fine discontinuous glints, darker roots:
       // hair reads as individual fibers rather than a glossy plastic sheet.
       const glint=.042*Math.exp(-Math.pow((t-.47)/.15,2))*
@@ -2014,6 +2073,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   fineGeo.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
   fineGeo.setIndex(tris);
   fineGeo.computeVertexNormals();fineGeo.computeBoundingSphere();
+  if(!staticGroom)dynamicFibres={
+   geometry:fineGeo,original:new Float32Array(coords),
+   owner:new Uint16Array(fibreOwner),station:new Uint8Array(fibreStation)
+  };
   const fineMat=new THREE.MeshPhysicalMaterial({
    color:0xffffff,vertexColors:true,roughness:.91,metalness:0,
    clearcoat:0,clearcoatRoughness:1,
@@ -2022,7 +2085,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   });
   const fineMesh=new THREE.Mesh(fineGeo,fineMat);
   fineMesh.name='DETACHABLE_WIG_FINE_FIBRES';
-  fineMesh.userData.staticPreviewDetail=true;
+  fineMesh.userData.staticPreviewDetail=!!staticGroom;
   fineMesh.userData.fiberMultiplier=fiberMultiplier;
   if(!style.shortCutKind)root.add(fineMesh);else{fineGeo.dispose();fineMat.dispose();}
   microFibreTriangles=tris.length/3;
@@ -2032,7 +2095,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // The former short tangential crown fibres resembled dark buzz stubble and
  // hid the missing long-hair follicles. Long hair is now rooted uniformly
  // across the REAL pigmented scalp. Keep the helper for standalone QA.
- const sadakoCrownFlow=null;
+ const sadakoCrownFlow=sadakoMaster?createSadakoCrownFlow(cap,box,color):null;
  if(sadakoCrownFlow)root.add(sadakoCrownFlow);
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
@@ -2086,6 +2149,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    ?[cap,...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
+    node.name==='SADAKO_CROWN_TANGENTIAL_FIBRE_FLOW_V50'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
   const normalLayers=sadakoMaster?1:clamp(Math.trunc(normalLayerCount),1,3),
@@ -2202,9 +2266,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoCrownLayerOrder:sadakoMaster?'top-grown-canopy-crosses-and-overlies-both-sides-v57':null,
   sadakoCrownOverSideLocks:sadakoMaster?
    strands.filter(s=>s.crownOverSide).length:0,
-  sadakoCrownOverSideOffset:sadakoMaster?.056:null,
-  sadakoCrownCanopyGroom:sadakoMaster?'scalp-following-crown-to-temple-then-gravity-v58':null,
-  sadakoCrownOuterMaxFraction:sadakoMaster?.038:null,
+  sadakoCrownOverSideOffset:sadakoMaster?.021:null,
+  sadakoCrownCanopyGroom:sadakoMaster?'curved-scalp-crown-guide-fibre-overlay-v59':null,
+  sadakoCrownOuterMaxFraction:sadakoMaster?.016:null,
   sadakoCrownOuterOnlyAboveEar:sadakoMaster,
   sadakoEarRibbonWidthFactor:sadakoMaster?.90:null,
   sadakoCrownScalpFollow:sadakoMaster,
@@ -2215,7 +2279,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
   sadakoUnifiedScalpClipping:sadakoMaster&&cap.userData.unifiedBuzzContour,
 
-  sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-headhug-rear-v58':null,
+  sadakoMasterGroom:sadakoMaster?'sadako-scalp-curved-dynamic-v59':null,
   sadakoRearOriginBasedClearance:sadakoMaster,
   sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
@@ -2228,7 +2292,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   closeCutSelfShadowDisabled:style.shortCutKind==='buzz',
 
   closeCutFibresOnSurface:Boolean(closeCutFibres),
-  microFibresAnimated:false,
+  microFibresAnimated:!staticGroom&&fiberMultiplier>1,
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
@@ -2261,6 +2325,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   rearScalpCoverage:'nape-and-occipital-head-triangles',
   groomingSmoothingPasses:3,frizzAmplitudeFactor:.025,
   hairClumpSwayGroupSize:12,
+  dynamicHairFollowsHead:!staticGroom,
+  dynamicHairGuideSway:!staticGroom,
+  dynamicFibreGuideBinding:!staticGroom&&fiberMultiplier>1,
   satinHairFiberSurface:true,
   fineFringeMultiplier:fringeMultiplier,frontFineLockExtra:fringeExtra,
   rearBodyVolumeExtra,
