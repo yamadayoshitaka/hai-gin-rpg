@@ -1563,10 +1563,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const add=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m)};
   const L=15*cellSize,W=BATTLE_BRIDGE_WIDTH_CELLS*cellSize;
   // Nine collision and walking lanes; the wide stone model matches battle navigation.
-  for(let x=0;x<15;x++)for(let z=0;z<BATTLE_BRIDGE_WIDTH_CELLS;z++){
-   const px=(x-7)*cellSize,pz=(z-BATTLE_BRIDGE_HALF_WIDTH_CELLS)*cellSize;
-   if(!broken||x<6||x>9){add(cellSize*.985,.24,cellSize*.985,px,0,pz,stone)}
-   if(!broken||x<6||x>9)for(let k=0;k<3;k++)add(cellSize*.3,.018,.025,px+(k-1)*cellSize*.3,.13,pz+cellSize*.2,mortar);
+  for(let x=0;x<15;x++)for(let z=0;z<3;z++){
+   // Each rendered stone course spans three passable lanes.
+   // Fewer decorative meshes preserve phone FPS on nine-lane bridges.
+   const px=(x-7)*cellSize,pz=(z-1)*W/3;
+   if(!broken||x<6||x>9){add(cellSize*.985,.30,W/3-.045,px,0,pz,stone)}
+   if(!broken||x<6||x>9)for(let k=0;k<3;k++)add(cellSize*.3,.018,.035,px+(k-1)*cellSize*.3,.164,pz+W/6-.065,mortar);
   }
   for(const side of [-1,1]){
    const z=side*(W/2+.13);
@@ -1588,6 +1590,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
  const deck=new THREE.MeshStandardMaterial({color:0x8b6540,roughness:.92}),wood=new THREE.MeshStandardMaterial({color:0x4f3828,roughness:.95});
  const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m)};
  const length=15*cellSize,W=BATTLE_BRIDGE_WIDTH_CELLS*cellSize;
+ // Three longitudinal stringers keep the expanded timber deck supported.
+ if(!broken)for(const fraction of [-.32,0,.32])box(length,.32,.38,0,-.34,fraction*W,wood);
  for(let i=0;i<15;i++)if(!broken||i<6||i>9)box(cellSize*.97,.25,W*.99,(i-7)*cellSize,0,0,i%3===0?wood:deck);
  for(const side of [-1,1]){const z=side*(W/2+.13);
  if(!broken){box(length,.25,.23,0,-.3,side*(W/2-.35),wood);box(length,.16,.16,0,1.1,z,wood);box(length,.1,.13,0,.57,z,wood)}
