@@ -6,6 +6,7 @@
  * Demo talking is SILENT, syllable-paced motion; not phoneme/audio sync.
  */
 import * as THREE from 'three';
+import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
 const smooth=t=>{const x=clamp(t);return x*x*(3-2*x);};
 /** Signed intensities are blended with ongoing blink and speech.
@@ -241,8 +242,14 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  let elapsed=0,blink=0,mouthOpen=0,manualMouth=null,forcedBlink=null,disposed=false;
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
+ // Keep smooth skin normals across blendshape expressions, including
+ // split geometry vertices around UV seams (raw recompute causes facets).
+ const initialNormalReport=smoothStudioFaceNormals(face.geometry,{
+  weldTolerance:.00007
+ });
  const facialAttr=face.geometry.getAttribute('position');
  const facialRest=facialAttr.array.slice();
+ const sculptNormalRest=face.geometry.getAttribute('normal')?.array.slice()||null;
  const faceBox=face.geometry.boundingBox.clone();
  const faceSize=faceBox.getSize(new THREE.Vector3());
  const centerX=(faceBox.min.x+faceBox.max.x)/2;
@@ -278,8 +285,17 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    facialAttr.array[k+2]=z+depth*(.009*e.cheek*cheek+
     .008*Math.max(0,e.smile)*lipCorner+muscle.dz+micro.dz);
   }
+  // Exact neutral restoration also preserves signed zeros / donor float32
+  // geometry, eliminating cumulative drift after repeated face changes.
+  if(state.expression==='neutral')facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
-  face.geometry.computeVertexNormals();face.geometry.computeBoundingSphere();
+  const normals=face.geometry.getAttribute('normal');
+  if(normals&&sculptNormalRest&&
+     normals.array.length===sculptNormalRest.length){
+   normals.array.set(sculptNormalRest);
+   normals.needsUpdate=true;
+  }else face.geometry.computeVertexNormals();
+  face.geometry.computeBoundingSphere();
   for(const side of sides)if(side.brow&&side.browRest){
    side.brow.position.y=side.browRest.y+faceSize.y*e.brow*.012;
    side.brow.rotation.z=side.browRest.z+(side.side==='LEFT'?-1:1)*e.tilt*.21;
@@ -298,7 +314,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
       faceSize.y*(.008*e.smile*corner+.0015*e.cheek);
      attr.array[k+2]=original[k+2];
     }
-    attr.needsUpdate=true;mesh.geometry.computeVertexNormals();
+    attr.needsUpdate=true;
+    // Small lip-corner movements preserve the author's smooth normal map.
+    if(!mesh.geometry.getAttribute('normal'))mesh.geometry.computeVertexNormals();
    }
   }
  }
@@ -371,6 +389,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v65NasalCheekMuscleCoupling:true,
    v76FineForeheadNasalNasolabialAndCanthusMuscles:true,
    v76BothLashesTrackBlinkClosure:true,
+   v76FacialSculptNormalsPreserved:!!sculptNormalRest,
+   v76InitialSeamNormalSmoothing:initialNormalReport.applied,
+   v76ExpressionKeepsSmoothShading:true,
    expressionIntensity:strength,
    elapsed:Number(elapsed.toFixed(3))})
  };
