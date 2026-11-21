@@ -11,7 +11,7 @@ import {
 const box=new THREE.Box3(new THREE.Vector3(-1,-1,-1),new THREE.Vector3(1,1,1));
 
 test('v56 ears: scalp-root sampling reaches lower temples instead of only top-of-head',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v65$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v66$/);
  const sphere=new THREE.SphereGeometry(.5,48,36).toNonIndexed();
  sphere.computeVertexNormals();sphere.computeBoundingBox();
  const cap=new THREE.Mesh(sphere,new THREE.MeshStandardMaterial());
@@ -102,8 +102,8 @@ test('actual Sadako mesh allocates dense ear curtains AND an upper crown layer',
 test('both game hair editors use v56 and can inspect crown from above',()=>{
  const face=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const body=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
- assert.match(face,/20261121-sadako-five-variants-v65/);
- assert.match(body,/20261121-sadako-five-variants-v65/);
+ assert.match(face,/20261121-sadako-invisible-perm-rods-v66/);
+ assert.match(body,/20261121-sadako-invisible-perm-rods-v66/);
  assert.match(face,/id="crown"/);
  assert.match(face,/頭頂部レイヤー/);
 });
