@@ -378,6 +378,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   // geometry, eliminating cumulative drift after repeated face changes.
   if(neutralPose)facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
+  if(mouth?.integrated)face.userData.v82IntegratedMouth.lastPoseKey=null;
   const normals=face.geometry.getAttribute('normal');
   if(neutralPose&&normals&&sculptNormalRest&&
      normals.array.length===sculptNormalRest.length){
@@ -432,10 +433,11 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   if(mouth.integrated){
    // These vertices are owned by the HEAD geometry; no mouth silhouette
    // is drawn above the face and the same vertices carry lipstick.
-   poseIntegratedMouth(face,{
+   const updated=poseIntegratedMouth(face,{
     open:mouthOpen,smile:Number(frame.smile)||Number(frame.au12)||0,
     cheek:Number(frame.cheek)||Number(frame.au06)||0
    });
+   if(updated)smoothStudioFaceNormals(face.geometry,{weldTolerance:.00007});
   }else poseLips(frame,delta);
   mouth.cavity.visible=mouthOpen>.025;
   const grin=clamp(Number(frame.smile)||Number(frame.au12)||0);
