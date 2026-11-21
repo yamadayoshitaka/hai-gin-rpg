@@ -451,6 +451,13 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
        normal:hit.face?.normal?.toArray().map(v=>Number(v.toFixed(3))),
        pigment:attr&&a>=0?[attr.getX(a),attr.getY(a),attr.getZ(a)]
         .map(v=>Number(v.toFixed(3))):null,
+       geometryStats:{position:mesh.geometry?.getAttribute('position')?.count,
+        color:attr?.count,colorItemSize:attr?.itemSize,
+        index:mesh.geometry?.getIndex()?.count??null,
+        scalpMode:mesh.userData?.hairScalpMaskMode??null,
+        activeOriginalScalp:!!mesh.userData?.originalHairScalpGeometry,
+        originalColorCount:mesh.userData?.originalHairScalpGeometry?.getAttribute('color')?.count??null,
+        originalPositionCount:mesh.userData?.originalHairScalpGeometry?.getAttribute('position')?.count??null},
        materialColor:mat?.color?.getHexString(),side:mat?.side,
        depthTest:mat?.depthTest,vertexColors:mat?.vertexColors,
        renderOrder:mesh.renderOrder};
