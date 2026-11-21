@@ -349,7 +349,7 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 /* Player command categories: orders, buff-only rally, shared consumables. */
 #realtimeBattleDock #realtimeCommandTabs{
  grid-column:1/-1;grid-row:3;
- display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
  gap:4px;align-items:stretch;
 }
 #realtimeBattleDock #realtimeCommandTabs button{
@@ -755,4 +755,30 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  }
  #realtimeBattleMapOverlay .realtimeMapHelp{font-size:11px;line-height:1.3}
  #realtimeBattleMapOverlay .realtimeMapCard{gap:3px}
+}
+
+
+/* A formation change is a real team-wide commander order, not a passive-only tab. */
+#realtimeBattleDock #realtimeFormationInline{
+ grid-column:1/-1;grid-row:4/7;min-width:0;min-height:0;max-height:min(46vh,360px);
+ overflow-y:auto;display:grid;align-content:start;gap:7px;padding:6px;
+ border:1px solid #7d9eb4;border-radius:8px;background:#132c40;
+}
+#realtimeBattleDock #realtimeFormationInline[hidden]{display:none!important}
+#realtimeBattleDock #realtimeFormationInline>strong{font-size:12px;color:#ffe3a9}
+#realtimeBattleDock #realtimeFormationChoices{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-width:0;
+}
+#realtimeBattleDock #realtimeFormationChoices button{
+ display:grid;gap:3px;align-content:start;text-align:left;white-space:normal;
+ min-height:68px!important;border:1px solid #648da4;border-radius:7px;
+ color:#f4f5e7;background:#1c4358;padding:8px;font-size:11px;overflow-wrap:anywhere;
+}
+#realtimeBattleDock #realtimeFormationChoices button:disabled{opacity:.53}
+#realtimeBattleDock #realtimeFormationChoices button strong{color:#ffe4b2}
+#realtimeBattleDock #realtimeFormationChoices button small{font-size:10px;line-height:1.3}
+#realtimeBattleDock #realtimeFormationStatus{font-size:11px;line-height:1.4;color:#d7eabf}
+@media(max-width:380px){
+ #realtimeBattleDock #realtimeCommandTabs button{font-size:9px!important;padding:3px!important}
+ #realtimeBattleDock #realtimeFormationChoices button{padding:5px;min-height:72px!important}
 }

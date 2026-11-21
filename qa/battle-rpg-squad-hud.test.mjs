@@ -306,7 +306,8 @@ test('every playable battle link and display refresh route to the three-team HUD
  assert.match(battle,/aggregateBattleRpgTeams\(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup\)/);
  assert.match(battle,/if\(THREE_TEAM_BATTLE\)for\(const unit of squadRoster\)/);
  assert.doesNotMatch(battle,/battleRpgHud\.update\(storyRequest\?\.sortieTeamCount\?/);
- assert.match(map,/v=three-team-stage-type-single-deploy-20261121/);
+ assert.match(map,/tactics-wireframe\.html\?storyBattle=1&core=1&stage=/);
+ assert.match(map,/&v='\+Date\.now\(\)/,'battle launch must bypass stale Android pages');
  assert.match(game,/v=three-team-radar2-20261120/);
  assert.match(story,/storyBattle=1&v=three-team-radar2-20261120/);
 });

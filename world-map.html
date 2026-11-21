@@ -261,7 +261,7 @@ function launchSelectedStage(stageId){
   sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   saveSession();
-  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v=three-team-stage-type-single-deploy-20261121';
+  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v='+Date.now();
  }catch(error){stageLaunching=false;message(error.message||String(error));}
 }
 let stageLaunching=false;

@@ -36,7 +36,7 @@ export function createRealtimeBattleCommands({
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
  getObjectiveCheckpoints=()=>[],onCommandCommitted=()=>{},getOrderState=()=>({cooldown:0}),
  onReinforce=()=>false,getRallyInfo=()=>({level:1,maxTargets:1,targets:[]}),
- onRally=()=>false,onMapOverview=()=>false
+ onRally=()=>false,getFormationOptions=()=>[],onFormationChange=()=>false,onMapOverview=()=>false
 }={}){
  const doc=documentRef;
  if(!doc?.body?.append)throw Error('Real-time battle requires document.body');
@@ -72,7 +72,8 @@ export function createRealtimeBattleCommands({
    <span id="realtimeSelectedState" role="status">軍師：部隊を選択</span>
    <div id="realtimeCommandTabs" role="tablist" aria-label="軍師の指示を選ぶ">
     <button type="button" id="realtimeTabStrategy" role="tab" aria-selected="true">⚔ 作戦</button>
-    <button type="button" id="realtimeTabRally" role="tab" aria-selected="false">📣 号令（バフ）</button>
+    <button type="button" id="realtimeTabRally" role="tab" aria-selected="false">📣 強化号令</button>
+    <button type="button" id="realtimeTabFormation" role="tab" aria-selected="false">📐 陣形変更</button>
     <button type="button" id="realtimeTabItems" role="tab" aria-selected="false">🎒 アイテム</button>
    </div>
 
@@ -121,6 +122,11 @@ export function createRealtimeBattleCommands({
     <select id="realtimeRallyKind"></select>
     <small id="realtimeInlineRallyStatus" role="status"></small>
     <button type="button" id="realtimeConfirmRally" class="realtimeMainConfirm">✅ 号令を確定</button>
+   </div>
+   <div id="realtimeFormationInline" hidden role="group" aria-label="陣形変更の号令">
+    <strong>📐 陣形変更：生存兵の職業・レアリティ・人数で判定</strong>
+    <div id="realtimeFormationChoices" role="group" aria-label="変更できる陣形一覧"></div>
+    <small id="realtimeFormationStatus" role="status">陣形を選ぶと、その配置へ隊ごとに移動します。</small>
    </div>
    <div id="realtimeItemInline" hidden role="group" aria-label="全軍の共有アイテム">
     <label for="realtimeSharedItemChoice">共有所持品・取得アイテム</label>
@@ -315,6 +321,7 @@ export function createRealtimeBattleCommands({
   if(started&&!$('realtimeBattleDock').hidden){
    if(dockTab==='strategy')refreshMoveTargetChoices();
    if(dockTab==='rally')showRallyChoices();
+   if(dockTab==='formation')showFormationChoices();
    if(dockTab==='items')refreshInlineItems(true);
   }
   if(focus)onFocus(selectedId);
@@ -484,9 +491,9 @@ export function createRealtimeBattleCommands({
    '実行できません。所持数・対象状態・軍師・命令制限を確認してください（アイテムに射程制限なし）。';
  }
  function setDockTab(next='strategy'){
-  if(!['strategy','rally','items'].includes(next))return;
+  if(!['strategy','rally','formation','items'].includes(next))return;
   dockTab=next;hideContextChoices();
-  const strategy=next==='strategy',rally=next==='rally',items=next==='items';
+  const strategy=next==='strategy',rally=next==='rally',formation=next==='formation',items=next==='items';
   for(const id of ['realtimeDefend','realtimeCharge','realtimeHold','realtimeSpecial','realtimeThiefUnlock','realtimeThiefSteal'])
    $(id).hidden=!strategy;
   $('realtimeRally').hidden=true;
@@ -496,16 +503,49 @@ export function createRealtimeBattleCommands({
   $('realtimeStrategyTargets').hidden=!strategy||!battleAttackNeedsEnemy(pendingStrategy?.attackKind);
   $('realtimeConfirmStrategy').hidden=!strategy;
   $('realtimeRallyInline').hidden=!rally;
+  $('realtimeFormationInline').hidden=!formation;
   $('realtimeItemInline').hidden=!items;
-  for(const [id,selected] of [['realtimeTabStrategy',strategy],['realtimeTabRally',rally],['realtimeTabItems',items]]){
+  for(const [id,selected] of [['realtimeTabStrategy',strategy],['realtimeTabRally',rally],['realtimeTabFormation',formation],['realtimeTabItems',items]]){
    const button=$(id);button.classList.toggle('selected',selected);
    button.setAttribute('aria-selected',String(selected));
   }
   if(strategy)refreshMoveTargetChoices();
   if(rally)showRallyChoices();
+  if(formation)showFormationChoices();
   if(items)refreshInlineItems(true);
   tapChoices.renderAll();
   renderActionSelection();
+ }
+ function showFormationChoices(){
+  const root=$('realtimeFormationChoices'),status=$('realtimeFormationStatus');
+  root.replaceChildren();
+  const options=getFormationOptions(String(selectedId))||[];
+  if(!options.length){
+   status.textContent='陣形変更は3隊編成のストーリー戦闘で使用できます。';
+   return;
+  }
+  status.textContent='陣形変更は号令扱いです。条件を満たす陣形にのみ変更できます。';
+  for(const entry of options){
+   const item=doc.createElement('button');item.type='button';
+   item.className='realtimeFormationChoice';
+   const label=doc.createElement('strong');label.textContent=String(entry.name||entry.id);
+   const description=doc.createElement('small');
+   description.textContent='目的：'+String(entry.purpose||'')+'／動き：'+String(entry.movement||'');
+   const reason=doc.createElement('small');
+   reason.textContent=entry.current?'✓ 現在の陣形':
+    entry.eligible?'✓ 変更可能':'🔒 '+String(entry.reason||'条件未達');
+   item.append(label,description,reason);
+   item.disabled=!entry.eligible||Boolean(entry.current);
+   item.onclick=()=>{
+    if(!onFormationChange(String(selectedId),String(entry.id))){
+     status.textContent='陣形変更できません。軍師・生存兵・号令間隔を確認してください。';
+     showFormationChoices();return;
+    }
+    status.textContent='✓ '+String(entry.name||entry.id)+'へ陣形変更を発令';
+    closeSquadControls();
+   };
+   root.append(item);
+  }
  }
  function showSupportChoices(origin){
   const node=actionPanel(origin,'Support'),items=getAvailableItems(String(selectedId))||[];
@@ -1295,6 +1335,7 @@ radarCanvas.addEventListener('keydown',event=>{
  $('realtimeConfirmItem').onclick=confirmInlineItem;
  $('realtimeTabStrategy').onclick=()=>setDockTab('strategy');
  $('realtimeTabRally').onclick=()=>setDockTab('rally');
+ $('realtimeTabFormation').onclick=()=>setDockTab('formation');
  $('realtimeTabItems').onclick=()=>setDockTab('items');
  $('realtimeRally').onclick=()=>showRallyChoices();
  $('realtimeSpecial').onclick=()=>showSpecialChoices('dock');

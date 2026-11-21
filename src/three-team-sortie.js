@@ -6,7 +6,7 @@
 import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS,formationJobMinimums,formationMinimumForRole} from './sortie-formation-logic.js';
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
-import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts} from './sortie-formation-template-rules.js';
+import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts,FORMATION_ENTRY_REQUIREMENTS} from './sortie-formation-template-rules.js';
 export const SORTIE_TEAM_IDS=Object.freeze(Array.from({length:3},(_,i)=>i+1));
 export const SORTIE_SQUADS_PER_GROUP=3;
 /** Temporary level-99 battle/formation test without rewriting career XP. */
@@ -77,6 +77,16 @@ export function sortieFormationStatus(game,teamId){
   return {id:'free',valid:false,reason:'陣形未完成：テンプレートの'+spec.slots+'隊を配置してください'};
  const budget=sortieTemplateCapacity(game,teamId);
  if(!budget.valid)return {id:'free',valid:false,reason:budget.error};
+ const req=FORMATION_ENTRY_REQUIREMENTS[team.formation];
+ if(req){
+  const rarity=formationRarityCounts(team,ownSquads(game));
+  const people=sortieTeamCount(team);
+  const aboveR=rarity.R+rarity.SR+rarity.SSR+rarity.UR;
+  const aboveSR=rarity.SR+rarity.SSR+rarity.UR;
+  const aboveSSR=rarity.SSR+rarity.UR;
+  if(people<req.people||aboveR<req.rPlus||aboveSR<req.srPlus||aboveSSR<req.ssrPlus||rarity.UR<req.ur)
+   return {id:'free',valid:false,reason:'陣形条件未達：人数・レアリティの要件を確認してください'};
+ }
  const missing=formationJobMinimums(team,ownSquads(game),SORTIE_FORMATION_CELLS,spec.slots)
   .filter(entry=>!entry.valid);
  if(missing.length){
@@ -219,8 +229,10 @@ export function ensureSortiePlan(game){
  clampPlannedHeadcount(teams,sortiePlanningLimit(game));
  for(const team of teams)if(team.formation===FREE_FORMATION)clampFreeTeam(team,sources);
  for(const team of teams)if(team.formation!==FREE_FORMATION&&sortieTeamCount(team)){
-  // Older saves may contain job swaps; fixed presets always reconstruct the layout.
-  rebuildNamedFormation(game,teams,team,team.formation,team.slots.filter(Boolean).length);
+  // Preserve the exact roster, headcounts and captain selected at the inn.
+  // Only migrate legacy saves whose named formation has an invalid job/cell layout.
+  if(!formationStatus(team,sources,SORTIE_FORMATION_CELLS,sortieSquadCap(game)).valid)
+   rebuildNamedFormation(game,teams,team,team.formation,team.slots.filter(Boolean).length);
  }
  game.sortiePlan={version:1,teams};
  return game.sortiePlan;

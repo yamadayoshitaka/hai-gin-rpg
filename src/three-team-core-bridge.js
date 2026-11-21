@@ -1,7 +1,9 @@
 import {BUFFS,reserveTroops} from './story-campaign.js';
 import {STORY_JOB_TO_BATTLE} from './story-battle-bridge.js';
 import {slotLane,slotRank} from './inn-deployment.js';
-import {formationJobMinimums} from './sortie-formation-logic.js';
+import {formationJobMinimums,FORMATION_ROLES,formationMinimumForRole} from './sortie-formation-logic.js';
+import {inspectInnFormation} from './inn-formation-rules.js';
+import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
 import {captainBonus} from './army-groups.js';
 import {squadEquipmentBonus} from './game-core-flow.js';
 import {storyStageContext} from './story-narrative-flow.js';
@@ -92,6 +94,22 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   gender:protagonist.gender==='female'?'female':'male',faceId:protagonist.faceId||0,
   orders:BUFFS.filter(b=>b.unlock<=level).map(b=>({...b}))
  }];
+ // Battle can change a formation without inventing or exchanging soldiers.
+ // Precompute valid role/source mappings from the inn's exact roster.
+ const formationBattleOptions=Object.fromEntries(teams.map(team=>[String(team.id),
+  Object.entries(SORTIE_FORMATIONS).map(([id,formation])=>{
+   const assessment=inspectInnFormation(game,team.id,id);
+   const assignment=assessment.assignment||[];
+   const required=FORMATION_ENTRY_REQUIREMENTS[id];
+   const roleMinimums=Object.fromEntries(assignment.map((sid,i)=>
+    [String(sid),formationMinimumForRole(FORMATION_ROLES[id][i])]));
+   return {id,name:formation.name,purpose:FORMATION_BATTLE_PURPOSES[id]?.purpose||'',
+    movement:FORMATION_BATTLE_PURPOSES[id]?.movement||'',
+    eligible:assessment.eligible,reason:assessment.reason,
+    assignment,roleMinimums,cells:SORTIE_FORMATION_CELLS[id].slice(0,formation.slots),requirements:required,
+    bonus:{attack:formation.attack||0,defense:formation.defense||0,
+     mobility:formation.mobility||0,magic:formation.magic||0,healing:formation.healing||0}};
+  })]));
  const monsterBattle=stage.kind==='explore'||stage.kind==='boss';
  const storyContext=storyStageContext(game,stage.id);
  return {
@@ -106,7 +124,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   enemyName:monsterBattle?'魔物群':storyContext?.enemy||'紅炎軍',
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
   units,commanders,armyGroupBySquad,initialSquadOrders:orders,
-  deploymentLimit:stage.deploymentLimit??50,formationIntegrity,
+  deploymentLimit:stage.deploymentLimit??50,formationIntegrity,formationBattleOptions,
   availableSquadOrders:allowed,subdivisionMap,sortieLevel:level,
   formationBonuses:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].bonus])),
   squadDebuffProfiles:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?sortieDebuffTypes(game,t.id):[]])),
