@@ -10,7 +10,7 @@ import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-terr
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
-import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
+import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
