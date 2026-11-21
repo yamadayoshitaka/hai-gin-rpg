@@ -457,7 +457,17 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
         scalpMode:mesh.userData?.hairScalpMaskMode??null,
         activeOriginalScalp:!!mesh.userData?.originalHairScalpGeometry,
         originalColorCount:mesh.userData?.originalHairScalpGeometry?.getAttribute('color')?.count??null,
-        originalPositionCount:mesh.userData?.originalHairScalpGeometry?.getAttribute('position')?.count??null},
+        originalPositionCount:mesh.userData?.originalHairScalpGeometry?.getAttribute('position')?.count??null,
+        originalInvalidRGB:(()=>{
+         const a=mesh.userData?.originalHairScalpGeometry?.getAttribute('color');
+         return a?Array.from(a.array).filter(x=>!Number.isFinite(x)).length:null;
+        })(),
+        clippedInvalidRGB:(()=>{
+         const a=mesh.geometry?.getAttribute('color');
+         return a?Array.from(a.array).filter(x=>!Number.isFinite(x)).length:null;
+        })(),
+        sourcePigmentRepairCount:mesh.userData?.v87RepairedNonFinitePigment??null,
+        scalpPigmentRepairCount:mesh.userData?.v87ScalpColorRepairs??null},
        materialColor:mat?.color?.getHexString(),side:mat?.side,
        depthTest:mat?.depthTest,vertexColors:mat?.vertexColors,
        renderOrder:mesh.renderOrder};
