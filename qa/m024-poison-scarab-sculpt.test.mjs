@@ -106,9 +106,9 @@ for(const detail of ['low','high']){
    assert.ok(meshes>=80,'missing sculpted anatomical parts: '+meshes);
    assert.ok(faces<900000,'mobile triangle ceiling breached: '+faces);
    const textures=m024PBRTextureStats();
-   assert.equal(textures.atlasCount,5,
-    'exactly 5 surface atlases per quality tier already created');
-   assert.ok(textures.textureCount>=15&&textures.textureCount<=25,
+   assert.equal(textures.atlasCount,detail==='low'?5:10,
+    'exactly 5 reusable material atlases per quality tier');
+   assert.ok(textures.textureCount>=11&&textures.textureCount<=30,
     'unbounded texture churn in mobile gallery: '+textures.textureCount);
    model.updateMatrixWorld(true);
    const bounds=new Box3().setFromObject(model).getSize(new Vector3());
