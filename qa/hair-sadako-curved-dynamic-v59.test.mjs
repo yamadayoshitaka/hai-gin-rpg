@@ -8,10 +8,10 @@ import {FACE_HAIR_RUNTIME_BUILD,createScalpAnchoredWig,
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('v59 deployable preview uses the dynamic Sadako implementation',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-mask-buzz-restored-v62$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-neck-buzz-crown-v63$/);
  const body=read('face-body-studio.html'),face=read('face-mesh-studio.html');
  for(const html of [body,face])
-  assert.match(html,/20261121-costume-mask-buzz-restored-v62/);
+  assert.match(html,/20261121-costume-neck-buzz-crown-v63/);
  assert.match(body,/wig\?\.update\(dt\)/);
  assert.match(body,/staticGroom:hairSpec.styleId!=='sadako-straight-long'/);
  assert.match(face,/staticGroom:chosen.styleId!=='sadako-straight-long'/);

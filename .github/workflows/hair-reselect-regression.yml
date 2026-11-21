@@ -16,6 +16,8 @@ on:
       - 'qa/hair-sadako-mantle-crown-v60.test.mjs'
       - 'qa/hair-shared-scalp-temple-v61.test.mjs'
       - 'qa/hair-costume-scalp-mask-v62.test.mjs'
+      - 'qa/hair-costume-neck-crown-v63.test.mjs'
+      - 'src/heroine-battle-costume-bridge.js'
       - 'src/face-costume-scalp-mask.js'
       - 'src/face-mantle-hair-collision.js'
       - '.github/workflows/hair-reselect-regression.yml'
@@ -36,6 +38,8 @@ on:
       - 'qa/hair-sadako-mantle-crown-v60.test.mjs'
       - 'qa/hair-shared-scalp-temple-v61.test.mjs'
       - 'qa/hair-costume-scalp-mask-v62.test.mjs'
+      - 'qa/hair-costume-neck-crown-v63.test.mjs'
+      - 'src/heroine-battle-costume-bridge.js'
       - 'src/face-costume-scalp-mask.js'
       - 'src/face-mantle-hair-collision.js'
 permissions:
@@ -56,4 +60,5 @@ jobs:
           node --check src/face-scalp-wig.js
           node --check src/face-mantle-hair-collision.js
           node --check src/face-costume-scalp-mask.js
-          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs qa/hair-sadako-ear-crown-bust-v55.test.mjs qa/hair-sadako-ear-density-crown-v56.test.mjs qa/hair-sadako-crown-canopy-v57.test.mjs qa/hair-sadako-headhug-rear-v58.test.mjs qa/hair-sadako-curved-dynamic-v59.test.mjs qa/hair-sadako-mantle-crown-v60.test.mjs qa/hair-shared-scalp-temple-v61.test.mjs qa/hair-costume-scalp-mask-v62.test.mjs
+          node --check src/heroine-battle-costume-bridge.js
+          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs qa/hair-sadako-ear-crown-bust-v55.test.mjs qa/hair-sadako-ear-density-crown-v56.test.mjs qa/hair-sadako-crown-canopy-v57.test.mjs qa/hair-sadako-headhug-rear-v58.test.mjs qa/hair-sadako-curved-dynamic-v59.test.mjs qa/hair-sadako-mantle-crown-v60.test.mjs qa/hair-shared-scalp-temple-v61.test.mjs qa/hair-costume-scalp-mask-v62.test.mjs qa/hair-costume-neck-crown-v63.test.mjs
