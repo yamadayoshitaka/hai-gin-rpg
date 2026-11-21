@@ -1101,7 +1101,8 @@ const eyeExtras=[
  ['lashDensity','まつ毛の本数・密度'],
  ['lashLength','まつ毛の長さ'],
  ['lashThickness','まつ毛の太さ'],
- ['lashCurl','まつ毛のカール']
+ ['lashCurl','まつ毛のカール'],
+ ['mouthWidth','口の横幅（実メッシュ・口角）']
 ];
 function addEyeExtras(male=false){
  const target=$(male?'maleEyeSpacing':'eyeSpacing')?.closest('label');
@@ -1127,13 +1128,13 @@ addEyeExtras(false);addEyeExtras(true);
 const rebuildKeys=['irisDiameter','eyeSpacing','eyeWidth','eyeHeight',
  'browWidth','browThickness','eyeDepth',
  'lashDensity','lashLength','lashThickness','lashCurl',
- 'jawSharpness','noseTipLift',
+ 'jawSharpness','noseTipLift','mouthWidth',
  'nostrilCover','noseBridgeSharpness'];
 const cosmeticKeys=['lipstickX','lipstickY','lipstickWidth','lipstickHeight'];
 const angleKeys=['eyeAngle','browAngle','lashAngle'];
 const multiplierKeys=['irisDiameter','eyeSpacing','eyeWidth','eyeHeight',
  'browWidth','browThickness','lashDensity','lashLength','lashThickness','lashCurl',
- 'jawSharpness','lipstickWidth','lipstickHeight'];
+ 'jawSharpness','mouthWidth','lipstickWidth','lipstickHeight'];
 function setFaceControlDisplay(key,value){
  const el=$(key),out=$(key+'Value');
  // Mobile browsers can restore old range values independently of the JS
@@ -1186,14 +1187,14 @@ for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
 }
 const maleRebuildKeys=['jawSharpness','eyeSpacing','eyeWidth','eyeHeight','eyeDepth',
  'browWidth','browThickness','irisDiameter','noseTipLift',
- 'nostrilCover','noseBridgeSharpness','beardDensity','beardLength'];
+ 'nostrilCover','noseBridgeSharpness','mouthWidth','beardDensity','beardLength'];
 const maleAngleKeys=['eyeAngle','browAngle'];
 function setMaleControlDisplay(key,value){
  const id='male'+key[0].toUpperCase()+key.slice(1);
  $(id).value=String(value);
  $(id+'Value').value=String(value)+(maleAngleKeys.includes(key)?'°':
   ['jawSharpness','eyeSpacing','eyeWidth','eyeHeight',
-  'browWidth','browThickness','irisDiameter','beardLength'].includes(key)?'×':'');
+  'browWidth','browThickness','irisDiameter','mouthWidth','beardLength'].includes(key)?'×':'');
 }
 function syncMaleControlDisplays(){
  for(const key of [...maleRebuildKeys,...maleAngleKeys])
@@ -1274,7 +1275,7 @@ setupAdjustTabs('faceGroupTabs',[
   'browWidth','browThickness','browAngle','lashDensity','lashLength',
   'lashThickness','lashCurl','lashAngle','eyeAngle']],
  ['鼻',['noseTipLift','nostrilCover','noseBridgeSharpness']],
- ['口紅',['lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
+ ['口・口角',['mouthWidth','lipstickX','lipstickY','lipstickWidth','lipstickHeight']],
  ['カラコン',['contactPreset','contactColor']],
  ['髪',['wigDensity','wigLength','wigColor']]
 ]);
@@ -1284,6 +1285,7 @@ setupAdjustTabs('maleGroupTabs',[
   'maleBrowWidth','maleBrowThickness','maleBrowAngle',
   'maleEyeDepth','maleIrisDiameter','maleEyeAngle']],
  ['鼻',['maleNoseTipLift','maleNostrilCover','maleNoseBridgeSharpness']],
+ ['口・口角',['maleMouthWidth']],
  ['ヒゲ',['maleBeardDensity','maleBeardLength']]
 ]);
 $('contactPreset').addEventListener('change',()=>{
