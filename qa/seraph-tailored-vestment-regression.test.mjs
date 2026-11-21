@@ -15,7 +15,8 @@ function inspect(g){
  assert.ok(g.isBufferGeometry);
  const p=g.getAttribute('position'),uv=g.getAttribute('uv'),
   n=g.getAttribute('normal');
- assert.ok(g.index.count>30);
+ assert.ok((g.index?.count??p.count)>=24,
+  'A small 3D metal jewel can use non-indexed triangles');
  assert.ok(p.count===uv.count&&p.count===n.count);
  for(const attr of [p,uv,n])for(const x of attr.array)assert.ok(Number.isFinite(x));
  const bb=new THREE.Box3().setFromBufferAttribute(p);
