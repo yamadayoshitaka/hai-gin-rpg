@@ -1092,6 +1092,17 @@ export function createScalpFirstLongGuide({
    const sideOffset=side*(next.x-center.x);
    if(sideOffset<earOuterX)
     next.x+=side*(earOuterX-sideOffset)*earCover*.62;
+   // Actual ear cover must be a vertical curtain, not a wing flaring
+   // farther out than the pinna. Constrain only the ear-height band;
+   // above it, crown roots still follow their unmodified scalp path.
+   const yn=(next.y-box.min.y)/Math.max(d.y,1e-6);
+   const pinnaBand=THREE.MathUtils.smoothstep(yn,.45,.53)*
+    (1-THREE.MathUtils.smoothstep(yn,.84,.92));
+   const sideDistance=side*(next.x-center.x);
+   const maxEarOut=d.x*.445;
+   if(sideDistance>maxEarOut&&pinnaBand>0){
+    next.x-=side*(sideDistance-maxEarOut)*pinnaBand;
+   }
   }
   if(projectOutside)projectOutside(next,j===1,front,
    j*length/segments<=d.y*.27);
