@@ -76,9 +76,11 @@ assert.match(renderInnFormationWizard({game,view:'review'}),/隊長：/);
 assert.match(renderInnFormationWizard({game,view:'review'}),/攻撃\+/);
 
 assert.throws(()=>chooseInnFormation(game,2,'constellation'),/条件未達/);
-const totalBefore=sortieTeams(game).reduce((n,t)=>n+sortieTeamCount(t),0);
-assert.throws(()=>selectInnRosterJob(game,2,0,1),/空き兵員|他の隊/); // all R knights are not all free? handled below
-assert.equal(sortieTeams(game).reduce((n,t)=>n+sortieTeamCount(t),0),totalBefore);
+
+selectInnRosterJob(game,2,0,1);
+setInnRosterCount(game,2,1,3);
+assert.throws(()=>selectInnRosterJob(game,3,0,1),/空き兵員|他の隊/);
+assert.equal(sortieTeams(game).reduce((n,t)=>n+sortieTeamCount(t),0),36);
 
 const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 assert.match(town,/innWizardStep='teamPick'/);
