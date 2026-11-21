@@ -816,7 +816,8 @@ export function createCosplayedHumanoidMonster(spec,{
  };
  const state={root,source:'procedural-loading',profile,
   humanBaseMigration,
-  start(action,time=0){
+  start(action,time=0,skillId=null){
+   root.userData.previewSkillId=skillId;
    if(root.userData.action!==action||root.userData.actionAt!==time){
     root.userData.action=action;root.userData.actionAt=time;
     motionSequence++;
@@ -872,7 +873,8 @@ export function createCosplayedHumanoidMonster(spec,{
    const delta=lastTime===null?0:clamp(time-lastTime,0,.13);
    lastTime=time;motion.mixer.update(delta);
    combatMotion?.update(profile.id==='m042'&&action==='attack'?'idle':action,
-    clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
+    clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time,
+    root.userData.previewSkillId);
    // Source mesh is hidden for mineral/armoured creatures: fit shells
    // between each moving pair of joints AFTER the native animation mixer.
    if(isFlyingTengu)updateCanonicalTenguFlight(root,host,visual,action,time,elapsed);

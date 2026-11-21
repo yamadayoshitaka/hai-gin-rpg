@@ -1,0 +1,52 @@
+name: Summon gallery skills and walking limbs QA
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'summon-showcase.html'
+      - 'src/monster-character-cosplay.js'
+      - 'src/monster-humanoid-combat-poses.js'
+      - 'src/summon-gallery-action-catalog.js'
+      - 'src/summon-gallery-motion-route.js'
+      - 'qa/summon-gallery-actions-walk.test.mjs'
+      - 'qa/summon-gallery-actions-motion.spec.mjs'
+      - 'playwright.config.mjs'
+      - '.github/workflows/summon-gallery-gesture-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gallery-walk-and-spells:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install compatible Three.js and mobile browser test runner
+        run: npm install --no-save --package-lock=false three@0.160.1 @playwright/test@1.56.1
+      - name: Verify motion route, skill IDs and source contracts
+        run: |
+          node --check src/summon-gallery-motion-route.js
+          node --check src/summon-gallery-action-catalog.js
+          node --check src/monster-character-cosplay.js
+          node --check src/monster-humanoid-combat-poses.js
+          node --test qa/summon-gallery-actions-walk.test.mjs
+          node qa/monster-humanoid-combat-poses.test.mjs
+      - name: Install Chromium and required software WebGL libraries
+        run: npx playwright install --with-deps chromium
+      - name: Verify visible buttons and real skinned limb walk on mobile
+        run: npx playwright test qa/summon-gallery-actions-motion.spec.mjs --reporter=list
+        env:
+          CI: 'true'
+      - name: Preserve browser evidence for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: summon-gallery-walk-actions-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore

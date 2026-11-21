@@ -64,7 +64,7 @@ export function createHumanoidMonsterCombatMotion(model,profile){
  let disposed=false;
  return {
   color,hasHand:!!hand,
-  update(action,progress=0,time=0){
+  update(action,progress=0,time=0,skillId=null){
    if(disposed)return;
    const spell=action==='special',attack=action==='attack';
    group.visible=!!hand&&(spell||attack);
@@ -72,12 +72,18 @@ export function createHumanoidMonsterCombatMotion(model,profile){
    const p=clamp(progress,0,1),wave=ease(p);
    const phase=humanoidGesturePhases(p);
    if(spell){
-    // Overlay native idle pose after the mixer has evaluated; no persistent
-    // changes accumulate on shared bones between independent characters.
-    if(arms[0]){arms[0].rotation.x-=.38*wave;arms[0].rotation.z-=.45*wave;}
-    if(arms[1]){arms[1].rotation.x-=.52*wave;arms[1].rotation.z+=.48*wave;}
-    if(wrists[0])wrists[0].rotation.x-=.20*wave;
-    if(wrists[1])wrists[1].rotation.x-=.20*wave;
+    // Revive = both palms raised; heal = arms extended to the wounded;
+    // ritual Starflare = charged overhead cast. All are applied AFTER
+    // the canonical GLB mixer and own bone pivots, not disconnected FX.
+    const revival=skillId==='seraph_resurrection';
+    const heal=skillId==='seraph_blessing'||skillId==='forest_rejuvenation';
+    const royal=skillId==='dragon_lord_starflare';
+    const lift=revival?.82:royal?.92:heal?.47:.38;
+    const spread=revival?.21:royal?.16:heal?.64:.45;
+    if(arms[0]){arms[0].rotation.x-=lift*wave;arms[0].rotation.z-=spread*wave;}
+    if(arms[1]){arms[1].rotation.x-=(lift+.14)*wave;arms[1].rotation.z+=spread*wave;}
+    if(wrists[0])wrists[0].rotation.x-=(revival?.37:.20)*wave;
+    if(wrists[1])wrists[1].rotation.x-=(revival?.37:.20)*wave;
    }else if(arms[1]){
     // Native attack remains authoritative; only emphasize the release.
     arms[1].rotation.x-=.12*wave;
