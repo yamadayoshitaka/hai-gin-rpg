@@ -65,18 +65,19 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.equal(dom.root.querySelector('#realtimeSquadRadar').hidden,false);
  dom.root.querySelector('#realtimeRadarExpand').onclick();
  assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,false);
- assert.match(dom.root.innerHTML,/class="realtimeMapViewport"/);
+ assert.match(dom.root.innerHTML,/class="realtimeMapViewport" id="realtimeMapViewport"/);
  assert.ok(dom.root.innerHTML.indexOf('data-realtime-zoom="1"')<
   dom.root.innerHTML.indexOf('id="realtimeBattleCanvas"'));
  assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,true,
   'old independent post-move commands are hidden during three-team opening setup');
- assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,false);
+ assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,true,
+  'placement and strategy cannot appear together');
  dom.actions.get('hold').tap();
  assert.deepEqual(command.preferredActions,[['1','hold']]);
  command.selectSquad('2');
  assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,true,
   'old independent post-move commands are hidden during three-team opening setup');
- assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,false);
+ assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,true);
  dom.actions.get('support').tap();
  assert.deepEqual(command.preferredActions,[['1','hold']]);
  assert.equal(dom.root.querySelector('#realtimeMapSupportChoices').hidden,false);
@@ -90,6 +91,14 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  for(let i=0;i<30;i++)command.update([]);
  assert.equal(dom.ctxCalls.draw,redraws,'paused deployment must not repaint map on every squad status update');
  assert.ok(rosterCalls<=3,'roster snapshots are reused between map taps and UI updates');
+ dom.root.querySelector('#realtimeStart').onclick();
+ assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,false,
+  'after placement a separate strategy page appears');
+ dom.root.querySelector('#realtimeStart').onclick();
+ command.selectSquad('2');
+ canvas.tap('pointerdown',{pointerId:2,clientX:60,clientY:120});
+ canvas.tap('pointerup',{pointerId:2,clientX:60,clientY:120});
+ dom.root.querySelector('#realtimeStart').onclick();
  dom.root.querySelector('#realtimeStart').onclick();
  assert.ok(seen.some(x=>x[0]==='start'));
  assert.equal(command.openMove(),false,'standalone movement stays retired');
@@ -122,15 +131,14 @@ test('three teams must each be placed and given an initial strategy on the enlar
   ui.selectSquad('team'+n);
   map.tap('pointerdown',{pointerId:n,clientX:36+n*17,clientY:98+n*18});
   map.tap('pointerup',{pointerId:n,clientX:36+n*17,clientY:98+n*18});
+  dom.root.querySelector('#realtimeStart').onclick();
+  assert.equal(dom.root.querySelector('#realtimeMapViewport').hidden,true);
   const selector=dom.root.querySelector('#realtimeInitialStrategy');
   selector.value=['assault','defense','explore'][n-1];
   selector.onchange();
-  if(n===1){
-   dom.root.querySelector('#realtimeStart').onclick();
-   assert.equal(began.length,0,'team 2 and 3 still need their own selections');
-  }
+  dom.root.querySelector('#realtimeStart').onclick();
+  if(n===1)assert.equal(began.length,0,'team 2 and 3 still need their own selections');
  }
- dom.root.querySelector('#realtimeStart').onclick();
  assert.equal(began.length,1);
  assert.deepEqual(began[0].initialPlans,{'1':'assault','2':'defense','3':'explore'});
  assert.equal(ui.started,true);
@@ -184,7 +192,7 @@ test('live panel rejects movement-only and confirms action-target approach or sh
    alive:5,total:5,hp:500,maxHp:500,x:80,z:110}],
   getEnemies:()=>[],
   getMapBackground:()=>null,
-  getLegalPoint:(x,z)=>({x,z}),
+  getLegalPoint:(x,z)=>({x,z}),canDeploy:()=>true,onDeploy:()=>true,
   getMoveTargets:kind=>kind==='people'?[{id:'npc1',label:'旅人',x:85,z:111}]:[],
   onMove:(id,point)=>{seen.push(['move',id,point]);return true;},
   onOrder:(id,order)=>{seen.push(['order',id,order]);return true;},
@@ -196,6 +204,11 @@ test('live panel rejects movement-only and confirms action-target approach or sh
   onPause:()=>{paused=!paused;},getPaused:()=>paused
  });
  ui.openDeployment();
+ dom.root.querySelector('#realtimeRadarExpand').onclick();
+ const map=dom.root.querySelector('#realtimeBattleCanvas');
+ map.tap('pointerdown',{pointerId:7,clientX:65,clientY:118});
+ map.tap('pointerup',{pointerId:7,clientX:65,clientY:118});
+ dom.root.querySelector('#realtimeStart').onclick();
  dom.root.querySelector('#realtimeStart').onclick();
  ui.showSquadControls('1');
  assert.doesNotMatch(dom.root.innerHTML,/id="realtimeMove"/);
