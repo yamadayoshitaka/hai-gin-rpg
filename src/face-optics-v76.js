@@ -5,7 +5,7 @@ import * as THREE from 'three';
  * separate black pupil, the curved cornea, and eye expressions.
  * These supplementary details are deterministic, license-free generated
  * maps; the separately bundled skin microrelief is an authentic CC0 photo. */
-export function deriveIrisPolarDetail(width=512,height=128){
+export function deriveIrisPolarDetail(width=768,height=192){
  if(width<16||height<16)throw Error('Iris map too small');
  const data=new Uint8Array(width*height*4);
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
@@ -14,7 +14,8 @@ export function deriveIrisPolarDetail(width=512,height=128){
   const fiber=.064*Math.sin(theta*132+r*38)+
    .046*Math.sin(theta*83-r*74)+
    .027*Math.sin(theta*211+r*93);
-  const crypt=.040*Math.sin(theta*31+r*68)*
+  const crypt=(.038*Math.sin(theta*31+r*68)+
+   .022*Math.cos(theta*47-r*41)+.014*Math.sin(theta*87+r*27))*
    Math.exp(-Math.pow((r-.57)/.23,2));
   const collarette=.074*Math.exp(-Math.pow((r-.48)/.072,2));
   const limbus=-.15*THREE.MathUtils.smoothstep(r,.78,.99);
@@ -64,7 +65,7 @@ export function getLipVermilionNormalTexture(){
  return lip;
 }
 export const FACE_OPTICS_V76=Object.freeze({
- irisTexture:'polar-stroma-crypt-limbal-512x128',
+ irisTexture:'polar-stroma-crypt-limbal-768x192',
  lipNormal:'fine-vermilion-microfold-128x128',
  sclera:'natural-wet-lid-shadow',eyeGeometry:'face-conforming-corneal-dome',
  lipstickAsGeometry:true,photoIrisClaim:false

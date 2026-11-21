@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=76';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=80-iris';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
-import {resolveAgeBand} from './character-demographics-v47.js?v=49';
+import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -40,7 +40,7 @@ export const FACE_MAKEUP_PALETTES=Object.freeze([
 export function skinAgeShadowFactor(ageBand='twenties'){
  const id=resolveAgeBand(ageBand).id;
  return id==='under10'||id==='teens'?.06:id==='twenties'?.12:
-  id==='thirties'?.27:id==='forties'?.53:id==='sixties'?.88:1;
+  id==='thirties'?.27:id==='forties'?.53:id==='fifties'?.71:id==='sixties'?.88:1;
 }
 const orbitalRestPositions=new WeakMap();
 function setVertexMakeup(mesh,rgb){
@@ -779,6 +779,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.recessedBehindLid=true;
   eyePatch.userData.smoothCornealCore=true;
   eyePatch.userData.v79OpticalSubdivision='65x29-smooth-sclera';
+  eyePatch.userData.v80TearMeniscusFollowsBlink=true;
+  eyePatch.userData.v80LacrimalCaruncle=true;
   eyePatch.userData.v33OrbitSampleCount=orbitSamples.length;
   eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
   eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
@@ -910,6 +912,34 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    }
   }
   if(female)stitchLinerCorners(upperEyeliner,lowerEyeliner,d.x,d.z);
+  // V80: moist lower-lid meniscus and a medial caruncle, rigidly
+  // attached to each eye's anatomical orbital coordinate system.
+  const lowerLid=root.getObjectByName(eyeLabel+'_LOWER_ANATOMICAL_EYELID');
+  const tearMat=new THREE.MeshPhysicalMaterial({
+   color:0xbba4a8,metalness:0,roughness:.19,clearcoat:.92,
+   clearcoatRoughness:.085,transparent:true,opacity:.42,
+   side:THREE.DoubleSide,depthWrite:false
+  });
+  const tearRim=buildGrid(eyeLabel+'_LOWER_TEAR_MENISCUS',28,2,(u,v)=>{
+   const p=sampleGrid(lowerLid,28,4,u,.012+v*.075);
+   p.z+=Math.max(.00004,d.z*.0013);
+   return p;
+  },tearMat);
+  tearRim.userData.colorRole='tearFilm';
+  tearRim.userData.followsLowerLid=true;
+  tearRim.renderOrder=8;root.add(tearRim);
+  const ductMat=new THREE.MeshPhysicalMaterial({
+   color:0xaa7b7f,roughness:.30,metalness:0,
+   clearcoat:.60,clearcoatRoughness:.16
+  });
+  const caruncle=new THREE.Mesh(new THREE.SphereGeometry(1,14,10),ductMat);
+  caruncle.name=eyeLabel+'_LACRIMAL_CARUNCLE';
+  caruncle.scale.set(eyeRadius*.105,eyeRadius*.13,eyeRadius*.055);
+  caruncle.position.set(x-side*rimWidth*.90,
+   y-eyeRadius*.044,insetZ(x-side*rimWidth*.90,y-eyeRadius*.044)+d.z*.003);
+  caruncle.userData.colorRole='tearDuct';
+  caruncle.userData.sourceProjected=true;
+  root.add(caruncle);
    // The eye and makeup were previously built independently, leading to
    // protruding eyes despite accurate-looking eyeliner. Measure both
    // actual liner meshes AFTER generation, then adjust the three optical

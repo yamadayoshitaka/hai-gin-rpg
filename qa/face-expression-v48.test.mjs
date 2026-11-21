@@ -124,3 +124,23 @@ test('laugh and surprise visibly open both lips and eyelids, then reset',()=>{
  assert.deepEqual(model.face.geometry.getAttribute('position').array,neutralSkin);
  animator.dispose();
 });
+
+test('v80 expressions ease across FACS muscle poses instead of snapping',()=>{
+ const model=exampleFace();
+ const animator=createFaceExpressionAnimator(model,{autoBlink:false});
+ animator.setExpression('neutral');
+ animator.transitionToExpression('laugh',.28);
+ assert.equal(animator.getState().mouthOpen,0);
+ assert.ok(animator.getState().v80TransitionProgress!==null);
+ animator.update(.08);
+ assert.ok(animator.getState().mouthOpen>.02);
+ assert.ok(animator.getState().mouthOpen<.85);
+ for(let i=0;i<7;i++)animator.update(.06);
+ assert.equal(animator.getState().v80TransitionProgress,null);
+ assert.ok(animator.getState().mouthOpen>.95);
+ animator.transitionToExpression('neutral',.28);
+ for(let i=0;i<7;i++)animator.update(.06);
+ assert.equal(animator.getState().mouthOpen,0);
+ assert.equal(animator.getState().v80SmoothMuscleTransitions,true);
+ animator.dispose();
+});

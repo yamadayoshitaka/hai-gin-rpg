@@ -7,7 +7,7 @@
  */
 import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=67-v72';
 import {REBUILT_HAIR_PARTS} from './hair-rebuilt-catalog-v67.js?v=72';
-import {resolveAgeBand,resolveBodyType} from './character-demographics-v47.js?v=60';
+import {resolveAgeBand,resolveBodyType} from './character-demographics-v47.js?v=80-nine-age-bands';
 export const PART_GROUPS=Object.freeze(['face','eye','nose','mouth','hair','makeup']);
 export const PART_GROUP_LABELS=Object.freeze({
  face:'顔立ち',eye:'目',nose:'鼻',mouth:'口',

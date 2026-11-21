@@ -8,7 +8,7 @@ import {resolveEditedFaceControls,recordFaceManualEdit} from '../src/face-state-
 import {FACE_EXPRESSIONS,createFaceExpressionAnimator} from '../src/face-expression-animation-v48.js';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from '../src/heroine-face-preset-store.js';
 import {loadMaleFacePreset,saveMaleFacePreset} from '../src/male-face-preset-store.js';
-test('normal body is lean, fat distributes volume and eight ages stay ordered',()=>{
+test('normal body is lean, fat distributes volume and nine ages stay ordered',()=>{
  assert.ok(BODY_PROFILES.thin.width<BODY_PROFILES.normal.width);
  assert.ok(BODY_PROFILES.normal.width<1.07);
  assert.ok(BODY_PROFILES.normal.depth<1.07);
@@ -16,8 +16,9 @@ test('normal body is lean, fat distributes volume and eight ages stay ordered',(
  assert.ok(BODY_PROFILES.fat.width>1.30);
  assert.ok(BODY_PROFILES.fat.depth>1.30);
  assert.ok(BODY_PROFILES.fat.abdomen>BODY_PROFILES.normal.abdomen*10);
- assert.equal(AGE_BAND_IDS.length,8);
- const old=['forties','sixties','seventies','eightyPlus'].map(id=>AGE_PROFILES[id].wrinkles);
+ assert.equal(AGE_BAND_IDS.length,9);
+ assert.equal(AGE_PROFILES.fifties.label,'50代');
+ const old=['forties','fifties','sixties','seventies','eightyPlus'].map(id=>AGE_PROFILES[id].wrinkles);
  for(let i=1;i<old.length;i++)assert.ok(old[i]>old[i-1]);
 });
 test('80+ folds are integrated into the face geometry, without floating wrinkle ribbons',()=>{

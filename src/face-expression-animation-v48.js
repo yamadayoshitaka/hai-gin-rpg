@@ -7,6 +7,10 @@
  */
 import * as THREE from 'three';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
+import {resolveAgeBand} from './character-demographics-v47.js?v=80';
+import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=80';
+import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
+ from './face-anatomy-rig-v80.js?v=80';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
 const smooth=t=>{const x=clamp(t);return x*x*(3-2*x);};
 /** Signed intensities are blended with ongoing blink and speech.
@@ -88,12 +92,12 @@ function buildSide(parts,side,headSize){
  const decorations=[];
  for(const [suffix,isUpper] of [
   ['_UPPER_EYELINER',true],['_LOWER_EYELINER',false],
-  ['_UPPER_EYESHADOW',true]
+  ['_UPPER_EYESHADOW',true],['_LOWER_TEAR_MENISCUS',false]
  ]){
   const element=parts.getObjectByName(side+suffix);
   if(element?.geometry?.getAttribute('position'))
    decorations.push({...remember(element),isUpper,
-    rows:suffix.endsWith('EYESHADOW')?6:3});
+    rows:suffix.endsWith('EYESHADOW')?6:suffix.endsWith('MENISCUS')?2:3});
  }
  const brow=parts.getObjectByName(side+'_BROW_ANGLE_CONTROL');
  const browRest=brow?{y:brow.position.y,z:brow.rotation.z}:null;
@@ -187,7 +191,13 @@ function buildMouth(face,parts,headSize){
  cavity.renderOrder=3;cavity.visible=false;
  cavity.frustumCulled=false;
  face.add(cavity);
- return {upper,lower,cavity,restU:upper.position.y,restL:lower.position.y,
+ const oral=createFaceOralAnatomy(face,{
+  x:mid.x,y:face.userData.actualMouthCreaseY??mid.y,
+  z:frontZ+headSize.z*.006,
+  width:Math.max(.0001,b.max.x-b.min.x),
+  height:headSize.y,depth:headSize.z
+ });
+ return {upper,lower,cavity,oral,restU:upper.position.y,restL:lower.position.y,
   height:headSize.y,width:Math.max(.0001,b.max.x-b.min.x)};
 }
 /** Smooth low-frequency facial muscle fields: real cheek, nasal ala,
@@ -247,8 +257,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Muscle channels can blend emotions, dialogue and presets without
  // adding floating expression meshes or permanently changing the donor.
- const channels=['brow','tilt','squint','smile','open','cheek'];
- let manualActionUnits=null;
+ const channels=['brow','tilt','squint','smile','open','cheek',...FACS_CHANNELS_V80];
+ let manualActionUnits=null,transition=null;
  const expressionFrame=()=>({
   ...FACE_EXPRESSIONS[state.expression],...(manualActionUnits||{})
  });
@@ -263,6 +273,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const faceBox=face.geometry.boundingBox.clone();
  const faceSize=faceBox.getSize(new THREE.Vector3());
  const centerX=(faceBox.min.x+faceBox.max.x)/2;
+ const mouthY=clamp(((face.userData.actualMouthCreaseY??(
+  faceBox.min.y+faceSize.y*.509))-faceBox.min.y)/Math.max(1e-8,faceSize.y),.32,.62);
+ const ageStrength=resolveAgeBand(
+  face.userData.facePigmentControls?.ageBand||'twenties').wrinkles;
  const mouthRest=mouth?{
   upper:mouth.upper.geometry.getAttribute('position').array.slice(),
   lower:mouth.lower.geometry.getAttribute('position').array.slice()
@@ -273,6 +287,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    k,typeof v==='number'?v*strength:v
   ]));
   const neutralPose=channels.every(k=>Math.abs(Number(e[k])||0)<1e-8);
+  const actionUnits=deriveFacialActionUnits(e);
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
   const xd=Math.max(.000001,faceSize.x),yd=Math.max(.000001,faceSize.y);
@@ -282,23 +297,26 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const ax=Math.abs((x-centerX)/xd),ny=(y-faceBox.min.y)/yd;
    const front=clamp(((z-faceBox.min.z)/depth-.50)/.18);
    const fall=(a,c,w)=>Math.exp(-.5*((a-c)/w)**2);
-   const lipCorner=fall(ax,.065,.048)*fall(ny,.502,.050)*front;
+   const lipCorner=fall(ax,.065,.048)*fall(ny,mouthY,.050)*front;
    const cheek=fall(ax,.20,.11)*fall(ny,.565,.085)*front;
    const brow=fall(ax,.135,.090)*fall(ny,.745,.057)*front;
-   const jaw=fall(ax,.10,.17)*fall(ny,.403,.105)*front;
-   const lowerLip=fall(ax,.055,.068)*fall(ny,.478,.039)*front;
-   const mouthInterior=fall(ax,.050,.070)*fall(ny,.503,.020)*front;
+   const jaw=fall(ax,.10,.17)*fall(ny,mouthY-.099,.105)*front;
+   const lowerLip=fall(ax,.055,.068)*fall(ny,mouthY-.025,.039)*front;
+   const mouthInterior=fall(ax,.050,.070)*fall(ny,mouthY,.020)*front;
    const inner=fall(ax,.16,.10)*fall(ny,.745,.05)*front;
    const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:e});
    const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:e});
-   facialAttr.array[k]=x;
+   const anatomical=v80FaceMuscleDelta({ax,ny,front,mouthY,
+    ageStrength,actionUnits});
+   facialAttr.array[k]=x+xd*skinDeformationGain*
+    Math.sign(x-centerX)*anatomical.dxOut;
    facialAttr.array[k+1]=y+yd*skinDeformationGain*(.033*e.smile*lipCorner+
     .012*e.cheek*cheek+.008*e.brow*brow+
     .013*e.tilt*inner-.050*Math.max(0,e.open)*jaw-
-    .024*Math.max(0,e.open)*lowerLip+muscle.dy+micro.dy);
+    .024*Math.max(0,e.open)*lowerLip+muscle.dy+micro.dy+anatomical.dy);
    facialAttr.array[k+2]=z+depth*skinDeformationGain*(.009*e.cheek*cheek+
     .008*Math.max(0,e.smile)*lipCorner-
-    .014*Math.max(0,e.open)*mouthInterior+muscle.dz+micro.dz);
+    .014*Math.max(0,e.open)*mouthInterior+muscle.dz+micro.dz+anatomical.dz);
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
@@ -343,7 +361,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  }
  const setBlink=value=>{
   blink=clamp(value);
-  const squint=expressionFrame().squint*strength;
+  const frame=expressionFrame();
+  const squint=Math.max(Number(frame.squint)||0,Number(frame.au07)||0)*strength;
   const expressiveSquint=state.expression==='sleepy'?squint:
    Math.max(0,squint)*.48;
   const closure=clamp(blink+(1-blink)*expressiveSquint,0,1);
@@ -365,7 +384,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   }
  };
  const setMouthOpen=value=>{
-  mouthOpen=clamp(Math.max(value,expressionFrame().open*strength));
+  const frame=expressionFrame();
+  mouthOpen=clamp(Math.max(value,Math.max(Number(frame.open)||0,
+   Number(frame.au26)||0)*strength));
   if(!mouth)return;
   const delta=mouth.height*.053*mouthOpen;
   mouth.upper.position.y=mouth.restU+delta*.23;
@@ -374,10 +395,25 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   mouth.cavity.position.y=(face.userData.actualMouthCreaseY??mouth.cavity.position.y)-
    delta*.17;
   mouth.cavity.scale.set(mouth.width*.52,Math.max(.000001,delta*.78),1);
+  mouth.oral.update({openness:mouthOpen,jawDrop:mouthOpen,
+   smile:Number(frame.smile)||Number(frame.au12)||0});
  };
  const update=dt=>{
   if(disposed)return;
-  elapsed+=Math.max(0,Math.min(.10,Number(dt)||0));
+  const step=Math.max(0,Math.min(.10,Number(dt)||0));
+  elapsed+=step;
+  if(transition){
+   transition.elapsed+=step;
+   const t=smooth(transition.elapsed/transition.duration);
+   if(t>=1||t-transition.lastApplied>=.13){
+    transition.lastApplied=t;
+    manualActionUnits=t>=1?null:Object.fromEntries(
+     channels.map(k=>[k,(transition.from[k]||0)*(1-t)+
+      (transition.to[k]||0)*t]));
+    if(t>=1)transition=null;
+    applyExpression();
+   }
+  }
   setBlink(forcedBlink===null?(state.autoBlink?blinkEnvelope(elapsed):0):forcedBlink);
   setMouthOpen(manualMouth!==null?manualMouth:
    state.speaking?speechEnvelope(elapsed):0);
@@ -385,6 +421,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const dispose=()=>{
   if(disposed)return;
   state.expression='neutral';
+  manualActionUnits=null;transition=null;
   applyExpression();
   setBlink(0);setMouthOpen(0);
   for(const side of sides){
@@ -393,6 +430,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   if(mouth){
    mouth.cavity.removeFromParent();
    mouth.cavity.geometry.dispose();mouth.cavity.material.dispose();
+   mouth.oral.dispose();
   }
   disposed=true;
  };
@@ -402,12 +440,25 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   setExpression:id=>{
    if(!FACE_EXPRESSIONS[id])throw Error('Unknown 3D face expression: '+id);
    state.expression=id;
-   manualActionUnits=null;
+   manualActionUnits=null;transition=null;
    applyExpression();
    setBlink(blink);
    setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
   },
+  // Natural expression switching: six to eight shape updates over
+  // 0.28 s, not 60 heavy full-face normal recomputations per second.
+  transitionToExpression:(id,duration=.28)=>{
+   if(!FACE_EXPRESSIONS[id])throw Error('Unknown 3D face expression: '+id);
+   const from=expressionFrame(),to=FACE_EXPRESSIONS[id];
+   state.expression=id;
+   const seconds=THREE.MathUtils.clamp(Number(duration)||.28,.08,1);
+   transition={from,to,duration:seconds,elapsed:0,lastApplied:0};
+   manualActionUnits=Object.fromEntries(channels.map(k=>[k,Number(from[k])||0]));
+   applyExpression();setBlink(blink);
+   setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
+  },
   setActionUnits:values=>{
+   transition=null;
    manualActionUnits=values==null?null:Object.fromEntries(
     channels.filter(k=>Number.isFinite(Number(values[k]))).map(k=>[
      k,THREE.MathUtils.clamp(Number(values[k]),-1,1)
@@ -434,6 +485,12 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v79DynamicSeamWeldedNormals:true,
    v79ActionUnitChannels:channels.length,
    v79ManualActionUnits:manualActionUnits?{...manualActionUnits}:null,
+   v80FACSChannels:FACS_CHANNELS_V80.length,
+   v80MouthAnatomy:mouth?.oral.report||null,
+   v80OralLandmarkFollowsAge:true,
+   v80SmoothMuscleTransitions:true,
+   v80TransitionProgress:transition?Number(smooth(
+    transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,
    elapsed:Number(elapsed.toFixed(3))})
  };

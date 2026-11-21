@@ -7,15 +7,15 @@ import {chooseHeroFacePreset,HERO_FACE_PRESETS} from '../src/hero-face-presets-v
 import {defaultPartSelection,resolvePartSelection} from '../src/face-part-catalog-v32.js';
 
 const studio=()=>readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
-test('v78 age/expressions are clearly labelled separately from v72 hair and actual photo state is visible',()=>{
+test('v80 age/expressions are clearly labelled separately from v72 hair and actual photo state is visible',()=>{
  const html=studio();
- assert.match(html,/<h1>顔・髪の編集｜顔品質 v78・髪造形 v72<\/h1>/);
+ assert.match(html,/<h1>顔・髪の編集｜顔品質 v80・髪造形 v72<\/h1>/);
  assert.match(html,/id="faceQualityRelease"/);
  assert.match(html,/function facePhotoRuntimeStatus\(\)/);
  assert.match(html,/v76RealSkinPhoto/);
  assert.match(html,/state==='CC0-real-photo-microrelief'\?'反映済'/);
  assert.match(html,/実写肌PBR：/);
- assert.match(html,/face-expression-animation-v48\.js\?v=79-dynamic-normal-muscle-rig/);
+ assert.match(html,/face-expression-animation-v48\.js\?v=80-facs-teeth-tongue/);
  assert.doesNotMatch(html,/<h1>顔・髪の編集 v75/);
 });
 test('16 complete face choices per sex are not cosmetic-only, retain existing hair',()=>{
@@ -63,7 +63,7 @@ test('v79 3D expressions use live seam-welded normals and restore neutral',()=>{
  animator.setExpression('angry');
  assert.notDeepEqual(split.getAttribute('normal').array,normals);
  animator.setActionUnits({smile:.5,brow:.2});
- assert.equal(animator.getState().v79ActionUnitChannels,6);
+ assert.equal(animator.getState().v79ActionUnitChannels,20);
  assert.equal(animator.getState().v79ManualActionUnits.smile,.5);
  assert.equal(animator.getState().v76FacialSculptNormalsPreserved,true);
  assert.equal(animator.getState().v76ExpressionKeepsSmoothShading,true);
