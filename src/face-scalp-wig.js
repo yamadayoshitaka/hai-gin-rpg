@@ -1250,7 +1250,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     point.x=origin.x+dx/radius*safe;
     point.z=origin.z+dz/radius*safe;
     changed=true;
-   }else if(followScalp&&yn>.70&&yn<.985&&!front){
+   }else if(followScalp&&yn>.70&&yn<.985&&(!front||yn>.875)){
     // Keep the first head-length of crown/rear hair draped against the
     // scalp. A fully radial guide without this attraction floats like a
     // hard helmet above the rounded crown.
