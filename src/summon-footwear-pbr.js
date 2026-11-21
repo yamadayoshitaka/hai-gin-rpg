@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import {detachMonsterPhotoMaterial} from './monster-photo-pbr.js';
 
-export const SUMMON_FOOTWEAR_PBR_REVISION='seraph-matte-leather-no-chocolate-v4-20261122';
+export const SUMMON_FOOTWEAR_PBR_REVISION='forest-and-seraph-leather-pbr-v5-20261122';
 export const SUMMON_FOOTWEAR_SOURCE=Object.freeze({
  name:'Poly Haven Fabric Leather 01',license:'CC0',
  page:'https://polyhaven.com/a/fabric_leather_01',
@@ -72,7 +72,7 @@ function seraphMatteLeatherFallback(){
 function attachLoaded(material,entry){
  if(!active.has(material)||entry.state!=='ready')return;
  // Do not overwrite the Seraph's charcoal leather with brown upholstery.
- if(entry.slot==='map'&&material.userData.seraphFootwear)return;
+ if(entry.slot==='map'&&(material.userData.seraphFootwear||material.userData.forestFootwear))return;
  // The bundled leather texture is a shared reference. Release its user
  // reference before swapping; never dispose a global atlas here.
  if(entry.slot==='map'&&material.map!==entry.texture){
@@ -121,20 +121,21 @@ export function applySummonFootwearPBR(material,{role='',detail='high'}={}){
  material.needsUpdate=true;
  // The distant LOD uses the bundled local photograph. No 1K downloads
  // for crowds, only for the high-quality near-camera gallery/battle actor.
- if(material.userData.seraphFootwear){
+ if(material.userData.seraphFootwear||material.userData.forestFootwear){
   // The prior photo's chestnut albedo made both boots look like melted
   // chocolate. Preserve actual CC0 scanned roughness/normal maps, but
   // use neutral dyed charcoal-leather color and a much less glossy finish.
   detachMonsterPhotoMaterial(material);
   material.map=null;
-  material.color.setHex(0x554b4a);
+  material.color.setHex(material.userData.forestFootwear?0x655745:0x554b4a);
   material.metalness=0;
   material.roughness=.87;
   const fallback=seraphMatteLeatherFallback();
   material.normalMap=fallback.normal;
   material.roughnessMap=fallback.roughness;
   material.normalScale.set(.15,.15);
-  material.userData.seraphMatteLeather=true;
+  if(material.userData.seraphFootwear)material.userData.seraphMatteLeather=true;
+  if(material.userData.forestFootwear)material.userData.forestMatteLeather=true;
   material.needsUpdate=true;
  }
  if(!loader||detail==='low')return true;
