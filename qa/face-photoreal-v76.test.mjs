@@ -126,3 +126,39 @@ test('v76 no browser context never mutates or downloads skin and youth has no ad
  assert.equal(young.count,0);
  geo.dispose();mesh.material.dispose();
 });
+
+test('v79 elderly lips and lipstick anchor to the same deformed oral landmark',()=>{
+ for(const ageBand of ['seventies','eightyPlus']){
+  const face=new THREE.Mesh(new THREE.SphereGeometry(.20,52,38),
+   new THREE.MeshStandardMaterial());
+  face.geometry.computeBoundingBox();
+  const box=face.geometry.boundingBox.clone();
+  const height=box.max.y-box.min.y;
+  // Recreate a low, age-deformed oral seam: the old fixed 0.509 scan
+  // would instead attach lipstick to the philtrum above this point.
+  const anchor=box.min.y+height*.415;
+  face.userData.v79MouthLandmarkY=anchor;
+  const {root}=createAnatomicalFaceParts(face,{
+   gender:'female',controls:{ageBand}
+  });
+  const actual=face.userData.actualMouthCreaseY;
+  assert.ok(Math.abs(actual-anchor)<height*.025,
+   ageBand+' lip seam must remain on lower aged face');
+  assert.equal(face.userData.v79OralLandmarkAligned,true);
+  for(const id of ['UPPER','LOWER']){
+   const lip=root.getObjectByName(id+'_3D_VERMILION_LIP');
+   assert.ok(lip,'Both anatomical lips must remain present');
+   lip.geometry.computeBoundingBox();
+   const lipMid=(lip.geometry.boundingBox.min.y+lip.geometry.boundingBox.max.y)/2;
+   assert.ok(Math.abs(lipMid-actual)<height*.022,
+    id+' lip must be centered on the same oral landmark');
+  }
+  const eye=root.getObjectByName('LEFT_ORBITAL_EYEBALL');
+  assert.equal(eye.geometry.getAttribute('position').count,65*29,
+   'Smooth high-density cornea must retain the physical eye mesh');
+  root.traverse(mesh=>{
+   if(mesh.isMesh){mesh.geometry.dispose();mesh.material.dispose();}
+  });
+  face.geometry.dispose();face.material.dispose();
+ }
+});
