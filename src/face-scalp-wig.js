@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-crown-fibre-curtain-v50';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-uniform-pigment-v51';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -675,7 +675,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  * by area, placing thousands of small tapered quads just outside it. This
  * avoids extra head copies, generated scalp masks and head-top bald spots.
  */
-function createCloseCutScalpFibres(cap,box,color,hairCount){
+export function createCloseCutScalpFibres(cap,box,color,hairCount){
  const position=cap.geometry.getAttribute('position');
  const normal=cap.geometry.getAttribute('normal');
  const triangleCount=Math.floor(position.count/3);
@@ -699,6 +699,9 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
  const fract01=x=>x-Math.floor(x);
  const up=new THREE.Vector3(),root=new THREE.Vector3();
  const tangent=new THREE.Vector3(),widthDir=new THREE.Vector3();
+ // Invariant across all 30,000 fibres: do not allocate a new center per
+ // strand or change the palette as fibres cluster around the crown.
+ const scalpCenter=box.getCenter(new THREE.Vector3());
  for(let i=0;i<strands;i++){
   const sampleArea=fract01((i+.5)*.61803398875)*area;
   let lo=0,hi=triangleCount-1;
@@ -714,7 +717,6 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
   up.set(normal.getX(j)*w0+normal.getX(j+1)*w1+normal.getX(j+2)*w2,
    normal.getY(j)*w0+normal.getY(j+1)*w1+normal.getY(j+2)*w2,
    normal.getZ(j)*w0+normal.getZ(j+1)*w1+normal.getZ(j+2)*w2).normalize();
-  const scalpCenter=box.getCenter(new THREE.Vector3());
   if(up.dot(root.clone().sub(scalpCenter))<0)up.negate();
   // Forward/back grooming direction is projected onto the REAL local
   // scalp tangent: no flat, radial spikes or fibres buried in skin.
@@ -742,12 +744,15 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
    tip.clone().addScaledVector(widthDir,-width*.22),
    tip.clone().addScaledVector(widthDir,width*.22)
   ];
-  const tone=.72+.18*fract01((i+1)*.7320508);
+  // Previously .72-.90 with another .88 root multiplier made some densely
+  // overlapping crown fibres almost black even with a brown hair choice.
+  // Keep individual variation within ~10% of the user-selected palette.
+  const tone=.925+.065*fract01((i+1)*.7320508);
   for(let k=0;k<4;k++){
    const at=(i*4+k)*3;
    vertices[at]=points[k].x;vertices[at+1]=points[k].y;
    vertices[at+2]=points[k].z;
-   const shade=tone*(k<2?.88:1);
+   const shade=tone*(k<2?.96:1);
    colors[at]=pigment.r*shade;
    colors[at+1]=pigment.g*shade;
    colors[at+2]=pigment.b*shade;
@@ -762,13 +767,24 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
  geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
  geometry.setIndex(new THREE.BufferAttribute(indices,1));
  geometry.computeVertexNormals();geometry.computeBoundingSphere();
- const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.94,metalness:0,
-  side:THREE.DoubleSide,depthTest:true,depthWrite:true
+ // Very short, dense hair cards must not self-shadow into a black crown
+ // island as the camera rotates. The physical scalp below still supplies
+ // natural shading; fibre vertex colours preserve the exact chosen hue.
+ const material=new THREE.MeshBasicMaterial({
+  color:0xffffff,vertexColors:true,toneMapped:true,
+  side:THREE.DoubleSide,depthTest:true,depthWrite:true,
+  polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1
  });
+ material.name='buzz-selected-pigment-stubble-v51';
  const mesh=new THREE.Mesh(geometry,material);
  mesh.name='CLOSE_CUT_SCALP_FIBRES_V18';
+ mesh.castShadow=false;
+ mesh.receiveShadow=false;
  mesh.userData.rootedOnRealScalp=true;
+ mesh.userData.paletteLocked=true;
+ mesh.userData.selectedPigmentHex='#'+pigment.getHexString();
+ mesh.userData.fibreShadeRange=[.925*.96,.990];
+ mesh.userData.renderPolicy='matte-unlit-on-shaded-real-scalp';
  mesh.userData.fibreCount=strands;
  mesh.userData.source='donor-backed-clipped-scalp-surface';
  return mesh;
@@ -1657,7 +1673,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   geometry.computeBoundingSphere();
   consolidatedHair=new THREE.Mesh(geometry,materials);
   consolidatedHair.name='SINGLE_MESH_NORMAL_LAYERED_HAIR';
-  consolidatedHair.castShadow=true;
+  // The buzz-cut scalp contains 30k micro-strips in a single draw mesh.
+  // Casting those strips' own shadow onto the scalp produced the pitch-black
+  // crown patch in Android top view. Preserve shadows for longer styles.
+  consolidatedHair.castShadow=style.shortCutKind!=='buzz';
+  consolidatedHair.receiveShadow=false;
   consolidatedHair.userData.normalLayerCount=normalLayers;
   consolidatedHair.userData.normalOffsetStep=normalStep;
   consolidatedHair.userData.sourceHairStyle=style.id;
@@ -1702,6 +1722,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
   sadakoFacePartingDisabled:style.id==='sadako-straight-long',
   closeCutFibreCount:closeCutFibres?.userData.fibreCount||0,
+  closeCutPigmentHex:closeCutFibres?.userData.selectedPigmentHex||null,
+  closeCutFibreShadeRange:closeCutFibres?.userData.fibreShadeRange||null,
+  closeCutPaletteMatched:!!closeCutFibres?.userData.paletteLocked,
+  closeCutSelfShadowDisabled:style.shortCutKind==='buzz',
+
   closeCutFibresOnSurface:Boolean(closeCutFibres),
   microFibresAnimated:false,
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
