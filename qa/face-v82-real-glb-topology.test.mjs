@@ -324,7 +324,8 @@ test('V87 native mouth corners narrow on actual CC0 donor while cheeks, eyes and
   const face=model.face,pos=face.geometry.getAttribute('position');
   const ring=face.userData.v86OralSeal?.lipRing;
   assert.ok(ring?.length>=32&&ring.length<=48,
-   'V87 must preserve the original donor lip boundary and v86 seal');
+   'V87 must preserve the original donor lip boundary and v86 seal: '+
+    JSON.stringify({width,seal:face.userData.v86OralSealSummary,report:face.userData.v86OralSeal}));
   const xs=ring.map(id=>pos.getX(id));
   const span=Math.max(...xs)-Math.min(...xs);
   assert.ok(pos.array.every(Number.isFinite));
