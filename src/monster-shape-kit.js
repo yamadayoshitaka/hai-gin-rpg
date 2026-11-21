@@ -191,7 +191,8 @@ export function createSculpture(spec,detail='high'){
  };
  const tube=(parent,shade,points,radius=.04,{
    name=null,capEnds=false,taper=1,glow=false,
-   tubularSegments=null,radialSegments=null,radiusProfile=null,rough=.69
+   tubularSegments=null,radialSegments=null,radiusProfile=null,rough=.69,
+   metal=.08,surface=null,finish=null
  }={})=>{
    const curve=new THREE.CatmullRomCurve3(points.map(V));
    const [defaultSegments,defaultRadial]=resolution.tube;
@@ -232,7 +233,9 @@ export function createSculpture(spec,detail='high'){
      geo.computeVertexNormals();
      geo.computeBoundingSphere();
    }
-   const mesh=own(attach(parent,geo,shade,{name:name||shade,glow,rough}));
+   const mesh=own(attach(parent,geo,shade,{
+     name:name||shade,glow,rough,metal,surface,finish
+   }));
    if(capEnds){
      mesh.userData.cappedTubularSkin=true;
      mesh.userData.endCapTriangles=radial*2;
