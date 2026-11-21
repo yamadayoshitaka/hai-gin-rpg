@@ -104,7 +104,7 @@ test('Android studio provides a real one-tap underside hair view',()=>{
  assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
  assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
  assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
- assert.match(page,/sadako-ear-crown-bust-v55/);
+ assert.match(page,/sadako-ear-curtain-crown-over-v56/);
 });
 
 test('v53 independent follicle sampling covers crown and front without topology density bias',()=>{
@@ -149,5 +149,5 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  assert.match(page,/v53-sadako-matched-donor-clipping/);
  assert.match(hair,/if\(shortHair\|\|styleId==='sadako-straight-long'\)/);
  assert.match(hair,/const sadakoCrownFlow=null/);
- assert.match(page,/sadako-ear-crown-bust-v55/);
+ assert.match(page,/sadako-ear-curtain-crown-over-v56/);
 });
