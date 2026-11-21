@@ -11,6 +11,7 @@ on:
       - 'src/monster-character-cosplay.js'
       - 'tactics-wireframe.html'
       - 'qa/summon-healer-starflare-regression.test.mjs'
+      - 'qa/summon-geometry.test.mjs'
       - '.github/workflows/summon-battle-quality-qa.yml'
   workflow_dispatch:
 permissions:
