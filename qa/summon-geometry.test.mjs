@@ -1,3 +1,12 @@
+// Three.js FileLoader reports progress with a browser-only ProgressEvent.
+// Node 22 does not define it; provide the standard test-only event shape
+// so asynchronous GLTF fallback errors cannot crash geometry regression.
+globalThis.ProgressEvent ??= class ProgressEvent {
+ constructor(type,{lengthComputable=false,loaded=0,total=0}={}){
+  this.type=type;this.lengthComputable=lengthComputable;
+  this.loaded=loaded;this.total=total;
+ }
+};
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
