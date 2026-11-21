@@ -924,3 +924,29 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 @media(prefers-reduced-motion:reduce){
  #realtimeBattleMapOverlay #realtimeInitialFormationPreview .signatureTroop animateTransform{display:none}
 }
+
+/* Read-only battle map is a translucent window on the live 3D battlefield.
+   The opening deployment page stays opaque to preserve legibility. */
+#battleRealtimeControls #realtimeBattleMapOverlay:has(#realtimeMapDetail:not([hidden])){
+ background:rgba(3,13,23,.19);
+ backdrop-filter:none;
+}
+#battleRealtimeControls #realtimeBattleMapOverlay:has(#realtimeMapDetail:not([hidden])) .realtimeMapCard{
+ background:rgba(11,32,48,.40);
+ box-shadow:0 4px 18px rgba(0,0,0,.24);
+}
+#battleRealtimeControls #realtimeBattleMapOverlay:has(#realtimeMapDetail:not([hidden])) .realtimeMapHelp,
+#battleRealtimeControls #realtimeBattleMapOverlay:has(#realtimeMapDetail:not([hidden])) header{
+ text-shadow:0 1px 3px #061622,0 0 4px #061622;
+}
+#battleRealtimeControls #realtimeBattleMapOverlay .realtimeMapDetail select{
+ display:block;width:100%;min-height:38px;padding:5px 8px;
+ background:#204e60;border:1px solid #87c9c9;border-radius:6px;
+ color:#fff0c2;font:700 12px system-ui;
+}
+#battleRealtimeControls #realtimeBattleMapOverlay .realtimeMapDetail label{
+ font:700 11px system-ui;color:#e8f5fa;
+}
+#battleRealtimeControls #realtimeBattleMapOverlay .realtimeMapDetail small{
+ color:#d5e6ec;font:11px/1.4 system-ui;
+}
