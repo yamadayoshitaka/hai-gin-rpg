@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
-import {buzzHairlineFractionAtPoint,createSadakoCrownFlow,FACE_HAIR_RUNTIME_BUILD}
+import {buzzHairlineFractionAtPoint,createSadakoCrownFlow,createCloseCutScalpFibres,FACE_HAIR_RUNTIME_BUILD}
  from '../src/face-scalp-wig.js';
 import {synchronizeHeroHairSelection} from '../src/hero-hair-controls-v43.js';
 
@@ -87,4 +87,45 @@ test('v50 Sadako falls in front of the face without artificial centre parting',(
  assert.match(src,/sadakoCrownFlow=style.id==='sadako-straight-long'/);
  assert.match(src,/node.userData\?\.styledHairGeometry/,
   'Crown fibres must be retained by single-mesh consolidation');
+});
+
+test('v51 buzz-cut scalp fibres use the exact selected colour even at the crown',()=>{
+ const geometry=new THREE.SphereGeometry(.5,16,12).toNonIndexed();
+ geometry.computeVertexNormals();geometry.computeBoundingBox();
+ const cap=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+ const pigment=0x79503a;
+ const fibres=createCloseCutScalpFibres(cap,geometry.boundingBox,pigment,1200);
+ assert.ok(fibres.userData.fibreCount>=30000);
+ assert.equal(fibres.material.type,'MeshBasicMaterial',
+  'Opaque densely overlapping stubble must not turn black from surface normals');
+ assert.equal(fibres.material.vertexColors,true);
+ assert.equal(fibres.material.toneMapped,true);
+ assert.equal(fibres.material.polygonOffset,true);
+ assert.equal(fibres.castShadow,false,'Prevent 30k fibres shadowing their own scalp');
+ assert.equal(fibres.receiveShadow,false);
+ assert.equal(fibres.userData.paletteLocked,true);
+ assert.equal(fibres.userData.selectedPigmentHex,'#79503a');
+ const actual=fibres.geometry.getAttribute('color');
+ const target=new THREE.Color(pigment);
+ for(const vertex of [0,1,2,3,Math.floor(actual.count/4),actual.count-1]){
+  for(const channel of ['r','g','b']){
+   const value=actual.getComponent(vertex,{r:0,g:1,b:2}[channel]);
+   const expected=target[channel];
+   assert.ok(value>=expected*.885-1e-6&&value<=expected*.991+1e-6,
+    'Stubble '+channel+' is outside selected hue range at vertex '+vertex);
+  }
+ }
+ fibres.geometry.dispose();fibres.material.dispose();geometry.dispose();
+});
+test('v51 face studio disables buzz shadow only, preserves full-colour rear hair and bust',()=>{
+ const hair=read('src/face-scalp-wig.js');
+ const studio=read('face-mesh-studio.html');
+ const body=read('face-body-studio.html');
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v51$/);
+ assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
+ assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
+ assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
+ assert.match(studio,/buzz-uniform-pigment-v51/);
+ assert.match(body,/buzz-uniform-pigment-v51/);
+ assert.match(studio,/report\.closeCutPigmentHex/);
 });
