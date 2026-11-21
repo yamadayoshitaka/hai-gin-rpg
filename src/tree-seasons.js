@@ -1,4 +1,4 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=world60-physical-20261117';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=world61-wide-bridges-20261121';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
