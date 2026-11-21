@@ -15,7 +15,8 @@ function inspect(g){
  assert.ok(g.isBufferGeometry);
  const p=g.getAttribute('position'),uv=g.getAttribute('uv'),
   n=g.getAttribute('normal');
- assert.ok(g.index.count>30);
+ assert.ok((g.index?.count??p.count)>=24,
+  'A small 3D metal jewel can use non-indexed triangles');
  assert.ok(p.count===uv.count&&p.count===n.count);
  for(const attr of [p,uv,n])for(const x of attr.array)assert.ok(Number.isFinite(x));
  const bb=new THREE.Box3().setFromBufferAttribute(p);
@@ -106,5 +107,5 @@ test('real ivory silk light response does not load brown diffuse photo',()=>{
  assert.match(runtime,/SERAPH_VESTMENT_REVISION/);
  assert.match(runtime,/profile\.costume==='seraph_female'\?0x696767/);
  const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'utf8');
- assert.match(gallery,/seraph-(?:tailored-v3|matte-boots-v4)-20261122/);
+ assert.match(gallery,/seraph-(?:tailored-v3|matte-boots-v4|forest-quality-v5)-20261122/);
 });

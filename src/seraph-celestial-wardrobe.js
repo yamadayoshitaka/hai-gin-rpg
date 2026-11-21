@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 
-export const SERAPH_VESTMENT_REVISION='seraph-tailored-vestment-v3-20261122';
+export const SERAPH_VESTMENT_REVISION='seraph-tailored-vestment-v4-20261122';
 const PI=Math.PI;
 const detailCount=detail=>detail==='low'?12:32;
 
@@ -184,6 +184,37 @@ export function addSeraphCelestialVestment({frames,detail='high',attach,tube}={}
    {y:.046,rx:.226,rz:.189}
   ],{detail,kind:'hip-belt-gold-seam'}),
   'seraphGold','continuous-gold-hip-belt');
+ }
+ // Subtle celestial brooches and sculpted star ornaments in front of the
+ // fitted cloth: separate metal geometry, not a flat gold texture or tube
+ // floating over the face. They remain bone-anchored during all actions.
+ if(hi){
+  const haloDetail=(radius,thickness)=>
+   new THREE.TorusGeometry(radius,thickness,8,28);
+  add(frames.chest,haloDetail(.049,.006),'seraphGold',
+   'central-chest-jewel-rim',[0,.12,-.184]);
+  add(frames.chest,new THREE.OctahedronGeometry(.025,1),
+   'seraphEmbroidery','central-starlight-jewel',[0,.12,-.193]);
+  for(const side of [-1,1]){
+   add(frames.chest,haloDetail(.028,.004),'seraphGold',
+    'shoulder-clasp-jewel-'+side,[side*.216,.253,-.177]);
+   seam(frames.chest,'seraphEmbroidery','bodice-delicate-vine-'+side,[
+    [side*.09,.265,-.156],
+    [side*.138,.12,-.189],
+    [side*.166,-.065,-.174],
+    [side*.104,-.232,-.160]
+   ],.0032);
+   // Layered side chains hug the tabard front, with small medal end caps.
+   seam(frames.pelvis,'seraphGold','hip-garland-chain-'+side,[
+    [side*.182,.067,-.18],
+    [side*.198,-.025,-.21],
+    [side*.162,-.12,-.252],
+    [side*.080,-.20,-.292]
+   ],.0032);
+   add(frames.pelvis,new THREE.OctahedronGeometry(.012,0),
+    'seraphEmbroidery','hip-garland-pendant-'+side,
+    [side*.080,-.20,-.294]);
+  }
  }
  // Real shaped shoulder cloth and hanging sleeves, not black exposed armpits.
  for(const side of [-1,1]){

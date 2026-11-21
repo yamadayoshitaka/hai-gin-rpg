@@ -65,24 +65,44 @@ export function createFemaleSummonFeather({
  return geo;
 }
 export function createFemaleSummonLeaf({
- detail='high',size=.22
+ detail='high',size=.22,variety=0
 }={}){
- const steps=detail==='low'?6:14,p=[],uv=[],idx=[];
- for(let i=0;i<=steps;i++){
-  const t=i/steps,w=.45*size*Math.sin(Math.PI*t);
-  for(const side of [-1,0,1]){
-   p.push(side*w,size*t,.014*(1-side*side)+.026*Math.sin(Math.PI*t));
-   uv.push((side+1)/2,t);
+ // Physical plant blade with an upturned midrib, lateral camber,
+ // asymmetrical tip and very small edge scallops; not a flat green card.
+ // Real PBR leaf cuticle is applied separately in forest-spirit-pbr.js.
+ const rows=detail==='low'?8:23,columns=detail==='low'?4:8;
+ const p=[],uv=[],idx=[];
+ const mod=Number.isFinite(variety)?variety:0;
+ for(let i=0;i<=rows;i++){
+  const t=i/rows;
+  const taper=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.78);
+  const width=size*.36*taper*(1-.13*t);
+  for(let j=0;j<=columns;j++){
+   const u=j/columns*2-1;
+   const serrate=detail==='low'?1:
+    1+.033*Math.sin(t*Math.PI*22+mod*2.3)*
+     Math.pow(Math.abs(u),2);
+   const bent=.009*Math.sin((t*2+mod*.18)*Math.PI)*size/.22;
+   const x=u*width*serrate+.027*size*Math.sin(t*2.5+mod)*t;
+   const y=size*t+
+    .009*size*Math.sin(Math.PI*t)*Math.cos(u*Math.PI*.5);
+   const z=.038*Math.sin(Math.PI*t)+
+    .033*(1-u*u)*Math.sin(Math.PI*t)+
+    .011*u*u*t+bent;
+   p.push(x,y,z);
+   uv.push(j/columns,t);
+   if(i<rows&&j<columns){
+    const a=i*(columns+1)+j,b=a+columns+1;
+    idx.push(a,b,a+1,a+1,b,b+1);
+   }
   }
- }
- for(let i=0;i<steps;i++)for(let j=0;j<2;j++){
-  const a=i*3+j,b=a+3;idx.push(a,b,a+1,a+1,b,b+1);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geo.setIndex(idx);geo.computeVertexNormals();
- geo.userData={kind:'forest-spirit-leaf',detail};
+ geo.userData={kind:'forest-spirit-leaf',detail,
+  realLeafMidrib:true,curvedLeafBlade:true,leafVariety:mod};
  return geo;
 }
 
@@ -197,20 +217,20 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
   // Skin still belongs to a real female character; organic foliage
   // sprouts from the same animated head and torso, never a fake mask.
   for(const side of [-1,1]){
-   line(frames.head,'leaf','wood-antler-trunk-'+side,[
+   line(frames.head,'forestBark','wood-antler-trunk-'+side,[
     [side*.10,.12,.01],[side*.17,.26,.06],
     [side*.24,.37,.10]],.034);
    // Branching woodland antlers carry foliage and blossom buds, never
    // the Guardian's feathers or halo. All details follow the Head bone.
    for(let i=0;i<3;i++){
     const y=.25+i*.056,x=.16+i*.031;
-    line(frames.head,'leaf','wood-antler-branch-'+side+'-'+i,[
+    line(frames.head,'forestBark','wood-antler-branch-'+side+'-'+i,[
      [side*(x-.025),y-.04,.065],[side*(x+.045),y+.035,.063],
      [side*(x+.081),y+.072,.052]],.011);
     add(frames.head,createFemaleSummonLeaf({detail,size:.16+i*.025}),
      'leaf','antler-leaf-'+side+'-'+i,
      [side*x,y,.05],[side*.2,0,side*(.9+i*.35)]);
-    orb(frames.head,'ivoryCloth','forest-flower-bud-'+side+'-'+i,
+    orb(frames.head,'forestBlossom','forest-flower-bud-'+side+'-'+i,
      [side*(x+.073),y+.067,.052],[.019,.012,.019]);
    }
    add(frames.head,createFemaleSummonLeaf({detail,size:.12}),
@@ -235,12 +255,12 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
    const count=detail==='low'?10:18;
    for(let i=0;i<count;i++){
     const phi=Math.PI*2*(i+(tier?0.5:0))/count;
-    const size=(tier===0?.44:.51)+.035*Math.sin(i*2.1);
-    const radius=tier===0?.27:.42;
-    const mesh=add(frames.pelvis,createFemaleSummonLeaf({detail,size}),
+    const size=(tier===0?.275:.345)+.025*Math.sin(i*2.1);
+    const radius=tier===0?.25:.37;
+    const mesh=add(frames.pelvis,createFemaleSummonLeaf({detail,size,variety:i+tier*3}),
      i%4===0?'forestMint':i%3===0?'forestDeep':'leaf',
      'emerald-outer-skirt-leaf-'+tier+'-'+i,
-     [Math.sin(phi)*radius,.095-tier*.28,Math.cos(phi)*radius],
+     [Math.sin(phi)*radius,.088-tier*.25,Math.cos(phi)*radius],
      [Math.PI,phi,Math.sin(phi)*.12]);
     mesh.userData.forestCanopyOuterLayer=true;
     mesh.userData.forestCanopyTier=tier;
