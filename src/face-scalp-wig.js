@@ -1058,9 +1058,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.hairStyleName=style.label;
  root.userData.part=style.part;
  root.userData.whorlPosition=whorl.toArray();
+ const sadakoMaster=style.id==='sadako-straight-long';
  const cap=scalpShell(head.geometry,box,color,{
   fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
   battleStableCoverage,volumeProfile,styleId:style.id});root.add(cap);
+ // Sampling cap triangles by surface area avoids repeated source vertices
+ // and distributes roots across the front scalp instead of the ears.
+ const sadakoFollicles=sadakoMaster?
+  createAreaWeightedScalpRootSampler(cap,box):null;
  const baseCount=clamp(Math.round(count),48,2400),
   segments=style.id==='sadako-straight-long'?18:11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
@@ -1074,11 +1079,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const rearBodyVolumeExtra=bodyCollisionResolver&&!style.shortCutKind?
   Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
  const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
- const weightedZones=WIG_ZONE_WEIGHTS.map(([name,weight])=>
+ const sadakoWeights={
+  crown:.27,fringeLeft:.09,fringeRight:.09,
+  templeLeft:.10,templeRight:.10,
+  backLeft:.13,backRight:.13,napeLeft:.045,napeRight:.045
+ };
+ const weightedZones=WIG_ZONE_WEIGHTS.map(([name,originalWeight])=>{
+  const weight=sadakoMaster?sadakoWeights[name]:originalWeight;
+  return [
   [name,weight*(name.startsWith('fringe')?fringeMultiplier:
     bodyCollisionResolver&&(name.startsWith('back')||
      name.startsWith('nape'))?1.35:
-    bodyCollisionResolver&&name.startsWith('temple')?1.20:1)]);
+    bodyCollisionResolver&&name.startsWith('temple')?1.20:1)];
+ });
  const totalZoneWeight=weightedZones.reduce((sum,[,weight])=>sum+weight,0);
  const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
  const zoneCap=[],zoneNames=[];
@@ -1097,7 +1110,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ let sadakoAreaSampledRoots=0;
  const sampleRoot=(zone,index)=>{
+  const areaSeed=sadakoFollicles?.sample(zone,index);
+  if(areaSeed){sadakoAreaSampledRoots++;return areaSeed;}
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
@@ -1117,7 +1133,6 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
  const rootLift=d.x*(style.shortCutKind==='buzz'?.013:style.shortCutKind?.010:.0125);
- const sadakoMaster=style.id==='sadako-straight-long';
  const sadakoHeadDirection=new THREE.Vector3(),sadakoRenderCorner=new THREE.Vector3();
  let sadakoGuideScalpPushes=0,sadakoRibbonScalpPushes=0;
  /** True exterior projection for the guide AND rendered ribbon corners.
@@ -1775,8 +1790,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  // Close crops still need visible fibres OUTSIDE the scalp foundation.
  // Their count is independently reported, not a fake 10x fibre label.
- const sadakoCrownFlow=style.id==='sadako-straight-long'?
-  createSadakoCrownFlow(cap,box,color):null;
+ // The former short tangential crown fibres resembled dark buzz stubble and
+ // hid the missing long-hair follicles. Long hair is now rooted uniformly
+ // across the REAL pigmented scalp. Keep the helper for standalone QA.
+ const sadakoCrownFlow=null;
  if(sadakoCrownFlow)root.add(sadakoCrownFlow);
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
@@ -1935,6 +1952,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
   sadakoCrownFibreCount:sadakoCrownFlow?.userData.crownFibreCount||0,
+  sadakoAreaSampledRoots:sadakoMaster?sadakoAreaSampledRoots:null,
+  sadakoFollicleTriangles:sadakoFollicles?.donorTriangles||0,
+  sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
+  sadakoUnifiedScalpClipping:sadakoMaster&&cap.userData.unifiedBuzzContour,
+
   sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-master-v52':null,
   sadakoGravityTransition:sadakoMaster?{scalpTo:.15,fullyGravity:.38,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
