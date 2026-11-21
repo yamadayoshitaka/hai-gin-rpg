@@ -8,17 +8,18 @@
  * soldier skeletons. Summoned species have their normal human-relative height.
  */
 import * as THREE from 'three';
+import {m018BattleScale} from './m018-battle-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './monster-geometry.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {createCosplayedHumanoidMonster}
  from './monster-character-cosplay.js?v=4.6.90';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './monster-animation.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {creatureFlightHeight} from './combat-creature-performance.js?v=natural-size-20261116';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './creature-game-model-routing.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource} from './creature-real-source-catalog.js?v=real-body-only-v4';
 import {chooseCreatureLod} from './creature-master-library.js?v=m001-m005-m006-v3-20261118';
@@ -88,7 +89,9 @@ export function createMonsterSummonRenderer(scene,{
   if(!isHumanoid&&(!Number.isFinite(h)||h<=0)){
    disposeMonsterSculpture(actor);return null;
   }
-  const size=monsterSummonWorldScale(object.type,isHumanoid?1.7:h);
+  const hydra=spec.id==='m018';
+  const size=hydra?m018BattleScale(bounds,cellSize):
+   monsterSummonWorldScale(object.type,isHumanoid?1.7:h);
   const anchor=new THREE.Group();
   anchor.name='SummonedBestiary_'+spec.id;
   const fitting=new THREE.Group();
@@ -179,7 +182,11 @@ export function createMonsterSummonRenderer(scene,{
     if(!Number.isFinite(sourceHeight)||sourceHeight<=.0001){
      loaded.dispose();node.sourceError='Empty source GLB';return;
     }
-    const targetScale=monsterSummonWorldScale(object.type,sourceHeight);
+    const targetScale=hydra?m018BattleScale(sourceBounds,cellSize):
+     monsterSummonWorldScale(object.type,sourceHeight);
+    if(!Number.isFinite(targetScale)||targetScale<=0){
+     loaded.dispose();node.sourceError='Invalid source GLB proportions';return;
+    }
     // Only this summoned actor changes. Original source and catalog remain.
     position.remove(node.actor);
     disposeMonsterSculpture(node.actor);

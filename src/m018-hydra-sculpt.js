@@ -1,6 +1,6 @@
 import {dragonCraniumProfile} from './dragon-cranium-profile.js';
 
-export const M018_HYDRA_REVISION='m018-purple-thorn-dragon-necks-v23-20261121';
+export const M018_HYDRA_REVISION='m018-armored-four-cell-hydra-v24-20261121';
 
 const NECKS=[
  {suffix:'L',side:-1,scale:.89,neckHeight:1.54,spread:.99,rootX:-.24,rootZ:.24},
@@ -75,6 +75,14 @@ function dragonCranium(g,neck,definition,end,{detail='high'}={}){
   g.curvedHorn(skull,'light',
    [s*.160,.013,.044],[s*.253,.035,-.102],
    [s*.340,.082,-.285],.052,{name:'m018-dragon-cheek-spur-'+suffix});
+  if(!low){
+   g.curvedHorn(skull,'skin',[s*.143,.010,.361],
+    [s*.217,.031,.206],[s*.238,.087,.021],.046,
+    {name:'m018-cheek-scale-ridge'});
+   g.curvedHorn(skull,'#57316d',[s*.106,.142,.117],
+    [s*.141,.225,.027],[s*.174,.278,-.17],.033,
+    {name:'m018-orbital-crest'});
+  }
   const nostril=g.sphere(skull,'shadow',
    [s*.077,-.073,.717],[.022,.010,.013],
    {name:'m018-dragon-nostril-'+suffix+(s<0?'-L':'-R')});
@@ -130,7 +138,9 @@ function sculptThroatScutes(g,neck,path,curve,radius,suffix,low){
     const outward=forward.clone().cross(tangent);
     const angle=across*(.93-.10*depth);
     const shell=radius*(1-.35*t*t*(3-2*t));
-    const rise=shell*(.984+.075*Math.sin(depth*Math.PI))-.006*across*across;
+    // The low-LOD tube is faceted, so allow clearance for the outer corners
+    // of each plate as it spans the curve between neighboring tube rings.
+    const rise=shell*(1.035+.042*Math.sin(depth*Math.PI));
     center.addScaledVector(forward,rise*Math.cos(angle));
     center.addScaledVector(outward,rise*Math.sin(angle));
     positions.push(...center.toArray());
@@ -207,10 +217,71 @@ export function sculptM018Hydra(g,torso,centralHead,{detail='high'}={}){
  g.root.userData.m018PhysicalDragonHeads=true;
 }
 
-export function sculptM018HydraThorns(g,torso,tail,tailMid,{
- detail='high'
-}={}){
- // Root the purple dorsal crystals in the existing skin and tail pivots.
+export function sculptM018Leg(g,leg,name,side,fore){
+ // Bury the proximal joint into the same rib cage. Bend the upper limb
+ // outwards into a broad, lower, claw-bearing reptilian stance.
+ leg.position.y=1.19;
+ const joint=[side*.29,-.54,fore?-.10:.16];
+ const lower=g.group('lower'+name,joint,leg);
+ const palm=[side*.06,-.57,fore?.23:.19];
+ const thighWidth=fore?.207:.251;
+ g.limbLoft(leg,'skin',[
+  {x:side*-.06,y:.22,z:fore?.028:-.105,rx:.126,rz:.145},
+  {x:side*.025,y:.105,z:fore?.035:-.106,rx:thighWidth,rz:thighWidth*1.08},
+  {x:side*.105,y:-.090,z:fore?-.008:-.031,rx:thighWidth*.98,rz:thighWidth*1.02},
+  {x:side*.225,y:-.365,z:joint[2]*.81,rx:.164,rz:.169},
+  {x:joint[0],y:joint[1]-.081,z:joint[2],rx:.127,rz:.132},
+ ],{name:'m018-continuous-upper-'+name});
+ g.limbLoft(lower,'skin',[
+  {x:0,y:.134,z:0,rx:.123,rz:.129},
+  {x:side*.013,y:-.045,z:.012,rx:.146,rz:.149},
+  {x:side*.036,y:-.172,z:.033,rx:.125,rz:.123},
+  {x:palm[0],y:-.390,z:palm[2]*.60,rx:.090,rz:.102},
+  {x:palm[0],y:palm[1]+.011,z:palm[2],rx:.103,rz:.109},
+ ],{name:'m018-continuous-lower-'+name});
+ const toe=g.group('toe'+name,palm,lower);
+ g.sphere(toe,'skin',[0,-.010,.037],[.150,.070,.169],{name:'m018-palm-'+name});
+ const digits=g.root.userData.detail==='low'?3:4;
+ for(let digit=0;digit<digits;digit++){
+  const x=(digit-(digits-1)/2)*.069,z=.139-.028*Math.abs(x)/.1035;
+  const flesh=g.bridge(toe,'skin',[x*.59,.004,.053],[x,-.018,z+.044],.041,.031);
+  flesh.name='m018-digit-'+name;
+  g.curvedHorn(toe,'bone',[x,-.009,z+.012],[x*1.12,-.016,z+.088],
+   [x*1.22,-.061,z+.131],.027,{name:'m018-rooted-talon-'+name});
+ }
+}
+
+export function sculptM018Tail(g,tail){
+ const low=g.root.userData.detail==='low';
+ const sections=[
+  {path:[[0,-.015,.19],[0,.022,-.32],[.04,.045,-.82],[.07,.045,-1.00]],radius:.232,taper:.60},
+  {path:[[0,0,.17],[.08,.04,-.31],[.22,.11,-.73],[.27,.16,-.86]],radius:.158,taper:.40},
+  {path:[[0,-.02,.17],[.10,.11,-.22],[.19,.31,-.50],[.20,.41,-.58]],radius:.081,taper:.12},
+ ];
+ const mid=g.group('tailMid',[.04,.045,-.82],tail);
+ const tip=g.group('tailTip',[.22,.11,-.73],mid);
+ for(const [index,pivot] of [tail,mid,tip].entries()){
+  const {path,radius,taper}=sections[index];
+  const skin=g.tube(pivot,'skin',path,radius,{
+   name:'m018-closed-caudal-skin-'+index,taper,capEnds:true,
+   tubularSegments:low?10:22,radialSegments:low?9:15,
+  });
+  const curve=skin.geometry.parameters.path;
+  const count=low?3:5;
+  for(let i=0;i<count;i++){
+   const t=.18+.67*i/(count-1),p=curve.getPointAt(t);
+   const shell=radius*(1+(taper-1)*t*t*(3-2*t));
+   const height=.24-index*.065;
+   const x=p.x,y=p.y+shell*.79,z=p.z;
+   const spine=g.curvedHorn(pivot,'accent',[x,y,z],
+    [x+.018,y+height*.62,z-.051],[x+.041,y+height,z-.13],
+    Math.min(.054,shell*.42),{name:'m018-caudal-venom-spike-'+index});
+   spine.userData.m018TailFollow=true;
+  }
+ }
+}
+
+export function sculptM018HydraThorns(g,torso,{detail='high'}={}){
  const low=detail==='low';
  const count=low?6:12;
  for(let i=0;i<count;i++){
@@ -222,23 +293,11 @@ export function sculptM018HydraThorns(g,torso,tail,tailMid,{
    [side*.110,y+height,z-.13],low?.038:.052,
    {name:'m018-rooted-toxic-thorn-'+i,rough:.58});
   spine.userData.m018BuriedCrystalRoot=true;
- }
- if(!low)for(const side of [-1,1])for(let i=0;i<4;i++){
-  const z=.45-i*.28;
-  const scale=g.rock(torso,'shadow',
-   [side*.36,1.32,z],[.067,.031,.108],
-   {name:'m018-integrated-flank-plate-'+(side<0?'L':'R')+'-'+i});
-  scale.userData.m018InsetBodyScale=true;
- }
- // Only a few carefully anchored poison crystals on tail pivots.
- for(const [pivot,stem] of [[tail,'base'],[tailMid,'mid']]){
-  if(!pivot)continue;
-  for(let i=0;i<(low?2:3);i++){
-   const z=-.10-i*.17;
-   const shard=g.curvedHorn(pivot,'accent',
-    [0,.090,z],[.028,.140,z-.045],[.037,.213,z-.107],.025,
-    {name:'m018-caudal-venom-spike-'+stem+'-'+i});
-   shard.userData.m018TailFollow=true;
+  if(!low&&i%2===0)for(const rowSide of [-1,1]){
+   const x=rowSide*(.172-.049*t);
+   g.curvedHorn(torso,'#57316d',[x,y-.090,z-.039],
+    [x+rowSide*.095,y+.035,z-.097],[x+rowSide*.125,y+.090,z-.198],
+    .038,{name:'m018-secondary-dorsal-thorn'});
   }
  }
 }
