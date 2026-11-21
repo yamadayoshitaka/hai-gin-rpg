@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=sea-dragon-summon-silhouette-v3-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m024-chitin-crystal-wing-eye-pbr-v2-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -31,7 +31,7 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw}
  from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
 import {M024_SCARAB_REVISION,sculptM024PoisonScarab}
- from './m024-poison-scarab-sculpt.js?v=m024-purple-venom-armored-scarab-v1-20261121';
+ from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
  sculptBasiliskFacePlates,seaDragonRevision,isSeaDragon,sculptSeaDragon} from './reptile-detail-sculpt.js?v=leviathan-abyssal-sea-wyrm-v6-20261121';
 import {M050_CORAL_REVISION,sculptM050CoralBeast} from './m050-coral-beast-sculpt.js';
@@ -3040,5 +3040,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=sea-dragon-summon-silhouette-v3-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m024-chitin-crystal-wing-eye-pbr-v2-20261121';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=sea-dragon-summon-silhouette-v3-20261121';

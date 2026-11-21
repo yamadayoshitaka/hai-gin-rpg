@@ -4,6 +4,8 @@
  * Meshes are cached only where geometry parameters are genuinely reusable.
  */
 import * as THREE from 'three';
+import {decorateM024PBRMaterial}
+ from './m024-scarab-pbr-surface.js?v=m024-chitin-crystal-wing-eye-pbr-v2-20261121';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=m024-purple-venom-armored-scarab-v1-20261121';
@@ -52,12 +54,14 @@ function cachedGeometry(key,make){
  if(!geometryCache.has(key))geometryCache.set(key,make());
  return geometryCache.get(key);
 }
-function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},spec={},role='skin',detail='high'){
- const key=[spec.id,spec.family,role,detail,color,metal,rough,glow,translucent].join(':');
+function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
+ surface=null}={},spec={},role='skin',detail='high'){
+ const key=[spec.id,spec.family,role,detail,color,metal,rough,glow,translucent,surface].join(':');
  let entry=materialCache.get(key);
  if(!entry){
    const wet=spec.family==='aquatic'&&translucent;
-   const M=wet?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;
+   const m024Surface=spec.id==='m024'&&surface;
+   const M=wet||m024Surface?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;
    const mat=new M({
      color,roughness:wet?.13:rough,metalness:wet?0:metal,
      side:THREE.DoubleSide,vertexColors:role==='tailScale'||role==='seaDragonSkin',
@@ -67,7 +71,8 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},s
      ...(wet?{clearcoat:.88,clearcoatRoughness:.085,ior:1.35,
        transmission:.14,thickness:.4}:{}),
    });
-   if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
+   if(m024Surface)decorateM024PBRMaterial(mat,{surface,detail});
+   else if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
@@ -153,10 +158,10 @@ export function createSculpture(spec,detail='high'){
    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
    return m;
  };
- const bone=(parent,shade,from,to,radius,{tipRadius=.025,metal=.07,rough=.72}={})=>
+ const bone=(parent,shade,from,to,radius,{tipRadius=.025,metal=.07,rough=.72,surface=null}={})=>
    oriented(parent,shade,from,to,radius,tipRadius,
      length=>new THREE.CylinderGeometry(tipRadius,radius,length,resolution.rod,2),
-     {metal,rough});
+     {metal,rough,surface});
  const spike=(parent,shade,from,to,radius=.08)=>
    oriented(parent,shade,from,to,radius,0,
      length=>new THREE.ConeGeometry(radius,length,resolution.rod,2));
@@ -315,7 +320,7 @@ export function createSculpture(spec,detail='high'){
   * Station order is nose (+Z) -> tail (-Z). Animated parts remain separate.
   */
  const axialLoft=(parent,shade,stations,{name='axial-anatomical-source',
-   rough=.78,ribbing=.012,faceSculpt=false,capEnds=false}={})=>{
+   rough=.78,ribbing=.012,faceSculpt=false,capEnds=false,surface=null}={})=>{
    if(!Array.isArray(stations)||stations.length<3||
      !stations.every(p=>Number.isFinite(p.z)&&Number.isFinite(p.y)&&
        Number.isFinite(p.rx)&&p.rx>0&&Number.isFinite(p.ry)&&p.ry>0))
@@ -379,7 +384,7 @@ export function createSculpture(spec,detail='high'){
      geo.userData.anatomy='face';
      geo.userData.faceVolumeApplied=true;
    }
-   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
+   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0,surface}));
    if(facialVolume)mesh.userData.anatomyLoft=true;
    mesh.userData.axialAnatomy=true;
    mesh.userData.anatomicalStations=stations.length;
@@ -558,11 +563,12 @@ export function createSculpture(spec,detail='high'){
    return skin;
  };
  /** Buried curved horn/ivory root with continuous ridged tapered skin. */
- const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{name='beast-keratin',rough=.49,capRoot=false}={})=>{
+ const curvedHorn=(parent,shade,rootPoint,elbow,tip,radius,{
+    name='beast-keratin',rough=.49,capRoot=false,surface=null}={})=>{
    const geo=createRootedCreatureHornGeometry({
      root:rootPoint,elbow,tip,radius,capRoot,detail:detail==='low'?'low':'high'
    });
-   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0}));
+   const mesh=own(attach(parent,geo,shade,{name,rough,metal:0,surface}));
    mesh.userData.rootedKeratin=true;
    return mesh;
  };
@@ -925,7 +931,7 @@ export function createSculpture(spec,detail='high'){
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
    geo.setIndex(indices);geo.computeVertexNormals();
    return own(attach(parent,geo,shade,{name:options.name,rough:options.rough??.61,
-     translucent:options.translucent??false}));
+     translucent:options.translucent??false,surface:options.surface??null}));
  };
  /** A ribbed membrane spanned between a buried root and fin-ray tips. */
  const fanFin=(parent,shade,base,tips,{name='fan-fin',camber=.12}={})=>{
