@@ -189,7 +189,8 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
     [side*.094,.021,-.105],[side*.113,-.028,-.090],
     [side*.099,-.064,-.102]],.005);
   }
-  line(frames.forearms[i],type==='forest_spirit_female'?'leaf':'metal',
+  line(frames.forearms[i],type==='forest_spirit_female'?'leaf':
+   type==='seraph_female'?'seraphGoldTrim':'metal',
    'arm-guard-'+side,[[0,-.12,-.08],[side*.08,-.20,-.066],
    [0,-.30,-.05]],.016);
  }
@@ -270,10 +271,10 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
   // frontal camera. Use a true open halo facing the viewer (+Z).
   const halo=new THREE.TorusGeometry(.160,.014,
     hi?9:6,hi?45:18);
-  add(frames.head,halo,'metal','seraph-open-circular-halo',
+  add(frames.head,halo,'seraphGoldTrim','seraph-open-circular-halo',
     [0,.365,-.018],[-.15,0,0]);
   add(frames.chest,createGothicMantle({detail,width:.34,drop:.92,back:.25}),
-   'velvet','seraph-cloth-back');
+   'seraphCapeLining','seraph-cloth-back');
  }
  if(type==='dragonkin_male'){
   // Male sovereign: a broad plated head silhouette, horns, hinged wings,
