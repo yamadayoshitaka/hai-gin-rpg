@@ -41,8 +41,8 @@ export function deriveFacialActionUnits(expression={}){
 }
 
 export function v80FaceMuscleDelta({ax=0,ny=.5,front=1,
- mouthY=.509,ageStrength=0,expression={}}={}){
- const a=deriveFacialActionUnits(expression);
+ mouthY=.509,ageStrength=0,expression={},actionUnits=null}={}){
+ const a=actionUnits||deriveFacialActionUnits(expression);
  const f=clamp(front),age=clamp(ageStrength);
  const eyeY=.684,browY=.744;
  const corner=fall(ax,.078,.038)*fall(ny,mouthY,.048)*f;
