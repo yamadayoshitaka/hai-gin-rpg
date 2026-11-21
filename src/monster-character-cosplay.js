@@ -47,7 +47,7 @@ import {addConstructMonsterCostume,isConstructCostume,
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume,createOriginalGuardianWingPair}
- from './female-summon-costumes.js?v=seraph-mouth-whiskers-removed-v1-20261121';
+ from './female-summon-costumes.js?v=seraph-gilded-halo-v3-20261122';
 import {createDragonkinNativeScalpOverlay}
  from './dragonkin-native-scalp.js?v=4.5.14';
 import {cutFemaleSummonScalpUnderCover}
