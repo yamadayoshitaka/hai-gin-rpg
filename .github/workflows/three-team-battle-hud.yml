@@ -27,6 +27,9 @@ on:
       - 'tactics-wireframe.html'
       - 'qa/battle-three-team-*'
       - 'qa/realtime-deployment-mobile-performance.test.mjs'
+      - 'qa/battle-capture-objective.test.mjs'
+      - 'src/battle-capture-objective.js'
+      - 'src/targeted-strategy-runtime.js'
       - '.github/workflows/three-team-battle-hud.yml'
   workflow_dispatch:
 jobs:
@@ -40,6 +43,8 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check src/battle-portrait-identity.js && node --check src/battle-stage-identity.js && node --check src/battle-rpg-squad-source.js && node --check src/battle-rpg-squad-hud.js && node --check src/battle-realtime-commands.js && node --check src/battle-realtime-deployment.js && node --check src/three-team-core-bridge.js
+      - name: Verify simplified commands and true capture victory
+        run: node --check src/battle-capture-objective.js && node --check src/targeted-strategy-runtime.js && node --test qa/battle-capture-objective.test.mjs
       - name: Install lightweight DOM test dependency
         run: npm install --no-save --package-lock=false linkedom@0.18.12
       - name: Verify real DOM with three teams and nested job divisions
