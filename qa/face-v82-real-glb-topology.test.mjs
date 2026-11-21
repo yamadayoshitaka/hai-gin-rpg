@@ -196,6 +196,10 @@ test('V85 public CC0 face preserves original mouth geometry and neutralises laug
   femaleControls:{ageBand:'twenties'}
  });
  const face=model.face,rest=face.geometry.getAttribute('position');
+ const rgb=face.geometry.getAttribute('color');
+ assert.equal(rgb.count,rest.count,'Actual GLB makeup needs 1 RGB per vertex');
+ assert.ok(rgb.array.every(Number.isFinite),
+  'Actual GLB mouth/skin pigments must all be finite to avoid black GPU polygons');
  assert.ok(face.userData.v85SourceOralGeometryProtected);
  assert.ok(face.userData.v85RestoredOralVertices>10,
   'On a real GLB many mouth vertices should be restored to the donor');
