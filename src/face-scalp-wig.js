@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-pronounced-sideburn-nape-v38';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-pigment-sadako-gravity-v48';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -954,13 +954,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Even non-fringe CROWN roots must be cut above the eyebrows if they
   // face forward. Otherwise they form a long curtain across both eyes.
   // Temple hair is a long face-framing layer, NEVER a short eyebrow bang.
-  const overFace=!back&&!zone.startsWith('temple')&&frontRoot&&midFace;
+  const sadakoGravity=style.id==='sadako-straight-long';
+  const overFace=!sadakoGravity&&!back&&!zone.startsWith('temple')&&frontRoot&&midFace;
   if(overFace)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
   const torsoExtension=bodyCollisionResolver&&
    (back||zone.startsWith('temple')) ? .30 : 0;
-  const longFactor=(zone.startsWith('nape')?.68:
+  const longFactor=(sadakoGravity?1.65:zone.startsWith('nape')?.68:
    zone.startsWith('temple')?.72:back?.80:.76)+torsoExtension;
   // Longer cuts can fall from the eyebrow to the upper eye, while the
   // crown is protected against draping into the pupil, nose and mouth.
@@ -995,7 +996,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
-  const baseTrimY=cutKind?wigRoot.y-length*1.06:
+  const baseTrimY=sadakoGravity?wigRoot.y-length*1.04:cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
      hairCutY(zone,box,lengthScale,i,lateral,minLengthScale)+
@@ -1005,7 +1006,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // nape. Existing one-mesh layered cards follow these individual cuts.
   const floorRatio=back?catalogGroom.backFloor:
    zone.startsWith('temple')?catalogGroom.templeFloor:0;
-  const trimY=floorRatio?Math.max(baseTrimY,
+  const trimY=sadakoGravity?baseTrimY:floorRatio?Math.max(baseTrimY,
    Math.min(wigRoot.y-d.y*.014,box.min.y+d.y*floorRatio)):baseTrimY;
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
@@ -1023,14 +1024,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // bald notch above the forehead centre. Keep a subtle parted silhouette
    // without pulling the actual rooted bangs entirely off the centreline.
    (style.fringeSweep||.025)*.28*Math.pow(1-centerDist,1.1));
-  const targetX=(back?
+  const targetX=sadakoGravity?wigRoot.x+(wigRoot.x-center.x)*.025:
+   (back?
    center.x+(wigRoot.x-center.x)*silhouette.rearWidth:
    fringe?wigRoot.x+curtainSweep:
    wigRoot.x+(closeToFace?curtainSweep*.76:
     zone.startsWith('temple')?side*d.x*(.035+silhouette.sideFlare):
      side*d.x*(.010+silhouette.sideFlare*.55)))+
    partSide*d.x*style.partWidth*partInfluence*(fringe?.08:1);
-  const targetZ=closeToFace?wigRoot.z+d.z*style.scalpClearance:
+  const targetZ=sadakoGravity?wigRoot.z+(back?-d.z*.035:d.z*.015):
+   closeToFace?wigRoot.z+d.z*style.scalpClearance:
    // Go BEHIND the neck rather than being occluded by the rear bust skin.
    back?Math.min(wigRoot.z-d.z*((style.backSweep??.035)+silhouette.rearDepth),
     center.z-d.z*(.13+silhouette.rearDepth*.30)):
@@ -1494,8 +1497,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Keep the donor cap geometry for fibre-root sampling and diagnostics,
  // but do not render its solid white surface. Face/ear/neck are untouched.
  if(style.shortCutKind==='buzz'){
-  cap.visible=false;
-  cap.userData.buzzOpaqueShellDisabled=true;
+  // An opaque pigment-matched scalp undercoat prevents pale donor skin
+  // showing between individual stubble fibres. Keep it flush with the donor.
+  cap.visible=true;
+  cap.material.color.set(color);
+  cap.material.roughness=.96;
+  cap.userData.buzzPigmentUndercoat=true;
   root.userData.buzzFibreOnly=true;
  }
  // Characteristic coiffure sections must have their OWN REAL GEOMETRY.
@@ -1527,7 +1534,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // reintroducing its solid scalp cap. Native donor scalp is masked in
   // the studio along the contoured hairline, leaving face and ears.
   const nodes=style.shortCutKind==='buzz'
-   ?[...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
+   ?[cap,...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
