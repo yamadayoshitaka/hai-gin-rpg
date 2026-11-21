@@ -1869,8 +1869,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
       const scale=style.catalogCurl==='sauvage'?.45:.27;
       p.x+=bend.x*scale;p.y+=bend.y*scale;p.z+=bend.z*scale;
      }
-     if(style.catalogFront==='bangs'&&fringe)
-      p.y=Math.max(box.min.y+d.y*.762,p.y);
+     if(style.catalogFront==='bangs'&&fringe){
+      // Short pixie/mash "bangs" is an actual blunt fringe above eyebrows,
+      // not the original buzz donor's sideways cropped roof.
+      const blend=THREE.MathUtils.smoothstep(t,0,1);
+      const brow=box.min.y+d.y*.786;
+      p.y=THREE.MathUtils.lerp(wigRoot.y,
+       Math.min(brow,wigRoot.y-d.y*.035),blend);
+      p.x=THREE.MathUtils.lerp(p.x,wigRoot.x,blend*.92);
+      p.z=Math.max(p.z,wigRoot.z+d.z*.020*blend);
+     }
     }
    }
    if(j>0&&t<.65&&y>box.min.y+d.y*.60){
