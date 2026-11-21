@@ -110,7 +110,7 @@ export function setInnRosterCount(game,teamId,squadId,delta){
  team.slots.forEach((id,i)=>{if(id&&assigned(team,id)>0)team.grid[freeCells[i]]=String(id);});
  const others=otherAssigned(plan,team,sid);
  const freeSpec=formationTemplate('free');
- const rarities=formationRarityCounts(team,sources),tier=rarityOf(source);
+ const rarities=formationRarityCounts(team,sourcesOf(game)),tier=rarityOf(source);
  const limit=Math.min(source.count-others,freeSpec.maxTroops-headcount(team)+old,
   freeSpec.rarityCaps[tier]-rarities[tier]+old,
   sortiePlanningLimit(game)-plan.teams.reduce((n,t)=>n+headcount(t),0)+old);
