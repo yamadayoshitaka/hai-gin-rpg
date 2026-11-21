@@ -9,6 +9,11 @@ on:
       - 'src/combat-effect-directives.js'
       - 'src/combat-world-object-renderer.js'
       - 'src/monster-character-cosplay.js'
+      - 'src/seraph-celestial-wardrobe.js'
+      - 'src/seraph-celestial-materials.js'
+      - 'src/female-summon-costumes.js'
+      - 'src/monster-regal-garments.js'
+      - 'qa/seraph-tailored-vestment-regression.test.mjs'
       - 'tactics-wireframe.html'
       - 'qa/summon-healer-starflare-regression.test.mjs'
       - 'qa/summon-geometry.test.mjs'
@@ -34,6 +39,9 @@ jobs:
           node --check src/combat-effect-directives.js
           node --check src/combat-world-object-renderer.js
           node --check src/monster-character-cosplay.js
+          node --check src/seraph-celestial-wardrobe.js
+          node --check src/seraph-celestial-materials.js
+          node --test qa/seraph-tailored-vestment-regression.test.mjs
       - name: Verify healing priority, real Starflare damage and feather PBR
         run: npm run test:summon-battle-quality
       - name: Existing mass battle summoning and damage link regression
