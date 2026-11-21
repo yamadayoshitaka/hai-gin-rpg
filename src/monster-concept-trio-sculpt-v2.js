@@ -292,7 +292,7 @@ function crystalSlime(g,s){
  }
  for(const side of [-1,1])for(let j=0;j<2;j++){
   // Real faceted crystal mesh, rotated into the flowing skirt.
-  const geo=new THREE.OctahedronGeometry(.15+j*.025,1);
+  const geo=new THREE.OctahedronGeometry(.17+j*.027,0);
   const gem=placeMesh(g,torso,geo,'gel-embedded-crystal',
    'slime-gem',{color:j?'#c3ffff':'#52d5f6',roughness:.11,
      clearcoat:1,clearcoatRoughness:.045,metalness:.03});
@@ -457,8 +457,8 @@ function abyssalOctopus(g,s){
      const t=k/teeth,base=sweep.curve.getPoint(t),rNow=sweep.radiusAt(t);
      g.spike(parent,'light',
       [base.x,base.y+rNow*.74,base.z],
-      [base.x+x*rNow*.35,base.y+rNow*1.30,base.z-z*rNow*.25],
-      .028*(1-t*.6));
+      [base.x+x*rNow*.58,base.y+rNow*2.15,base.z-z*rNow*.42],
+      .053*(1-t*.4));
     }
    }
   }
