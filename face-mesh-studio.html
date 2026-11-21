@@ -434,7 +434,7 @@ function refreshExpression(sex){
 $('faceExpression').addEventListener('change',()=>{
  expressionPrefs.expression=$('faceExpression').value;
  for(const animator of expressions.values())
-  animator.setExpression(expressionPrefs.expression);
+  animator.transitionToExpression(expressionPrefs.expression,.28);
  updateFacePoseDiagnostics();
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
