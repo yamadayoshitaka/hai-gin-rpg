@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-scalp-first-gravity-v52';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-unified-scalp-area-roots-v53';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -95,6 +95,84 @@ function actualScalpCandidates(geo,box){
   }
  }
  return {pools,all};
+}
+/** V53 scalp follicle distribution: uniform over actual donor triangle
+ * AREA, not raw source vertex count. Photo-derived head topology is much
+ * denser at the eyes/ears than at the forehead and crown; using source
+ * vertices directly clumped roots behind the face and exposed the front.
+ * Do not sample the decorative nape strips included in the wig cap mesh. */
+export function createAreaWeightedScalpRootSampler(cap,box){
+ const pos=cap?.geometry?.getAttribute?.('position');
+ const normal=cap?.geometry?.getAttribute?.('normal');
+ if(!pos||!normal)throw Error('Real donor-backed scalp cap required');
+ const maxCount=Math.min(pos.count,
+  cap.userData?.donorScalpVertexCount??pos.count);
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const pools=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,[]]));
+ const totals=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
+ const pa=new THREE.Vector3(),pb=new THREE.Vector3(),pc=new THREE.Vector3();
+ const edgeA=new THREE.Vector3(),edgeB=new THREE.Vector3();
+ let donorTriangles=0;
+ const add=(zone,t,area)=>{
+  const next=totals[zone]+area;
+  pools[zone].push({index:t,area,cumulative:next});
+  totals[zone]=next;
+ };
+ for(let t=0;t+2<maxCount;t+=3){
+  pa.fromBufferAttribute(pos,t);pb.fromBufferAttribute(pos,t+1);
+  pc.fromBufferAttribute(pos,t+2);
+  const area=edgeA.subVectors(pb,pa).cross(edgeB.subVectors(pc,pa)).length()*.5;
+  if(!Number.isFinite(area)||area<1e-9)continue;
+  const x=(pa.x+pb.x+pc.x)/3,y=(pa.y+pb.y+pc.y)/3,
+   z=(pa.z+pb.z+pc.z)/3;
+  const nx=(x-c.x)/Math.max(d.x,1e-6),
+   nz=(z-c.z)/Math.max(d.z,1e-6),
+   yn=(y-box.min.y)/Math.max(d.y,1e-6);
+  const side=nx<0?'Left':'Right';
+  donorTriangles++;
+  // Crown must include the forward sweep all the way to the forehead.
+  if(yn>.82&&Math.abs(nx)<.46)add('crown',t,area);
+  if(yn>.835&&nz>.005&&Math.abs(nx)<.37)
+   add('fringe'+side,t,area);
+  if(yn>.74&&yn<.975&&nz>-.14&&Math.abs(nx)>.13)
+   add('temple'+side,t,area);
+  if(yn>.615&&nz<-.04)add('back'+side,t,area);
+  if(yn>.525&&yn<.81&&nz<-.045)add('nape'+side,t,area);
+ }
+ const fract=x=>x-Math.floor(x);
+ function sample(zone,index){
+  const list=pools[zone],total=totals[zone];
+  if(!list?.length||!(total>0))return null;
+  // A low-discrepancy sequence chooses triangle surface AREA instead of
+  // sampling arbitrarily repeated existing GLB vertices.
+  const target=fract((index+.5)*.618033988749895+
+   (WIG_ZONE_WEIGHTS.findIndex(([name])=>name===zone)+1)*.17320508075)*total;
+  let lo=0,hi=list.length-1;
+  while(lo<hi){
+   const m=(lo+hi)>>1;
+   if(list[m].cumulative<target)lo=m+1;
+   else hi=m;
+  }
+  const t=list[lo].index;
+  const u=Math.sqrt(fract((index+1)*.7548776662466927)),
+   v=fract((index+1)*.5698402909980532+
+    (WIG_ZONE_WEIGHTS.findIndex(([name])=>name===zone)+1)*.38196601125);
+  const weights=[1-u,u*(1-v),u*v];
+  const p=new THREE.Vector3(),n=new THREE.Vector3();
+  for(let j=0;j<3;j++){
+   const k=t+j,w=weights[j];
+   p.x+=pos.getX(k)*w;p.y+=pos.getY(k)*w;p.z+=pos.getZ(k)*w;
+   n.x+=normal.getX(k)*w;n.y+=normal.getY(k)*w;
+   n.z+=normal.getZ(k)*w;
+  }
+  n.normalize();
+  if(n.dot(p.clone().sub(c))<0)n.negate();
+  return {p,n,index:t,source:'donor-triangle-area-v53'};
+ }
+ return {sample,donorTriangles,
+  zoneTriangleCounts:Object.fromEntries(Object.entries(pools)
+   .map(([zone,entries])=>[zone,entries.length])),
+  zoneAreas:{...totals}};
 }
 /**
  * Real head envelope for growth->relax. Density is supplied by the continuous
@@ -435,7 +513,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    };
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
-   if(shortHair)return buzzHairlineFractionAtPoint(v,box,d,center);
+   if(shortHair||styleId==='sadako-straight-long')
+    return buzzHairlineFractionAtPoint(v,box,d,center);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
@@ -520,7 +599,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // Restore only small, closed donor crown holes for buzz cuts.
  // microOnly rejects wide boundary loops to avoid flat scalp fans.
  const crownRepair=repairRealCrownScalpHoles(
-  sourceScalpVerts,donorNormals,box,{microOnly:shortHair});
+  sourceScalpVerts,donorNormals,box,
+   {microOnly:shortHair||styleId==='sadako-straight-long'});
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -536,6 +616,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  const crownUnderlay=shortHair||styleId==='sadako-straight-long'?
   {triangles:0,source:shortHair?'disabled-for-short-hair':'sadako-no-overlapping-crown'}:
   appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile);
+ // Exclude rear decorative underlocks from follicle sampling. Only the
+ // real source-donor scalp (plus compact repairs) may spawn new roots.
+ const donorScalpVertexCount=verts.length/3;
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -647,6 +730,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ mesh.userData.donorScalpVertexCount=donorScalpVertexCount;
+ mesh.userData.unifiedBuzzContour=shortHair||styleId==='sadako-straight-long';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
@@ -874,10 +959,16 @@ export function createScalpFirstLongGuide({
  const side=root.x>=center.x?1:-1;
  const front=zone.startsWith('fringe')||temple||
   (!back&&(root.z>=(whorl?.z??center.z-d.z*.04)));
- const flow=new THREE.Vector3(
-  temple?side*.68:(targetX-root.x)/Math.max(d.x,1e-5)*.17,
-  -.23,back?-1:front?1:-1
- ).normalize();
+ // Hair parts around the REAL whorl and follows the local skull to the
+ // forehead, temples and occipital surface. Fixed outward vectors produced
+ // the radial fan and pushed front locks away from their hairline.
+ const relativeX=(root.x-(whorl?.x??center.x))/Math.max(d.x,1e-6);
+ const relativeZ=(root.z-(whorl?.z??center.z-d.z*.04))/Math.max(d.z,1e-6);
+ const rootSweepX=temple?side*.34:
+  THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
+ const rootSweepZ=back?-1:zone.startsWith('fringe')?1:
+  relativeZ>-.025?1:-1;
+ const flow=new THREE.Vector3(rootSweepX,-.17,rootSweepZ).normalize();
  const nRoot=normal.clone().normalize();
  const outwards=root.clone().sub(center);
  if(nRoot.dot(outwards)<0)nRoot.negate();
@@ -973,9 +1064,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  root.userData.hairStyleName=style.label;
  root.userData.part=style.part;
  root.userData.whorlPosition=whorl.toArray();
+ const sadakoMaster=style.id==='sadako-straight-long';
  const cap=scalpShell(head.geometry,box,color,{
   fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
   battleStableCoverage,volumeProfile,styleId:style.id});root.add(cap);
+ // Sampling cap triangles by surface area avoids repeated source vertices
+ // and distributes roots across the front scalp instead of the ears.
+ const sadakoFollicles=sadakoMaster?
+  createAreaWeightedScalpRootSampler(cap,box):null;
  const baseCount=clamp(Math.round(count),48,2400),
   segments=style.id==='sadako-straight-long'?18:11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
@@ -989,11 +1085,18 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const rearBodyVolumeExtra=bodyCollisionResolver&&!style.shortCutKind?
   Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
  const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
- const weightedZones=WIG_ZONE_WEIGHTS.map(([name,weight])=>
-  [name,weight*(name.startsWith('fringe')?fringeMultiplier:
+ const sadakoWeights={
+  crown:.27,fringeLeft:.09,fringeRight:.09,
+  templeLeft:.10,templeRight:.10,
+  backLeft:.13,backRight:.13,napeLeft:.045,napeRight:.045
+ };
+ const weightedZones=WIG_ZONE_WEIGHTS.map(([name,originalWeight])=>{
+  const weight=sadakoMaster?sadakoWeights[name]:originalWeight;
+  return [name,weight*(name.startsWith('fringe')?fringeMultiplier:
     bodyCollisionResolver&&(name.startsWith('back')||
      name.startsWith('nape'))?1.35:
-    bodyCollisionResolver&&name.startsWith('temple')?1.20:1)]);
+    bodyCollisionResolver&&name.startsWith('temple')?1.20:1)];
+ });
  const totalZoneWeight=weightedZones.reduce((sum,[,weight])=>sum+weight,0);
  const zoneCounts=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
  const zoneCap=[],zoneNames=[];
@@ -1012,7 +1115,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     Math.abs(a.p.x-center.x)-Math.abs(b.p.x-center.x));
    return [name,near.slice(0,Math.max(4,Math.ceil(near.length*.28)))];
   }));
+ let sadakoAreaSampledRoots=0;
  const sampleRoot=(zone,index)=>{
+  const areaSeed=sadakoFollicles?.sample(zone,index);
+  if(areaSeed){sadakoAreaSampledRoots++;return areaSeed;}
   const rear=zone.startsWith('back')||zone.startsWith('nape');
   const pool=rear&&index%3===0?backCenterPools[zone]:pools[zone];
   // Golden-ratio low-discrepancy sequence. Every zone is allocated
@@ -1032,7 +1138,6 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
  const rootLift=d.x*(style.shortCutKind==='buzz'?.013:style.shortCutKind?.010:.0125);
- const sadakoMaster=style.id==='sadako-straight-long';
  const sadakoHeadDirection=new THREE.Vector3(),sadakoRenderCorner=new THREE.Vector3();
  let sadakoGuideScalpPushes=0,sadakoRibbonScalpPushes=0;
  /** True exterior projection for the guide AND rendered ribbon corners.
@@ -1690,8 +1795,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  // Close crops still need visible fibres OUTSIDE the scalp foundation.
  // Their count is independently reported, not a fake 10x fibre label.
- const sadakoCrownFlow=style.id==='sadako-straight-long'?
-  createSadakoCrownFlow(cap,box,color):null;
+ // The former short tangential crown fibres resembled dark buzz stubble and
+ // hid the missing long-hair follicles. Long hair is now rooted uniformly
+ // across the REAL pigmented scalp. Keep the helper for standalone QA.
+ const sadakoCrownFlow=null;
  if(sadakoCrownFlow)root.add(sadakoCrownFlow);
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
@@ -1850,6 +1957,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
   sadakoCrownFibreCount:sadakoCrownFlow?.userData.crownFibreCount||0,
+  sadakoAreaSampledRoots:sadakoMaster?sadakoAreaSampledRoots:null,
+  sadakoFollicleTriangles:sadakoFollicles?.donorTriangles||0,
+  sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
+  sadakoUnifiedScalpClipping:sadakoMaster&&cap.userData.unifiedBuzzContour,
+
   sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-master-v52':null,
   sadakoGravityTransition:sadakoMaster?{scalpTo:.15,fullyGravity:.38,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
