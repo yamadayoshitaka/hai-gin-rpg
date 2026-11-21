@@ -130,7 +130,7 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/sadako-scalp-first-gravity-v52/);
- assert.match(body,/sadako-scalp-first-gravity-v52/);
+ assert.match(studio,/sadako-unified-scalp-area-roots-v53/);
+ assert.match(body,/sadako-unified-scalp-area-roots-v53/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });
