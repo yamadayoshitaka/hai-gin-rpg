@@ -20,7 +20,8 @@ const roles=Object.freeze({
  forestBrocade:{kind:'brocade',roughness:.75,metalness:0,color:0x5d926b},
  forestBark:{kind:'bark',roughness:.94,metalness:0,color:0x534936},
  forestLeatherTrim:{kind:'leather',roughness:.89,metalness:0,color:0x4d4033},
- forestBrass:{kind:'brass',roughness:.38,metalness:.56,color:0x9b8a5c}
+ forestBrass:{kind:'brass',roughness:.38,metalness:.56,color:0x9b8a5c},
+ forestBlossom:{kind:'silk',roughness:.7,metalness:0,color:0xdcd5b3}
 });
 const cache=new Map();
 const clamp=x=>Math.max(0,Math.min(1,x));
