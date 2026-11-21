@@ -42,6 +42,20 @@ for(const id of ['m016','m017','m019','m020','m048','m050']){
     assert.ok(p.spineRear&&!p.legfrontL,'marine body uses undulation');
     assert.equal(model.getObjectByName(id+'-rooted-horn-L').parent,p.head);
     assert.equal(model.getObjectByName(id+'-caudal-fin-R').parent,p.tailTip);
+    const crest=model.getObjectByName('m020-tidal-dorsal-crest');
+    if(id==='m020'){
+     assert.ok(crest?.isSkinnedMesh);
+     assert.deepEqual(crest.skeleton.bones.map(b=>b.parent),tail.skeleton.bones.map(b=>b.parent));
+     const crestVertex=crest.geometry.attributes.position.count-1;
+     const moving=crest.getVertexPosition(crestVertex,new Vector3());
+     animateMonsterModel(model,.74);
+     model.updateMatrixWorld(true);
+     assert.ok(moving.distanceTo(crest.getVertexPosition(crestVertex,new Vector3()))>.02);
+     for(const suffix of ['L','R']){
+      assert.equal(model.getObjectByName('m020-swept-crown-'+suffix).parent,p.head);
+      assert.equal(model.getObjectByName('m020-current-whisker-'+suffix).parent,p.head);
+     }
+    }else assert.equal(crest,undefined);
    }else{
     for(const suffix of ['frontL','frontR','rearL','rearR'])
      assert.equal(p['lower'+suffix].parent,p['leg'+suffix]);
