@@ -7,6 +7,7 @@ on:
       - 'src/creature-master-runtime.js'
       - 'monster-manager.html'
       - 'qa/monster-all-50-theme-actions.test.mjs'
+      - 'qa/m023-mantis-sculpt.test.mjs'
       - 'qa/monster-kraken-reference-parity.test.mjs'
       - '.github/workflows/monster-theme-actions.yml'
   workflow_dispatch:
@@ -36,5 +37,7 @@ jobs:
         run: node --test qa/monster-all-50-theme-actions.test.mjs
       - name: Verify protected canonical humanoid joints and gargoyle
         run: node --test qa/monster-gargoyle-species.test.mjs qa/monster-humanoid-armor-articulation.test.mjs
+      - name: Verify six-limbed articulated mantis mesh and mobile LOD
+        run: node --test qa/m023-mantis-sculpt.test.mjs
       - name: Verify Kraken and beetle parity without altering approved masters
         run: node --test qa/monster-kraken-reference-parity.test.mjs
