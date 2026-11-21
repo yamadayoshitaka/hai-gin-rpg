@@ -1265,6 +1265,37 @@ export function shapeRebuiltEarTuck(points,{box,side=1}={}){
  }
  return points;
 }
+/** v72: pin ONLY forehead fringe. Never slick the temple, ear cover,
+ * side and rear strands backwards: the old all-zone ear tuck produced an
+ * exaggerated 1980s helmet. This guide moves sideways along the forehead
+ * toward a shallow clip, while preserving the rooted hairline. */
+export function shapeRebuiltPinnedFringe(points,{box,side=1}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),p=points[j];
+  const sweep=THREE.MathUtils.smoothstep(t,.025,.20);
+  const x=c.x+side*d.x*.305;
+  p.x=THREE.MathUtils.lerp(p.x,x,sweep*.94);
+  // Pin stays on the forehead-facing hair, not pulled to rear of ear.
+  p.z=THREE.MathUtils.lerp(p.z,
+   c.z+d.z*.235,sweep*.42);
+ }
+ return points;
+}
+/** Make non-pinned side-face framing avoid the pupils without routing whole
+ * side/crown hair to the back. The temple and nape are left untouched. */
+export function shapeRebuiltFaceFrame(points,{box,side=1}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ for(let j=1;j<points.length;j++){
+  const p=points[j],h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  if(h>=.67&&h<=.86&&side*(p.x-c.x)<d.x*.245){
+   p.x=c.x+side*d.x*.245;
+  }
+ }
+ return points;
+}
 /** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
  * reuse a measured head donor for follicles, but NOT a female bob guide. */
 export function shapeRebuiltMaleGuide(points,{
@@ -1330,17 +1361,18 @@ export function shapeCatalogLengthGuide(points,{
 }={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3||
   !Number.isFinite(tipY))return points;
- const d=box.getSize(new THREE.Vector3());
- const root=points[0].clone();
- const variation=d.y*.012*Math.sin(rootIndex*2.3999632);
+ const d=box.getSize(new THREE.Vector3()),root=points[0].clone();
+ const variation=d.y*.007*Math.sin(rootIndex*2.3999632);
  const target=Math.min(root.y-d.y*.024,tipY+variation);
- const prevTip=points.at(-1).y;
+ let previousY=root.y;
  for(let j=1;j<points.length;j++){
-  const t=j/(points.length-1),w=THREE.MathUtils.smoothstep(t,.07,.96);
-  // Preserve donor crown/ear tangent for the first stations; groom the
-  // lower length to its haircut's actual shoulder/neck/chin cut line.
-  const smoothTarget=THREE.MathUtils.lerp(root.y,target,Math.pow(t,.90));
-  points[j].y=THREE.MathUtils.lerp(points[j].y,smoothTarget,w);
+  const t=j/(points.length-1);
+  // The former partial lerp left *middle* stations far below target and
+  // raised only the final tip, producing a fake long ponytail under a
+  // shoulder bob. Build a continuous, monotone fall with an exact cut.
+  const targetY=root.y+(target-root.y)*Math.pow(t,.86);
+  const y=Math.min(previousY-d.y*.0004,Math.max(target,targetY));
+  points[j].y=y;previousY=y;
  }
  points.at(-1).y=target;
  return points;
@@ -1917,19 +1949,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      tipLevel:style.himeFringe?.752:.786});
     else if(style.catalogShape?.himeSide&&zone.startsWith('temple'))
      shapeHimeSideGuide(shape,{box,side:partSide,rootIndex:i});
-    else if(faceFrame||zone.startsWith('temple'))
-     shapeRebuiltEarTuck(shape,{box,side:partSide});
+    else if(faceFrame&&zone==='crown')
+     shapeRebuiltFaceFrame(shape,{box,side:partSide});
    }else if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
     variant:sadakoVariant,box,zone,side:partSide,
     rootIndex:i,front:faceFrame,bangsCut,
     lateralScale:style.rebuiltBase==='sadako'?.19:1
    });
-   // Every center/tucked woman's frontal lock clears the eyes EARLY;
-   // previous ear tuck only worked on lower ends below the whole face.
+   // ONLY the frontal forehead section reaches the temple pin. All side
+   // and back locks retain their free vertical shoulder-length fall.
    if(style.rebuiltBase==='sadako'&&style.gender==='female'&&
-      style.catalogFront!=='bangs'&&
-      (faceFrame||zone.startsWith('temple')))
-    shapeRebuiltEarTuck(shape,{box,side:partSide});
+      style.catalogFront==='tucked'){
+    if(fringe)shapeRebuiltPinnedFringe(shape,{box,side:partSide});
+    else if(faceFrame&&zone==='crown')
+     shapeRebuiltFaceFrame(shape,{box,side:partSide});
+   }
    if(style.maleGroom)shapeRebuiltMaleGuide(shape,{
     box,zone,side:partSide,part:style.part,
     long:style.styleLength>.74,bangsCut,frontRoot,
@@ -2596,27 +2630,44 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // three interwoven strands and ponytails have a distinct tied root.
  const styled=makeStyleSpecificHair(styleId,box,rootColor,{scalpCandidates});
  styled.meshes.forEach(mesh=>root.add(mesh));
- // A pair of subtle physical pins secures the one-length front locks at
- // the temples. These are actual metallic 3D meshes, not a UI label/texture.
- // They become draw groups of the same consolidated mesh in static studios.
+ // v72 clips are placed from ACTUAL fringe guide surfaces, not a
+ // floating bounding-box position. Transform geometry into head-local
+ // coordinates BEFORE one-mesh consolidation (which ignores node.position).
  const earClipMeshes=[];
+ const pinAnchors=[];
  if(style.gender==='female'&&style.rebuiltBase==='sadako'&&
     style.catalogFront==='tucked'){
-  for(const side of [-1,1])for(let lane=0;lane<2;lane++){
-   const geoClip=new THREE.CapsuleGeometry(d.x*.0038,d.x*.061,3,6);
+  for(const side of [-1,1]){
+   const candidates=strands.filter(lock=>lock.zone===
+    (side<0?'fringeLeft':'fringeRight'));
+   const target=new THREE.Vector3(center.x+side*d.x*.315,
+    box.min.y+d.y*.83,center.z+d.z*.25);
+   const samples=candidates.flatMap(lock=>lock.rest.slice(1,9)
+    .map((p,index)=>({p,lock,index})));
+   if(!samples.length)continue;
+   samples.sort((a,b)=>a.p.distanceToSquared(target)-
+    b.p.distanceToSquared(target));
+   const sample=samples[0].p;
+   const outward=new THREE.Vector3(sample.x-center.x,0,
+    sample.z-center.z).normalize();
+   const pinCenter=sample.clone().addScaledVector(outward,d.x*.0035);
+   const geoClip=new THREE.CapsuleGeometry(d.x*.0032,d.x*.045,3,7);
+   geoClip.rotateZ(side*.34);
+   geoClip.translate(pinCenter.x,pinCenter.y,pinCenter.z);
    const matClip=new THREE.MeshStandardMaterial({
     color:0xb9b9b4,metalness:.64,roughness:.35,
     side:THREE.DoubleSide
    });
    const clipMesh=new THREE.Mesh(geoClip,matClip);
-   clipMesh.name=(side<0?'LEFT':'RIGHT')+'_TEMPLE_HAIRPIN_'+lane;
-   clipMesh.position.set(center.x+side*d.x*(.345+lane*.011),
-    box.min.y+d.y*(.817-lane*.009),
-    center.z+d.z*(.215-lane*.015));
-   clipMesh.rotation.z=side*(.32+lane*.05);
+   clipMesh.name=(side<0?'LEFT':'RIGHT')+'_TEMPLE_HAIRPIN_0';
    clipMesh.userData.styledHairGeometry=true;
    clipMesh.userData.v70RealHairPin=true;
+   clipMesh.userData.v72PinnedFringe=true;
+   clipMesh.userData.pinSourceZone=side<0?'fringeLeft':'fringeRight';
+   clipMesh.userData.pinSurfaceGap=pinCenter.distanceTo(sample);
    root.add(clipMesh);earClipMeshes.push(clipMesh);
+   pinAnchors.push({side,position:pinCenter.toArray(),
+    distanceToScalpGuide:pinCenter.distanceTo(sample)});
   }
  }
  root.userData.v49StyledHair=styled.type;
@@ -2756,6 +2807,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v71TempleTipMedian:medianStrandTipY(strands.filter(x=>
    x.zone.startsWith('temple'))),
   v70HairPinMeshCount:earClipMeshes.length,
+  v72FringeOnlyPins:earClipMeshes.every(x=>x.userData.v72PinnedFringe),
+  v72PinAnchors:pinAnchors,
+  v72NaturalLooseTemples:style.rebuiltBase==='sadako'&&style.gender==='female',
   v70MasculineGroom:style.maleGroom||null,
   v70HimeFringe:style.himeFringe||null,
   v70EarTuckBeforeEyes:style.rebuiltBase==='sadako'&&
