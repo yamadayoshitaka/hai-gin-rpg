@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-no-baked-helmet-v26';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-locks-no-shell-v27';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1456,7 +1456,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Their count is independently reported, not a fake 10x fibre label.
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
- if(closeCutFibres)root.add(closeCutFibres);
+ // v27: old lock-based buzz style, not the v18 spike-fibre substitute.
+ if(closeCutFibres){closeCutFibres.geometry.dispose();closeCutFibres.material.dispose();}
  // Buzz cut is a fibre layer on skin, not an opaque plastic helmet.
  // Keep the donor cap geometry for fibre-root sampling and diagnostics,
  // but do not render its solid white surface. Face/ear/neck are untouched.
@@ -1490,8 +1491,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Invisible source meshes were previously baked into SINGLE_MESH_NORMAL_LAYERED_HAIR.
   // In particular cap.visible=false had no effect once the cap triangles were
   // copied into the consolidated mesh. Never bake the buzz cap or long locks.
+  // Restore the original lock-based hair silhouette (v8 era) without
+  // reintroducing its solid scalp cap. Native donor scalp is masked in
+  // the studio along the contoured hairline, leaving face and ears.
   const nodes=style.shortCutKind==='buzz'
-   ?root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')
+   ?[locks]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
