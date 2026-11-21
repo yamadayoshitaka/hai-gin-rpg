@@ -61,7 +61,7 @@ import {alignCostumeToCanonicalFacing}
  from './monster-anatomical-frame.js?v=4.5.05';
 import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  createRegalLimbGeometry,createRegalFootGeometry}
- from './monster-regal-garments.js?v=4.5.19';
+ from './monster-regal-garments.js?v=tailored-angel-v3-20261122';
 
 import {addGargoyleMonsterAnatomy,createGargoyleStoneTexture,
  createGargoylePbrMaterial,GARGOYLE_SPECIES_REVISION,
