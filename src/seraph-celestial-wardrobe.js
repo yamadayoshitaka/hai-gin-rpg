@@ -170,12 +170,12 @@ export function addSeraphCelestialVestment({frames,detail='high',attach,tube}={}
    [side*.095,-.02,-.235],[side*.086,-.18,-.284],
    [side*.125,-.36,-.348],[side*.076,-.56,-.43],
    [side*.11,-.73,-.51]],hi?.0045:.006);
-  // Tailored side cape anchors at waist, no extra floating cloth slab.
-  add(frames.pelvis,loft([
+  // A single continuous belt avoids duplicated coplanar loops.
+  if(side===-1)add(frames.pelvis,loft([
    {y:.12,rx:.217,rz:.186},{y:.084,rx:.227,rz:.190},
    {y:.046,rx:.226,rz:.189}
   ],{detail,kind:'hip-belt-gold-seam'}),
-  'seraphGold','gold-hip-belt-'+side);
+  'seraphGold','continuous-gold-hip-belt');
  }
  // Real shaped shoulder cloth and hanging sleeves, not black exposed armpits.
  for(const side of [-1,1]){
