@@ -30,6 +30,8 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw}
  from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
+import {M024_SCARAB_REVISION,sculptM024PoisonScarab}
+ from './m024-poison-scarab-sculpt.js?v=m024-purple-venom-armored-scarab-v1-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
  sculptBasiliskFacePlates,seaDragonRevision,isSeaDragon,sculptSeaDragon} from './reptile-detail-sculpt.js?v=leviathan-abyssal-sea-wyrm-v6-20261121';
 import {M050_CORAL_REVISION,sculptM050CoralBeast} from './m050-coral-beast-sculpt.js';
@@ -2581,6 +2583,10 @@ function bird(g,s){
  }
 }
 function insect(g,s,{spider=false}={}){
+ if(!spider&&s.id==='m024'){
+  sculptM024PoisonScarab(g,s);
+  return;
+ }
  const v=s.variant;
  const torso=g.group('torso');
  g.sphere(torso,'shadow',[0,1.03,-.16],[.50,.38,.63],{metal:.38,rough:.49});
@@ -2993,6 +2999,7 @@ if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
  if(spec.id==='m019')markMagmaSalamander(g.root);
  if(spec.id==='m018')g.root.userData.gameModelRevision=M018_HYDRA_REVISION;
  if(spec.id==='m050')g.root.userData.gameModelRevision=M050_CORAL_REVISION;
+ if(spec.id==='m024')g.root.userData.gameModelRevision=M024_SCARAB_REVISION;
  // The optional effects are created lazily only when a rendered near-LOD
  // m001 performs an action. Pure timing tests can import monster-animation
  // without importing Three.js or allocating a GPU mesh.
