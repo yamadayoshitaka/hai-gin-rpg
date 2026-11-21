@@ -312,7 +312,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     .0070*lowerLidBag-.0052*lowerLidCrease-
     .0035*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.036)*front);
   ny+=faceAgeY;
-  const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
+  let nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
     +.016*chinHollow
     +spec.eyeSocketSoftness*bell(Math.abs(xn),.43,.22)
       *bell(yn,.69,.055)*front)+local.dz+surfaceFairing.dz
