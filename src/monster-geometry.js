@@ -550,6 +550,10 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    // existing rib cage; do not shift or replace the body or limbs.
    (hydra||s.id==='m002'||felineMaster||magmaSalamander)?torso:g.root);
  if(salamanderLineage&&!magmaSalamander)head.position.y-=salamanderLineage.bodyDrop;
+ // Legacy wolf/cat mouth/fur code later in this function still reads
+ // faceCore. Keep its lexical binding outside the hydra-only branch so
+ // every existing non-hydra species stays unchanged.
+ let faceCore=null;
  if(hydra){
   // Replace ONLY the inherited single generic reptile muzzle.
   // The original m018 torso, four legs, tail and combat behavior survive.
@@ -579,7 +583,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // The earlier 1/3-scale inner "ball face" floated in front of the muzzle.
  // The new compact anatomical skull is a surface loft with directly fitted
  // eye sockets. Nose, jaw and the moving mane retain independent pivots.
- const faceCore=s.id==='m001'?
+ faceCore=s.id==='m001'?
    g.group('m001-face-core',[0,.025,.055],head):head;
  if(s.id==='m001'){
    // Keep the skull, nose and jaw on the same forward centerline, but
