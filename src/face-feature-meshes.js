@@ -3,6 +3,7 @@ import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovasc
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
+import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -316,6 +317,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const softEyeshadow=new THREE.Color(gender==='female'?makeup[1]:0xa48087);
  const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
+ const mouthTopology=face.userData.v82IntegratedMouth;
+ const lipNatural=new THREE.Color(gender==='male'?0xb8867c:0xce9597);
  let actualLipTintVertices=0,actualCheekTintVertices=0;
  for(let i=0;i<positions.count;i++){
   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
@@ -394,13 +397,23 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    // Lip makeup is exclusively on the moving anatomical vermilion.
    .multiply(pigmentFactor(skin,softEyeshadow,naturalEyeMakeup.shadow))
    .multiplyScalar(s*(1+naturalEyeMakeup.lowerLift+.037*noseBridgeHighlight));
+  // Pigment is on the NEW vertices of the SAME face mesh as the mouth rim.
+  // There is no stationary skin lipstick underneath a floating lip layer.
+  const lipWeight=mouthTopology?.lipTintWeights?.get(i)||0;
+  if(lipWeight>0){
+   const painted=lipNatural.clone().lerp(lipstick,
+    gender==='male'?0:clamp(cosmeticOpacity(.23)*lipWeight,0,1));
+   rgb.lerp(painted,clamp(.64+lipWeight*.36,0,1));
+   actualLipTintVertices++;
+  }
   colors.push(rgb.x,rgb.y,rgb.z);
  }
  setVertexMakeup(face,colors);
  colorizedMakeup(face,mode==='color');
  face.userData.facePigmentControls={...settings};
  face.userData.activeMakeupType=gender==='female'?Math.max(0,Math.min(9,Math.round(Number(makeupType)||0))):null;
- face.userData.mouthPigmentSource='deforming-vermilion-vertices-v81';
+ face.userData.mouthPigmentSource=mouthTopology?.integrated?
+  'integrated-head-mouth-vertices-v82':'deforming-vermilion-vertices-v81';
  face.userData.v81NoStaticLipstickGhost=true;
  face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
@@ -1146,6 +1159,18 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Both cheek and lip pigments live on OWNED real head mesh vertices.
  // No separate lipstick sticker can drift over the skin/chin.
  face.userData.actualMouthCreaseY=lipCenter;
+ const halfWidth=d.x*(female?.057:.044)*
+  Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
+ const mouthTopology=integrateMouthIntoFace(face,{
+  centerX:cx,centerY:lipCenter,halfWidth,
+  headHeight:d.y,surfaceZ:surfaceAt(cx,lipCenter)
+ });
+ face.userData.v82MouthTopologyReport={
+  integrated:!!mouthTopology.integrated,
+  removedTriangles:mouthTopology.removedTriangles,
+  boundaryEdges:mouthTopology.boundaryEdges,
+  stitchedTriangleCount:mouthTopology.stitchedTriangleCount||0
+ };
  const pigmentCount=updateRealFacePigment(face,settings,'color',gender);
  const actualLipTintVertices=pigmentCount.lip;
  const actualCheekTintVertices=pigmentCount.cheek;
@@ -1153,7 +1178,6 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // surface, but lipstick is painted ONLY on the original head triangles.
  // Widen the actual vermilion surface only when requested; the v8 saved
  // preset (1x) retains identical 3D lip topology and pigmentation.
- const halfWidth=d.x*(female?.057:.044)*Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
  const actualLips=new Map();
  for(const upper of [true,false]){
   const material=female?lipMat.clone():lipMat;
@@ -1174,6 +1198,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   mesh.userData.faceSurfaceConforming=true;
   mesh.userData.colorRole='lipBase';
   mesh.userData.v81PigmentBoundToAnimatedLip=true;
+  // Compatibility geometry for old editor tools; NEVER rendered on the
+  // face if the single-head aperture topology was integrated.
+  mesh.visible=!mouthTopology.integrated;
+  mesh.userData.v82HiddenLegacyLipStrip=!!mouthTopology.integrated;
   actualLips.set(upper,mesh);
   root.add(mesh);
  }
