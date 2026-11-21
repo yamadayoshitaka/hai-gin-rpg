@@ -45,6 +45,7 @@ try{
   const {x,y,width,height}=native.rect;
   assert.ok(width>25&&height>20,'Must sample a real projected mouth region');
   let total=0,black=0,skin=0;
+  const blackPixelCoords=[];
   const sx=png.width/capture.canvasSize.width,
    sy=png.height/capture.canvasSize.height;
   const minX=Math.max(0,Math.floor(x*sx));
@@ -55,8 +56,17 @@ try{
    const i=(yy*png.width+xx)*4,r=png.data[i],
     g=png.data[i+1],b=png.data[i+2];
    total++;
-   if(r<=8&&g<=8&&b<=8)black++;
+   if(r<=8&&g<=8&&b<=8){black++;blackPixelCoords.push([xx,yy]);}
    if(r>90&&g>65&&b>55)skin++;
+  }
+  if(blackPixelCoords.length>0){
+   const [px,py]=blackPixelCoords[Math.floor(blackPixelCoords.length/2)];
+   const rayHits=await page.evaluate(({x,y})=>
+    window.__faceExpressionQA.rayTraceOralPixel(x,y),
+    {x:px/sx,y:py/sy});
+   console.log('BLACK_PIXEL_RAYTRACE '+JSON.stringify({
+    expression,pixel:[px,py],rayHits
+   }));
   }
   const blackPercent=total?black/total*100:100;
   const skinPercent=total?skin/total*100:0;
