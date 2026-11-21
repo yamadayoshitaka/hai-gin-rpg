@@ -72,7 +72,7 @@ button{padding:9px 11px}
 <header>
 <h1>顔・髪の編集｜顔品質 v76・髪造形 v72</h1>
 <p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v76：皮膚PBR確認中／虹彩・唇・表情造形 v76　｜　髪造形 v72</p>
-<a class="studioNav" href="./face-body-studio.html?v=57" id="returnToCostume">衣装確認画面に戻る</a>
+<a class="studioNav" href="./face-body-studio.html?v=76" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
@@ -111,7 +111,7 @@ button{padding:9px 11px}
  <select id="faceExpression" aria-label="表情を22種類から選択"></select></label>
  </div>
 </div>
-<section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ10種類）</h2>
+<section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ16種類）</h2>
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
 <div class="controls" aria-label="年代と顔の体型">
 <label for="v47AgeBand">年代<select id="v47AgeBand" aria-label="年代を8種類から選択"></select></label>
@@ -222,7 +222,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261121-photo-optics-v76';
-import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=76';
+import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=76-smooth-shading-fix';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261121-photo-optics-v76';
 import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69-faceclear-v70-salon-v71-pins-v72';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
@@ -554,7 +554,7 @@ function setView(view){
 function selectGender(next){
  if(!models.has(next))return;
  gender=next;
- $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=57':'./face-body-studio.html?v=57';
+ $('returnToCostume').href=gender==='male'?'./male-body-studio.html?v=76':'./face-body-studio.html?v=76';
  for(const [k,m] of models)m.root.visible=k===gender;
  $('wig').hidden=false;
  $('quickHairControl').hidden=false;
