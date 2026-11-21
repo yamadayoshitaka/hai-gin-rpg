@@ -266,7 +266,7 @@ export function createRealtimeBattleCommands({
    const defaults=getInitialTeamPlan(row)||{};
    const allowed=Array.isArray(defaults.allowedStrategies)&&defaults.allowedStrategies.length?defaults.allowedStrategies:['assault','defense','balanced','explore'];
    const chooser=$('realtimeInitialStrategy');
-   for(const option of chooser.options)option.disabled=!allowed.includes(option.value);
+   for(const option of chooser.options||[])option.disabled=!allowed.includes(option.value);
    let strategy=initialTeamPlans.get(key);
    if(!allowed.includes(strategy)){
     strategy=allowed.includes(defaults.strategy)?defaults.strategy:allowed[0];
