@@ -10,7 +10,8 @@ import {eligibleEnemyBattleTargets,battleAttackNeedsEnemy} from './battle-target
 import {visibleBattleSquadPins} from './battle-squad-leader-pins.js';
 import {battleAttackCommand} from './battle-attack-choices.js';
 import {renderFormationSignaturePreview,signatureStrategyFor} from './formation-signature-strategies.js';
-import {formationUnlockLabels} from './formation-strategy-unlocks.js';
+import {formationUnlockLabels,ADVANCED_FORMATION_TACTICS} from './formation-strategy-unlocks.js';
+import {BASIC_OPENING_TACTICS} from './prebattle-opening-tactics.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=three-team-radar2-20261120';
@@ -25,7 +26,8 @@ const PREBATTLE_FORMATION_IDS=Object.freeze({
 const formationPreviewId=plan=>String(plan?.formationId||
  PREBATTLE_FORMATION_IDS[plan?.formation]||plan?.formation||'balanced');
 const PREBATTLE_TACTIC_NAMES=Object.freeze({
- assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索'
+ assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索',
+ ...ADVANCED_FORMATION_TACTICS
 });
 const escapePrebattle=value=>String(value??'').replace(/[&<>"']/g,ch=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -335,7 +337,15 @@ export function createRealtimeBattleCommands({
    const defaults=getInitialTeamPlan(row)||{};
    const allowed=Array.isArray(defaults.allowedStrategies)&&defaults.allowedStrategies.length?defaults.allowedStrategies:['assault','defense','balanced','explore'];
    const chooser=$('realtimeInitialStrategy');
-   for(const option of chooser.options||[])option.disabled=option.value!==''&&!allowed.includes(option.value);
+   // The Android native picker is populated from the team's *actual* live
+   // capabilities; selecting an additional tactic now issues that tactic.
+   const basic=Object.keys(BASIC_OPENING_TACTICS).filter(id=>allowed.includes(id));
+   const advanced=Object.keys(ADVANCED_FORMATION_TACTICS).filter(id=>allowed.includes(id));
+   chooser.innerHTML='<option value="">作戦を選択してください</option>'+
+    '<optgroup label="基本作戦">'+basic.map(id=>
+      '<option value="'+id+'">'+escapePrebattle(BASIC_OPENING_TACTICS[id])+'</option>').join('')+'</optgroup>'+
+    (advanced.length?'<optgroup label="陣形・ジョブの追加作戦">'+advanced.map(id=>
+      '<option value="'+id+'">★ '+escapePrebattle(ADVANCED_FORMATION_TACTICS[id])+'</option>').join('')+'</optgroup>':'');
    let strategy=initialTeamPlans.get(key);
    if(!allowed.includes(strategy)){
     strategy=requirePrebattleChoices?'':allowed.includes(defaults.strategy)?defaults.strategy:allowed[0];
@@ -1701,8 +1711,14 @@ radarCanvas.addEventListener('keydown',event=>{
  $('realtimeInitialStrategy').onchange=()=>{
   const group=getSelected()?.groupId??getSelected()?.id;
   if(group==null||started)return;
-  initialTeamPlans.set(String(group),$('realtimeInitialStrategy').value);
-  $('realtimeMapMessage').textContent='第'+group+'隊の初期作戦を保存しました。開戦後も指示変更できます。';
+  const strategy=$('realtimeInitialStrategy').value;
+  const allowed=getInitialTeamPlan(getSelected())?.allowedStrategies||[];
+  if(!allowed.includes(strategy)){
+   $('realtimeMapMessage').textContent='この隊の陣形・ジョブでは選択できません。';
+   refreshOptions();return;
+  }
+  initialTeamPlans.set(String(group),strategy);
+  $('realtimeMapMessage').textContent='第'+group+'隊：「'+(PREBATTLE_TACTIC_NAMES[strategy]||strategy)+'」を初期作戦に設定しました。';
  };
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
