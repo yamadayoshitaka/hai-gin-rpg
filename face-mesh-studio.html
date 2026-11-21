@@ -639,54 +639,98 @@ function setHairHiddenScalp(face,enabled,wig=null){
   const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);
   return t*t*(3-2*t);
  };
- // Same curved hairline as the buzz scalp generator (v23), with a
- // conservative +0.015 safety margin protecting the facial boundary.
- const inScalp=(i)=>{
-  const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
-  const zn=(z-center.z)/d.z;
-  const xn=Math.abs(x-center.x)/d.x;
-  const back=smooth(-.45,-.10,zn);
-  const temple=smooth(-.06,.24,zn);
-  const napeCenter=.58+.105*smooth(.10,.39,xn);
-  const rearSide=THREE.MathUtils.lerp(napeCenter,.715,back);
-  const front=THREE.MathUtils.lerp(rearSide,.81,temple);
-  const earArc=.105*smooth(.22,.38,xn)*
-   (1-smooth(.10,.36,zn))*smooth(-.38,-.12,zn);
-  const threshold=THREE.MathUtils.clamp(front+earArc,.56,.90)+.015;
-  return y>box.min.y+d.y*threshold;
+ // Clip triangles against the smooth anatomical hairline, rather than
+ // dropping whole triangles. Preserve UV, normals, color and skinning data.
+ const signed=(v)=>{
+  const x=v.position[0],y=v.position[1],z=v.position[2];
+  const zn=(z-center.z)/d.z,xn=Math.abs(x-center.x)/d.x;
+  const back=smooth(-.45,-.10,zn),temple=smooth(-.06,.24,zn);
+  const nape=.58+.105*smooth(.10,.39,xn);
+  const rear=THREE.MathUtils.lerp(nape,.715,back);
+  const front=THREE.MathUtils.lerp(rear,.81,temple);
+  const ear=.105*smooth(.22,.38,xn)*(1-smooth(.10,.36,zn))*
+   smooth(-.38,-.12,zn);
+  return y-(box.min.y+d.y*(THREE.MathUtils.clamp(front+ear,.56,.90)+.015));
  };
  const source=original.index;
- const triangleCount=source?source.count/3:position.count/3;
- const retained=[];
- const retainedGroups=[];
- let removed=0;
- // Preserve the original material assignments and their index ranges.
+ const attrs=Object.entries(original.attributes);
+ const out=Object.fromEntries(attrs.map(([key])=>[key,[]]));
  const groups=original.groups.length?original.groups:
-  [{start:0,count:triangleCount*3,materialIndex:0}];
- for(const group of groups){
-  const groupStart=retained.length;
-  const stop=Math.min(triangleCount*3,group.start+group.count);
-  for(let k=group.start;k+2<stop;k+=3){
-   const a=source?source.getX(k):k;
-   const b=source?source.getX(k+1):k+1;
-   const c=source?source.getX(k+2):k+2;
-   if(inScalp(a)&&inScalp(b)&&inScalp(c)){removed++;continue;}
-   retained.push(a,b,c);
+  [{start:0,count:(source?source.count:position.count),materialIndex:0}];
+ const retainedGroups=[];
+ let removed=0,clipped=0;
+ const read=(idx)=>{
+  const v={};
+  for(const [key,attr] of attrs){
+   const values=[];
+   for(let j=0;j<attr.itemSize;j++)values.push(attr.getComponent(idx,j));
+   v[key]=values;
   }
-  if(retained.length>groupStart)
-   retainedGroups.push({start:groupStart,count:retained.length-groupStart,
-    materialIndex:group.materialIndex});
+  v.distance=signed(v);
+  return v;
+ };
+ const interpolate=(u,v)=>{
+  // Binary-search the exact intersection with the curved hairline.
+  let lo=0,hi=1;
+  for(let n=0;n<13;n++){
+   const t=(lo+hi)*.5;
+   const mid={};
+   for(const [key] of attrs)
+    mid[key]=u[key].map((x,j)=>x+(v[key][j]-x)*t);
+   mid.distance=signed(mid);
+   if((mid.distance<=0)===(u.distance<=0))lo=t;
+   else hi=t;
+  }
+  const t=(lo+hi)*.5,w={};
+  for(const [key] of attrs)
+   w[key]=u[key].map((x,j)=>x+(v[key][j]-x)*t);
+  w.distance=0;
+  return w;
+ };
+ let vertexCount=0;
+ for(const group of groups){
+  const start=vertexCount;
+  const stop=Math.min(source?source.count:position.count,group.start+group.count);
+  for(let k=group.start;k+2<stop;k+=3){
+   const tri=[0,1,2].map(j=>read(source?source.getX(k+j):k+j));
+   let polygon=tri;
+   const next=[];
+   for(let i=0;i<polygon.length;i++){
+    const u=polygon[i],v=polygon[(i+1)%polygon.length];
+    const insideU=u.distance<=0,insideV=v.distance<=0;
+    if(insideU)next.push(u);
+    if(insideU!==insideV)next.push(interpolate(u,v));
+   }
+   if(next.length<3){removed++;continue;}
+   if(next.length!==3||tri.some(v=>v.distance>0))clipped++;
+   for(let i=1;i<next.length-1;i++){
+    for(const v of [next[0],next[i],next[i+1]]){
+     for(const [key] of attrs)out[key].push(...v[key]);
+     vertexCount++;
+    }
+   }
+  }
+  if(vertexCount>start)
+   retainedGroups.push({start,count:vertexCount-start,materialIndex:group.materialIndex});
  }
- if(!removed)return;
- const clone=original.clone();
- clone.setIndex(retained);
- clone.clearGroups();
+ if(!removed&&!clipped)return;
+ const clone=new THREE.BufferGeometry();
+ for(const [key,attr] of attrs){
+  const values=out[key];
+  // Skin indices must remain integral; interpolated joints use nearest source.
+  if(key==='skinIndex')for(let i=0;i<values.length;i++)values[i]=Math.round(values[i]);
+  const typed=new attr.array.constructor(values);
+  clone.setAttribute(key,new THREE.BufferAttribute(typed,attr.itemSize,attr.normalized));
+ }
  for(const group of retainedGroups)
   clone.addGroup(group.start,group.count,group.materialIndex);
+ clone.computeBoundingBox();
+ clone.computeBoundingSphere();
  face.geometry=clone;
  face.userData.hairScalpMaskActive=true;
  face.userData.hairScalpMaskedTriangles=removed;
- face.userData.hairScalpMaskMode='v25-contoured-native-cut';
+ face.userData.hairScalpClippedTriangles=clipped;
+ face.userData.hairScalpMaskMode='v29-smooth-triangle-clipping';
 }
 
 function hideDuplicateHairCap(wig){
