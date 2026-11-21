@@ -13,7 +13,7 @@ import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=monster-all50-pbr-v1-20261121';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
 import {AVIAN_REALISM_REVISION} from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
 import {createHumanoidMonsterCombatMotion} from './monster-humanoid-combat-poses.js?v=4.5.18';
@@ -21,7 +21,7 @@ import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js?v=4.5.11';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
- from './monster-photo-pbr.js';
+ from './monster-photo-pbr.js?v=monster-all50-pbr-v1-20261121';
 import {decorateAll50MonsterSurface}
  from './monster-all50-surface.js?v=all50-species-materials-v1-20261121';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
