@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-no-helmet-v22';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-contour-v23';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -419,11 +419,18 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     // front hairline high enough to leave the forehead and eyes visible.
     // The former .53 rear boundary covered the ear and neck like a
     // helmet. Raise the cut line and trim lateral ear/temple coverage.
-    const rear=.68;
-    const side=THREE.MathUtils.lerp(rear,.75,smooth(-.10,.12,zn));
-    const forehead=THREE.MathUtils.lerp(side,.82,smooth(.10,.28,zn));
-    const earClearance=.11*smooth(.25,.42,xn);
-    return THREE.MathUtils.clamp(forehead+earClearance,.68,.92);
+    // Anatomical contour rather than a horizontal helmet cut.
+    // Lower the center nape, curve upward around the mastoid/ear,
+    // and transition continuously to a higher temple/forehead.
+    const back=smooth(-.45,-.10,zn);
+    const temple=smooth(-.06,.24,zn);
+    const napeCenter=.58+.105*smooth(.10,.39,xn);
+    const rearSide=THREE.MathUtils.lerp(napeCenter,.715,back);
+    const front=THREE.MathUtils.lerp(rearSide,.81,temple);
+    const earArc=.105*smooth(.22,.38,xn)*
+     (1-smooth(.10,.36,zn))*
+     smooth(-.38,-.12,zn);
+    return THREE.MathUtils.clamp(front+earArc,.56,.90);
    }
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
