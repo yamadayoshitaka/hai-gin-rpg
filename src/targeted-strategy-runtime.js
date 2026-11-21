@@ -118,7 +118,7 @@ export function createTargetedStrategyUi({
     '<div class="centerGrid">'+
     b('data-strategy-start="plan"','⚔ 作戦・陣形固有作戦')+
     b('data-strategy-start="move"','🗺 移動先を指定')+
-    b('data-strategy-start="item"','🎒 アイテムを使う',false,!getItems().some(x=>x.quantity>0))+'</div>'+
+    b('data-strategy-start="item"','🎒 アイテムを使う',false,!getItems(String(groupId)).some(x=>x.quantity>0))+'</div>'+
     '<small class="centerHelp">現在の陣形：'+esc(formationFor())+' ／ 解放作戦：'+
     esc(unlocked.join('・')||'基本作戦のみ')+'</small>';
   }else if(step==='moveTarget'){
@@ -158,7 +158,7 @@ export function createTargetedStrategyUi({
     '</div><div class="centerStep">または作戦の系統を選択</div><div class="centerGrid">'+
     Object.entries(STRATEGY_TREE).map(([id,x])=>b('data-strategy-family="'+id+'"',x.name,
      family===id,!Object.values(x.intents).some(y=>y.methods.some(m=>eligible.has(m.id))))).join('')+
-    b('data-strategy-family="item"','🎒 アイテム',false,!getItems().length)+'</div>'+
+    b('data-strategy-family="item"','🎒 アイテム',false,!getItems(String(groupId)).length)+'</div>'+
     '<small class="centerHelp">突撃なら敵部隊、守備・退却なら大型レーダー、探索ならオブジェクトを選びます。</small>'+
     controls('◀ 指示単位へ戻る','次へ','目的を選ぶ',false);
   }else if(step==='intent'){
@@ -179,7 +179,7 @@ export function createTargetedStrategyUi({
     controls('◀ 目的へ戻る','次へ','対象を選ぶ',!dist.total||kind==='mixed');
   }else if(step==='items'){
    html='<div class="centerStep">③ アイテムを選択</div><div class="centerSquadGrid">'+
-    getItems().map(x=>b('data-strategy-item="'+esc(x.id)+'"',x.label+' · '+x.quantity+'個',
+    getItems(String(groupId)).map(x=>b('data-strategy-item="'+esc(x.id)+'"',x.label+' · '+x.quantity+'個',
      chosenItem===String(x.id),!x.quantity)).join('')+'</div>'+
     '<small class="centerHelp">アイテムは作戦の一種です。使用する味方分隊を対象に選択します。</small>'+
     controls('◀ 作戦へ戻る','次へ','味方対象へ',!chosenItem);
@@ -205,7 +205,7 @@ export function createTargetedStrategyUi({
    html='<div class="centerStep">⑥ 作戦の内容を確認</div>'+
     '<div class="centerQuota"><b>第'+esc(groupId)+'班 · '+(scope==='group'?'班全体':'選択した分隊')+'</b>'+
     '<div>実行 '+selectedSquads.size+'分隊 / '+dist.totalSoldiers+'人</div>'+
-    '<div>'+(isItem?'🎒 '+esc(getItems().find(x=>String(x.id)===chosenItem)?.label||chosenItem):
+    '<div>'+(isItem?'🎒 '+esc(getItems(String(groupId)).find(x=>String(x.id)===chosenItem)?.label||chosenItem):
       activeMethod.map(m=>esc(m.name)).join('・'))+'</div>'+
     '<div>'+kindName+'：'+(mapPoint?'('+mapPoint.x+', '+mapPoint.z+')':
        [...selectedTargets].map(id=>esc((chosenItem?
