@@ -9,7 +9,8 @@ import {WIG_STYLES,listWigStyles,getWigStyle,
  DEFAULT_WIG_STYLE_ID} from '../src/face-wig-styles.js';
 import {PART_CATALOG} from '../src/face-part-catalog-v32.js';
 import {resolveHeroHairSpec} from '../src/hero-hair-controls-v43.js';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD}
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,
+ shapeRebuiltCatalogCurl,shapeSadakoVariantGuide}
  from '../src/face-scalp-wig.js';
 import {setCostumeHairScalpMask,releaseCostumeHairScalpMask}
  from '../src/face-costume-scalp-mask.js';
@@ -132,4 +133,39 @@ test('both interactive studios use the same v67 reconstructed catalogs',()=>{
  assert.match(outfit,/garmentCollisionResolver:mantleCollision/);
  assert.match(read('.github/workflows/hair-reselect-regression.yml'),
   /hair-rebuilt-catalog-v67\.test\.mjs/);
+});
+
+test('v68 rebuilt external flips curl only at tips; soft volume cannot turn into side wings',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ const create=()=>Array.from({length:19},(_,i)=>
+  new THREE.Vector3(.22,1-i*.05,.19));
+ const outward=create(),inward=create(),sauvage=create();
+ shapeRebuiltCatalogCurl(outward,{variant:'outward',box,side:1});
+ shapeRebuiltCatalogCurl(inward,{variant:'inward',box,side:1});
+ shapeRebuiltCatalogCurl(sauvage,{variant:'sauvage',box,side:1});
+ for(let i=0;i<=13;i++){
+  assert.ok(outward[i].distanceTo(create()[i])<1e-8,'outward bends only last 27%');
+  assert.ok(inward[i].distanceTo(create()[i])<1e-8,'inward bends only last 27%');
+ }
+ assert.ok(outward[18].x>.22&&outward[18].x<=.47,
+  'outward tip must be visible but below silhouette width');
+ assert.ok(inward[18].x<.22,'inward must turn towards face');
+ assert.ok(outward[18].y>create()[18].y,'curled tip returns upward');
+ assert.ok(sauvage[0].distanceTo(create()[0])<1e-8,'wave keeps real follicle');
+ assert.ok(Math.max(...sauvage.map((p,i)=>Math.abs(p.x-create()[i].x)))<.032,
+  'sauvage wave is not the old wide fan');
+});
+test('v68 rebuilt center-part is narrower than approved full Sadako donor',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ const create=()=>Array.from({length:19},(_,i)=>
+  new THREE.Vector3(.12,1-i*.05,.19));
+ const donor=create(),rebuilt=create();
+ shapeSadakoVariantGuide(donor,{variant:'center',box,side:1,front:true});
+ shapeSadakoVariantGuide(rebuilt,{variant:'center',box,side:1,front:true,
+  lateralScale:.26});
+ assert.ok(Math.abs(donor[18].x-.12)>.33,'approved donor is unchanged');
+ assert.ok(rebuilt[18].x-.12<.10,'new catalog keeps the face part close');
+ assert.ok(rebuilt[0].distanceTo(donor[0])<1e-8,'scalp roots never move');
 });
