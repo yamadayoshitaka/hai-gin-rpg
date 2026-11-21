@@ -20,9 +20,17 @@ test('forest spirit actually walks and runs with animated skinned legs, and has 
  expect(first.canonicalMovement.hasWalkClip).toBe(true);
  await page.waitForTimeout(480);
  const moved=await page.evaluate(()=>window.__summonGalleryLayoutQA());
- expect(moved.previewX).toBeGreaterThan(first.previewX+.35);
- expect(moved.canonicalMovement.position.x).toBeGreaterThan(
-  first.canonicalMovement.position.x+.35);
+ // The real gallery route bends and returns at x=2; check displacement,
+ // NOT monotonic X (a valid leftward walking frame is still walking).
+ const displacement=Math.hypot(moved.previewX-first.previewX,
+  moved.previewZ-first.previewZ);
+ expect(displacement).toBeGreaterThan(.22);
+ expect(Math.hypot(moved.canonicalMovement.position.x-
+    first.canonicalMovement.position.x,
+   moved.canonicalMovement.position.z-
+    first.canonicalMovement.position.z)).toBeGreaterThan(.22);
+ expect(moved.canonicalMovement.position.x).toBeCloseTo(moved.previewX,2);
+ expect(moved.canonicalMovement.position.z).toBeCloseTo(moved.previewZ,2);
  expect(moved.canonicalMovement.activeClip?.toLowerCase()).toContain('walk');
  expect(moved.canonicalMovement.legs.length).toBeGreaterThanOrEqual(2);
  const different=moved.canonicalMovement.legs.some((leg,i)=>
