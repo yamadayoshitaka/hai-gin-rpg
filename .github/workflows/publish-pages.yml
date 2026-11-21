@@ -120,6 +120,8 @@ jobs:
         run: node --test qa/monster-gargoyle-species.test.mjs
       - name: Verify all 50 species themes, original rigs, monster materials and new battle action routing
         run: node --test qa/monster-all-50-theme-actions.test.mjs
+      - name: Verify Kraken and beetle reference-quality geometry, PBR and every family
+        run: node --test qa/monster-kraken-reference-parity.test.mjs
       - name: Verify 4 beetle species actual 3D anatomy, PBR and donor preservation
         id: qa_m024_concept
         # Block Pages publication if any 3D beetle cannot be constructed.
