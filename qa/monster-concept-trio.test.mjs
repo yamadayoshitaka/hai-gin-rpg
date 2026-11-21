@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
+import {GAME_MONSTER_MODEL_REGISTRY} from '../src/creature-game-model-routing.js';
 import {CONCEPT_TRIO_IDS,CONCEPT_TRIO_REVISION}
  from '../src/monster-concept-trio-sculpt.js';
 import {createMonsterModel,disposeMonsterSculpture,monsterSculptCacheStats}
@@ -13,6 +14,8 @@ const octopusIds=new Set(['m047','m049']);
 for(const id of CONCEPT_TRIO_IDS){
  const species=MONSTER_BY_ID[id];
  assert.ok(species,'Existing bestiary identity preserved: '+id);
+ assert.equal(GAME_MONSTER_MODEL_REGISTRY[id].version,CONCEPT_TRIO_REVISION);
+ assert.equal(GAME_MONSTER_MODEL_REGISTRY[id].mobileVisualApproved,false);
  for(const detail of ['high','low']){
   const monster=createMonsterModel(species,{detail});
   assert.equal(monster.userData.gameModelRevision,CONCEPT_TRIO_REVISION);
