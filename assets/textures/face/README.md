@@ -11,6 +11,6 @@ Asset: `cc0-human-skin-reference.jpg` (1,040,257 bytes).
 
 ## Game treatment
 
-`src/face-photo-microdetail-v76.js` downscales the actual photographed local luminance into two 384×384 GPU maps: neutral skin micro-bump relief and subtle PBR roughness variation. Wide lighting gradients and photographic skin tone are removed. **The image is not a UV portrait**, and its original color is never directly applied to eyes, nose, lips, brows or overall facial skin; original character pigmentation, makeup and age remain intact. The maps are shared across both male/female 3D faces. If the asset fails to decode, existing procedural skin and face controls remain usable.
+`src/face-photo-microdetail-v76.js` downscales the actual photographed local luminance into two 512×512 GPU maps: neutral skin micro-bump relief and subtle PBR roughness variation. Wide lighting gradients and photographic skin tone are removed. **The image is not a UV portrait**, and its original color is never directly applied to eyes, nose, lips, brows or overall facial skin; original character pigmentation, makeup and age remain intact. The maps are shared across both male/female 3D faces. If the asset fails to decode, existing procedural skin and face controls remain usable.
 
 This photo is a genuine skin close-up, **not a registered/retopologized 4K facial atlas**. The iris and lip optical relief maps in `src/face-optics-v76.js` are geometric/polar procedural details, not third-party photographed eye textures. Do not misrepresent them as a photogrammetric iris scan.
