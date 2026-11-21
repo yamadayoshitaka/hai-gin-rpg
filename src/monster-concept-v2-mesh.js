@@ -113,7 +113,7 @@ export function texturedEllipsoid(g,parent,{
 export function sweepVolume(g,parent,points,{
  name='organic-swept-volume',role='swept-skin',
  radius=.12,taper=.25,color='#503c72',light='#8c69b0',
- ridges=.12,roughness=.34,metalness=.07,
+ ridges=.12,roughness=.34,metalness=.07,caps=false,
  transparent=false,opacity=.9,
  glow=false
 }={}){
@@ -131,11 +131,12 @@ export function sweepVolume(g,parent,points,{
    const phi=j/sides*PI2;
    const spoke=frames.normals[i].clone().multiplyScalar(Math.cos(phi))
       .addScaledVector(frames.binormals[i],Math.sin(phi));
-   const ringR=a*(1+ridges*.5*Math.sin(phi*5+t*25)
-      +.065*Math.sin(t*34+phi*2));
+   const micro=transparent?.006:role.includes('octopus')?.009:.019;
+   const ringR=a*(1+ridges*.27*Math.sin(phi*5+t*8)
+      +micro*Math.sin(t*23+phi*2));
    xyz.push(pos.x+spoke.x*ringR,
     pos.y+spoke.y*ringR,pos.z+spoke.z*ringR);
-   let mix=clamp(.32+.28*Math.cos(phi)+.20*Math.sin(t*17+phi*7),.04,.9);
+   let mix=clamp(.31+.22*Math.cos(phi)+.08*Math.sin(t*9+phi*5),.09,.81);
    const col=colA.clone().lerp(colB,mix);
    rgba.push(col.r,col.g,col.b);
    uv.push(j/sides,t);
@@ -145,15 +146,19 @@ export function sweepVolume(g,parent,points,{
    }
   }
  }
- // End caps prevent visible tubular cut-offs on articulating roots.
- const startI=xyz.length/3,first=curve.getPoint(0),last=curve.getPoint(1);
- xyz.push(first.x,first.y,first.z);rgba.push(colA.r,colA.g,colA.b);uv.push(.5,0);
- const endI=xyz.length/3;
- xyz.push(last.x,last.y,last.z);rgba.push(colA.r,colA.g,colA.b);uv.push(.5,1);
- for(let j=0;j<sides;j++){
-  indices.push(startI,j+1,j);
-  const k=rings*(sides+1)+j;
-  indices.push(endI,k,k+1);
+ // End caps on the old limbs rendered as hard black disks at every hinge.
+ // Open cross-sections overlap organically; optional closure is only for
+ // species where a genuinely exposed end is required.
+ if(caps){
+  const startI=xyz.length/3,first=curve.getPoint(0),last=curve.getPoint(1);
+  xyz.push(first.x,first.y,first.z);rgba.push(colA.r,colA.g,colA.b);uv.push(.5,0);
+  const endI=xyz.length/3;
+  xyz.push(last.x,last.y,last.z);rgba.push(colA.r,colA.g,colA.b);uv.push(.5,1);
+  for(let j=0;j<sides;j++){
+   indices.push(startI,j+1,j);
+   const k=rings*(sides+1)+j;
+   indices.push(endI,k,k+1);
+  }
  }
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
@@ -224,16 +229,17 @@ export function mergedSuckerRows(g,parent,sweep,{
   const lateral=new THREE.Vector3().crossVectors(tangent,UP).normalize();
   if(lateral.lengthSq()<.01)lateral.set(1,0,0);
   const rad=sweep.radiusAt(t),cupR=rad*.37*scale;
-  const floor=DOWN.clone().multiplyScalar(rad*.84);
+  const cupFace=DOWN.clone().addScaledVector(FRONT,.53).normalize();
+  const floor=cupFace.clone().multiplyScalar(rad*.81);
   for(let r=0;r<rows;r++){
    const side=(r-(rows-1)/2);
    const foot=center.clone().add(floor).addScaledVector(lateral,side*rad*.52);
-   const rotation=Q.setFromUnitVectors(FRONT,DOWN);
+   const rotation=Q.setFromUnitVectors(FRONT,cupFace);
    const ring=new THREE.TorusGeometry(cupR,cupR*.20,ringTube,ringSegment)
       .applyQuaternion(rotation).translate(foot.x,foot.y,foot.z);
    rims.push(ring);
    const disk=new THREE.CircleGeometry(cupR*.61,ringSegment)
-      .applyQuaternion(rotation).translate(foot.x,foot.y-.004,foot.z);
+      .applyQuaternion(rotation).translate(foot.x,foot.y-.004,foot.z+.003);
    holes.push(disk);
   }
  }
@@ -252,10 +258,10 @@ export function mergedSuckerRows(g,parent,sweep,{
 /** One continuous fluid silhouette, with scalloped lobes at ground level. */
 export function slimeMembrane(g,parent,{name='translucent-main-gel'}={}){
  const profile=[
-  [.00,1.51],[.10,1.54],[.26,1.51],[.44,1.34],
-  [.60,1.10],[.68,.82],[.75,.56],[.86,.39],
-  [1.04,.22],[1.17,.14],[1.20,.09],[1.12,.08],
-  [.73,.075],[.22,.08],[.00,.09]
+  [.06,1.46],[.20,1.49],[.43,1.40],[.61,1.21],
+  [.72,1.02],[.77,.77],[.82,.56],[.92,.39],
+  [1.09,.21],[1.20,.13],[1.22,.08],[1.12,.075],
+  [.70,.065],[.22,.07],[.045,.08]
  ];
  const sides=conceptDensity(g,100,70,48,26);
  const pos=[],uv=[],color=[],indices=[];
