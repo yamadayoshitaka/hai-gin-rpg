@@ -841,8 +841,13 @@ function setHairHiddenScalp(face,enabled,wig=null){
  }
  if(!removed&&!clipped)return;
  const clone=new THREE.BufferGeometry();
+ let invalidColorComponents=0;
  for(const [key,attr] of attrs){
   const values=out[key];
+  if(key==='color')for(let i=0;i<values.length;i++)
+   if(!Number.isFinite(values[i])){
+    values[i]=1;invalidColorComponents++;
+   }
   // Skin indices must remain integral; interpolated joints use nearest source.
   if(key==='skinIndex')for(let i=0;i<values.length;i++)values[i]=Math.round(values[i]);
   const typed=new attr.array.constructor(values);
@@ -852,7 +857,13 @@ function setHairHiddenScalp(face,enabled,wig=null){
   clone.addGroup(group.start,group.count,group.materialIndex);
  clone.computeBoundingBox();
  clone.computeBoundingSphere();
+ const clippedPos=clone.getAttribute('position');
+ const clippedColor=clone.getAttribute('color');
+ if(clippedColor&&clippedColor.count!==clippedPos.count)
+  throw Error('Clipped scalp/head RGB and position vertex counts differ');
  face.geometry=clone;
+ face.userData.v87ScalpColorRepairs=invalidColorComponents;
+ face.userData.v87ScalpRGBVertexCount=clippedColor?.count||0;
  face.userData.hairScalpMaskActive=true;
  face.userData.hairScalpMaskedTriangles=removed;
  face.userData.hairScalpClippedTriangles=clipped;
