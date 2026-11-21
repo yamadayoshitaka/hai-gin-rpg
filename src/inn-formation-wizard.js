@@ -10,13 +10,15 @@ import {FORMATION_ROLES,ROLE_NAMES} from './sortie-formation-logic.js';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
 import {inspectInnFormation} from './inn-formation-rules.js';
 import {TOWN_SHOP,squadEquipmentBonus} from './game-core-flow.js';
+import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
+import {formationUnlockLabels} from './formation-strategy-unlocks.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class="'+(selected?'selected':'')+'">'+title+'</button>';
 const sourceLabel=s=>esc(s.characterName||s.name||s.job+'代表');
 const gearName=id=>TOWN_SHOP.find(x=>x.id===id)?.name||'装備なし';
-const names=['隊の選択','隊員と人数','装備','リーダー','陣形','編成確認'];
-const stageByStep={teamPick:0,roster:1,rosterPick:1,equipment:2,equipmentPick:2,leader:3,formation:4,review:5};
+const names=['隊の選択','隊員と人数','装備','持参アイテム','リーダー','陣形','編成確認'];
+const stageByStep={teamPick:0,roster:1,rosterPick:1,equipment:2,equipmentPick:2,items:3,leader:4,formation:5,review:6};
 const purpose=id=>FORMATION_BATTLE_PURPOSES[id]||{purpose:'汎用隊列',movement:'隊列を維持'};
 const requirement=id=>{
  const r=FORMATION_ENTRY_REQUIREMENTS[id];
@@ -54,14 +56,15 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
  const teams=sortieTeams(game),team=currentTeam(game,teamId),members=currentSources(game,team);
  const step=stageByStep[view]??0;
  const total=teams.reduce((n,t)=>n+sortieTeamCount(t),0),limit=sortiePlanningLimit(game);
- const header='<div class="sortieWizardHeader"><small>宿屋｜'+names[step]+'　'+(step+1)+' / 6</small>'+
+ const header='<div class="sortieWizardHeader"><small>宿屋｜'+names[step]+'　'+(step+1)+' / 7</small>'+
   '<strong>'+(view==='teamPick'?'どの隊を編成する？':view==='rosterPick'?'ジョブを選択':view==='equipmentPick'?'装備品を選択':
-   view==='roster'?'第'+team.id+'隊の隊員・人数':view==='equipment'?'第'+team.id+'隊の装備':
+   view==='roster'?'第'+team.id+'隊の隊員・人数':view==='equipment'?'第'+team.id+'隊の装備':view==='items'?'第'+team.id+'隊の持参アイテム':
    view==='leader'?'第'+team.id+'隊のリーダー':view==='formation'?'第'+team.id+'隊で使える陣形':
    '第'+team.id+'隊の編成内訳')+'</strong>'+
   '<span>'+(view==='teamPick'?'編成する隊を選ぶと、その隊の隊員から順に設定します。':
    view==='roster'?'最大3ジョブ。先に隊員と人数を決め、条件に合う陣形を後から選びます。':
    view==='equipment'?'武器と防具はジョブごとの装備です。変更・解除ができます。':
+   view==='items'?'道具屋で買ったアイテムを隊に分配します。共有在庫を超えて配布できません。':
    view==='leader'?'この隊に配属したジョブの代表からリーダーを選びます。':
    view==='formation'?'人数・レアリティ・職業・軍師Lv.を満たす陣形のみ選べます。戦闘中も陣形の目的に沿って動きます。':
    view==='review'?'隊員・装備・リーダー・陣形を確認して保存します。':
@@ -116,7 +119,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     button('data-inn-wizard-gear-source="'+esc(s.id)+'" data-category="防具"','防具：'+esc(gearName(gear.armor)))+'</div></div>';
   }).join('')+'</div>'+
    '<small class="innWizardInfo">保有装備は共有在庫です。同じ装備を別ジョブにも使う場合は個数が必要です。</small>';
-  back='roster';next='leader';
+  back='roster';next='items';
  }else if(view==='equipmentPick'){
   const s=members.find(x=>String(x.id)===String(gearSourceId));
   const slot=gearCategory==='防具'?'armor':'weapon';
@@ -133,15 +136,28 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
      '<small>所持 '+own+'／他の隊が使用 '+used+(own<=used&&!equipped?' · 在庫不足':'')+'</small></span>',equipped);
    }).join('')+'</div>';
   back='equipment';
+ }else if(view==='items'){
+  body='<div class="innWizardRoster">'+INN_CONSUMABLES.map(item=>{
+   const stock=teamItemStock(game,team.id,item.id);
+   return '<div class="innWizardMember"><div><b>🎒 '+esc(item.name)+'</b><small>'+esc(item.description)+'</small>'+
+    '<small>全軍所持 '+stock.owned+'個 ／ 他隊へ '+stock.assigned+'個 ／ 残り '+stock.available+'個</small></div>'+
+    '<div class="innWizardRosterControls">'+
+    button('data-inn-wizard-item="'+esc(item.id)+'" data-delta="-1" '+(!stock.current?'disabled':''),'−')+
+    '<b>'+stock.current+'個</b>'+
+    button('data-inn-wizard-item="'+esc(item.id)+'" data-delta="1" '+(!stock.available?'disabled':''),'＋')+
+    '</div></div>';
+  }).join('')+'</div>'+
+   '<small class="innWizardInfo">持参品はここで予約します。実際に使用すると戦闘中に1個減ります。</small>';
+  back='equipment';next='leader';
  }else if(view==='leader'){
   body='<div class="sortieWizardChoices">'+members.map(s=>button('data-inn-wizard-leader="'+esc(s.id)+'"',
    '<span class="sortieWizardStrategyIcon">♛</span><span class="sortieWizardStrategyDetails"><b>'+sourceLabel(s)+'</b>'+
    '<small>'+esc(s.job)+' · '+esc(s.rarity||'N')+' · '+(team.counts[String(s.id)]||0)+'人</small></span>',
    String(team.captainId)===String(s.id))).join('')+'</div>'+
    (members.length?'':'<small class="innWizardInfo">隊員を選択してからリーダーを決めてください。</small>');
-  back='equipment';next='formation';
+  back='items';next='formation';
  }else if(view==='formation'){
-  const ids=Object.keys(SORTIE_FORMATIONS),per=4,pages=Math.ceil(ids.length/per);
+  const ids=Object.keys(SORTIE_FORMATIONS),per=1,pages=Math.ceil(ids.length/per);
   const page=Math.max(0,Math.min(pages-1,Number(formationPage)||0));
   const options=ids.slice(page*per,page*per+per);
   body='<div class="sortieWizardFormationChoices innWizardFormations">'+options.map(id=>{
@@ -156,7 +172,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     '<span class="sortieWizardFormationTitle"><b>'+esc(f.name)+'</b></span>'+
     '<small>目的：'+esc(brief.purpose)+'</small>'+
     '<span class="sortieWizardOldMiniGrid sortieMiniGrid">'+mini+'</span>'+
-    '<small>動き：'+esc(brief.movement)+'</small>'+
+    '<small>動き：'+esc(brief.movement)+'</small>'+ 
+    '<small>追加作戦：'+esc(formationUnlockLabels(id).join('・')||'基本作戦のみ')+'</small>'+
     '<small>条件：Lv.'+f.level+'・'+esc(requirement(id))+'</small>'+
     '<small class="sortieWizardFormationBonus">攻撃+'+Math.round((f.attack||0)*100)+'%／防御+'+Math.round((f.defense||0)*100)+'%</small>'+
     '<small>'+(elig.eligible?'✓ 利用可能':'🔒 '+esc(elig.reason))+'</small>',team.formation===id);
@@ -171,8 +188,11 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   body='<div class="innWizardReview"><div class="innWizardReviewSummary"><b>第'+team.id+'隊 · '+esc(f?.name||'自由陣形')+'</b>'+
    '<small>合計 '+sortieTeamCount(team)+'人／'+members.length+'ジョブ</small>'+
    '<small>目的：'+esc(brief.purpose)+'</small>'+
-   '<small>動き：'+esc(brief.movement)+'</small></div>'+
+   '<small>動き：'+esc(brief.movement)+'</small>'+ 
+   '<small>追加作戦：'+esc(formationUnlockLabels(team.formation).join('・')||'基本作戦のみ')+'</small></div>'+
    rosterBreakdown(game,team)+
+   '<div class="innWizardReviewSummary"><b>🎒 持参アイテム</b><small>'+
+    esc(innTeamItemsSummary(game,team.id).map(x=>x.name+' ×'+x.quantity).join(' ／ ')||'なし')+'</small></div>'+
    '<div class="innWizardReviewSummary"><b>隊長：'+
    (members.find(s=>String(s.id)===String(team.captainId))?
      sourceLabel(members.find(s=>String(s.id)===String(team.captainId))):'未選択')+'</b>'+
