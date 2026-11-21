@@ -13,7 +13,7 @@ import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
 import {M018_HYDRA_REVISION}
- from './m018-hydra-sculpt.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './m018-hydra-sculpt.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {M019_HERO_REVISION} from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';

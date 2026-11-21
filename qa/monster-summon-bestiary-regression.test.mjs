@@ -151,7 +151,9 @@ if(THREE){
   const bb=new THREE.Box3().setFromObject(actor),sz=new THREE.Vector3();
   bb.getSize(sz);
   const reference=MONSTER_SUMMON_MODEL_HEIGHT*MONSTER_SUMMON_BY_TYPE[type].size;
-  assert.ok(Math.abs(sz.y-reference)<reference*.06,
+  if(id==='m018')assert.ok(Math.abs(sz.z-4*1.12)<.08,
+   'hydra summon must span four cells nose-to-tail');
+  else assert.ok(Math.abs(sz.y-reference)<reference*.06,
    id+' must retain its source species height; actual '+sz.y+' expected '+reference);
   const pivots=actor.userData.pivots;
   assert.ok(Object.keys(pivots).length>0,'Original joint rig missing '+id);

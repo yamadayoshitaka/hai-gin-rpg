@@ -5,24 +5,24 @@
  * No missing actor while loading, no per-instance 1000v1000 GLB request.
  */
 import * as THREE from 'three';
+import {m018BattleScale} from './m018-battle-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './monster-geometry.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {startMonsterAction,animateMonsterModel}
- from './monster-animation.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './monster-animation.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ from './creature-game-model-routing.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';
 
-const targetHeightOf=root=>{
+const boundsOf=root=>{
  root.updateMatrixWorld(true);
- const b=new THREE.Box3().setFromObject(root);
- return {height:b.max.y-b.min.y,bottom:b.min.y};
+ return new THREE.Box3().setFromObject(root);
 };
 
 export function createRegisteredBattleMonster(spec,{
- detail='low',allowExternal=false,storage=globalThis.localStorage
+ detail='low',allowExternal=false,storage=globalThis.localStorage,cellSize=1
 }={}){
  if(!spec?.id)throw Error('Battle monster needs a canonical species ID');
  const choice=resolveRegisteredMonsterModel(spec.id,{
@@ -37,6 +37,9 @@ export function createRegisteredBattleMonster(spec,{
  root.userData.modelLoadStatus='procedural-ready';
  let native=createMonsterModel(spec,{detail}),external=null;
  let disposed=false,lastAction='idle',lastTime=null;
+ const hydra=spec.id==='m018';
+ const restBounds=hydra?boundsOf(native):null;
+ if(hydra)root.scale.setScalar(m018BattleScale(restBounds,cellSize));
  root.add(native);
  startMonsterAction(native,'idle',0);
  let ready=Promise.resolve(root);
@@ -55,18 +58,16 @@ export function createRegisteredBattleMonster(spec,{
       detail,allowExternal,storage}).selected){
      loaded.dispose();return root;
     }
-    const previous=targetHeightOf(native);
-    const next=targetHeightOf(loaded.root);
-    if(!Number.isFinite(next.height)||next.height<=.001||
-       !Number.isFinite(previous.height)||previous.height<=.001)
+    const previous=hydra?restBounds:boundsOf(native);
+    const next=boundsOf(loaded.root);
+    const axis=hydra?'z':'y';
+    const span=bounds=>bounds.max[axis]-bounds.min[axis];
+    if(![span(previous),span(next)].every(n=>Number.isFinite(n)&&n>.001))
       throw Error('Source GLB has no valid geometry bounds');
-    const scale=previous.height/next.height;
-    // Preserve collision and AI: all re-fitting is inside the visual
-    // wrapper, never the actual soldier/collider root.
-    loaded.root.scale.multiplyScalar(scale);
-    loaded.root.updateMatrixWorld(true);
-    const fitted=targetHeightOf(loaded.root);
-    loaded.root.position.y+=previous.bottom-fitted.bottom;
+    // Scale the visual wrapper independently of the actor's grid cell and AI.
+    loaded.root.scale.multiplyScalar(span(previous)/span(next));
+    const fitted=boundsOf(loaded.root);
+    loaded.root.position.y+=previous.min.y-fitted.min.y;
     root.add(loaded.root);
     root.remove(native);
     disposeMonsterSculpture(native);native=null;

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -30,8 +30,8 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
  from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
-import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns}
- from './m018-hydra-sculpt.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptM018Leg,sculptM018Tail}
+ from './m018-hydra-sculpt.js?v=m018-armored-four-cell-hydra-v24-20261121';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
@@ -1473,6 +1473,10 @@ cloneCanine?
         magmaSalamander?(fore>0?1.035:-1.025):fore*.49],
      pelvisMounted?g.pivots.pelvis:
        (s.id==='m001'||s.id==='m002'||felineMaster||magmaSalamander?torso:g.root));
+   if(hydra){
+     sculptM018Leg(g,leg,name,side,fore>0);
+     continue;
+   }
 if(salamanderLineage){
      // Derive short planted limbs with the SAME articulated knee, paw
      // and shoulder axes; never shorten a leg by dropping its foot only.
@@ -2250,7 +2254,8 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    tail.userData.salamanderTorsoParented=true;
    if(magmaSalamander)tail.userData.m019ExtendedSalamanderTail=true;
  }
- if(felineMaster){
+ if(hydra)sculptM018Tail(g,tail);
+ else if(felineMaster){
    const caudal=g.axialLoft(tail,'skin',[
      {z:.220,y:.012,rx:.074,ry:.078},
      {z:.110,y:.044,rx:.091,ry:.091},
@@ -2288,7 +2293,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
       ribbing:.013,capEnds:true});
    caudal.userData.salamanderRootBuriedInCroup=true;
  }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
- const tailMid=g.group('tailMid',
+ const tailMid=hydra?g.pivots.tailMid:g.group('tailMid',
    felineMaster?[0,.320,-.790]:
    forestWolf?[0,.174,-.610]:magmaSalamander?[0,.066,-.535]:[0,.08,-.50],tail);
  if(felineMaster){
@@ -2322,8 +2327,8 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
      {z:-.66,y:-.108,rx:.037,ry:.043}
    ],{name:s.id+'-closed-caudal-mid',rough:.78,
       ribbing:.011,capEnds:true});
- }else g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
- const tailTip=g.group('tailTip',
+ }else if(!hydra)g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
+ const tailTip=hydra?g.pivots.tailTip:g.group('tailTip',
    felineMaster?[0,-.145,-.750]:
    forestWolf?[0,.005,-.620]:magmaSalamander?[0,-.060,-.645]:
      [.09,-.11,-.49-v*.10],tailMid);
@@ -2332,7 +2337,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  else if(forestWolf)g.sphere(tailTip,'skin',[0,0,-.006],
    [.052,.057,.066],{name:'m005-embedded-tail-tip'});
  else if(magmaSalamander)sculptM019TailTip(g,tailTip,{detail:coatDetail});
- else g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
+ else if(!hydra)g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
  // so it follows jaw anticipation and neck pitch without floating.
@@ -2487,7 +2492,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    sculptSalamanderLineageBack(g,torso,{id:s.id,detail:coatDetail});
    sculptSalamanderSurface(g,torso,head,{id:s.id,detail:coatDetail});
  }else if(hydra){
-   sculptM018HydraThorns(g,torso,tail,tailMid,{detail:coatDetail});
+   sculptM018HydraThorns(g,torso,{detail:coatDetail});
  }else{
    for(let i=0;i<12+v*3;i++){
      const z=-.65+i*.12;
@@ -3121,5 +3126,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m018-armored-four-cell-hydra-v24-20261121';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m016-m017-salamander-quality-v21-20261121';

@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {createRegisteredBattleMonster} from '../src/battle-registered-monster-model.js';
+import {createMonsterSummonRenderer} from '../src/monster-summon-renderer.js';
 import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {M018_HYDRA_REVISION} from
- '../src/m018-hydra-sculpt.js?v=m018-purple-thorn-dragon-necks-v23-20261121';
+ '../src/m018-hydra-sculpt.js?v=m018-armored-four-cell-hydra-v24-20261121';
 
 for(const detail of ['low','high']){
  test('m018 '+detail+' retains base body and four planted limbs while creating 3 long dragon heads',()=>{
@@ -25,9 +27,19 @@ for(const detail of ['low','high']){
     'preserve the original m018 root-owned tail pivot, do not silently reparent');
    assert(root.getObjectByName('species-shoulder-rib-pelvis-m018')?.isMesh,
     'keep original m018 anatomical torso, not a fresh monster replacement');
+   assert.equal(piv.tailTip.parent,piv.tailMid);
+   for(const i of [0,1,2]){
+    assert(root.getObjectByName('m018-closed-caudal-skin-'+i)?.userData.cappedTubularSkin);
+   }
    for(const id of ['frontL','frontR','rearL','rearR']){
     assert(piv['leg'+id],'do not delete original '+id);
     assert.equal(piv['lower'+id].parent,piv['leg'+id]);
+    const talon=root.getObjectByName('m018-rooted-talon-'+id);
+    assert.equal(talon?.parent,piv['toe'+id]);
+    assert.equal(talon.userData.rootedKeratin,true);
+    const joint=piv['lower'+id];
+    assert(Math.abs(joint.position.x)>.2,'limb should splay outwards');
+
    }
    const meshes=[];root.traverse(x=>{if(x.isMesh)meshes.push(x)});
    assert.equal(meshes.filter(x=>x.name.startsWith('m018-long-neck-')).length,3);
@@ -109,4 +121,29 @@ test('replacing m018 face does not replace unrelated reptile skulls',()=>{
    assert.equal(root.userData.m018DragonHeadCount,undefined);
   }finally{disposeMonsterSculpture(root);}
  }
+});
+
+test('m018 enemy and summon use four visual cells without resizing during actions',()=>{
+ const spec=MONSTER_BY_ID.m018;
+ const cells=4,cellSize=1.18;
+ for(const detail of ['low','high']){
+  const monster=createRegisteredBattleMonster(spec,{detail,cellSize});
+  try{
+   const rest=new THREE.Box3().setFromObject(monster.root);
+   assert.ok(Math.abs(rest.max.z-rest.min.z-cells*cellSize)<.001);
+   const scale=monster.root.scale.x;
+   monster.update(0,'attack');
+   monster.update(.4,'attack');
+   assert.equal(monster.root.scale.x,scale);
+  }finally{monster.dispose();}
+ }
+ const scene=new THREE.Scene();
+ const renderer=createMonsterSummonRenderer(scene,{cellSize});
+ try{
+  renderer.sync([{id:1,type:'summon_m018',x:6,z:6}],0);
+  const actor=scene.getObjectByName('SummonedBestiary_m018');
+  assert(actor);
+  const live=new THREE.Box3().setFromObject(actor);
+  assert.ok(Math.abs(live.max.z-live.min.z-cells*cellSize)<.14);
+ }finally{renderer.dispose();}
 });
