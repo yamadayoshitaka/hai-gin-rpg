@@ -11,7 +11,7 @@ const headBox=new THREE.Box3(new THREE.Vector3(-1,-1,-1),
  new THREE.Vector3(1,1,1));
 
 test('v55 temple hair covers both ear sides as the locks descend',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v55$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v56$/);
  for(const side of [-1,1]){
   const root=new THREE.Vector3(side*.40,.87,-.075);
   const normal=new THREE.Vector3(side*.45,.80,.12).normalize();
@@ -25,8 +25,10 @@ test('v55 temple hair covers both ear sides as the locks descend',()=>{
   const earPoints=path.filter(p=>p.y>headBox.min.y+2*.53&&
     p.y<headBox.min.y+2*.77);
   assert.ok(earPoints.length>0,'Must pass through the actual ear-height band');
-  assert.ok(earPoints.some(p=>side*p.x>side*root.x+.06),
-   'Temple locks must fall on the outside of '+(side<0?'left':'right')+' ear');
+  assert.ok(earPoints.some(p=>side*p.x>.34),
+   'Hair must stay outside the ear on the '+(side<0?'left':'right')+' side');
+  assert.ok(earPoints.every(p=>side*p.x<.60),
+   'Hair must cover the ear rather than fly out as a wide side fan');
   assert.ok(earPoints.some(p=>p.z>root.z+.07),
    'Temple locks must pass in front of the ear, not behind it');
   assert.ok(nearHead.some(sample=>sample.followScalp),
@@ -86,8 +88,8 @@ test('both face and full-body editors load v55 collision geometry',()=>{
  const face=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const body=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
  const scalp=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
- assert.match(face,/20261121-sadako-ear-crown-bust-v55/);
- assert.match(body,/20261121-sadako-ear-crown-bust-v55/);
+ assert.match(face,/20261121-sadako-ear-curtain-crown-over-v56/);
+ assert.match(body,/20261121-sadako-ear-curtain-crown-over-v56/);
  assert.match(scalp,/projectSadakoRearBust\(ribbonCollisionPoint,strand.zone\)/);
  assert.match(scalp,/projectSadakoRearBust\(p,zone\)/);
  assert.match(face,/耳被覆毛束/);
