@@ -89,7 +89,21 @@ const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 for(const attr of ['data-sortie-plan-formation','data-sortie-plan-save']){
  assert.ok(town.includes(attr),'inn click handler: '+attr);
 }
-assert.ok(town.includes("sortieView='formationOnly'"),'inn opens on formations only');
+// Check the actual entry handler rather than a matching default variable elsewhere
+// in the file: this previously passed while openPanel('formation') still
+// routed to the obsolete 'strategy' screen.
+const openPanelStart=town.indexOf('function openPanel(which)');
+const closePanelStart=town.indexOf('function closePanel()',openPanelStart);
+assert.ok(openPanelStart>=0&&closePanelStart>openPanelStart,'town must implement openPanel');
+const openPanelHandler=town.slice(openPanelStart,closePanelStart);
+assert.match(openPanelHandler,/if\(which==='formation'\)\{sortieView='formationOnly';/,
+ 'entering the inn must open the first formation picker');
+assert.doesNotMatch(openPanelHandler,/sortieView='strategy'/,
+ 'the removed strategy-first screen must never open from the inn');
+assert.ok(town.includes("if(sortieTeamId<3){sortieTeamId++;sortieView='formationOnly';}"),
+ 'formation selection should advance to the next team');
+assert.ok(town.includes("else sortieView='formationReview'"),
+ 'the third formation selection should advance to review');
 assert.ok(town.includes("setSortieFormation(game,sortieTeamId,target.dataset.sortiePlanFormation)"),
  'inn formation changes must never apply fixed battle tactics');
 assert.ok(!town.includes("selectThreeTeamStrategy(game,target.dataset.sortiePlanStrategy)"),
