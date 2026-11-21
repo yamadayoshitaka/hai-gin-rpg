@@ -421,6 +421,12 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
  window.__faceExpressionQA={
   setBlink(value){expressions.get(gender)?.setBlinkProgress(value);},
    setMouth(value){expressions.get(gender)?.setMouthOpen(value);},
+   // Bypass Playwright's flaky screenshots on a continuously animated
+   // Three.js canvas. Capture the real WebGL frame synchronously after render.
+   captureWebGLFrame(){
+    renderer.render(scene,camera);
+    return renderer.domElement.toDataURL('image/png');
+   },
    nativeLipProbe(){
     const current=models.get(gender),face=current?.face;
     if(!face)return null;
