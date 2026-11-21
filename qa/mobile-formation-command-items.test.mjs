@@ -57,4 +57,21 @@ for(const marker of ['deployStep=\'placement\'','syncPrebattleScreen()','realtim
 }
 assert.match(css,/\.innWizardFormations/);
 assert.match(css,/overflow:hidden!important/);
-console.log('PASS: paged formations, team item stock, command routing and formation tactic unlocks');
+
+const strategy=readFileSync(new URL('../src/targeted-strategy-runtime.js',import.meta.url),'utf8');
+const strategyCss=readFileSync(new URL('../src/central-battle-orders.css',import.meta.url),'utf8');
+const radarCss=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
+assert.match(strategy,/renderFormationSignaturePreview\(formation\)/,
+ 'battle command selection must reuse the actual inn animated formation');
+assert.match(strategy,/data-strategy-quick="assault"/);
+assert.match(strategy,/data-strategy-signature="1"/);
+assert.match(strategy,/data-strategy-start="plan"/);
+assert.match(strategy,/else if\(kind==='plan'\)step='family'/,
+ 'the advanced tactics button must open the real tactics picker');
+assert.match(radar,/realtimeInitialFormationPreview/,
+ 'each prebattle team needs an animated preview next to allowed orders');
+assert.match(radar,/PREBATTLE_TACTIC_NAMES/);
+assert.match(strategyCss,/centerQuickBattleGrid/);
+assert.match(radarCss,/#realtimeInitialFormationPreview/);
+
+console.log('PASS: paged formations, animated battle tactics, team items, and formation unlocks');

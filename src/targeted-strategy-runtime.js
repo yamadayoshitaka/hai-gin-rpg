@@ -3,7 +3,9 @@
  * Multiple methods can be combined and physical squads are shared without duplication.
  */
 import {STRATEGY_TREE,STRATEGY_METHODS} from './three-step-strategy-catalog.js';
-import {formationAllowsTactic,formationUnlockLabels} from './formation-strategy-unlocks.js';
+import {formationAllowsTactic,formationUnlockLabels,unlockedFormationTactics} from './formation-strategy-unlocks.js';
+import {renderFormationSignaturePreview} from './formation-signature-strategies.js';
+import {SORTIE_FORMATIONS} from './three-team-sortie.js';
 import {makeSelectableMapOverlay,isSelectableMapPoint} from './battle-target-highlight.js?v=20261116-map1';
 export const TARGETED_STRATEGY_KINDS=Object.freeze({
  charge:{label:'攻撃',type:'enemy'},defend:{label:'守備',type:'map'},
@@ -129,35 +131,47 @@ export function createTargetedStrategyUi({
   const dist=distribution(),kind=type(),groupInfo=grouped(),activeMethod=[...selectedMethods].map(id=>STRATEGY_METHODS[id]).filter(Boolean);
   let html='';
   if(step==='quick'){
-    const objective=getVictoryObjective(),counts=groupInfo.map(g=>liveSquads(g.plan).reduce((n,s)=>n+Number(s.soldiers||0),0));
-    const allowed=new Set(liveSquads(plan).flatMap(s=>s.allowed||plan.allowed||[]));
-    const canAssault=allowed.has('charge'),canDefend=allowed.has('defend')||allowed.has('hold');
-    const canExplore=allowed.has('explore')||(objective?.kind==='capture'&&allowed.has('charge'));
-    const signature=getSignatureStrategy(String(groupId));
-    html='<div class="centerStep">指示する隊を選択</div>'+
-     '<div class="centerGrid centerGroupCards">'+groupInfo.map((g,i)=>b('data-strategy-group="'+g.id+'"',
-      '第'+g.id+'隊 · '+counts[i]+'人',String(groupId)===String(g.id),counts[i]===0)).join('')+'</div>'+
-     '<div class="centerStep">第'+esc(groupId)+'隊の作戦（開戦前と同じ4種類）</div>'+
-     '<div class="centerGrid">'+
-     b('data-strategy-quick="assault"','⚔ 殲滅',false,!canAssault)+
-     b('data-strategy-quick="defense"','🛡 守備',false,!canDefend)+
-     b('data-strategy-quick="balanced"','⚖ バランス',false,!canAssault||!canDefend)+
-     b('data-strategy-quick="explore"','🔍 探索・目標へ進軍',false,!canExplore)+
-     '</div>'+
-     (signature?'<div class="centerStep">★ この陣形だけの専用作戦</div><div class="centerGrid">'+
-       b('data-strategy-signature="1"','★ '+signature.name+'｜'+signature.description,false,!signature.usable)+
-       '</div>':'')+
-     '<div class="centerStep">またはアイテムを使う</div>'+
-     '<div class="centerGrid">'+b('data-strategy-start="item"','🎒 アイテムを使用',false,
-      !getItems(String(groupId)).some(x=>Number(x.quantity)>0))+'</div>'+
-     (objective?.kind==='capture'?
-      '<div class="centerQuota"><b>🏁 勝利目標：'+esc(objective.label)+'</b>'+
-      '<div>マップ X'+esc(objective.x)+' / Z'+esc(objective.z)+
-      '・制圧範囲 半径'+esc(objective.radius)+'マス</div>'+
-      '<div>味方が到着し、周囲の敵を排除して'+esc(objective.holdSeconds)+
-      '秒確保すると勝利（現在 '+esc(objective.progress)+'%）</div></div>':
-      '<small class="centerHelp">作戦は隊全体へ一括指示します。アイテムだけ使用対象を選択します。</small>')+
-     '<small class="centerHelp">作戦ボタンで確定して戦闘に戻ります。使用不可の作戦は陣形・編成条件に従います。</small>';
+   const objective=getVictoryObjective(),counts=groupInfo.map(g=>liveSquads(g.plan).reduce((n,s)=>n+Number(s.soldiers||0),0));
+   const allowed=new Set(liveSquads(plan).flatMap(s=>s.allowed||plan.allowed||[]));
+   const canAssault=allowed.has('charge'),canDefend=allowed.has('defend')||allowed.has('hold');
+   const canExplore=allowed.has('explore')||(objective?.kind==='capture'&&allowed.has('charge'));
+   const formation=formationFor(),activeFormation=isFormationActive();
+   const formationName=SORTIE_FORMATIONS[formation]?.name||formation;
+   const signature=getSignatureStrategy(String(groupId));
+   const preview=renderFormationSignaturePreview(formation);
+   const unlocked=unlockedFormationTactics(formation,activeFormation);
+   const canUseExtra=unlocked.some(id=>eligible.has(id));
+   html='<div class="centerQuickTeamPicker"><div class="centerStep">① 作戦を選ぶ隊</div>'+
+    '<div class="centerGrid centerGroupCards">'+groupInfo.map((g,i)=>b('data-strategy-group="'+g.id+'"',
+     '第'+g.id+'隊 · '+counts[i]+'人',String(groupId)===String(g.id),counts[i]===0)).join('')+'</div></div>'+
+    '<div class="centerQuickBattleGrid">'+
+    '<section class="centerQuickPreview" aria-label="選択中の隊の陣形とアニメーション">'+
+    '<div class="centerStep">第'+esc(groupId)+'隊｜'+esc(formationName)+'</div>'+
+    (preview||'<small class="centerHelp">この陣形には専用の動作アニメーションがありません。</small>')+
+    '<small class="centerHelp">'+(activeFormation?'✓ 宿屋の陣形を維持':'⚠ 陣形条件が未成立：追加作戦は使用不可')+'</small>'+
+    '</section>'+
+    '<section class="centerQuickOrders" aria-label="第'+esc(groupId)+'隊の使用可能な作戦">'+
+    '<div class="centerStep">② この隊が使える作戦を選択</div>'+
+    '<div class="centerGrid centerQuickBasics">'+
+    b('data-strategy-quick="assault"','⚔ 殲滅',false,!canAssault)+
+    b('data-strategy-quick="defense"','🛡 守備',false,!canDefend)+
+    b('data-strategy-quick="balanced"','⚖ バランス',false,!canAssault||!canDefend)+
+    b('data-strategy-quick="explore"','🔍 探索・目標遂行',false,!canExplore)+
+    '</div>'+
+    (signature?'<div class="centerQuickSignature">'+
+     b('data-strategy-signature="1"','★ 陣形専用：'+signature.name,false,!signature.usable)+
+     '<small class="centerHelp">'+esc(signature.description)+'</small></div>':'')+
+    '<div class="centerQuickExtras">'+
+    (unlocked.length?b('data-strategy-start="plan"','✦ 追加作戦（'+unlocked.length+'種）',false,!canUseExtra):'')+
+    b('data-strategy-start="item"','🎒 アイテム',false,
+     !getItems(String(groupId)).some(x=>Number(x.quantity)>0))+'</div>'+
+    (unlocked.length?'<small class="centerHelp">追加：'+
+     esc(formationUnlockLabels(formation,activeFormation).join('・'))+'</small>':'')+
+    '<small class="centerHelp">選択すると確定して実行。暗いボタンは現在使用できません。</small>'+
+    '</section></div>'+
+    (objective?.kind==='capture'?
+     '<div class="centerQuota centerQuickObjective"><b>🏁 '+esc(objective.label)+'</b>'+
+     ' · X'+esc(objective.x)+'/Z'+esc(objective.z)+' · 制圧率 '+esc(objective.progress)+'%</div>':'');
   }else if(step==='menu'){
    const unlocked=formationUnlockLabels(formationFor(),isFormationActive());
    const signature=getSignatureStrategy(String(groupId));
@@ -487,6 +501,7 @@ export function createTargetedStrategyUi({
    chosenItem=null;selectedMethods.clear();selectedTargets.clear();mapPoint=null;
    if(kind==='move')step='moveTarget';
    else if(kind==='item')step='items';
+   else if(kind==='plan')step='family';
    else step='quick';
    error='';render();return;
   }

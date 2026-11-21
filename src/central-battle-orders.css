@@ -93,3 +93,65 @@ body.story-center-orders #topQuickActions{display:flex;gap:5px}
 #targetedStrategyCard .centerBattleRecommendations button{min-height:50px;text-align:left;line-height:1.35;padding:7px!important;font-size:11px!important}
 #targetedStrategyCard .centerBattleRecommendations button:first-child{grid-column:1/-1;border-color:#d7b167;background:#51412b;color:#fff2c2}
 @media(max-width:375px){#targetedStrategyCard .centerBattleRecommendations{grid-template-columns:1fr}}
+
+
+/* The same SVG/SMIL animation shown for each formation at the inn is also
+   displayed alongside its legal commands; landscape never needs a second page. */
+#targetedStrategyCard:has(.centerQuickBattleGrid){
+ width:min(98vw,880px);max-height:96dvh;overflow:hidden;gap:4px;
+}
+#targetedStrategyCard .centerQuickTeamPicker{display:grid;gap:3px;min-width:0}
+#targetedStrategyCard .centerQuickTeamPicker .centerGroupCards{grid-template-columns:repeat(3,minmax(0,1fr))}
+#targetedStrategyCard .centerQuickTeamPicker .centerGroupCards button{
+ min-height:35px;font-size:11px;padding:4px 6px;text-align:center;
+}
+#targetedStrategyCard .centerQuickBattleGrid{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+ gap:8px;min-height:0;align-items:start;
+}
+#targetedStrategyCard .centerQuickPreview,#targetedStrategyCard .centerQuickOrders{
+ display:grid;align-content:start;gap:4px;min-width:0;
+}
+#targetedStrategyCard .centerQuickPreview>.centerStep,
+#targetedStrategyCard .centerQuickOrders>.centerStep{font-size:13px}
+#targetedStrategyCard .centerQuickPreview .signaturePreview{min-width:0;display:grid;gap:3px}
+#targetedStrategyCard .centerQuickPreview .signaturePreview svg{
+ display:block;width:100%;height:clamp(85px,26dvh,145px);
+ border:1px solid #6caebc;border-radius:7px;max-width:100%;
+}
+#targetedStrategyCard .centerQuickPreview .signaturePhaseCaptions{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;
+}
+#targetedStrategyCard .centerQuickPreview .signaturePhaseCaptions span{
+ padding:3px 2px;min-width:0;text-align:center;font:700 9px/1.25 system-ui;
+ color:#d6ecf7;border:1px solid #426e7d;border-radius:4px;background:#173d51;
+}
+#targetedStrategyCard .centerQuickBasics{grid-template-columns:repeat(2,minmax(0,1fr))}
+#targetedStrategyCard .centerQuickBasics button{
+ min-height:39px;font-size:12px;padding:4px;white-space:normal;
+}
+#targetedStrategyCard .centerQuickSignature{display:grid;gap:3px}
+#targetedStrategyCard .centerQuickSignature button{
+ width:100%;border-color:#e4c788;background:#4b422e;min-height:36px;
+}
+#targetedStrategyCard .centerQuickExtras{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;
+}
+#targetedStrategyCard .centerQuickExtras button{min-height:33px;font-size:11px}
+#targetedStrategyCard .centerQuickObjective{font-size:10px;padding:3px 6px}
+@media(orientation:portrait){
+ #targetedStrategyCard:has(.centerQuickBattleGrid){overflow-y:auto;max-height:96dvh}
+ #targetedStrategyCard .centerQuickBattleGrid{grid-template-columns:minmax(0,1fr)}
+ #targetedStrategyCard .centerQuickPreview .signaturePreview svg{height:clamp(90px,19dvh,145px)}
+}
+@media(max-height:430px) and (orientation:landscape){
+ #targetedStrategyCard:has(.centerQuickBattleGrid){padding:6px 9px;gap:2px}
+ #targetedStrategyCard .centerPauseRibbon{padding:3px}
+ #targetedStrategyCard .centerQuickPreview .signaturePreview svg{height:clamp(78px,24dvh,110px)}
+ #targetedStrategyCard .centerQuickBasics button{min-height:34px}
+ #targetedStrategyCard .centerQuickOrders .centerHelp{font-size:9px;line-height:1.15}
+ #targetedStrategyCard .centerQuickPreview .signaturePhaseCaptions span{font-size:8px;padding:2px 0}
+}
+@media(prefers-reduced-motion:reduce){
+ #targetedStrategyCard .centerQuickPreview .signatureTroop animateTransform{display:none}
+}
