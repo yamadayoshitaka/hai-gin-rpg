@@ -63,6 +63,7 @@ test('v70 actual female semilong carries visible metal hairpins and compact head
  const x=wig('rb-f-semilong');
  const report=x.w.getReport();
  assert.equal(report.v70EarTuckBeforeEyes,true);
+ assert.equal(report.v70EyeCurtainLocks,0,'no frontal eye-level hair veil in the actual 3D semilong');
  assert.equal(report.v70HairPinMeshCount,4);
  for(const side of ['LEFT','RIGHT']){
   for(let i=0;i<2;i++){
