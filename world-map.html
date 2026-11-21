@@ -92,6 +92,7 @@ import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stages
 import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
 import {makeCoreBattleRequest,settleCoreBattle,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js?v=army-groups-1';
 import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieSquadCap,setSortieSlot,allowedSortieSlots,resolvedSortieSlot,stageIsControlled,sortieFormationStatus,SORTIE_FORMATIONS} from './src/three-team-sortie.js';
+import {battleStageType,battleStageObjective} from './src/battle-stage-identity.js';
 import {storyDecisionForStage,setStoryDecision,availableStoryRoutes,selectStoryRoute,currentStoryRoute,storyStageContext,availableStoryEndings,chooseStoryEnding} from './src/story-narrative-flow.js';
 import {storyVoiceText} from './src/story-pronunciations.js';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -288,7 +289,7 @@ function launchSelectedStage(stageId){
   sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   saveSession();
-  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v=three-team-radar2-20261120';
+  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset)+'&v=three-team-stage-type-single-deploy-20261121';
  }catch(error){stageLaunching=false;$('deploymentPicker').hidden=true;message(error.message||String(error));}
 }
 let stageLaunching=false,deploymentTeamId=1;
@@ -304,12 +305,12 @@ function renderDeploymentPicker(stage){
  if(!active)throw Error('宿屋でジョブを編成してから出撃してください。');
  deploymentTeamId=active.id;
  const allowed=allowedSortieSlots(game,stage);
- $('deploymentTitle').textContent='初期配置レーダー · '+stage.name;
+ $('deploymentTitle').textContent='初期配置｜'+battleStageType(stage.kind)+' · '+stage.name;
  const planned=teams.reduce((n,t)=>n+sortieTeamCount(t),0);
- $('deploymentHelp').textContent='出撃上限 '+stageDeploymentLimit(stage)+
+ $('deploymentHelp').textContent='勝利条件：'+battleStageObjective(stage.kind,stage.winCondition)+'。出撃上限 '+stageDeploymentLimit(stage)+
   '人／配置予定 '+planned+'人。'+(stageIsControlled(game,stage)?
   '制圧済み：レーダーの全12か所から選択。':'未制圧：レーダー下部の入口3か所を選択。')+
-  ' ここでは初期号令・作戦は選びません。';
+  ' 宿屋で設定した陣形と初期作戦を使用します。';
  $('deploymentGroups').innerHTML=teams.map(t=>
   '<button type="button" data-deployment-group="'+t.id+'" class="'+(t.id===active.id?'selected':'')+'">'+
   '第'+t.id+'班<small>'+sortieTeamCount(t)+'人・'+(t.slots?.filter(Boolean).length||0)+'/'+(SORTIE_FORMATIONS[t.formation]?.slots||sortieSquadCap(game))+'隊</small></button>').join('');
