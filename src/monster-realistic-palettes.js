@@ -14,6 +14,10 @@ export const MONSTER_REALISTIC_PALETTE=Object.freeze({
    accent:'#9d54c8',bone:'#bdae97',eye:'#ef7eff'}),
  m019:Object.freeze({skin:'#30292a',light:'#49393b',accent:'#ff792b',
    bone:'#514141',eye:'#ffbb55',shadow:'#151316'}),
+ // Owner-supplied purple scarab illustration: dark iridescent cuticle,
+ // pale green crown, glossy inset eyes and warm ivory fangs.
+ m024:Object.freeze({skin:'#382049',light:'#713b83',accent:'#bce579',
+   shadow:'#1e1327',bone:'#e9dcc5',eye:'#1d101f'}),
  m020:Object.freeze({skin:'#2a5675',light:'#74a4b1',shadow:'#172f46',
    accent:'#5ed2d1',bone:'#c7d5cf',eye:'#f3d992'}),
  m048:Object.freeze({skin:'#355787',light:'#88a3c3',shadow:'#213957',
