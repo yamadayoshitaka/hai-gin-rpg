@@ -47,7 +47,7 @@ test('buzz can be selected, replaced by Sadako, then selected again',()=>{
 
 test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  const page=read('face-mesh-studio.html'),hair=read('src/face-scalp-wig.js');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v65$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v66$/);
  assert.match(page,/Math\.max\(wigDensity,1200\)/,
   'restored low-density user preferences must not expose the entire crown');
  assert.match(hair,/sadakoGravity\?d\.y\*\(longFactor/,
@@ -57,9 +57,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/sadako-five-variants-v65/,
+ assert.match(page,/sadako-invisible-perm-rods-v66/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/sadako-five-variants-v65/,
+ assert.match(read('face-body-studio.html'),/sadako-invisible-perm-rods-v66/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -126,11 +126,11 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  const hair=read('src/face-scalp-wig.js');
  const studio=read('face-mesh-studio.html');
  const body=read('face-body-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v65$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v66$/);
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/sadako-five-variants-v65/);
- assert.match(body,/sadako-five-variants-v65/);
+ assert.match(studio,/sadako-invisible-perm-rods-v66/);
+ assert.match(body,/sadako-invisible-perm-rods-v66/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });

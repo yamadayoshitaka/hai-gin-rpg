@@ -12,7 +12,7 @@ const box=new THREE.Box3(new THREE.Vector3(-1,-1,-1),
  new THREE.Vector3(1,1,1));
 
 test('v57 anatomical crown canopy sweeps BOTH ways over the side scalp',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v65$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v66$/);
  for(const side of [-1,1]){
   const root=new THREE.Vector3(side*.12,.95,.01);
   const normal=new THREE.Vector3(side*.18,.97,.02).normalize();
@@ -97,7 +97,7 @@ test('buzz does not inherit long canopy and studios load the exact v57 module',(
  buzz.dispose();geometry.dispose();head.material.dispose();
  const face=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const body=readFileSync(new URL('../face-body-studio.html',import.meta.url),'utf8');
- assert.match(face,/20261121-sadako-five-variants-v65/);
- assert.match(body,/20261121-sadako-five-variants-v65/);
+ assert.match(face,/20261121-sadako-invisible-perm-rods-v66/);
+ assert.match(body,/20261121-sadako-invisible-perm-rods-v66/);
  assert.match(face,/頭頂→横に覆う毛束/);
 });
