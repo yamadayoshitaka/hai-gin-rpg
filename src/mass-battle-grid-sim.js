@@ -1825,13 +1825,19 @@ export class MassBattleGridSimulation {
       const reachable=assignedFlow&&assignedFlow[cell]<0x3fffffff;
       const supporting=squadCommand==='support'&&this.supportFlow[cell]<0x3fffffff;
       const remembered=u.pursuitMemory?.until>=this.time?u.pursuitMemory:null;
-      const pursuing=!reachable&&!supporting&&order!=='retreat'&&remembered&&
+      // A completed rally point is not a permanent ceasefire. After reaching
+      // the assigned area, active assault squads may resume enemy pursuit.
+      // Explicit guard/hold/retreat formations retain their requested position.
+      const assignedReached=Boolean(reachable&&assignedFlow[cell]===0);
+      const resumeCombat=assignedReached&&!['hold','defend','retreat'].includes(order)&&
+        this.live[1-u.team]>0;
+      const pursuing=(!reachable||resumeCombat)&&!supporting&&order!=='retreat'&&remembered&&
         Math.hypot(u.x-remembered.x,u.z-remembered.z)<26;
       const targetFlow=pursuing?this._pursuitFlow(remembered,u.jobId):null;
       const chaseFlow=targetFlow&&targetFlow[cell]<0x3fffffff?targetFlow:null;
       const missionSquad=mission&&['eliminate_squad','eliminate_commander'].includes(mission.type)?
         mission.targetSquadId:null;
-      const enemyFlow=!reachable&&!supporting&&order!=='retreat'?
+      const enemyFlow=(!reachable||resumeCombat)&&!supporting&&order!=='retreat'?
         this._enemyPursuitFlow(u.team,u.jobId,missionSquad):null;
       const globalChase=!chaseFlow&&enemyFlow&&enemyFlow[cell]<0x3fffffff;
       const highRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase===0?
@@ -1840,8 +1846,9 @@ export class MassBattleGridSimulation {
       const healingRoute=triageNeedsMovement?this._pursuitFlow(triageTarget,u.jobId):null;
       const triageFlow=healingRoute&&healingRoute[cell]<0x3fffffff?healingRoute:null;
       const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
-        triageFlow|| (reachable?assignedFlow:supporting?this.supportFlow:
-        chaseFlow||(globalChase?enemyFlow:defaultFlow));
+        triageFlow|| (reachable&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
+        supporting?this.supportFlow:chaseFlow||(globalChase?enemyFlow:
+        reachable?assignedFlow:defaultFlow));
       if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       if(supporting&&!reachable&&flow===this.supportFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];

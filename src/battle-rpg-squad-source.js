@@ -75,9 +75,56 @@ export function makeBattleRpgStatusRows({
    mode:getMode(id,team),effects:effectsFor(team,id),
    center:alive>0?{x:stat.x/alive,z:stat.z/alive}:null});
  }
- // Evaluate both armies before removing temporary centroids. Mutating centroids
- // in the same loop would mark the first side as engaged but not the second.
- for(const row of rows){
+ // A squad's centroid is NOT its front line: a wide formation can have
+ // melee fighters in contact while the two centroids are far apart.
+ // Use living soldiers and their actual grid coordinates on both sides.
+ // Spatial buckets keep the HUD refresh linear even at 1000 vs 1000.
+ const bySquad=new Map(rows.map(row=>[row.team+':'+row.id,row]));
+ const buckets=new Map(),active=[];
+ const bucketSize=5,contactSquared=4.5*4.5;
+ for(const unit of units){
+  const team=Number(unit.team),key=team+':'+String(unit.squadId);
+  if(!bySquad.has(key)||unit.alive===false||!(Number(unit.hp)>0)||
+   !Number.isFinite(unit.x)||!Number.isFinite(unit.z))continue;
+  const x=Number(unit.x),z=Number(unit.z);
+  const entry={unit,team,key,x,z};
+  active.push(entry);
+  const bucket=team+':'+Math.floor(x/bucketSize)+':'+Math.floor(z/bucketSize);
+  if(!buckets.has(bucket))buckets.set(bucket,[]);
+  buckets.get(bucket).push(entry);
+ }
+ for(const row of rows)row.inContact=false;
+ for(const entry of active){
+  const {unit,team,key,x,z}=entry;
+  // Ranged skills also count as engagement when the worker has acquired a
+  // living enemy squad, even if that squad is outside melee proximity.
+  const target=Number(unit.currentTargetSquadId);
+  if((unit.action==='attack'||unit.action==='skill')&&
+   unit.currentTargetSquadId!=null&&Number.isFinite(target)&&target>=0){
+   const enemyRow=bySquad.get((1-team)+':'+String(target));
+   if(enemyRow&&enemyRow.alive>0){
+    bySquad.get(key).inContact=true;enemyRow.inContact=true;
+   }
+  }
+  const bx=Math.floor(x/bucketSize),bz=Math.floor(z/bucketSize);
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+   const near=buckets.get((1-team)+':'+(bx+dx)+':'+(bz+dz));
+   if(!near)continue;
+   for(const other of near){
+    // An upstairs soldier cannot engage a ground-floor enemy through a slab.
+    const floorA=unit.highGroundFloor??unit.indoorFloor??1;
+    const floorB=other.unit.highGroundFloor??other.unit.indoorFloor??1;
+    if(floorA!==floorB)continue;
+    if((x-other.x)**2+(z-other.z)**2<=contactSquared){
+     bySquad.get(key).inContact=true;
+     bySquad.get(other.key).inContact=true;
+    }
+   }
+  }
+ }
+ // Legacy test/stage summaries may not supply individual coordinates.
+ // Preserve their centroid fallback only when neither army has any positions.
+ if(!active.length)for(const row of rows){
   row.inContact=Boolean(row.center&&rows.some(other=>other.team!==row.team&&other.center&&
    Math.hypot(row.center.x-other.center.x,row.center.z-other.center.z)<=10));
  }
