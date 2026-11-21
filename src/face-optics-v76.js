@@ -28,7 +28,39 @@ export function deriveIrisPolarDetail(width=768,height=192){
  }
  return {width,height,data,polarUV:true,limbalRing:true,crypts:true};
 }
-let iris=null,lip=null;
+let iris=null,lip=null,sclera=null;
+/** Deterministic low-opacity episcleral vascular microdetail.
+ * Fine capillaries only near the medial/lateral canthi: no fake red eye
+ * and no oversized lines over the pupil or corneal optical zone. */
+export function getScleraMicrovascularTexture(){
+ if(sclera)return sclera;
+ const width=384,height=128,data=new Uint8Array(width*height*4);
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  const u=(x+.5)/width,v=(y+.5)/height;
+  const edge=Math.pow(Math.abs(u-.5)*2,2.5);
+  const lower=Math.pow(1-v,.6);
+  const curve1=.33+.032*Math.sin(u*19)+.018*Math.sin(u*39);
+  const curve2=.66+.027*Math.sin(u*24+.4);
+  const thin=(Math.exp(-Math.pow((v-curve1)/.006,2))+
+   .65*Math.exp(-Math.pow((v-curve2)/.005,2)))*edge*lower;
+  const i=(y*width+x)*4;
+  data[i]=Math.max(0,Math.min(255,Math.round(246-2*edge+2.4*thin)));
+  data[i+1]=Math.max(0,Math.min(255,Math.round(242-4*edge-19*thin)));
+  data[i+2]=Math.max(0,Math.min(255,Math.round(239-4*edge-17*thin)));
+  data[i+3]=255;
+ }
+ sclera=new THREE.DataTexture(data,width,height,THREE.RGBAFormat);
+ sclera.colorSpace=THREE.SRGBColorSpace;
+ sclera.wrapS=THREE.ClampToEdgeWrapping;
+ sclera.wrapT=THREE.ClampToEdgeWrapping;
+ sclera.magFilter=THREE.LinearFilter;
+ sclera.minFilter=THREE.LinearMipmapLinearFilter;
+ sclera.generateMipmaps=true;
+ sclera.anisotropy=4;
+ sclera.needsUpdate=true;
+ return sclera;
+}
+
 export function getFaceIrisStromaTexture(){
  if(iris)return iris;
  const {width,height,data}=deriveIrisPolarDetail();
