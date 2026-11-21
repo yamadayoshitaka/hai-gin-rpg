@@ -427,6 +427,35 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
     renderer.render(scene,camera);
     return renderer.domElement.toDataURL('image/png');
    },
+   // Exact pixel-to-mesh diagnostic: identify the foremost geometry
+   // underlying a black mouth pixel, rather than guessing from mesh names.
+   rayTraceOralPixel(x,y){
+    scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+    const r=canvas.getBoundingClientRect();
+    const ray=new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(x/r.width*2-1,1-y/r.height*2),camera);
+    const visibleParents=mesh=>{
+     for(let o=mesh;o;o=o.parent)if(o.visible===false)return false;
+     return true;
+    };
+    return ray.intersectObjects(scene.children,true).filter(hit=>
+     visibleParents(hit.object)).slice(0,12).map(hit=>{
+      const mesh=hit.object,mat=Array.isArray(mesh.material)?
+       mesh.material[0]:mesh.material;
+      const a=hit.face?.a??-1,attr=mesh.geometry?.getAttribute('color');
+      return {name:mesh.name,parent:mesh.parent?.name,
+       distance:Number(hit.distance.toFixed(5)),
+       point:hit.point.toArray().map(v=>Number(v.toFixed(4))),
+       faceIndex:hit.faceIndex,
+       triangle:hit.face?[hit.face.a,hit.face.b,hit.face.c]:null,
+       normal:hit.face?.normal?.toArray().map(v=>Number(v.toFixed(3))),
+       pigment:attr&&a>=0?[attr.getX(a),attr.getY(a),attr.getZ(a)]
+        .map(v=>Number(v.toFixed(3))):null,
+       materialColor:mat?.color?.getHexString(),side:mat?.side,
+       depthTest:mat?.depthTest,vertexColors:mat?.vertexColors,
+       renderOrder:mesh.renderOrder};
+     });
+   },
    nativeLipProbe(){
     const current=models.get(gender),face=current?.face;
     if(!face)return null;
