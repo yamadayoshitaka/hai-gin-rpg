@@ -21,7 +21,7 @@ export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
  lifted:{label:'広げる',crown:.069,side:.013,spread:1},
  full:{label:'最大に広げる',crown:.086,side:.048,spread:1.5}
 });
-export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
+export const DEFAULT_WIG_STYLE_ID='rb-f-long';
 export const SADAKO_FAMILY_STYLE_IDS=Object.freeze([
  'sadako-straight-long','sadako-inward-long','sadako-outward-long',
  'sadako-sauvage-long','sadako-center-part-long','sadako-bangs-long'
