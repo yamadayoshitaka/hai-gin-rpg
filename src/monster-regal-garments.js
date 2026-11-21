@@ -8,7 +8,7 @@
  * unchanged. Separate LOD topology for inexpensive mobile preview.
  */
 import * as THREE from 'three';
-import {addSeraphCelestialVestment} from './seraph-celestial-wardrobe.js?v=tailored-angel-v3-20261122';
+import {addSeraphCelestialVestment} from './seraph-celestial-wardrobe.js?v=seraph-gold-polish-v4-20261122';
 import {addForestSpiritTailoredOutfit} from './forest-spirit-tailored-wardrobe.js?v=forest-drapery-v2-20261122';
 
 export const REGAL_HUMANOID_WARDROBE=Object.freeze({
