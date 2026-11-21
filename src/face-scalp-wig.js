@@ -561,7 +561,7 @@ export function buzzHairlineFractionAtPoint(v,box,size=null,center=null){
  const backToEar=1-THREE.MathUtils.smoothstep(angle,.06,.63);
  const temple=THREE.MathUtils.smoothstep(lateral,.19,.31)*
   (1-THREE.MathUtils.smoothstep(lateral,.46,.54));
- return THREE.MathUtils.clamp(boundary-.040*temple*backToEar,.48,.91);
+ return THREE.MathUtils.clamp(boundary-.064*temple*backToEar,.48,.91);
 }
 
 function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile='natural',battleStableCoverage=false,styleId=null}={}){
