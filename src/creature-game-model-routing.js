@@ -11,6 +11,8 @@
 import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {CONCEPT_TRIO_IDS,CONCEPT_TRIO_REVISION} from './monster-concept-trio-sculpt-v2.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
+import {HUMANLIKE_CONCEPT_REVISION,HUMANLIKE_CONCEPT_IDS}
+ from './monster-humanoid-concept-finish.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
 import {hasReptileDetail,REPTILE_DETAIL_REVISION,isSeaDragon,seaDragonRevision} from './reptile-detail-sculpt.js?v=leviathan-abyssal-sea-wyrm-v6-20261121';
@@ -33,6 +35,8 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
  MONSTER_CATALOG.map(spec=>[spec.id,Object.freeze({
   speciesId:spec.id,name:spec.name,family:spec.family,
   model:'procedural:'+spec.id,
+  conceptFinishRevision:HUMANLIKE_CONCEPT_IDS.includes(spec.id)?
+   HUMANLIKE_CONCEPT_REVISION:null,
   version:CONCEPT_TRIO_IDS.includes(spec.id)?CONCEPT_TRIO_REVISION:
    spec.id==='m001'?MODEL_REFERENCE_REVISION:
    spec.id==='m005'?'m001-forest-wolf-mesh-v14-20261118':
