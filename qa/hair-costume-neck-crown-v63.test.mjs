@@ -118,9 +118,9 @@ test('full body attaches real neck first and remasks after animated update',()=>
  assert.match(studio,/scalpReferenceGeometry:uncutScalpSource\?\.geometry/);
  assert.match(mask,/studioOriginalFaceVertexCount/);
  assert.match(mask,/stitchedNeck\?\[true,true,true\]/);
- assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-neck-buzz-crown-v63$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-side-ribbon-blend-v64$/);
  for(const path of ['face-mesh-studio.html','face-body-studio.html'])
-  assert.match(read(path),/20261121-costume-neck-buzz-crown-v63/);
+  assert.match(read(path),/20261121-sadako-side-ribbon-blend-v64/);
  assert.match(read('.github/workflows/hair-reselect-regression.yml'),
   /hair-costume-neck-crown-v63\.test\.mjs/);
 });
