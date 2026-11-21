@@ -27,12 +27,13 @@ try{
  // Playwright's element screenshot waits for a static element layout. This
  // 3D canvas continuously changes layout while the wig/preview animates.
  // A viewport screenshot avoids an endless 'waiting for element to be stable'.
- await page.evaluate(()=>document.getElementById('faceCanvas')
-  ?.scrollIntoView({block:'center',behavior:'instant'}));
- await page.waitForTimeout(300);
  const canvas=page.locator('#faceCanvas');
  for(const expression of ['neutral','laugh','surprised']){
   await page.locator('#faceExpression').selectOption(expression);
+  // selectOption may auto-scroll down to the expression menu. Restore
+  // the 3D canvas inside the viewport before sampling its pixels.
+  await page.evaluate(()=>document.getElementById('faceCanvas')
+   ?.scrollIntoView({block:'center',behavior:'instant'}));
   await page.waitForTimeout(600);
   const canvasBox=await canvas.boundingBox();
   assert.ok(canvasBox,'WebGL canvas must be visible');
