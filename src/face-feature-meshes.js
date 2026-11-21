@@ -292,8 +292,11 @@ export function v65ScleralShading(u,v){
  const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
  const corners=Math.pow(Math.abs(u-.5)*2,5);
  const lower=Math.pow(1-THREE.MathUtils.smoothstep(v,0,.25),2);
- const shade=THREE.MathUtils.clamp(1-.19*top-.046*corners-.022*lower,.67,1);
- return [shade,shade*.987,shade*.974];
+ const shade=THREE.MathUtils.clamp(1-.16*top-.049*corners-.030*lower,.67,1);
+ // Gentle vascular warmth near the canthi, not a saturated flat white disk.
+ const margin=.037*Math.pow(corners,1.5)+.010*lower;
+ return [shade*(1+.16*margin),shade*(.985-.22*margin),
+  shade*(.973-.40*margin)];
 }
 
 export function updateRealFacePigment(face,controls={},mode='color',gender='female',makeupType=0){
@@ -759,7 +762,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    eyeRadius*.075+Math.max(.00012,d.z*.004);
   irisUpperLidRecessRatios.push((upperEyelinerDepth-
    (z+eyeRadius*.010))/eyeRadius);
-  const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',48,18,(u,v)=>{
+  // More subdivisions keep oblique corneal reflections smooth on phones.
+ const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',64,28,(u,v)=>{
    const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.70);
    const xx=x+t*width;
    const yy=y+(v*2-1)*eyeRadius*eyeApertureRatio*eyeHeight*arch;
@@ -774,6 +778,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   eyePatch.userData.socketDepressionInOriginalMesh=true;
   eyePatch.userData.recessedBehindLid=true;
   eyePatch.userData.smoothCornealCore=true;
+  eyePatch.userData.v79OpticalSubdivision='65x29-smooth-sclera';
   eyePatch.userData.v33OrbitSampleCount=orbitSamples.length;
   eyePatch.userData.v33OrbitalSkinFrontEnvelope=orbitFrontZ;
   eyePatch.userData.skinBlendRestrictedToEyelidRim=true;
@@ -786,8 +791,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   // Occlusion on the INSIDE of the sclera, strongest under the upper lid,
   // fading into a slight pink scleral margin at either eye corner.
   const whiteShading=[];
-  for(let j=0;j<=18;j++)for(let i=0;i<=48;i++){
-   const u=i/48,v=j/18;
+  for(let j=0;j<=28;j++)for(let i=0;i<=64;i++){
+   const u=i/64,v=j/28;
    whiteShading.push(...v65ScleralShading(u,v));
   }
   eyePatch.geometry.setAttribute('color',
@@ -1080,15 +1085,25 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Detect the actual mouth groove from the sculpted 3D head surface.
  // Search an oral-only vertical zone and average the depth curvature
  // across the lips; never use the chin or a screen-space painted patch.
- const nominalMouthY=box.min.y+d.y*.509;
+ // v79: anchor the lips to the deformed donor mouth, not a fixed fraction
+ // of the enlarged elderly head. The old 0.509+/-0.022 search could lock
+ // onto the philtrum while the true mouth had descended far below it.
+ const ageSag=resolveAgeBand(settings.ageBand).sag;
+ const nominalMouthY=face.userData.v79MouthLandmarkY ??
+  box.min.y+d.y*(.509-.073*ageSag);
  let lipCenter=nominalMouthY,bestCrease=-Infinity;
- for(let k=-12;k<=12;k++){
-  const y=nominalMouthY+k*d.y*.0018,dy=d.y*.006;
+ for(let k=-18;k<=18;k++){
+  const y=nominalMouthY+k*d.y*.0013,dy=d.y*.005;
   let curvature=0;
   for(const x of [cx-d.x*.012,cx,cx+d.x*.012])
    curvature+=(surfaceAt(x,y-dy)+surfaceAt(x,y+dy))*.5-surfaceAt(x,y);
-  if(curvature>bestCrease){bestCrease=curvature;lipCenter=y;}
+  // Prefer a genuine groove close to the aged oral landmark over the
+  // much stronger philtrum / nostril and chin creases.
+  const score=curvature-d.z*.0012*Math.pow(k/18,2);
+  if(score>bestCrease){bestCrease=score;lipCenter=y;}
  }
+ face.userData.v79OralLandmarkY=nominalMouthY;
+ face.userData.v79OralLandmarkAligned=true;
  // Both cheek and lip pigments live on OWNED real head mesh vertices.
  // No separate lipstick sticker can drift over the skin/chin.
  face.userData.actualMouthCreaseY=lipCenter;

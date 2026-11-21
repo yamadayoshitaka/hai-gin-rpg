@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-age-pigment-v78';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-oral-eye-v79';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=78-visible-aging';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
@@ -183,6 +183,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  let cheekProtectedSamples=0,maxCheekWidthChange=0;
  let outerContourXError=0,outerContourSamples=0;
  let localizedNoseAndMouthSamples=0;
+ let oralMotionSum=0,oralMotionWeight=0;
  // A continuous low-amplitude sculpt, not many stacked portrait morphs.
  // Refill sunken cheeks and soften the jaw without shifting nose, scalp,
  // rear skull, or the neck attachment. Male retains slightly stronger brow.
@@ -298,10 +299,15 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    sum+Math.exp(-Math.pow((yn-at)/.019,2))*(.57+.11*k),0)*forehead;
   const crowsFeet=bell(Math.abs(xn),.53,.125)*
    bell(yn,.68,.095)*front;
+  // Age-dependent skin relief: under-eye puff and its lower crease share
+  // the original face vertices, never disconnected wrinkle strips.
+  const lowerLidBag=bell(Math.abs(xn),.30,.17)*bell(yn,.628,.029)*front;
+  const lowerLidCrease=bell(Math.abs(xn),.32,.17)*bell(yn,.605,.018)*front;
   const smileCrease=bell(Math.abs(xn),.31,.068)*
    bell(yn,.495,.095)*front;
   const ageLines=d.z*demo.age.wrinkles*
-   (-.0090*foreheadLines+.0062*crowsFeet-.0105*smileCrease-
+   (-.0090*foreheadLines+.0062*crowsFeet-.0105*smileCrease+
+    .0070*lowerLidBag-.0052*lowerLidCrease-
     .0035*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.036)*front);
   ny+=faceAgeY;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
@@ -341,6 +347,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
      Math.abs((nx-demographicWidthDelta)-x));
    }
   }
+  // Mouth accessories follow the anatomically deformed lower midface.
+  const oralWeight=bell(xn,0,.22)*bell(yn,.48,.047)*front;
+  oralMotionSum+=(ny-y)*oralWeight;
+  oralMotionWeight+=oralWeight;
   p.setXYZ(i,nx,ny,nz);
   if(Math.abs(nx-x)+Math.abs(ny-y)+Math.abs(nz-z)>1e-6)changed++;
   cheekDelta+=Math.max(0,nz-z)*cheek;
@@ -349,6 +359,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  p.needsUpdate=true;
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ // Anchor pigment and both lip meshes to the same aged oral landmark.
+ const oralMotion=oralMotionWeight>1e-8?oralMotionSum/oralMotionWeight:0;
+ face.userData.v79MouthLandmarkY=b.min.y+d.y*.509+oralMotion-d.y*.073*demo.age.sag;
+ face.userData.v79MouthLandmarkMotion=oralMotion;
  face.material=new THREE.MeshStandardMaterial({
   color:0xbfc3cb,roughness:.70,metalness:0,
   side:THREE.FrontSide,flatShading:false

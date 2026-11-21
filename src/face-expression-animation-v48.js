@@ -243,8 +243,15 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  // On sparse donor polygons large cheek displacement creates visible triangular
  // folds. Retain part-rig motion while damping whole-skin deformation only.
- const skinDeformationGain=.78;
+ const skinDeformationGain=.55;
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
+ // Muscle channels can blend emotions, dialogue and presets without
+ // adding floating expression meshes or permanently changing the donor.
+ const channels=['brow','tilt','squint','smile','open','cheek'];
+ let manualActionUnits=null;
+ const expressionFrame=()=>({
+  ...FACE_EXPRESSIONS[state.expression],...(manualActionUnits||{})
+ });
  // Keep smooth skin normals across blendshape expressions, including
  // split geometry vertices around UV seams (raw recompute causes facets).
  const initialNormalReport=smoothStudioFaceNormals(face.geometry,{
@@ -261,10 +268,11 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   lower:mouth.lower.geometry.getAttribute('position').array.slice()
  }:null;
  function applyExpression(){
-  const preset=FACE_EXPRESSIONS[state.expression];
+  const preset=expressionFrame();
   const e=Object.fromEntries(Object.entries(preset).map(([k,v])=>[
    k,typeof v==='number'?v*strength:v
   ]));
+  const neutralPose=channels.every(k=>Math.abs(Number(e[k])||0)<1e-8);
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
   const xd=Math.max(.000001,faceSize.x),yd=Math.max(.000001,faceSize.y);
@@ -294,14 +302,20 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
-  if(state.expression==='neutral')facialAttr.array.set(facialRest);
+  if(neutralPose)facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
   const normals=face.geometry.getAttribute('normal');
-  if(normals&&sculptNormalRest&&
+  if(neutralPose&&normals&&sculptNormalRest&&
      normals.array.length===sculptNormalRest.length){
    normals.array.set(sculptNormalRest);
    normals.needsUpdate=true;
-  }else face.geometry.computeVertexNormals();
+  }else{
+   // Never shade deformed skin using neutral-pose normals. Recalculate
+   // only at pose changes, welding UV-split coincident vertices so
+   // cheeks and nasolabial regions do not show polygon boundaries.
+   face.geometry.computeVertexNormals();
+   smoothStudioFaceNormals(face.geometry,{weldTolerance:.00007});
+  }
   face.geometry.computeBoundingSphere();
   for(const side of sides)if(side.brow&&side.browRest){
    side.brow.position.y=side.browRest.y+faceSize.y*e.brow*.012;
@@ -329,7 +343,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  }
  const setBlink=value=>{
   blink=clamp(value);
-  const squint=FACE_EXPRESSIONS[state.expression].squint*strength;
+  const squint=expressionFrame().squint*strength;
   const expressiveSquint=state.expression==='sleepy'?squint:
    Math.max(0,squint)*.48;
   const closure=clamp(blink+(1-blink)*expressiveSquint,0,1);
@@ -351,7 +365,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   }
  };
  const setMouthOpen=value=>{
-  mouthOpen=clamp(Math.max(value,FACE_EXPRESSIONS[state.expression].open*strength));
+  mouthOpen=clamp(Math.max(value,expressionFrame().open*strength));
   if(!mouth)return;
   const delta=mouth.height*.053*mouthOpen;
   mouth.upper.position.y=mouth.restU+delta*.23;
@@ -388,8 +402,17 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   setExpression:id=>{
    if(!FACE_EXPRESSIONS[id])throw Error('Unknown 3D face expression: '+id);
    state.expression=id;
+   manualActionUnits=null;
    applyExpression();
    setBlink(blink);
+   setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
+  },
+  setActionUnits:values=>{
+   manualActionUnits=values==null?null:Object.fromEntries(
+    channels.filter(k=>Number.isFinite(Number(values[k]))).map(k=>[
+     k,THREE.MathUtils.clamp(Number(values[k]),-1,1)
+    ]));
+   applyExpression();setBlink(blink);
    setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
   },
   // Stable direct preview/QA pose. Passing null restores periodic blinking.
@@ -408,6 +431,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v76FacialSculptNormalsPreserved:!!sculptNormalRest,
    v76InitialSeamNormalSmoothing:initialNormalReport.applied,
    v76ExpressionKeepsSmoothShading:true,
+   v79DynamicSeamWeldedNormals:true,
+   v79ActionUnitChannels:channels.length,
+   v79ManualActionUnits:manualActionUnits?{...manualActionUnits}:null,
    expressionIntensity:strength,
    elapsed:Number(elapsed.toFixed(3))})
  };
