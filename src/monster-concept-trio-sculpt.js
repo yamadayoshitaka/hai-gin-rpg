@@ -186,7 +186,7 @@ function sculptAbyssalOctopus(g,s){
  const head=g.group('head',[0,1.27,.12]);
  g.sphere(head,'skin',[0,.24,-.05],[.48,.49,.49],
   {name:'cephalopod-head',rough:.27});
- const mantle=g.group('mantle',[0,1.77,-.18],head);
+ const mantle=g.group('mantle',[0,.50,-.18],head);
  g.sphere(mantle,'skin',[0,.15,-.19],[.57,.53,.68],
   {name:'bulbous-octopus-mantle',rough:.26,metal:.10});
  g.sphere(mantle,'light',[0,.48,-.22],[.40,.15,.47],
