@@ -31,7 +31,7 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw}
  from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
 import {BEETLE_LINEAGE_REVISION,isBeetleLineage,sculptBeetleLineage}
- from './scarab-beetle-lineage-sculpt.js?v=m024-donor-beetle-lineage-v1-20261121';
+ from './scarab-beetle-lineage-sculpt.js?v=m022-single-central-rhinoceros-horn-v2-20261121';
 import {M024_SCARAB_REVISION,sculptM024PoisonScarab}
  from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,

@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import {sculptM024PoisonScarab} from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
 
 export const BEETLE_DONOR_ID='m024';
-export const BEETLE_LINEAGE_REVISION='m024-donor-beetle-lineage-v1-20261121';
+export const BEETLE_LINEAGE_REVISION='m022-single-central-rhinoceros-horn-v2-20261121';
 
 const BEETLE_VARIANTS=Object.freeze({
  m021:Object.freeze({theme:'iron',wingScale:.62,mandible:.73}),
@@ -67,25 +67,25 @@ function sculptBeetleSpeciesDetails(g,spec,profile){
    });
  }
  if(spec.id==='m021'){
-  // Hard, single rhinoceros-beetle horn and thick chitinous shoulder plates.
-  horn(head,'iron-charge-horn',[0,.23,.17],[0,.58,.31],
-   [0,1.17,.42],.175,{shade:palette.highlight});
-  for(const side of [-1,1]){
-   const v=(x,y,z)=>[x*side,y,z];
-   horn(head,'iron-guard-horn-'+s(side),v(.18,.18,.08),
-    v(.32,.36,-.02),v(.41,.44,-.27),.082);
-  }
+  // A single central horn: no side horns from either temple.
+  // Its root starts inside the frontal head shell and rises forwards.
+  horn(head,'iron-charge-horn',[0,.16,.23],[0,.62,.43],
+   [0,1.23,.48],.205,{shade:palette.highlight});
  }else if(spec.id==='m022'){
-  // Separate twin swept horns for the fire-spinning beetle.
+  // Japanese rhinoceros beetle silhouette: ONE horn rooted on the
+  // midline of the forehead. A thick forward-curving stem rises into a
+  // small fork only at the tip; these branches are NOT independent horns.
+  // Embed the two fork roots in the upper central stem to keep them
+  // visually continuous from every camera angle.
+  horn(head,'central-rhinoceros-horn',[0,.19,.26],[0,.70,.51],
+   [0,1.28,.49],.218,{
+    shade:palette.highlight,surface:'chitin',
+   });
   for(const side of [-1,1]){
    const v=(x,y,z)=>[x*side,y,z];
-   horn(head,'flame-fork-'+s(side),v(.16,.23,.10),
-    v(.27,.64,.10),v(.55,1.03,.04),.154,{
-     shade:palette.accent,surface:'crystal',
-    });
-   horn(head,'fire-guard-'+s(side),v(.23,.15,-.19),
-    v(.45,.36,-.31),v(.58,.51,-.45),.077,{
-     shade:palette.highlight,
+   horn(head,'central-horn-tip-'+s(side),
+    [0,1.06,.48],v(.095,1.23,.50),v(.245,1.41,.53),.076,{
+     shade:palette.highlight,surface:'chitin',
     });
   }
  }else if(spec.id==='m025'){
@@ -141,7 +141,11 @@ export function sculptBeetleLineage(g,spec){
   name==='m024-toxic-saliva'||
   name.startsWith('m024-long-venom-fang')||
   name.startsWith('m024-venom-crystal')||
-  name.startsWith('m024-side-toxic-spine');
+  name.startsWith('m024-side-toxic-spine')||
+  // The donor's two upright toxic antennae and temple crests looked like
+  // extra head horns on beetles, obscuring their true central horn.
+  name.startsWith('m024-curved-antenna')||
+  name.startsWith('m024-temple-crest');
  const nameFor=name=>typeof name==='string'?name.replace(/^m024-/,spec.id+'-'):name;
  const wrapper=Object.create(g);
  for(const key of ['axialLoft','sphere','curvedHorn','tube','bone','fin']){
