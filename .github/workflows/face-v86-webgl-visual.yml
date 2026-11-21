@@ -1,0 +1,40 @@
+name: V86 Face WebGL Visual Regression
+on:
+  pull_request:
+    paths:
+      - 'src/face-feature-meshes.js'
+      - 'src/face-mouth-seal-v86.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/independent-face-masters.js'
+      - 'face-mesh-studio.html'
+      - 'qa/face-v86-webgl-visual.mjs'
+      - '.github/workflows/face-v86-webgl-visual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  black-mouth-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install headless Chromium, real Three.js and screenshot parser
+        run: |
+          npm install --no-save --package-lock=false playwright@1.58.0 pngjs@7.0.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Serve repository browser build
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-webgl-server.log 2>&1 &
+          sleep 2
+      - name: Assert no large black polygons on normal/laugh/surprised faces
+        run: node qa/face-v86-webgl-visual.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: face-v86-webgl-evidence
+          path: qa/screenshots/face-v86/*.png
+          if-no-files-found: ignore
+          retention-days: 7
