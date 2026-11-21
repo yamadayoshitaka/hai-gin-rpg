@@ -436,8 +436,10 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
       y:(.5-p.y*.5)*canvas.getBoundingClientRect().height};
     };
     const centerX=(b.min.x+b.max.x)/2,front=b.max.z;
-    const lhs=worldToCanvas(centerX-d.x*.20,mouth+d.y*.105,front),
-     rhs=worldToCanvas(centerX+d.x*.20,mouth-d.y*.105,front);
+    // Tight oral-region sampling: the old 0.40×0.21 face-box included
+    // cheek skin and falsely passed while the black mouth was still present.
+    const lhs=worldToCanvas(centerX-d.x*.095,mouth+d.y*.045,front),
+     rhs=worldToCanvas(centerX+d.x*.095,mouth-d.y*.045,front);
     return {seal:face.userData.v86OralSealSummary,
      rect:{x:Math.max(0,Math.min(lhs.x,rhs.x)),
       y:Math.max(0,Math.min(lhs.y,rhs.y)),
