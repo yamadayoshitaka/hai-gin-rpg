@@ -7,10 +7,12 @@
  * are changed here. Mantis (m023) and all eight-legged spiders are excluded.
  */
 import * as THREE from 'three';
-import {sculptM024PoisonScarab} from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
+import {sculptM024PoisonScarab} from './m024-poison-scarab-sculpt.js?v=beetle-four-reference-sculpt-v1-20261121';
+import {sculptBeetleConceptDetails,BEETLE_CONCEPT_REVISION}
+ from './beetle-concept-upgrade.js?v=beetle-four-reference-sculpt-v1-20261121';
 
 export const BEETLE_DONOR_ID='m024';
-export const BEETLE_LINEAGE_REVISION='m022-polished-rhinoceros-horn-v3-20261121';
+export const BEETLE_LINEAGE_REVISION='beetle-four-reference-sculpt-v1-20261121';
 
 const BEETLE_VARIANTS=Object.freeze({
  m021:Object.freeze({theme:'iron',wingScale:.62,mandible:.73}),
@@ -21,13 +23,24 @@ export const BEETLE_LINEAGE_IDS=Object.freeze(Object.keys(BEETLE_VARIANTS));
 export const isBeetleLineage=id=>Object.hasOwn(BEETLE_VARIANTS,id);
 
 function shadeFor(spec,source,surface){
+ // The user-approved four-species reference keeps the same anatomy, but
+ // steel gray, burgundy lacquer, gold-on-red, and poison violet have
+ // intentionally different body and wing pigments.
+ if(surface==='wing'){
+  return {m021:'#bb835b',m022:'#ec914b',m025:'#f9d36f'}[spec.id]||source;
+ }
  // Preserve semantic palette roles (skin/bone/etc.) supplied by the species.
  if(typeof source!=='string'||!source.startsWith('#'))return source;
  const original=new THREE.Color(source);
  const hsl={};original.getHSL(hsl);
- const secondary=new THREE.Color(spec.colors.highlight);
- const primary=new THREE.Color(spec.colors.base);
- const accent=new THREE.Color(spec.colors.accent);
+ const ink={
+  m021:{base:'#4e4e57',highlight:'#95939b',accent:'#bfae99'},
+  m022:{base:'#762333',highlight:'#ba4146',accent:'#efa45a'},
+  m025:{base:'#833044',highlight:'#bc6471',accent:'#f2d27a'}
+ }[spec.id];
+ const secondary=new THREE.Color(ink?.highlight||spec.colors.highlight);
+ const primary=new THREE.Color(ink?.base||spec.colors.base);
+ const accent=new THREE.Color(ink?.accent||spec.colors.accent);
  if(surface==='enamel')return source; // white talons stay ivory
  if(surface==='eye')return spec.id==='m025'?'#495061':'#1b181d';
  // Variation within one material family comes from the original donor's
@@ -70,7 +83,15 @@ function sculptBeetleSpeciesDetails(g,spec,profile){
   // A single central horn: no side horns from either temple.
   // Its root starts inside the frontal head shell and rises forwards.
   horn(head,'iron-charge-horn',[0,.16,.23],[0,.62,.43],
-   [0,1.23,.48],.205,{shade:palette.highlight});
+   [0,1.23,.48],.205,{shade:'#89503d',
+    finish:'ironHorn',heroKeratin:true});
+  for(const side of [-1,1]){
+   const v=(x,y,z)=>[x*side,y,z];
+   horn(head,'iron-horn-tip-'+s(side),[0,1.02,.46],
+    v(.09,1.19,.49),v(.24,1.39,.51),.072,{
+     shade:'#89503d',finish:'ironHorn',heroKeratin:true
+    });
+  }
  }else if(spec.id==='m022'){
   // Japanese rhinoceros beetle silhouette: ONE horn rooted on the
   // midline of the forehead. A thick forward-curving stem rises into a
@@ -95,19 +116,19 @@ function sculptBeetleSpeciesDetails(g,spec,profile){
     });
   }
  }else if(spec.id==='m025'){
-  // Divine scarab has a much wider three-part crown rather than m024's
-  // poisonous needle forest. The original four wings remain fully open.
-  horn(head,'solar-central-crown',[0,.22,.03],[0,.72,.10],
-   [0,1.42,-.04],.19,{shade:palette.accent,surface:'crystal'});
+  // A single magnificent golden-rimmed horn with a tiny fork at its tip.
+  // Wings and ornate leaf motifs are on the back, not extra temple horns.
+  horn(head,'solar-central-crown',[0,.19,.26],[0,.72,.50],
+   [0,1.31,.49],.207,{
+    shade:'#974b37',surface:'chitin',
+    finish:'divineHorn',heroKeratin:true
+   });
   for(const side of [-1,1]){
    const v=(x,y,z)=>[x*side,y,z];
-   horn(head,'solar-horn-'+s(side),v(.20,.18,-.01),
-    v(.41,.56,-.16),v(.82,1.22,-.32),.142,{
-     shade:palette.highlight,surface:'crystal',
-    });
-   horn(torso,'solar-wing-crest-'+s(side),v(.46,1.70,-.56),
-    v(.63,2.13,-.72),v(.94,2.37,-.91),.104,{
-     shade:palette.accent,surface:'crystal',
+   horn(head,'solar-horn-tip-'+s(side),[0,1.07,.48],
+    v(.08,1.23,.49),v(.23,1.41,.51),.072,{
+     shade:'#974b37',surface:'chitin',
+     finish:'divineHorn',heroKeratin:true
     });
   }
  }
@@ -171,10 +192,12 @@ export function sculptBeetleLineage(g,spec){
  // surface tags; the same geometry code runs for each derivative.
  sculptM024PoisonScarab(wrapper,spec);
  sculptBeetleSpeciesDetails(g,spec,profile);
+ sculptBeetleConceptDetails(g,spec);
  delete g.root.userData.m024ConceptBasedSculpt;
  delete g.root.userData.m024Anatomy;
  g.root.userData.beetleDonorId=BEETLE_DONOR_ID;
  g.root.userData.beetleLineage={speciesId:spec.id,theme:profile.theme,
   legPairs:3,wingMembranes:4,donor:BEETLE_DONOR_ID};
  g.root.userData.gameModelRevision=BEETLE_LINEAGE_REVISION;
+ g.root.userData.beetleConceptRevision=BEETLE_CONCEPT_REVISION;
 }

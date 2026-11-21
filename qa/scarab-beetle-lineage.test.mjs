@@ -9,7 +9,7 @@ import {registeredMonsterModel} from '../src/creature-game-model-routing.js';
 import {BEETLE_DONOR_ID,BEETLE_LINEAGE_IDS,BEETLE_LINEAGE_REVISION,isBeetleLineage}
  from '../src/scarab-beetle-lineage-sculpt.js';
 import {M024_PBR_REVISION,m024PBRTextureStats}
- from '../src/m024-scarab-pbr-surface.js?v=m022-polished-horn-surface-v4-20261121';
+ from '../src/m024-scarab-pbr-surface.js?v=beetle-four-reference-sculpt-v1-20261121';
 
 assert.deepEqual([...BEETLE_LINEAGE_IDS].sort(),['m021','m022','m025']);
 assert.equal(BEETLE_DONOR_ID,'m024');
@@ -159,8 +159,12 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
       'center and tip must share one seamless glossy keratin finish');
     }
    }else{
-    assert.ok(byName(id+'-solar-horn-L')&&byName(id+'-solar-horn-R'));
-    assert.ok(byName(id+'-solar-wing-crest-L'));
+    assert.ok(byName(id+'-solar-horn-tip-L')&&byName(id+'-solar-horn-tip-R'),
+     'the golden beetle must have one central horn with a split tip');
+    assert.equal(byName(id+'-solar-horn-L'),undefined,
+     'golden beetle must not retain extra independent side horns');
+    assert.ok(byName(id+'-concept-winged-gold-crest-L-0'),
+     'golden feather ornament should grow from the shell');
    }
    let meshCount=0,triangles=0;
    model.traverse(node=>{

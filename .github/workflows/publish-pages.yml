@@ -104,10 +104,10 @@ jobs:
         # Keep established Pages publication policy; expose QA outcome.
         continue-on-error: true
         run: node --test qa/m018-hydra-dragon-heads.test.mjs qa/m050-coral-beast.test.mjs qa/reptile-detail-sculpt.test.mjs
-      - name: Verify m024 source and m021/m022/m025 3D beetle donor adoption
+      - name: Verify 4 beetle species actual 3D anatomy, PBR and donor preservation
         id: qa_m024_concept
-        # Reject broken geometry, materials or articulation before publishing.
-        run: node --test qa/m024-poison-scarab-sculpt.test.mjs qa/scarab-beetle-lineage.test.mjs
+        # Block Pages publication if any 3D beetle cannot be constructed.
+        run: node --test qa/m024-poison-scarab-sculpt.test.mjs qa/scarab-beetle-lineage.test.mjs qa/beetle-four-reference.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         id: qa_10
         # Owner permits deployment despite QA failure; leave the outcome visible.

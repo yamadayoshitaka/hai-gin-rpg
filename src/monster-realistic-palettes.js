@@ -14,6 +14,14 @@ export const MONSTER_REALISTIC_PALETTE=Object.freeze({
    accent:'#9d54c8',bone:'#bdae97',eye:'#ef7eff'}),
  m019:Object.freeze({skin:'#30292a',light:'#49393b',accent:'#ff792b',
    bone:'#514141',eye:'#ffbb55',shadow:'#151316'}),
+ // User-approved family sheet: burgundy living chitin under the steel
+ // plating, crimson fire lacquer and red/gold divine armor.
+ m021:Object.freeze({skin:'#502c35',light:'#78515a',accent:'#c3a68a',
+   shadow:'#21191e',bone:'#e9dcc5',metal:'#888b94',eye:'#20181e'}),
+ m022:Object.freeze({skin:'#712433',light:'#ab3e45',accent:'#e79f52',
+   shadow:'#29141d',bone:'#efe0c7',eye:'#1d141b'}),
+ m025:Object.freeze({skin:'#76273c',light:'#b24b5b',accent:'#f2d37c',
+   shadow:'#341923',bone:'#f2e2c3',metal:'#e6c16a',eye:'#251824'}),
  // Owner-supplied purple scarab illustration: dark iridescent cuticle,
  // pale green crown, glossy inset eyes and warm ivory fangs.
  m024:Object.freeze({skin:'#382049',light:'#713b83',accent:'#bce579',
