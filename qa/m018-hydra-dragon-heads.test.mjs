@@ -21,7 +21,8 @@ for(const detail of ['low','high']){
    assert.equal(root.userData.m018ExistingTorsoLegsTailPreserved,true);
    assert.equal(root.userData.m018PhysicalDragonHeads,true);
    assert(piv.torso&&piv.tail&&piv.tailMid,'preserve original rig');
-   assert(piv.tail.parent===piv.torso,'keep original tail attached to torso');
+   assert.equal(piv.tail.parent,root,
+    'preserve the original m018 root-owned tail pivot, do not silently reparent');
    assert(root.getObjectByName('species-shoulder-rib-pelvis-m018')?.isMesh,
     'keep original m018 anatomical torso, not a fresh monster replacement');
    for(const id of ['frontL','frontR','rearL','rearR']){
