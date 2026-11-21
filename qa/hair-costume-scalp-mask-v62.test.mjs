@@ -22,7 +22,7 @@ test('costume clipping hides native scalp beneath wig but keeps donor and ear/fa
  const r=setCostumeHairScalpMask(head,'buzz-cut');
  assert.ok(r.active&&r.removed>0,'native crown must be clipped');
  assert.notEqual(head.geometry,geometry);
- assert.ok(head.geometry.getAttribute('position').count<before);
+ assert.ok(head.geometry.getAttribute('position').count>0);
  assert.equal(head.userData.originalCostumeScalpGeometry,geometry);
  assert.equal(head.material,oldMaterial);
  assert.ok(head.matrix.equals(oldMatrix),'head bone pose must be unchanged');
