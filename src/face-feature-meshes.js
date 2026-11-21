@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=76';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=80-iris';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
