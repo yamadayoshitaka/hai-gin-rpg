@@ -172,6 +172,34 @@ def include(path: Path) -> bool:
 
 
 def copy_asset(src: Path, dst: Path) -> None:
+    # The licensed 3693x2462 skin source MUST remain unmodified in git.
+    # Browsers decode only a 512x512 central crop for high-pass pore detail,
+    # so sending the original 1.04-MB photo in every Pages release is wasteful.
+    # Resize/compress ONLY the output JPEG to keep the strict 90-MiB budget.
+    # Do not exclude the asset: the live face PBR requires this local URL.
+    if src.relative_to(SOURCE).as_posix() == (
+        "assets/textures/face/cc0-human-skin-reference.jpg"
+    ):
+        with Image.open(src) as photo:
+            sample = photo.convert("RGB")
+            sample.thumbnail((960, 960), Image.Resampling.LANCZOS)
+            sample.save(dst, format="JPEG", quality=66,
+                        optimize=True, progressive=True, subsampling=0)
+        if dst.stat().st_size > 210_000:
+            # A bounded second export retains sufficient 512px pore detail.
+            with Image.open(src) as photo:
+                sample = photo.convert("RGB")
+                sample.thumbnail((840, 840), Image.Resampling.LANCZOS)
+                sample.save(dst, format="JPEG", quality=60,
+                            optimize=True, progressive=True, subsampling=2)
+        if dst.stat().st_size > 210_000:
+            raise RuntimeError("Skin PBR Pages preview JPEG exceeds 210 KB")
+        print(
+            "PAGES FACE PHOTO: original CC0 JPG retained in git,"
+            f" compressed delivery {dst.stat().st_size} bytes"
+            f" of {src.stat().st_size} bytes."
+        )
+        return
     # GLTF references expect the original .png path and preserved alpha.
     if (
         src.suffix.lower() == ".png"
