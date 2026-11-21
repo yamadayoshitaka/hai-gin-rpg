@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head>
-<!-- Pages publication: v48 buzz pigment and sadako gravity 2026-11-21 -->
+<!-- Pages publication: v49 stable hair reselect, Sadako crown + matte PBR 2026-11-21 -->
 <!-- Pages publication: v30 scalp coverage cdaab952; 2026-11-21 --><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -220,7 +220,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261121-buzz-pigment-sadako-gravity-v48';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-hairline-reselect-sadako-matte-v49';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=45';
@@ -578,7 +578,7 @@ function repaint(){
  for(const [sex,m] of models){
    setHairHiddenScalp(m.face,false);
    applyFaceColorMode(m.face,faceMode,{contactColor,makeupType:v32Makeup[sex]});
-   if(wigOn&&wigs.get(sex))setHairHiddenScalp(m.face,true);
+   if(wigOn&&wigs.get(sex))setHairHiddenScalp(m.face,true,wigs.get(sex));
   }
  setActive(['clay','color'],faceMode);
  persistHeroineFace();
@@ -598,7 +598,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const badge=document.getElementById('hairBuildBadge');
  if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
-  '｜頭皮補正v9：'+(active?'ON':'OFF')+'（'+mode+'）';
+  '｜頭皮補正：'+(active?'ON':mode==='long-pigment-underlay'?'ロング被覆':'OFF')+'（'+mode+'）';
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
@@ -630,7 +630,11 @@ function setHairHiddenScalp(face,enabled,wig=null){
  face.userData.hairScalpMaskActive=false;
  face.userData.hairScalpMaskedTriangles=0;
  face.userData.hairScalpMaskMode='native-restored';
- if(!enabled||!wig?.root?.userData?.buzzFibreOnly)return;
+ if(!enabled)return;
+  if(!wig?.root?.userData?.buzzFibreOnly){
+   face.userData.hairScalpMaskMode='long-pigment-underlay';
+   return;
+  }
  const position=original.getAttribute('position');
  if(!position||position.count<3)return;
  original.computeBoundingBox();
@@ -638,24 +642,10 @@ function setHairHiddenScalp(face,enabled,wig=null){
  const d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
  if(d.x<=0||d.y<=0||d.z<=0)return;
- const smooth=(a,b,x)=>{
-  const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);
-  return t*t*(3-2*t);
- };
- // Clip triangles against the smooth anatomical hairline, rather than
- // dropping whole triangles. Preserve UV, normals, color and skinning data.
- const signed=(v)=>{
-  const x=v.position[0],y=v.position[1],z=v.position[2];
-  const zn=(z-center.z)/d.z,xn=Math.abs(x-center.x)/d.x;
-  const back=smooth(-.45,-.10,zn),temple=smooth(-.06,.24,zn);
-  const nape=.58+.105*smooth(.10,.39,xn);
-  const rear=THREE.MathUtils.lerp(nape,.715,back);
-  const front=THREE.MathUtils.lerp(rear,.81,temple);
-  const ear=.105*smooth(.22,.38,xn)*(1-smooth(.10,.36,zn))*
-   smooth(-.38,-.12,zn);
-  return y-(box.min.y+d.y*(THREE.MathUtils.clamp(front+ear,.56,.90)+.015));
- };
- const source=original.index;
+ // The same anatomical contour drives scalp pigment and donor clipping.
+  const signed=(v)=>v.position[1]-(box.min.y+d.y*(
+   buzzHairlineFractionAtPoint({x:v.position[0],y:v.position[1],z:v.position[2]},box,d,center)+.003));
+  const source=original.index;
  const attrs=Object.entries(original.attributes);
  const out=Object.fromEntries(attrs.map(([key])=>[key,[]]));
  const groups=original.groups.length?original.groups:
@@ -767,7 +757,8 @@ function rebuildWig(){
  if(!ready||!wigOn||!models.get('female'))return;
  try{
   const wig=createScalpAnchoredWig(models.get('female').face,{
-   count:wigDensity,lengthScale:wigLength,fineFringeMultiplier:3,
+   count:chosen.styleId==='sadako-straight-long'?Math.max(wigDensity,1200):wigDensity,
+    lengthScale:wigLength,fineFringeMultiplier:3,
     visualFiberMultiplier:10,staticGroom:true,
    normalLayeredSingleMesh:v32PartMode,gender:'female',
    styleId:chosen.styleId,
@@ -868,7 +859,7 @@ function rebuildFemale(){
  if(oldWig&&wigOn){
   next.face.add(oldWig.root);
   
-  setHairHiddenScalp(next.face,true);
+  setHairHiddenScalp(next.face,true,oldWig);
   const base=oldWig.root.getObjectByName('DETACHABLE_WIG_TRANSPARENT_HEAD_BASE');
   if(base){base.geometry.dispose();base.geometry=next.face.geometry.clone();}
  }
