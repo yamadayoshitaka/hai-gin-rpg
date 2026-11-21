@@ -11,6 +11,7 @@ import {nonhumanMonsterStage} from '../src/nonhuman-model-quality.js';
 import {APPROVED_REFERENCE_IDS,MONSTER_REFERENCE_FINISH_TARGETS,
  MONSTER_REFERENCE_FINISH_REVISION,referenceFinishProfile,
  getMonsterReferenceNormalMap,enhanceMonsterReferenceMaterial,
+ enhanceMonsterHumanoidCostumeMaterial,
  monsterReferenceFinishCacheStats}
  from '../src/monster-reference-finish.js';
 const approved=new Set(APPROVED_REFERENCE_IDS);
@@ -30,6 +31,39 @@ test('50 bestiary models split into 12 protected reference, 22 upgraded and 16 i
  }
  assert.deepEqual({upgraded,humanoid,protectedCount},
   {upgraded:22,humanoid:16,protectedCount:12});
+});
+test('16 humanoid costumes gain microrelief without altering canonical faces or donor GLB materials',()=>{
+ const human=MONSTER_CATALOG.filter(x=>!!humanoidMonsterCostumeFor(x));
+ assert.equal(human.length,16);
+ for(const m of human){
+  const profile=humanoidMonsterCostumeFor(m);
+  const safe=new THREE.MeshPhysicalMaterial();
+  assert.equal(enhanceMonsterHumanoidCostumeMaterial(safe,{
+   profile,role:'metal',detail:'high'
+  }),true,m.id+' metal costume not upgraded');
+  assert.ok(safe.normalMap?.isDataTexture);
+  assert.equal(safe.userData.monsterCostumeMicrorelief,true);
+  const low=new THREE.MeshPhysicalMaterial();
+  assert.equal(enhanceMonsterHumanoidCostumeMaterial(low,{
+   profile,role:'metal',detail:'low'
+  }),false,'battle LOD altered '+m.id);
+  const face=new THREE.MeshPhysicalMaterial();
+  assert.equal(enhanceMonsterHumanoidCostumeMaterial(face,{
+   profile,role:'skin',detail:'high'
+  }),false,'donor face/skin must not be overwritten '+m.id);
+  const hair=new THREE.MeshPhysicalMaterial();
+  assert.equal(enhanceMonsterHumanoidCostumeMaterial(hair,{
+   profile,role:'hair',detail:'high'
+  }),false,'donor hair must not be overwritten '+m.id);
+  const headTexture=new THREE.DataTexture(new Uint8Array([128,128,255,255]),1,1);
+  const existing=new THREE.MeshPhysicalMaterial({normalMap:headTexture});
+  assert.equal(enhanceMonsterHumanoidCostumeMaterial(existing,{
+   profile,role:'metal',detail:'high'
+  }),false);
+  assert.equal(existing.normalMap,headTexture);
+  headTexture.dispose();
+  existing.dispose();hair.dispose();face.dispose();low.dispose();safe.dispose();
+ }
 });
 test('higher source/high geometry density without any mobile low-LOD growth',()=>{
  for(const s of MONSTER_CATALOG){
