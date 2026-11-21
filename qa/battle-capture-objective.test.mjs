@@ -43,6 +43,8 @@ test('quick orders keep only the four prebattle strategies plus usable inventory
  assert.match(ui,/data-strategy-start="item"/);
  assert.match(ui,/onQuickOrder\(\{groupId,strategy,squadIds:/);
  assert.match(main,/captureObjective\.tick\(massSim\?\.units\?\?actors,elapsed\)/);
+ assert.equal((main.match(/if\(!ally\|\|\(!foe&&!captureObjective\)\)completeBattle\(Boolean\(ally\)/g)||[]).length,2,
+  'capture battles must not end when all defenders die until the zone is secured');
  assert.match(hud,/const captureMessage=goal\?\.kind==='capture'/);
  assert.match(hud,/ctx\.fillText\('⚑',gx/);
 });
