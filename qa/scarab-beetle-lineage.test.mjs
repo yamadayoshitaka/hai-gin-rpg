@@ -44,7 +44,10 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
     assert.equal(byName(id+'-elytra-shell-'+side)?.parent,p['elytron'+side]);
     assert.equal(byName(id+'-eye-'+side)?.parent,p.head);
     assert.equal(byName(id+'-mandible-'+side)?.parent,p.jaw);
-    assert.equal(byName(id+'-curved-antenna-'+side)?.parent,p.head);
+    assert.equal(byName(id+'-curved-antenna-'+side),undefined,
+     'donor poison antennae must not impersonate beetle horns');
+    assert.equal(byName(id+'-temple-crest-'+side),undefined,
+     'no unused donor temple horn');
     for(let i=0;i<3;i++){
      const prefix='leg'+side+i;
      assert.equal(p[prefix].parent,p.torso);
@@ -74,8 +77,8 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
    assert.equal(byName('m024-fang-venom-drop-L'),undefined);
    assert.equal(byName(id+'-long-venom-fang-L'),undefined);
    assert.equal(byName(id+'-venom-crystal-1'),undefined);
-   const hornName={m021:'iron-charge-horn',m022:'flame-fork-L',
-    m025:'solar-central-crown'}[id];
+   const hornName={m021:'iron-charge-horn',
+    m022:'central-rhinoceros-horn',m025:'solar-central-crown'}[id];
    const mainHorn=byName(id+'-'+hornName);
    assert.ok(mainHorn?.userData.rootedKeratin,'species-specific horn required');
    assert.equal(mainHorn.parent,p.head);
@@ -97,9 +100,31 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
    else assert.equal(carapace.material.normalMap,null);
    if(id==='m021'){
     assert.ok(!mainHorn.material.emissiveIntensity,'steel horn must not glow');
+    assert.equal(byName(id+'-iron-guard-horn-L'),undefined,
+     'iron beetle has only one horn, not side horns');
+    assert.equal(byName(id+'-iron-guard-horn-R'),undefined);
+    assert.ok(Math.abs(mainHorn.geometry.userData.root[0])<.001,
+     'iron horn must grow from the middle of the forehead');
    }else if(id==='m022'){
-    assert.ok(byName(id+'-flame-fork-R'),'fire beetle needs two flame horns');
-    if(detail==='high')assert.ok(mainHorn.material.emissiveIntensity>0);
+    const hornRoot=mainHorn.geometry.userData.root;
+    assert.ok(Math.abs(hornRoot[0])<.001,
+     'red rhinoceros beetle must have ONE central forehead horn');
+    assert.ok(hornRoot[1]<.30,'central horn root must enter the forehead');
+    assert.equal(mainHorn.material.userData.m024PBR,'chitin');
+    assert.equal(byName(id+'-flame-fork-L'),undefined);
+    assert.equal(byName(id+'-flame-fork-R'),undefined);
+    assert.equal(byName(id+'-fire-guard-L'),undefined);
+    assert.equal(byName(id+'-fire-guard-R'),undefined);
+    for(const side of ['L','R']){
+     const tip=byName(id+'-central-horn-tip-'+side);
+     assert.ok(tip?.userData.rootedKeratin,
+      'the central horn must fork ONLY at its upper tip');
+     assert.equal(tip.parent,p.head);
+     assert.ok(Math.abs(tip.geometry.userData.root[0])<.001,
+      'tip branches must grow from same center stem');
+     assert.ok(tip.geometry.userData.root[1]>1,
+      'no extra basal side horn below center fork');
+    }
    }else{
     assert.ok(byName(id+'-solar-horn-L')&&byName(id+'-solar-horn-R'));
     assert.ok(byName(id+'-solar-wing-crest-L'));
