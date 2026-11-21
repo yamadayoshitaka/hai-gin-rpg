@@ -61,7 +61,7 @@ function reliefAt(x,y,seed,profile){
  return .25*flow+.32*noise(x*9,y*25,seed)+grain;
 }
 export function referenceFinishProfile(spec,detail='high'){
- if(!spec||approved.has(spec.id)||detail==='low')return null;
+ if(!spec||spec.id==='m015'||approved.has(spec.id)||detail==='low')return null;
  if(!['source','high','medium'].includes(detail))return null;
  const p=families[spec.family];
  if(!p)return null;
