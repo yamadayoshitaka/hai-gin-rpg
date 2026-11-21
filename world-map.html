@@ -123,7 +123,7 @@ $('stageNarration').onclick=()=>{
 const message=m=>$('feedback').textContent=m;
 function saveSession(){persistSession(game,sessionStorage);}
 function returnTown(){
- try{stageAtTown(game,game.lastTown||'c01-s01');saveSession();location.href='./town-hub.html?v=town-visit-20261110';}
+ try{stageAtTown(game,game.lastTown||'c01-s01');saveSession();location.href='./town-hub.html?v='+Date.now();}
  catch(error){message(error.message||String(error));}
 }
 $('homeTown').onclick=returnTown;$('toTitle').onclick=()=>location.href='./game.html';
@@ -254,7 +254,7 @@ function launchSelectedStage(stageId){
   if(game.campaign.gameOver)throw Error(game.campaign.gameOver);
   const stage=selectCampaignStage(game,stageId);
   if(stage.kind==='town'){
-   saveSession();location.href='./town-hub.html?opening=1&v=stage-manga-20261111';return;
+   saveSession();location.href='./town-hub.html?opening=1&v='+Date.now();return;
   }
   const request=makeCoreBattleRequest(game,stage.id,Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   sessionStorage.setItem(CORE_BATTLE_PENDING_KEY,JSON.stringify(request));

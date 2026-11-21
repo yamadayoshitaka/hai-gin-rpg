@@ -119,6 +119,18 @@ assert.match(onlyReview,/作戦は戦闘画面で隊ごとに選択/);
 assert.doesNotMatch(onlyReview,/用に保存/);
 assert.ok(town.includes("scrollTop=0"),'every wizard step starts with the first option visible');
 assert.match(town,/inn-formation-only-20261121/,'Android receives refreshed JS and CSS');
+
+// Entry URLs previously carried a fixed November 10 cache key, which allowed
+// Android WebView/browser cache to keep serving the old unclickable strategy
+// wizard after the corrected town page had already been deployed.
+for(const sourceFile of ['game.html','world-map.html']){
+ const entrySource=readFileSync(new URL('../'+sourceFile,import.meta.url),'utf8');
+ assert.doesNotMatch(entrySource,/town-hub\.html\?[^'"]*(?:town-visit-20261110|stage-manga-20261111)/,
+  sourceFile+' must not reuse stale town-page cache keys');
+ const hrefs=entrySource.match(/'\.\/town-hub\.html\?[^']*'\+Date\.now\(\)/g)||[];
+ assert.ok(hrefs.length>=2,sourceFile+' must cache-bust both normal and opening town entries');
+}
+
 const styles=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
 assert.match(styles,/\.sortieWizardOldMiniGrid/);
 assert.match(styles,/\.sortieWizardStrategyIcon/);
