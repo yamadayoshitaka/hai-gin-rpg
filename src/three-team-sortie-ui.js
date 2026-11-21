@@ -29,9 +29,9 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage,formationO
  const current=teams[Math.max(0,Math.min(2,Number(teamId)-1))];
  const step=formationOnly?(view==='review'?4:current.id):view==='strategy'?1:view==='review'?5:current.id+1;
  const header=formationOnly?
-  '<div class="sortieWizardHeader"><small>宿屋｜3隊の陣形　'+step+' / 4</small>'+
+  '<div class="sortieWizardHeader"><small>軍訓練所｜3隊の陣形　'+step+' / 4</small>'+
    '<strong>'+(view==='review'?'3隊の陣形を確認':'第'+current.id+'隊の陣形を選択')+'</strong>'+
-   '<span>'+(view==='review'?'陣形は宿屋で保存。作戦は戦闘画面で隊ごとに選択します。':
+   '<span>'+(view==='review'?'陣形は軍訓練所で保存。作戦は戦闘画面で隊ごとに選択します。':
     '従来の陣形を選択します。各隊の作戦は戦闘開始時に指定します。')+'</span></div>':
   '<div class="sortieWizardHeader"><small>作戦別・3隊陣形テンプレート　'+step+' / 5</small>'+
    '<strong>'+(view==='strategy'?'どの作戦で戦う？':view==='review'?'3隊の編成を確認':rule.name+'：第'+current.id+'隊の陣形は？')+'</strong>'+
@@ -106,7 +106,7 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage,formationO
    '<p>必要なときだけ既存の詳細編成画面へ進めます。</p>'+
    button('data-sortie-view="setup"','詳細調整を開く')+'</details>';
  }
- return '<section class="sortiePlanner sortieWizard" aria-label="'+(formationOnly?'宿屋の3隊陣形を設定':'作戦ごとに3隊の陣形を設定')+'">'+
+ return '<section class="sortiePlanner sortieWizard" aria-label="'+(formationOnly?'軍訓練所の3隊陣形を設定':'作戦ごとに3隊の陣形を設定')+'">'+
    header+'<div class="sortieWizardBody">'+content+'</div>'+
    '<footer class="sortieWizardFooter">'+back+(!formationOnly&&view==='review'?button('data-sortie-view="strategy"','別の作戦を選ぶ'):'')+'</footer></section>';
 }
@@ -288,7 +288,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  Object.values(STRATEGY_METHODS).map(m=>'<option value="'+esc(m.id)+'">'+esc(m.name)+'</option>').join('')+
  '</select><button type="button" data-sortie-battle-save>現在のステージ目的で保存</button></div>';
  const tabList=[['formationReview','◀ 陣形確認'],['templates','陣形'],['setup','ジョブ・人数'],['captains','隊長']];
- const tabBar='<nav class="sortieModeTabs" aria-label="宿屋の機能">'+tabList.map(([key,label])=>
+ const tabBar='<nav class="sortieModeTabs" aria-label="軍訓練所の機能">'+tabList.map(([key,label])=>
  button('data-sortie-view="'+key+'"',esc(label),view===key)).join('')+'</nav>';
  const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel,battlePlans,assessment};
  const autoButtons='<div class="sortieAutoOptions" role="group" aria-label="自動編成方式">'+Object.entries(THREE_TEAM_AUTO_MODES).map(([id,entry])=>button('data-sortie-auto="'+id+'"','自動：'+entry.name,game.sortieAutoMode===id)).join('')+'</div>';
