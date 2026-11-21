@@ -67,6 +67,7 @@ export function createRealtimeBattleCommands({
  const deploymentActions=new Map(),arrivalActions=new Map(),preferredActions=new Map();
  const initialTeamPlans=new Map(),placedTeams=new Set();
  let deployStep='placement';
+ const prebattleStrategyPageByGroup=new Map();
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  let inspectedMapPin=null,mapInspectionPins=[],inspectedBuilding=null,mapInspectionBuildings=[],lastInspectionRefreshAt=-Infinity;
@@ -191,13 +192,19 @@ export function createRealtimeBattleCommands({
     <div class="realtimeMapMessage" id="realtimeMapMessage" role="status"></div>
     <div id="realtimeInitialTeamPlanning" role="group" aria-label="隊ごとの初期作戦">
      <label for="realtimeInitialStrategy" id="realtimeInitialStrategyLabel">② この隊の初期作戦</label>
-     <select id="realtimeInitialStrategy" aria-label="開戦時の隊連携作戦">
+     <select id="realtimeInitialStrategy" hidden tabindex="-1" aria-hidden="true" aria-label="開戦時の隊連携作戦">
       <option value="">作戦を選択してください</option>
       <option value="assault">⚔ 相手殲滅・攻撃重視</option>
       <option value="defense">🛡 守備・陣形維持</option>
       <option value="balanced">⚖ バランス・攻防連携</option>
       <option value="explore">🔎 探索・目的遂行</option>
      </select>
+     <div id="realtimeInitialStrategyChoices" class="realtimeInitialStrategyChoices" role="group" aria-label="利用できる初期作戦"></div>
+     <div id="realtimeInitialStrategyPager" class="realtimeInitialStrategyPager" hidden>
+      <button type="button" data-prebattle-strategy-page="-1" aria-label="前の作戦一覧">◀</button>
+      <small id="realtimeInitialStrategyPageInfo" aria-live="polite">1 / 1</small>
+      <button type="button" data-prebattle-strategy-page="1" aria-label="次の作戦一覧">▶</button>
+     </div>
      <div id="realtimeInitialFormationPreview" class="realtimeInitialFormationPreview" aria-label="宿屋で選んだ陣形のアニメーション"></div>
      <small id="realtimeInitialFormationStatus" role="status"></small>
     </div>
@@ -352,6 +359,39 @@ export function createRealtimeBattleCommands({
     if(strategy)initialTeamPlans.set(key,strategy);
    }
    chooser.value=strategy||'';chooser.disabled=false;
+   // Android's native select menu expands over the entire modal and can
+   // ignore taps at large text scale. Keep it as a hidden state bridge and
+   // render fixed-size, accessible touch buttons instead.
+   const options=[...basic,...advanced],perPage=6;
+   const totalPages=Math.max(1,Math.ceil(options.length/perPage));
+   const selectedPage=Math.max(0,Math.floor(options.indexOf(strategy)/perPage));
+   const page=Math.max(0,Math.min(totalPages-1,
+    prebattleStrategyPageByGroup.get(key)??selectedPage));
+   prebattleStrategyPageByGroup.set(key,page);
+   const pageItems=options.slice(page*perPage,page*perPage+perPage);
+   const choices=$('realtimeInitialStrategyChoices');
+   const signature=key+'|'+options.join(',')+'|'+page;
+   if(choices.dataset.signature!==signature){
+    choices.replaceChildren();
+    for(const id of pageItems){
+     const b=doc.createElement('button');
+     b.type='button';b.dataset.prebattleStrategy=id;
+     b.textContent=(advanced.includes(id)?'★ ':'')+
+      String(PREBATTLE_TACTIC_NAMES[id]||BASIC_OPENING_TACTICS[id]||ADVANCED_FORMATION_TACTICS[id]||id);
+     choices.append(b);
+    }
+    choices.dataset.signature=signature;
+   }
+   for(const b of choices.querySelectorAll('[data-prebattle-strategy]')){
+    const chosen=b.dataset.prebattleStrategy===strategy;
+    b.classList.toggle('selected',chosen);
+    b.setAttribute('aria-pressed',String(chosen));
+   }
+   const pager=$('realtimeInitialStrategyPager');
+   pager.hidden=totalPages<=1;
+   $('realtimeInitialStrategyPageInfo').textContent=(page+1)+' / '+totalPages;
+   pager.querySelector('[data-prebattle-strategy-page="-1"]').disabled=page===0;
+   pager.querySelector('[data-prebattle-strategy-page="1"]').disabled=page>=totalPages-1;
    $('realtimeInitialStrategyLabel').textContent='② 第'+key+'隊の初期作戦';
    const formationId=formationPreviewId(defaults),formationRule=signatureStrategyFor(formationId);
    const preview=$('realtimeInitialFormationPreview'),active=defaults.formationActive!==false;
@@ -1713,6 +1753,22 @@ radarCanvas.addEventListener('keydown',event=>{
   $('realtimePrebattleMusic').textContent='♪ BGM再生を要求しました';
   if(result?.catch)result.catch(()=>{$('realtimePrebattleMusic').textContent='♪ もう一度タップしてBGM再生';});
  };
+ // Custom buttons do not invoke the system picker on mobile.
+ $('realtimeInitialStrategyChoices').addEventListener('click',event=>{
+  const button=event.target.closest?.('button[data-prebattle-strategy]');
+  if(!button||started||mode!=='deploy')return;
+  $('realtimeInitialStrategy').value=button.dataset.prebattleStrategy;
+  $('realtimeInitialStrategy').onchange?.();
+  refreshOptions();
+ });
+ $('realtimeInitialStrategyPager').addEventListener('click',event=>{
+  const button=event.target.closest?.('button[data-prebattle-strategy-page]');
+  if(!button||button.disabled||started||mode!=='deploy')return;
+  const group=String(getSelected()?.groupId??getSelected()?.id??'1');
+  prebattleStrategyPageByGroup.set(group,
+   Math.max(0,(prebattleStrategyPageByGroup.get(group)||0)+Number(button.dataset.prebattleStrategyPage)));
+  refreshOptions();
+ });
  $('realtimeInitialStrategy').onchange=()=>{
   const group=getSelected()?.groupId??getSelected()?.id;
   if(group==null||started)return;
