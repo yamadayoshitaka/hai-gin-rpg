@@ -7,7 +7,7 @@
  * and aquatic creatures use clearcoat/translucency until water scans exist.
  */
 import * as THREE from 'three';
-import {decorateAll50MonsterSurface,monsterAll50SurfaceStats}
+import {decorateAll50MonsterSurface,complementAll50PhotoNormal,monsterAll50SurfaceStats}
  from './monster-all50-surface.js?v=all50-species-materials-v1-20261121';
 import {salamanderLineageSurface,salamanderLineageSurfaceStats}
  from './salamander-lineage-surface.js?v=m016-m017-salamander-quality-v21-20261121';
@@ -172,6 +172,7 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
    material.normalMap=attachUser(normal,material);
    material.normalScale=new THREE.Vector2(.23,.23);
  }
+ if(src.kind==='stone')complementAll50PhotoNormal(material,{speciesId,detail});
  // The source texture supplies microdetail; the specimen's phenotype tint
  // remains in material.color. Roughness & metalness are physically distinct.
  material.roughness=src.kind==='metal'?.38:src.kind==='coat'?.86:
