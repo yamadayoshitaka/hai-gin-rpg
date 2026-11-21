@@ -1,11 +1,11 @@
 import {dragonCraniumProfile} from './dragon-cranium-profile.js';
 import {sculptArticulatedReptileTail,sculptHydraLeg,sculptThroatScutes}
- from './m018-hydra-sculpt.js?v=m050-hydra-derived-coral-beast-v1-20261121';
+ from './m018-hydra-sculpt.js?v=m050-hydra-derived-coral-beast-v2-20261121';
 
 export const M050_CORAL_REVISION='m050-hydra-derived-coral-beast-v1-20261121';
 
-const coral=(g,parent,name,root,bend,tip,radius)=>
- g.curvedHorn(parent,'accent',root,bend,tip,radius,{name,capRoot:true,rough:.69});
+const coral=(g,parent,name,root,bend,tip,radius,shade='accent')=>
+ g.curvedHorn(parent,shade,root,bend,tip,radius,{name,capRoot:true,rough:.69});
 
 function sculptFace(g,head,low){
  const rings=dragonCraniumProfile(.68,1.15,.78,.01,.14).reverse()
@@ -43,18 +43,29 @@ function sculptFace(g,head,low){
   });
 
   // Fused branch roots overlap the primary coral horn at its thickest points.
+  g.curvedHorn(head,'skin',point(.087,.104,.087),
+   point(.148,.170,.054),point(.189,.219,-.022),.104,{
+    name:'m050-coral-horn-socket-'+suffix,capRoot:true,rough:.76,
+   });
   coral(g,head,'m050-coral-horn-'+suffix,point(.112,.096,.09),
    point(.265,.361,-.12),point(.383,.625,-.37),.090);
   coral(g,head,'m050-coral-fork-inner-'+suffix,point(.206,.302,-.079),
-   point(.169,.437,-.150),point(.152,.528,-.223),.050);
+   point(.169,.437,-.150),point(.152,.528,-.223),.050,'#f2bd9f');
   coral(g,head,'m050-coral-fork-outer-'+suffix,point(.248,.385,-.145),
-   point(.403,.427,-.246),point(.486,.532,-.312),.048);
+   point(.403,.427,-.246),point(.486,.532,-.312),.048,'#d9816a');
   if(!low)coral(g,head,'m050-coral-fork-tip-'+suffix,point(.310,.489,-.247),
-   point(.345,.576,-.177),point(.366,.644,-.151),.029);
+   point(.345,.576,-.177),point(.366,.644,-.151),.029,'#f6c7ab');
 
   g.fin(head,'light',point(.162,.011,.027),point(.476,.105,-.394),.096,{
    name:'m050-cheek-fin-'+suffix,rough:.64,
   });
+  for(let i=0;i<(low?1:3);i++){
+   const z=.09-i*.086;
+   g.curvedHorn(head,'light',point(.209,.034,z),point(.252,.058,z-.021),
+    point(.274,.042,z-.086),.044,{
+     name:'m050-overlapping-cheek-scale-'+suffix,capRoot:true,rough:.64,
+    });
+  }
   for(let i=0;i<(low?1:3);i++){
    const z=.62-i*.091,x=.116+i*.011;
    g.curvedHorn(head,'bone',point(x,-.107,z),point(x,-.151,z+.009),
@@ -115,9 +126,16 @@ export function sculptM050CoralBeast(g,spec){
  const finRoot=tailCurve.getPointAt(.91).sub(tipLocal);
  for(const side of [-1,1]){
   const reach=finRoot.clone().add(finRoot.clone().set(side*.325,.109,-.37));
-  g.fin(tip,side<0?'light':'accent',finRoot.toArray(),reach.toArray(),.117,{
+  g.fin(tip,'light',finRoot.toArray(),reach.toArray(),.139,{
    name:'m050-forked-tail-fin-'+(side<0?'L':'R'),rough:.57,
   });
+  if(!low){
+   const rib=finRoot.clone().lerp(reach,.54);
+   g.tube(tip,'accent',[finRoot.toArray(),rib.toArray(),reach.toArray()],.021,{
+    name:'m050-caudal-fin-ray',taper:.17,capEnds:true,
+    radialSegments:6,tubularSegments:9,
+   });
+  }
  }
  g.root.userData.m050HydraDerived=true;
  g.root.scale.setScalar(spec.size*.86);

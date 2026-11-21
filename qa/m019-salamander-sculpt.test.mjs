@@ -1,3 +1,4 @@
+import {REPTILE_DETAIL_REVISION} from '../src/reptile-detail-sculpt.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -45,7 +46,7 @@ for(const detail of ['low','high']){
    assert(meshes.length>0,'real triangle meshes are required');
    assert(nameSet.has('m019-m001-sourced-closed-cranium'));
    assert.equal(model.userData.m019HeroSilhouette,M019_HERO_REVISION);
-   assert.equal(model.userData.gameModelRevision,M019_HERO_REVISION);
+   assert.equal(model.userData.gameModelRevision,REPTILE_DETAIL_REVISION);
    assert.equal(model.userData.m019ModelFollowsFourView,true);
    assert.deepEqual(model.userData.m019ApprovedTurnaround,
      M019_APPROVED_SILHOUETTE);
@@ -55,12 +56,12 @@ for(const detail of ['low','high']){
    assert(nameSet.has('m019-recessed-mouth-slit'));
    assert(!nameSet.has('quadruped-tongue'),'m019 must never show a floating tongue ball');
    assert(!nameSet.has('reptile-orbital-socket'),'m019 must use its own narrow eyes');
-   assert(nameSet.has('m019-continuous-tail-tip'));
+   assert(nameSet.has('m019-continuous-caudal-skin'));
    assert.equal(nameSet.has('m019-cheek-horn-L'),false,
     'concept has only two major cranial horns, not extra tusks');
-   const tailTipMesh=meshes.find(m=>m.name==='m019-continuous-tail-tip');
-   assert.equal(tailTipMesh.userData.m019ClosedTaperedTail,true);
-   assert.equal(tailTipMesh.userData.m019UpcurledTip,true);
+   const tailTipMesh=meshes.find(m=>m.name==='m019-continuous-caudal-skin');
+   assert(tailTipMesh.isSkinnedMesh&&tailTipMesh.userData.cappedTubularSkin);
+   assert.equal(tailTipMesh.skeleton.bones.length,3);
    assert(tailTipMesh.geometry.getAttribute('position').array.some((v,i)=>
      i%3===1&&v>.47),'tail tip must actually rise in 3D');
 
@@ -110,10 +111,8 @@ for(const detail of ['low','high']){
    assert(pivot.tailTip?.userData!==undefined,'tail tip must be a movable pivot');
    assert.equal(pivot.tailMid.parent,pivot.tail);
    assert.equal(pivot.tailTip.parent,pivot.tailMid);
-   // A formerly +.164 Y offset created a visible disconnected tail.
-   // Current outer mid ring is at y=-.108; the tip inlet is y=-.016.
-   assert(Math.abs((pivot.tailTip.position.y-.016)-(-.108))<.075,
-    'the upcurled tip must overlap the previous anatomical tail ring');
+   assert.equal(tailTipMesh.parent,pivot.tail);
+   assert.equal(model.getObjectByName('m019-molten-tail-tip').parent,pivot.tailTip);
 
    const body=meshes.find(o=>o.name==='species-shoulder-rib-pelvis-m019');
    assert.equal(body?.parent,pivot.torso);

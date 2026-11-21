@@ -12,12 +12,12 @@ import {MONSTER_BY_ID,MONSTER_CATALOG} from './monster-catalog.js';
 import {HUMAN_MONSTER_IDS} from './monster-character-cosplay-manifest.js';
 import {adoptedCreatureMesh,protectedCreature,baseMonsterId,
  recommendedMeshSources} from './creature-mesh-adoption.js';
+import {hasReptileDetail,REPTILE_DETAIL_REVISION} from './reptile-detail-sculpt.js';
 import {M050_CORAL_REVISION} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION}
  from './m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {MAGMA_SALAMANDER_REVISION} from './magma-salamander-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
-import {M019_HERO_REVISION} from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
-import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';
+import {salamanderLineageFor} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';
 
 const humanoids=new Set(HUMAN_MONSTER_IDS);
 export const MODEL_REFERENCE_REVISION='m001-sweptback-nose-v20-20261117';
@@ -36,8 +36,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    felineWave.has(spec.id)?'m007-torso-anchor-tail-v12-20261118':
    spec.id==='m018'?M018_HYDRA_REVISION:
    spec.id==='m050'?M050_CORAL_REVISION:
-   spec.id==='m019'?M019_HERO_REVISION:
-   salamanderLineageFor(spec.id)?SALAMANDER_LINEAGE_REVISION:
+   hasReptileDetail(spec.id)?REPTILE_DETAIL_REVISION:
    spec.id==='m015'?'phoenix-master-tengu-feathers-v21-20261118':
    avianWave.has(spec.id)?'phoenix-master-bird-plumage-v21-20261118':
    'catalog-baseline',
@@ -51,6 +50,7 @@ export const GAME_MONSTER_MODEL_REGISTRY=Object.freeze(Object.fromEntries(
    firstWave.has(spec.id)?'copied-wolf-king-geometry-in-review':
    felineWave.has(spec.id)?'copied-m007-feline-geometry-in-review':
    avianWave.has(spec.id)?'phoenix-master-bird-anatomy-in-review':
+   hasReptileDetail(spec.id)?'continuous-tail-and-sea-dragon-detail-in-review':
    'pending-review',
   // Releasing a model does not mean its visual QA has been approved.
   mobileVisualApproved:false,

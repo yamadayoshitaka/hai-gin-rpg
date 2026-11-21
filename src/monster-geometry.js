@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m050-hydra-derived-coral-beast-v1-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=reptile-sculpture-v2-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -28,16 +28,18 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  M019_LIMB_WIDTH,M019_APPROVED_SILHOUETTE,
  M019_SPRAWL_KNEE_X,M019_SPRAWL_KNEE_Y,M019_SHOULDER_LOCAL_Y,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
- sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
- from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
+ sculptM019Jaw,sculptM019Limb,sculptM019Paw}
+ from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
+import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
+ sculptBasiliskFacePlates,sculptMarineFace,sculptMarineTail} from './reptile-detail-sculpt.js';
 import {M050_CORAL_REVISION,sculptM050CoralBeast} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptHydraLeg,sculptM018Tail}
  from './m018-hydra-sculpt.js?v=m050-hydra-derived-coral-beast-v1-20261121';
-import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
+import {salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- sculptSalamanderLineageLimb,markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';
+ sculptSalamanderLineageLimb,markSalamanderLineage} from './salamander-lineage-sculpt.js?v=reptile-sculpture-v2-20261121';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -2256,6 +2258,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    if(magmaSalamander)tail.userData.m019ExtendedSalamanderTail=true;
  }
  if(hydra)sculptM018Tail(g,tail);
+ else if(salamanderLineage)sculptSalamanderDetailTail(g,tail,s.id);
  else if(felineMaster){
    const caudal=g.axialLoft(tail,'skin',[
      {z:.220,y:.012,rx:.074,ry:.078},
@@ -2283,18 +2286,8 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
       capEnds:true});
    caudal.userData.forestWolfOriginalBodyPreserved=true;
    tail.userData.forestWolfTailRooted=true;
-}else if(salamanderLineage){
-   const caudal=g.axialLoft(tail,'skin',[
-     {z:.14,y:.000,rx:.195,ry:.194},
-     {z:.07,y:.023,rx:.173,ry:.171},
-     {z:-.18,y:.105,rx:.142,ry:.135},
-     {z:-.37,y:.107,rx:.109,ry:.106},
-     {z:-.58,y:.076,rx:.087,ry:.088}
-   ],{name:s.id+'-closed-caudal-root',rough:.76,
-      ribbing:.013,capEnds:true});
-   caudal.userData.salamanderRootBuriedInCroup=true;
  }else g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.50]],reptile?.14:.085);
- const tailMid=hydra?g.pivots.tailMid:g.group('tailMid',
+ const tailMid=hydra||salamanderLineage?g.pivots.tailMid:g.group('tailMid',
    felineMaster?[0,.320,-.790]:
    forestWolf?[0,.174,-.610]:magmaSalamander?[0,.066,-.535]:[0,.08,-.50],tail);
  if(felineMaster){
@@ -2319,17 +2312,8 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    ],{name:'m005-middle-caudal-skin',rough:.93,ribbing:.004,
       capEnds:true});
    caudalMid.userData.forestWolfTailContinuous=true;
-}else if(salamanderLineage){
-   g.axialLoft(tailMid,'skin',[
-     {z:.14,y:.000,rx:.096,ry:.093},
-     {z:.005,y:.016,rx:.098,ry:.096},
-     {z:-.20,y:-.002,rx:.081,ry:.081},
-     {z:-.43,y:-.075,rx:.064,ry:.061},
-     {z:-.66,y:-.108,rx:.037,ry:.043}
-   ],{name:s.id+'-closed-caudal-mid',rough:.78,
-      ribbing:.011,capEnds:true});
- }else if(!hydra)g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
- const tailTip=hydra?g.pivots.tailTip:g.group('tailTip',
+ }else if(!hydra&&!salamanderLineage)g.tube(tailMid,'skin',[[0,0,0],[0,.01,-.25-v*.05],[.09,-.11,-.49-v*.10]],reptile?.13:.078);
+ const tailTip=hydra||salamanderLineage?g.pivots.tailTip:g.group('tailTip',
    felineMaster?[0,-.145,-.750]:
    forestWolf?[0,.005,-.620]:magmaSalamander?[0,-.060,-.645]:
      [.09,-.11,-.49-v*.10],tailMid);
@@ -2337,8 +2321,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    [.038,.040,.047],{name:'feline-connected-tail-tip-'+s.id});
  else if(forestWolf)g.sphere(tailTip,'skin',[0,0,-.006],
    [.052,.057,.066],{name:'m005-embedded-tail-tip'});
- else if(magmaSalamander)sculptM019TailTip(g,tailTip,{detail:coatDetail});
- else if(!hydra)g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
+ else if(!hydra&&!salamanderLineage)g.sphere(tailTip,'skin',[0,0,-.025],[.044,.047,.085]);
  // Felines need short sleek directional fur instead of reusing a wolf
  // winter coat. Only the lion grows a deep mane, anchored to its head
  // so it follows jaw anticipation and neck pitch without floating.
@@ -2492,6 +2475,7 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
  }else if(salamanderLineage){
    sculptSalamanderLineageBack(g,torso,{id:s.id,detail:coatDetail});
    sculptSalamanderSurface(g,torso,head,{id:s.id,detail:coatDetail});
+   if(s.id==='m017'&&coatDetail!=='low')sculptBasiliskFacePlates(g,head);
  }else if(hydra){
    sculptM018HydraThorns(g,torso,bodyStations,{detail:coatDetail});
  }else{
@@ -2891,7 +2875,7 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
  * Segment joints and dorsal scutes are visible 3D meshes, not a billboard.
  */
 function seaSerpent(g,s){
- const v=s.variant,torso=g.group('torso');
+ const torso=g.group('torso');
  // An eel / sea-dragon axial body: tapered cranial base, branchial swell,
  // abdomen and caudal peduncle. Section dimensions, not subdivision count,
  // now control the original creature silhouette.
@@ -2903,68 +2887,33 @@ function seaSerpent(g,s){
    {z:-.35,y:1.02,rx:.34,ry:.29},
    {z:-.63,y:1.02,rx:.25,ry:.22}
   ],{name:'marine-axial-cranial-abdominal-'+s.id,
-     rough:.51,ribbing:.031});
+     rough:.51,ribbing:.031,capEnds:true});
  const spine=g.group('spineRear',[0,1.02,-.28],torso);
  g.axialLoft(spine,'skin',[
-   {z:.16,y:0,rx:.275,ry:.245},
-   {z:-.08,y:.02,rx:.28,ry:.23},
-   {z:-.39,y:.065,rx:.235,ry:.197},
+   {z:.21,y:0,rx:.30,ry:.257},
+   {z:-.075,y:.008,rx:.339,ry:.283},
+   {z:-.39,y:.032,rx:.252,ry:.223},
    {z:-.77,y:-.055,rx:.195,ry:.157}
-  ],{name:'marine-posterior-spine-'+s.id,rough:.51,ribbing:.024});
+  ],{name:'marine-posterior-spine-'+s.id,rough:.51,ribbing:.024,capEnds:true});
  const tail=g.group('tail',[0,-.06,-.73],spine);
- g.axialLoft(tail,'skin',[
-   {z:.17,y:0,rx:.212,ry:.168},
-   {z:-.09,y:.013,rx:.19,ry:.147},
-   {z:-.36,y:.038,rx:.155,ry:.112},
-   {z:-.67,y:-.08,rx:.119,ry:.092}
-  ],{name:'marine-caudal-muscle-'+s.id,rough:.50,ribbing:.019});
- const mid=g.group('tailMid',[0,-.08,-.63],tail);
- g.axialLoft(mid,'skin',[
-   {z:.15,y:0,rx:.133,ry:.103},
-   {z:-.12,y:.028,rx:.122,ry:.095},
-   {z:-.36,y:.012,rx:.096,ry:.079},
-   {z:-.59,y:-.105,rx:.057,ry:.045}
-  ],{name:'marine-tail-tip-muscle-'+s.id,rough:.50,ribbing:.013});
- const tip=g.group('tailTip',[0,-.10,-.52],mid);
- g.fin(tip,'accent',[0,0,0],[0,.42,-.35],.18);
- const head=g.group('head',[0,1.11,.78]);
- // Leviathan and sea serpent: sculpted organic cranium and deep temporal
- // muscles instead of a flattened scaled sphere. Keep existing jaw pivot.
- g.anatomicalLoft(head,'skin',
-   QUADRUPED_CRANIUM_RINGS.map(r=>({...r,
-     y:r.y*.91,rx:r.rx*.94,rz:r.rz*1.23,cz:r.cz+.09,
-   })),{name:'serpent-cranium-'+s.id,kind:'face',asymmetry:.10});
- g.bridge(head,'skin',[0,-.02,.22],[0,-.11,.67],.25,.13);
- g.sphere(head,'light',[0,-.13,.59],[.205,.105,.25]);
- g.eyes(head,.32,.09,.25,.042);
- for(const side of [-1,1]){
-   g.sphere(head,'shadow',[side*.145,-.09,.80],[.030,.020,.025],{rough:.65});
-   g.spike(head,'accent',[side*.23,.16,-.09],[side*.34,.34,-.12],.073);
- }
- const jaw=g.group('jaw',[0,1.03,.89]);
- g.sphere(jaw,'shadow',[0,-.07,.35],[.21,.07,.40]);
- // Sea-serpent species m020/m048 do not use the quadruped rig. Give
- // both a physically visible split between their skull and moving jaw.
- for(const side of [-1,1]){
-   g.tube(head,'shadow',[
-     [side*.239,-.137,.34],[side*.210,-.148,.55],
-     [side*.141,-.151,.765]],.013);
-   g.tube(jaw,'shadow',[
-     [side*.235,-.056,.225],[side*.203,-.073,.435],
-     [side*.137,-.074,.650]],.014);
-   g.spike(jaw,'bone',[side*.148,-.030,.52],
-     [side*.153,.058,.551],.026);
- }
- g.sphere(jaw,'shadow',[0,-.035,.405],[.143,.018,.176],
-   {name:'quadruped-oral-cavity'});
- g.sphere(jaw,'light',[0,-.046,.47],[.090,.011,.099],
-   {name:'quadruped-tongue'});
- for(let i=0;i<7+v*2;i++){
-   const z=.43-i*.18,attach=i<5?torso:spine;
-   const localZ=i<5?z:z+.30;
-   const height=.16+.08*Math.sin(i*.6);
-   g.fin(attach,i%3?'light':'accent',[0,1.30-(i<5?0:1.02),localZ],
-     [0,1.30-(i<5?0:1.02)+height,localZ-.085],.11);
+ sculptMarineTail(g,tail,s.id);
+ const head=g.group('head',[0,1.11,.78],torso);
+ sculptMarineFace(g,head,s.id);
+ const ice=s.id==='m048',low=g.root.userData.detail==='low';
+ const keel=[
+  [torso,.59,1.30,.25],[torso,.40,1.35,.25],[torso,.18,1.36,.24],
+  [torso,-.02,1.34,.23],[spine,-.20,.225,.19],[spine,-.40,.212,.17],
+  [spine,-.61,.138,.15],
+ ];
+ for(const [i,[pivot,z,y,radius]] of keel.entries()){
+  if(low&&i%2)continue;
+  const h=ice?.117:.229;
+  g.curvedHorn(pivot,ice?'bone':'light',[0,y-.07,z],[0,y+h*.37,z-.045],
+   [0,y+h,z-.16],ice?.059:.074,{name:s.id+'-dorsal-keel-'+i,capRoot:true});
+  if(!low)for(const side of [-1,1])g.fin(pivot,'accent',[side*.06,y-.10,z],
+   [side*radius,y+h*.59,z-.187],ice?.041:.074,{
+    name:s.id+'-dorsal-web-'+i,rough:.59,
+   });
  }
  g.root.scale.setScalar(s.size*.87);
 }
@@ -3095,13 +3044,11 @@ if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
    g.root.userData.avianGameSourceRevision=AVIAN_REALISM_REVISION;
  if(spec.id==='m001')g.root.m001FxThree=THREE;
 if(spec.id==='m019'){
-   g.root.userData.gameModelRevision=M019_HERO_REVISION;
    g.root.userData.m019HeroSilhouette=M019_HERO_REVISION;
    g.root.userData.m019ApprovedTurnaround=M019_APPROVED_SILHOUETTE;
    g.root.userData.m019ModelFollowsFourView=true;
  }
- else if(salamanderLineageFor(spec.id))
-   g.root.userData.gameModelRevision=SALAMANDER_LINEAGE_REVISION;
+ if(hasReptileDetail(spec.id))g.root.userData.gameModelRevision=REPTILE_DETAIL_REVISION;
  if(['m002','m007','m008','m009','m010'].includes(spec.id))
    g.root.beastFxThree=THREE;
  g.root.userData.speciesId=spec.id;
@@ -3129,5 +3076,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m050-hydra-derived-coral-beast-v1-20261121';
-export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m050-hydra-derived-coral-beast-v1-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=reptile-sculpture-v2-20261121';
+export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=reptile-sculpture-v2-20261121';
