@@ -30,26 +30,6 @@ const findByName=(model,needle)=>{
  });
  return found;
 };
-function aimBone(bone,next,model,side,{strength=.92,forearm=false}={}){
- if(!bone?.isBone||!next?.isBone)return false;
- bone.updateWorldMatrix(true,false);
- next.updateWorldMatrix(true,false);
- bone.getWorldPosition(worldStart);next.getWorldPosition(worldEnd);
- const source=worldEnd.sub(worldStart).normalize();
- model.getWorldQuaternion(modelQ);
- const dest=target.set(side*(forearm?.28:.46),-.86,.10)
-  .normalize().applyQuaternion(modelQ);
- // Get rotation from current segment direction to relaxed combat stance.
- const angle=source.angleTo(dest);
- if(angle<.04)return false;
- correctionQ.setFromUnitVectors(source,dest);
- const qParent=bone.parent.getWorldQuaternion(parentQ).clone();
- const localCorrection=qParent.invert().multiply(correctionQ).multiply(qParent);
- candidateQ.copy(bone.quaternion).premultiply(localCorrection);
- bone.quaternion.slerp(candidateQ,strength);
- bone.updateWorldMatrix(true,false);
- return true;
-}
 export function createMineralLimbArticulator({model,frames,id}={}){
  if(!model||!frames||!id)throw Error('Mineral articulator missing rig');
  const joints=Object.fromEntries(Object.entries(candidates).map(([key,names])=>
@@ -71,15 +51,9 @@ export function createMineralLimbArticulator({model,frames,id}={}){
  return {
   segments,revision:MONSTER_LIMB_FIT_REVISION,
   update(action='idle'){
-   const relaxed=action==='idle'||action==='guard';
-   if(relaxed){
-    for(let side=0;side<2;side++){
-     aimBone(joints.arms[side],joints.forearms[side],model,
-      side===0?1:-1,{strength:.88});
-     aimBone(joints.forearms[side],joints.hands[side],model,
-      side===0?1:-1,{strength:.77,forearm:true});
-    }
-   }
+   // Never override the GLTF's authored idle/guard/attack shoulder pose.
+   // Forced world-space shoulder aiming caused fists to fly above the head.
+   // Instead, solve every mesh FROM the actual two moving joints.
    model.updateMatrixWorld(true);
    let corrected=0;
    for(const {frame,nextFrame,mesh,nominal} of segments){
