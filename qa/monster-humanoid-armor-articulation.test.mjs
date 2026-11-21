@@ -6,7 +6,8 @@ import {humanoidMonsterCostumeFor}
 import {isFullBodyMonsterShell,isConstructCostume,
  CONSTRUCT_SHELL_SPECIES,addConstructMonsterCostume}
  from '../src/monster-construct-costume.js';
-import {createMineralLimbArticulator,MONSTER_LIMB_FIT_REVISION}
+import {createMineralLimbArticulator,MONSTER_LIMB_FIT_REVISION,
+ relaxMineralArmToBody}
  from '../src/monster-mineral-limb-articulator.js';
 import {addDemonicFaceCosmetics}
  from '../src/monster-demon-cosmetics.js';
@@ -21,6 +22,23 @@ assert.match(source,/mineralArticulator\?\.update\(action\)/);
 assert.match(gothic,/if\(kind==='skeleton'\|\|kind==='death_knight'\|\|kind==='dark_knight'\)/,
  'Original skull-face plate source must be skipped by the runtime fullBody gate');
 const ids=['m036','m037','m038','m039','m040','m042','m045'];
+{
+ const root=new THREE.Group(),chest=new THREE.Bone(),hips=new THREE.Bone();
+ chest.name='spine_02';chest.position.set(0,1.40,0);
+ hips.name='hips';hips.position.set(0,.76,0);
+ const arm=new THREE.Bone(),fore=new THREE.Bone();
+ arm.position.set(.53,1.48,0);
+ fore.position.set(.26,.00,0);
+ arm.add(fore);root.add(chest,hips,arm);root.updateMatrixWorld(true);
+ assert.ok(relaxMineralArmToBody({
+  bone:arm,next:fore,chest,hips,strength:1,spread:.7
+ }), 'Idle source shoulder cannot be relaxed');
+ const start=arm.getWorldPosition(new THREE.Vector3());
+ const end=fore.getWorldPosition(new THREE.Vector3());
+ assert.ok(end.y<start.y-.1,
+  'Idle-stance correction raised the fist ABOVE the shoulder instead of down');
+}
+
 function fakeRig(){
  const model=new THREE.Group(),frames={};
  const parents={};
