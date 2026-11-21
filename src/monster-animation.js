@@ -1,3 +1,5 @@
+import {resolveMonsterThemeAction} from './monster-theme-actions.js';
+import {applyMonsterThemeMotion} from './monster-theme-motion.js';
 import {applyMonsterBiologicalMotion} from './monster-joint-motion.js?v=phoenix-flight-joints-v9-20261118';
 import {updatePhoenixFeatherWaves}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
@@ -73,13 +75,18 @@ export function startMonsterAction(model,action,time=0){
 export function animateMonsterModel(model,time=0){
  if(!model)return;
  const p=model.userData.pivots||{};
- let action=model.userData.action||'idle';
+ let requested=model.userData.action||'idle';
+ const theme=resolveMonsterThemeAction(model.userData.speciesId,requested);
+ let action=theme?.base||requested;
+ if(!Object.prototype.hasOwnProperty.call(durations,action))action='idle';
  const elapsed=Math.max(0,time-(model.userData.actionAt??0));
+ const activeDuration=theme?.duration??durations[action];
  // Defeat is a terminal pose; do not resurrect the model after 1.15s.
- if(elapsed>durations[action]&&action!=='defeat'){
+ if(elapsed>activeDuration&&action!=='defeat'){
+   requested='idle';
    action='idle';model.userData.action='idle';model.userData.actionAt=time;
  }
- const d=durations[action],progress=Number.isFinite(d)?Math.min(1,elapsed/d):0;
+ const d=activeDuration,progress=Number.isFinite(d)?Math.min(1,elapsed/d):0;
  const pulse=Number.isFinite(d)?Math.sin(Math.PI*progress):0;
  const locomotion=action==='walk'||action==='run';
  // A defeated animal must not keep breathing, blinking, flexing its tail
@@ -343,8 +350,18 @@ export function animateMonsterModel(model,time=0){
  if(['m002','m007','m008','m009','m010'].includes(
     model.userData.speciesId))
    updateReferenceBeastFx(model,{action,progress,time:motionTime});
+ // Theme poses layer on top of the established family biomechanics.
+ // No additional draw calls, geometry allocations or shared rig mutations.
+ if(theme&&action!=='defeat')applyMonsterThemeMotion(model,{
+  tech:theme,progress,time:motionTime
+ });
+ else{
+  model.userData.themeAction=null;
+  model.userData.themePose=null;
+ }
  // m019 uses one immutable oriented-bridge upper mesh and one shin mesh
  // parented to the real rotating shoulder/knee. The old CPU deforming
  // second shell was removed: no redundant per-frame buffer uploads.
- return {action,progress,...(leap?{leapPhase:leap.phase}:null)};
+ return {action:theme?requested:action,baseAction:action,theme:theme?.id??null,
+  progress,...(leap?{leapPhase:leap.phase}:null)};
 }
