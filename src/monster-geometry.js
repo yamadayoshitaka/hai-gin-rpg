@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m019-matched-charcoal-limbs-v20-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m016-m017-salamander-quality-v21-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -34,7 +34,7 @@ import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
  sculptSalamanderLineageBack,sculptSalamanderSurface,
- sculptSalamanderLineageLimb,markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
+ sculptSalamanderLineageLimb,markSalamanderLineage} from './salamander-lineage-sculpt.js?v=m016-m017-salamander-quality-v21-20261121';
 /** Organic cranium sections shared by wolves, cats and reptiles.
  * The muzzle, eyelids and the animated jaw remain their existing species
  * parts. This skull is one continuous shaded volume instead of a sphere.
@@ -3103,5 +3103,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m019-matched-charcoal-limbs-v20-20261121';
-export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m019-matched-charcoal-limbs-v20-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m016-m017-salamander-quality-v21-20261121';
+export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m016-m017-salamander-quality-v21-20261121';
