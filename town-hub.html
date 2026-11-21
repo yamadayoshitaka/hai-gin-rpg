@@ -142,6 +142,8 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inn-formation-only-20261121';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=roster-first-20261121';
+import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=roster-first-20261121';
 import {registerBattlePlan,selectBattlePlan,allBattlePlans} from './src/battle-plan-recommendations.js?v=20261116';
 import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions,sortiePlanningStage} from './src/three-team-sortie.js';
 import {autoComposeThreeTeams} from './src/three-team-auto-composition.js';
@@ -249,7 +251,7 @@ $('townDialogueNext').onclick=()=>{
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
 function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();tavernGachaResults=null;panel=which;
- townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){sortieView='formationOnly';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
+ townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){innWizardStep='teamPick';sortieView='teamPick';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){tavernGachaResults=null;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
  townAudio.setScene(insideFacility==='formation'?'inn':insideFacility==='save'?'church':insideFacility==='story'?'castle':insideFacility==='tavern'?'tavern':insideFacility?'shop':'town');}
@@ -408,7 +410,8 @@ function renderInnPages(){
  }
  root.replaceChildren(heading,nav,pages.strategies,pages.deployment,pages.overview,pages.squads,pages.recruit);
 }
-let sortieView='formationOnly',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
+let sortieView='teamPick',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
+let innWizardStep='teamPick',innWizardSlot=0,innWizardRosterPage=0,innWizardFormationPage=0,innWizardGearSourceId='',innWizardGearCategory='武器';
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
@@ -436,7 +439,7 @@ function renderPanel(){
    '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!squads.length?'disabled':'')+'>隊列に装備</button>':'')+'</div></div>')+'</div>'+
    '<p>所持金：'+game.wallet+'G'+(armory?'　※同じ装備を複数隊列に使うには人数分ではなく隊列数分の在庫が必要です。':'')+'</p>';
  }else if(panel==='formation'){
-   $('panelContent').innerHTML=renderThreeTeamPlanner({game,teamId:sortieTeamId,cellIndex:sortieCellIndex,jobPage:sortieJobPage,templatePage:sortieTemplatePage,strategyFamily:sortieStrategyFamily,strategyIntent:sortieStrategyIntent,view:sortieView});
+   $('panelContent').innerHTML=renderInnFormationWizard({game,teamId:sortieTeamId,view:innWizardStep,rosterSlot:innWizardSlot,rosterPage:innWizardRosterPage,formationPage:innWizardFormationPage,gearSourceId:innWizardGearSourceId,gearCategory:innWizardGearCategory});
    // Every new wizard page begins with its first option fully visible.
    $('panelContent').scrollTop=0;
   }else if(panel==='tavern'){
@@ -480,6 +483,72 @@ $('panelContent').onclick=event=>{
  if(panel==='formation'){
   const target=event.target.closest('button');
   if(!target)return;
+  try{
+   const data=target.dataset,step=innWizardStep;
+   const redraw=()=>{renderPanel();};
+   const saveAndDraw=()=>{persist();redraw();};
+   if(target.hasAttribute('data-inn-wizard-team')){
+    sortieTeamId=Number(data.innWizardTeam);innWizardStep='roster';innWizardSlot=0;
+    innWizardRosterPage=0;innWizardFormationPage=0;redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-slot')){
+    innWizardSlot=Number(data.innWizardSlot);innWizardRosterPage=0;
+    innWizardStep='rosterPick';redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-roster-page')){
+    innWizardRosterPage=Math.max(0,innWizardRosterPage+Number(data.innWizardRosterPage));redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-roster-job')){
+    selectInnRosterJob(game,sortieTeamId,innWizardSlot,data.innWizardRosterJob||null);
+    innWizardStep='roster';saveAndDraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-count')){
+    setInnRosterCount(game,sortieTeamId,data.innWizardCount,Number(data.delta));
+    saveAndDraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-gear-source')){
+    innWizardGearSourceId=data.innWizardGearSource;
+    innWizardGearCategory=data.category||'武器';
+    innWizardStep='equipmentPick';redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-equip')){
+    equipSquadItem(game,Number(innWizardGearSourceId),data.innWizardEquip||null,innWizardGearCategory);
+    innWizardStep='equipment';saveAndDraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-leader')){
+    setSortieCaptain(game,sortieTeamId,data.innWizardLeader);
+    saveAndDraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-formation-page')){
+    innWizardFormationPage=Math.max(0,innWizardFormationPage+Number(data.innWizardFormationPage));
+    redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-formation')){
+    chooseInnFormation(game,sortieTeamId,data.innWizardFormation);
+    innWizardStep='review';saveAndDraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-save')){
+    persist();innWizardStep='teamPick';redraw();
+    notice('第'+sortieTeamId+'隊の編成・装備・リーダー・陣形を保存しました。');
+    return;
+   }
+   if(target.hasAttribute('data-inn-wizard-back')){
+    innWizardStep=({roster:'teamPick',rosterPick:'roster',equipment:'roster',
+     equipmentPick:'equipment',leader:'equipment',formation:'leader',review:'formation'})[step]||'teamPick';
+    redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-next')){
+    const team=game.sortiePlan?.teams?.find(t=>t.id===sortieTeamId);
+    const sourceIds=Object.keys(team?.counts||{}).filter(id=>team.counts[id]>0);
+    if(!sourceIds.length)throw Error('先に隊員を1人以上配置してください。');
+    if(step==='leader'&&!sourceIds.includes(String(team.captainId)))
+     throw Error('この隊のリーダーを選んでください。');
+    innWizardStep=({roster:'equipment',equipment:'leader',leader:'formation'})[step]||step;
+    redraw();return;
+   }
+  }catch(error){renderPanel();notice(error.message||String(error));return;}
+  // Legacy click handlers below remain for compatibility, but the new
+  // roster-first wizard never produces their old data-sortie attributes.
   if(target.hasAttribute('data-sortie-plan-formation')){
    try{
     setSortieFormation(game,sortieTeamId,target.dataset.sortiePlanFormation);
