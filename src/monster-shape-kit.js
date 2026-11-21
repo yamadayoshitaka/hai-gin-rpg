@@ -68,7 +68,7 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},s
        transmission:.14,thickness:.4}:{}),
    });
    if(role==='skin'||role==='light'||role==='fabric'||role==='bandage'||
-     role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(spec.id==='m019'&&role==='shadow')){
+     role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
      });
