@@ -182,7 +182,7 @@ test('V84 actual GLB skin avoids mouth-triangle reversal for ALL 22 expressions'
  animator.dispose();geo.dispose();face.material.dispose();
 });
 
-test('V85 public CC0 face preserves original mouth geometry and neutralises laugh folds',()=>{
+test('V85 donor protection remains exact at V87 neutral mouthWidth=1; expressions remain stable',()=>{
  const {geo}=sourceGeometry();
  const positions=geo.getAttribute('position').array.slice();
  geo.computeBoundingBox();
@@ -193,7 +193,7 @@ test('V85 public CC0 face preserves original mouth geometry and neutralises laug
  head.name='CC0_SOURCE_GEO-head_animation_realistic';
  root.add(head);
  const model=makeIndependentFaceMaster(root,'female',{
-  femaleControls:{ageBand:'twenties'}
+  femaleControls:{ageBand:'twenties',mouthWidth:1}
  });
  const face=model.face,rest=face.geometry.getAttribute('position');
  const rgb=face.geometry.getAttribute('color');
@@ -303,6 +303,66 @@ test('V86: actual independent male/female head has no exposed original lip hole'
   }
   animator.dispose();
   model.root.traverse(o=>{
+   if(!o.isMesh)return;
+   o.geometry?.dispose();
+   for(const mat of (Array.isArray(o.material)?o.material:[o.material]))
+    mat?.dispose?.();
+  });
+ }
+});
+
+test('V87 native mouth corners narrow on actual CC0 donor while cheeks, eyes and scalp remain fixed',()=>{
+ const snapshots=[];
+ for(const width of [0.65,0.85,1,1.25]){
+  const {geo}=sourceGeometry();
+  const scene=new THREE.Group();
+  const donor=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+  donor.name='CC0_SOURCE_GEO-head_animation_realistic';scene.add(donor);
+  const model=makeIndependentFaceMaster(scene,'female',{
+   femaleControls:{ageBand:'twenties',mouthWidth:width}
+  });
+  const face=model.face,pos=face.geometry.getAttribute('position');
+  const ring=face.userData.v86OralSeal?.lipRing;
+  assert.ok(ring?.length>=32&&ring.length<=48,
+   'V87 must preserve the original donor lip boundary and v86 seal: '+
+    JSON.stringify({width,seal:face.userData.v86OralSealSummary,report:face.userData.v86OralSeal}));
+  const xs=ring.map(id=>pos.getX(id));
+  const span=Math.max(...xs)-Math.min(...xs);
+  assert.ok(pos.array.every(Number.isFinite));
+  assert.ok(face.geometry.getAttribute('color').array.every(Number.isFinite));
+  assert.equal(face.userData.v87AnatomicalMouthWidth,width);
+  assert.equal(face.userData.v87MouthWidthOnOriginalSkin,true);
+  snapshots.push({width,span,positions:pos.array.slice(),model});
+ }
+ const [minimum,narrower,neutral,maximum]=snapshots;
+ assert.ok(narrower.span<neutral.span*.97&&narrower.span>neutral.span*.75,
+  'V87 default mouth must be visibly narrower without crushing the native lip seal');
+ assert.ok(minimum.span<narrower.span*.96,
+  'Narrower slider setting should actually move native mouth corners');
+ assert.ok(maximum.span>neutral.span*1.08,
+  'The real-mouth slider must affect actual head vertices');
+ // The multiplier must only modify the oral skin area, not cheeks/eyes.
+ const source=snapshots[0].model.face.userData.v86OriginalDonorPositions;
+ const origGeo=snapshots[0].model.face.geometry;
+ origGeo.computeBoundingBox();
+ const bounds=origGeo.boundingBox,d=bounds.getSize(new THREE.Vector3());
+ const center=(bounds.min.x+bounds.max.x)/2;
+ let protectedCount=0;
+ for(let i=0;i<source.length/3;i++){
+  const x=source[i*3],y=source[i*3+1],z=source[i*3+2];
+  const xn=(x-center)/(d.x*.5),yn=(y-bounds.min.y)/d.y,
+   zn=(z-bounds.min.z)/d.z;
+  if(Math.abs(xn)>.49||Math.abs(yn-.509)>.13||zn<.42){
+   protectedCount++;
+   for(let k=0;k<3;k++)
+    assert.ok(Math.abs(snapshots[0].positions[i*3+k]-
+      narrower.positions[i*3+k])<1e-8,
+     'Mouth width should not modify any other part of the face');
+  }
+ }
+ assert.ok(protectedCount>1000,'QA must inspect real cheeks and eye/scalp vertices');
+ for(const snapshot of snapshots){
+  snapshot.model.root.traverse(o=>{
    if(!o.isMesh)return;
    o.geometry?.dispose();
    for(const mat of (Array.isArray(o.material)?o.material:[o.material]))

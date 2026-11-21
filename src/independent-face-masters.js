@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-native-mouth-seal-v86';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-mouth-width-v87';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=81-nasolabial';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
-import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js?v=87-mouth-width';
 
 /**
  * Two independent head-only clay mesh prototypes from the CC0 male and female
@@ -15,6 +15,24 @@ const smooth=(a,b,v)=>{
  const t=THREE.MathUtils.clamp((v-a)/(b-a),0,1);
  return t*t*(3-2*t);
 };
+
+/**
+ * V87: extend true oral commissures horizontally on the original donor
+ * surface, not as separate lipstick, detached lip cards or extra triangles.
+ * Zero outside the mouth neighbourhood. Protect nose, eyes, cheeks, jaws.
+ */
+export function v87AnatomicalMouthWidthDelta({
+ xn,yn,zn,faceWidth,mouthWidth=.85
+}={}){
+ if(![xn,yn,zn,faceWidth,mouthWidth].every(Number.isFinite)||
+    faceWidth<=0)return 0;
+ const ax=Math.abs(xn),dy=Math.abs(yn-.509);
+ if(ax>=.45||dy>=.105||zn<=.48)return 0;
+ const lateral=1-smooth(.24,.45,ax);
+ const vertical=1-smooth(.030,.105,dy);
+ const anterior=smooth(.48,.74,zn);
+ return xn*faceWidth*.5*(mouthWidth-1)*lateral*vertical*anterior;
+}
 
 /**
  * Compact-support nose and mouth sculpt.
@@ -365,6 +383,11 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    nz=z+(nz-z)*(1-mouthProtected);
    if(mouthProtected>.97)v85OralSourceRestored++;
   }
+  // V87: expand native lip corners after v85 source-mouth restoration.
+  // The v86 lip seals reuse these SAME original displaced skin vertices.
+  nx+=v87AnatomicalMouthWidthDelta({
+   xn,yn,zn,faceWidth:d.x,mouthWidth:controls.mouthWidth
+  });
   // Mouth accessories follow the anatomically deformed lower midface.
   const oralWeight=bell(xn,0,.22)*bell(yn,.48,.047)*front;
   oralMotionSum+=(ny-y)*oralWeight;
@@ -383,6 +406,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  face.userData.v79MouthLandmarkMotion=oralMotion;
  face.userData.v85SourceOralGeometryProtected=true;
  face.userData.v85RestoredOralVertices=v85OralSourceRestored;
+ face.userData.v87AnatomicalMouthWidth=controls.mouthWidth;
+ face.userData.v87MouthWidthOnOriginalSkin=true;
  face.material=new THREE.MeshStandardMaterial({
   color:0xbfc3cb,roughness:.70,metalness:0,
   side:THREE.FrontSide,flatShading:false

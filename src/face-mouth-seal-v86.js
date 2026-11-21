@@ -71,13 +71,20 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  const bounds=geometry.boundingBox,size=bounds.getSize(new THREE.Vector3());
  const mouthNominal=bounds.min.y+size.y*.509;
  const loops=boundaryCycles(geometry);
+ // Use immutable donor-space lip contours to identify the true
+ // boundary after v87 width morphs have narrowed its visible span.
+ // Added triangles still share the existing current skin vertices.
+ const donor=face.userData.v86OriginalDonorPositions;
+ const sample=(id,k)=>donor?.length===pos.count*3?
+  donor[id*3+k]:
+  (k===0?pos.getX(id):k===1?pos.getY(id):pos.getZ(id));
  const eligible=[];
  for(const ring of loops){
   if(ring.length<20||ring.length>80)continue;
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,
    minZ=Infinity,maxZ=-Infinity;
   for(const i of ring){
-   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+   const x=sample(i,0),y=sample(i,1),z=sample(i,2);
    minX=Math.min(minX,x);maxX=Math.max(maxX,x);
    minY=Math.min(minY,y);maxY=Math.max(maxY,y);
    minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
@@ -92,7 +99,7 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
    spanX<size.x*.10||spanX>size.x*.30||
    spanY>size.y*.043||spanY<size.y*.001||
    spanZ>size.z*.13)continue;
-  const contour=ring.map(i=>new THREE.Vector2(pos.getX(i),pos.getY(i)));
+  const contour=ring.map(i=>new THREE.Vector2(sample(i,0),sample(i,1)));
   let area=0;
   for(let k=0;k<contour.length;k++){
    const a=contour[k],b=contour[(k+1)%contour.length];
@@ -116,8 +123,8 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  // original lip boundary vertices and never inserts floating polygons.
  let left=0,right=0;
  for(let i=1;i<ring.length;i++){
-  if(pos.getX(ring[i])<pos.getX(ring[left]))left=i;
-  if(pos.getX(ring[i])>pos.getX(ring[right]))right=i;
+  if(sample(ring[i],0)<sample(ring[left],0))left=i;
+  if(sample(ring[i],0)>sample(ring[right],0))right=i;
  }
  const buildArc=step=>{
   let current=left;
@@ -131,7 +138,7 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  const upper=buildArc(1),lower=buildArc(-1);
  if(upper.length+lower.length!==ring.length+2 ||
   [upper,lower].some(arc=>arc.slice(1).some((id,k)=>
-   pos.getX(id)+size.x*.0002<pos.getX(arc[k])))){
+   sample(id,0)+size.x*.0002<sample(arc[k],0)))){
   return {sealed:false,reason:'nonmonotone-original-lip-rim',
    ringVertexCount:ring.length};
  }
@@ -139,16 +146,18 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  const patch=[];
  while(ia<upper.length-1||ib<lower.length-1){
   const moveUpper=ib===lower.length-1||
-   (ia<upper.length-1&&pos.getX(upper[ia+1])<=pos.getX(lower[ib+1]));
+   (ia<upper.length-1&&sample(upper[ia+1],0)<=sample(lower[ib+1],0));
   const a=upper[ia],b=lower[ib];
   const c=moveUpper?upper[++ia]:lower[++ib];
-  const x1=pos.getX(b)-pos.getX(a),y1=pos.getY(b)-pos.getY(a);
-  const x2=pos.getX(c)-pos.getX(a),y2=pos.getY(c)-pos.getY(a);
-  let zArea=x1*y2-y1*x2;
-  if(Math.abs(zArea)<size.x*size.y*1e-8)continue;
-  if(zArea<0){patch.push(a,c,b);zArea=-zArea;}
+  const x1=sample(b,0)-sample(a,0),y1=sample(b,1)-sample(a,1);
+  const x2=sample(c,0)-sample(a,0),y2=sample(c,1)-sample(a,1);
+  const sourceArea=x1*y2-y1*x2;
+  if(Math.abs(sourceArea)<size.x*size.y*1e-8)continue;
+  const currentArea=(pos.getX(b)-pos.getX(a))*(pos.getY(c)-pos.getY(a))-
+   (pos.getY(b)-pos.getY(a))*(pos.getX(c)-pos.getX(a));
+  if(currentArea<0)patch.push(a,c,b);
   else patch.push(a,b,c);
-  areaSum+=zArea*.5;positive++;
+  areaSum+=Math.abs(sourceArea)*.5;positive++;
  }
  const projectedArea=Math.abs(item.area)*.5;
  if(positive<ring.length*.72||
@@ -161,10 +170,6 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  // Sealing only the small slit left an obvious black oval in the real
  // Chromium screenshot. Cap the foremost projection of the wider 40-edge
  // ring too; each triangle remains part of the SAME original face geometry.
- const donor=face.userData.v86OriginalDonorPositions;
- const sample=(id,k)=>donor?.length===pos.count*3?
-  donor[id*3+k]:
-  (k===0?pos.getX(id):k===1?pos.getY(id):pos.getZ(id));
  const outerCandidates=[];
  for(const candidate of loops){
   if(candidate===ring||candidate.length<39||candidate.length>55)continue;

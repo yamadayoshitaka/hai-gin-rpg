@@ -19,11 +19,21 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v86確認済');
+   ?.includes('実行JS：v87確認済');
  },{timeout:120000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have the front lip aperture sealed: '+JSON.stringify(native));
+ assert.ok(native.mouthWidth>=.84&&native.mouthWidth<=.86,
+  'The requested narrower-mouth preset must be applied to the actual 3D donor');
+ assert.ok(native.donorLipWidth>0&&
+  native.currentLipWidth/native.donorLipWidth<.97&&
+  native.currentLipWidth/native.donorLipWidth>.75,
+  'Real WebGL source-mouth lip span must visibly shrink, not lipstick only');
+ assert.ok(await page.locator('#mouthWidth').count()===1,
+  'Real female mouth-width adjustment slider must be present');
+ assert.ok(await page.locator('#maleMouthWidth').count()===1,
+  'Real male mouth-width adjustment slider must be present');
  // Read the actual WebGL canvas immediately after an explicit render.
  // Playwright page/element screenshots intermittently time out while this
  // animated Three.js preview resizes, even with CSS animations disabled.
