@@ -204,6 +204,46 @@ export function createGargoyleToeClawGeometry({detail='high'}={}){
  g.userData={kind:'gargoyle-paw-integrated-toe-talon',detail,rootEmbedded:true};
  return g;
 }
+/** Keep the fully hand-attached blade pointing OUT and FORWARD throughout
+ * native idle, attack, run and special clips, including crossed-arm frames.
+ * The previous straight-down blade followed the wrist THROUGH the thigh.
+ * This correction changes only m042's sword pivot, not the shared GLB.
+ */
+export function poseGargoyleSwordClearance({
+ swordPivot,chest,body,action='idle',progress=0
+}={}){
+ if(!swordPivot?.parent||!chest||!body)return false;
+ const hand=swordPivot.parent;
+ hand.updateWorldMatrix(true,false);
+ chest.updateWorldMatrix(true,false);
+ body.updateWorldMatrix(true,false);
+ const grip=hand.getWorldPosition(new THREE.Vector3());
+ const center=chest.getWorldPosition(new THREE.Vector3());
+ const bodyQ=body.getWorldQuaternion(new THREE.Quaternion());
+ const right=new THREE.Vector3(1,0,0).applyQuaternion(bodyQ).normalize();
+ const forward=new THREE.Vector3(0,0,1).applyQuaternion(bodyQ).normalize();
+ const up=new THREE.Vector3(0,1,0).applyQuaternion(bodyQ).normalize();
+ const sideOffset=grip.clone().sub(center).dot(right);
+ const prev=swordPivot.userData.gargoyleSwordSide??-1;
+ const sign=Math.abs(sideOffset)>.055?Math.sign(sideOffset):prev;
+ swordPivot.userData.gargoyleSwordSide=sign;
+ const phase=Math.max(0,Math.min(1,progress));
+ const swing=(action==='attack'||action==='special')?
+  Math.sin(Math.PI*phase):0;
+ const lateral=.58+.24*swing;
+ const depth=.55+.19*swing;
+ const vertical=-.74+.82*swing;
+ const direction=right.multiplyScalar(sign*lateral)
+  .addScaledVector(forward,depth).addScaledVector(up,vertical).normalize();
+ const parentRotation=hand.getWorldQuaternion(new THREE.Quaternion()).invert();
+ const localAim=direction.clone().applyQuaternion(parentRotation).normalize();
+ swordPivot.quaternion.setFromUnitVectors(new THREE.Vector3(0,-1,0),localAim);
+ swordPivot.position.set(0,0,0);
+ swordPivot.userData.gargoyleBladeOutsideThigh=true;
+ swordPivot.userData.gargoyleSwordStrikeProgress=phase;
+ swordPivot.userData.gargoyleSwordAction=action;
+ return true;
+}
 /** Curved backward-facing horn/crown or finger claw, NOT a rounded sphere. */
 export function createGargoyleSpireGeometry({
  detail='high',height=.29,width=.046,curve=.13,side=1
