@@ -1527,8 +1527,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const rearBodyVolumeExtra=bodyCollisionResolver&&!style.shortCutKind?
   Math.min(2400-baseCount-fringeExtra,Math.round(baseCount*.17)):0;
  const lockCount=baseCount+fringeExtra+rearBodyVolumeExtra;
- const sadakoWeights={
-  // Give the ear band dense vertical curtains while preserving the crown.
+ const sadakoWeights=style.maleGroom?{
+  // Men's independent top/side/nape population, not women's wide curtains.
+  crown:.36,fringeLeft:.09,fringeRight:.09,
+  templeLeft:.105,templeRight:.105,
+  backLeft:.09,backRight:.09,napeLeft:.035,napeRight:.035
+ }:{
   crown:.30,fringeLeft:.085,fringeRight:.085,
   templeLeft:.20,templeRight:.20,
   backLeft:.055,backRight:.055,napeLeft:.025,napeRight:.025
@@ -1734,7 +1738,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // crown guides: the other 5-in-6 covered the pupils in v65.
   const faceFrame=sadakoGravity&&(fringe||
    (zone==='crown'&&frontRoot&&midFace));
-  const bangsCut=sadakoVariant==='bangs'&&(fringe||overFace);
+  const bangsCut=sadakoVariant==='bangs'&&
+   (style.rebuiltBase==='sadako'?fringe:(fringe||overFace));
   if(overFace&&!sadakoGravity)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
@@ -1770,9 +1775,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    cutKind==='buzz'?(battleStableCoverage?.088:.032):
    cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
   const templeScale=zone.startsWith('temple')?
-   (style.catalogTempleRatio||1):1;
+   (style.catalogTempleRatio||1)*(style.maleGroom?.74:1):1;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618))*templeScale:
-   bangsCut?d.y*(.21+.024*fract(i*.618)):
+   bangsCut?d.y*(.21+.024*fract(i*.618)+(style.himeFringe?.055:0)):
    sadakoGravity?d.y*(longFactor+fract(i*.381966)*.13)*
     clamp(lengthScale,minLengthScale,1.5)*(style.styleLength||1)*templeScale:
    (fringe||overFace)?
@@ -1781,7 +1786,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
-  const baseTrimY=bangsCut?box.min.y+d.y*(.760+.008*Math.sin(i*.73)):
+  const baseTrimY=bangsCut?box.min.y+d.y*
+   ((style.himeFringe?.735:.760)+.004*Math.sin(i*.73)):
    sadakoGravity?wigRoot.y-length*1.04:cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
@@ -1849,19 +1855,25 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // Variant shape runs AFTER anatomical root-to-gravity grooming and
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
    if(style.rebuiltBase==='sadako'&&style.catalogFront==='bangs'){
-    if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i});
-    else if(faceFrame)shapeSadakoVariantGuide(shape,{
-     variant:'center',box,zone,side:partSide,rootIndex:i,
-     front:true,lateralScale:.20
-    });
+    if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i,
+     tipLevel:style.himeFringe?.752:.786});
+    else if(faceFrame||zone.startsWith('temple'))
+     shapeRebuiltEarTuck(shape,{box,side:partSide});
    }else if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
     variant:sadakoVariant,box,zone,side:partSide,
     rootIndex:i,front:faceFrame,bangsCut,
     lateralScale:style.rebuiltBase==='sadako'?.19:1
    });
-   if(style.catalogFront==='tucked'&&
+   // Every center/tucked woman's frontal lock clears the eyes EARLY;
+   // previous ear tuck only worked on lower ends below the whole face.
+   if(style.rebuiltBase==='sadako'&&style.gender==='female'&&
+      style.catalogFront!=='bangs'&&
       (faceFrame||zone.startsWith('temple')))
     shapeRebuiltEarTuck(shape,{box,side:partSide});
+   if(style.maleGroom)shapeRebuiltMaleGuide(shape,{
+    box,zone,side:partSide,part:style.part,
+    long:style.styleLength>.74,bangsCut
+   });
    // Face-parting and invisible-rod curls are INDEPENDENT components.
    // Earlier old styles used one variant switch and silently lost curls.
    if(style.catalogCurl&&style.catalogCurl!=='straight'&&!bangsCut)
@@ -1936,6 +1948,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
   }
+  if(style.maleGroom&&style.rebuiltBase==='buzz')
+   shapeRebuiltMaleGuide(rest,{box,zone,side:partSide,part:style.part,
+    long:false,bangsCut:style.catalogFront==='bangs'&&fringe});
   // Natural grooming relaxes tangents, preserving the real root and cut tip.
   for(let pass=0;pass<(sadakoGravity?1:3);pass++){
    const filtered=rest.map(p=>p.clone());
