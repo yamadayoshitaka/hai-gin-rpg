@@ -4,15 +4,19 @@
  */
 import {displayBattleJobName} from './battle-job-squads.js';
 import {strengthFromHp} from './battle-command-doctrine.js';
+import {battleMonsterIdentity} from './battle-portrait-identity.js';
 export function makeBattleRpgStatusRows({
  sums,units=[],allyIds=[],enemyIds=[],getJob=()=>'',getMode=()=>null,
- mass=false,now=0,simTime=now,itemTypes={},auras=new Map(),
+ mass=false,now=0,simTime=now,itemTypes={},auras=new Map(),getMonster=()=>null,
  skirmishBuffs=new Map(),massDebuffs=new Map(),skirmishDebuffs=new Map(),commanderRallies=new Map()
 }={}){
  const safeIds=[allyIds,enemyIds];
- const maxHpBySquad=new Map(),mpBySquad=new Map(),maxMpBySquad=new Map();
+ const maxHpBySquad=new Map(),mpBySquad=new Map(),maxMpBySquad=new Map(),monsterBySquad=new Map();
  for(const unit of units){
   const key=String(unit.team)+':'+String(unit.squadId);
+  if(Number(unit.team)===1&&!monsterBySquad.has(key)){
+   const species=battleMonsterIdentity(unit);if(species)monsterBySquad.set(key,species);
+  }
   maxHpBySquad.set(key,(maxHpBySquad.get(key)||0)+Math.max(0,Number(unit.maxHp)||0));
   maxMpBySquad.set(key,(maxMpBySquad.get(key)||0)+Math.max(0,Number(unit.maxMp)||0));
   if(unit.alive!==false&&Number(unit.hp)>0)
@@ -60,8 +64,9 @@ export function makeBattleRpgStatusRows({
  const rows=[];
  for(let team=0;team<2;team++)for(const [index,id] of safeIds[team].entries()){
   const key=team+':'+String(id),stat=sums?.get(key),alive=Number(stat?.n)||0;
-  const job=displayBattleJobName(getJob(id,team)||'部隊');
-  rows.push({team,id:String(id),name:'第'+(index+1)+'隊 '+job,job,
+  const species=team===1?(monsterBySquad.get(key)||getMonster(id,team,index)):null;
+  const job=species?.name||displayBattleJobName(getJob(id,team)||'部隊');
+  rows.push({team,id:String(id),name:'第'+(index+1)+'隊 '+job,job,monster:species||null,
    alive,total:Number(stat?.total)||0,hp:Number(stat?.hp)||0,
    maxHp:maxHpBySquad.get(key)||Number(stat?.maxHp)||0,
    mp:mpBySquad.get(key)||0,maxMp:maxMpBySquad.get(key)||0,
@@ -87,7 +92,7 @@ export function makeBattleRpgStatusRows({
  * inn sortie teams. Never aggregate the enemy, or pass these synthetic IDs to
  * the realtime unit-command engine.
  */
-export function aggregateBattleRpgTeams(rows,groupBySquad={},enemyGroupBySquad=null){
+export function aggregateBattleRpgTeams(rows,groupBySquad={},enemyGroupBySquad=null,captainsByGroup={}){
  const all=Array.isArray(rows)?rows:[];
  const sum=(members,key)=>members.reduce((total,row)=>total+(Number(row[key])||0),0);
  const aggregate=(side,mapping)=>{
@@ -101,12 +106,14 @@ export function aggregateBattleRpgTeams(rows,groupBySquad={},enemyGroupBySquad=n
   }
   return [...groups].sort((a,b)=>a[0]-b[0]).map(([groupId,members])=>{
    const jobs=[...new Set(members.map(row=>String(row.job||'兵士')))];
+   const monster=side===1?(members.find(row=>row.monster)?.monster||null):null;
+   const captain=side===0?captainsByGroup[String(groupId)]||null:null;
    const totalMaxHp=sum(members,'maxHp');
    const effects=[...new Map(members.flatMap(row=>row.effects||[])
     .map(effect=>[effect.kind+':'+effect.label,effect])).values()];
    return {
     team:side,id:(side===0?'team:':'enemy-team:')+groupId,groupId,
-    name:'第'+groupId+'隊',job:jobs.length+'ジョブ',jobs,members,
+    name:'第'+groupId+'隊',job:monster?.name||jobs.length+'ジョブ',jobs,members,monster,captain,
     alive:sum(members,'alive'),total:sum(members,'total'),
     hp:sum(members,'hp'),maxHp:totalMaxHp,
     mp:sum(members,'mp'),maxMp:sum(members,'maxMp'),
