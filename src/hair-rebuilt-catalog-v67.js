@@ -35,7 +35,7 @@ const F=[
  ['rb-f-long-in','内巻きロング','sadako',1.22,'tucked','inward','center',1],
  ['rb-f-long-out','外巻きロング','sadako',1.22,'tucked','outward','center',1],
  ['rb-f-long-wave','ソバージュロング','sadako',1.23,'center','sauvage','center',1],
- ['rb-f-hime','姫カット風・眉丈前髪','sadako',1.18,'bangs','straight','center',.55]
+ ['rb-f-hime','姫カット風・眉間丈前髪','sadako',1.18,'bangs','straight','center',.55]
 ];
 const M=[
  ['rb-m-crew','クルーカット','buzz',.11,'center','straight','center',1],
