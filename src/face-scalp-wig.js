@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-depth-ear-v19';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-crown-microhole-v21';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -417,9 +417,11 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    if(shortHair){
     // Extend the back/side donor cap toward the nape while keeping the
     // front hairline high enough to leave the forehead and eyes visible.
-    const rear=.43;
-    const side=THREE.MathUtils.lerp(rear,.59,smooth(-.10,.12,zn));
-    return THREE.MathUtils.lerp(side,.76,smooth(.10,.28,zn));
+    const rear=.53;
+    const side=THREE.MathUtils.lerp(rear,.70,smooth(-.10,.12,zn));
+    const forehead=THREE.MathUtils.lerp(side,.79,smooth(.10,.28,zn));
+    // Keep short hair off the ears and temple skin.
+    return THREE.MathUtils.clamp(forehead+.025*smooth(.24,.45,xn),.53,.83);
    }
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
@@ -493,8 +495,10 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // The generic crown hole repair fans arbitrary loops across the rear/ear
  // boundary and creates the large planar gray patches seen in buzzcut v5.
  // Preserve only donor-backed triangles for the close-cut style.
- const crownRepair=shortHair?{repairs:0,repairCount:0,triangles:0,source:'donor-only'}:
-  repairRealCrownScalpHoles(sourceScalpVerts,donorNormals,box);
+ // Restore only small, closed donor crown holes for buzz cuts.
+ // microOnly rejects wide boundary loops to avoid flat scalp fans.
+ const crownRepair=repairRealCrownScalpHoles(
+  sourceScalpVerts,donorNormals,box,{microOnly:shortHair});
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -699,8 +703,8 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
   }
   tangent.normalize();
   widthDir.crossVectors(up,tangent).normalize();
-  const width=d.x*(.0007+.00025*fract01(i*.381966));
-  const length=d.x*(.007+.006*fract01(i*.41421356));
+  const width=d.x*(.00038+.00015*fract01(i*.381966));
+  const length=d.x*(.0035+.0025*fract01(i*.41421356));
   const base=root.clone().addScaledVector(up,d.x*.0015);
   const tip=base.clone().addScaledVector(tangent,length)
    .addScaledVector(up,d.x*.0012);
