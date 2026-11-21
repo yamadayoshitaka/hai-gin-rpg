@@ -21,6 +21,9 @@
     #summonMotionStrip button{min-width:max-content;flex:0 0 auto;
       font-size:12px;padding:8px 10px;min-height:40px}
     #summonMotionStrip button[aria-pressed=true]{background:#356785;border-color:#edcd89}
+    #summonMotionStrip button.speciesSkill{border-color:#c5a665;color:#f8e4ab}
+    #summonMotionStrip button.speciesSkill[aria-pressed=true]{background:#4e5d35}
+    #summonMotionStrip button[hidden]{display:none!important}
     header details{position:relative;z-index:22}
     header summary{list-style:none;cursor:pointer;background:#1b3447;border:1px solid #708f9a;padding:10px;border-radius:8px;font-size:13px}
     header details[open] #poseButtons{position:absolute;right:0;top:calc(100% + 5px);display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#122f43;border:1px solid #708f9a;border-radius:10px;padding:8px;min-width:270px;max-height:55dvh;overflow-y:auto;box-shadow:0 7px 25px #0009}
@@ -111,7 +114,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣57種・軍馬 3D鑑賞 v4.6.92</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣57種・軍馬 3D鑑賞 v4.6.93</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -181,9 +184,13 @@
   </details>
   <script type="module">
     import * as THREE from 'three';
+    import {summonGalleryActions}
+      from './src/summon-gallery-action-catalog.js?v=actions-v1-20261122';
+    import {sampleSummonPreviewRoute}
+      from './src/summon-gallery-motion-route.js?v=continuous-walk-v1-20261122';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {femaleSummonCosplayFor,FEMALE_SUMMON_FORM_IDS,MALE_DRAGON_LORD_FORM,MALE_DRAGON_LORD_HUMAN_FORM} from './src/female-summon-forms.js?v=dragon-original-default-20261121';
-    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=seraph-no-face-whiskers-v3-20261121';
+    import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=summon-walk-and-spells-v1-20261122';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.6.51';
     import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES} from './src/monster-catalog.js';
     import {loadSpeciesSourceComposite} from './src/monster-source-composite.js?v=4.6.92';
@@ -380,9 +387,24 @@
         document.getElementById('metrics').textContent='GLBを読み込めません：'+error.message;
       }
     });
-    let walking=false,running=false,nextStepAt=0,routeStep=0;
-    const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
-      {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
+    let walking=false,running=false,walkBeganAt=0,selectedSkill=null;
+    const motionStrip=document.getElementById('summonMotionStrip');
+    // Skill buttons are species-specific, not silently hidden in the
+    // battle-only action registry. Keep them before walk/run on phones.
+    function renderSpeciesSkillButtons(){
+      for(const prior of motionStrip.querySelectorAll('.speciesSkill'))prior.remove();
+      for(const entry of summonGalleryActions(selected)){
+        const button=document.createElement('button');
+        button.type='button';
+        button.className='speciesSkill';
+        button.dataset.skill=entry.id;
+        button.title=entry.description;
+        button.textContent=entry.label;
+        button.setAttribute('aria-pressed','false');
+        button.addEventListener('click',()=>playGallerySkill(entry,button));
+        motionStrip.insertBefore(button,document.getElementById('walk'));
+      }
+    }
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
     // A grouped selector makes all 50 EXISTING monster species individually
@@ -442,7 +464,8 @@
         (!femaleAvailable||femaleMode.value==='original');
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
-      walking=false;running=false;routeStep=0;
+      walking=false;running=false;selectedSkill=null;walkBeganAt=0;
+      renderSpeciesSkillButtons();
       document.getElementById('walk').textContent='歩行';
       document.getElementById('runButton').textContent='走行';
       document.querySelectorAll('#summonMotionStrip button').forEach(button=>
@@ -598,6 +621,43 @@
         {position:origin,target,job:selected,
          magic:giant?.element||'arcane',scale:giant?3:1.5});
     };
+    function playGallerySkill(entry,button){
+      const t=clock.getElapsedTime();
+      walking=false;running=false;selectedSkill=entry.id;
+      document.getElementById('walk').textContent='歩行';
+      document.getElementById('runButton').textContent='走行';
+      for(const el of motionStrip.querySelectorAll('button'))
+        el.setAttribute('aria-pressed',String(el===button));
+      startCreaturePose(previewObject,entry.pose,t);
+      // The same real bone rig receives distinct healing/revival/attack IDs.
+      femaleSummonHandle?.start(entry.pose,t,entry.id);
+      externalPreview?.play(entry.pose);
+      const origin=new THREE.Vector3(previewObject.x,selected==='dragon_lord'?4:2.2,previewObject.z);
+      const target=new THREE.Vector3(previewObject.x,1.1,previewObject.z+2.5);
+      if(['heal','revive'].includes(entry.vfx)){
+        vfx.emitArea(target,entry.vfx==='revive'?3.2:2.7,
+          {element:'nature',heal:true});
+        vfx.flash('nature',target,{scale:entry.vfx==='revive'?2.1:1.2,life:.8});
+      }else if(entry.vfx==='starflare'){
+        // This is a gallery preview; authoritative 195 HP AoE is in battle.
+        vfx.emitArea(target,6,{element:'arcane',intensity:2});
+        vfx.emitExplosion(target,5.5,{element:'arcane'});
+        vfx.flash('arcane',target,{scale:2.2,life:1.2});
+      }else if(entry.vfx==='breath'){
+        vfx.emitBreath(origin,target,{element:'fire',radius:2.2});
+      }else if(entry.vfx==='arrow'){
+        vfx.emit('arrow',{position:origin,target,job:selected,magic:'nature',scale:1.9});
+      }else if(entry.vfx==='radiant'){
+        vfx.emit('magic',{position:origin,target,job:selected,magic:'arcane',scale:1.7});
+      }else if(entry.vfx==='roar'){
+        creatureSounds.unlock();
+        creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true});
+      }
+      if(entry.pose==='attack'){
+        previewObject.attackStartedAt=t;
+        previewObject.attackTarget={x:target.x,z:target.z};
+      }
+    }
     // The action strip stays visible while the full-size 3D scene remains
     // interactive; no menu expansion or camera shrinking is necessary.
     document.querySelectorAll('#summonMotionStrip button').forEach(button=>{
@@ -614,6 +674,7 @@
     document.querySelectorAll('[data-pose]').forEach(button=>{
       button.onclick=()=>{
         const pose=button.dataset.pose,t=clock.getElapsedTime();
+        selectedSkill=null;
         if(pose==='idle'){
           // Creature pose runtime only accepts finite actions. Clear its
           // envelope rather than passing an unsupported 'idle' action.
@@ -642,19 +703,26 @@
       };
     });
     const updateMoveLabels=()=>{
+      const t=clock.getElapsedTime();
       document.getElementById('walk').textContent=walking&&!running?'歩行停止':'歩行';
       document.getElementById('runButton').textContent=walking&&running?'走行停止':'走行';
       previewObject.moving=walking;
       previewObject.previewWalk=walking&&!running;
-      femaleSummonHandle?.start(walking?'run':'idle',clock.getElapsedTime());
+      // CRITICAL: walking is WALK, not RUN. These are real skinned GLB clips.
+      femaleSummonHandle?.start(walking?(running?'run':'walk'):'idle',t);
+      if(!walking){previewObject.poseAction=null;previewObject.poseStartedAt=null;}
     };
     document.getElementById('walk').onclick=()=>{
-      walking=running?true:!walking;running=false;routeStep=0;
-      nextStepAt=clock.getElapsedTime();updateMoveLabels();
+      walking=running?true:!walking;running=false;
+      walkBeganAt=clock.getElapsedTime();selectedSkill=null;
+      if(walking){previewObject.poseAction=null;previewObject.poseStartedAt=null;}
+      updateMoveLabels();
     };
     document.getElementById('runButton').onclick=()=>{
-      walking=!walking||!running;running=walking;routeStep=0;
-      nextStepAt=clock.getElapsedTime();updateMoveLabels();
+      walking=!walking||!running;running=walking;
+      walkBeganAt=clock.getElapsedTime();selectedSkill=null;
+      if(walking){previewObject.poseAction=null;previewObject.poseStartedAt=null;}
+      updateMoveLabels();
     };
     let polygonInspection=false;
     document.getElementById('wireframe').onclick=()=>{
@@ -669,10 +737,14 @@
       requestAnimationFrame(tick);
       const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
       const spec=COMBAT_OBJECT_SPECS[selected];
-      if(walking&&t>=nextStepAt){
-        routeStep=(routeStep+1)%travelRoute.length;
-        Object.assign(previewObject,travelRoute[routeStep]);
-        nextStepAt=t+1/(spec.speed*(running?1.8:1));
+      if(walking){
+        // Smooth 3D movement in the preview; no 15-cell/sec teleporting.
+        const point=sampleSummonPreviewRoute(t-walkBeganAt,{running});
+        previewObject.x=point.x;previewObject.z=point.z;
+        previewObject.previewFacing=point.yaw;
+      }else{
+        previewObject.x=0;previewObject.z=0;
+        previewObject.previewFacing=0;
       }
       const isFemaleReady=femaleSummonHandle?.source==='canonical-character-cosplay';
       previewObject.moving=walking;
@@ -698,15 +770,24 @@
           frameMonsterType=selected;
         }
       }
+      // All canonical humanoids must follow the SAME animated 3D route as
+      // their original species. Previously only Seraph's coordinates updated,
+      // so the forest spirit's walk/run buttons left the actor motionless.
+      if(femaleSummonHandle){
+        femaleSummonHandle.root.position.x=previewObject.x;
+        femaleSummonHandle.root.position.z=previewObject.z;
+        femaleSummonHandle.root.rotation.y=previewObject.previewFacing||0;
+      }
       femaleSummonHandle?.update(t);
       // Only the optional gallery female Seraph levitates; the original
       // battlefield summons, rider rules and physics are unchanged.
       if(isFemaleReady&&selected==='seraph_guardian'&&femaleMode.value==='female'){
         femaleFlightAltitude=(.76+.11*Math.sin(t*1.85))*SUMMON_WORLD_SCALE;
         femaleSummonHandle.root.position.y=femaleFlightAltitude;
-        femaleSummonHandle.root.position.x=previewObject.x||0;
-        femaleSummonHandle.root.position.z=previewObject.z||0;
-      }else femaleFlightAltitude=0;
+      }else{
+        femaleFlightAltitude=0;
+        if(femaleSummonHandle)femaleSummonHandle.root.position.y=0;
+      }
       if(externalPreview){
         externalPreview.root.position.x=previewObject.x;
         externalPreview.root.position.z=previewObject.z;
@@ -750,7 +831,26 @@
       });
       return result;
     };
+    const canonicalMovementAudit=()=>{
+      const root=femaleSummonHandle?.root;
+      const host=root?.getObjectByName('character-cosplay-host');
+      const motion=host?.userData?.canonicalMotion;
+      const legs=[];
+      root?.traverse(node=>{
+        if(node.isBone&&/^(thigh|calf|shin|upperleg)[_\d-]*[lr]?$/i.test(node.name)&&legs.length<6)
+          legs.push({name:node.name,quaternion:node.quaternion.toArray().map(n=>+n.toFixed(5))});
+      });
+      return {requested:root?.userData?.action??null,
+        activeClip:motion?.active?.getClip?.()?.name??null,
+        hasWalkClip:!!motion?.actions?.walk,
+        position:root?{x:root.position.x,z:root.position.z}:null,
+        legs};
+    };
     window.__summonGalleryLayoutQA=()=>({
+      speciesActionIds:[...motionStrip.querySelectorAll('.speciesSkill')].map(x=>x.dataset.skill),
+      selectedSkill,
+      walking,running,previewX:previewObject.x,previewZ:previewObject.z,
+      canonicalMovement:canonicalMovementAudit(),
       motionStripVisible:getComputedStyle(document.getElementById('summonMotionStrip')).display!=='none',
       actionButtons:document.querySelectorAll('#summonMotionStrip button').length,
       activeMotion:document.querySelector('#summonMotionStrip button[aria-pressed=true]')?.dataset.pose||
