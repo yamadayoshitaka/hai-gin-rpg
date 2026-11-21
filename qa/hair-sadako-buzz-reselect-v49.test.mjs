@@ -47,7 +47,7 @@ test('buzz can be selected, replaced by Sadako, then selected again',()=>{
 
 test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  const page=read('face-mesh-studio.html'),hair=read('src/face-scalp-wig.js');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v5[0-9]$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v60$/);
  assert.match(page,/Math\.max\(wigDensity,1200\)/,
   'restored low-density user preferences must not expose the entire crown');
  assert.match(hair,/sadakoGravity\?d\.y\*\(longFactor/,
