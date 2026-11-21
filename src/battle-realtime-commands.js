@@ -25,6 +25,7 @@ export function createRealtimeBattleCommands({
  documentRef=globalThis.document,worldSize=232,
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
  getDeploymentTeams=null,getInitialTeamPlan=()=>({strategy:'assault'}),getRadarEnemies=null,
+ battleTypeLabel='戦闘',victoryCondition='敵を撃破',
  getRadarSquads=null,getRadarGroup=null,onRadarTeamCommand=null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
@@ -50,7 +51,7 @@ export function createRealtimeBattleCommands({
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
   <div id="realtimeSquadRadar" hidden role="group" aria-label="中央部隊レーダー">
-   <div class="realtimeRadarHeader"><strong id="realtimeRadarTitle">◎ 部隊レーダー</strong>
+   <div class="realtimeRadarHeader"><strong id="realtimeRadarTitle">◎ 部隊レーダー｜${String(battleTypeLabel)}</strong>
     <span id="realtimeRadarClock" hidden aria-label="作戦選択の残り時間"></span></div>
    <canvas id="realtimeRadarCanvas" width="224" height="178"
     aria-label="味方と敵の隊長位置。青が味方、赤が敵。番号は隊番号" tabindex="0"></canvas>
@@ -193,7 +194,7 @@ export function createRealtimeBattleCommands({
  const missionNotice=doc.createElement('div');
  missionNotice.id='battleMissionNotice';missionNotice.setAttribute('role','status');
  missionNotice.setAttribute('aria-live','polite');
- missionNotice.textContent='🎯 作戦目標：進捗を確認中';
+ missionNotice.textContent='⚑ '+String(battleTypeLabel)+'｜勝利条件：'+String(victoryCondition);
  root.append(missionNotice);
  const orderNotice=doc.createElement('div');orderNotice.id='battleActiveOrderNotice';
  orderNotice.setAttribute('role','status');orderNotice.textContent='📋 部隊作戦：選択待ち';
@@ -223,11 +224,11 @@ export function createRealtimeBattleCommands({
   const completed=checkpoints.filter(p=>p.status==='達成'||p.status==='地点到着').length;
   const initialSummary=[...initialTeamPlans].map(([group,strategy])=>
    '第'+group+'隊 '+({assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索'}[strategy]||strategy)).join('／');
-  const message=!last?(initialSummary?'🎯 初期作戦：'+initialSummary:'🎯 作戦目標：未設定'):
+  const message='⚑ '+String(battleTypeLabel)+'｜'+(!last?(initialSummary?'勝利条件：'+String(victoryCondition)+'｜初期作戦：'+initialSummary:'勝利条件：'+String(victoryCondition)):
    (last.status==='達成'||last.status==='地点到着'?'✅ 目的達成：':
     last.status==='失敗'?'⚠ 作戦失敗：':'🎯 進行中：')+
     '第'+String(last.groupId||1)+'班 '+String(last.label||'目標')+
-    '（'+Math.round(Number(last.progress)||0)+'%）｜達成 '+completed+'/'+checkpoints.length;
+    '（'+Math.round(Number(last.progress)||0)+'%）｜達成 '+completed+'/'+checkpoints.length);
   if(lastMissionSignature!==message){missionNotice.textContent=message;lastMissionSignature=message;}
   missionNotice.hidden=!started;
  }
@@ -1283,9 +1284,8 @@ radarCanvas.addEventListener('keydown',event=>{
   else issueDockOrder('defend');
  };
  $('realtimeHold').onclick=()=>issueDockOrder('hold');
- $('realtimeStart').onclick=()=>{
-  if(started)return;
-  // Do not close deployment while battle has failed to unpause.
+ function beginBattleWithPlans(){
+  if(started)return true;
   const plans={};
   const plannedTeams=typeof getDeploymentTeams==='function'?getDeploymentTeams():squads();
   for(const team of plannedTeams||[]){
@@ -1295,12 +1295,13 @@ radarCanvas.addEventListener('keydown',event=>{
   const accepted=onStart({initialPlans:plans});
   if(accepted===false){
    $('realtimeMapMessage').textContent='戦闘を開始できません。作戦停止状態を確認してください。';
-   return;
+   return false;
   }
   started=true;mode='live';invalidateSquadSnapshot();hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;
   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
-  renderStatus();drawRadar(true);
- };
+  renderStatus();drawRadar(true);return true;
+ }
+ $('realtimeStart').onclick=()=>beginBattleWithPlans();
  $('realtimeRoster')?.addEventListener('click',()=>onRoster());
  $('realtimeMenu').onclick=()=>{closeSquadControls();onMenu();};
  const commandWizard=mountBattleCommandWizard({
@@ -1321,6 +1322,14 @@ radarCanvas.addEventListener('keydown',event=>{
  };
  // Pause is controlled by entering/leaving the squad planning dock.
  return {
+  /** Campaign map already supplied the three 3x4 placement slots. No second placement modal. */
+  startFromPreparedDeployment(){
+   started=false;mode='deploy';exitPlanning();commandWizard.reset();planningOwnsPause=false;
+   initialTeamPlans.clear();deploymentActions.clear();arrivalActions.clear();preferredActions.clear();
+   invalidateSquadSnapshot();$('realtimeBattleMapOverlay').hidden=true;
+   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=true;
+   return beginBattleWithPlans();
+  },
   openDeployment(){started=false;mode='deploy';exitPlanning();commandWizard.reset();planningOwnsPause=false;
    initialTeamPlans.clear();
    $('realtimeSquadRadar').hidden=true;deploymentActions.clear();arrivalActions.clear();preferredActions.clear();invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;openMap('deploy');},
