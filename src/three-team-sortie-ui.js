@@ -56,7 +56,7 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
     const jobs=FORMATION_ROLES[id].slice(0,Math.min(3,f.slots)).map(x=>ROLE_NAMES[x]).join('・');
     return button('data-sortie-plan-formation="'+id+'" '+(!enabled?'disabled':''),
      '<b>'+esc(f.name)+(suggestions.has(id)?' <em>推奨</em>':'')+'</b>'+
-     '<small>最大3ジョブ・'+esc(jobs)+' · Lv.'+f.level+(!enabled?' 未解放':'')+'</small>'+
+     '<small>'+f.slots+'ジョブ・'+esc(jobs)+' · Lv.'+f.level+(!enabled?' 未解放':'')+'</small>'+
      '<small>攻撃 '+Math.round((f.attack||0)*100)+'% / 防御 '+Math.round((f.defense||0)*100)+
      '% / 移動 '+Math.round((f.mobility||0)*100)+'%</small>',current.formation===id);
    }).join('')+'</div>'+
