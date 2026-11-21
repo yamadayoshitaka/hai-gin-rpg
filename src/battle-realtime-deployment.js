@@ -52,7 +52,12 @@ export function planSkirmishGroupDeployment(actors,{
  const cols=cells.map(c=>c%4),rows=cells.map(c=>Math.floor(c/4));
  const centerCol=(Math.min(...cols)+Math.max(...cols))/2;
  const centerRow=(Math.min(...rows)+Math.max(...rows))/2;
- const shadow=actors.map(actor=>({...actor,cell:actor.cell?{...actor.cell}:null}));
+ // All participating divisions are moving in the same atomic operation.
+ // Their former cells must not block another division's target position.
+ const movingIds=new Set(ids);
+ const shadow=actors.map(actor=>({...actor,cell:
+  actor.team===team&&movingIds.has(String(actor.squadId))?null:
+   actor.cell?{...actor.cell}:null}));
  const original=new Map(shadow.map((actor,i)=>[actor,actors[i]]));
  const planned=[],duplicateCells=new Map();
  for(let i=0;i<ids.length;i++){
