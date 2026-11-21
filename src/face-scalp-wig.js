@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-costume-neck-buzz-crown-v63';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-side-ribbon-blend-v64';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -279,6 +279,27 @@ export function sadakoCrownSideOverlayOffset(zone,y,t,box,overlay=false){
  return d.x*.021*across*down*headBand;
 }
 
+/** A real hair-card width/overlap profile, NOT another side panel.
+ * This changes Sadako only; the approved sparse buzz uses its old mesh. */
+export function sadakoSideRibbonBlend(zone,crownOverSide,t,layer=0){
+ const affected=zone.startsWith('temple')||
+  (zone==='crown'&&!!crownOverSide);
+ if(!affected)return {
+  active:false,widthScale:1,layerWidth:[1,.78,.55,.32][layer]??.32,
+  thicknessScale:1,crownLiftScale:1,toneBlendEnd:.30};
+ const temple=zone.startsWith('temple');
+ const join=.84+.16*THREE.MathUtils.smoothstep(
+  THREE.MathUtils.clamp(t,0,1),.04,.30);
+ return {
+  active:true,
+  widthScale:(temple?.66:.83)*join,
+  layerWidth:[.82,.48,.22,.07][layer]??.07,
+  thicknessScale:.54,
+  crownLiftScale:temple?1:.64,
+  toneBlendEnd:.44
+ };
+}
+
 /** Sample the real donor bust's REAR silhouette below the head.
  * A bare face preview has no full-body collider: old shoulder capsules
  * missed the back of the neck and the nape locks intersected the bust.
@@ -370,12 +391,12 @@ export function v63WigScalpTone(x,y,z,box){
 }
 /** Seam-safe root pigment: match the opaque scalp on the first hair station,
  * then gradually restore individual strand tones, with no extra geometry. */
-export function v67ScalpMatchedLockTone(point,box,t,seed,layer=0){
+export function v67ScalpMatchedLockTone(point,box,t,seed,layer=0,blendEnd=.30){
  const u=THREE.MathUtils.clamp(t,0,1);
  const scalp=v63WigScalpTone(point.x,point.y,point.z,box);
  const strand=v63WigLockTone(u,seed,layer);
  return THREE.MathUtils.lerp(scalp,strand,
-  THREE.MathUtils.smoothstep(u,0,.30));
+  THREE.MathUtils.smoothstep(u,0,blendEnd));
 }
 export function v63WigLockTone(t,seed,layer=0){
  const u=THREE.MathUtils.clamp(t,0,1);
@@ -1641,7 +1662,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    for(let k=0;k<ribbonStride;k++){
     const at=(base+j*ribbonStride+k)*3;
     const layer=Math.floor(k/2);
-     const tone=v67ScalpMatchedLockTone(wigRoot,box,t,i,layer)*
+     // The temple and crown-over-side are dyed like the donor scalp
+     // farther along the root, so no sharp band divides top from side.
+     const seamBlendEnd=sadakoMaster&&
+      (zone.startsWith('temple')||crownOverSide)?.44:.30;
+     const tone=v67ScalpMatchedLockTone(wigRoot,box,t,i,layer,seamBlendEnd)*
       (1+.018*Math.sin(i*2.39996+layer*.91+t*8.6));
     colors[at]=shaded.r*tone;colors[at+1]=shaded.g*tone;
     colors[at+2]=shaded.b*tone;
@@ -1819,13 +1844,18 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     (.43+.57*THREE.MathUtils.smoothstep(t,0,.24)):
     (strand.fringe?.48:.28)+
     (strand.fringe?.52:.72)*THREE.MathUtils.smoothstep(t,0,.30);
+   // Keep every follicle and guide; remove the wide planar appearance
+   // by narrowing ONLY the Sadako side-facing rendered ribbons.
+   const sideBlend=sadakoMaster?sadakoSideRibbonBlend(
+    strand.zone,strand.crownOverSide,t):null;
    const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
      (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
     (strand.zone.startsWith('fringe')?.52:
      strand.zone.startsWith('temple')?.90:
      strand.zone==='crown'?.49:
      strand.zone.startsWith('back')?.88:
-     strand.zone.startsWith('nape')?.82:.86);
+     strand.zone.startsWith('nape')?.82:.86)*
+    (sideBlend?.widthScale??1);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
     // The old world-X/world-Z crosses stuck through crown triangles like
     // needles; a tangent-plane ribbon lays on the rounded scalp instead.
@@ -1850,8 +1880,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     for(let k=0;k<ribbonStride;k++){
      const at=(i*(segments+1)*ribbonStride+j*ribbonStride+k)*3;
      const layer=Math.floor(k/2),sign=k%2===0?-1:1;
-     const thickness=half*(.10+layer*.085)*Math.sin(Math.PI*Math.min(.99,t));
-     const layerWidth=[1,.78,.55,.32][layer];
+     const thickness=half*(.10+layer*.085)*
+      (sideBlend?.thicknessScale??1)*Math.sin(Math.PI*Math.min(.99,t));
+     const layerWidth=sideBlend?.layerWidth??[1,.78,.55,.32][layer];
      const scale=sign*width*layerWidth,blend=layer/3;
      const strandSurface=d.x*.00014*Math.sin(t*19+i*.83+layer*1.21);
      let vx=p.x+sway+scale*(wx*(1-blend)+sx*blend)+nx*(thickness+strandSurface);
@@ -1862,10 +1893,13 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      if(sadakoMaster&&strand.zone==='crown'){
       // This side-swept top layer remains outside the temple and fringe
       // hair DOWN the upper side of the skull, not just at the whorl.
+      // The crown stays OUTSIDE its temple roots without a raised slab.
+      // Feather the overlap down the scalp rather than a hard ledge.
       const crownLift=Math.max(
-       sadakoCrownSurfaceLayerOffset(strand.zone,vy,t,box),
+       sadakoCrownSurfaceLayerOffset(strand.zone,vy,t,box)*
+        (strand.crownOverSide?.86:1),
        sadakoCrownSideOverlayOffset(strand.zone,vy,t,box,
-        strand.crownOverSide));
+        strand.crownOverSide)*(sideBlend?.crownLiftScale??1));
       if(crownLift){
        const hx=vx-center.x,hz=vz-center.z;
        const hy=Math.max(0,(vy-center.y)*.85);
