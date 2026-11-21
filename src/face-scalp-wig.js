@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-five-variants-v65';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-invisible-perm-rods-v66';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1072,58 +1072,92 @@ export function createSadakoCrownFlow(cap,box,color){
 /** Head-local modifiers for the FIVE Sadako descendants.
  * Exact approved scalp roots, crown-side card shape and collision are reused.
  * Changes start below the crown. The root at t=0 is always unchanged. */
+/** Invisible salon perm rods: the rods are purely parametric frames.
+ * We wrap the free guide around their circular cross-section. No physical
+ * cylinder is attached or rendered, so only the finished HAIR is visible.
+ * Roots, crown seam, follicles and collision rules are unchanged. */
+export function sadakoInvisiblePermRodOffset(variant,t,{
+ side=1,rootIndex=0,width=1,depth=1
+}={}){
+ const u=THREE.MathUtils.clamp(t,0,1);
+ if(variant==='inward'||variant==='outward'){
+  const start=.56,span=1-start;
+  if(u<=start)return {x:0,y:0,z:0};
+  const pct=THREE.MathUtils.clamp((u-start)/span,0,1);
+  // Lower 44% wraps just over three quarters of a full rod turn:
+  // downward curve, outward apex, then a visible UP-TURNED tip.
+  const angle=1.54*Math.PI*pct;
+  const radius=width*(variant==='inward'?.174:.205);
+  const direction=variant==='inward'?-side:side;
+  return {
+   x:direction*radius*(1-Math.cos(angle)),
+   y:-radius*Math.sin(angle),
+   z:(variant==='inward'?1:-1)*depth*.10*(1-Math.cos(angle))
+  };
+ }
+ if(variant==='sauvage'){
+  const start=.205,phaseOffset=Math.floor(rootIndex/14)*.16;
+  const u2=THREE.MathUtils.clamp((u-start)/(1-start),0,1);
+  const envelope=u2*u2*(3-2*u2);
+  const theta=u2*Math.PI*2*3.3+phaseOffset;
+  // Thin salon rods repeated over the entire midshaft and lower hair.
+  // Deterministic clumps prevent static noise or detached flat strands.
+  return {
+   x:width*.152*envelope*Math.sin(theta),
+   y:width*.027*envelope*Math.sin(theta*2),
+   z:depth*.118*envelope*(Math.cos(theta)-Math.cos(phaseOffset))
+  };
+ }
+ return {x:0,y:0,z:0};
+}
+
+/** Apply rolled or face-parted guides WITHOUT moving the scalp follicle.
+ * A centre part opens the eyes; a short, actual bang is TRIMMED at brow.
+ * Other frontal crown locks sweep to the side rather than crossing pupils.
+ */
 export function sadakoVariantGuideOffset(variant,t,{
  side=1,front=false,zone='crown',rootIndex=0,width=1,depth=1
 }={}){
  const u=THREE.MathUtils.clamp(t,0,1);
  const smooth=(a,b)=>THREE.MathUtils.smoothstep(u,a,b);
- if(variant==='inward'){
-  const end=smooth(.60,.98);
-  return {x:-side*width*.088*end,z:depth*.020*end,y:0};
- }
- if(variant==='outward'){
-  const end=smooth(.61,.98);
-  return {x:side*width*.098*end,z:-depth*.018*end,y:0};
- }
- if(variant==='sauvage'){
-  const wave=smooth(.22,.43);
-  const phase=(u-.21)*Math.PI*7.4+Math.floor(rootIndex/11)*.38;
-  return {x:width*.055*wave*Math.sin(phase),
-   z:depth*.037*wave*Math.cos(phase),y:width*.012*wave*Math.sin(phase*2)};
- }
+ if(variant==='inward'||variant==='outward'||variant==='sauvage')
+  return sadakoInvisiblePermRodOffset(variant,u,{
+   side,rootIndex,width,depth});
  if(variant==='center'&&front){
-  // Move down-growing facial curtains AROUND eyes without moving roots,
-  // preserving a true parted front rather than a bald artificial cap.
-  return {x:side*width*.245*smooth(.08,.34),
-   z:-depth*.012*smooth(.13,.4),y:0};
+  const open=smooth(.055,.31);
+  return {x:side*width*.35*open,
+   y:0,z:-depth*.038*smooth(.16,.38)};
  }
  if(variant==='bangs'&&front){
-  const fringeTip=smooth(.09,.90);
-  // Keep the bang mesh on the face plane, not a flat plate sticking out.
-  return {x:width*.009*Math.sin(rootIndex*2.39996)*fringeTip,
-   z:depth*.018*fringeTip,y:0};
+  // Crown canopy continues long, opening the eyes on both sides.
+  // Only explicitly selected fringe guides finish at eyebrow height.
+  return {x:side*width*.34*smooth(.075,.33),
+   y:0,z:-depth*.034*smooth(.13,.38)};
  }
  return {x:0,y:0,z:0};
 }
 
-/** Mutate guide free ends ONLY; callers keep all original donor roots.
- * Fringe variant stops just ABOVE the eyes, centre part opens both pupils.
- * Curled lengths retain the parent mantle/shoulder collision solver. */
 export function shapeSadakoVariantGuide(points,{variant='straight',
- box,zone='crown',side=1,rootIndex=0,front=false}={}){
+ box,zone='crown',side=1,rootIndex=0,front=false,bangsCut=false}={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  if(variant==='straight')return points;
  const d=box.getSize(new THREE.Vector3()),root=points[0];
  for(let j=1;j<points.length;j++){
   const t=j/(points.length-1),p=points[j];
+  // Unseen perm-rod cross-section is sampled into the visible hair guide.
   const delta=sadakoVariantGuideOffset(variant,t,{
    side,front,zone,rootIndex,width:d.x,depth:d.z});
   p.x+=delta.x;p.y+=delta.y;p.z+=delta.z;
-  if(variant==='bangs'&&front){
-   const browY=box.min.y+d.y*(.765+.014*Math.sin(rootIndex*.73));
+  if(variant==='bangs'&&bangsCut){
+   const browY=box.min.y+d.y*(.767+.007*Math.sin(rootIndex*.73));
    const tipY=Math.min(root.y-d.y*.055,browY);
-   const blend=THREE.MathUtils.smoothstep(t,.025,.94);
+   // True trimmed mesh, not a full-length curtain folded back on itself.
+   const blend=THREE.MathUtils.smoothstep(t,0,1);
    p.y=THREE.MathUtils.lerp(root.y,tipY,blend);
+   // Short fringe stays in front of the brow. Its sides are graduated
+   // but are not pushed outwards like the remaining long crown curtains.
+   p.x-=side*d.x*.34*THREE.MathUtils.smoothstep(t,.075,.33);
+   p.z+=d.z*.045*THREE.MathUtils.smoothstep(t,.075,.50);
   }
  }
  return points;
@@ -1548,6 +1582,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const rearFacing=back||(zone==='crown'&&wigRoot.z<center.z-d.z*.03);
   const overFace=!crownOverSide&&!back&&!zone.startsWith('temple')&&
    frontRoot&&midFace;
+  // Face-covering crown strands are not ONLY the 1-in-6 non-overlaid
+  // crown guides: the other 5-in-6 covered the pupils in v65.
+  const faceFrame=sadakoGravity&&(fringe||
+   (zone==='crown'&&frontRoot&&midFace));
+  const bangsCut=sadakoVariant==='bangs'&&(fringe||overFace);
   if(overFace&&!sadakoGravity)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
@@ -1582,6 +1621,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const shortLength=cutKind==='buzz'?(battleStableCoverage?.088:.032):
    cutKind==='very-short'?(battleStableCoverage?.115:.060):.15;
   const length=cutKind?d.y*shortLength*(.84+.26*fract(i*.618)):
+   bangsCut?d.y*(.21+.024*fract(i*.618)):
    sadakoGravity?d.y*(longFactor+fract(i*.381966)*.13)*
     clamp(lengthScale,minLengthScale,1.5)*(style.styleLength||1):
    (fringe||overFace)?
@@ -1590,7 +1630,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (style.styleLength||1);
   const rest=[],points=[],vel=[];
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
-  const baseTrimY=sadakoGravity?wigRoot.y-length*1.04:cutKind?wigRoot.y-length*1.06:
+  const baseTrimY=bangsCut?box.min.y+d.y*(.760+.008*Math.sin(i*.73)):
+   sadakoGravity?wigRoot.y-length*1.04:cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
      hairCutY(zone,box,lengthScale,i,lateral,minLengthScale)+
@@ -1657,7 +1698,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
    if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
     variant:sadakoVariant,box,zone,side:partSide,
-    rootIndex:i,front:fringe||overFace
+    rootIndex:i,front:faceFrame,bangsCut
    });
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
@@ -1720,7 +1761,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      zone.startsWith('temple')))sadakoGuideScalpPushes++;
   for(let j=1;j<=segments;j++)points[j].copy(rest[j]);
   strands.push({root:wigRoot,rest,points,vel,fringe,side,crownOverSide,rearFacing,
-   zone,seedIndex:seed.index,trimY,overFace,partSide,
+   zone,seedIndex:seed.index,trimY,overFace,partSide,faceFrame,bangsCut,
    gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
   const base=i*(segments+1)*ribbonStride;
   for(let j=0;j<=segments;j++){
@@ -2461,10 +2502,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoVariant:sadakoMaster?sadakoVariant:null,
   sadakoVisibleEyes:sadakoMaster&&(sadakoVariant==='center'||sadakoVariant==='bangs'),
   sadakoCurlShape:sadakoMaster?({
-   straight:'gravity-straight',inward:'inward-tail-curl',
-   outward:'outward-tail-flip',sauvage:'middle-to-tip-s-wave',
-   center:'eye-clear-center-part',bangs:'short-brow-fringe'
+   straight:'gravity-straight',
+   inward:'invisible-perm-rod-inward-tail-loop-v66',
+   outward:'invisible-perm-rod-outward-tail-loop-v66',
+   sauvage:'invisible-thin-rod-multi-wave-v66',
+   center:'full-crown-curtain-eye-clear-v66',
+   bangs:'physical-brow-cut-plus-curtain-sweep-v66'
   })[sadakoVariant]:null,
+  sadakoInvisibleRodGeometryRendered:false,
+  sadakoFaceFrameLocks:sadakoMaster?strands.filter(s=>s.faceFrame).length:0,
+  sadakoActualBrowCutLocks:sadakoMaster?strands.filter(s=>s.bangsCut).length:0,
   closeCutFibreCount:closeCutFibres?.userData.fibreCount||0,
   closeCutPigmentHex:closeCutFibres?.userData.selectedPigmentHex||null,
   closeCutFibreShadeRange:closeCutFibres?.userData.fibreShadeRange||null,
