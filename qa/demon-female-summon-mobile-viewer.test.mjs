@@ -175,6 +175,8 @@ for(const id of FEMALE_SUMMON_FORM_IDS){
    }
    assert.equal(fixture.owned.filter(n=>n.name.includes('seraph-primary-')).length,0,
     'Do not use nine serrated cardboard feather strips');
+   assert.equal(fixture.owned.filter(n=>/canthal-liner|temple-mark/.test(n.name)).length,0,
+    'Angel must have no pale whisker-like tubes over its mouth');
   }
  }
  if(id==='forest_archer')
@@ -204,6 +206,8 @@ assert.match(gallery,/FEMALE_SUMMON_FORM_IDS.includes\(selected\)/);
 assert.match(gallery,/createCosplayedHumanoidMonster\(spec,\{/);
 assert.match(gallery,/withoutFallback:true/);
 assert.match(gallery,/femaleSummonHandle\?\.update\(t\)/);
+assert.match(gallery,/femaleMode\.value=selected==='dragon_lord'\?'original':'female'/,
+ 'Dragon Lord must default to original dragon, not a human variant');
 assert.match(gallery,/femaleFlightAltitude=\(\.76\+\.11\*Math\.sin\(t\*1\.85\)\)\*SUMMON_WORLD_SCALE/,
  'Seraph female must visibly float above ground');
 assert.match(gallery,/femaleSummonHandle\.root\.position\.y=femaleFlightAltitude/,
