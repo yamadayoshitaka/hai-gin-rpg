@@ -6,16 +6,16 @@
  * A stage is a geometric change, NOT proof of improved visual aesthetics.
  */
 export const NONHUMAN_QUALITY_PROGRESS=Object.freeze({
-  cycle:9,
+  cycle:10,
   buildingDetails:1,
-  beast:1,
-  canineCoat:1,
-  feline:1,
-  avian:1,
-  reptile:1,
-  insect:1,
-  arachnid:1,
-  aquatic:1,
+  beast:2,
+  canineCoat:2,
+  feline:2,
+  avian:2,
+  reptile:2,
+  insect:2,
+  arachnid:2,
+  aquatic:2,
 });
 
 export const NONHUMAN_QUALITY_LIMITS=Object.freeze({
