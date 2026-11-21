@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-fibre-only-v24';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-native-cut-v25';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
