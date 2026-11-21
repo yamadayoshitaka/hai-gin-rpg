@@ -132,6 +132,39 @@ export function createGargoyleLimbGeometry({detail='high',part='upperArm'}={}){
   {y:-len*1.04,rx:bottom*.82,rz:bottom*.75}
  ],detail,{kind:'gargoyle-tapered-'+part,ridge:.016,grain:.030});
 }
+/** Two edged, pointed gothic sword blade with a raised central ridge. */
+export function createGargoyleSwordBladeGeometry({detail='high'}={}){
+ const stations=detail==='low'?[
+  {y:0,w:.057},{y:-.36,w:.068},{y:-.79,w:.0015}
+ ]:[
+  {y:0,w:.052},{y:-.16,w:.062},{y:-.41,w:.066},
+  {y:-.67,w:.043},{y:-.84,w:.0015}
+ ];
+ const verts=[],uv=[],indices=[],section=6;
+ for(let i=0;i<stations.length;i++){
+  const {y,w}=stations[i],d=.017*(w/.066)+.002;
+  for(const [x,z] of [[-w,0],[-w*.47,-d],[w*.47,-d],
+   [w,0],[w*.47,d],[-w*.47,d]]){
+   verts.push(x,y,z);uv.push((x/w+1)*.5,i/(stations.length-1));
+  }
+  if(i)for(let k=0;k<section;k++){
+   const a=(i-1)*section+k,b=(i-1)*section+(k+1)%section,
+    c=i*section+k,d=i*section+(k+1)%section;
+   indices.push(a,c,b,b,c,d);
+  }
+ }
+ for(let k=1;k<section-1;k++){
+  indices.push(0,k+1,k);
+  const end=(stations.length-1)*section;
+  indices.push(end,end+k,end+k+1);
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(indices);g.computeVertexNormals();
+ g.userData={kind:'gargoyle-sword-double-edge',detail};
+ return g;
+}
 /** Curved backward-facing horn/crown or finger claw, NOT a rounded sphere. */
 export function createGargoyleSpireGeometry({
  detail='high',height=.29,width=.046,curve=.13,side=1
@@ -277,7 +310,8 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
     frames.hands?.length!==2||frames.feet?.length!==2)
   throw Error('m042 needs full head, chest, hip, upper/lower limbs and hands/feet');
  const near=!far(detail);
- let count=0,wingCount=0,clawCount=0;
+ let count=0,wingCount=0,clawCount=0,swordCount=0;
+ const wingPivots=[];
  const add=(frame,g,role,name,pos=[0,0,0],rotation=[0,0,0])=>{
   if(!frame)return null;
   const m=attach(frame,g,role,'gargoyle-m042-'+name,pos,rotation);
@@ -417,10 +451,23 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
     ],.007);
    }
   }
-  // Broad asymmetric finger-bone wings with layered scarred stone membrane.
-  add(frames.chest,createGargoyleWingGeometry({detail,side}),
-   'gargoyleMembrane','scalloped-leather-stone-wing-'+i);
+  // Wing and all its ribs share the same shoulder-rooted flight pivot.
+  const wingPivot=new THREE.Group();
+  wingPivot.name='gargoyle-m042-flight-wing-pivot-'+i;
+  wingPivot.position.set(side*.132,.31,-.35);
+  wingPivot.userData.gargoyleWingSide=side;
+  frames.chest.add(wingPivot);wingPivots.push(wingPivot);
+  // Offset authored chest-space geometry to preserve the rest silhouette.
+  add(wingPivot,createGargoyleWingGeometry({detail,side}),
+   'gargoyleMembrane','scalloped-leather-stone-wing-'+i,
+   [-side*.132,-.31,-.35]);
   wingCount++;
+  const wingLine=(role,name,pts,radius)=>{
+   const mesh=line(wingPivot,role,name,pts,radius);
+   // attach() has already mirrored original Z to the canonical actor.
+   if(mesh)mesh.position.set(-side*.132,-.31,.35);
+   return mesh;
+  };
   // Raised wing finger bones follow the SAME sweep as the real membrane.
   // Previously these were straight, floating rods far in front of the wing.
   const wingTop=u=>.31+.87*Math.sin(u*Math.PI*.69)+.13*u;
@@ -438,15 +485,26 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   for(let k=0;k<(near?4:3);k++){
    const reach=.42+k*.17;
    const v=.12+k*.13;
-   line(frames.chest,'gargoyleWingVein','wing-articulated-rib-'+i+'-'+k,[
+   wingLine('gargoyleWingVein','wing-articulated-rib-'+i+'-'+k,[
     wingPoint(.015,.12),wingPoint(reach*.55,v*.6),
     wingPoint(reach,v)
    ],near?.011:.018);
   }
-  line(frames.chest,'gargoyleRidge','wing-root-to-shoulder-'+i,[
+  wingLine('gargoyleRidge','wing-root-to-shoulder-'+i,[
    wingPoint(0,.20),wingPoint(.21,.09),
    wingPoint(.42,.04)],.016);
  }
+ // The sword is attached to the right hand BONE, not a static world prop.
+ // Its tip points down in idle and follows native attack arm animation.
+ const swordHand=frames.hands[1];
+ add(swordHand,new THREE.CylinderGeometry(.027,.03,.20,far(detail)?8:12),
+  'gargoyleHilt','sword-leather-grip',[0,-.13,-.025]);swordCount++;
+ add(swordHand,new THREE.BoxGeometry(.244,.030,.045),
+  'gargoyleHilt','sword-crossguard',[0,-.238,-.025]);swordCount++;
+ add(swordHand,createGargoyleSwordBladeGeometry({detail}),
+  'gargoyleBlade','sword-faceted-blade',[0,-.256,-.025]);swordCount++;
+ add(swordHand,new THREE.OctahedronGeometry(.040,0),
+  'gargoyleHilt','sword-pommel',[0,.006,-.025]);swordCount++;
  add(frames.pelvis,createGargoyleTailGeometry({detail}),
   'gargoyleStone','long-jointed-stone-tail');
  const endX=.20*Math.sin(4.7),endZ=1.15+.16*Math.sin(3.4);
@@ -464,6 +522,8 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
  frames.chest.userData.golemShellParts=count;
  frames.chest.userData.gargoyleMeshCount=count;
  frames.chest.userData.gargoyleWingCount=wingCount;
+ frames.chest.userData.gargoyleWingPivots=wingPivots;
  frames.chest.userData.gargoyleClawCount=clawCount;
+ frames.chest.userData.gargoyleSwordCount=swordCount;
  return true;
 }
