@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {tuneWorldQualityMaterial} from './world-quality-pbr.js';
+import {BATTLE_BRIDGE_WIDTH_CELLS,BATTLE_BRIDGE_HALF_WIDTH_CELLS} from './battle-wide-bridge-clearance.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js?v=4.6.28';
 
@@ -185,10 +186,10 @@ export const OBJECT_CATALOG=Object.freeze({
  stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2},rangedAttackFromInside:true,openings:[{side:'south',kind:'door',widthCells:2},{side:'west',kind:'window',widthCells:2},{side:'east',kind:'window',widthCells:2}]},
  swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
  rocky_mountain_001:{id:'rocky_mountain_001',name:'岩山',category:'地形',kind:'mountain',widthCells:9,depthCells:9,passable:false},
- timber_bridge_001:{id:'timber_bridge_001',name:'木製の橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:1,passable:true},
- stone_bridge_001:{id:'stone_bridge_001',name:'石橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:3,passable:true},
- timber_bridge_broken_001:{id:'timber_bridge_broken_001',name:'壊れた木橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:1,passable:false},
- stone_bridge_broken_001:{id:'stone_bridge_broken_001',name:'崩れた石橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:3,passable:false},
+ timber_bridge_001:{id:'timber_bridge_001',name:'木製の橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:BATTLE_BRIDGE_WIDTH_CELLS,passable:true},
+ stone_bridge_001:{id:'stone_bridge_001',name:'石橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:BATTLE_BRIDGE_WIDTH_CELLS,passable:true},
+ timber_bridge_broken_001:{id:'timber_bridge_broken_001',name:'壊れた木橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:BATTLE_BRIDGE_WIDTH_CELLS,passable:false},
+ stone_bridge_broken_001:{id:'stone_bridge_broken_001',name:'崩れた石橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:BATTLE_BRIDGE_WIDTH_CELLS,passable:false},
 });
 export function createObjectById(id,{cellSize=2.2}={}){
  if(!OBJECT_CATALOG[id])throw Error('Unknown object: '+id);
@@ -1558,12 +1559,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
  }
  const root=new THREE.Group();root.name=id;
  if(stoneBridge){
-  const stone=new THREE.MeshStandardMaterial({color:0x9a9b98,roughness:1}),mortar=new THREE.MeshStandardMaterial({color:0x656866,roughness:1}),coping=new THREE.MeshStandardMaterial({color:0xb5b4aa,roughness:.95});
+  const stone=new THREE.MeshStandardMaterial({color:0x919995,roughness:.93}),mortar=new THREE.MeshStandardMaterial({color:0x565d58,roughness:1}),coping=new THREE.MeshStandardMaterial({color:0xb8b7aa,roughness:.88});
   const add=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m)};
-  const L=15*cellSize,W=3*cellSize;
-  // Three walkable tile lanes, fifteen tiles along the bridge.
-  for(let x=0;x<15;x++)for(let z=0;z<3;z++){
-   const px=(x-7)*cellSize,pz=(z-1)*cellSize;
+  const L=15*cellSize,W=BATTLE_BRIDGE_WIDTH_CELLS*cellSize;
+  // Nine collision and walking lanes; the wide stone model matches battle navigation.
+  for(let x=0;x<15;x++)for(let z=0;z<BATTLE_BRIDGE_WIDTH_CELLS;z++){
+   const px=(x-7)*cellSize,pz=(z-BATTLE_BRIDGE_HALF_WIDTH_CELLS)*cellSize;
    if(!broken||x<6||x>9){add(cellSize*.985,.24,cellSize*.985,px,0,pz,stone)}
    if(!broken||x<6||x>9)for(let k=0;k<3;k++)add(cellSize*.3,.018,.025,px+(k-1)*cellSize*.3,.13,pz+cellSize*.2,mortar);
   }
@@ -1581,21 +1582,21 @@ export function createObjectById(id,{cellSize=2.2}={}){
   }
   for(const x of [-5,0,5])for(const side of [-1,1])add(.85,2.3,.85,x*cellSize,-1.4,side*(W/2-.45),mortar);
   if(broken)for(let i=0;i<13;i++){const x=((i*7)%17-8)*cellSize*.35,z=((i*5)%7-3)*cellSize*.4;const rubble=new THREE.Mesh(new THREE.DodecahedronGeometry(.2+(i%4)*.12,0),i%3?stone:mortar);rubble.position.set(x,-1.4-(i%3)*.2,z);rubble.rotation.set(i*.4,i*.7,i*.2);root.add(rubble)}
-  root.userData.catalogId=id;root.userData.footprint={lengthCells:15,widthCells:3};root.userData.passable=!broken;return root;
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:15,widthCells:BATTLE_BRIDGE_WIDTH_CELLS};root.userData.passable=!broken;return root;
  }
 
  const deck=new THREE.MeshStandardMaterial({color:0x8b6540,roughness:.92}),wood=new THREE.MeshStandardMaterial({color:0x4f3828,roughness:.95});
  const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m)};
- const length=15*cellSize;
- for(let i=0;i<15;i++)if(!broken||i<6||i>9)box(cellSize*.97,.16,cellSize*1.25,(i-7)*cellSize,0,0,deck);
- for(const side of [-1,1]){const z=side*cellSize*.58;
- if(!broken){box(length,.25,.23,0,-.3,side*cellSize*.42,wood);box(length,.16,.16,0,1.1,z,wood);box(length,.1,.13,0,.57,z,wood)}
- for(let i=0;i<15;i++)if(broken&&(i<6||i>9)){box(cellSize*.96,.25,.23,(i-7)*cellSize,-.3,side*cellSize*.42,wood);box(cellSize*.96,.16,.16,(i-7)*cellSize,1.1,z,wood);box(cellSize*.96,.1,.13,(i-7)*cellSize,.57,z,wood)}
+ const length=15*cellSize,W=BATTLE_BRIDGE_WIDTH_CELLS*cellSize;
+ for(let i=0;i<15;i++)if(!broken||i<6||i>9)box(cellSize*.97,.25,W*.99,(i-7)*cellSize,0,0,i%3===0?wood:deck);
+ for(const side of [-1,1]){const z=side*(W/2+.13);
+ if(!broken){box(length,.25,.23,0,-.3,side*(W/2-.35),wood);box(length,.16,.16,0,1.1,z,wood);box(length,.1,.13,0,.57,z,wood)}
+ for(let i=0;i<15;i++)if(broken&&(i<6||i>9)){box(cellSize*.96,.25,.23,(i-7)*cellSize,-.3,side*(W/2-.35),wood);box(cellSize*.96,.16,.16,(i-7)*cellSize,1.1,z,wood);box(cellSize*.96,.1,.13,(i-7)*cellSize,.57,z,wood)}
  for(let i=0;i<15;i+=2)if(!broken||i<6||i>9)box(.18,1.2,.18,(i-7)*cellSize,.57,z,wood);
- for(const i of [-5,0,5])box(.34,2.7,.34,i*cellSize,-1.4,side*cellSize*.4,wood);
+ for(const i of [-5,0,5])box(.34,2.7,.34,i*cellSize,-1.4,side*(W/2-.45),wood);
  }
  if(broken)for(let i=0;i<9;i++){const plank=new THREE.Mesh(new THREE.BoxGeometry(cellSize*.6,.13,.28),deck);plank.position.set(((i*7)%11-5)*cellSize*.35,-1.1-(i%3)*.14,((i*3)%5-2)*cellSize*.4);plank.rotation.y=i*.41;root.add(plank)}
- root.userData.catalogId=id;root.userData.passable=!broken;return root;
+ root.userData.catalogId=id;root.userData.footprint={lengthCells:15,widthCells:BATTLE_BRIDGE_WIDTH_CELLS};root.userData.passable=!broken;return root;
 }
 
 
