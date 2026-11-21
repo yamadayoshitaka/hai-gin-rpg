@@ -176,11 +176,13 @@ export function addFemaleSummonCostume({profile,frames,detail='high',attach,tube
  const type=profile.costume;
  for(const side of [-1,1]){
   const i=side<0?0:1;
-  const liner=type==='forest_spirit_female'?'makeup':'lip';
-  if(!['dragonkin_female','dragonkin_male'].includes(type)){
+  // These two head-anchored tubes became a WHITE V-SHAPED MOUSTACHE
+  // on the seraph because donor Head coordinates differ from costume space.
+  // Retain forest elf eyeliner; native angel eyelids remain untouched.
+  if(type==='forest_spirit_female'){
    // Dragon Lord has its own close-fitting eye sockets. These common
    // heavy face lines would stack into the black goggle-like band.
-   line(frames.head,liner,'canthal-liner-'+side,[
+   line(frames.head,'makeup','canthal-liner-'+side,[
     [side*.016,.058,-.132],[side*.061,.074,-.143],
     [side*.121,.089,-.108]],.006);
    line(frames.head,'rune','temple-mark-'+side,[
