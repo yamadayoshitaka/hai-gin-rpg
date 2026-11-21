@@ -110,6 +110,8 @@ jobs:
       - name: Verify 16 humanoid monster 2D-reference sculpt and 4 LODs
         # Never publish a broken humanoid costume or non-bone-attached overlay.
         run: node --test qa/monster-humanoid-concept-finish.test.mjs
+      - name: Verify all 5 golems fully replace exposed human skin and clothing
+        run: node --test qa/monster-golem-full-shell.test.mjs qa/monster-16-cosplay-pigment-regression.test.mjs
       - name: Verify 4 beetle species actual 3D anatomy, PBR and donor preservation
         id: qa_m024_concept
         # Block Pages publication if any 3D beetle cannot be constructed.
