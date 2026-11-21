@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head>
-<!-- Pages publication: v53 Sadako hairline native clip + area coverage 2026-11-21 -->
+<!-- Pages publication: v54 Sadako curved centre-part, board removal and unified volume controls 2026-11-21 -->
 <!-- Pages publication: v30 scalp coverage cdaab952; 2026-11-21 --><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -764,7 +764,6 @@ function rebuildWig(){
   v32PartMode?null:wigStyleId);
  Object.assign(v32Parts.female,chosen.parts);wigStyleId=chosen.styleId;
  $('quickWigStyle').value=chosen.styleId;
- $('quickWigStyle').value=chosen.styleId;
  $('wigVolume').value=v32Parts.female.hairVolume;
  $('activeHairStyle').textContent='再生成：'+($('quickWigStyle').selectedOptions[0]?.textContent||chosen.styleId);
  performanceMetrics.wigRebuilds++;
@@ -1004,6 +1003,7 @@ function syncFaceControlDisplays(){
 // This must NOT reset user edits: modelChanges/contactColor remain canonical.
 window.addEventListener('pageshow',()=>{
  syncFaceControlDisplays();
+ $('wigVolume').value=v32Parts.female.hairVolume;
  $('quickWigStyle').value=wigStyleId;
 });
 for(const key of [...rebuildKeys,...cosmeticKeys,...angleKeys]){
