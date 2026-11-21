@@ -494,6 +494,11 @@ export function createRealtimeBattleCommands({
    if(known){
     const floors=Math.max(1,Math.min(12,Number(known.floors)||1));
     const level=clamp(Number(inspectedBuilding.floor)||1,1,floors);
+    const detailKey='building:'+String(known.id)+':'+level;
+    // Inspect-mode redraws every 330 ms. Do not destroy an open mobile
+    // <select> while the player is choosing a building floor.
+    if(detail.dataset?.inspectorKey===detailKey)return;
+    detail.dataset.inspectorKey=detailKey;
     detail.replaceChildren();
     const heading=doc.createElement('strong');
     heading.textContent='🏠 '+String(known.label||'建物')+'｜階数を選択';
@@ -520,6 +525,7 @@ export function createRealtimeBattleCommands({
    }
    inspectedBuilding=null;
   }
+  detail.dataset.inspectorKey='';
   const pin=inspectedMapPin;
   if(!pin){detail.textContent='🔵 味方・🔴 敵の番号をタップすると、人数・HP/MP・作戦・行動状態・強化/弱体を表示します。';return;}
   const data=getSquadDetails(pin.team,pin.id,pin.groupId)||{};
