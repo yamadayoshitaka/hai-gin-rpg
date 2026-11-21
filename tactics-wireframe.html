@@ -906,7 +906,7 @@ body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261121-three-team-item-target';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261121-formation-signature';
 import {createBattleCaptureObjective} from './src/battle-capture-objective.js?v=20261121-capture-goal';
 import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
@@ -916,7 +916,7 @@ import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-readonly-inspect';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-preplaced-deploy';
 import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
@@ -11076,6 +11076,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
     hp:stats.reduce((n,u)=>n+(u.hp>0?u.hp:0),0),
     maxHp:stats.reduce((n,u)=>n+(Number(u.maxHp)||0),0)};
   }):null,
+ onPrebattleMusic:()=>{battleAudio.setPhase('march');return battleAudio.unlock();},
  getInitialTeamPlan:team=>{
   const group=Number(team?.groupId)||1,saved=storyRequest?.initialTeamPlans?.[String(group)]||{};
   const ids=squadIds.filter(id=>Number(armyGroupBySquad[id])===group);
@@ -12856,11 +12857,12 @@ async function finishBattleLoading(){
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}
   battleReady=true;
   setBattlePaused(true);
+  battleAudio.setPhase('march'); // Music starts at the first Android user gesture during positioning.
   loading.hidden=true;
   initialCommanderCinematicPending=null;
   document.body.classList.add('battle-realtime-clean');
-  // Entry is the ordinary in-battle radar. The player explicitly expands it
-  // to position each real squad and choose every initial team strategy.
+  // Enter the full initial placement map directly, with legal tiles colored
+  // and already-positioned real squads. No extra radar tap is required.
   realtimeCommandUI?.openDeployment();
   clock.getDelta();
   log('開戦前：初期配置を決めてからリアルタイム戦闘を開始します');
