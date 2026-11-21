@@ -221,3 +221,63 @@
 @media(min-width:690px){.sortieWizardChoices{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-height:650px){#panel.formation-command-ui .sortieWizardChoices button{min-height:58px!important;padding:6px 10px!important}
  .sortieWizardHeader{gap:3px;padding-bottom:5px}.sortieWizard{gap:5px!important}}
+
+/* Inn wizard v2: a single column of strategy choices, classic mini-map cards. */
+#panel.formation-command-ui .sortieWizardHeader{
+ position:relative!important;inset:auto!important;z-index:auto!important;
+ display:grid!important;align-items:start!important;justify-content:stretch!important;
+ background:transparent!important;backdrop-filter:none!important;
+ border:0!important;border-bottom:1px solid #5d7690!important;
+ padding:4px 2px 10px!important;width:100%;min-height:0!important;
+}
+#panel.formation-command-ui .sortieWizardChoices{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+#panel.formation-command-ui .sortieWizardChoices button{
+ display:grid!important;grid-template-columns:50px minmax(0,1fr);
+ align-items:center;justify-items:start;min-height:95px!important;
+ padding:11px 13px!important;gap:10px!important;
+}
+.sortieWizardStrategyIcon{font-size:31px;line-height:1;display:grid;place-items:center;min-width:42px;min-height:44px}
+.sortieWizardStrategyDetails{display:grid;gap:5px;min-width:0;width:100%}
+.sortieWizardStrategyDetails b{font-size:17px!important}
+.sortieWizardStrategyDetails small{display:block;font-size:12px!important;line-height:1.4}
+#panel.formation-command-ui .sortieWizardFormationChoices{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;
+}
+#panel.formation-command-ui .sortieWizardFormationChoices button{
+ position:relative;display:grid;grid-template-columns:minmax(0,1fr);
+ justify-items:center;align-content:start;text-align:center;gap:5px;
+ min-width:0;min-height:174px!important;padding:11px 5px 8px!important;
+ white-space:normal;overflow:visible;border-radius:9px
+}
+.sortieWizardFormationTitle{display:flex;align-items:center;justify-content:center;gap:4px;
+ min-width:0;max-width:100%;font-size:13px;line-height:1.3;overflow-wrap:anywhere}
+.sortieWizardFormationTitle b{font-size:13px!important;line-height:1.3}
+.sortieWizardFormationIcon{font-size:19px;line-height:1;flex-shrink:0}
+.sortieWizardFormationChoices .sortieWizardOldMiniGrid{
+ display:grid;grid-template-columns:repeat(4,15px)!important;grid-template-rows:repeat(4,15px)!important;
+ gap:3px!important;justify-content:center;align-content:center;margin:2px auto;
+}
+.sortieWizardFormationChoices .sortieWizardOldMiniGrid i{
+ display:grid;place-items:center;width:15px;height:15px;line-height:1;
+ font:700 9px system-ui;color:#0f2534;border:1px solid #7897a9;border-radius:3px;
+}
+.sortieWizardFormationChoices .sortieWizardOldMiniGrid i.occupied{
+ color:#162a3c;background:#e6bd75;border-color:#ffe5ad;
+}
+.sortieWizardFormationChoices button>small{font-size:10px!important;line-height:1.35;max-width:100%;
+ overflow-wrap:anywhere;color:#d7e6f1}
+.sortieWizardFormationChoices button .sortieWizardFormationBonus{font-size:11px!important;color:#ffe3af}
+.sortieWizardFormationChoices button.selected{border-color:#f2c779!important;background:#56462d!important}
+.sortieWizardRecommended{position:absolute;top:3px;right:3px;font-size:9px;
+ color:#ffe4aa;background:#4b3e28;border-radius:4px;padding:2px 3px;}
+.sortieWizardHelp{font-size:11px;line-height:1.45;color:#bad3e0}
+@media(max-width:380px){
+ #panel.formation-command-ui .sortieWizardFormationChoices{gap:5px}
+ #panel.formation-command-ui .sortieWizardFormationChoices button{padding:9px 3px 6px!important}
+ .sortieWizardFormationTitle b{font-size:12px!important}
+}
+@media(max-height:680px){
+ #panel.formation-command-ui .sortieWizardChoices button{min-height:78px!important}
+ #panel.formation-command-ui .sortieWizardFormationChoices button{min-height:148px!important}
+ .sortieWizardStrategyIcon{font-size:27px}
+}

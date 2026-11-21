@@ -13,6 +13,8 @@ import {THREE_TEAM_STRATEGY_TYPES,savedThreeTeamStrategy,selectedThreeTeamStrate
 const FOUR_STRATEGY_FAMILIES=Object.freeze({attack:STRATEGY_TREE.attack,defense:STRATEGY_TREE.defense,
  balanced:{name:'バランス',intents:{...STRATEGY_TREE.support.intents,...STRATEGY_TREE.weaken.intents}},
  explore:{name:'探索',intents:{...STRATEGY_TREE.explore.intents,...STRATEGY_TREE.environment.intents}}});
+const STRATEGY_WIZARD_ICONS=Object.freeze({attack:'⚔️',defense:'🛡️',balanced:'⚖️',explore:'🧭'});
+const FORMATION_WIZARD_ICONS=Object.freeze({attack:'⚔️',balanced:'⚖️',support:'✨',wall:'🛡️',spear:'🔱',arrow:'🏹',wedge:'🔺',pincer:'🎯',circle:'🔄',ambush:'🌙',cross:'✚',fortress:'🏰',dragon:'🐉',constellation:'🌟'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class="'+(selected?'selected':'')+'">'+title+'</button>';
 
@@ -26,11 +28,11 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
  const total=teams.reduce((n,t)=>n+sortieTeamCount(t),0);
  const current=teams[Math.max(0,Math.min(2,Number(teamId)-1))];
  const step=view==='strategy'?1:view==='review'?5:current.id+1;
- const header='<header class="sortieWizardHeader"><small>作戦別・3隊陣形テンプレート　'+step+' / 5</small>'+
+ const header='<div class="sortieWizardHeader"><small>作戦別・3隊陣形テンプレート　'+step+' / 5</small>'+
   '<strong>'+(view==='strategy'?'どの作戦で戦う？':view==='review'?'3隊の編成を確認':rule.name+'：第'+current.id+'隊の陣形は？')+'</strong>'+
   '<span>'+(view==='strategy'?'作戦を1つ選ぶと、第1隊から順番に設定します。':
    view==='review'?'この組み合わせを「'+esc(rule.name)+'」のテンプレートとして保存します。':
-   '第'+current.id+'隊は最大3ジョブ。陣形を1つ選ぶと次の隊へ進みます。')+'</span></header>';
+   '第'+current.id+'隊は最大3ジョブ。陣形を1つ選ぶと次の隊へ進みます。')+'</span></div>';
  const back=view==='strategy'?'':button('data-sortie-plan-back="1"',view==='review'?'◀ 第3隊へ戻る':current.id===1?'◀ 作戦を選び直す':'◀ 第'+(current.id-1)+'隊へ戻る');
  let content='';
  if(view==='strategy'){
@@ -39,9 +41,10 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
     const saved=savedThreeTeamStrategy(game,id);
     const names=(saved?.teams?.map(t=>SORTIE_FORMATIONS[t.formation]?.name||'未設定')||
      suggestedThreeTeamFormations(game,id).map(key=>SORTIE_FORMATIONS[key]?.name||'未設定')).join(' / ');
-    return button('data-sortie-plan-strategy="'+id+'"',
-     '<b>'+esc(entry.name)+'</b><small>'+esc(entry.description)+'</small>'+
-     '<small>'+(saved?'保存済み：':'推奨：')+esc(names)+'</small>');
+    return button('data-sortie-plan-strategy="'+id+'" aria-label="'+esc(entry.name)+'の作戦を選択"',
+     '<span class="sortieWizardStrategyIcon" aria-hidden="true">'+(STRATEGY_WIZARD_ICONS[id]||'⚔️')+'</span>'+
+     '<span class="sortieWizardStrategyDetails"><b>'+esc(entry.name)+'</b><small>'+esc(entry.description)+'</small>'+
+     '<small>'+(saved?'保存済み：':'推奨：')+esc(names)+'</small></span>');
    }).join('')+'</div>';
  }else if(view==='formationPick'){
   const ids=orderedThreeTeamFormations(game,strategy),limit=4;
@@ -50,21 +53,32 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
   const suggestions=new Set(rule.recommended.flat());
   content='<div class="sortieWizardTeamState">現在：<b>'+esc(SORTIE_FORMATIONS[current.formation]?.name||'自由陣形')+
    '</b><small>第'+current.id+'隊 '+sortieTeamCount(current)+'人</small></div>'+
-   '<div class="sortieWizardChoices" role="group" aria-label="第'+current.id+'隊の陣形を1つ選択">'+
+   '<div class="sortieWizardFormationChoices" role="group" aria-label="従来の陣形一覧から第'+current.id+'隊を選択">'+
    ids.slice(page*limit,(page+1)*limit).map(id=>{
     const f=SORTIE_FORMATIONS[id],enabled=f.level<=sortieLevel(game);
-    const jobs=FORMATION_ROLES[id].slice(0,Math.min(3,f.slots)).map(x=>ROLE_NAMES[x]).join('・');
-    return button('data-sortie-plan-formation="'+id+'" '+(!enabled?'disabled':''),
-     '<b>'+esc(f.name)+(suggestions.has(id)?' <em>推奨</em>':'')+'</b>'+
-     '<small>'+f.slots+'ジョブ・'+esc(jobs)+' · Lv.'+f.level+(!enabled?' 未解放':'')+'</small>'+
-     '<small>攻撃 '+Math.round((f.attack||0)*100)+'% / 防御 '+Math.round((f.defense||0)*100)+
-     '% / 移動 '+Math.round((f.mobility||0)*100)+'%</small>',current.formation===id);
+    const roles=FORMATION_ROLES[id].slice(0,f.slots);
+    const jobs=roles.map(x=>ROLE_NAMES[x]).join('・');
+    const preview=Object.fromEntries(SORTIE_FORMATION_CELLS[id].slice(0,f.slots).map((cell,index)=>[cell,roles[index]]));
+    const grid=Array.from({length:16},(_,i)=>{
+     const role=preview[i];
+     return '<i class="'+(role?'occupied':'')+'" title="'+esc(ROLE_NAMES[role]||'空き')+'">'+
+      (role?esc(ROLE_NAMES[role].slice(0,1)):'')+'</i>';
+    }).join('');
+    return button('data-sortie-plan-formation="'+id+'" aria-label="'+esc(f.name)+'を選択" '+(!enabled?'disabled':''),
+     '<span class="sortieWizardFormationTitle"><span class="sortieWizardFormationIcon" aria-hidden="true">'+
+     (FORMATION_WIZARD_ICONS[id]||'⚔️')+'</span><b>'+esc(f.name)+'</b></span>'+
+     '<span class="sortieWizardOldMiniGrid sortieMiniGrid" aria-hidden="true">'+grid+'</span>'+
+     '<small>'+f.slots+'ジョブ · 最大'+f.maxTroops+'人'+(enabled?'':' · 🔒 Lv.'+f.level)+'</small>'+
+     '<small>'+esc(jobs)+'</small>'+
+     '<small class="sortieWizardFormationBonus">攻撃'+Math.round((f.attack||0)*100)+'% / 防御'+Math.round((f.defense||0)*100)+'%</small>'+
+     (suggestions.has(id)?'<span class="sortieWizardRecommended">推奨</span>':''),
+     current.formation===id);
    }).join('')+'</div>'+
    '<div class="sortieWizardPager">'+
     button('data-sortie-template-page="'+(page-1)+'" '+(!page?'disabled':''),'◀ 前の陣形')+
     '<small>'+(page+1)+' / '+pages+'</small>'+
     button('data-sortie-template-page="'+(page+1)+'" '+(page===pages-1?'disabled':''),'次の陣形 ▶')+
-   '</div>';
+   '</div><small class="sortieWizardHelp">旧陣形の4×4配置図と補正を表示しています。選択すると次の隊へ進みます。</small>';
  }else{
   const saved=savedThreeTeamStrategy(game,strategy);
   content='<div class="sortieWizardReview">'+teams.map(t=>{
