@@ -10,6 +10,7 @@ on:
       - 'src/creature-game-model-routing.js'
       - 'src/monster-character-cosplay.js'
       - 'src/monster-construct-costume.js'
+      - 'src/monster-construct-anatomy-v3.js'
       - 'src/monster-humanoid-concept-finish.js'
       - 'src/monster-character-cosplay-manifest.js'
       - 'qa/monster-concept-trio.test.mjs'
@@ -49,6 +50,7 @@ jobs:
           node --check src/monster-character-cosplay.js
           npm run test:humanoid-concept
           node --check src/monster-construct-costume.js
+          node --check src/monster-construct-anatomy-v3.js
           npm run test:golem-full-shell
           node qa/monster-16-cosplay-pigment-regression.test.mjs
 
