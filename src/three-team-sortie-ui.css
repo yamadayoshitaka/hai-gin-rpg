@@ -382,3 +382,32 @@
   width:12px;height:12px;
  }
 }
+
+
+/* One no-scroll animated formation preview: the battle runner reads the same
+   doctrine waypoints, so the miniature is explanatory, not decorative. */
+#panel.formation-command-ui .innWizardFormations button:has(.signaturePreview){
+ display:flex!important;flex-direction:column;align-items:stretch;justify-content:center;
+ text-align:left!important;gap:3px!important;padding:7px 9px!important;
+}
+#panel.formation-command-ui .innWizardFormations .signaturePreview{
+ display:grid;width:100%;max-width:330px;align-self:center;gap:2px;flex-shrink:1;min-height:0;
+}
+.signaturePreview svg{display:block;width:100%;height:clamp(108px,21dvh,172px);border:1px solid #5ca6bb;border-radius:9px}
+.signaturePhaseCaptions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+.signaturePhaseCaptions span{background:#173d51;color:#d6ecf7;border:1px solid #426e7d;
+ font-size:9px;line-height:1.25;text-align:center;border-radius:4px;padding:4px 1px}
+#panel.formation-command-ui .innWizardFormations .signatureName{
+ font-size:13px;color:#ffe2a0;text-align:left
+}
+#panel.formation-command-ui .innWizardFormations .signatureSummary{
+ font-size:10px!important;line-height:1.25!important;text-align:left;color:#d3e8ec
+}
+@media(max-height:700px){
+ .signaturePreview svg{height:clamp(82px,18dvh,122px)}
+ #panel.formation-command-ui .innWizardFormations button:has(.signaturePreview){gap:2px!important;padding:4px 8px!important}
+ .signaturePhaseCaptions span{font-size:8px;padding:2px 1px}
+}
+@media(prefers-reduced-motion:reduce){
+ .signatureTroop animateTransform{display:none}
+}

@@ -829,3 +829,24 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
   width:min(calc(100% - 65px),36dvh,330px);max-height:36dvh}
  #realtimeBattleMapOverlay .realtimeMapDetail{max-height:30dvh;padding:5px 7px;font-size:10px}
 }
+
+
+/* Immediate prebattle placement: valid movement tiles are tinted using the
+   engine's own traversability callback; the screen is not a decorative map. */
+#realtimeBattleMapOverlay .realtimeDeploymentLegend{
+ display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+ gap:4px;padding:5px 7px;border-radius:7px;border:1px solid #70c3ad;
+ background:#10394b;color:#edfffa;font-size:11px;font-weight:700;
+}
+#realtimeBattleMapOverlay .realtimeDeploymentLegend span:first-child{color:#83f3d4}
+#realtimeBattleMapOverlay .realtimeDeploymentLegend span:nth-child(2){color:#ffadba}
+#realtimeBattleMapOverlay #realtimePrebattleMusic{
+ min-height:33px;padding:4px 7px;font-size:11px;
+ border:1px solid #f3d492;background:#34536a;color:#fff0cd;border-radius:6px
+}
+#realtimeBattleMapOverlay #realtimeBattleCanvas{touch-action:none;border:2px solid #6de6cc;border-radius:8px}
+#realtimeBattleMapOverlay #realtimeMapHelp{color:#c9ffe7;font-weight:650}
+@media(max-height:660px){
+ #realtimeBattleMapOverlay .realtimeDeploymentLegend{font-size:9px;padding:3px 5px}
+ #realtimeBattleMapOverlay #realtimePrebattleMusic{min-height:28px;padding:2px 5px}
+}

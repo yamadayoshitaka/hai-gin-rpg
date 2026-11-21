@@ -12,6 +12,7 @@ import {inspectInnFormation} from './inn-formation-rules.js';
 import {TOWN_SHOP,squadEquipmentBonus} from './game-core-flow.js';
 import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
 import {formationUnlockLabels} from './formation-strategy-unlocks.js';
+import {signatureStrategyFor,renderFormationSignaturePreview} from './formation-signature-strategies.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class="'+(selected?'selected':'')+'">'+title+'</button>';
@@ -162,6 +163,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const options=ids.slice(page*per,page*per+per);
   body='<div class="sortieWizardFormationChoices innWizardFormations">'+options.map(id=>{
    const f=SORTIE_FORMATIONS[id],elig=inspectInnFormation(game,team.id,id),brief=purpose(id);
+   const signature=signatureStrategyFor(id);
    const cells=SORTIE_FORMATION_CELLS[id].slice(0,f.slots),roles=FORMATION_ROLES[id];
    const mini=Array.from({length:16},(_,i)=>{
     const roleIndex=cells.indexOf(i);
@@ -171,8 +173,10 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    return button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
     '<span class="sortieWizardFormationTitle"><b>'+esc(f.name)+'</b></span>'+
     '<small>目的：'+esc(brief.purpose)+'</small>'+
-    '<span class="sortieWizardOldMiniGrid sortieMiniGrid">'+mini+'</span>'+
+    renderFormationSignaturePreview(id,{labels:roles.slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
     '<small>動き：'+esc(brief.movement)+'</small>'+ 
+    '<strong class="signatureName">★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
+    '<small class="signatureSummary">'+esc(signature?.summary||'')+'</small>'+ 
     '<small>追加作戦：'+esc(formationUnlockLabels(id).join('・')||'基本作戦のみ')+'</small>'+
     '<small>条件：Lv.'+f.level+'・'+esc(requirement(id))+'</small>'+
     '<small class="sortieWizardFormationBonus">攻撃+'+Math.round((f.attack||0)*100)+'%／防御+'+Math.round((f.defense||0)*100)+'%</small>'+
@@ -189,6 +193,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    '<small>合計 '+sortieTeamCount(team)+'人／'+members.length+'ジョブ</small>'+
    '<small>目的：'+esc(brief.purpose)+'</small>'+
    '<small>動き：'+esc(brief.movement)+'</small>'+ 
+   '<small>陣形専用作戦：'+esc(signatureStrategyFor(team.formation)?.name||'なし')+'</small>'+ 
    '<small>追加作戦：'+esc(formationUnlockLabels(team.formation).join('・')||'基本作戦のみ')+'</small></div>'+
    rosterBreakdown(game,team)+
    '<div class="innWizardReviewSummary"><b>🎒 持参アイテム</b><small>'+
