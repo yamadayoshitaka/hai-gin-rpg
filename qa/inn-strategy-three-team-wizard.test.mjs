@@ -86,16 +86,29 @@ assert.ok(!sortieFormationStatus(game,1).reason.includes('テンプレートの4
 assert.throws(()=>chooseThreeTeamFormation(game,'attack',4,'balanced'),/第1〜3隊/);
 
 const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
-for(const attr of ['data-sortie-plan-strategy','data-sortie-plan-formation','data-sortie-plan-save']){
+for(const attr of ['data-sortie-plan-formation','data-sortie-plan-save']){
  assert.ok(town.includes(attr),'inn click handler: '+attr);
 }
-assert.ok(town.includes("sortieView='strategy'"),'inn opens the wizard first');
+assert.ok(town.includes("sortieView='formationOnly'"),'inn opens on formations only');
+assert.ok(town.includes("setSortieFormation(game,sortieTeamId,target.dataset.sortiePlanFormation)"),
+ 'inn formation changes must never apply fixed battle tactics');
+assert.ok(!town.includes("selectThreeTeamStrategy(game,target.dataset.sortiePlanStrategy)"),
+ 'inn no longer provides a strategy selector');
+const only=renderThreeTeamPlanner({game,view:'formationOnly',teamId:1});
+assert.match(only,/第1隊の陣形を選択/);
+assert.doesNotMatch(only,/data-sortie-plan-strategy/);
+assert.match(only,/作戦は戦闘開始時に指定/);
+assert.equal((only.match(/sortieWizardOldMiniGrid/g)||[]).length,4);
+const onlyReview=renderThreeTeamPlanner({game,view:'formationReview'});
+assert.match(onlyReview,/3隊の陣形を確認/);
+assert.match(onlyReview,/作戦は戦闘画面で隊ごとに選択/);
+assert.doesNotMatch(onlyReview,/用に保存/);
 assert.ok(town.includes("scrollTop=0"),'every wizard step starts with the first option visible');
-assert.match(town,/inn-wizard-classic-icons-20261121/,'Android receives refreshed JS and CSS');
+assert.match(town,/inn-formation-only-20261121/,'Android receives refreshed JS and CSS');
 const styles=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
 assert.match(styles,/\.sortieWizardOldMiniGrid/);
 assert.match(styles,/\.sortieWizardStrategyIcon/);
 for(const f of ['src/three-team-strategy-presets.js','src/three-team-sortie-ui.js','src/three-team-sortie.js']){
  new SourceTextModule(readFileSync(new URL('../'+f,import.meta.url),'utf8'),{identifier:f});
 }
-console.log('PASS: one-choice screens, strategy-specific 3-team templates, saved restoration, no troop cloning');
+console.log('PASS: formation-only inn primary flow, legacy strategy catalog, no troop cloning');
