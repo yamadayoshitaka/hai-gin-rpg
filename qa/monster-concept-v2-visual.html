@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monster concept-v2 actual 3D preview</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#34343c;color:#f1f0f4;font-family:system-ui,sans-serif}
+#status{padding:9px 18px;font-weight:700}
+#viewport{width:100%;height:calc(100vh - 45px);display:block}
+</style>
+<script type="importmap">
+{"imports":{
+ "three":"/node_modules/three/build/three.module.js",
+ "three/addons/":"/node_modules/three/examples/jsm/"
+}}
+</script>
+</head>
+<body><div id="status">Loading real 3D mesh...</div><canvas id="viewport"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {MONSTER_BY_ID} from '../src/monster-catalog.js';
+import {createMonsterModel} from '../src/monster-geometry.js';
+const id=new URLSearchParams(location.search).get('id')||'m030';
+const spec=MONSTER_BY_ID[id];
+if(!spec)throw Error('Unknown species ID '+id);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#77747c');
+const camera=new THREE.PerspectiveCamera(36,1,.1,300);
+const renderer=new THREE.WebGLRenderer({
+ canvas:document.getElementById('viewport'),
+ antialias:true,powerPreference:'high-performance'
+});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.45;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+scene.add(new THREE.HemisphereLight('#eff7ff','#55485c',2.0));
+const key=new THREE.DirectionalLight('#fff8ef',3.2);
+key.position.set(4.5,9,7);key.castShadow=true;
+key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-10;
+key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
+scene.add(key);
+const rim=new THREE.DirectionalLight('#9cddff',2.7);
+rim.position.set(-5,5,-7);scene.add(rim);
+const ground=new THREE.Mesh(
+ new THREE.PlaneGeometry(50,50),
+ new THREE.MeshStandardMaterial({color:'#65636a',roughness:.89,metalness:0})
+);
+ground.rotation.x=-Math.PI/2;ground.position.y=-.06;
+ground.receiveShadow=true;scene.add(ground);
+const model=createMonsterModel(spec,{detail:'high'});
+scene.add(model);
+model.updateMatrixWorld(true);
+const box=new THREE.Box3().setFromObject(model);
+const size=box.getSize(new THREE.Vector3());
+const center=box.getCenter(new THREE.Vector3());
+const width=Math.max(size.x,size.z),height=size.y;
+const dist=Math.max(width*1.65,height*2.40,4.2);
+camera.position.set(center.x+dist*.53,center.y+dist*.41,center.z+dist*.83);
+camera.lookAt(center.x,center.y*.96,center.z);
+const resize=()=>{
+ const canvas=document.getElementById('viewport');
+ const w=canvas.clientWidth,h=canvas.clientHeight;
+ renderer.setSize(w,h,false);
+ camera.aspect=w/h;camera.updateProjectionMatrix();
+};
+resize();
+window.addEventListener('resize',resize);
+renderer.render(scene,camera);
+document.getElementById('status').textContent=
+ id+' '+spec.name+' / V2 full 3D • '+model.userData.gameModelRevision;
+document.body.dataset.ready='true';
+</script></body></html>
