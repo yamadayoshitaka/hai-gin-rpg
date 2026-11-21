@@ -907,8 +907,12 @@ export function createSculpture(spec,detail='high'){
    }
    side.normalize();
    const normal=new THREE.Vector3().crossVectors(direction,side).normalize();
-   const rows=detail==='source'?20+nonhumanStage:detail==='high'?9+Math.floor(nonhumanStage/2):detail==='medium'?6+Math.floor(nonhumanStage/3):2;
-   const cols=detail==='source'?8+Math.floor(nonhumanStage/2):detail==='high'?4+Math.floor(nonhumanStage/4):detail==='medium'?3:2;
+   // The detailed scarab family keeps enough membrane subdivisions to
+   // show its veined wing curve even in the mobile low LOD (16 vertices,
+   // rather than a flat 9-vertex fin). Other monster LOD budgets stay fixed.
+   const scarabLow=isScarabPBRSpecies(spec.id)&&detail==='low';
+   const rows=detail==='source'?20+nonhumanStage:detail==='high'?9+Math.floor(nonhumanStage/2):detail==='medium'?6+Math.floor(nonhumanStage/3):scarabLow?3:2;
+   const cols=detail==='source'?8+Math.floor(nonhumanStage/2):detail==='high'?4+Math.floor(nonhumanStage/4):detail==='medium'?3:scarabLow?3:2;
    const vertices=[],uv=[],indices=[];
    for(let i=0;i<=rows;i++){
      const t=i/rows,center=a.clone().lerp(b,t);
