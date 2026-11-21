@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {attachAgeDetails} from './face-age-detail-v49.js?v=49';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261121-photo-optics-v76';
+import {attachAgeDetails} from './face-age-detail-v49.js?v=76';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=76';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
