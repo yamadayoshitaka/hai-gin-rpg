@@ -53,9 +53,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/buzz-uniform-pigment-v51/,
+ assert.match(page,/sadako-scalp-first-gravity-v52/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/buzz-uniform-pigment-v51/,
+ assert.match(read('face-body-studio.html'),/sadako-scalp-first-gravity-v52/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -121,11 +121,11 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  const hair=read('src/face-scalp-wig.js');
  const studio=read('face-mesh-studio.html');
  const body=read('face-body-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v51$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v52$/);
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/buzz-uniform-pigment-v51/);
- assert.match(body,/buzz-uniform-pigment-v51/);
+ assert.match(studio,/sadako-scalp-first-gravity-v52/);
+ assert.match(body,/sadako-scalp-first-gravity-v52/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });

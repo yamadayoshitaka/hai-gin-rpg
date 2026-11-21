@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-uniform-pigment-v51';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-scalp-first-gravity-v52';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -852,6 +852,64 @@ export function createSadakoCrownFlow(cap,box,color){
  return mesh;
 }
 
+/** Reusable long-hair groom foundation. Future haircuts alter length,
+ * layers and the endpoint, NOT the rooted scalp-to-gravity transition. */
+export function scalpToGravityWeight(t,start=.15,end=.38){
+ const q=THREE.MathUtils.clamp((t-start)/Math.max(end-start,1e-5),0,1);
+ return q*q*(3-2*q);
+}
+export function createScalpFirstLongGuide({
+ root,normal,box,zone='crown',whorl=null,length,trimY,
+ targetX=root.x,targetZ=root.z,segments=18,projectOutside=null
+}={}){
+ if(!root?.isVector3||!normal?.isVector3||!box?.isBox3||
+  !Number.isFinite(length)||length<=0||segments<4)
+  throw Error('Scalp-first guide requires a real root, normal, box and length');
+ const d=box.getSize(new THREE.Vector3());
+ const center=box.getCenter(new THREE.Vector3());
+ // Local flow across the skull. Only after the rooted arc is established
+ // does gravity bend the strands toward the neck and shoulders.
+ const back=zone.startsWith('back')||zone.startsWith('nape');
+ const temple=zone.startsWith('temple');
+ const side=root.x>=center.x?1:-1;
+ const front=zone.startsWith('fringe')||temple||
+  (!back&&(root.z>=(whorl?.z??center.z-d.z*.04)));
+ const flow=new THREE.Vector3(
+  temple?side*.68:(targetX-root.x)/Math.max(d.x,1e-5)*.17,
+  -.23,back?-1:front?1:-1
+ ).normalize();
+ const nRoot=normal.clone().normalize();
+ const outwards=root.clone().sub(center);
+ if(nRoot.dot(outwards)<0)nRoot.negate();
+ const result=[root.clone()];
+ let last=root.clone();
+ const workNormal=new THREE.Vector3(),tan=new THREE.Vector3(),
+  direction=new THREE.Vector3(),fall=new THREE.Vector3();
+ for(let j=1;j<=segments;j++){
+  const t=j/segments,gravity=scalpToGravityWeight(t);
+  // Ellipsoid slope is only a steering normal. Exact head clearance is
+  // applied separately against the actual donor radial scalp envelope.
+  workNormal.set(
+   (last.x-center.x)/Math.max(d.x*.5,1e-6),
+   (last.y-(box.min.y+d.y*.48))/Math.max(d.y*.52,1e-6),
+   (last.z-center.z)/Math.max(d.z*.5,1e-6)).normalize();
+  workNormal.lerp(nRoot,1-THREE.MathUtils.smoothstep(t,.015,.23)).normalize();
+  tan.copy(flow).addScaledVector(workNormal,-flow.dot(workNormal));
+  if(tan.lengthSq()<1e-8)tan.set(front?0:side,0,front?1:-1)
+   .addScaledVector(workNormal,-workNormal.z).normalize();
+  else tan.normalize();
+  fall.set((targetX-last.x)/Math.max(length,1e-6)*.12,-1,
+   (targetZ-last.z)/Math.max(length,1e-6)*.12).normalize();
+  direction.copy(tan).multiplyScalar(1-gravity).addScaledVector(fall,gravity).normalize();
+  const next=last.clone().addScaledVector(direction,length/segments);
+  next.y=Math.max(trimY,next.y);
+  if(projectOutside)projectOutside(next,j===1,front);
+  result.push(next);
+  last=next;
+ }
+ return result;
+}
+
 /**
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
@@ -918,7 +976,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  const cap=scalpShell(head.geometry,box,color,{
   fullBody:!!bodyCollisionResolver,shortHair:!!style.shortCutKind,
   battleStableCoverage,volumeProfile,styleId:style.id});root.add(cap);
- const baseCount=clamp(Math.round(count),48,2400),segments=11;
+ const baseCount=clamp(Math.round(count),48,2400),
+  segments=style.id==='sadako-straight-long'?18:11;
  // Allocate EXTRA fine roots at the forehead without removing the existing
  // crown, rear and nape locks. Legacy face-test count stays unchanged at 1x.
  const fringeMultiplier=clamp((Number(fineFringeMultiplier)||1)*EVOLUTION_PROFILE.hair.fringeRootScale,1,4);
@@ -973,6 +1032,43 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
  const rootLift=d.x*(style.shortCutKind==='buzz'?.013:style.shortCutKind?.010:.0125);
+ const sadakoMaster=style.id==='sadako-straight-long';
+ const sadakoHeadDirection=new THREE.Vector3(),sadakoRenderCorner=new THREE.Vector3();
+ let sadakoGuideScalpPushes=0,sadakoRibbonScalpPushes=0;
+ /** True exterior projection for the guide AND rendered ribbon corners.
+  * A finite 0.035-width nudge left long-hair points inside the donor skull,
+  * especially visible from underneath, so this projects all the way out. */
+ function projectSadakoOutside(point,nearRoot=false,front=false){
+  if(!sadakoMaster)return false;
+  const yn=(point.y-box.min.y)/Math.max(d.y,1e-6);
+  if(yn<.40||yn>1.004)return false;
+  const clearance=d.x*(nearRoot?.007:.014);
+  let changed=false;
+  if(yn>.535){
+   const origin=radialScalp.radialCenter;
+   let dx=point.x-origin.x,dz=point.z-origin.z;
+   let radius=Math.hypot(dx,dz);
+   if(radius<d.x*.001){
+    dx=(point.x>=center.x?1:-1)*d.x*.02;
+    dz=(front?1:-1)*d.z*.13;radius=Math.hypot(dx,dz);
+   }
+   sadakoHeadDirection.set(dx,0,dz);
+   const safe=radialScalp.radius(point.y,sadakoHeadDirection)+clearance;
+   if(radius<safe){
+    point.x=origin.x+dx/radius*safe;
+    point.z=origin.z+dz/radius*safe;
+    changed=true;
+   }
+  }
+  if(front&&yn<.93&&point.z>=center.z+d.z*.005){
+   const skinZ=surfaceSampler.query(point.x,point.y);
+   if(skinZ!==null&&point.z<skinZ+clearance){
+    point.z=skinZ+clearance;
+    changed=true;
+   }
+  }
+  return changed;
+ }
  // Shoulder/chest proxy geometry is in the SAME coordinates as the head.
  // Future full-body rigs can supply exact external capsules.
  const colliders=[
@@ -1117,6 +1213,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // Gravity rest shape: initial down-velocity + gravitational acceleration.
   const g=style.gravityMps2*(d.y/2)*style.gravityScale;
   const fallTime=Math.sqrt(Math.max(1e-8,length/g));
+  if(sadakoGravity){
+   // Root tangent follows the actual head for 0–15% of strand length;
+   // gravity blends in from 15–38%, never directly at the hair follicle.
+   const shape=createScalpFirstLongGuide({
+    root:wigRoot,normal:outward,box,zone,whorl,length,trimY,
+    targetX,targetZ,segments,
+    projectOutside:(point,nearRoot,front)=>{
+     if(projectSadakoOutside(point,nearRoot,front))
+      sadakoGuideScalpPushes++;
+    }
+   });
+   for(const p of shape){
+    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
+   }
+  }else{
   for(let j=0;j<=segments;j++){
    const t=j/segments,fall=Math.pow(t*t*(3-2*t),style.restFallExponent||1.1);
    const drop=.5*length*t+.5*g*(t*fallTime)**2;
@@ -1158,8 +1269,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
    rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
   }
+  }
   // Natural grooming relaxes tangents, preserving the real root and cut tip.
-  for(let pass=0;pass<3;pass++){
+  for(let pass=0;pass<(sadakoGravity?1:3);pass++){
    const filtered=rest.map(p=>p.clone());
    for(let j=1;j<segments;j++){
     filtered[j].copy(rest[j]).multiplyScalar(.60)
@@ -1168,7 +1280,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
    for(let j=1;j<segments;j++)rest[j].copy(filtered[j]);
   }
-  for(let j=1;j<segments;j++)points[j].copy(rest[j]);
+  if(sadakoGravity)for(let j=1;j<=segments;j++)
+   if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
+     zone.startsWith('temple')))sadakoGuideScalpPushes++;
+  for(let j=1;j<=segments;j++)points[j].copy(rest[j]);
   strands.push({root:wigRoot,rest,points,vel,fringe,side,
    zone,seedIndex:seed.index,trimY,overFace,partSide,
    gravityRestShape:true,growthLogic:'grow-relax-collide-trim'});
@@ -1281,6 +1396,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     collisions++;bodyContacts++;
    }
   }
+  if(sadakoMaster&&projectSadakoOutside(p,false,
+    zone.startsWith('fringe')||zone.startsWith('temple')||overFace))
+   sadakoGuideScalpPushes++;
   // This must be LAST: proxy shoulder capsules must not push a corrected
   // strand back inside the real female body geometry.
   const contactSide=(zone.startsWith('back')||zone.startsWith('nape'))?
@@ -1289,6 +1407,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(bodyCollisionResolver?.resolve?.(p,{side:contactSide})){
    collisions++;bodyContacts++;realBodyContacts++;
   }
+  if(sadakoMaster&&projectSadakoOutside(p,false,
+    zone.startsWith('fringe')||zone.startsWith('temple')||overFace))
+   sadakoGuideScalpPushes++;
   // Gentle drape attraction around lower neck and shoulders: keep a small
   // silhouette gap from the ACTUAL imported torso, never cross the surface.
   // This corrects the floating shell visible from top/side without letting
@@ -1405,11 +1526,21 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      }
      // The rendered edge, not only its centre guide, must clear the brow/
      // glabella central part. Root vertices j=0 remain on true scalp.
-     if(j>0&&(strand.fringe||strand.overFace)&&
+     if(!sadakoMaster&&j>0&&(strand.fringe||strand.overFace)&&
        vy>box.min.y+d.y*.66&&vy<box.min.y+d.y*.75&&
        vz>center.z+d.z*.025&&Math.abs(vx-center.x)<d.x*.055){
       vx=center.x+(strand.partSide||strand.side||1)*d.x*.055;
       glabellaClearanceEvents++;
+     }
+     // The guide may be outside while the ribbon EDGE still crosses the
+     // donor skull. Check every rendered corner, including underside faces.
+     if(sadakoMaster){
+      sadakoRenderCorner.set(vx,vy,vz);
+      if(projectSadakoOutside(sadakoRenderCorner,j===0,
+       strand.fringe||strand.overFace||strand.zone.startsWith('temple')))
+       sadakoRibbonScalpPushes++;
+      vx=sadakoRenderCorner.x;vy=sadakoRenderCorner.y;
+      vz=sadakoRenderCorner.z;
      }
      // The guide centre may be legal while the wide ribbon edge penetrates
      // clothing. Resolve actual rendered corners, without unrooting j=0.
@@ -1719,6 +1850,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
   sadakoCrownFibreCount:sadakoCrownFlow?.userData.crownFibreCount||0,
+  sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-master-v52':null,
+  sadakoGravityTransition:sadakoMaster?{scalpTo:.15,fullyGravity:.38,segments}:null,
+  sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
   sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
   sadakoFacePartingDisabled:style.id==='sadako-straight-long',
   closeCutFibreCount:closeCutFibres?.userData.fibreCount||0,
