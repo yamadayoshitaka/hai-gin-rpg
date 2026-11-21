@@ -12,7 +12,7 @@ import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from '.
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=reptile-sculpture-v2-20261121';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=sea-dragon-summon-silhouette-v3-20261121';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[112,80],rock:4,rod:28,tube:[64,16],torus:[16,72]}),
@@ -60,14 +60,14 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false}={},s
    const M=wet?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;
    const mat=new M({
      color,roughness:wet?.13:rough,metalness:wet?0:metal,
-     side:THREE.DoubleSide,vertexColors:role==='tailScale',
+     side:THREE.DoubleSide,vertexColors:role==='tailScale'||role==='seaDragonSkin',
      emissive:glow?color:0x000000,emissiveIntensity:glow?.46:0,
      transparent:translucent,opacity:translucent?.82:1,
      depthWrite:!translucent,
      ...(wet?{clearcoat:.88,clearcoatRoughness:.085,ior:1.35,
        transmission:.14,thickness:.4}:{}),
    });
-   if(role==='skin'||role==='light'||role==='tailScale'||role==='fabric'||role==='bandage'||
+   if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
@@ -118,6 +118,7 @@ export function createSculpture(spec,detail='high'){
    tone.eye='#b66d43';
    tone.bone='#ddd0b5';
  }
+ tone.seaDragonSkin='#ffffff';
  const V=v=>new THREE.Vector3(...v);
  const attach=(parent,geo,shade,opt={})=>{
    const isRole=typeof shade==='string'&&Object.hasOwn(tone,shade);
@@ -926,6 +927,36 @@ export function createSculpture(spec,detail='high'){
    return own(attach(parent,geo,shade,{name:options.name,rough:options.rough??.61,
      translucent:options.translucent??false}));
  };
+ /** A ribbed membrane spanned between a buried root and fin-ray tips. */
+ const fanFin=(parent,shade,base,tips,{name='fan-fin',camber=.12}={})=>{
+   const rootPoint=V(base),outline=tips.map(V);
+   const normal=outline[0].clone().sub(rootPoint)
+     .cross(outline.at(-1).clone().sub(rootPoint)).normalize();
+   const crosswise=new THREE.CatmullRomCurve3(outline);
+   const segments=detail==='low'?6:14,rows=detail==='low'?4:8;
+   const positions=rootPoint.toArray(),uv=[.5,0],indices=[];
+   for(let row=1;row<=rows;row++){
+     const t=row/rows;
+     for(let col=0;col<=segments;col++){
+       const u=col/segments;
+       const point=rootPoint.clone().lerp(crosswise.getPoint(u),t)
+         .addScaledVector(normal,camber*Math.sin(Math.PI*u)*Math.sin(Math.PI*t));
+       positions.push(...point.toArray());
+       uv.push(u,t);
+       if(col<segments){
+         const i=1+(row-1)*(segments+1)+col;
+         if(row===1)indices.push(0,i,i+1);
+         else indices.push(i-segments-1,i,i+1,i-segments-1,i+1,i-segments);
+       }
+     }
+   }
+   const geo=new THREE.BufferGeometry();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(indices);
+   geo.computeVertexNormals();
+   return own(attach(parent,geo,shade,{name,rough:.54}));
+ };
  const eyes=(parent,z=.34,y=.03,width=.19,size=.05)=>{
    const organic=nonhumanMonsterStage(spec)>0;
    for(const side of [-1,1]){
@@ -965,7 +996,7 @@ export function createSculpture(spec,detail='high'){
  };
  root.userData.detail=detail;
  return {root,pivots,group,sphere,rock,bone,spike,rootedSpike,seamHem,tube,skinAxialTube,bridge,
-   axialLoft,limbLoft,felineContinuousLimb,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,eyes,claws,ring,fine,colors};
+   axialLoft,limbLoft,felineContinuousLimb,curvedHorn,foxPinna,recessCanineEyeSockets,recessedCanineAlmondEye,anatomicalLoft,fur,skinnedFur,bandage,fin,fanFin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;

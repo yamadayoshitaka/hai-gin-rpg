@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=reptile-sculpture-v2-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=sea-dragon-summon-silhouette-v3-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -31,7 +31,7 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw}
  from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
- sculptBasiliskFacePlates,sculptMarineFace,sculptMarineTail} from './reptile-detail-sculpt.js';
+ sculptBasiliskFacePlates,SEA_DRAGON_REVISION,isSeaDragon,sculptSeaDragon} from './reptile-detail-sculpt.js';
 import {M050_CORAL_REVISION,sculptM050CoralBeast} from './m050-coral-beast-sculpt.js';
 import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptHydraLeg,sculptM018Tail}
  from './m018-hydra-sculpt.js?v=m050-hydra-derived-coral-beast-v1-20261121';
@@ -2870,52 +2870,8 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    {name:'monster-anatomical-lower-jaw'});
  g.root.scale.setScalar(s.size*(rock?.85:.87));
 }
-/** Marine serpent anatomy: axial undulation rather than decorative tiny
- * walking legs. The old quadruped stand-in was misleading for these IDs.
- * Segment joints and dorsal scutes are visible 3D meshes, not a billboard.
- */
-function seaSerpent(g,s){
- const torso=g.group('torso');
- // An eel / sea-dragon axial body: tapered cranial base, branchial swell,
- // abdomen and caudal peduncle. Section dimensions, not subdivision count,
- // now control the original creature silhouette.
- g.axialLoft(torso,'skin',[
-   {z:1.05,y:1.06,rx:.12,ry:.12},
-   {z:.81,y:1.04,rx:.24,ry:.22},
-   {z:.46,y:1.01,rx:.39,ry:.34},
-   {z:.04,y:1.00,rx:.43,ry:.35},
-   {z:-.35,y:1.02,rx:.34,ry:.29},
-   {z:-.63,y:1.02,rx:.25,ry:.22}
-  ],{name:'marine-axial-cranial-abdominal-'+s.id,
-     rough:.51,ribbing:.031,capEnds:true});
- const spine=g.group('spineRear',[0,1.02,-.28],torso);
- g.axialLoft(spine,'skin',[
-   {z:.21,y:0,rx:.30,ry:.257},
-   {z:-.075,y:.008,rx:.339,ry:.283},
-   {z:-.39,y:.032,rx:.252,ry:.223},
-   {z:-.77,y:-.055,rx:.195,ry:.157}
-  ],{name:'marine-posterior-spine-'+s.id,rough:.51,ribbing:.024,capEnds:true});
- const tail=g.group('tail',[0,-.06,-.73],spine);
- sculptMarineTail(g,tail,s.id);
- const head=g.group('head',[0,1.11,.78],torso);
- sculptMarineFace(g,head,s.id);
- const ice=s.id==='m048',low=g.root.userData.detail==='low';
- const keel=[
-  [torso,.59,1.30,.25],[torso,.40,1.35,.25],[torso,.18,1.36,.24],
-  [torso,-.02,1.34,.23],[spine,-.20,.225,.19],[spine,-.40,.212,.17],
-  [spine,-.61,.138,.15],
- ];
- for(const [i,[pivot,z,y,radius]] of keel.entries()){
-  if(low&&i%2)continue;
-  const h=ice?.117:.229;
-  g.curvedHorn(pivot,ice?'bone':'light',[0,y-.07,z],[0,y+h*.37,z-.045],
-   [0,y+h,z-.16],ice?.059:.074,{name:s.id+'-dorsal-keel-'+i,capRoot:true});
-  if(!low)for(const side of [-1,1])g.fin(pivot,'accent',[side*.06,y-.10,z],
-   [side*radius,y+h*.59,z-.187],ice?.041:.074,{
-    name:s.id+'-dorsal-web-'+i,rough:.59,
-   });
- }
- g.root.scale.setScalar(s.size*.87);
+function seaSerpent(g,spec){
+ sculptSeaDragon(g,spec);
 }
 function aquatic(g,s){
  const v=s.variant;
@@ -3049,6 +3005,7 @@ if(spec.id==='m019'){
    g.root.userData.m019ModelFollowsFourView=true;
  }
  if(hasReptileDetail(spec.id))g.root.userData.gameModelRevision=REPTILE_DETAIL_REVISION;
+ if(isSeaDragon(spec.id))g.root.userData.gameModelRevision=SEA_DRAGON_REVISION;
  if(['m002','m007','m008','m009','m010'].includes(spec.id))
    g.root.beastFxThree=THREE;
  g.root.userData.speciesId=spec.id;
@@ -3076,5 +3033,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=reptile-sculpture-v2-20261121';
-export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=reptile-sculpture-v2-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=sea-dragon-summon-silhouette-v3-20261121';
+export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=sea-dragon-summon-silhouette-v3-20261121';

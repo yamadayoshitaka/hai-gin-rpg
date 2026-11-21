@@ -2,7 +2,10 @@ import {dragonCraniumProfile} from './dragon-cranium-profile.js';
 import {sculptArticulatedReptileTail} from './m018-hydra-sculpt.js';
 
 export const REPTILE_DETAIL_REVISION='reptile-sculpture-v2-20261121';
-export const hasReptileDetail=id=>['m016','m017','m019','m020','m048'].includes(id);
+export const hasReptileDetail=id=>['m016','m017','m019'].includes(id);
+export const SEA_DRAGON_REVISION='sea-dragon-summon-silhouette-v3-20261121';
+export const isSeaDragon=id=>id==='m020'||id==='m048';
+
 
 function surfaceSpines(g,tail,rig,radius,{id,count,shade,height}){
  const {curve,mid,tip,midAt,tipAt,midLocal,tipLocal}=rig;
@@ -62,13 +65,13 @@ export function sculptBasiliskFacePlates(g,head){
  }
 }
 
-export function sculptMarineFace(g,head,id){
+function sculptMarineFace(g,head,id){
  const ice=id==='m048',low=g.root.userData.detail==='low';
  const width=ice?.62:.74,length=ice?.82:.95;
  const rings=dragonCraniumProfile(width,ice?1.18:1.30,length,.04,.17)
   .reverse().map(([z,y,rx,ry])=>({z,y,rx,ry}));
  Object.assign(rings.at(-1),{rx:.12,ry:.118});
- g.axialLoft(head,'skin',rings,{name:'serpent-cranium-'+id,capEnds:true,ribbing:.026});
+ g.axialLoft(head,'skin',rings,{name:'serpent-cranium-'+id,capEnds:true,ribbing:.026,faceSculpt:true});
  g.axialLoft(head,'skin',[
   {z:.96,y:-.073,rx:.050,ry:.032},{z:.84,y:-.086,rx:.141,ry:.068},
   {z:.66,y:-.065,rx:.169,ry:.092},{z:.451,y:-.036,rx:.194,ry:.113},
@@ -81,6 +84,7 @@ export function sculptMarineFace(g,head,id){
   {z:.021,y:-.012,rx:.141,ry:.065},
  ],{name:id+'-marine-dragon-jaw',capEnds:true});
  g.sphere(jaw,'shadow',[0,-.014,.44],[.147,.026,.272],{name:'quadruped-oral-cavity'});
+ g.sphere(jaw,'light',[0,.002,.464],[.091,.015,.144],{name:'quadruped-tongue'});
  for(const side of [-1,1]){
   const sign=side<0?'L':'R',x=width*.42,s=(a,b,c)=>[a*side,b,c];
   g.sphere(head,'shadow',s(x-.014,.094,.28),[.047,.043,.071],{name:id+'-eye-socket-'+sign});
@@ -88,36 +92,175 @@ export function sculptMarineFace(g,head,id){
   g.sphere(head,'shadow',s(x+.045,.094,.292),[.005,.022,.012],{name:id+'-serpent-pupil-'+sign});
   g.sphere(head,'shadow',s(.119,-.036,.847),[.021,.012,.023],{name:id+'-nostril-'+sign});
   g.curvedHorn(head,ice?'bone':'light',s(.123,.125,.042),
-   s(ice?.255:.275,ice?.286:.412,-.168),s(ice?.325:.502,ice?.345:.485,ice?-.355:-.54),
-   ice?.078:.092,{name:id+'-rooted-horn-'+sign,capRoot:true});
-  g.fin(head,'accent',s(.185,.085,-.01),
-   s(ice?.442:.631,ice?.144:.315,ice?-.306:-.498),ice?.076:.139,{
-    name:id+'-cheek-fin-'+sign,rough:.58,
+   s(ice?.274:.332,ice?.382:.54,-.184),s(ice?.38:.68,ice?.51:.64,ice?-.54:-.78),
+   ice?.086:.115,{name:id+'-rooted-horn-'+sign,capRoot:true});
+  const root=s(.154,.012,.031);
+  const rays=[
+   s(ice?.47:.72,ice?.17:.42,ice?-.31:-.44),
+   s(ice?.64:.99,ice?.064:.24,ice?-.46:-.69),
+   s(ice?.58:.91,ice?-.109:-.16,ice?-.51:-.77),
+   s(ice?.34:.63,ice?-.206:-.32,ice?-.43:-.71),
+  ];
+  g.fanFin(head,'accent',root,rays,{name:id+'-cheek-fin-'+sign,camber:.096});
+  for(const [i,end] of rays.entries()){
+   if(low&&i%2)continue;
+   const bend=root.map((v,axis)=>v*.43+end[axis]*.57+(axis===1?.034:0));
+   g.curvedHorn(head,i===0?'bone':'light',root,bend,end,.034-i*.004,{
+    capRoot:true,name:id+'-gill-ray-'+sign+'-'+i,
    });
+  }
+  g.curvedHorn(head,'shadow',s(.146,.135,.435),s(x+.046,.172,.28),
+   s(x*.84,.221,.121),.044,{capRoot:true,name:id+'-armored-brow-'+sign});
+  g.curvedHorn(head,'light',s(.079,.192,.268),s(.146,.283,.16),
+   s(.218,.406,-.045),.052,{capRoot:true,name:id+'-cranial-crest-'+sign});
   for(let i=0;i<(low?1:3);i++){
    const z=.79-i*.125,x=.123+i*.014;
    g.curvedHorn(head,'bone',s(x,-.122,z),s(x,-.166,z+.003),
-    s(x*.97,-.237+i*.014,z-.023),.021,{name:id+'-rooted-fang',capRoot:true});
+    s(x*.97,-.276+i*.023,z-.031),i===0?.030:.023,{name:id+'-rooted-fang',capRoot:true});
   }
  }
 }
 
-export function sculptMarineTail(g,tail,id){
- const ice=id==='m048',low=g.root.userData.detail==='low';
- const radius=t=>.017+(ice?.184:.220)*(1-t)**.87;
- const rig=sculptArticulatedReptileTail(g,tail,{
-  name:id+'-continuous-caudal-skin',radius,shade:'skin',
-  path:[[0,0,.22],[0,.017,-.13],[.026,.030,-.44],[.099,-.037,-.80],
-   [.169,-.079,-1.17],[.200,-.110,-1.47],[.197,.046,ice?-1.64:-1.83]],
- });
- surfaceSpines(g,tail,rig,radius,{id,count:low?4:7,
-  shade:ice?'bone':'light',height:ice?.144:.175});
- const {tip,curve,tipLocal}=rig;
- const root=curve.getPointAt(.91).sub(tipLocal).toArray();
+const SEA_SPINE=[
+ [-.31,3.07,1.13],[-.45,2.91,.79],[-.65,2.39,.56],[-.67,1.68,.43],
+ [-.39,1.09,.17],[.22,.78,-.43],[.93,.78,-1.14],[1.10,.94,-1.91],
+ [.76,1.15,-2.61],[.055,1.24,-3.20],[-.57,1.40,-3.66],[-.83,1.66,-4.12],
+];
+const SHELL_RADII=[[0,.182],[.13,.265],[.31,.346],[.43,.370],
+ [.59,.317],[.73,.226],[.87,.143],[1,.026]];
+
+function radiusAlong(t,ice){
+ for(let i=1;i<SHELL_RADII.length;i++){
+  const [end,radius]=SHELL_RADII[i];
+  if(t>end)continue;
+  const [start,previous]=SHELL_RADII[i-1];
+  const u=(t-start)/(end-start);
+  return (previous+(radius-previous)*u*u*(3-2*u))*(ice?.83:1);
+ }
+ return .026;
+}
+
+function sculptSeaScales(tube,curve,ice){
+ const {geometry}=tube,{tubularSegments,radialSegments}=geometry.parameters;
+ const pos=geometry.getAttribute('position'),uv=geometry.getAttribute('uv');
+ const stride=radialSegments+1;
+ const color=tube.material.color.clone();
+ const back=color.clone().set(ice?'#26385e':'#132e56');
+ const flank=color.clone().set(ice?'#4182b0':'#228799');
+ const belly=color.clone().set(ice?'#a0c5d4':'#9accc3');
+ const ramp=(x,a,b)=>Math.max(0,Math.min(1,(x-a)/(b-a)));
+ const colors=[];
+ const direction=curve.getPointAt(0);
+ for(let row=0;row<=tubularSegments;row++){
+  const t=row/tubularSegments;
+  const center=curve.getPointAt(t),tangent=curve.getTangentAt(t);
+  const ventral=tangent.clone().set(0,-1,.65);
+  ventral.addScaledVector(tangent,-ventral.dot(tangent)).normalize();
+  for(let col=0;col<=radialSegments;col++){
+   const i=row*stride+col;
+   direction.fromBufferAttribute(pos,i).sub(center);
+   const radius=direction.length();
+   direction.normalize();
+   const side=direction.dot(ventral);
+   const stripe=.5+.5*Math.cos(t*(ice?23:18)*Math.PI*2+side*2.3);
+   const rim=ramp(side,.14,.37),scale=ramp(side,.46,.76);
+   color.copy(back).lerp(flank,rim).lerp(belly,scale);
+   const band=ice?.29:.22;
+   color.multiplyScalar(1-band*Math.pow(stripe,7)*scale+.035*Math.sin(t*72+col*2.5)*(1-scale));
+   colors.push(...color.toArray());
+   direction.multiplyScalar(radius+(.014-.025*Math.pow(stripe,7))*scale)
+    .add(center);
+   pos.setXYZ(i,direction.x,direction.y,direction.z);
+   // Stock tube UVs are longitudinal in X. Keep scale size roughly uniform.
+   uv.setX(i,t*2.1);
+  }
+ }
+ colors.push(...flank.toArray(),...back.toArray());
+ geometry.setAttribute('color',new pos.constructor(colors,3));
+ geometry.computeVertexNormals();
+ geometry.computeBoundingSphere();
+}
+
+function sculptSeaBodyFins(g,curve,joints,radius,id,low){
+ const ice=id==='m048';
+ // Detail roots follow the nearest joint and sit well below the convex skin.
+ const locations=low?[.16,.29,.48,.64,.80]:[.10,.16,.23,.30,.38,.46,.54,.63,.72,.81,.89];
+ const center=new Map(joints.map(({at,pivot})=>[pivot,curve.getPointAt(at)]));
+ const torso=joints.find(({pivot})=>pivot.name==='torso').pivot;
+ center.get(torso).set(0,0,0);
+ for(const [i,t] of locations.entries()){
+  const {pivot}=joints.reduce((best,joint)=>
+   Math.abs(joint.at-t)<Math.abs(best.at-t)?joint:best);
+  // The head has its own plate and fin silhouette. Do not attach a body ridge to its yaw.
+  const owner=pivot.name==='head'?joints[1].pivot:pivot;
+  const point=curve.getPointAt(t).sub(center.get(owner));
+  const tangent=curve.getTangentAt(t);
+  const rear=tangent.clone().set(0,1,-.65);
+  rear.addScaledVector(tangent,-rear.dot(tangent)).normalize();
+  const r=radius(t),height=(ice?.199:.343)*(1-t*.67);
+  const root=point.clone().addScaledVector(rear,r*.60);
+  const end=point.clone().addScaledVector(rear,r+height)
+   .addScaledVector(tangent,height*.63);
+  const bend=root.clone().lerp(end,.58).addScaledVector(rear,height*.24);
+  g.curvedHorn(owner,ice?'bone':'light',root.toArray(),bend.toArray(),end.toArray(),
+   Math.min(.087,r*.44),{capRoot:true,name:id+'-dorsal-keel-'+i});
+ }
+ const breast=curve.getPointAt(.393);
  for(const side of [-1,1]){
-  const end=[root[0]+side*(ice?.226:.365),root[1]+(side<0?-.205:.278),root[2]-(ice?.30:.43)];
-  g.fin(tip,'accent',root,end,ice?.106:.151,{
-   name:id+'-caudal-fin-'+(side<0?'L':'R'),rough:.54,
+  const suffix=side<0?'L':'R';
+  const reach=ice?.68:1.05;
+  const root=[breast.x+side*.12,breast.y+.035,breast.z];
+  const rays=[[side*reach,ice?.33:.64,-.50],[side*(reach+.15),.25,-.94],
+   [side*(reach-.04),-.19,-1.03],[side*.35,-.24,-.76]]
+   .map(([x,y,z])=>[breast.x+x,breast.y+y,breast.z+z]);
+  g.fanFin(torso,'accent',root,rays,{name:id+'-pectoral-sail-'+suffix,camber:.105});
+  for(const [i,end] of rays.entries()){
+   if(low&&i%2)continue;
+   const mid=root.map((v,axis)=>v*.50+end[axis]*.50+(axis===1?.094:0));
+   g.curvedHorn(torso,'light',root,mid,end,.052-i*.006,{
+    capRoot:true,name:id+'-pectoral-fin-ray-'+suffix,
+   });
+  }
+ }
+}
+
+export function sculptSeaDragon(g,spec){
+ const id=spec.id,ice=id==='m048',low=g.root.userData.detail==='low';
+ const torso=g.group('torso');
+ const path=ice?SEA_SPINE.map(([x,y,z])=>[x*.71,y*.81,z*.91]):SEA_SPINE;
+ const radius=t=>radiusAlong(t,ice);
+ const tube=g.tube(torso,'seaDragonSkin',path,radius(0),{
+  name:id+'-marine-serpent-skin',capEnds:true,radiusProfile:radius,
+  tubularSegments:low?37:72,radialSegments:low?11:20,rough:.66,
+ });
+ const curve=tube.geometry.parameters.path;
+ sculptSeaScales(tube,curve,ice);
+ const at=(name,t,parent,offset)=>g.group(name,curve.getPointAt(t).sub(offset).toArray(),parent);
+ const origin=torso.position;
+ const neck=at('marineNeck',.166,torso,origin);
+ const head=at('head',0,neck,neck.position);
+ const spine=at('spineRear',.49,torso,origin);
+ const tail=at('tail',.636,spine,spine.position);
+ const mid=at('tailMid',.777,tail,curve.getPointAt(.636));
+ const tip=at('tailTip',.892,mid,curve.getPointAt(.777));
+ const joints=[
+  {pivot:head,at:0},{pivot:neck,at:.166,blend:.066},
+  {pivot:torso,at:.323,blend:.078},{pivot:spine,at:.49,blend:.064},
+  {pivot:tail,at:.636,blend:.052},{pivot:mid,at:.777,blend:.052},
+  {pivot:tip,at:.892,blend:.049},
+ ];
+ g.skinAxialTube(tube,joints);
+ sculptMarineFace(g,head,id);
+ sculptSeaBodyFins(g,curve,joints,radius,id,low);
+ const root=curve.getPointAt(.95).sub(curve.getPointAt(.892));
+ const spread=ice?.38:.58;
+ for(const side of [-1,1]){
+  const w=ice?.122:.181;
+  const end=root.clone().add(root.clone().set(side*spread,side<0?-.36:.56,-.44));
+  g.fin(tip,'accent',root.toArray(),end.toArray(),w,{
+   name:id+'-caudal-fin-'+(side<0?'L':'R'),rough:.58,
   });
  }
+ g.root.userData.seaDragonSilhouette=true;
+ g.root.scale.setScalar(spec.size*.87);
 }

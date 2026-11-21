@@ -7,11 +7,11 @@
 import * as THREE from 'three';
 import {m018BattleScale} from './m018-battle-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=reptile-sculpture-v2-20261121';
+ from './monster-geometry.js?v=sea-dragon-summon-silhouette-v3-20261121';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=reptile-sculpture-v2-20261121';
+ from './creature-game-model-routing.js?v=sea-dragon-summon-silhouette-v3-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';
