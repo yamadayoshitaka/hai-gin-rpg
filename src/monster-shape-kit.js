@@ -4,8 +4,8 @@
  * Meshes are cached only where geometry parameters are genuinely reusable.
  */
 import * as THREE from 'three';
-import {decorateM024PBRMaterial}
- from './m024-scarab-pbr-surface.js?v=m024-chitin-crystal-wing-eye-pbr-v2-20261121';
+import {decorateM024PBRMaterial,isScarabPBRSpecies}
+ from './m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3-20261121';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=m024-purple-venom-armored-scarab-v1-20261121';
@@ -60,7 +60,7 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
  let entry=materialCache.get(key);
  if(!entry){
    const wet=spec.family==='aquatic'&&translucent;
-   const m024Surface=spec.id==='m024'&&surface;
+   const m024Surface=isScarabPBRSpecies(spec.id)&&surface;
    const M=wet||m024Surface?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;
    const mat=new M({
      color,roughness:wet?.13:rough,metalness:wet?0:metal,
@@ -71,7 +71,7 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
      ...(wet?{clearcoat:.88,clearcoatRoughness:.085,ior:1.35,
        transmission:.14,thickness:.4}:{}),
    });
-   if(m024Surface)decorateM024PBRMaterial(mat,{surface,detail});
+   if(m024Surface)decorateM024PBRMaterial(mat,{surface,detail,speciesId:spec.id});
    else if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
