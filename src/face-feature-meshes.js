@@ -40,7 +40,7 @@ export const FACE_MAKEUP_PALETTES=Object.freeze([
 export function skinAgeShadowFactor(ageBand='twenties'){
  const id=resolveAgeBand(ageBand).id;
  return id==='under10'||id==='teens'?.06:id==='twenties'?.12:
-  id==='thirties'?.27:id==='forties'?.53:id==='sixties'?.88:1;
+  id==='thirties'?.27:id==='forties'?.53:id==='fifties'?.71:id==='sixties'?.88:1;
 }
 const orbitalRestPositions=new WeakMap();
 function setVertexMakeup(mesh,rgb){
