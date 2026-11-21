@@ -4,7 +4,7 @@
  * Each specimen is real 3D geometry, never an image billboard.
  */
 import * as THREE from 'three';
-import {sculptConceptTrio} from './monster-concept-trio-sculpt.js?v=concept-trio-v1-20261121';
+import {sculptConceptTrio} from './monster-concept-trio-sculpt-v2.js?v=concept-trio-v2-20261121';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
