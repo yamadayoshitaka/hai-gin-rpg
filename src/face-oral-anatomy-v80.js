@@ -1,113 +1,140 @@
 import * as THREE from 'three';
 
 /**
- * V80 local-space oral rig. The face owns a single, reusable oral cavity.
- * Each upper/lower arch follows the jaw aperture; the tongue moves with
- * the mandibular arch instead of being a painted rectangle or lip decal.
- * Geometry is only created once per editor model, never on an animation tick.
+ * Anatomical V81 oral preview: a small dental arcade and a flattened,
+ * floor-of-mouth tongue, not the old forward-facing vampire fangs/ball.
+ *
+ * 12 independent crowns per arch are kept for editable/exportable meshes.
+ * Dental crowns point into the oral cavity, are short, and posterior teeth
+ * recede in Z along an elliptical dental arc. Rest state is completely hidden.
+ * Mouth aperture is determined by the lip rig, not by a static tooth plate.
  */
 export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,depth=.2}={}){
- if(!face?.add||!(width>0&&height>0&&depth>0))
-  throw Error('Oral anatomy requires a 3D face and positive measurements');
+ if(!face?.add||![width,height,depth].every(v=>Number.isFinite(v)&&v>0))
+  throw Error('3D face and positive oral measurements required');
  const root=new THREE.Group();
  root.name='V80_INTRAORAL_ANATOMY';
  root.position.set(x,y,z);
  root.visible=false;
- root.userData.anatomicalRig='maxillary-mandibular-arches-and-tongue';
+ root.userData.anatomicalRig='elliptical-dental-arcade-with-hinged-mandible-v81';
  face.add(root);
+
  const enamel=new THREE.MeshPhysicalMaterial({
-  color:0xece8db,roughness:.24,metalness:0,clearcoat:.35,
-  clearcoatRoughness:.16,side:THREE.DoubleSide
+  color:0xdedbd1,roughness:.30,metalness:0,clearcoat:.18,
+  clearcoatRoughness:.27
  });
- const gum=new THREE.MeshStandardMaterial({
-  color:0x94545d,roughness:.81,side:THREE.DoubleSide
+ const gums=new THREE.MeshStandardMaterial({
+  color:0x87525a,roughness:.80,metalness:0
  });
  const tongueMat=new THREE.MeshPhysicalMaterial({
-  color:0xac626b,roughness:.48,metalness:0,clearcoat:.22,
-  clearcoatRoughness:.3,side:THREE.DoubleSide
+  color:0x9b5760,roughness:.59,metalness:0,clearcoat:.12,
+  clearcoatRoughness:.39
  });
- const grooveMat=new THREE.MeshStandardMaterial({color:0x88454e,roughness:.83});
- const sharedTooth=new THREE.SphereGeometry(1,12,10);
- const sharedGum=new THREE.SphereGeometry(1,16,10);
+ const midlineMat=new THREE.MeshStandardMaterial({
+  color:0x8d4d56,roughness:.79
+ });
+ const crownGeometry=new THREE.SphereGeometry(1,14,10);
+ const gumGeometry=new THREE.SphereGeometry(1,22,12);
  const upper=new THREE.Group(),lower=new THREE.Group();
  upper.name='V80_UPPER_TEETH_ARCH';
  lower.name='V80_LOWER_TEETH_ARCH';
  root.add(upper,lower);
- const span=width*.84;
+
+ const arches=[];
  const addArch=(parent,isUpper)=>{
-  const gumRidge=new THREE.Mesh(sharedGum,gum);
-  gumRidge.name=isUpper?'V80_UPPER_GINGIVA':'V80_LOWER_GINGIVA';
-  gumRidge.scale.set(span*.51,height*.009,depth*.010);
-  gumRidge.position.y=isUpper?height*.003:-height*.003;
-  gumRidge.position.z=-depth*.004;
-  parent.add(gumRidge);
-  const count=12;
-  for(let index=0;index<count;index++){
-   const t=(index-(count-1)/2)/((count-1)/2);
-   const axial=Math.abs(t);
-   // Four incisors, two canines, premolars and first molars. Each
-   // crown has its own tapered width/height, not one white solid bar.
-   const isIncisor=axial<.37,isCanine=axial>=.37&&axial<.55;
-   const toothWidth=span/count*(isIncisor?.88:isCanine?.75:.81);
-   const toothHeight=height*(isIncisor?.012:isCanine?.014:.010);
-   const tooth=new THREE.Mesh(sharedTooth,enamel);
-   tooth.name=(isUpper?'V80_UPPER_TOOTH_':'V80_LOWER_TOOTH_')+
-    String(index+1).padStart(2,'0');
-   tooth.userData.colorRole='tooth';
-   tooth.userData.toothClass=isIncisor?'incisor':isCanine?'canine':'premolar-molar';
-   tooth.scale.set(toothWidth*.50,toothHeight,depth*(isIncisor?.007:.009));
-   tooth.position.set(t*span*.50,
-    (isUpper?-1:1)*height*.003,
-    depth*(.006-.008*axial*axial));
-   tooth.rotation.z=t*.10;
-   parent.add(tooth);
+  const row=[];
+  // The half-width includes the anterior teeth; lateral teeth wrap toward
+  // the throat and should NOT form a white picket fence in frontal view.
+  const spread=width*.42;
+  const gingiva=new THREE.Mesh(gumGeometry,gums);
+  gingiva.name=isUpper?'V80_UPPER_GINGIVA':'V80_LOWER_GINGIVA';
+  gingiva.scale.set(width*.37,height*.0021,depth*.014);
+  gingiva.position.set(0,isUpper?height*.003:-height*.003,-depth*.018);
+  parent.add(gingiva);
+  for(let i=0;i<12;i++){
+   const t=(i-5.5)/5.5,axial=Math.abs(t);
+   const incisor=axial<.39,canine=axial>=.39&&axial<.60;
+   const family=incisor?'incisor':canine?'canine':'premolar-molar';
+   const crown=new THREE.Mesh(crownGeometry,enamel);
+   crown.name=(isUpper?'V80_UPPER_TOOTH_':'V80_LOWER_TOOTH_')+
+    String(i+1).padStart(2,'0');
+   crown.userData.colorRole='tooth';
+   crown.userData.toothClass=family;
+   crown.userData.anatomicalCrown='rounded-short-v81';
+   crown.userData.archParameter=t;
+   // The flat, wide maxillary incisors must not look like needles.
+   const horizontal=width*(incisor?.054:canine?.049:.051);
+   const vertical=height*(incisor?.0050:canine?.0054:.0042);
+   crown.scale.set(horizontal,vertical,depth*.0050);
+   crown.position.set(t*spread,
+    (isUpper?-1:1)*height*.0014,
+    -depth*(.009+.045*axial*axial));
+   crown.rotation.z=t*.055;
+   parent.add(crown);row.push(crown);
   }
+  return row;
  };
- addArch(upper,true);addArch(lower,false);
+ arches.push(addArch(upper,true),addArch(lower,false));
+
  const tongue=new THREE.Group();
  tongue.name='V80_TONGUE_JAW_FOLLOW';
- const body=new THREE.Mesh(new THREE.SphereGeometry(1,22,14),tongueMat);
- body.name='V80_TONGUE_DORSUM';body.userData.colorRole='tongue';
- body.scale.set(width*.255,height*.018,depth*.028);
- body.position.z=depth*.012;tongue.add(body);
- const sulcus=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),grooveMat);
+ const dorsum=new THREE.Mesh(new THREE.SphereGeometry(1,28,16),tongueMat);
+ dorsum.name='V80_TONGUE_DORSUM';
+ dorsum.userData.colorRole='tongue';
+ dorsum.userData.anatomicalShape='low-flattened-tongue-body';
+ // A horizontal dorsum inside the mandibular arch, NOT a pink floating ball.
+ dorsum.scale.set(width*.235,height*.0053,depth*.064);
+ dorsum.position.set(0,-height*.016,-depth*.033);
+ tongue.add(dorsum);
+ const sulcus=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),midlineMat);
  sulcus.name='V80_TONGUE_MEDIAN_SULCUS';
- sulcus.scale.set(width*.012,height*.011,depth*.0025);
- sulcus.position.set(0,height*.002,depth*.039);
+ sulcus.scale.set(width*.007,height*.0012,depth*.021);
+ sulcus.position.set(0,-height*.0107,-depth*.013);
  tongue.add(sulcus);
  root.add(tongue);
+
  const update=({openness=0,jawDrop=openness,smile=0}={})=>{
   const open=THREE.MathUtils.clamp(Number(openness)||0,0,1);
   const jaw=THREE.MathUtils.clamp(Number(jawDrop)||0,0,1);
+  const smileLift=THREE.MathUtils.clamp(Number(smile)||0,0,1);
   const delta=height*.053*open;
-  root.visible=open>.15;
-  root.position.y=y-delta*.17;
-  const dentalVisible=open>.24;
-  upper.visible=dentalVisible;lower.visible=dentalVisible;
-  tongue.visible=open>.42;
-  upper.position.y=delta*.39;
-  lower.position.y=-delta*.42-height*.004*jaw;
-  // The lower arch hinges backward very slightly as it drops.
-  lower.rotation.x=-jaw*.07;
-  tongue.position.y=-delta*.28-height*.006*jaw;
-  tongue.rotation.x=jaw*.13;
-  const smileWidth=1+.10*Math.max(0,Number(smile)||0);
-  upper.scale.x=smileWidth;lower.scale.x=smileWidth;
+  root.visible=open>.095;
+  // The maxillary arch is rigid. Mandibular arch and tongue follow the
+  // same hinge, with tiny recession during large open-jaw poses.
+  upper.position.y=delta*.36+height*.002;
+  lower.position.y=-delta*.52-height*.001;
+  lower.position.z=-depth*.005*jaw;
+  lower.rotation.x=-jaw*.09;
+  upper.scale.x=1+smileLift*.095;lower.scale.x=1+smileLift*.095;
+  tongue.position.y=-delta*.31;
+  tongue.position.z=-depth*.008*jaw;
+  tongue.rotation.x=jaw*.09;
+  const teethVisible=open>.16;
+  upper.visible=teethVisible;lower.visible=teethVisible;
+  tongue.visible=open>.31;
+  // Lateral molars are inside the cheek, not visible through the lips.
+  for(const row of arches)for(const tooth of row){
+   const axial=Math.abs(tooth.userData.archParameter);
+   tooth.visible=teethVisible&&axial<.79;
+  }
  };
  const dispose=()=>{
   root.removeFromParent();
-  const geometries=new Set(),materials=new Set();
+  const geos=new Set(),mats=new Set();
   root.traverse(o=>{
    if(!o.isMesh)return;
-   geometries.add(o.geometry);
-   for(const m of Array.isArray(o.material)?o.material:[o.material])
-    materials.add(m);
+   geos.add(o.geometry);
+   const items=Array.isArray(o.material)?o.material:[o.material];
+   for(const mat of items)mats.add(mat);
   });
-  geometries.forEach(g=>g.dispose());
-  materials.forEach(m=>m.dispose());
+  geos.forEach(g=>g.dispose());
+  mats.forEach(m=>m.dispose());
  };
  return {root,upper,lower,tongue,update,dispose,
-  report:Object.freeze({upperTeeth:12,lowerTeeth:12,
-   tongueMeshCount:2,gingivae:2,mandibleFollowsJaw:true,
-   geometryIndependentOfLipMakeup:true})};
+  report:Object.freeze({
+   upperTeeth:12,lowerTeeth:12,tongueMeshCount:2,gingivae:2,
+   mandibleFollowsJaw:true,geometryIndependentOfLipMakeup:true,
+   v81ShortBluntCrowns:true,v81RecessedDentalArcade:true,
+   v81FlattenedTongue:true
+  })};
 }
