@@ -1,8 +1,8 @@
 /** Chapter-1/2 canonical identities, and intentionally different NPC archetypes.
  * Distinct art references are metadata: never claim a scene crop is an approved 3D master.
  * The 3D preview is rendered by the existing independent real-head/real-outfit rig. */
-import {normalizePartSelection,PART_CATALOG} from './face-part-catalog-v32.js?v=67-v71';
-import {synchronizeHeroHairSelection} from './hero-hair-controls-v43.js?v=67-v71';
+import {normalizePartSelection,PART_CATALOG} from './face-part-catalog-v32.js?v=67-v72';
+import {synchronizeHeroHairSelection} from './hero-hair-controls-v43.js?v=67-v72';
 import {chooseHeroFacePreset,polishHeroFaceControls} from './hero-face-presets-v45.js';
 import {resolveAgeBand,resolveBodyType,applyDemographicFaceControls,AGE_BAND_IDS,BODY_TYPE_IDS} from './character-demographics-v47.js?v=60';
 import {youngHeroMaleControls} from './hero-youthful-appearance-v50.js?v=50';
