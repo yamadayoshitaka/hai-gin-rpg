@@ -25,7 +25,7 @@ assert.match(source,/node\.visible=visible;delete node\.userData\.constructDonor
 assert.match(source,/constructShellParts:construct\?frames\.chest\.userData\.golemShellParts/,
  'Runtime must record actual geometry, not only the named concept');
 assert.equal(CONSTRUCT_COSTUME_KINDS.length,5);
-assert.equal(CONSTRUCT_FULL_SHELL_REVISION,'golem-whole-body-no-flesh-v2-20261121');
+assert.equal(CONSTRUCT_FULL_SHELL_REVISION,'golem-anatomical-facets-v3-20261121');
 
 const roles=new Set(['constructBase','constructFacet','constructTrim',
  'constructCore','constructDark']);
