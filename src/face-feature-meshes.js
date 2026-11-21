@@ -363,12 +363,12 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const lowerLipContact=bell(nx,0,.095)*bell(ny,.482,.012)*front;
   const foreheadBands=[.758,.794,.823].reduce((v,y)=>
    v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
-  const crows=bell(nx,.52,.13)*bell(ny,.675,.085)*front;
-  const nasolabial=bell(nx,.27+.08*(.63-ny),.052)*
+  const crows=bell(nx,.208,.066)*bell(ny,.675,.073)*front;
+  const nasolabial=bell(nx,.084+.032*(.63-ny),.034)*
    bell(ny,.51,.099)*front;
-  const mouthCorners=bell(nx,.235,.035)*bell(ny,.478,.027)*front;
+  const mouthCorners=bell(nx,.076,.023)*bell(ny,.483,.032)*front;
   const ageShade=age.wrinkles*(.17*foreheadBands+.30*crows+
-   .42*nasolabial+.19*mouthCorners);
+   .65*nasolabial+.26*mouthCorners);
   // 20s must not inherit the adult under-eye bag. Skin shades rise with
   // AGE independently of cosmetic presets; no permanent young wrinkles.
   const youthFade=skinAgeShadowFactor(age.id);
