@@ -24,11 +24,12 @@ try{
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have the front lip aperture sealed: '+JSON.stringify(native));
- assert.ok(native.mouthWidth>=1.23&&native.mouthWidth<=1.25,
-  'The new natural-width preset must be applied to the actual 3D donor');
+ assert.ok(native.mouthWidth>=.84&&native.mouthWidth<=.86,
+  'The requested narrower-mouth preset must be applied to the actual 3D donor');
  assert.ok(native.donorLipWidth>0&&
-  native.currentLipWidth/native.donorLipWidth>1.12,
-  'Real WebGL source-mouth lip span must visibly increase, not lipstick only');
+  native.currentLipWidth/native.donorLipWidth<.97&&
+  native.currentLipWidth/native.donorLipWidth>.75,
+  'Real WebGL source-mouth lip span must visibly shrink, not lipstick only');
  assert.ok(await page.locator('#mouthWidth').count()===1,
   'Real female mouth-width adjustment slider must be present');
  assert.ok(await page.locator('#maleMouthWidth').count()===1,
