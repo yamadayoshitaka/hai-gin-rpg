@@ -54,6 +54,8 @@ import {addGargoyleMonsterAnatomy,createGargoyleStoneTexture,
  from './monster-gargoyle-sculpt.js?v=m042-slender-talon-safe-sword-v3-20261121';
 import {createMineralLimbArticulator}
  from './monster-mineral-limb-articulator.js?v=bone-to-bone-20261121';
+import {buildM031SkeletonAnatomy,M031_SKELETON_ANATOMY_REVISION}
+ from './m031-skeleton-anatomy.js?v=m031-real-skeleton-v1-20261121';
 import {applyHumanlikeConceptFinish}
  from './monster-humanoid-concept-finish.js?v=humanoid-concept-sculpt-v1-20261121';
 
@@ -198,6 +200,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // diameter for a slim female, heavy guard and broad male actor.
  const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
  const ownedGeo=[],ownedMats=[],ownedTextures=[];
+ const skeletal=profile.id==='m031'&&profile.costume==='skeleton';
  const construct=isConstructCostume(profile);
  const fullBody=isFullBodyMonsterShell(profile);
  const mineral=fullBody?CONSTRUCT_SHELL_SPECIES[profile.costume]:null;
@@ -385,7 +388,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Original source materials remain untouched and maps/normals are retained.
  let suppressedFacialHair=0;
  model.traverse(node=>{
-  if(construct&&node.isMesh){
+  if((construct||skeletal)&&node.isMesh){
    // Keep bones and imported animation clips, not the donor's naked skin,
    // ordinary human face, opaque clothing, hair or eye geometry.
    concealedDonorMeshes.push({node,visible:node.visible});
@@ -421,7 +424,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
  // attach a single continuous head-grown scalp and long, tapered hair:
  // source Quaternius hair is intentionally hidden by canonical actor loader.
- const groom=construct?null:fullBody?null:attachCanonicalCharacterGroom({
+ const groom=construct||skeletal||fullBody?null:attachCanonicalCharacterGroom({
   THREE,model,frames:{...frames,head:frames.headGroom},
   headBone:joints.head,profile,detail,
   attach:(frame,g,role,name,p,r)=>
@@ -431,9 +434,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const gothic=hasGothicMonsterSculpt(costume);
  const demonic=hasDemonCosmetics(profile);
  const femaleSummon=isFemaleSummonCostume(profile);
- if(gothic&&!fullBody)addGothicMonsterSculpt({
+ if(gothic&&!fullBody&&!skeletal)addGothicMonsterSculpt({
    THREE,profile,detail,frames,attach,tube,torus
  });
+ const skeletonSculpt=skeletal?buildM031SkeletonAnatomy({
+  profile,detail,frames,attach,tube
+ }):null;
  if(profile.id==='m042')addGargoyleMonsterAnatomy({
    profile,detail,frames,attach,tube
  });
@@ -471,7 +477,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  }):null;
  // Structural garment layers are essential: the canonical full-body donor
  // wears little clothing. A cape or set of wings is not an outfit.
- const royalOutfit=fullBody?null:wardrobeFor(profile);
+ const royalOutfit=fullBody||skeletal?null:wardrobeFor(profile);
  if(royalOutfit)addRegalHumanoidOutfit({
    profile,detail,frames,attach,tube
  });
@@ -641,8 +647,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(profile.mage){
   bands(frames.chest,'rune-hem',-.38,-.21,.23,.17,1.9,'accent');
  }
- const conceptFinish=fullBody?Object.freeze({id:profile.id,
-  revision:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
+ const conceptFinish=fullBody||skeletal?Object.freeze({id:profile.id,
+  revision:skeletal?M031_SKELETON_ANATOMY_REVISION:
+   profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
    CONSTRUCT_FULL_SHELL_REVISION,
   skeletonAnchored:true,visualApproved:false}):
   applyHumanlikeConceptFinish({THREE,profile,detail,frames,attach,tube});
@@ -665,7 +672,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
   id:profile.id,kind:costume,heroSource:profile.modelId,
   humanConceptFinish:conceptFinish,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
-  gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
+  gothicSculptEdition:gothic&&!skeletal?'gothic-horror-2026-11':null,
+  skeletonSculptEdition:skeletonSculpt?.revision??null,
+  skeletonRealBones:skeletonSculpt?.longBones??0,
+  skeletonRibs:skeletonSculpt?.ribs??0,
+  skeletonDonorSkinConcealed:skeletal&&concealedDonorMeshes.length>0,
   constructSculptEdition:fullBody?(profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
     CONSTRUCT_FULL_SHELL_REVISION):null,
   gargoyleSculptEdition:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:null,
@@ -677,7 +688,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gargoyleFlight:profile.id==='m042',
   gargoyleStoneTexture:profile.id==='m042'?!!gargoyleTexture:false,
   armourSourceHumanFaceHidden:fullBody&&concealedDonorMeshes.length>0,
-  noHumanoidUnderwear:fullBody,
+  noHumanoidUnderwear:fullBody||skeletal,
   anatomicalLimbFitting:fullBody?model.userData.mineralArticulator.revision:null,
   fullBodyShellParts:fullBody?frames.chest.userData.golemShellParts??0:0,
   constructDonorMeshesConcealed:concealedDonorMeshes.length,
@@ -711,7 +722,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   modelUprightGroom:!!frames.headGroom.userData.modelUprightGroom,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,
-  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||fullBody,
+  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||fullBody||skeletal,
   clothCoverageValidated:!!royalOutfit,
   shoulderYokeAttached:!!royalOutfit,neckCollarTapered:!!royalOutfit,
   shoulderFitCalibrated:outfitFit.calibrated,
