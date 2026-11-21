@@ -98,11 +98,11 @@ test('wig keeps a continuous donor-derived crown undercoat and repels rear locks
 });
 
 test('published editors and QA workflow load v60 with cloak refresh after pose update',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-neck-buzz-crown-v63$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-side-ribbon-blend-v64$/);
  const body=read('face-body-studio.html');
  const face=read('face-mesh-studio.html');
- assert.match(body,/20261121-costume-neck-buzz-crown-v63/);
- assert.match(face,/20261121-costume-neck-buzz-crown-v63/);
+ assert.match(body,/20261121-sadako-side-ribbon-blend-v64/);
+ assert.match(face,/20261121-sadako-side-ribbon-blend-v64/);
  assert.match(body,/createMantleHairCollision/);
  assert.match(body,/garmentCollisionResolver:mantleCollision/);
  assert.match(body,/mantleCollision\.refresh\(\)/);
