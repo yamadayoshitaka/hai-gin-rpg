@@ -11185,6 +11185,14 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }),enemyGroupBySquad):null,
  worldSize:WORLD_SIZE,
  getMapBackground:()=>miniBase,
+ getMapBuildings:()=>availableExplorationBuildings({all:true}).filter(b=>
+  !destroyedTownBuildings.has(b.building.data)&&b.building.model?.position
+ ).map(b=>({
+  id:b.id,label:b.name,
+  x:Math.round(b.building.model.position.x/CELL+6),
+  z:Math.round(b.building.model.position.z/CELL+6),
+  floors:Math.max(1,b.building.structure?.floors?.length||1)
+ })),
  // The public radar presents three command teams, never job division IDs.
  // The normal skill/action roster remains physical for correct targeting.
  getRadarSquads:own=>THREE_TEAM_BATTLE?
