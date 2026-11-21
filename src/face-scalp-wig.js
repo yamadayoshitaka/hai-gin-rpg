@@ -1499,7 +1499,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // reintroducing its solid scalp cap. Native donor scalp is masked in
   // the studio along the contoured hairline, leaving face and ears.
   const nodes=style.shortCutKind==='buzz'
-   ?[locks,...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
+   ?[...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
