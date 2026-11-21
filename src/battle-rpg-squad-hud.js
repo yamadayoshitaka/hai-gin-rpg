@@ -66,7 +66,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  root.setAttribute('aria-label','戦場の味方隊と敵隊のRPGステータス');
  root.hidden=true;
  const panels=[];
- let rows=[],selected='',expanded=[true,true],pages=[0,0],visible=false,expandedTeamId=null;
+ let rows=[],selected='',expanded=[true,true],pages=[0,0],visible=false,expandedTeamId=[null,null];
  let pendingTapTimer=null,lastTap=null;
  // Roster refreshes replace DOM elements: distinguish taps using stable squad keys.
  for(let team=0;team<=1;team++){
@@ -118,8 +118,8 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   }
   if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);
   lastTap={key,at:now};
-  const parent=team===0&&rows.find(row=>row.id===String(id)&&Array.isArray(row.members));
-  if(parent)expandedTeamId=expandedTeamId===String(id)?null:String(id);
+  const parent=rows.find(row=>Number(row.team)===team&&row.id===String(id)&&Array.isArray(row.members));
+  if(parent)expandedTeamId[team]=expandedTeamId[team]===String(id)?null:String(id);
   select(team,id);
   pendingTapTimer=setTimeout(()=>{
    if(lastTap?.key!==key)return;
@@ -130,8 +130,8 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  function renderSide(team){
   const side=panels[team];
   const base=rows.filter(r=>Number(r.team)===team);
-  const own=team===0?base.flatMap(row=>
-   Array.isArray(row.members)&&expandedTeamId===String(row.id)?
+  const own=base.flatMap(row=>
+   Array.isArray(row.members)&&expandedTeamId[team]===String(row.id)?
     [row,...row.members.map(member=>({...member,isJobDivision:true,parentTeamId:row.id}))]:[row]):base;
   const pageSize=expanded[team]?Math.max(1,own.length):5;
   const totalPages=Math.max(1,Math.ceil(own.length/pageSize));
@@ -298,7 +298,8 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   if(nextSig===root.dataset.signature)return;
   root.dataset.signature=nextSig;
   rows=next;
-  if(expandedTeamId&&!rows.some(r=>String(r.id)===expandedTeamId))expandedTeamId=null;
+  for(const team of [0,1])if(expandedTeamId[team]&&
+   !rows.some(r=>Number(r.team)===team&&String(r.id)===expandedTeamId[team]))expandedTeamId[team]=null;
   const firstAlly=rows.find(r=>Number(r.team)===0);
   const firstRender=!selected&&firstAlly;
   if(firstRender){selected=selectionKey(0,firstAlly.id);pages=[0,0];}
