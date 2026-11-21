@@ -54,7 +54,12 @@ for(const id of ['m016','m017','m019','m020','m048','m050']){
      for(const suffix of ['L','R']){
       assert.equal(model.getObjectByName('m020-swept-crown-'+suffix).parent,p.head);
       assert.equal(model.getObjectByName('m020-current-whisker-'+suffix).parent,p.head);
+      assert.equal(model.getObjectByName('m020-temple-antler-'+suffix).parent,p.head);
+      assert.equal(model.getObjectByName('m020-caudal-fin-'+suffix).parent,p.tailTip);
+      assert.equal(model.getObjectByName('m020-flank-scute-'+suffix+'-0')?.isMesh,true);
+      assert.equal(model.getObjectByName('m020-caudal-spar-'+suffix+'-0').parent,p.tailTip);
      }
+    assert.equal(model.getObjectByName('m020-caudal-keel-stinger').parent,p.tailTip);
     }else assert.equal(crest,undefined);
    }else{
     for(const suffix of ['frontL','frontR','rearL','rearR'])
@@ -64,7 +69,7 @@ for(const id of ['m016','m017','m019','m020','m048','m050']){
  });
 }
 
-for(const [id,target,nativeMinimum] of [['m020',12,10.5],['m048',10,8]]){
+for(const [id,target,nativeMinimum] of [['m020',14,13.2],['m048',10,8]]){
  test(id+' elongated body keeps its giant battle and summon scale',()=>{
   const cellSize=1.12;
   const enemy=createRegisteredBattleMonster(MONSTER_BY_ID[id],{detail:'low',cellSize});
