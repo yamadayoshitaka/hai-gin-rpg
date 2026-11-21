@@ -6,7 +6,7 @@ import {ensureSortiePlan,sortieTeams,sortieLevel,sortiePlanningLimit,
  SORTIE_FORMATIONS} from './three-team-sortie.js';
 import {FORMATION_ENTRY_REQUIREMENTS,formationTemplate} from './sortie-formation-template-rules.js';
 import {FORMATION_ROLES,ROLE_JOBS,formationMinimumForRole} from './sortie-formation-logic.js';
-import {JOBS,armyTroops} from './story-campaign.js';
+import {JOBS} from './story-campaign.js';
 import {trainingHireCapacity,hireTownSoldiers} from './game-core-flow.js';
 import {chooseInnFormation,inspectInnFormation} from './inn-formation-rules.js';
 
@@ -47,13 +47,13 @@ function availablePools(game,team){
  for(const job of JOBS){
   const main=sources.find(s=>s.job===job&&canonical(s));
   if(main)canonicalJobs.add(String(main.id));
-  const other=main?plan.teams.filter(t=>t!==team).reduce((n,t)=>n+assigned(t,main.id),0):0;
+  const other=main?plan.teams.filter(t=>t.id!==team.id).reduce((n,t)=>n+assigned(t,main.id),0):0;
   pool.push({key:'hire:'+job,id:main?.id??null,job,rarity:'N',
    free:main?Math.max(0,asCount(main.count)-other):0,canHire:true});
  }
  for(const s of sources){
   if(!active(s)||canonicalJobs.has(String(s.id)))continue;
-  const other=plan.teams.filter(t=>t!==team).reduce((n,t)=>n+assigned(t,s.id),0);
+  const other=plan.teams.filter(t=>t.id!==team.id).reduce((n,t)=>n+assigned(t,s.id),0);
   const free=Math.max(0,asCount(s.count)-other);
   if(free>0)pool.push({key:'stock:'+s.id,id:s.id,job:s.job,rarity:s.rarity||'N',
    free,canHire:false});
