@@ -10,6 +10,9 @@ on:
       - 'src/creature-game-model-routing.js'
       - 'src/monster-character-cosplay.js'
       - 'src/monster-construct-costume.js'
+      - 'src/monster-mineral-limb-articulator.js'
+      - 'src/monster-demon-cosmetics.js'
+      - 'qa/monster-humanoid-armor-articulation.test.mjs'
       - 'src/monster-construct-anatomy-v3.js'
       - 'src/monster-humanoid-concept-finish.js'
       - 'src/monster-character-cosplay-manifest.js'
@@ -52,6 +55,9 @@ jobs:
           node --check src/monster-construct-costume.js
           node --check src/monster-construct-anatomy-v3.js
           npm run test:golem-full-shell
+          node --check src/monster-mineral-limb-articulator.js
+          node --check src/monster-demon-cosmetics.js
+          node qa/monster-humanoid-armor-articulation.test.mjs
           node qa/monster-16-cosplay-pigment-regression.test.mjs
 
       - name: Capture real Three.js monster visuals in headless browser
