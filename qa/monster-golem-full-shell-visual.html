@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Construct monster actual animated rig visual verification</title>
+<style>
+html,body{margin:0;background:#262530;color:#f8f3ff;font-family:system-ui,sans-serif}
+#status{padding:12px 20px;font-weight:700;background:#151620;min-height:25px}
+#viewport{width:100%;height:calc(100vh - 50px);display:block}
+</style>
+<script type="importmap">
+{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}
+</script></head>
+<body data-ready="false"><div id="status">Loading actual skinned mineral monster...</div>
+<canvas id="viewport"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {MONSTER_BY_ID} from '../src/monster-catalog.js';
+import {createCosplayedHumanoidMonster} from '../src/monster-character-cosplay.js';
+const params=new URLSearchParams(location.search);
+const id=params.get('id')||'m038';
+const spec=MONSTER_BY_ID[id];
+if(!spec||!['m036','m037','m038','m039','m040'].includes(id))
+ throw Error('Expected one of the five canonical golems');
+const status=document.getElementById('status');
+const scene=new THREE.Scene();scene.background=new THREE.Color('#605b67');
+scene.add(new THREE.HemisphereLight('#edecff','#525060',1.85));
+const key=new THREE.DirectionalLight('#fff6ec',3.1);
+key.position.set(4,8,7);scene.add(key);
+const fill=new THREE.DirectionalLight('#bfb3ff',2);
+fill.position.set(-5,6,-4);scene.add(fill);
+const ground=new THREE.Mesh(
+ new THREE.PlaneGeometry(30,30),
+ new THREE.MeshStandardMaterial({color:'#52525f',roughness:.98})
+);
+ground.rotation.x=-Math.PI/2;ground.position.y=-.08;scene.add(ground);
+const renderer=new THREE.WebGLRenderer({
+ canvas:document.getElementById('viewport'),
+ antialias:true,alpha:false,preserveDrawingBuffer:true,
+ powerPreference:'high-performance'
+});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.38;
+renderer.setSize(innerWidth,innerHeight-50,false);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/(innerHeight-50),.1,200);
+const handle=createCosplayedHumanoidMonster(spec,{detail:'high',withoutFallback:true});
+scene.add(handle.root);
+try{
+ const loaded=await handle.ready;
+ if(loaded.source!=='canonical-character-cosplay')
+  throw Error('Native rig failed: '+JSON.stringify(loaded));
+ handle.update(0.12);
+ const shell=handle.metadata;
+ if(!shell||shell.constructDonorMeshesConcealed<1||shell.constructShellParts<45)
+  throw Error('Construct is not fully mineralized: '+JSON.stringify(shell));
+ handle.root.updateMatrixWorld(true);
+ const box=new THREE.Box3(),local=new THREE.Box3();
+ box.makeEmpty();
+ let drawCount=0,originalVisible=0,protection=0;
+ const actualVisible=o=>{
+  for(let p=o;p;p=p.parent)if(!p.visible)return false;
+  return true;
+ };
+ handle.root.traverse(o=>{
+  if(!o.isMesh||!actualVisible(o))return;
+  drawCount++;
+  if(!o.userData?.golemFullShell)originalVisible++;
+  else protection++;
+  local.setFromObject(o);
+  box.union(local);
+ });
+ if(drawCount===0||originalVisible!==0||protection<45||box.isEmpty())
+  throw Error('Human donor leaked or live render missing: '+JSON.stringify({
+   drawCount,originalVisible,protection}));
+ const size=box.getSize(new THREE.Vector3());
+ const center=box.getCenter(new THREE.Vector3());
+ const dist=Math.max(size.y*2.08,size.x*2.20,5);
+ camera.position.set(center.x+dist*.44,center.y+size.y*.06,
+  center.z+dist*.83);
+ camera.lookAt(center);
+ renderer.render(scene,camera);
+ const gl=renderer.getContext();gl.finish();
+ const pixel=new Uint8Array(4);
+ gl.readPixels(Math.floor(renderer.domElement.width/2),
+  Math.floor(renderer.domElement.height/2),1,1,
+  gl.RGBA,gl.UNSIGNED_BYTE,pixel);
+ const snapshot=new Image();snapshot.id='actual-golem-render-snapshot';
+ snapshot.src=renderer.domElement.toDataURL('image/png');
+ snapshot.style.cssText='display:block;width:100%;height:calc(100vh - 50px);object-fit:contain';
+ renderer.domElement.replaceWith(snapshot);
+ status.textContent=id+' '+spec.name+' • REAL SKINNED GOLEM • '+shell.constructSculptEdition+
+  ' | visible '+drawCount+' | humanoid donor faces '+originalVisible+
+  ' | mineral parts '+protection+' | center pixel '+[...pixel].join(',');
+ document.body.dataset.ready='true';
+ document.body.dataset.originalVisible=String(originalVisible);
+ document.body.dataset.mineralParts=String(protection);
+}catch(error){
+ status.textContent='FAILED '+id+': '+String(error?.stack||error);
+ document.body.dataset.error=String(error);
+ throw error;
+}
+</script></body></html>
