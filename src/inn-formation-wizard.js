@@ -9,6 +9,7 @@ import {
 import {FORMATION_ROLES,ROLE_NAMES} from './sortie-formation-logic.js';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
 import {inspectInnFormation} from './inn-formation-rules.js';
+import {trainingSoldierStock,inspectTrainingFormationPurchase} from './training-formation-purchase.js';
 import {TOWN_SHOP,squadEquipmentBonus,trainingHireCapacity} from './game-core-flow.js';
 import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
 import {formationUnlockLabels} from './formation-strategy-unlocks.js';
@@ -118,6 +119,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     button('data-inn-wizard-slot="'+index+'"',s?'変更':'選択')+'</div></div>';
   }).join('');
 
+  const stock=trainingSoldierStock(game,team.id);
   const entries=Object.keys(SORTIE_FORMATIONS).map(id=>({
    id,...inspectInnFormation(game,team.id,id)
   }));
@@ -131,12 +133,18 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const previewId=previewEntry?.id;
   const preview=previewId?SORTIE_FORMATIONS[previewId]:null;
   const plan=previewId?signatureStrategyFor(previewId):null;
+  const purchase=previewId?inspectTrainingFormationPurchase(game,team.id,previewId):null;
   const needLabel=entry=>{
    if(entry.eligible)return '✓ 使用可能';
    const peopleLeft=Math.max(0,(entry.requirements?.people||0)-entry.total);
    return peopleLeft?'あと'+peopleLeft+'人':'職業・条件不足';
   };
+  const stockByJob=stock.byJob.filter(r=>r.available>0);
   body='<div class="innWizardRoster">'+rows+'</div>'+
+   '<div class="trainingStockOverview"><b>在庫兵 '+stock.unassigned+'人 ／ 予備兵 '+stock.reserve+'人 ／ 所持金 '+stock.wallet+'G</b>'+
+    '<small>未配置 '+stock.unassigned+'人・出撃配置済 '+stock.assigned+'人 ／ 追加雇用 最大'+stock.capacity.max+'人（N兵 '+stock.capacity.unitCost+'G/人）</small>'+
+    '<div class="trainingStockJobs">'+(stockByJob.length?stockByJob.map(r=>
+     '<span>'+esc(r.job)+' '+esc(r.rarity)+' '+r.available+'人</span>').join(''):'<span>未配置の兵士なし</span>')+'</div></div>'+
    '<small class="innWizardInfo">出撃予定 '+total+'/'+limit+'人 · 人数を変えると陣形条件も即時更新</small>'+
    '<div class="innWizardRosterPreview" aria-label="陣形の使用可否と不足人数">'+
     '<div class="trainingFormationHeading"><b>陣形一覧　使用可 '+usable+' / '+allCount+'</b>'+
@@ -163,7 +171,16 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
          esc(previewEntry.reason))+
       '</small>'+
       renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
-      '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small></div>':'')+
+      '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small>'+
+      '<div class="trainingFormationQuote" aria-live="polite">'+
+       '<b>所持金 '+stock.wallet+'G ／ 在庫兵 '+stock.unassigned+'人 ／ 必要人数 '+(purchase?.total||0)+'人</b>'+
+       (purchase?.allocations?.length?'<small>'+purchase.allocations.map(p=>
+         esc(p.job)+' '+esc(p.rarity)+' '+p.count+'人（既存'+(p.count-p.hire)+'／補充'+p.hire+'）').join(' · ')+'</small>':'')+
+       '<small>追加雇用 '+(purchase?.hireCount||0)+'人 ／ 支払 '+(purchase?.cost||0)+'G'+
+        (purchase?.possible?' ／ 支払後 '+(stock.wallet-(purchase.cost||0))+'G':' ／ '+esc(purchase?.reason||'編成不可'))+'</small>'+
+       button('data-training-auto-formation="'+esc(previewId)+'" '+(!purchase?.possible?'disabled':''),
+        purchase?.possible?'✓ '+(purchase.hireCount?'在庫＋雇用で配置する':'在庫兵だけで配置する')+'（'+purchase.cost+'G）':'条件不足：雇用・配置できません')+
+      '</div></div>':'')+
    '</div>';
   back='teamPick';next='equipment';
  }else if(view==='rosterPick'){
