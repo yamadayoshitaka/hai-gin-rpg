@@ -45,7 +45,7 @@ import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
 
 import {addGargoyleMonsterAnatomy,createGargoyleStoneTexture,
  createGargoylePbrMaterial,GARGOYLE_SPECIES_REVISION}
- from './monster-gargoyle-sculpt.js?v=m042-species-redesign-v1-20261121';
+ from './monster-gargoyle-sculpt.js?v=m042-slim-sword-flight-v2-20261121';
 import {createMineralLimbArticulator}
  from './monster-mineral-limb-articulator.js?v=bone-to-bone-20261121';
 import {applyHumanlikeConceptFinish}
@@ -100,6 +100,36 @@ function updateCanonicalTenguFlight(root,host,visual,action,time,elapsed){
   if(leg)leg.rotation.x+=.32;
 }
 
+/** m042 flying gargoyle: airborne idle, progress, attacks and defeat landing. */
+function updateCanonicalGargoyleFlight(root,host,visual,action,time,elapsed){
+ const flying=action!=='defeat',height=1.35;
+ const pulse=(duration)=>Math.sin(Math.PI*clamp(elapsed/duration,0,1));
+ const attack=action==='attack'?pulse(1.1):0;
+ const special=action==='special'?pulse(1.6):0;
+ const leap=action==='leap'?pulse(1.25):0;
+ const hover=.065*Math.sin(time*1.65)+.018*Math.sin(time*3.1);
+ const landing=1-clamp(elapsed/1.15,0,1);
+ const altitude=flying?
+  Math.max(.44,height+hover+.48*leap-.30*attack-.14*special):
+  height*landing*landing;
+ root.position.y=altitude;
+ root.userData.gargoyleInAir=flying&&altitude>.4;
+ root.userData.gargoyleCurrentAltitude=altitude;
+ root.userData.gargoyleFlightAction=action;
+ root.userData.gargoyleSwordArmed=!!visual?.userData?.monsterCostume?.gargoyleSword;
+ host.rotation.x=flying?-.045-(action==='run'?.12:0)-.10*attack:0;
+ host.rotation.z=flying?.025*Math.sin(time*.9):0;
+ const tempo=action==='run'?5.6:action==='attack'?6.8:3.8;
+ const power=action==='run'?.48:action==='attack'?.52:.32;
+ for(const pivot of visual?.userData?.gargoyleWingPivots||[]){
+  const side=pivot.userData.gargoyleWingSide,beat=Math.sin(time*tempo);
+  pivot.rotation.z=side*(flying?.13+power*beat:.035);
+  pivot.rotation.x=flying?-.06+.14*Math.cos(time*tempo-.25):0;
+  pivot.rotation.y=flying?side*.055:0;
+ }
+ if(flying)for(const leg of visual?.userData?.gargoyleFlightLegBones||[])
+  if(leg)leg.rotation.x+=.35;
+}
 /** Convert a visible canonical human rig bone into an anatomical world-metre
  * attachment frame, inherited by every subsequent skeletal animation pose. */
 function createFrame(bone,model){
@@ -599,6 +629,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(fullBody)model.userData.mineralArticulator=createMineralLimbArticulator({
   model,frames,id:profile.id
  });
+ if(profile.id==='m042'){
+  model.userData.gargoyleWingPivots=frames.chest.userData.gargoyleWingPivots;
+  model.userData.gargoyleFlightLegBones=joints.legs.filter(Boolean);
+ }
  model.userData.monsterCostume={
   id:profile.id,kind:costume,heroSource:profile.modelId,
   humanConceptFinish:conceptFinish,
@@ -609,6 +643,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gargoyleSculptEdition:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:null,
   gargoyleWings:profile.id==='m042'?frames.chest.userData.gargoyleWingCount??0:0,
   gargoyleTalons:profile.id==='m042'?frames.chest.userData.gargoyleClawCount??0:0,
+  gargoyleSword:profile.id==='m042'?frames.chest.userData.gargoyleSwordCount===4:false,
+  gargoyleFlight:profile.id==='m042',
   gargoyleStoneTexture:profile.id==='m042'?!!gargoyleTexture:false,
   armourSourceHumanFaceHidden:fullBody&&concealedDonorMeshes.length>0,
   noHumanoidUnderwear:fullBody,
@@ -685,6 +721,11 @@ export function createCosplayedHumanoidMonster(spec,{
  });
  const root=new THREE.Group();root.name=spec.id+'-'+spec.name+'-cosplay';
  const isFlyingTengu=spec.id==='m015';
+ const isFlyingGargoyle=spec.id==='m042';
+ if(isFlyingGargoyle){
+  root.userData.gargoyleFlightMode=true;
+  root.userData.gargoyleFlightHeight=1.35;
+ }
  if(isFlyingTengu){
   root.userData.avianFlightMode=true;
   root.userData.tenguFlightMode=true;
@@ -743,7 +784,8 @@ export function createCosplayedHumanoidMonster(spec,{
    if(!motion)return;
    // A cast is not a sword swing. Keep the native idle base and overlay
    // a per-instance casting gesture; ordinary attacks still use the GLB clip.
-   const clip=isFlyingTengu&&['run','walk','leap'].includes(action)?'idle':
+   const clip=(isFlyingTengu||isFlyingGargoyle)&&
+    ['run','walk','leap'].includes(action)?'idle':
     action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
    const chosen=motion.actions[clip]?clip:'idle';
    if(lastAction!==chosen||!motion.active){
@@ -763,6 +805,7 @@ export function createCosplayedHumanoidMonster(spec,{
    // between each moving pair of joints AFTER the native animation mixer.
    visual?.userData.mineralArticulator?.update(action);
    if(isFlyingTengu)updateCanonicalTenguFlight(root,host,visual,action,time,elapsed);
+   if(isFlyingGargoyle)updateCanonicalGargoyleFlight(root,host,visual,action,time,elapsed);
    if(profile.costume==='seraph_female'){
     for(const pivot of seraphWingPivots){
      const side=pivot.userData.seraphFlightWingSide,beat=Math.sin(time*4.1);
