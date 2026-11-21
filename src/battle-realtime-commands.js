@@ -1297,6 +1297,7 @@ radarCanvas.addEventListener('keydown',event=>{
    $('realtimeMapMessage').textContent='戦闘を開始できません。作戦停止状態を確認してください。';
    return false;
   }
+  for(const [group,strategy] of Object.entries(plans))initialTeamPlans.set(group,strategy);
   started=true;mode='live';invalidateSquadSnapshot();hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;
   $('realtimeBattleDock').hidden=true;$('realtimeSquadRadar').hidden=false;
   renderStatus();drawRadar(true);return true;
