@@ -1,0 +1,47 @@
+name: Summon healing AI, Starflare and visual regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/summon-battle-doctrine.js'
+      - 'src/combat-action-runtime.js'
+      - 'src/combat-creature-performance.js'
+      - 'src/combat-effect-directives.js'
+      - 'src/combat-world-object-renderer.js'
+      - 'src/monster-character-cosplay.js'
+      - 'tactics-wireframe.html'
+      - 'qa/summon-healer-starflare-regression.test.mjs'
+      - '.github/workflows/summon-battle-quality-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  summon-simulation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frozen rendering dependencies without updating lockfile
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Validate battle and rendering modules
+        run: |
+          node --check src/summon-battle-doctrine.js
+          node --check src/combat-action-runtime.js
+          node --check src/combat-effect-directives.js
+          node --check src/combat-world-object-renderer.js
+          node --check src/monster-character-cosplay.js
+      - name: Verify healing priority, real Starflare damage and feather PBR
+        run: npm run test:summon-battle-quality
+      - name: Existing mass battle summoning and damage link regression
+        run: |
+          node --test qa/battle-manual-summon-attack.test.mjs
+          node --test qa/battle-bridge-summon-evac.test.mjs
+          node qa/humanoid-summons.test.mjs
+      - name: Existing summon visual, flight and geometry regression
+        run: |
+          node qa/summon-geometry.test.mjs
+          node qa/demon-female-summon-mobile-viewer.test.mjs
+          node qa/summon-source-hybrid-colors-scale.test.mjs
