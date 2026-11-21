@@ -14,6 +14,10 @@ const makeShieldGame=()=>{
  const shield={id:999,job:'盾騎士',rarity:'N',count:3,commanderId:'player',purpose:'前線'};
  game.campaign.squads.push(shield);
  ensureSortiePlan(game);
+ for(const team of game.sortiePlan.teams){
+  team.formation='free';team.slots=[null,null,null];team.counts={};
+  team.divisions={};team.grid=Array(16).fill(null);
+ }
  const team=game.sortiePlan.teams[0];
  team.formation='free';team.slots=['999',null,null];team.counts={'999':3};
  team.divisions={'999':1};team.grid=Array(16).fill(null);
