@@ -17,7 +17,7 @@ test('training roster includes exactly one named strategist-swordsman and Garan'
  assert.ok(named.every(s=>s.count===1));
  const html=renderInnFormationWizard({game,view:'roster',teamId:1});
  assert.match(html,/軍訓練所/);
- assert.match(html,/使用可能な陣形/);
+ assert.match(html,/陣形一覧/);
  assert.match(html,/innWizardRosterPreview/);
  assert.match(html,/trainingFormationList|trainingFormationEmpty/);
  const cost=recruit(game.campaign,{job:'忍者',rarity:'N',count:2,purpose:'前線',commanderId:'player',faceId:0});
