@@ -222,8 +222,11 @@ function armoredSpider(g,s){
 function crystalSlime(g,s){
  const torso=g.group('torso');
  slimeMembrane(g,torso,{name:'translucent-main-gel'});
- g.sphere(torso,'skin',[0,1.47,0],[.17,.065,.17],
-  {name:'sealed-gel-crown',rough:.09,translucent:true});
+ texturedEllipsoid(g,torso,{
+  name:'sealed-gel-crown',center:[0,1.47,0],radii:[.105,.043,.105],
+  color:'#3078ad',light:'#7af4ec',role:'slime-crown-gel',
+  deform:0,roughness:.055,translucent:true
+ });
  const head=g.group('head',[0,0,0]);
  // Contrasting frontal dark jaw silhouette matches the open-mouthed concept.
  addBoss(g,head,[0,.78,.744],[.255,.158,.042],
