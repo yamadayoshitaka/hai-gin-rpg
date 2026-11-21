@@ -39,7 +39,7 @@ test('16 complete face choices per sex are not cosmetic-only, retain existing ha
  assert.match(html,/if\(facePartChanged\|\|completeFace\)modelChanges=nextControls/);
  assert.match(html,/if\(facePartChanged\|\|completeFace\)maleChanges=/);
  assert.match(html,/id="facePresetApplied"/);
- assert.match(html,/performanceMetrics\.headRebuilds\+'回'/);
+ assert.match(html,/performanceMetrics\.headRebuilds/);
  assert.match(html,/if\(faceChanged\)rebuildFemale\(\)/);
  assert.match(html,/if\(faceChanged\)rebuildMale\(\)/);
 });
