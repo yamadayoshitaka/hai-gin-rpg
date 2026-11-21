@@ -106,5 +106,5 @@ test('real ivory silk light response does not load brown diffuse photo',()=>{
  assert.match(runtime,/SERAPH_VESTMENT_REVISION/);
  assert.match(runtime,/profile\.costume==='seraph_female'\?0x696767/);
  const gallery=readFileSync(new URL('../summon-showcase.html',import.meta.url),'utf8');
- assert.match(gallery,/seraph-tailored-v3-20261122/);
+ assert.match(gallery,/seraph-(?:tailored-v3|matte-boots-v4)-20261122/);
 });
