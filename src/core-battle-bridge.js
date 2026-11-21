@@ -1,4 +1,3 @@
-import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 import {makeThreeTeamBattleRequest} from './three-team-core-bridge.js';
 import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 /**
