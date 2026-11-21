@@ -228,12 +228,12 @@ export function mergedSuckerRows(g,parent,sweep,{
   const tangent=sweep.curve.getTangent(t);
   const lateral=new THREE.Vector3().crossVectors(tangent,UP).normalize();
   if(lateral.lengthSq()<.01)lateral.set(1,0,0);
-  const rad=sweep.radiusAt(t),cupR=rad*.37*scale;
-  const cupFace=DOWN.clone().addScaledVector(FRONT,.53).normalize();
-  const floor=cupFace.clone().multiplyScalar(rad*.81);
+  const rad=sweep.radiusAt(t),cupR=rad*.46*scale;
+  const cupFace=DOWN.clone().multiplyScalar(.42).addScaledVector(FRONT,.82).normalize();
+  const floor=cupFace.clone().multiplyScalar(rad*.88);
   for(let r=0;r<rows;r++){
    const side=(r-(rows-1)/2);
-   const foot=center.clone().add(floor).addScaledVector(lateral,side*rad*.52);
+   const foot=center.clone().add(floor).addScaledVector(lateral,side*rad*.48);
    const rotation=Q.setFromUnitVectors(FRONT,cupFace);
    const ring=new THREE.TorusGeometry(cupR,cupR*.20,ringTube,ringSegment)
       .applyQuaternion(rotation).translate(foot.x,foot.y,foot.z);
@@ -285,6 +285,17 @@ export function slimeMembrane(g,parent,{name='translucent-main-gel'}={}){
     indices.push(i,i+sides+1,i+1,i+1,i+sides+1,i+sides+2);
    }
   }
+ }
+ // Close the tiny crown and underside holes with real curved cap vertices.
+ // The previous open radial poles produced black starburst artifacts.
+ const crown=pos.length/3;
+ pos.push(0,1.51,0);uv.push(.5,0);color.push(col1.r,col1.g,col1.b);
+ const base=pos.length/3;
+ pos.push(0,.070,0);uv.push(.5,1);color.push(col2.r,col2.g,col2.b);
+ const endRing=(profile.length-1)*(sides+1);
+ for(let j=0;j<sides;j++){
+  indices.push(crown,j+1,j);
+  indices.push(base,endRing+j,endRing+j+1);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
