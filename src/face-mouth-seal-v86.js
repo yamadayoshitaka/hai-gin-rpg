@@ -161,13 +161,17 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
  // Sealing only the small slit left an obvious black oval in the real
  // Chromium screenshot. Cap the foremost projection of the wider 40-edge
  // ring too; each triangle remains part of the SAME original face geometry.
+ const donor=face.userData.v86OriginalDonorPositions;
+ const sample=(id,k)=>donor?.length===pos.count*3?
+  donor[id*3+k]:
+  (k===0?pos.getX(id):k===1?pos.getY(id):pos.getZ(id));
  const outerCandidates=[];
  for(const candidate of loops){
   if(candidate===ring||candidate.length<39||candidate.length>55)continue;
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
   let minZ=Infinity,maxZ=-Infinity;
   for(const id of candidate){
-   const x=pos.getX(id),y=pos.getY(id),z=pos.getZ(id);
+   const x=sample(id,0),y=sample(id,1),z=sample(id,2);
    minX=Math.min(minX,x);maxX=Math.max(maxX,x);
    minY=Math.min(minY,y);maxY=Math.max(maxY,y);
    minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
@@ -176,7 +180,7 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
    maxX-minX<size.x*.20||maxX-minX>size.x*.31||
    maxY-minY>size.y*.075||maxY-minY<size.y*.02||
    maxZ-minZ<size.z*.24||maxZ-minZ>size.z*.62)continue;
-  const contour=candidate.map(id=>new THREE.Vector2(pos.getX(id),pos.getY(id)));
+  const contour=candidate.map(id=>new THREE.Vector2(sample(id,0),sample(id,1)));
   let signedArea=0;
   for(let k=0;k<contour.length;k++){
    const q=contour[k],n=contour[(k+1)%contour.length];
@@ -197,12 +201,16 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   let covered=0;
   for(const triple of ears){
    const [a,b,c]=triple.map(i=>selected.candidate[i]);
-   const cross=(pos.getX(b)-pos.getX(a))*(pos.getY(c)-pos.getY(a))-
+   // Ear clipping depends on ORIGINAL topology, not XY distortion from
+   // ageing/cheek/jaw sliders. Use current vertices only for final winding.
+   const sourceCross=(sample(b,0)-sample(a,0))*(sample(c,1)-sample(a,1))-
+    (sample(b,1)-sample(a,1))*(sample(c,0)-sample(a,0));
+   if(Math.abs(sourceCross)<size.x*size.y*1e-9)continue;
+   const currentCross=(pos.getX(b)-pos.getX(a))*(pos.getY(c)-pos.getY(a))-
     (pos.getY(b)-pos.getY(a))*(pos.getX(c)-pos.getX(a));
-   if(Math.abs(cross)<size.x*size.y*1e-9)continue;
-   if(cross<0)fill.push(a,c,b);
+   if(currentCross<0)fill.push(a,c,b);
    else fill.push(a,b,c);
-   covered+=Math.abs(cross)*.5;
+   covered+=Math.abs(sourceCross)*.5;
   }
   outerTriangulated=fill.length/3;
   outerAreaRatio=selected.area>0?covered/selected.area:0;
@@ -233,6 +241,7 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   outerSelectedSize,
   outerTriangulated,
   outerAreaRatio:Number(outerAreaRatio.toFixed(4)),
+  outerTriangulationUsesOriginalDonor:!!donor,
   area:projectedArea,
   originalBoundaryLoops:loops.length,
   lipRing: ring.slice(),
