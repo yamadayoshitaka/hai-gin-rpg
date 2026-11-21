@@ -1,0 +1,33 @@
+name: Hair reselect and scalp continuity v49
+on:
+  pull_request:
+    paths:
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'src/face-scalp-wig.js'
+      - 'qa/hair-sadako-buzz-reselect-v49.test.mjs'
+      - '.github/workflows/hair-reselect-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'src/face-scalp-wig.js'
+      - 'qa/hair-sadako-buzz-reselect-v49.test.mjs'
+permissions:
+  contents: read
+jobs:
+  hair-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Three.js used by the actual wig generator
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Verify hair module syntax and buzz/Sadako re-selection contract
+        run: |
+          node --check src/face-scalp-wig.js
+          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs
