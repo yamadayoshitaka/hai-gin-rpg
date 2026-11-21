@@ -23,7 +23,7 @@ import {classifyCosplaySurface,applyMonsterMaterialPigment}
  from './monster-cosplay-pigmentation.js?v=4.5.21';
 import {addConstructMonsterCostume,isConstructCostume,
  CONSTRUCT_SHELL_SPECIES,CONSTRUCT_FULL_SHELL_REVISION}
- from './monster-construct-costume.js?v=golem-full-shell-v2-20261121';
+ from './monster-construct-costume.js?v=golem-anatomical-facets-v3-20261121';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume,createOriginalGuardianWingPair}
