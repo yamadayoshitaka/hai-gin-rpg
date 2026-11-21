@@ -7,7 +7,7 @@ import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.j
 import {registeredMonsterModel} from '../src/creature-game-model-routing.js';
 import {M024_SCARAB_REVISION} from '../src/m024-poison-scarab-sculpt.js';
 import {M024_PBR_REVISION,m024PBRTextureStats}
- from '../src/m024-scarab-pbr-surface.js';
+ from '../src/m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3-20261121';
 
 for(const detail of ['low','high']){
  test('m024 '+detail+' matches concept-art armor, six limbs, wings and venom',()=>{
