@@ -8,11 +8,13 @@
  * unchanged. Separate LOD topology for inexpensive mobile preview.
  */
 import * as THREE from 'three';
+import {addSeraphCelestialVestment} from './seraph-celestial-wardrobe.js?v=tailored-angel-v3-20261122';
 
 export const REGAL_HUMANOID_WARDROBE=Object.freeze({
- seraph_female:Object.freeze({style:'celestial-vestment',bodice:'ivoryCloth',
-  hem:'ivoryCloth',trim:'gold',skirt:.99,flare:.49,sleeve:'ivoryCloth',
-  sleeveLength:.42,leggings:'metal',bootMaterial:'summonBootLeather',bootTrim:'gold',head:'none'}),
+ seraph_female:Object.freeze({style:'celestial-vestment',bodice:'seraphSatin',
+  hem:'seraphSatin',trim:'seraphGold',skirt:.87,flare:.33,sleeve:'seraphOrganza',
+  sleeveLength:.42,leggings:'seraphLining',bootMaterial:'summonBootLeather',
+  bootTrim:'seraphGold',head:'none',tailoredCelestial:true}),
  forest_spirit_female:Object.freeze({style:'living-leaf-robe',bodice:'leaf',
   hem:'leaf',trim:'gold',skirt:.82,flare:.40,sleeve:'leaf',
   sleeveLength:.36,leggings:'leaf',bootMaterial:'summonBootLeather',head:'none'}),
@@ -215,6 +217,10 @@ export function createRegalFootGeometry({detail='high'}={}){
 export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube}={}){
  const plan=wardrobeFor(profile);
  if(!plan)return false;
+ // Angel's outfit is deliberately not the generic cone-and-sphere uniform.
+ if(plan.tailoredCelestial)return addSeraphCelestialVestment({
+  frames,detail,attach,tube
+ });
  if(!frames?.chest||!frames?.pelvis||frames.arms?.length!==2||
     frames.legs?.length!==2||frames.calves?.length!==2)
   throw Error('Regal outfit requires full torso, pelvic and articulated arm/leg frames');
