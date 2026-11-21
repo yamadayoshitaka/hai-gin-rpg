@@ -1092,8 +1092,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  };
  const weightedZones=WIG_ZONE_WEIGHTS.map(([name,originalWeight])=>{
   const weight=sadakoMaster?sadakoWeights[name]:originalWeight;
-  return [
-  [name,weight*(name.startsWith('fringe')?fringeMultiplier:
+  return [name,weight*(name.startsWith('fringe')?fringeMultiplier:
     bodyCollisionResolver&&(name.startsWith('back')||
      name.startsWith('nape'))?1.35:
     bodyCollisionResolver&&name.startsWith('temple')?1.20:1)];
