@@ -67,6 +67,12 @@ try{
    console.log('BLACK_PIXEL_RAYTRACE '+JSON.stringify({
     expression,pixel:[px,py],rayHits
    }));
+   for(const hit of rayHits){
+    if(hit.name?.includes('FACE')&&
+       hit.geometryStats?.color!==hit.geometryStats?.position){
+     console.log('FATAL_MISMATCH_FACE_COLOR '+JSON.stringify(hit.geometryStats));
+    }
+   }
   }
   const blackPercent=total?black/total*100:100;
   const skinPercent=total?skin/total*100:0;
