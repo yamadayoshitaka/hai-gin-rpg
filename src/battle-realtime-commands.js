@@ -358,12 +358,12 @@ export function createRealtimeBattleCommands({
    const previewKey=key+'|'+formationId+'|'+active;
    if(preview.dataset.previewKey!==previewKey){
     const name=escapePrebattle(defaults.formation||'標準陣形');
-    const unlocked=formationUnlockLabels(formationId,active);
+    const unlocked=advanced.map(id=>ADVANCED_FORMATION_TACTICS[id]);
     preview.innerHTML='<strong>第'+escapePrebattle(key)+'隊｜'+name+
      (formationRule?'｜★ '+escapePrebattle(formationRule.name):'')+'</strong>'+
      (renderFormationSignaturePreview(formationId)||
       '<small>この陣形は専用の動作アニメーションがありません。</small>')+
-     '<small>使用可能な追加作戦：'+escapePrebattle(unlocked.join('・')||'基本作戦のみ')+'</small>';
+     '<small>現在の編成で実行できる追加作戦：'+escapePrebattle(unlocked.join('・')||'なし')+'</small>';
     preview.dataset.previewKey=previewKey;
    }
    $('realtimeInitialFormationStatus').textContent=
