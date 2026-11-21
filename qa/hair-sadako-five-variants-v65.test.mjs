@@ -126,7 +126,7 @@ test('both comboboxes bind new IDs and retain animation/mantle on all Sadako var
  for(const src of [mesh,body]){
   assert.match(src,/20261121-two-donor-unisex-catalog-v67/);
   assert.match(src,/isSadakoFamilyStyle/);
-  assert.match(src,/face-part-catalog-v32\.js\?v=65/);
+  assert.match(src,/face-part-catalog-v32\.js\?v=67/);
  }
  assert.match(mesh,/staticGroom:!isSadakoFamilyStyle\(chosen.styleId\)/);
  assert.match(body,/staticGroom:!isSadakoFamilyStyle\(hairSpec.styleId\)/);
