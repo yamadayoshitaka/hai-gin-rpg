@@ -15,11 +15,11 @@ export function setInnTeamItem(game,teamId,itemId,delta){
  if(game.location!=='town')throw Error('持参アイテムは宿屋で設定してください。');
  const item=INN_CONSUMABLES.find(entry=>entry.id===String(itemId));
  if(!item)throw Error('道具屋で扱うアイテムを選択してください。');
- const team=ensureSortiePlan(game).teams.find(entry=>entry.id===Number(teamId));
+ const stock=teamItemStock(game,teamId,itemId);
+ const team=game.sortiePlan.teams.find(entry=>entry.id===Number(teamId));
  if(!team)throw Error('第1〜3隊から選んでください。');
  const n=Number(delta);
  if(!Number.isInteger(n)||Math.abs(n)!==1)throw Error('個数を1個ずつ増減してください。');
- const stock=teamItemStock(game,teamId,itemId);
  const next=stock.current+n;
  if(next<0||n>0&&stock.available<=0)throw Error('共有在庫が足りません。他隊の持参数も確認してください。');
  if(!team.items||typeof team.items!=='object')team.items={};
