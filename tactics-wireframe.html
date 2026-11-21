@@ -8655,7 +8655,9 @@ function advanceFormationSignatures(){
      individualCommanderUnavailableReason(id)){
    activeFormationSignatures.delete(id);continue;
   }
-  const center=squadCenter(id,0),progress=formationSignatureProgress(plan,center,elapsed);
+  const center=squadCenter(id,0);
+  if(!center){activeFormationSignatures.delete(id);continue;}
+  const progress=formationSignatureProgress(plan,center,elapsed);
   if(progress.action==='wait'){
    activeFormationSignatures.set(id,progress.plan);continue;
   }
