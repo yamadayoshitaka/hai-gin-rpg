@@ -118,7 +118,7 @@ assert.match(onlyReview,/3隊の陣形を確認/);
 assert.match(onlyReview,/作戦は戦闘画面で隊ごとに選択/);
 assert.doesNotMatch(onlyReview,/用に保存/);
 assert.ok(town.includes("scrollTop=0"),'every wizard step starts with the first option visible');
-assert.match(town,/inn-roster-first-20261121/,'Android receives refreshed roster-first wizard JS and CSS');
+assert.match(town,/inn-(?:roster-first|items-one-page|gear-items-page)-20261121/,'Android receives refreshed seven-step inn wizard JS and CSS');
 
 // Entry URLs previously carried a fixed November 10 cache key, which allowed
 // Android WebView/browser cache to keep serving the old unclickable strategy
