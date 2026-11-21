@@ -47,7 +47,7 @@ test('buzz can be selected, replaced by Sadako, then selected again',()=>{
 
 test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  const page=read('face-mesh-studio.html'),hair=read('src/face-scalp-wig.js');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v61$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v62$/);
  assert.match(page,/Math\.max\(wigDensity,1200\)/,
   'restored low-density user preferences must not expose the entire crown');
  assert.match(hair,/sadakoGravity\?d\.y\*\(longFactor/,
@@ -57,9 +57,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/shared-scalp-angle-coverage-v61/,
+ assert.match(page,/costume-mask-buzz-restored-v62/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/shared-scalp-angle-coverage-v61/,
+ assert.match(read('face-body-studio.html'),/costume-mask-buzz-restored-v62/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -126,11 +126,11 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  const hair=read('src/face-scalp-wig.js');
  const studio=read('face-mesh-studio.html');
  const body=read('face-body-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v61$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v62$/);
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/shared-scalp-angle-coverage-v61/);
- assert.match(body,/shared-scalp-angle-coverage-v61/);
+ assert.match(studio,/costume-mask-buzz-restored-v62/);
+ assert.match(body,/costume-mask-buzz-restored-v62/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });
