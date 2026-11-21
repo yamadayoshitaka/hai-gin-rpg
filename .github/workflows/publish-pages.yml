@@ -27,6 +27,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
+      - name: Verify mobile squad commands, inn item loadouts and formation tactic unlocks
+        run: node --test qa/mobile-formation-command-items.test.mjs qa/inn-roster-first-formation.test.mjs
       - name: Verify chained battle orders and automatic follow-ups
         run: node --test qa/battle-command-followup.test.mjs
       - name: Verify published batch PR preview and checkpoint contract
