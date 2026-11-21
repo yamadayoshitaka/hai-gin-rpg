@@ -1,6 +1,6 @@
 import {dragonCraniumProfile} from './dragon-cranium-profile.js';
 
-export const M018_HYDRA_REVISION='m018-continuous-tail-venom-blades-v25-20261121';
+export const M018_HYDRA_REVISION='m018-webgl-skin-rooted-horns-v26-20261121';
 
 const NECKS=[
  {suffix:'L',side:-1,scale:.89,neckHeight:1.54,spread:.99,rootX:-.24,rootZ:.24},
@@ -66,11 +66,16 @@ function dragonCranium(g,neck,definition,end,{detail='high'}={}){
    [s*.229,.147,.055],.034,
    {name:'m018-armored-brow-'+suffix+(s<0?'-L':'-R'),rough:.82});
   brow.userData.m018DragonBrow=true;
-  // Genuine swept-back keratin horns rooted behind both temples.
-  const horn=g.curvedHorn(skull,'accent',
-   [s*.165,.145,-.093],[s*.268,.363,-.26],
-   [s*.378,.401,-.58],.076,
-   {name:'m018-dragon-horn-'+suffix+(s<0?'-L':'-R'),rough:.72});
+  // The broad root starts inside the actual rear skull ellipse.
+  const hornSide=s<0?'-L':'-R';
+  const root=[s*.098,.107,-.031];
+  g.curvedHorn(skull,'skin',root,[s*.156,.182,-.058],
+   [s*.207,.234,-.104],.103,{
+    name:'m018-dragon-horn-socket-'+suffix+hornSide,rough:.74,capRoot:true,
+   });
+  const horn=g.curvedHorn(skull,'accent',root,
+   [s*.262,.397,-.245],[s*.385,.458,-.585],.083,
+   {name:'m018-dragon-horn-'+suffix+hornSide,rough:.53,capRoot:true});
   horn.userData.m018RootedDragonHorn=true;
   g.curvedHorn(skull,'light',
    [s*.160,.013,.044],[s*.253,.035,-.102],
@@ -104,11 +109,11 @@ function dragonCranium(g,neck,definition,end,{detail='high'}={}){
  }
  // Poison crystals follow the skull's rearward sweep.
  for(let i=0;i<(low?2:4);i++){
-  const z=.03-i*.115,rootY=.258-i*.015;
+  const z=.13-i*.089,rootY=.177-i*.026;
   const thorn=g.curvedHorn(skull,i%2===0?'accent':'#57316d',
-   [0,rootY-.059,z],[.009,rootY+.048,z-.065],
-   [i%2?.018:-.018,rootY+.207-i*.020,z-.13],
-   .031,{name:'m018-toxic-cranial-thorn-'+suffix+'-'+i});
+   [0,rootY,z],[.009,rootY+.147,z-.088],
+   [i%2?.018:-.018,rootY+.257-i*.021,z-.151],
+   .037,{name:'m018-toxic-cranial-thorn-'+suffix+'-'+i,capRoot:true});
   thorn.userData.m018HeadCrystal=true;
  }
  return {skull,jaw};
@@ -249,7 +254,7 @@ export function sculptM018Leg(g,leg,name,side,fore){
 function sculptVenomBlade(g,parent,center,tangent,out,radius,height,width,name,{
  shade='accent',socket=false
 }={}){
- const root=center.clone().addScaledVector(out,radius*.67);
+ const root=center.clone().addScaledVector(out,radius*.40);
  const shoulder=center.clone().addScaledVector(out,radius*.94);
  const bend=shoulder.clone().addScaledVector(out,height*.70)
   .addScaledVector(tangent,height*.40);
@@ -259,10 +264,10 @@ function sculptVenomBlade(g,parent,center,tangent,out,radius,height,width,name,{
   g.curvedHorn(parent,'#47334e',root.clone().addScaledVector(tangent,-width*.31).toArray(),
    shoulder.clone().addScaledVector(out,height*.24).toArray(),
    shoulder.clone().addScaledVector(tangent,width*1.4).toArray(),width*1.32,
-   {name:name+'-socket',rough:.76});
+   {name:name+'-socket',rough:.76,capRoot:true});
  }
  const blade=g.curvedHorn(parent,shade,root.toArray(),bend.toArray(),tip.toArray(),
-  width,{name,rough:.47});
+  width,{name,rough:.47,capRoot:true});
  // Flatten across the ridge and retain the sweep along the animal's back.
  const sideways=out.clone().cross(tangent).normalize();
  const positions=blade.geometry.getAttribute('position');
@@ -324,7 +329,6 @@ export function sculptM018Tail(g,tail){
    {socket:!low,shade:i%3===0?'#6e3f8a':'accent'});
   spine.userData.m018TailFollow=true;
  }
-
 }
 
 export function sculptM018HydraThorns(g,torso,stations,{detail='high'}={}){

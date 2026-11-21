@@ -7,7 +7,7 @@ import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {M018_HYDRA_REVISION} from
- '../src/m018-hydra-sculpt.js?v=m018-continuous-tail-venom-blades-v25-20261121';
+ '../src/m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 
 for(const detail of ['low','high']){
  test('m018 '+detail+' retains base body and four planted limbs while creating 3 long dragon heads',()=>{
@@ -102,6 +102,13 @@ for(const detail of ['low','high']){
      const horn=root.getObjectByName('m018-dragon-horn-'+suffix+'-'+side);
      assert(horn?.isMesh&&horn.userData.m018RootedDragonHorn,
       'all heads must have true dragon horns');
+     assert.equal(horn.parent,skull);
+     const origin=skull.localToWorld(new THREE.Vector3(...horn.geometry.userData.root));
+     const outward=new THREE.Vector3(side==='L'?-.41:.41,.84,-.35)
+      .transformDirection(skull.matrixWorld);
+     const exit=new THREE.Raycaster(origin,outward).intersectObject(cranium,false);
+     assert.equal(exit.length%2,1,'the root of the horn must start inside the closed skull');
+     assert.ok(exit[0].distance>.03,'the visible horn must extend from a buried root');
      assert(root.getObjectByName('m018-dragon-nostril-'+suffix+'-'+side)?.isMesh);
      assert(root.getObjectByName('m018-upper-fang-'+suffix+'-'+side+'-0')?.isMesh);
     }
@@ -109,8 +116,17 @@ for(const detail of ['low','high']){
    const thorns=meshes.filter(x=>/^m018-rooted-toxic-thorn-\d+$/.test(x.name));
    assert.equal(thorns.length,detail==='low'?6:12);
    assert(thorns.every(x=>x.parent===piv.torso),'toxins must be rooted in original back');
-   assert(meshes.every(x=>x.geometry?.getAttribute('position')?.count>0),
-    'all hydra components must be real nonempty 3D meshes');
+   for(const mesh of meshes){
+    const {geometry}=mesh;
+    const vertices=geometry.getAttribute('position').count;
+    assert(vertices>0,mesh.name+' must contain renderable vertices');
+    for(const [name,attribute] of Object.entries(geometry.attributes)){
+     assert.equal(attribute.count,vertices,mesh.name+' / '+name+' WebGL attribute count');
+     assert(attribute.array.every(Number.isFinite),mesh.name+' / '+name+' must be finite');
+    }
+    assert(geometry.index?.array.every(i=>i<vertices)??true,
+     mesh.name+' can only index uploaded vertices');
+   }
    const bounds=new THREE.Box3().setFromObject(root);
    assert(!bounds.isEmpty()&&bounds.max.y>bounds.min.y);
    // Side heads and mandibles are animated alongside the center's real jaw.
