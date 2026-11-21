@@ -9,10 +9,16 @@ on:
       - 'src/monster-catalog.js'
       - 'src/creature-game-model-routing.js'
       - 'src/monster-character-cosplay.js'
+      - 'src/monster-construct-costume.js'
+      - 'src/monster-construct-anatomy-v3.js'
       - 'src/monster-humanoid-concept-finish.js'
       - 'src/monster-character-cosplay-manifest.js'
       - 'qa/monster-concept-trio.test.mjs'
       - 'qa/monster-humanoid-concept-finish.test.mjs'
+      - 'qa/monster-golem-full-shell.test.mjs'
+      - 'monster-manager.html'
+      - 'qa/monster-golem-full-shell-visual.html'
+      - 'src/monster-summon-renderer.js'
       - 'package.json'
       - 'qa/monster-concept-v2-visual.html'
       - '.github/workflows/monster-concept-trio-qa.yml'
@@ -43,6 +49,10 @@ jobs:
           node --check src/monster-humanoid-concept-finish.js
           node --check src/monster-character-cosplay.js
           npm run test:humanoid-concept
+          node --check src/monster-construct-costume.js
+          node --check src/monster-construct-anatomy-v3.js
+          npm run test:golem-full-shell
+          node qa/monster-16-cosplay-pigment-regression.test.mjs
 
       - name: Capture real Three.js monster visuals in headless browser
         run: |
@@ -69,6 +79,31 @@ jobs:
             base64 -w 2048 "qa-reports/monster-concept-v2/${id}.png" | sed 's/^/CONCEPT-V2-B64:/'
             echo "CONCEPT-V2-SCREENSHOT:${id}:END"
           done
+      - name: Render full-body m038 from actual animated canonical rig
+        run: |
+          mkdir -p qa-reports/golem-full-shell
+          timeout 45s google-chrome --headless --no-sandbox --disable-dev-shm-usage \
+            --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader \
+            --hide-scrollbars --virtual-time-budget=20000 \
+            --window-size=900,1000 \
+            --screenshot="qa-reports/golem-full-shell/m038.png" \
+            "http://127.0.0.1:8765/qa/monster-golem-full-shell-visual.html?id=m038" \
+            2>/tmp/golem-visual-chrome.log
+          test -s "qa-reports/golem-full-shell/m038.png"
+          test "$(stat -c%s qa-reports/golem-full-shell/m038.png)" -ge 45000
+          # Preserve screenshot pixels for reviewing the actual GLB-derived
+          # mineral rig, rather than mistaking an empty live WebGL canvas
+          # in headless Chrome for a passing visual test.
+          echo GOLEM-VISUAL-M038:BEGIN
+          base64 -w 2048 qa-reports/golem-full-shell/m038.png | sed 's/^/GOLEM-IMG-B64:/'
+          echo GOLEM-VISUAL-M038:END
+      - name: Retain golem m038 true game preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golem-full-shell-m038-capture
+          path: qa-reports/golem-full-shell/m038.png
+          retention-days: 14
       - name: Retain 3D reference preview screenshots
         if: always()
         uses: actions/upload-artifact@v4

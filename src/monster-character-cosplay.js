@@ -21,8 +21,9 @@ import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
  from './monster-photo-pbr.js';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
  from './monster-cosplay-pigmentation.js?v=4.5.21';
-import {addConstructMonsterCostume,isConstructCostume}
- from './monster-construct-costume.js';
+import {addConstructMonsterCostume,isConstructCostume,
+ CONSTRUCT_SHELL_SPECIES,CONSTRUCT_FULL_SHELL_REVISION}
+ from './monster-construct-costume.js?v=golem-anatomical-facets-v3-20261121';
 import {addDemonicFaceCosmetics,hasDemonCosmetics}
  from './monster-demon-cosmetics.js?v=4.5.05';
 import {addFemaleSummonCostume,isFemaleSummonCostume,createOriginalGuardianWingPair}
@@ -149,7 +150,15 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // diameter for a slim female, heavy guard and broad male actor.
  const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
  const ownedGeo=[],ownedMats=[],ownedTextures=[];
- const palette={skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
+ const construct=isConstructCostume(profile);
+ const mineral=construct?CONSTRUCT_SHELL_SPECIES[profile.costume]:null;
+ const concealedDonorMeshes=[];
+ const palette={
+  constructBase:mineral?.base??0x777777,
+  constructFacet:mineral?.facet??0xaaaaaa,
+  constructTrim:mineral?.trim??0x444444,
+  constructCore:mineral?.core??0xffffff,
+  constructDark:mineral?.dark??0x222222,skin:profile.skin,cloth:profile.cloth,metal:profile.metal,
   accent:profile.accent,bone:0xd6cdb4,bandage:0xb6a993,
   ivory:0xc3b9ab,linen:0xb5a58e,
   stain:0x3b322f,black:0x1b141a,iris:0xb94a2e,
@@ -180,6 +189,24 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const materials=new Map();
  const mat=(role)=>{
   if(!materials.has(role)){
+   if(construct&&role.startsWith('construct')){
+    // Mineral PBR is local, vivid and photograph-free. A donor's dark
+    // velvet diffuse atlas must never turn purple crystal into black cloth.
+    const isCore=role==='constructCore';
+    const isCrystal=profile.costume==='crystal_construct';
+    const isMetalShell=['bronze_construct','silver_construct'].includes(profile.costume);
+    const m=new THREE.MeshPhysicalMaterial({
+     color:palette[role],flatShading:true,side:THREE.DoubleSide,
+     roughness:isCrystal?.24:isMetalShell?.36:.79,
+     metalness:isCrystal?.18:isMetalShell?.66:.07,
+     clearcoat:isCrystal?.68:.12,clearcoatRoughness:isCrystal?.17:.49,
+     emissive:isCore?palette[role]:isCrystal?0x160827:0x000000,
+     emissiveIntensity:isCore?.50:isCrystal?.14:0,
+    });
+    m.userData={golemMaterial:true,photographicHumanAlbedo:false,
+     species:profile.id,role};
+    ownedMats.push(m);materials.set(role,m);return m;
+   }
    const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
     color:palette[role]??0x999999,
     vertexColors:role==='seraphWing',
@@ -291,6 +318,14 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Original source materials remain untouched and maps/normals are retained.
  let suppressedFacialHair=0;
  model.traverse(node=>{
+  if(construct&&node.isMesh){
+   // Keep bones and imported animation clips, not the donor's naked skin,
+   // ordinary human face, opaque clothing, hair or eye geometry.
+   concealedDonorMeshes.push({node,visible:node.visible});
+   node.visible=false;
+   node.userData.constructDonorConcealed=true;
+   return;
+  }
   // The seraph is explicitly beardless. Do not hide scalp hair, eyelashes,
   // eyebrows or the whole face; only named moustache/beard meshes.
   if(profile.noBeard===true&&/(?:^|[_\\s-])(?:beard|moustache|mustache|goatee|stubble|facialhair)(?:$|[_\\s-])/i.test(node.name||'')){
@@ -313,7 +348,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
  // attach a single continuous head-grown scalp and long, tapered hair:
  // source Quaternius hair is intentionally hidden by canonical actor loader.
- const groom=attachCanonicalCharacterGroom({
+ const groom=construct?null:attachCanonicalCharacterGroom({
   THREE,model,frames:{...frames,head:frames.headGroom},
   headBone:joints.head,profile,detail,
   attach:(frame,g,role,name,p,r)=>
@@ -321,7 +356,6 @@ function buildMonsterCostume(THREE,model,profile,detail){
  });
  const costume=profile.costume;
  const gothic=hasGothicMonsterSculpt(costume);
- const construct=isConstructCostume(profile);
  const demonic=hasDemonCosmetics(profile);
  const femaleSummon=isFemaleSummonCostume(profile);
  if(gothic)addGothicMonsterSculpt({
@@ -367,7 +401,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Mummies and the five constructs already own species-specific torso
  // sculpting. Close all exposed donor legs without placing a second gown
  // over bandages, crystal or rock armour. Every plate follows the source rig.
- if(!royalOutfit&&(profile.costume==='mummy'||construct)){
+ if(!royalOutfit&&profile.costume==='mummy'){
   const role=profile.costume==='mummy'?'bandage':'metal';
   for(let i=0;i<2;i++){
    attach(frames.legs[i],createRegalLimbGeometry({
@@ -530,15 +564,20 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(profile.mage){
   bands(frames.chest,'rune-hem',-.38,-.21,.23,.17,1.9,'accent');
  }
- const conceptFinish=applyHumanlikeConceptFinish({
-  THREE,profile,detail,frames,attach,tube
- });
+ const conceptFinish=construct?Object.freeze({id:profile.id,
+  revision:CONSTRUCT_FULL_SHELL_REVISION,
+  skeletonAnchored:true,visualApproved:false}):
+  applyHumanlikeConceptFinish({THREE,profile,detail,frames,attach,tube});
  model.userData.monsterCostume={
   id:profile.id,kind:costume,heroSource:profile.modelId,
   humanConceptFinish:conceptFinish,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
-  constructSculptEdition:construct?'human-rigged-construct-2026-11':null,
+  constructSculptEdition:construct?CONSTRUCT_FULL_SHELL_REVISION:null,
+  constructDonorMeshesConcealed:concealedDonorMeshes.length,
+  constructSkinExposed:construct?false:null,
+  constructMineralTheme:mineral?.theme??null,
+  constructShellParts:construct?frames.chest.userData.golemShellParts??0:0,
   skinColor:profile.skin,skinMaterialIsolation:true,
   noBeard:profile.noBeard===true,beardSourceMeshesSuppressed:suppressedFacialHair,
   skinTone:profile.skinTone??null,
@@ -575,6 +614,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   jointAnchored:true,independentHeroMaterials:true,
  };
  return ()=>{
+  for(const {node,visible} of concealedDonorMeshes){
+   node.visible=visible;delete node.userData.constructDonorConcealed;
+  }
   scalpCut?.dispose();
   for(const frame of [...Object.values(frames).filter(x=>x?.isGroup),
    ...frames.arms,...frames.forearms,...frames.legs,...frames.calves,
