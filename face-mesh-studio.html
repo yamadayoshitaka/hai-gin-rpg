@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head>
-<!-- Pages publication: v51 buzz crown selected-pigment stubble 2026-11-21 -->
+<!-- Pages publication: v52 Sadako scalp-following gravity guide 2026-11-21 -->
 <!-- Pages publication: v30 scalp coverage cdaab952; 2026-11-21 --><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -220,7 +220,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-buzz-uniform-pigment-v51';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-sadako-scalp-first-gravity-v52';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=45';
@@ -608,6 +608,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
   ' / モデル生成: '+(error?'失敗 '+String(error):wig?'成功':'待機')+
   ' / 極短毛色: '+(report.closeCutPigmentHex||'対象外')+
   ' / 自己影: '+(report.closeCutSelfShadowDisabled?'無効':'通常')+
+  ' / ロング原型: '+(report.sadakoMasterGroom||'対象外')+
   ' / 毛束: '+(report.rootCount??'未取得')+
   ' / 描画オブジェクト: '+meshCount+
   ' / Pages公開SHA: 未検証（コード識別子のみ）';
