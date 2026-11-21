@@ -24,18 +24,29 @@ try{
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have the front lip aperture sealed: '+JSON.stringify(native));
+ // Playwright's element screenshot waits for a static element layout. This
+ // 3D canvas continuously changes layout while the wig/preview animates.
+ // A viewport screenshot avoids an endless 'waiting for element to be stable'.
+ await page.evaluate(()=>document.getElementById('faceCanvas')
+  ?.scrollIntoView({block:'center',behavior:'instant'}));
+ await page.waitForTimeout(300);
  const canvas=page.locator('#faceCanvas');
  for(const expression of ['neutral','laugh','surprised']){
   await page.locator('#faceExpression').selectOption(expression);
   await page.waitForTimeout(600);
-  const data=await canvas.screenshot({path:out+'/'+expression+'.png'});
+  const canvasBox=await canvas.boundingBox();
+  assert.ok(canvasBox,'WebGL canvas must be visible');
+  const data=await page.screenshot({path:out+'/'+expression+'.png',
+   animations:'disabled',timeout:30000});
   const png=PNG.sync.read(data);
   native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
   const {x,y,width,height}=native.rect;
   assert.ok(width>25&&height>25,'Must sample a real projected mouth region');
   let total=0,black=0,skin=0;
-  const minX=Math.max(0,Math.floor(x)),maxX=Math.min(png.width,Math.ceil(x+width));
-  const minY=Math.max(0,Math.floor(y)),maxY=Math.min(png.height,Math.ceil(y+height));
+  const minX=Math.max(0,Math.floor(x+canvasBox.x));
+  const maxX=Math.min(png.width,Math.ceil(x+width+canvasBox.x));
+  const minY=Math.max(0,Math.floor(y+canvasBox.y));
+  const maxY=Math.min(png.height,Math.ceil(y+height+canvasBox.y));
   for(let yy=minY;yy<maxY;yy++)for(let xx=minX;xx<maxX;xx++){
    const i=(yy*png.width+xx)*4,r=png.data[i],
     g=png.data[i+1],b=png.data[i+2];
