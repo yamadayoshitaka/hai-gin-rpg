@@ -12,7 +12,7 @@ import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battl
 import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=concept-trio-v2-20261121';
 import {createCosplayedHumanoidMonster}
- from './monster-character-cosplay.js?v=golem-whole-body-no-flesh-v2-20261121';
+ from './monster-character-cosplay.js?v=golem-anatomical-facets-v3-20261121';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {startMonsterAction,animateMonsterModel}
