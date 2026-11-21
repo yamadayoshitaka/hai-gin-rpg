@@ -8,13 +8,13 @@ import {CONSTRUCT_COSTUME_KINDS,CONSTRUCT_SHELL_SPECIES,
  from '../src/monster-construct-costume.js';
 
 const source=readFileSync(new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
-assert.match(source,/if\(construct&&node\.isMesh\)\{/,
+assert.match(source,/if\(\(construct\|\|skeletal\)&&node\.isMesh\)\{/,
  'The human avatar must disappear, not be painted gray under a chest plate');
 assert.match(source,/node\.visible=false;\s*node\.userData\.constructDonorConcealed=true/,
  'Clothes, eyes, bare face, head and hands must be hidden by runtime');
-assert.match(source,/const groom=construct\?null:fullBody\?null:attachCanonicalCharacterGroom/,
+assert.match(source,/const groom=construct\|\|skeletal\|\|fullBody\?null:attachCanonicalCharacterGroom/,
  'No human hair or wig should grow on a crystal/stone golem');
-assert.match(source,/const conceptFinish=fullBody\?Object\.freeze/,
+assert.match(source,/const conceptFinish=fullBody\|\|skeletal\?Object\.freeze/,
  'Old floating humanoid decorations must not obscure new golem shell');
 assert.match(source,/const mineral=fullBody\?CONSTRUCT_SHELL_SPECIES/,
  'Golem mineral palette must not come from human skin/clothes');
