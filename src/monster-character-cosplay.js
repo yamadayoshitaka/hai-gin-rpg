@@ -11,6 +11,9 @@ import {isFacialHairSourceMesh,SERAPH_NO_BEARD_REVISION}
  from './seraph-facial-hair-guard.js?v=seraph-nobeard-v2-20261121';
 import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
  from './summon-humanoid-pbr.js?v=summons-pbr-v1-20261121';
+import {buildMonsterNativeMotionVariants,selectMonsterMotionVariant,
+ monsterMotionCoverage,MONSTER_LICENSED_MOTION_REVISION}
+ from './monster-licensed-motion-variants.js?v=ual2-source-clips-v1-20261121';
 import {resolveMonsterThemeAction} from './monster-theme-actions.js';
 import {enhanceMonsterHumanoidCostumeMaterial} from './monster-reference-finish.js';
 import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
@@ -797,6 +800,7 @@ export function createCosplayedHumanoidMonster(spec,{
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
  let seraphWingPivots=[],combatMotion=null;
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
+ let motionSequence=0;
  // A GLB may finish loading after a user switches species. The late visual
  // must not remain attached to an already disposed preview host.
  const releaseLateCharacterLoad=()=>{
@@ -815,6 +819,7 @@ export function createCosplayedHumanoidMonster(spec,{
   start(action,time=0){
    if(root.userData.action!==action||root.userData.actionAt!==time){
     root.userData.action=action;root.userData.actionAt=time;
+    motionSequence++;
    }
    if(!ready&&fallback)startMonsterAction(fallback,action,time);
   },
@@ -844,11 +849,16 @@ export function createCosplayedHumanoidMonster(spec,{
    const clip=(isFlyingTengu||isFlyingGargoyle)&&
     ['run','walk','leap'].includes(action)?'idle':
     action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
-   const chosen=motion.actions[clip]?clip:'idle';
+   // Play only source clips proven to target the SAME canonical skeleton.
+   const eligible=['idle','walk','run','attack','guard','hit','dodge','leap'];
+   const variant=!theme&&eligible.includes(action)?
+     selectMonsterMotionVariant(motion.monsterVariants,action,
+       motionSequence-1):null;
+   const chosen=variant?.key||(motion.actions[clip]?clip:'idle');
    if(lastAction!==chosen||!motion.active){
     if(motion.active&&motion.active!==motion.actions[chosen])
      motion.active.fadeOut(.16);
-    const target=motion.actions[chosen];
+    const target=variant?.action||motion.actions[chosen];
     if(target){
      target.reset().fadeIn(.16).play();motion.active=target;
     }
@@ -932,6 +942,17 @@ export function createCosplayedHumanoidMonster(spec,{
    if(disposed){releaseLateCharacterLoad();return {source:'cancelled'};}
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
    state.metadata=visual.userData.monsterCostume;
+   const native=host.userData.canonicalMotion;
+   if(native?.mixer){
+     native.monsterVariants=buildMonsterNativeMotionVariants(THREE,{
+       clips:native.sourceCompatibleClips||[],
+       targetNames:native.targetBoneNames,
+       mixer:native.mixer,profile
+     });
+     state.metadata.nativeMotionCoverage=monsterMotionCoverage(
+       native.monsterVariants);
+     state.metadata.nativeMotionRevision=MONSTER_LICENSED_MOTION_REVISION;
+   }
    combatMotion=createHumanoidMonsterCombatMotion(visual,profile);
    state.metadata.combatMotionLayer='native-clip-plus-procedural-charge-release-v1';
    seraphWingPivots=[];
