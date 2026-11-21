@@ -68,6 +68,15 @@ try{
     expression,pixel:[px,py],rayHits
    }));
    for(const hit of rayHits){
+    if(hit.name==='FEMALE_INDEPENDENT_CLAY_FACE'){
+     assert.equal(hit.geometryStats?.color,hit.geometryStats?.position,
+      'All clipped head skin vertices need a matching RGB triplet');
+     assert.ok(hit.pigment?.every(Number.isFinite),
+      'Black mouth is caused by non-finite face vertex pigment: '+
+       JSON.stringify(hit.geometryStats));
+    }
+   }
+   for(const hit of rayHits){
     if(hit.name?.includes('FACE')&&
        hit.geometryStats?.color!==hit.geometryStats?.position){
      console.log('FATAL_MISMATCH_FACE_COLOR '+JSON.stringify(hit.geometryStats));
