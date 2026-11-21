@@ -200,7 +200,8 @@ function buildMouth(face,parts,headSize){
  oral.root.traverse(o=>{
   if(!o.isMesh)return;
   o.material.depthWrite=false;o.material.depthTest=false;
-  o.renderOrder=7;
+  // Interior/gingiva behind crowns, with tongue below the dental edge.
+  o.renderOrder=/(?:TOOTH|TONGUE)/.test(o.name)?8:7;
  });
  for(const lip of [upper,lower]){
   lip.material.depthTest=false;lip.material.depthWrite=false;
