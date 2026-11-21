@@ -114,9 +114,20 @@ jobs:
               --virtual-time-budget=20000 --dump-dom \
               "http://127.0.0.1:8765/qa/monster-golem-full-shell-visual.html?id=${id}&pose=${pose}" \
               > /tmp/rigged-shell-dom.html 2>>/tmp/golem-visual-chrome.log
-            grep -q 'data-ready="true"' /tmp/rigged-shell-dom.html
-            grep -q 'data-original-visible="0"' /tmp/rigged-shell-dom.html
-            grep -q 'id="actual-golem-render-snapshot"' /tmp/rigged-shell-dom.html
+            if ! grep -q 'data-ready="true"' /tmp/rigged-shell-dom.html; then
+              echo "::error::Real WebGL renderer never reported ready for ${selection}"
+              grep -o 'data-ready="[^"]*"\|data-error="[^"]*"\|<div id="status">[^<]*' /tmp/rigged-shell-dom.html | head -5 || :
+              tail -25 /tmp/golem-visual-chrome.log || :
+              exit 1
+            fi
+            if ! grep -q 'data-original-visible="0"' /tmp/rigged-shell-dom.html; then
+              echo "::error::Original human body remained visible for ${selection}"
+              exit 1
+            fi
+            if ! grep -q 'id="actual-golem-render-snapshot"' /tmp/rigged-shell-dom.html; then
+              echo "::error::Rendered WebGL image was not produced for ${selection}"
+              exit 1
+            fi
             if grep -q 'data-error=' /tmp/rigged-shell-dom.html; then
               echo "::error::Visible humanoid has runtime error for ${selection}"
               exit 1
