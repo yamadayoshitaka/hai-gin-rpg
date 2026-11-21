@@ -5,8 +5,8 @@
  * Selections build actual eye/eyelid/face/lip GLB triangles through v31 mesh
  * construction and the hair styles build volumetric layered hair-card meshes.
  */
-import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=67';
-import {REBUILT_HAIR_PARTS} from './hair-rebuilt-catalog-v67.js';
+import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=67-v69';
+import {REBUILT_HAIR_PARTS} from './hair-rebuilt-catalog-v67.js?v=69';
 import {resolveAgeBand,resolveBodyType} from './character-demographics-v47.js?v=60';
 export const PART_GROUPS=Object.freeze(['face','eye','nose','mouth','hair','makeup']);
 export const PART_GROUP_LABELS=Object.freeze({

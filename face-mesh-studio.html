@@ -224,11 +224,11 @@ import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expressi
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
-import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=67';
+import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=67-v69';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './src/face-wig-styles.js?v=67-v69';
-import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=67';
+import {resolveHeroHairSpec,synchronizeHeroHairSelection} from './src/hero-hair-controls-v43.js?v=67-v69';
 import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,matchHeroFacePreset,HERO_FACE_PRESETS} from './src/hero-face-presets-v45.js?v=64';
-import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from './src/character-cast-v46.js?v=64';
+import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from './src/character-cast-v46.js?v=64-v69';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=60';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
@@ -603,16 +603,16 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const count=mask?.hairScalpMaskedTriangles??0;
  const active=Boolean(mask?.hairScalpMaskActive);
  const reloadButton=document.getElementById('hairForceReload');
- if(reloadButton)reloadButton.title='現在の髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
+ if(reloadButton)reloadButton.title='現在の髪モデル版: '+FACE_HAIR_RUNTIME_BUILD+' / 造形v69';
  const badge=document.getElementById('hairBuildBadge');
- if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
+ if(badge)badge.textContent='髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+' / 造形v69'+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
   '｜頭皮補正：'+(active?'ON':mode==='long-pigment-underlay'?'ロング被覆':'OFF')+'（'+mode+'）';
  const el=document.getElementById('hairRuntimeDiagnostics');
  if(!el)return;
  const report=wig?.getReport?.()||{};
  const meshCount=wig?.root?.children?.length??0;
- el.textContent='髪コード: '+FACE_HAIR_RUNTIME_BUILD+
+ el.textContent='髪コード: '+FACE_HAIR_RUNTIME_BUILD+' / 造形v69'+
   ' / 頭皮補正v9: '+mode+' / 除外三角形: '+count+
   ' / モデル生成: '+(error?'失敗 '+String(error):wig?'成功':'待機')+
   ' / 極短毛色: '+(report.closeCutPigmentHex||'対象外')+
