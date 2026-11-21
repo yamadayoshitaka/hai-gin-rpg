@@ -104,6 +104,9 @@ jobs:
         # Keep established Pages publication policy; expose QA outcome.
         continue-on-error: true
         run: node --test qa/m018-hydra-dragon-heads.test.mjs qa/m050-coral-beast.test.mjs qa/reptile-detail-sculpt.test.mjs
+      - name: Verify 8 concept-matched spiders, slime and octopuses in high and low LOD
+        # Fail Pages publication if any reference-matched 3D creature regresses.
+        run: node --test qa/monster-concept-trio.test.mjs
       - name: Verify 4 beetle species actual 3D anatomy, PBR and donor preservation
         id: qa_m024_concept
         # Block Pages publication if any 3D beetle cannot be constructed.
