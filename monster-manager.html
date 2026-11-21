@@ -77,7 +77,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.42</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.43</small></h1>
  <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a><a href="./monster-quality-review.html?monster=m001">品質KPI管理</a><a href="./creature-reconstruction-plan.html">108体再構成</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -190,7 +190,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-mobile-leg-fit';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=reptile-sculpture-v2-20261121';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=sea-dragon-summon-silhouette-v3-20261121';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=tengu-canonical-flight-v14-20261118';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
@@ -374,6 +374,7 @@ function refreshGeometry(){
    'フェニックス改修版モデルが読み込まれていません'):
   (model?.userData?.m018HydraRevision?'毒棘ヒュドラ '+model.userData.m018HydraRevision.split('-').at(-2):
     model?.userData?.m050HydraDerived?'珊瑚の海神獣 '+model.userData.gameModelRevision.split('-').at(-2):
+    model?.userData?.seaDragonSilhouette?'海竜モデル v3':
     model?.userData?.gameModelRevision?.startsWith('reptile-sculpture-')?'竜・爬虫類モデル v2':
     revision?'モデル正本 '+revision:'標準モデル / 外部モデル');
  byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+
@@ -397,11 +398,12 @@ function focusCamera(full=false){
  }
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
- if(model?.userData?.m018DragonHeadCount===3||model?.userData?.m050HydraDerived){
+ if(model?.userData?.m018DragonHeadCount===3||model?.userData?.m050HydraDerived||model?.userData?.seaDragonSilhouette){
   // Fit the necks, claws and long tail on narrow screens.
   const aspect=Math.max(.20,view.clientWidth/Math.max(1,view.clientHeight));
   camera.aspect=aspect;camera.updateProjectionMatrix();
-  const aim=new THREE.Vector3(.70,.20,.68).normalize();
+  const aim=(model.userData.seaDragonSilhouette?
+   new THREE.Vector3(.62,.22,.72):new THREE.Vector3(.70,.20,.68)).normalize();
   const right=new THREE.Vector3().crossVectors(camera.up,aim).normalize();
   const up=new THREE.Vector3().crossVectors(aim,right);
   const vf=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);

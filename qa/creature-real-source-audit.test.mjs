@@ -56,10 +56,10 @@ test('source silhouettes use authored anatomical cross-sections, never subdivisi
  assert.match(geometry,/species-shoulder-rib-pelvis-/);
  assert.match(geometry,/avian-keel-rib-cavity-/);
  assert.match(geometry,/segmented-thorax-/);
- assert.match(geometry,/marine-axial-cranial-abdominal-/);
- assert.match(geometry,/marine-posterior-spine-/);
- assert.match(geometry,/marine-caudal-muscle-/);
- assert.match(geometry,/marine-tail-tip-muscle-/);
+ const dragon=read('../src/reptile-detail-sculpt.js');
+ assert.match(geometry,/sculptSeaDragon/);
+ assert.match(dragon,/marine-serpent-skin/);
+ assert.match(dragon,/skinAxialTube\(tube,joints\)/);
  assert.doesNotMatch(source,/mesh\.userData\.photorealCertified=true/);
 });
 test('viewer distinguishes source diagnostics from qualified real 3D bases',()=>{

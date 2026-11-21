@@ -12,10 +12,11 @@ for(const id of ['m016','m017','m019','m020','m048','m050']){
   try{
    assert.equal(model.userData.gameModelRevision,registeredMonsterModel(id).version);
    const p=model.userData.pivots;
-   const tail=model.getObjectByName(id+'-continuous-caudal-skin');
+   const marine=id==='m020'||id==='m048';
+   const tail=model.getObjectByName(id+(marine?'-marine-serpent-skin':'-continuous-caudal-skin'));
    assert.ok(tail?.isSkinnedMesh&&tail.userData.cappedTubularSkin);
-   assert.equal(tail.parent,p.tail);
-   assert.equal(tail.skeleton.bones.length,3);
+   assert.equal(tail.parent,marine?p.torso:p.tail);
+   assert.equal(tail.skeleton.bones.length,marine?7:3);
    const vertex=tail.geometry.attributes.position.count-1;
    model.updateMatrixWorld(true);
    const rest=tail.getVertexPosition(vertex,new Vector3());
@@ -31,7 +32,10 @@ for(const id of ['m016','m017','m019','m020','m048','m050']){
      assert.equal(attribute.count,vertices,mesh.name+' '+name);
     assert.ok(geometry.index?.array.every(i=>i<vertices)??true,mesh.name);
    });
-   if(id==='m020'||id==='m048'){
+   if(marine){
+    assert.ok(p.head.getWorldPosition(new Vector3()).y-p.spineRear.getWorldPosition(new Vector3()).y>1.35);
+    assert.equal(model.getObjectByName(id+'-pectoral-sail-L').parent,p.torso);
+    assert.equal(model.getObjectByName(id+'-cheek-fin-L').parent,p.head);
     assert.equal(p.jaw.parent,p.head);
     assert.ok(p.spineRear&&!p.legfrontL,'marine body uses undulation');
     assert.equal(model.getObjectByName(id+'-rooted-horn-L').parent,p.head);
