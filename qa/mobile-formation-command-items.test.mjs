@@ -45,12 +45,16 @@ const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const center=readFileSync(new URL('../src/targeted-strategy-runtime.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
+const radar=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
 for(const marker of ['data-inn-wizard-item','items:\'leader\'','setInnTeamItem'])
  assert.ok(town.includes(marker),'town item control '+marker);
 for(const marker of ['zoomToSquadMember(String(id),team)','onMoveExecute:','getFormationId:','townItemsSpent:spentInnItems'])
  assert.ok(battle.includes(marker),'real battle link '+marker);
 for(const marker of ['moveTarget','moveConfirm','data-strategy-start','tacticUnlocked'])
  assert.ok(center.includes(marker),'separate command flow '+marker);
+for(const marker of ['deployStep=\'placement\'','syncPrebattleScreen()','realtimeMapViewport','配置を確定して作戦選択','作戦を保存して次の隊へ']){
+ assert.ok(radar.includes(marker),'two-step prebattle UI '+marker);
+}
 assert.match(css,/\.innWizardFormations/);
 assert.match(css,/overflow:hidden!important/);
 console.log('PASS: paged formations, team item stock, command routing and formation tactic unlocks');
