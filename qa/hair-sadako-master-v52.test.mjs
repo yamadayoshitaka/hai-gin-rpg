@@ -42,9 +42,9 @@ test('v52 real Sadako ribbons resist penetrating the donor head from underneath'
   visualFiberMultiplier:1,fineFringeMultiplier:1
  });
  const report=wig.getReport();
- assert.equal(report.sadakoMasterGroom,'sadako-scalp-first-master-v52');
+ assert.equal(report.sadakoMasterGroom,'sadako-scalp-first-headhug-rear-v58');
  assert.deepEqual(report.sadakoGravityTransition,
-  {scalpTo:.15,fullyGravity:.38,segments:18});
+  {scalpTo:.12,fullyGravity:.32,segments:18});
  assert.ok(report.pointCount>=80*19);
  assert.equal(report.sadakoUnifiedScalpClipping,true);
  assert.ok(report.sadakoAreaSampledRoots>=report.rootCount*.40,
