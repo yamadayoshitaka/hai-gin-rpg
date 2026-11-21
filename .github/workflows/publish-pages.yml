@@ -104,6 +104,12 @@ jobs:
         # Keep established Pages publication policy; expose QA outcome.
         continue-on-error: true
         run: node --test qa/m018-hydra-dragon-heads.test.mjs qa/m050-coral-beast.test.mjs qa/reptile-detail-sculpt.test.mjs
+      - name: Verify m024 owner-approved 2D scarab reference is reconstructed in 3D
+        id: qa_m024_concept
+        # Model QA remains visible; matching the 2D reference still needs
+        # the user's visual approval after publication.
+        continue-on-error: true
+        run: node --test qa/m024-poison-scarab-sculpt.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         id: qa_10
         # Owner permits deployment despite QA failure; leave the outcome visible.
