@@ -1,3 +1,12 @@
+// Three.js FileLoader reports progress with a browser-only ProgressEvent.
+// Node 22 does not define it; provide the standard test-only event shape
+// so asynchronous GLTF fallback errors cannot crash geometry regression.
+globalThis.ProgressEvent ??= class ProgressEvent {
+ constructor(type,{lengthComputable=false,loaded=0,total=0}={}){
+  this.type=type;this.lengthComputable=lengthComputable;
+  this.loaded=loaded;this.total=total;
+ }
+};
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
@@ -52,7 +61,10 @@ if(threeAvailable){
   }
   const scene=new THREE.Scene();
   const camera=new THREE.PerspectiveCamera();
-  camera.position.set(1,2,9);
+  // Inspect the near/high LOD directly; the former camera (1,2,9)
+  // put flying dragons into medium LOD, leaving high mesh matrices at
+  // identity and making the wing-animation assertion meaningless.
+  camera.position.set(-4,4,-2);
   const renderer=createCombatWorldObjectRenderer(scene,{camera});
   const entries=['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse'].map((type,i)=>({
     id:'creature-'+i,type,alive:true,team:0,x:i,z:0,flying:!!COMBAT_OBJECT_SPECS[type].flying,

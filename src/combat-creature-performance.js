@@ -12,7 +12,9 @@ export const CREATURE_PERFORMANCE = Object.freeze({
   wyvern: Object.freeze({attack:'dive_claw',windup:.24,duration:.88,voice:'shriek',seat:1.55,scaleWhenMounted:1.05,voiceLength:.85}),
   dragon: Object.freeze({attack:'fire_breath',windup:.44,duration:1.18,voice:'roar',seat:2.68,scaleWhenMounted:1.35,voiceLength:1.3}),
   elder_dragon: Object.freeze({attack:'celestial_breath',windup:.58,duration:1.44,voice:'ancient_roar',seat:3.43,scaleWhenMounted:1.55,voiceLength:1.5}),
-  dragon_lord: Object.freeze({attack:'inferno_breath',windup:.76,duration:1.75,voice:'royal_roar',mountable:false,seat:0,scaleWhenMounted:1.70,voiceLength:1.8}),
+  dragon_lord: Object.freeze({attack:'inferno_breath',ultimate:'royal_starflare',
+    windup:.76,duration:1.75,voice:'royal_roar',mountable:false,seat:0,
+    scaleWhenMounted:1.70,voiceLength:1.8}),
   forest_archer: Object.freeze({attack:'spirit_arrow',windup:.38,duration:1.0,voice:'forest_chant',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:.85}),
   seraph_guardian: Object.freeze({attack:'radiant_lance',windup:.54,duration:1.34,voice:'angelic_chime',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:1.28}),
   // Real horse saddle top is ~1.79m (horse body 1.22 + saddle .51 + .055).

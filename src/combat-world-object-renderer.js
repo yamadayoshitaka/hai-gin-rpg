@@ -16,6 +16,8 @@ import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} fro
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.78';
 import {creaturePoseFrame} from './combat-creature-actions.js?v=4.4.78';
+import {applySummonHumanoidPBR}
+ from './summon-humanoid-pbr.js?v=summons-feather-battle-v2-20261121';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
@@ -239,14 +241,13 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const equipmentMaterial=new THREE.MeshStandardMaterial({vertexColors:true,
     roughness:.50,metalness:.27,side:THREE.DoubleSide});
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
-  // The guardian's near wings use the project's existing linen photograph as
-  // a fine feather-fibre layer. Skin, facial UVs and elven hair are untouched.
+  // Feather microtexture, not an incorrectly tiled linen cloth photo.
+  // One atlas reused across all near-LOD angels; distant LOD stays cheap.
   const wingMaterial=new THREE.MeshStandardMaterial({
     vertexColors:true,roughness:.88,metalness:0,side:THREE.DoubleSide,
   });
-  photos.get('../assets/textures/outfits/linen.jpg',1.8,true,loaded=>{
-    if(disposed)return;
-    wingMaterial.map=loaded;wingMaterial.needsUpdate=true;
+  applySummonHumanoidPBR(wingMaterial,{
+    id:'seraph_guardian',role:'seraphWing',detail:'high'
   });
   for(const type of types){
     const lods={};
@@ -511,6 +512,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     }
     eyeMaterial.dispose();equipmentMaterial.dispose();humanoidMaterial.dispose();
     wingMaterial.dispose();
+    // The normal/albedo texture atlas is shared across viewers and
+    // battlefield instances. Its cache owns lifetime; do not dispose here.
     photos.dispose();
     distantMaterial.dispose();
   }

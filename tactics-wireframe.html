@@ -4847,6 +4847,12 @@ function moveActor(a,goal,dt,stop){
       objectId:e.objectId,position:{x:(e.x-6)*CELL,z:(e.z-6)*CELL},
       listener:camera.position,volume:e.type==='objectWindup'?.64:.38});
     }
+    if(e.type==='objectWindup'&&e.attackType==='royal_starflare'){
+     const center=cellPosition(Math.round(e.targetX),Math.round(e.targetZ));
+     // Charge cue, not a fake hit. Real damage and radius fire on impact.
+     actionVfx.emitArea(center,1.25*CELL,{element:'arcane',intensity:1.25});
+     actionVfx.flash('arcane',center,{scale:1.3,life:.75});
+    }
     if(e.type==='objectWindup'&&e.attackType?.includes('breath')){
      const p=cellPosition(Math.round(e.x),Math.round(e.z));
      p.y+=creature.type==='dragon_lord'?creatureFlightHeight(creature,elapsed)+3.65*creatureSize(creature.type):
