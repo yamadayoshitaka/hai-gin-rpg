@@ -507,7 +507,7 @@ export function createRealtimeBattleCommands({
     }
    }
    ctx.strokeStyle='rgba(114,254,225,.90)';ctx.lineWidth=2;
-   ctx.strokeRect(1,1,w-2,h-2);
+   ctx.strokeRect?.(1,1,w-2,h-2);
   }
   const goal=getVictoryObjective();
   if(goal?.kind==='capture'){
