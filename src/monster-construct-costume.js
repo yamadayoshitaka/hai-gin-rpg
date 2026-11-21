@@ -17,6 +17,11 @@ export const CONSTRUCT_COSTUME_KINDS=Object.freeze([
 ]);
 export const isConstructCostume=profile=>!!profile?.construct&&
  CONSTRUCT_COSTUME_KINDS.includes(profile?.costume);
+// m042/m045 share the proven humanoid bone-driven anatomical geometry,
+// but must not be mistaken for golems in the species catalog or game rules.
+export const isFullBodyMonsterShell=profile=>isConstructCostume(profile)||
+ (['m042','m045'].includes(profile?.id)&&
+  ['gargoyle','dark_knight'].includes(profile?.costume));
 
 export function createConstructCarapaceGeometry({
  width=.32,height=.62,depth=.21,detail='high',material='stone',
@@ -98,12 +103,16 @@ export const CONSTRUCT_SHELL_SPECIES=Object.freeze({
  lava_construct:Object.freeze({base:0x52494a,facet:0x817275,trim:0x2c2c32,
   core:0xff8738,dark:0x302c31,theme:'charcoal-with-magma-fissures'}),
  silver_construct:Object.freeze({base:0xb3c2d0,facet:0xe0ecf5,trim:0xc39d59,
-  core:0xffe3ad,dark:0x667f91,theme:'engraved-sanctified-silver'})
+  core:0xffe3ad,dark:0x667f91,theme:'engraved-sanctified-silver'}),
+ gargoyle:Object.freeze({base:0x62747a,facet:0x83939b,trim:0x3a505b,
+  core:0xb9c1d6,dark:0x202c37,theme:'one-piece-carved-gargoyle-no-clothing'}),
+ dark_knight:Object.freeze({base:0x171e2b,facet:0x313b4c,trim:0x637188,
+  core:0xd34d68,dark:0x080b13,theme:'black-forged-armour-and-integrated-visor'})
 });
 export function addConstructMonsterCostume({
  THREE:Engine=THREE,frames,profile,detail='high',attach,tube
 }={}){
- if(!isConstructCostume(profile))return false;
+ if(!isFullBodyMonsterShell(profile))return false;
  const design=CONSTRUCT_SHELL_SPECIES[profile.costume];
  if(!design)throw Error('Golem mineral material missing: '+profile.id);
  const low=detail==='low',near=detail==='source'||detail==='high';
@@ -138,6 +147,7 @@ export function addConstructMonsterCostume({
    m.userData.golemSpecies=profile.id;m.userData.boneAnchored=true;count++;}
  };
  const head=frames.head,chest=frames.chest;
+ const upperSide=side=>frames.arms[side<0?0:1];
  const pelvis=frames.pelvis??chest,neck=frames.neck??head;
  // The native donor is invisible. Build complete mineral anatomy including
  // skull, ears, jaw, eyes, throat, chest, waist, all limbs, wrists and soles.
@@ -226,7 +236,36 @@ export function addConstructMonsterCostume({
    [side*.11,.167-j*.128,-.246],
    [side*.25,.085-j*.128,-.221],
    [side*.29,.008-j*.128,-.174]],.010);
- if(profile.costume==='crystal_construct'){
+ if(profile.costume==='dark_knight'){
+  // No human face, paper cheek plates or ornamental skeletal teeth.
+  // The continuous helmet is the same animated head shell, with a narrow
+  // forged eye opening, nasal ridge and armoured jaw, not two loose planes.
+  poly(head,'constructTrim','helmet-cheek-guard-left',
+   [-.143,-.053,-.098],[.038,.117,.089]);
+  poly(head,'constructTrim','helmet-cheek-guard-right',
+   [.143,-.053,-.098],[.038,.117,.089]);
+  poly(head,'constructDark','recessed-steel-faceplate',
+   [0,-.015,-.147],[.113,.104,.048]);
+  add(head,new Engine.BoxGeometry(.151,.016,.020),
+   'constructCore','narrow-slit-visor',[0,.052,-.199]);
+  add(head,createConstructCrystalBlade({detail,height:.16,waist:.035}),
+   'constructTrim','helmet-central-metal-crest',[0,.176,-.009]);
+  for(const side of [-1,1]){
+   poly(chest,'constructTrim','knight-breastplate-chevron-'+side,
+    [side*.145,.118,-.239],[.075,.17,.040]);
+   poly(upperSide(side),'constructFacet','black-knight-pauldron-'+side,
+    [side*.015,.088,0],[.212,.128,.191]);
+  }
+ }else if(profile.costume==='gargoyle'){
+  // Body is rock, not a humanoid wearing a stone loincloth and skirt.
+  for(const side of [-1,1]){
+   add(head,createConstructCrystalBlade({detail,height:.17,waist:.048}),
+    'constructTrim','craggy-brow-horn-'+side,
+    [side*.132,.127,.01],[0,0,side*.28]);
+   poly(chest,'constructFacet','layered-sculpted-sternum-'+side,
+    [side*.13,.06,-.213],[.123,.163,.064]);
+  }
+ }else if(profile.costume==='crystal_construct'){
   // Purple crystal should read as a colossal crystalline sculpture.
   for(const side of [-1,1]){
    poly(chest,'constructFacet','large-shoulder-amethyst-'+side,
