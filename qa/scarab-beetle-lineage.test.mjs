@@ -9,7 +9,7 @@ import {registeredMonsterModel} from '../src/creature-game-model-routing.js';
 import {BEETLE_DONOR_ID,BEETLE_LINEAGE_IDS,BEETLE_LINEAGE_REVISION,isBeetleLineage}
  from '../src/scarab-beetle-lineage-sculpt.js';
 import {M024_PBR_REVISION,m024PBRTextureStats}
- from '../src/m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3b-20261121';
+ from '../src/m024-scarab-pbr-surface.js?v=m022-polished-horn-surface-v4-20261121';
 
 assert.deepEqual([...BEETLE_LINEAGE_IDS].sort(),['m021','m022','m025']);
 assert.equal(BEETLE_DONOR_ID,'m024');
@@ -111,6 +111,36 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
      'red rhinoceros beetle must have ONE central forehead horn');
     assert.ok(hornRoot[1]<.30,'central horn root must enter the forehead');
     assert.equal(mainHorn.material.userData.m024PBR,'chitin');
+    assert.equal(mainHorn.userData.polishedHeroHorn,true);
+    assert.equal(mainHorn.geometry.userData.heroKeratin,true,
+     'main horn needs a high-density continuous smooth shell');
+    assert.equal(mainHorn.geometry.userData.parallelTransport,true,
+     'horn normals must use a stable non-twisting frame');
+    assert.equal(mainHorn.geometry.userData.axialSegments,
+     detail==='low'?14:32);
+    assert.equal(mainHorn.geometry.userData.radialSegments,
+     detail==='low'?12:24);
+    const polished=mainHorn.material;
+    assert.notEqual(polished,carapace.material,
+     'hero horn must have an independent finish without changing shell');
+    assert.equal(polished.userData.polishedBeetleHorn,true);
+    assert.equal(polished.userData.m024PBR,'chitin');
+    assert.equal(polished.map,carapace.material.map,
+     'polished horn and armored shell should use the same albedo atlas');
+    assert.equal(polished.normalMap,carapace.material.normalMap);
+    assert.equal(polished.roughnessMap,carapace.material.roughnessMap);
+    assert.ok(polished.clearcoat>=.90,'horn needs a glossy hard-shell coating');
+    assert.ok(polished.clearcoatRoughness<=.12,
+     'horn coating should reflect as smoothly as the elytra');
+    if(detail==='high')assert.ok(polished.normalScale.x<=.12,
+     'large horn bump must be more subtle than small plate grain');
+    const hornNormals=mainHorn.geometry.getAttribute('normal');
+    assert.ok(hornNormals?.array.every(Number.isFinite),
+     'large horn must have finite smooth normals');
+    const uv=mainHorn.geometry.getAttribute('uv');
+    let vmax=0;
+    for(let i=0;i<uv.count;i++)vmax=Math.max(vmax,uv.getY(i));
+    assert.ok(vmax<=.44,'UV must not stretch a repeated ring pattern');
     assert.equal(byName(id+'-flame-fork-L'),undefined);
     assert.equal(byName(id+'-flame-fork-R'),undefined);
     assert.equal(byName(id+'-fire-guard-L'),undefined);
@@ -124,6 +154,9 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
       'tip branches must grow from same center stem');
      assert.ok(tip.geometry.userData.root[1]>1,
       'no extra basal side horn below center fork');
+     assert.equal(tip.geometry.userData.heroKeratin,true);
+     assert.equal(tip.material,mainHorn.material,
+      'center and tip must share one seamless glossy keratin finish');
     }
    }else{
     assert.ok(byName(id+'-solar-horn-L')&&byName(id+'-solar-horn-R'));
