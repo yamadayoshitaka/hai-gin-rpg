@@ -7,7 +7,7 @@ import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
 import {M018_HYDRA_REVISION} from
- '../src/m018-hydra-sculpt.js?v=m018-armored-four-cell-hydra-v24-20261121';
+ '../src/m018-hydra-sculpt.js?v=m018-continuous-tail-venom-blades-v25-20261121';
 
 for(const detail of ['low','high']){
  test('m018 '+detail+' retains base body and four planted limbs while creating 3 long dragon heads',()=>{
@@ -28,9 +28,26 @@ for(const detail of ['low','high']){
    assert(root.getObjectByName('species-shoulder-rib-pelvis-m018')?.isMesh,
     'keep original m018 anatomical torso, not a fresh monster replacement');
    assert.equal(piv.tailTip.parent,piv.tailMid);
-   for(const i of [0,1,2]){
-    assert(root.getObjectByName('m018-closed-caudal-skin-'+i)?.userData.cappedTubularSkin);
+   const tailSkin=root.getObjectByName('m018-continuous-caudal-skin');
+   assert(tailSkin?.isSkinnedMesh&&tailSkin.userData.cappedTubularSkin);
+   assert.equal(tailSkin.frustumCulled,false);
+   assert.equal(tailSkin.skeleton.bones.length,3);
+   const tailGeo=tailSkin.geometry,{radialSegments,tubularSegments}=tailGeo.parameters;
+   const tipIndex=(radialSegments+1)*tubularSegments;
+   const atRest=tailSkin.getVertexPosition(tipIndex,new THREE.Vector3());
+   piv.tailMid.rotation.y=.46;
+   piv.tailTip.rotation.y=-.26;
+   root.updateMatrixWorld(true);
+   const flexed=tailSkin.getVertexPosition(tipIndex,new THREE.Vector3());
+   assert(atRest.distanceTo(flexed)>.18);
+   const weight=tailGeo.getAttribute('skinWeight');
+   for(let i=0;i<weight.count;i++){
+    assert.ok(Math.abs(weight.getX(i)+weight.getY(i)-1)<1e-6);
    }
+   assert(Array.from(weight.array).some(v=>v>0&&v<1),'intermediate rings must blend both bones');
+   piv.tailMid.rotation.y=0;
+   piv.tailTip.rotation.y=0;
+   root.updateMatrixWorld(true);
    for(const id of ['frontL','frontR','rearL','rearR']){
     assert(piv['leg'+id],'do not delete original '+id);
     assert.equal(piv['lower'+id].parent,piv['leg'+id]);
@@ -89,7 +106,7 @@ for(const detail of ['low','high']){
      assert(root.getObjectByName('m018-upper-fang-'+suffix+'-'+side+'-0')?.isMesh);
     }
    }
-   const thorns=meshes.filter(x=>x.name.startsWith('m018-rooted-toxic-thorn-'));
+   const thorns=meshes.filter(x=>/^m018-rooted-toxic-thorn-\d+$/.test(x.name));
    assert.equal(thorns.length,detail==='low'?6:12);
    assert(thorns.every(x=>x.parent===piv.torso),'toxins must be rooted in original back');
    assert(meshes.every(x=>x.geometry?.getAttribute('position')?.count>0),

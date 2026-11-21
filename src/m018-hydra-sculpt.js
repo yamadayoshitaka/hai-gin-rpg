@@ -1,6 +1,6 @@
 import {dragonCraniumProfile} from './dragon-cranium-profile.js';
 
-export const M018_HYDRA_REVISION='m018-armored-four-cell-hydra-v24-20261121';
+export const M018_HYDRA_REVISION='m018-continuous-tail-venom-blades-v25-20261121';
 
 const NECKS=[
  {suffix:'L',side:-1,scale:.89,neckHeight:1.54,spread:.99,rootX:-.24,rootZ:.24},
@@ -191,21 +191,16 @@ export function sculptM018Hydra(g,torso,centralHead,{detail='high'}={}){
   const curve=tube.geometry.parameters.path;
   const radius=side===0?.269:.229;
   sculptThroatScutes(g,neck,path,curve,radius,def.suffix,low);
-  const rows=low?5:11;
+  const rows=low?5:9;
   for(let i=0;i<rows;i++){
-   const t=.15+.70*i/(rows-1);
+   const t=.16+.71*i/(rows-1);
    const center=curve.getPointAt(t),tangent=curve.getTangentAt(t);
-   const forward=tangent.clone().set(0,0,1);
-   forward.addScaledVector(tangent,-tangent.z).normalize();
+   const rear=tangent.clone().set(0,0,-1);
+   rear.addScaledVector(tangent,tangent.z).normalize();
    const surface=radius*(1-.35*t*t*(3-2*t));
-   if(low&&i%2!==0)continue;
-   const anchor=center.clone().addScaledVector(forward,-surface*.87);
-   const bend=anchor.clone().addScaledVector(forward,-.094)
-    .addScaledVector(tangent,-.033);
-   const tip=anchor.clone().addScaledVector(forward,-.19)
-    .addScaledVector(tangent,-.134);
-   g.curvedHorn(neck,'accent',anchor.toArray(),bend.toArray(),tip.toArray(),
-    surface*.23,{name:'m018-neck-venom-spine-'+def.suffix,rough:.39});
+   const height=.19+.09*Math.sin(t*Math.PI);
+   sculptVenomBlade(g,neck,center,tangent,rear,surface,height,
+    .049,'m018-neck-venom-spine-'+def.suffix,{socket:!low});
   }
   dragonCranium(g,neck,def,path.at(-1),{detail});
  }
@@ -251,53 +246,107 @@ export function sculptM018Leg(g,leg,name,side,fore){
  }
 }
 
-export function sculptM018Tail(g,tail){
- const low=g.root.userData.detail==='low';
- const sections=[
-  {path:[[0,-.015,.19],[0,.022,-.32],[.04,.045,-.82],[.07,.045,-1.00]],radius:.232,taper:.60},
-  {path:[[0,0,.17],[.08,.04,-.31],[.22,.11,-.73],[.27,.16,-.86]],radius:.158,taper:.40},
-  {path:[[0,-.02,.17],[.10,.11,-.22],[.19,.31,-.50],[.20,.41,-.58]],radius:.081,taper:.12},
- ];
- const mid=g.group('tailMid',[.04,.045,-.82],tail);
- const tip=g.group('tailTip',[.22,.11,-.73],mid);
- for(const [index,pivot] of [tail,mid,tip].entries()){
-  const {path,radius,taper}=sections[index];
-  const skin=g.tube(pivot,'skin',path,radius,{
-   name:'m018-closed-caudal-skin-'+index,taper,capEnds:true,
-   tubularSegments:low?10:22,radialSegments:low?9:15,
-  });
-  const curve=skin.geometry.parameters.path;
-  const count=low?3:5;
-  for(let i=0;i<count;i++){
-   const t=.18+.67*i/(count-1),p=curve.getPointAt(t);
-   const shell=radius*(1+(taper-1)*t*t*(3-2*t));
-   const height=.24-index*.065;
-   const x=p.x,y=p.y+shell*.79,z=p.z;
-   const spine=g.curvedHorn(pivot,'accent',[x,y,z],
-    [x+.018,y+height*.62,z-.051],[x+.041,y+height,z-.13],
-    Math.min(.054,shell*.42),{name:'m018-caudal-venom-spike-'+index});
-   spine.userData.m018TailFollow=true;
-  }
+function sculptVenomBlade(g,parent,center,tangent,out,radius,height,width,name,{
+ shade='accent',socket=false
+}={}){
+ const root=center.clone().addScaledVector(out,radius*.67);
+ const shoulder=center.clone().addScaledVector(out,radius*.94);
+ const bend=shoulder.clone().addScaledVector(out,height*.70)
+  .addScaledVector(tangent,height*.40);
+ const tip=shoulder.clone().addScaledVector(out,height*.84)
+  .addScaledVector(tangent,height*.98);
+ if(socket){
+  g.curvedHorn(parent,'#47334e',root.clone().addScaledVector(tangent,-width*.31).toArray(),
+   shoulder.clone().addScaledVector(out,height*.24).toArray(),
+   shoulder.clone().addScaledVector(tangent,width*1.4).toArray(),width*1.32,
+   {name:name+'-socket',rough:.76});
  }
+ const blade=g.curvedHorn(parent,shade,root.toArray(),bend.toArray(),tip.toArray(),
+  width,{name,rough:.47});
+ // Flatten across the ridge and retain the sweep along the animal's back.
+ const sideways=out.clone().cross(tangent).normalize();
+ const positions=blade.geometry.getAttribute('position');
+ const p=root.clone();
+ for(let i=0;i<positions.count;i++){
+  p.fromBufferAttribute(positions,i).sub(root);
+  p.addScaledVector(sideways,-.48*p.dot(sideways)).add(root);
+  positions.setXYZ(i,p.x,p.y,p.z);
+ }
+ positions.needsUpdate=true;
+ blade.geometry.computeVertexNormals();
+ blade.geometry.computeBoundingSphere();
+ blade.userData.m018BuriedCrystalRoot=true;
+ return blade;
 }
 
-export function sculptM018HydraThorns(g,torso,{detail='high'}={}){
- const low=detail==='low';
+export function sculptM018Tail(g,tail){
+ const low=g.root.userData.detail==='low';
+ // Broad tail base flows into a low sweeping curve and a rising, pointed tip.
+ const path=[[0,-.023,.31],[0,.003,-.15],[.03,-.037,-.52],
+  [.10,-.13,-.94],[.28,-.12,-1.39],[.51,.01,-1.77],
+  [.67,.24,-2.04],[.68,.45,-2.20]];
+ const radius=t=>.012+.275*(1-t)**.96;
+ const tube=g.tube(tail,'tailScale',path,radius(0),{
+  name:'m018-continuous-caudal-skin',capEnds:true,radiusProfile:radius,
+  tubularSegments:low?20:40,radialSegments:low?10:18,rough:.72,
+ });
+ const geometry=tube.geometry,curve=geometry.parameters.path;
+ const {tubularSegments,radialSegments}=geometry.parameters;
+ const pos=geometry.getAttribute('position');
+ const colors=[];
+ const sideCount=(tubularSegments+1)*(radialSegments+1);
+ for(let i=0;i<pos.count;i++){
+  const t=i<sideCount?Math.floor(i/(radialSegments+1))/tubularSegments:
+   i===sideCount?0:1;
+  const blend=Math.min(1,t/.26);
+  const value=.26+.74*blend*blend*(3-2*blend);
+  colors.push(value,value,value);
+ }
+ geometry.setAttribute('color',new pos.constructor(colors,3));
+ const midAt=.39,tipAt=.72,blend=.092;
+ const midLocal=curve.getPointAt(midAt),tipLocal=curve.getPointAt(tipAt);
+ const mid=g.group('tailMid',midLocal.toArray(),tail);
+ const tip=g.group('tailTip',tipLocal.clone().sub(midLocal).toArray(),mid);
+ const skin=g.skinAxialTube(tube,[{pivot:tail,at:0},
+  {pivot:mid,at:midAt,blend},{pivot:tip,at:tipAt,blend}]);
+ skin.userData.m018ContinuousTail=true;
+ const pivots=[tail,mid,tip],offsets=[tail.position.clone().set(0,0,0),midLocal,tipLocal];
+ const count=low?7:12;
+ for(let i=0;i<count;i++){
+  const t=.10+.85*i/(count-1);
+  const region=t<midAt?0:t<tipAt?1:2;
+  const point=curve.getPointAt(t).sub(offsets[region]),tangent=curve.getTangentAt(t);
+  const normal=tangent.clone().set(0,1,0);
+  normal.addScaledVector(tangent,-tangent.y).normalize();
+  const shell=radius(t),height=.235*(1-t)+.045;
+  const spine=sculptVenomBlade(g,pivots[region],point,tangent,normal,shell,height,
+   Math.min(.065,shell*.51),'m018-caudal-venom-spike-'+region,
+   {socket:!low,shade:i%3===0?'#6e3f8a':'accent'});
+  spine.userData.m018TailFollow=true;
+ }
+
+}
+
+export function sculptM018HydraThorns(g,torso,stations,{detail='high'}={}){
+ const low=detail==='low',prototype=torso.position;
+ const ridge=prototype.clone().set(0,0,-1),up=prototype.clone().set(0,1,0);
  const count=low?6:12;
  for(let i=0;i<count;i++){
-  const t=i/(count-1),z=.60-t*1.20;
-  const y=1.62-.048*t,side=i%2?-1:1;
-  const height=(low?.22:.34)*(.55+.45*Math.sin(Math.PI*t));
-  const spine=g.curvedHorn(torso,i%3===0?'#57316d':'accent',
-   [side*.073,y-.050,z],[side*.089,y+height*.57,z-.035],
-   [side*.110,y+height,z-.13],low?.038:.052,
-   {name:'m018-rooted-toxic-thorn-'+i,rough:.58});
-  spine.userData.m018BuriedCrystalRoot=true;
+  const t=i/(count-1),z=.51-t*1.12;
+  const index=stations.findIndex(station=>station.z<=z);
+  const [front,back]=[stations[index-1],stations[index]];
+  const blend=(front.z-z)/(front.z-back.z);
+  const y=front.y+(back.y-front.y)*blend;
+  const shell=front.ry+(back.ry-front.ry)*blend;
+  const side=i%2?-1:1;
+  const center=prototype.clone().set(side*.062,y,z);
+  const height=.24+.17*Math.sin(Math.PI*t);
+  sculptVenomBlade(g,torso,center,ridge,up,shell,height,.067-.013*t,
+   'm018-rooted-toxic-thorn-'+i,{socket:!low,shade:i%3===0?'#6e3f8a':'accent'});
   if(!low&&i%2===0)for(const rowSide of [-1,1]){
-   const x=rowSide*(.172-.049*t);
-   g.curvedHorn(torso,'#57316d',[x,y-.090,z-.039],
-    [x+rowSide*.095,y+.035,z-.097],[x+rowSide*.125,y+.090,z-.198],
-    .038,{name:'m018-secondary-dorsal-thorn'});
+   const normal=prototype.clone().set(rowSide*.60,.80,0);
+   sculptVenomBlade(g,torso,center,ridge,normal,shell*.88,height*.53,.055,
+    'm018-secondary-dorsal-thorn',{shade:'#6e3f8a'});
   }
  }
 }
