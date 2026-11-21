@@ -9,7 +9,7 @@ import {registeredMonsterModel} from '../src/creature-game-model-routing.js';
 import {BEETLE_DONOR_ID,BEETLE_LINEAGE_IDS,BEETLE_LINEAGE_REVISION,isBeetleLineage}
  from '../src/scarab-beetle-lineage-sculpt.js';
 import {M024_PBR_REVISION,m024PBRTextureStats}
- from '../src/m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3b-20261121';
+ from '../src/m024-scarab-pbr-surface.js?v=m022-polished-horn-surface-v4-20261121';
 
 assert.deepEqual([...BEETLE_LINEAGE_IDS].sort(),['m021','m022','m025']);
 assert.equal(BEETLE_DONOR_ID,'m024');
