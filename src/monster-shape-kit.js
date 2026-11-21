@@ -8,6 +8,7 @@ import {decorateM024PBRMaterial,isScarabPBRSpecies}
  from './m024-scarab-pbr-surface.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
+import {enhanceMonsterReferenceMaterial} from './monster-reference-finish.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
@@ -80,6 +81,10 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
      });
    }
+   // Earlier species gain sculpt-aware PBR relief only when their own
+   // approved photograph/normal map has not already supplied one.
+   // All materials are cached by species: no per-frame GPU allocations.
+   enhanceMonsterReferenceMaterial(mat,{spec,detail,role});
    mat.userData.monsterCacheKey=key;
    entry={mat,refs:0};
    materialCache.set(key,entry);
