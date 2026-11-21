@@ -9,10 +9,12 @@ on:
       - 'src/monster-catalog.js'
       - 'src/creature-game-model-routing.js'
       - 'src/monster-character-cosplay.js'
+      - 'src/monster-construct-costume.js'
       - 'src/monster-humanoid-concept-finish.js'
       - 'src/monster-character-cosplay-manifest.js'
       - 'qa/monster-concept-trio.test.mjs'
       - 'qa/monster-humanoid-concept-finish.test.mjs'
+      - 'qa/monster-golem-full-shell.test.mjs'
       - 'package.json'
       - 'qa/monster-concept-v2-visual.html'
       - '.github/workflows/monster-concept-trio-qa.yml'
@@ -43,6 +45,9 @@ jobs:
           node --check src/monster-humanoid-concept-finish.js
           node --check src/monster-character-cosplay.js
           npm run test:humanoid-concept
+          node --check src/monster-construct-costume.js
+          npm run test:golem-full-shell
+          node qa/monster-16-cosplay-pigment-regression.test.mjs
 
       - name: Capture real Three.js monster visuals in headless browser
         run: |
