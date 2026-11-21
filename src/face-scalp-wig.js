@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-headhug-rear-drape-v58';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-curved-dynamic-v59';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -262,7 +262,7 @@ export function sadakoCrownSurfaceLayerOffset(zone,y,t,box){
  const upper=THREE.MathUtils.smoothstep(yn,.64,.83);
  const rooted=THREE.MathUtils.smoothstep(t,0,.085);
  const returnToShape=1-THREE.MathUtils.smoothstep(t,.52,.76);
- return d.x*.038*upper*rooted*returnToShape;
+ return d.x*.016*upper*rooted*returnToShape;
 }
 
 /** True top-over-side overlay. Crown-grown guides sweep across the
@@ -276,7 +276,7 @@ export function sadakoCrownSideOverlayOffset(zone,y,t,box,overlay=false){
  const across=THREE.MathUtils.smoothstep(t,.02,.15);
  const down=1-THREE.MathUtils.smoothstep(t,.49,.75);
  const headBand=THREE.MathUtils.smoothstep(yn,.46,.59);
- return d.x*.056*across*down*headBand;
+ return d.x*.021*across*down*headBand;
 }
 
 /** Sample the real donor bust's REAR silhouette below the head.
@@ -989,7 +989,7 @@ export function createSadakoCrownFlow(cap,box,color){
   for(const [p,sign] of [[a,-1],[a,1],[b,-.7],[b,.7]]){
    const q=p.clone().addScaledVector(widthAxis,sign*half);
    points.push(q.x,q.y,q.z);
-   const shade=.76+.10*((tri*.41421356)%1);
+   const shade=.91+.075*((tri*.41421356)%1);
    shades.push(pigment.r*shade,pigment.g*shade,pigment.b*shade);
   }
   indices.push(offset,offset+1,offset+2,offset+1,offset+3,offset+2);
@@ -1045,9 +1045,9 @@ export function createScalpFirstLongGuide({
  // Crown overlay is its own scalp-rooted grooming route: sweep ACROSS
  // the head first, then fall down the near side. Normal crown/fringe
  // guides may still travel forward/backward and keep the central part.
- const rootSweepX=crownOverSide?side*.62:temple?side*.035:
+ const rootSweepX=crownOverSide?side*.24:temple?side*.035:
   THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
- const rootSweepZ=crownOverSide?-.065:back?-1:zone.startsWith('fringe')?1:
+ const rootSweepZ=crownOverSide?-.13:back?-1:zone.startsWith('fringe')?1:
   relativeZ>-.025?1:-1;
  const flow=new THREE.Vector3(rootSweepX,-.17,rootSweepZ).normalize();
  const nRoot=normal.clone().normalize();
@@ -1137,7 +1137,7 @@ export function createScalpFirstLongGuide({
    // Crown-born strands follow the cranium, not a radial umbrella.
    const headY=(next.y-box.min.y)/Math.max(d.y,1e-6);
    const lateral=side*(next.x-center.x);
-   const maxLateral=d.x*(.255+.078*(1-smooth(headY,.60,.94)));
+   const maxLateral=d.x*(.240+.064*(1-smooth(headY,.60,.94)));
    if(headY>.57&&lateral>maxLateral)
     next.x-=side*(lateral-maxLateral);
   }
@@ -1352,7 +1352,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(!Number.isFinite(rear))return false;
   // Gentle fade above the actual neck; full clearance through shoulders.
   const strength=1-THREE.MathUtils.smoothstep(yn,.48,.63);
-  const safeZ=rear-d.x*.026;
+  const safeZ=rear-d.x*.052;
   if(point.z>safeZ&&strength>.0001){
    point.z=THREE.MathUtils.lerp(point.z,safeZ,strength);
    return true;
@@ -1634,7 +1634,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Finer groomed layers: 4 overlapped cards remain, but individual
  // panels no longer read as wide flat white ribbons in side view.
  // Reduce plate-like white ribbons; 10x individual fibre mesh replaces width.
- const half=d.x*(sadakoMaster?.0074:.0100);
+ const half=d.x*(sadakoMaster?.0059:.0100);
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -1764,7 +1764,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
     (strand.zone.startsWith('fringe')?.52:
      strand.zone.startsWith('temple')?.90:
-     strand.zone==='crown'?1.10:
+     strand.zone==='crown'?.49:
      strand.zone.startsWith('back')?.88:
      strand.zone.startsWith('nape')?.82:.86);
     // Groom BOTH ribbon planes along the actual hair-guide tangent.
@@ -2032,7 +2032,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // The former short tangential crown fibres resembled dark buzz stubble and
  // hid the missing long-hair follicles. Long hair is now rooted uniformly
  // across the REAL pigmented scalp. Keep the helper for standalone QA.
- const sadakoCrownFlow=null;
+ const sadakoCrownFlow=sadakoMaster?createSadakoCrownFlow(cap,box,color):null;
  if(sadakoCrownFlow)root.add(sadakoCrownFlow);
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
@@ -2086,6 +2086,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    ?[cap,...root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')]
    :[cap,locks,...root.children.filter(node=>
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
+    node.name==='SADAKO_CROWN_TANGENTIAL_FIBRE_FLOW_V50'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
   const normalLayers=sadakoMaster?1:clamp(Math.trunc(normalLayerCount),1,3),
@@ -2202,9 +2203,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoCrownLayerOrder:sadakoMaster?'top-grown-canopy-crosses-and-overlies-both-sides-v57':null,
   sadakoCrownOverSideLocks:sadakoMaster?
    strands.filter(s=>s.crownOverSide).length:0,
-  sadakoCrownOverSideOffset:sadakoMaster?.056:null,
-  sadakoCrownCanopyGroom:sadakoMaster?'scalp-following-crown-to-temple-then-gravity-v58':null,
-  sadakoCrownOuterMaxFraction:sadakoMaster?.038:null,
+  sadakoCrownOverSideOffset:sadakoMaster?.021:null,
+  sadakoCrownCanopyGroom:sadakoMaster?'curved-scalp-crown-guide-fibre-overlay-v59':null,
+  sadakoCrownOuterMaxFraction:sadakoMaster?.016:null,
   sadakoCrownOuterOnlyAboveEar:sadakoMaster,
   sadakoEarRibbonWidthFactor:sadakoMaster?.90:null,
   sadakoCrownScalpFollow:sadakoMaster,
@@ -2215,7 +2216,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
   sadakoUnifiedScalpClipping:sadakoMaster&&cap.userData.unifiedBuzzContour,
 
-  sadakoMasterGroom:sadakoMaster?'sadako-scalp-first-headhug-rear-v58':null,
+  sadakoMasterGroom:sadakoMaster?'sadako-scalp-curved-dynamic-v59':null,
   sadakoRearOriginBasedClearance:sadakoMaster,
   sadakoGravityTransition:sadakoMaster?{scalpTo:.12,fullyGravity:.32,segments}:null,
   sadakoGuideScalpPushes,sadakoRibbonScalpPushes,
