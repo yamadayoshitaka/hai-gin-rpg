@@ -121,10 +121,10 @@ test('costume skin clipping is available for new descendants, reversible and doe
  }
 });
 test('both comboboxes bind new IDs and retain animation/mantle on all Sadako variants',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-invisible-perm-rods-v66$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/two-donor-unisex-catalog-v67$/);
  const mesh=read('face-mesh-studio.html'),body=read('face-body-studio.html');
  for(const src of [mesh,body]){
-  assert.match(src,/20261121-sadako-invisible-perm-rods-v66/);
+  assert.match(src,/20261121-two-donor-unisex-catalog-v67/);
   assert.match(src,/isSadakoFamilyStyle/);
   assert.match(src,/face-part-catalog-v32\.js\?v=65/);
  }
