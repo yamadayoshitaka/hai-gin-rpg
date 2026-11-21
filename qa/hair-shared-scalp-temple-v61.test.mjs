@@ -36,12 +36,16 @@ test('v61 donor scalp contour is symmetric for left and right temple views',()=>
    assert.ok(Math.abs(a-b)<1e-10,`bilateral mismatch at ${x},${z}`);
   }
  }
- assert.ok(buzzHairlineFractionAtPoint({x:.35,y:0,z:-.1},box,size,center)<.64,
-  'side-temple contour must not leave large bare patches');
+ assert.ok(buzzHairlineFractionAtPoint({x:.35,y:0,z:-.1},box,size,center)>.64,
+  'approved sparse buzz contour must not be artificially lowered');
 });
 
-test('buzz and Sadako share real donor underlay across BOTH temples',()=>{
- for(const style of ['buzz-cut','sadako-straight-long']){
+test('only Sadako keeps the long-hair temple underlay; buzz remains sparse',()=>{
+ const buzz=make('buzz-cut');
+ assert.equal(buzz.wig.getReport().v66RealCrownUnderlayTriangles,0);
+ assert.equal(buzz.wig.getReport().bilateralTempleScalpCoverage,false);
+ dispose(buzz);
+ for(const style of ['sadako-straight-long']){
   const f=make(style);
   const cap=f.cap,report=f.wig.getReport();
   assert.ok(cap?.isMesh,'actual donor scalp must be present');
@@ -67,13 +71,13 @@ test('buzz and Sadako share real donor underlay across BOTH temples',()=>{
  }
 });
 
-test('buzz pigment is behind its real microfibres and keeps consistent colour',()=>{
+test('buzz restores its approved physical pigment with stubble',()=>{
  const f=make('buzz-cut');
- assert.equal(f.cap.material.type,'MeshBasicMaterial');
+ assert.equal(f.cap.material.type,'MeshPhysicalMaterial');
  assert.equal(f.cap.material.depthWrite,true);
- assert.ok(f.cap.renderOrder<0);
- assert.equal(f.cap.userData.buzzPigmentBelowFibres,true);
- assert.equal(f.wig.getReport().buzzScalpPigmentBelowFibres,true);
+ assert.equal(f.cap.renderOrder,2);
+ assert.equal(f.cap.userData.shortHairDepthPriority,true);
+ assert.equal(f.wig.getReport().buzzScalpPigmentBelowFibres,false);
  const stubble=f.wig.root.getObjectByName('CLOSE_CUT_SCALP_FIBRES_V18');
  assert.equal(stubble.material.type,'MeshBasicMaterial');
  const originalCap=f.cap.userData.donorScalpVertexCount;
@@ -97,9 +101,9 @@ test('long crown fibres sample original donor, not the duplicated hairline under
 });
 
 test('both studios use latest common scalp renderer and retain mantle collision',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/shared-scalp-angle-coverage-v61$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-mask-buzz-restored-v62$/);
  for(const path of ['face-mesh-studio.html','face-body-studio.html'])
-  assert.match(read(path),/20261121-shared-scalp-angle-coverage-v61/);
+  assert.match(read(path),/20261121-costume-mask-buzz-restored-v62/);
  assert.match(read('face-mesh-studio.html'),/buzzHairlineFractionAtPoint/);
  assert.match(read('face-body-studio.html'),/garmentCollisionResolver:mantleCollision/);
  assert.match(read('.github/workflows/hair-reselect-regression.yml'),
