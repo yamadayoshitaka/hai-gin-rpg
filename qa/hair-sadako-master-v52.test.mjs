@@ -147,7 +147,7 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  assert.match(page,/sadakoCover=wig\?\.root\?\.userData\?\.hairStyleId==='sadako-straight-long'/);
  assert.match(page,/if\(!wig\?\.root\?\.userData\?\.buzzFibreOnly&&!sadakoCover\)/);
  assert.match(page,/v53-sadako-matched-donor-clipping/);
- assert.match(hair,/if\(shortHair\|\|styleId==='sadako-straight-long'\)/);
+ assert.match(hair,/if\(shortHair\)return buzzHairlineFractionAtPoint/);
  assert.match(hair,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/);
  assert.match(page,/costume-mask-buzz-restored-v62/);
 });
