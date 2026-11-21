@@ -394,6 +394,23 @@ function focusCamera(full=false){
  }
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
+ if(selected==='m018'&&model?.userData?.m018DragonHeadCount===3){
+  // Fit all three long dragon necks AND original feet on narrow screens.
+  const aspect=Math.max(.20,view.clientWidth/Math.max(1,view.clientHeight));
+  camera.aspect=aspect;camera.updateProjectionMatrix();
+  const vfov=THREE.MathUtils.degToRad(camera.fov);
+  const hfov=2*Math.atan(Math.tan(vfov/2)*aspect);
+  const distance=Math.max(4.8,
+    size.y/(2*Math.tan(vfov/2))*1.25,
+    size.x/(2*Math.tan(hfov/2))*1.35,
+    size.z/(2*Math.tan(vfov/2))*1.20);
+  const offset=new THREE.Vector3(.20,.09,.98).normalize().multiplyScalar(distance);
+  controls.target.set(center.x,Math.max(.7,center.y),center.z);
+  camera.position.copy(controls.target).add(offset);
+  controls.maxDistance=85;
+  model.userData.m018LastFit={threeDragonHeads:true,fullBody:true,distance,aspect};
+  controls.update();return;
+ }
  if(selected==='m019'&&model?.userData?.m019ModelFollowsFourView){
   // The previous portrait camera fitted only vertical FOV, clipping the
   // long tail off-screen. Fit the real X/Z bounds in the viewport H-FOV.
@@ -446,6 +463,22 @@ byId('zoomOut').onclick=()=>zoomModel(1.30);
 byId('resetCamera').onclick=()=>{if(model){m019CameraUserAdjusted=false;focusCamera(true)}};
 byId('portraitCamera').onclick=()=>{
  if(!model)return;
+ if(selected==='m018'&&model.userData.m018DragonHeadCount===3){
+  // Face view frames all three moving dragon skulls.
+  model.updateMatrixWorld(true);
+  const heads=['hydraSkullL','hydraSkullC','hydraSkullR']
+    .map(id=>model.userData.pivots?.[id]).filter(Boolean);
+  if(heads.length===3){
+   const center=new THREE.Vector3();
+   for(const h of heads)center.add(h.getWorldPosition(new THREE.Vector3()));
+   center.divideScalar(3);
+   controls.target.copy(center);
+   const scale=Math.max(1,model.scale.x);
+   camera.position.set(center.x+.36*scale,
+     center.y+.13*scale,center.z+3.6*scale);
+   controls.update();return;
+  }
+ }
  if(selected==='m013'&&model.userData.avianRebuildRevision){
   const head=model.userData.pivots?.head||model.getObjectByName('head');
   if(head){
