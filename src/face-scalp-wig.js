@@ -959,10 +959,16 @@ export function createScalpFirstLongGuide({
  const side=root.x>=center.x?1:-1;
  const front=zone.startsWith('fringe')||temple||
   (!back&&(root.z>=(whorl?.z??center.z-d.z*.04)));
- const flow=new THREE.Vector3(
-  temple?side*.68:(targetX-root.x)/Math.max(d.x,1e-5)*.17,
-  -.23,back?-1:front?1:-1
- ).normalize();
+ // Hair parts around the REAL whorl and follows the local skull to the
+ // forehead, temples and occipital surface. Fixed outward vectors produced
+ // the radial fan and pushed front locks away from their hairline.
+ const relativeX=(root.x-(whorl?.x??center.x))/Math.max(d.x,1e-6);
+ const relativeZ=(root.z-(whorl?.z??center.z-d.z*.04))/Math.max(d.z,1e-6);
+ const rootSweepX=temple?side*.34:
+  THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
+ const rootSweepZ=back?-1:zone.startsWith('fringe')?1:
+  relativeZ>-.025?1:-1;
+ const flow=new THREE.Vector3(rootSweepX,-.17,rootSweepZ).normalize();
  const nRoot=normal.clone().normalize();
  const outwards=root.clone().sub(center);
  if(nRoot.dot(outwards)<0)nRoot.negate();
