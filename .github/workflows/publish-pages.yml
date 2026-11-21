@@ -31,6 +31,7 @@ jobs:
         run: |
           node --test qa/mobile-formation-command-items.test.mjs qa/inn-roster-first-formation.test.mjs
           node --test qa/training-ground-forge-critical-roster.test.mjs
+          node --test qa/training-gear-owner-purchase.test.mjs qa/town-facility-squad-gear.test.mjs
       - name: Verify chained battle orders and automatic follow-ups
         run: node --test qa/battle-command-followup.test.mjs
       - name: Verify published batch PR preview and checkpoint contract
