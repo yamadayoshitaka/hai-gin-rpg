@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-crown-microhole-v21';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-no-helmet-v22';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -417,11 +417,13 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    if(shortHair){
     // Extend the back/side donor cap toward the nape while keeping the
     // front hairline high enough to leave the forehead and eyes visible.
-    const rear=.53;
-    const side=THREE.MathUtils.lerp(rear,.70,smooth(-.10,.12,zn));
-    const forehead=THREE.MathUtils.lerp(side,.79,smooth(.10,.28,zn));
-    // Keep short hair off the ears and temple skin.
-    return THREE.MathUtils.clamp(forehead+.025*smooth(.24,.45,xn),.53,.83);
+    // The former .53 rear boundary covered the ear and neck like a
+    // helmet. Raise the cut line and trim lateral ear/temple coverage.
+    const rear=.68;
+    const side=THREE.MathUtils.lerp(rear,.75,smooth(-.10,.12,zn));
+    const forehead=THREE.MathUtils.lerp(side,.82,smooth(.10,.28,zn));
+    const earClearance=.11*smooth(.25,.42,xn);
+    return THREE.MathUtils.clamp(forehead+earClearance,.68,.92);
    }
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
@@ -478,7 +480,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
      (v.z-center.z)/Math.max(d.z*.5,1e-6)
     ).normalize();
     const outward=n.dot(radial)<.25?radial:n.clone().add(radial).normalize();
-    v.addScaledVector(outward,d.x*.009);
+    v.addScaledVector(outward,d.x*.003);
     smoothNormals.push(outward.x,outward.y,outward.z);
    }else{
     v.addScaledVector(n,d.x*.0012);
