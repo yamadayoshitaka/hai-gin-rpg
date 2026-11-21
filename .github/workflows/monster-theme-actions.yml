@@ -1,0 +1,37 @@
+name: Monster 50 families action & quality regression
+on:
+  pull_request:
+    paths:
+      - 'src/monster-*'
+      - 'src/nonhuman-model-quality.js'
+      - 'src/creature-master-runtime.js'
+      - 'monster-manager.html'
+      - 'qa/monster-all-50-theme-actions.test.mjs'
+      - '.github/workflows/monster-theme-actions.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  monster-themes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the pinned geometry runtime without lockfile changes
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Syntax check species, pose and viewer route
+        run: |
+          node --check src/monster-theme-actions.js
+          node --check src/monster-theme-motion.js
+          node --check src/monster-animation.js
+          node --check src/monster-character-cosplay.js
+          node --check src/monster-summon-renderer.js
+          node --check src/battle-registered-monster-model.js
+          node --check src/nonhuman-model-quality.js
+      - name: Verify 50 live low LODs, 250 theme actions and quality stages
+        run: node --test qa/monster-all-50-theme-actions.test.mjs
+      - name: Verify protected canonical humanoid joints and gargoyle
+        run: node --test qa/monster-gargoyle-species.test.mjs qa/monster-humanoid-armor-articulation.test.mjs
