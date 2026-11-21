@@ -7,6 +7,9 @@ on:
       - 'src/monster-character-cosplay.js'
       - 'src/seraph-celestial-wardrobe.js'
       - 'src/seraph-celestial-materials.js'
+      - 'src/forest-spirit-tailored-wardrobe.js'
+      - 'src/forest-spirit-pbr.js'
+      - 'qa/forest-seraph-sculpted-visual-polish.test.mjs'
       - 'src/female-summon-costumes.js'
       - 'src/monster-regal-garments.js'
       - 'qa/seraph-tailored-vestment-regression.test.mjs'
@@ -42,6 +45,11 @@ jobs:
           node --check src/seraph-celestial-wardrobe.js
           node --check src/seraph-celestial-materials.js
           node --test qa/seraph-tailored-vestment-regression.test.mjs
+          node --check src/forest-spirit-tailored-wardrobe.js
+          node --check src/forest-spirit-pbr.js
+          node --check src/female-summon-costumes.js
+          node --test qa/forest-seraph-sculpted-visual-polish.test.mjs
+          node qa/forest-spirit-emerald-regression.test.mjs
           node --check src/summon-footwear-pbr.js
           node --check src/monster-regal-garments.js
           node --test qa/summon-leather-boots.test.mjs
