@@ -7,6 +7,7 @@ on:
       - 'src/face-scalp-wig.js'
       - 'qa/hair-sadako-buzz-reselect-v49.test.mjs'
       - 'qa/hair-sadako-master-v52.test.mjs'
+      - 'qa/hair-sadako-parting-v54.test.mjs'
       - '.github/workflows/hair-reselect-regression.yml'
   push:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'src/face-scalp-wig.js'
       - 'qa/hair-sadako-buzz-reselect-v49.test.mjs'
       - 'qa/hair-sadako-master-v52.test.mjs'
+      - 'qa/hair-sadako-parting-v54.test.mjs'
 permissions:
   contents: read
 jobs:
@@ -32,4 +34,4 @@ jobs:
       - name: Verify hair module syntax and buzz/Sadako re-selection contract
         run: |
           node --check src/face-scalp-wig.js
-          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs
+          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs

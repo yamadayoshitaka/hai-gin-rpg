@@ -10,13 +10,15 @@ const deepFreeze=value=>{
  }
  return value;
 };
-// Static scalp foundation volume. This is geometry, not a shader or physics.
+// Persistent profile IDs are unchanged. For long hair, spread moves the
+// falling STRANDS away from/toward the head; it never raises the naked scalp
+// or creates a second floating fringe foundation.
 export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
- natural:{label:'トップ最小（頭皮に沿う）',crown:.0,side:.0},
- soft:{label:'やや少なめ（自然な丸み）',crown:.016,side:.008},
- airy:{label:'標準（ふんわりした根元）',crown:.034,side:.019},
- lifted:{label:'多め（トップにボリューム）',crown:.069,side:.013},
- full:{label:'最大（全体に厚み）',crown:.086,side:.048}
+ soft:{label:'髪を抑える（密着）',crown:.016,side:.008,spread:-1},
+ natural:{label:'自然・標準',crown:0,side:0,spread:0},
+ airy:{label:'少し広げる',crown:.034,side:.019,spread:.5},
+ lifted:{label:'広げる',crown:.069,side:.013,spread:1},
+ full:{label:'最大に広げる',crown:.086,side:.048,spread:1.5}
 });
 export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
 export const WIG_STYLES=deepFreeze({

@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-unified-scalp-area-roots-v53';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-parting-volume-curved-v54';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -635,7 +635,10 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // Shared posterior opacity pass for every long hairstyle. The previous 88
  // narrow strips left the actual scalp visible between disconnected cards.
  // This is independent of style IDs so every long wig gets the same coverage.
- const undercoatStrips=!fullBody&&!shortHair&&rearCandidates.length?160:0;
+ // Sadako owns one head-hugging long layer; legacy 160 broad rear panels
+ // were the visible sideways "board" in the user's profile screenshot.
+ const undercoatStrips=!fullBody&&!shortHair&&
+  styleId!=='sadako-straight-long'&&rearCandidates.length?160:0;
  const stripSegments=12,stripWidths=[],tipHeights=[];
  for(let k=0;k<undercoatStrips;k++){
   const u=(k+.5)/undercoatStrips,side=u<.5?-1:1;
@@ -945,7 +948,7 @@ export function scalpToGravityWeight(t,start=.15,end=.38){
 }
 export function createScalpFirstLongGuide({
  root,normal,box,zone='crown',whorl=null,length,trimY,
- targetX=root.x,targetZ=root.z,segments=18,projectOutside=null
+ targetX=root.x,targetZ=root.z,segments=18,volumeSpread=0,projectOutside=null
 }={}){
  if(!root?.isVector3||!normal?.isVector3||!box?.isBox3||
   !Number.isFinite(length)||length<=0||segments<4)
@@ -974,10 +977,20 @@ export function createScalpFirstLongGuide({
  if(nRoot.dot(outwards)<0)nRoot.negate();
  const result=[root.clone()];
  let last=root.clone();
+ // In v52 the gravity interval was a percentage of the ENTIRE uncut hair
+ // length. With hair extending past the shoulders, 15% meant a horizontal
+ // plate longer than the skull itself. Convert to anatomical head distance.
+ const gravityStart=Math.min(.15,d.y*.075/length);
+ const gravityEnd=Math.max(gravityStart+.015,
+  Math.min(.38,d.y*.26/length));
+ const centerCurtain=front&&(zone.startsWith('fringe')||zone==='crown');
+ const smooth=(t,a,b)=>THREE.MathUtils.smoothstep(t,a,b);
+ const sweptPart=t=>centerCurtain?smooth(t,.018,.32)*d.x*.135:0;
+ const spreadCurve=t=>smooth(t,.025,.40)*d.x*.075*volumeSpread;
  const workNormal=new THREE.Vector3(),tan=new THREE.Vector3(),
   direction=new THREE.Vector3(),fall=new THREE.Vector3();
  for(let j=1;j<=segments;j++){
-  const t=j/segments,gravity=scalpToGravityWeight(t);
+  const t=j/segments,gravity=scalpToGravityWeight(t,gravityStart,gravityEnd);
   // Ellipsoid slope is only a steering normal. Exact head clearance is
   // applied separately against the actual donor radial scalp envelope.
   workNormal.set(
@@ -993,6 +1006,17 @@ export function createScalpFirstLongGuide({
    (targetZ-last.z)/Math.max(length,1e-6)*.12).normalize();
   direction.copy(tan).multiplyScalar(1-gravity).addScaledVector(fall,gravity).normalize();
   const next=last.clone().addScaledVector(direction,length/segments);
+  // True centre-part: part left/right above the forehead, without moving
+  // the donor root or leaving the frontal locks as one central curtain.
+  const partDelta=sweptPart(t)-sweptPart((j-1)/segments);
+  if(partDelta)next.x+=side*partDelta;
+  // Volume is controlled on the HAIR, not on a second lifted scalp base.
+  // Apply only incremental offset so the loose lengths stay vertical.
+  const volumeDelta=spreadCurve(t)-spreadCurve((j-1)/segments);
+  if(volumeDelta){
+   const radial=new THREE.Vector3(next.x-center.x,0,next.z-center.z);
+   if(radial.lengthSq()>1e-8)next.addScaledVector(radial.normalize(),volumeDelta);
+  }
   next.y=Math.max(trimY,next.y);
   if(projectOutside)projectOutside(next,j===1,front);
   result.push(next);
@@ -1189,7 +1213,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    colliders.push({name:extra.name||'external-body',
     a:new THREE.Vector3(...extra.a),b:new THREE.Vector3(...extra.b),r:extra.r});
  }
- const hairLayers=4;
+ // Avoid duplicating two broad orthogonal hair-card planes for Sadako:
+ // dense, narrower donor-rooted cards retain volume without flat boards.
+ const hairLayers=sadakoMaster?2:4;
  const ribbonStride=hairLayers*2;
  const vertexCount=lockCount*(segments+1)*ribbonStride;
  const vertices=new Float32Array(vertexCount*3),colors=new Float32Array(vertexCount*3);
@@ -1324,6 +1350,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    const shape=createScalpFirstLongGuide({
     root:wigRoot,normal:outward,box,zone,whorl,length,trimY,
     targetX,targetZ,segments,
+    volumeSpread:WIG_BASE_VOLUME_PROFILES[volumeProfile].spread||0,
     projectOutside:(point,nearRoot,front)=>{
      if(projectSadakoOutside(point,nearRoot,front))
       sadakoGuideScalpPushes++;
@@ -1406,7 +1433,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   }
   for(let j=0;j<segments;j++){
    const a=base+j*ribbonStride,b=base+(j+1)*ribbonStride;
-   for(const off of [0,2,4,6]){
+   for(let off=0;off<ribbonStride;off+=2){
     indices.push(a+off,a+off+1,b+off,b+off,a+off+1,b+off+1);
    }
   }
@@ -1438,7 +1465,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Finer groomed layers: 4 overlapped cards remain, but individual
  // panels no longer read as wide flat white ribbons in side view.
  // Reduce plate-like white ribbons; 10x individual fibre mesh replaces width.
- const half=d.x*.0100;
+ const half=d.x*(sadakoMaster?.0068:.0100);
  // The visible mesh retains all 1440+ locks, but only ~320 master locks
  // require full constraint and capsule solving on Android.
  const guideStride=Math.max(1,Math.ceil(lockCount/320));
@@ -1558,7 +1585,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // broad clean midsection and softly tapered point-cut tip. Keeping
    // crown cards narrow prevents the interlocking square tiles visible
    // in the previous overhead screenshots.
-   const rootProfile=(strand.fringe?.48:.28)+
+   const rootProfile=sadakoMaster?
+    (.82+.18*THREE.MathUtils.smoothstep(t,0,.16)):
+    (strand.fringe?.48:.28)+
     (strand.fringe?.52:.72)*THREE.MathUtils.smoothstep(t,0,.30);
    const width=half*tip*rootProfile*(.81+.24*fract(i*.35))*
      (fiberMultiplier>=10&&normalLayeredSingleMesh?1.14:1)*
@@ -1854,7 +1883,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     node.name==='DETACHABLE_WIG_FINE_FIBRES'||
     node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
-  const normalLayers=clamp(Math.trunc(normalLayerCount),1,3),normalStep=d.x*.0018;
+  const normalLayers=sadakoMaster?1:clamp(Math.trunc(normalLayerCount),1,3),
+   normalStep=d.x*.0018;
   let vertexOffset=0;
   for(const node of nodes){
    const src=node.geometry;
@@ -1957,6 +1987,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
   sadakoCrownFibreCount:sadakoCrownFlow?.userData.crownFibreCount||0,
+  sadakoSidePanelCount:sadakoMaster?0:cap.userData.rearUndercoatStripCount,
+  sadakoCenterParted:sadakoMaster,
+  sadakoHairVolumeSpread:sadakoMaster?WIG_BASE_VOLUME_PROFILES[volumeProfile].spread||0:null,
+  sadakoGravityDistanceBased:sadakoMaster,
   sadakoAreaSampledRoots:sadakoMaster?sadakoAreaSampledRoots:null,
   sadakoFollicleTriangles:sadakoFollicles?.donorTriangles||0,
   sadakoAreaZoneTriangles:sadakoFollicles?.zoneTriangleCounts||null,
@@ -1978,7 +2012,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   staticGroom:!!staticGroom,simulationEnabled:!staticGroom,
   runtimePhysicsCallsPerFrame:staticGroom?0:1,
   constructionCollisionOnly:!!staticGroom,
-  hairCardStyle:staticGroom&&normalLayeredSingleMesh?
+  hairCardStyle:sadakoMaster?
+   'two-narrow-tangent-ribbons-single-layer-centre-part-v54':
+   staticGroom&&normalLayeredSingleMesh?
    'normal-offset-identical-strand-mesh-layers-one-render-object':
    'four-stacked-thick-ribbon-layers-with-real-depth',
   v33ShortCutKind:style.shortCutKind||'long',
@@ -2027,7 +2063,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   wigBaseMaterialOpacity:normalLayeredSingleMesh?null:0,
   wigBaseNeverWritesDepth:true,
   transparentBaseRemoved:!!normalLayeredSingleMesh,
-  normalLayerCount:staticGroom&&normalLayeredSingleMesh?3:1,
+  normalLayerCount:staticGroom&&normalLayeredSingleMesh?
+   (sadakoMaster?1:clamp(Math.trunc(normalLayerCount),1,3)):1,
   consolidatedHairMesh:staticGroom?consolidatedHair?.name:null,
   rootScalpLiftFraction:.0125,
   trueScalpRibbonVertexCollision:true,

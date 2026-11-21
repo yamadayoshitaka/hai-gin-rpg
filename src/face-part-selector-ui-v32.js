@@ -2,10 +2,10 @@ import {
  PART_CATALOG,PART_GROUPS,PART_GROUP_LABELS,OFFSET_CHOICES,ANGLE_CHOICES,
  normalizePartSelection,HAIR_COLORS
 } from './face-part-catalog-v32.js?v=35';
-import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=35';
+import {WIG_BASE_VOLUME_PROFILES} from './face-wig-styles.js?v=54';
 
 /** v32: select ten real 3D geometric presets, not independent morph sliders. */
-export function createPartSelectorUI(target,gender,current,onChange){
+export function createPartSelectorUI(target,gender,current,onChange,{hideHairType=false,hideHairVolume=false}={}){
  if(!target||!PART_CATALOG[gender])throw Error('Invalid v32 part selector');
  const state=normalizePartSelection(current);
  target.replaceChildren();
@@ -50,7 +50,7 @@ export function createPartSelectorUI(target,gender,current,onChange){
    group[0].toUpperCase()+group.slice(1),
    choices.map((item,i)=>[i, String(i+1).padStart(2,'0')+' '+item.label]),
    state[group],v=>{state[group]=v;announce();}));
-  panel.append(label);
+  if(!(group==='hair'&&hideHairType))panel.append(label);
   if(group==='hair'){
    const colorLabel=document.createElement('label');
    colorLabel.textContent='髪色（16色プリセット）';
@@ -66,7 +66,7 @@ export function createPartSelectorUI(target,gender,current,onChange){
    });
    colorLabel.append(colorSelect);panel.append(colorLabel);
    const baseLabel=document.createElement('label');
-   baseLabel.textContent='ウィッグの土台（根元の盛り上がり）';
+   baseLabel.textContent='髪全体のボリューム（抑える／広げる）';
    const baseSelect=document.createElement('select');
    baseSelect.id='v33'+(gender==='female'?'Female':'Male')+'WigVolume';
    for(const [key,profile] of Object.entries(WIG_BASE_VOLUME_PROFILES)){
@@ -77,7 +77,8 @@ export function createPartSelectorUI(target,gender,current,onChange){
    baseSelect.addEventListener('change',()=>{
     state.hairVolume=baseSelect.value;announce();
    });
-   baseLabel.append(baseSelect);panel.append(baseLabel);
+   baseLabel.append(baseSelect);
+   if(!hideHairVolume)panel.append(baseLabel);
   }
   if(ids[group].length){
    const grid=document.createElement('div');grid.className='v32-pose-grid';
@@ -98,7 +99,7 @@ export function createPartSelectorUI(target,gender,current,onChange){
  }
  const tip=document.createElement('p');
  tip.className='v32-tip';
- tip.textContent='髪は物理演算なしの厚み付き4層ヘアカード。土台の盛り上がりに合わせて毛束の根元も動きます。';
+ tip.textContent='髪ボリュームは頭皮の土台を浮かせず、毛流れを頭の輪郭へ抑える／外へ広げる調整です。';
  target.append(tip);
  return {getSelection:()=>({...state})};
 }
