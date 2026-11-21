@@ -55,10 +55,16 @@ export function migrateLegacy(old){
  settings:{bgm:true,voice:true,quality:'auto'},
  history:['旧ストーリーの軍師・軍団・領地を引き継いだ。町で保存してください。']};
 }
-export function getSavedGame(storage){
- const saved=read(storage,GAME_SAVE_KEY);
+export const GAME_SAVE_SLOT_COUNT=3;
+export function getSavedGame(storage,slot=1){
+ if(!Number.isInteger(slot)||slot<1||slot>GAME_SAVE_SLOT_COUNT)return null;
+ const saved=read(storage,'hai-gin-core-slot-'+slot);
  if(validGame(saved))return saved;
- return migrateLegacy(read(storage,OLD_CAMPAIGN_KEY));
+ // Original slot 1 and legacy campaigns remain readable after the migration.
+ return slot===1?migrateLegacy(read(storage,OLD_CAMPAIGN_KEY)):null;
+}
+export function getSaveSlots(storage){
+ return Array.from({length:GAME_SAVE_SLOT_COUNT},(_,index)=>({slot:index+1,game:getSavedGame(storage,index+1)}));
 }
 export function loadGame(storage,sessionStorage){
  const active=read(sessionStorage,GAME_SESSION_KEY);
@@ -166,10 +172,11 @@ export function claimTownEvent(game,eventId){
  game.history=game.history.slice(0,50);
  return event;
 }
-export function saveAtTown(game,storage,sessionStorage){
+export function saveAtTown(game,storage,sessionStorage,slot=1){
  if(!validGame(game)||game.location!=='town')throw Error('セーブは町でのみ可能です。');
+ if(!Number.isInteger(slot)||slot<1||slot>GAME_SAVE_SLOT_COUNT)throw Error('セーブスロットは1〜3から選んでください。');
  game.savedAt=new Date().toISOString();
- write(storage,GAME_SAVE_KEY,plain(game));
+ write(storage,'hai-gin-core-slot-'+slot,plain(game));
  write(sessionStorage,GAME_SESSION_KEY,plain(game));
  return game;
 }

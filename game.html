@@ -43,6 +43,10 @@
  .shell .subtitle{font-size:11px;letter-spacing:.08em}
 }
 @media(max-height:630px){.crest{font-size:26px}h1{font-size:28px;margin:4px}.ornament{margin:7px auto}.title-menu{margin:10px auto}.title-menu button{padding:6px;min-height:40px}#intro p{font-size:15px;min-height:4.8em}}
+#loadSlotList{display:grid;gap:9px;margin:12px 0 18px}
+#loadSlotList button{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px}
+#loadSlotList small{display:block;font-size:11px;color:#c7d5df;margin-top:4px}
+#loadSlotList button:disabled{opacity:.55}
 </style></head><body>
 <div id="sky" aria-hidden="true"></div><div id="stars" aria-hidden="true"></div><a class="batch-center-launch" href="./batch-monitor.html" aria-label="バッチ管理センターを開く">⚙ バッチ管理</a>
 <section id="intro" aria-label="オープニング" hidden><div id="introArt" role="img" aria-label="序幕・男女別の分岐対応漫画"><img id="introPanelImage" alt="オープニングの現在の1コマ" hidden><div id="introArtMissing" role="status">原画確認中</div></div><div class="intro-crest" aria-hidden="true">✧</div><div id="introSpeakerRow"><img id="introPortrait" hidden alt="話者の顔"><div id="introSpeaker">序章・灰の勅命</div></div><p id="introLine">千年のあいだ、星鐘は鳴らなかった。</p><div id="introProgress">序幕 · 1 / 4</div><button id="introNext" type="button">次の場面へ ▶</button><button id="skip" type="button">スキップ ▶</button></section>
@@ -51,11 +55,12 @@
 <button id="newGame">ニューゲーム</button><button id="replayTutorial">はじめての方・操作ガイド</button><button id="viewPrologue">序章を見る</button><button id="continueGame">続きから</button><button id="versus">対戦</button><button id="settings">設定</button><button id="storyMaintenance" type="button">物語フロー・保守</button></nav>
 <div class="version">GAME CORE v0.1 · 20章 × 10ステージ = 200　<a href="./creature-model-credits.html" style="color:#b9dbea">3Dモデル著作者・ライセンス</a></div></main>
 <div id="tutorialModal" class="modal" hidden><section class="panel" aria-label="はじめての方へのチュートリアル"><div class="guide-top"><span id="guideEyebrow">最初の一歩</span><span id="guideCount">1 / 5</span></div><div class="guide-art"><div class="guide-icon" id="guideIcon">✦</div></div><h2 id="guideTitle">この世界について</h2><p id="guideBody"></p><p id="guideTip"></p><div id="guideDots" class="guide-dots" aria-hidden="true"></div><div class="choice"><button id="guideBack" type="button">◀ 前へ</button><button id="guideNext" type="button" class="primary">次へ ▶</button></div><button id="guideSkip" type="button" style="margin-top:9px;width:100%;min-height:35px;background:transparent;border:0;color:#adbcc8;font-size:12px">ガイドを省略する</button></section></div>
+<div id="loadModal" class="modal" hidden><section class="panel"><h2>旅の記録を選択</h2><p>教会で保存した最大3つの記録から再開できます。</p><div id="loadSlotList"></div><button type="button" data-close style="width:100%">タイトルへ戻る</button></section></div>
 <div id="newModal" class="modal" hidden><section class="panel"><h2>新しい物語</h2><p>あなたは灰銀軍の軍師。名前を決めると、レヴナの町で第一章のオープニングイベントが始まります。</p><form id="newForm"><label for="playerName">軍師の名前</label><input id="playerName" maxlength="24" required autocomplete="off" placeholder="軍師名を入力"><label for="playerGender">主人公の性別</label><select id="playerGender"><option value="male">男性</option><option value="female">女性</option></select><div class="choice"><button type="button" data-close>戻る</button><button type="submit" class="primary">物語を始める ▶</button></div><p id="newMessage"></p></form></section></div>
 <div id="settingsModal" class="modal" hidden><section class="panel"><h2>ゲーム設定</h2><p>基本設定は端末に保存します。町や戦闘の音声・画質には、各画面固有の設定もあります。</p><div class="setting"><span>BGM</span><button id="optBgm" type="button"></button></div><div class="setting"><span>音声</span><button id="optVoice" type="button" aria-label="音声のオン・オフ"></button></div><div class="setting"><label for="optQuality">画質</label><select id="optQuality"><option value="auto">自動</option><option value="high">高</option><option value="low">軽量</option></select></div><div class="choice"><button type="button" data-close>戻る</button><button type="button" class="primary" id="saveSettings">保存</button></div><p><a href="./dev-menu.html" style="color:#badbeb">開発・テスト用メニュー</a></p></section></div>
 <div id="versusModal" class="modal" hidden><section class="panel"><h2>対戦</h2><p>対人ネットワーク対戦は準備中です。現在は既存のリアルタイム軍団戦を使ったCPU戦闘テストを起動できます。</p><div class="choice"><button type="button" data-close>戻る</button><button type="button" class="primary" id="vsCpu">CPU模擬戦 ▶</button></div></section></div>
 <script type="module">
-import {createNewGame,getSavedGame,startNewSession} from './src/game-core-flow.js';
+import {createNewGame,getSavedGame,getSaveSlots,startNewSession} from './src/game-core-flow.js';
 import {mangaForStage} from './src/story-stage-manga.js';
 import {FIRST_PLAY_GUIDE} from './src/first-play-guide.js';
 import {comicPageAsset} from './src/story-chapter-comic.js';
@@ -180,10 +185,26 @@ $('guideSkip').onclick=finishTutorial;
 $('newGame').onclick=()=>showTutorial(true);
 $('replayTutorial').onclick=()=>showTutorial(false);
 $('viewPrologue').onclick=openIntro;
-const saved=getSavedGame(localStorage);
-$('continueGame').disabled=!saved;
-$('continueGame').textContent=saved?'続きから　—　'+saved.playerName:'続きから（セーブなし）';
-$('continueGame').onclick=()=>{if(!saved)return;sessionStorage.setItem('hai-gin-core-active-v1',JSON.stringify(saved));location.href='./town-hub.html?v='+Date.now();};
+const savedSlots=getSaveSlots(localStorage);
+$('continueGame').disabled=!savedSlots.some(slot=>slot.game);
+$('continueGame').textContent=$('continueGame').disabled?'続きから（セーブなし）':'続きから（記録を選択）';
+$('continueGame').onclick=()=>{
+ $('loadSlotList').replaceChildren();
+ for(const {slot,game:saved} of savedSlots){
+  const button=document.createElement('button');
+  button.type='button';button.disabled=!saved;
+  const label=document.createElement('span'),heading=document.createElement('strong'),sub=document.createElement('small');
+  heading.textContent='スロット '+slot+'　'+(saved?.playerName||'未保存');
+  sub.textContent=saved?.savedAt?new Date(saved.savedAt).toLocaleString('ja-JP'):'記録なし';
+  label.append(heading,sub);button.append(label);
+  if(saved)button.onclick=()=>{
+   sessionStorage.setItem('hai-gin-core-active-v1',JSON.stringify(saved));
+   location.href='./town-hub.html?v='+Date.now()+'&slot='+slot;
+  };
+  $('loadSlotList').append(button);
+ }
+ openModal('loadModal');
+};
 $('versus').onclick=()=>openModal('versusModal');
 $('vsCpu').onclick=()=>location.href='./tactics-wireframe.html?army=50&mode=cpu&v=three-team-radar2-20261120';
 $('settings').onclick=()=>{renderSettings();openModal('settingsModal')};
