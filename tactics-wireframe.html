@@ -936,7 +936,7 @@ import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout
 import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from './src/battle-overview-squad-pins.js?v=20261117-map-pins2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture,resolveDefensiveGuardIntent} from './src/battle-defensive-doctrine.js?v=20261122-guard-intent1';
-import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
+import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=20261122-cell-pingpong2';
 import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
@@ -1136,7 +1136,7 @@ import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-b
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {battleSquadJob,engineBattleJobNameForSquad,displayBattleJobName} from './src/battle-job-squads.js?v=20261119-job-teams';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261122-anti-wander1';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261122-cell-pingpong2';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=20261120-roof2';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
@@ -4528,11 +4528,22 @@ function recoverBlockedActor(a,goal){
   // When an otherwise clear corridor is occupied for several seconds,
   // yield to a legal side cell. Never sidestep through walls, water, stairs
   // or another soldier; doorway queues still wait for their real route.
+  const before=Math.abs(a.cell.x-target.x)+Math.abs(a.cell.z-target.z);
+  const exitCandidates=legal.filter(cell=>!routeOccludedByTerrain(cell,target,a))
+   .map(cell=>{
+    // The yield tile needs a subsequent legal step toward the actual goal;
+    // otherwise the only possible action is to walk straight back.
+    const escape=[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dz])=>{
+     const x=cell.x+dx,z=cell.z+dz;
+     return !(x===a.cell.x&&z===a.cell.z)&&availableCell(x,z,a)&&
+      Math.abs(x-target.x)+Math.abs(z-target.z)<before;
+    });
+    return {...cell,escape};
+   });
   const detour=chooseBlockedMovementDetour({
    x:a.cell.x,z:a.cell.z,goalX:target.x,goalZ:target.z,
    previousX:a._lastRecoveryFromX,previousZ:a._lastRecoveryFromZ,
-   neighbors:legal.filter(cell=>!routeOccludedByTerrain(cell,target,a)),
-   maxWorsening:1
+   neighbors:exitCandidates,maxWorsening:1,requireEscape:true
   });
   if(detour){
    const origin={x:a.cell.x,z:a.cell.z};
@@ -4677,18 +4688,8 @@ function moveActor(a,goal,dt,stop){
    // If the path is still being planned, keep its frontier alive.
    // Do not initiate an unrelated recovery A* that steals the shared budget.
    if(a._exitRoute?.search){a.poseMoving=false;return;}
-   // Congested bridge: allow a short detour around the blocked first tile.
-   // Do not send actors onto the river or teleport through other units.
-   if(path){
-    for(const [dx,dz] of [[0,-1],[0,1],[-1,0],[1,0]]){
-     const nx=a.cell.x+dx,nz=a.cell.z+dz;
-     if(!availableCell(nx,nz,a))continue;
-     // No throwaway 8000-node A* for a hypothetical actor every tick.
-     // Only take a detour whose direct line is terrain-clear.
-     const alternate=!routeOccludedByTerrain({x:nx,z:nz},target,a);
-     if(alternate&&startCellMove(a,nx,nz)){a.jumping=false;return}
-    }
-   }
+   // Bridge queues wait for a stable path or a verified two-step exit.
+   // Immediate alternate left/right moves made actors oscillate by one cell.
    recoverBlockedActor(a,goal);return;
   }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);

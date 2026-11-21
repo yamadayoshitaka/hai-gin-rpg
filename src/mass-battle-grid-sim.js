@@ -10,7 +10,7 @@ import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-terr
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
-import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
+import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
@@ -1434,6 +1434,14 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
+    // A corpse stays visible for the death animation but immediately frees
+    // its collision footprint, including the interpolated departure cell.
+    // This also applies to killAtCells() outside the regular AI step.
+    const occupied=this._occupancy;
+    for(const [x,z] of [[u.x,u.z],[u.fromX,u.fromZ]]){
+      const tile=z*this.width+x;
+      if(occupied[tile]===u.id)occupied[tile]=-1;
+    }
     if(u.highGroundRouteIndex>=0){
       const route=this.highGroundRoutes[u.highGroundRouteIndex];
       this._releaseHighGroundClaimIfEmpty(u,route);
@@ -1885,9 +1893,11 @@ export class MassBattleGridSimulation {
         if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1||
           !massDiagonalClear(u.x,u.z,dx,dz,this.width,isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
         const rawFlow=flow[z*this.width+x];
-        // Never take an equal-or-worse BFS step just to change formation
-        // offsets. Those plateau steps previously caused aimless wandering.
-        if(!nearest&&!taskNeedsApproach&&rawFlow>=here)continue;
+        // Monotonic BFS progress is required even while an enemy is visible
+        // or a mission is active. The previous condition exempted those
+        // cases, allowing a 1-cell A->B->A oscillation under congestion.
+        // High-ground repositioning remains a separately authorized move.
+        if(rawFlow>=here&&!higherStep)continue;
         // A 2D detour around a stair core must not alternate between the
         // cell just visited and the current cell every AI tick. Backtracking
         // is valid only when a newly changed goal actually lowers the flow;
@@ -1923,12 +1933,26 @@ export class MassBattleGridSimulation {
             // use legal adjacent tiles towards the new front instead of
             // holding the same tile forever. Never cross water or another unit.
             if(here<0x3fffffff&&distance>here+2)continue;
-            legal.push({x,z,flow:distance<0x3fffffff?distance:Infinity});
+            // A side-step is valid only if it has an actual onward exit
+            // to a strictly lower-flow cell without crossing back through
+            // the soldier's current tile. Otherwise it is a dead-end shuffle
+            // and should wait for a living blocker to move away.
+            let escape=distance<here;
+            if(!escape&&here<0x3fffffff)for(const [ox,oz] of NEIGHBORS){
+              const ex=x+ox,ez=z+oz,ei=ez*this.width+ex;
+              if((ex===u.x&&ez===u.z)||!this._walkable(ex,ez,u.jobId)||
+                 occupied[ei]!==-1||flow[ei]>=here||
+                 !massDiagonalClear(x,z,ox,oz,this.width,
+                  isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
+              escape=true;break;
+            }
+            legal.push({x,z,flow:distance<0x3fffffff?distance:Infinity,escape});
           }
           next=chooseBlockedMovementDetour({
             x:u.x,z:u.z,goalX,goalZ,
             previousX:u.fromX,previousZ:u.fromZ,neighbors:legal,
-            currentFlow:here<0x3fffffff?here:Infinity
+            currentFlow:here<0x3fffffff?here:Infinity,
+            requireEscape:true
           });
         }
       }

@@ -69,6 +69,6 @@ test('both real-time and Worker entrypoints use updated anti-wander logic',()=>{
  assert.match(page,/resolveDefensiveGuardIntent\(/);
  assert.match(source,/if\(here===0&&!nearest&&!taskNeedsApproach\)/);
  assert.match(source,/rawFlow>=here\)continue/);
- assert.match(worker,/mass-battle-grid-sim\.js\?v=20261122-anti-wander1/);
- assert.match(page,/mass-battle-grid-sim\.js\?v=20261122-anti-wander1/);
+ assert.match(worker,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
+ assert.match(page,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
 });
