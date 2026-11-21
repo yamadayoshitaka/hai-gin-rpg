@@ -85,11 +85,13 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   const spanX=maxX-minX,spanY=maxY-minY,spanZ=maxZ-minZ;
   // The original lip slit is very shallow in Y, far forward in Z.
   // Deep internal mouth rim, eyelids and scalp holes must never be capped.
-  if(Math.abs((minY+maxY)/2-mouthNominal)>size.y*.07||
+  // Nose projection and chin sliders can expand Z/Y bounds considerably.
+  // Use the tiny, shallow contour's OWN span/depth rather than comparing
+  // its absolute position against a global max Z that belongs to the nose.
+  if(Math.abs((minY+maxY)/2-mouthNominal)>size.y*.12||
    spanX<size.x*.10||spanX>size.x*.30||
    spanY>size.y*.043||spanY<size.y*.001||
-   spanZ>size.z*.13||
-   minZ<bounds.min.z+size.z*.76)continue;
+   spanZ>size.z*.13)continue;
   const contour=ring.map(i=>new THREE.Vector2(pos.getX(i),pos.getY(i)));
   let area=0;
   for(let k=0;k<contour.length;k++){
@@ -106,19 +108,40 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
    candidateLoops:eligible.length,originalBoundaryLoops:loops.length};
  }
  const item=eligible[0];
- const ring=item.area>0?item.ring:item.ring.slice().reverse();
- const flat=ring.map(i=>new THREE.Vector2(pos.getX(i),pos.getY(i)));
- const triangles=THREE.ShapeUtils.triangulateShape(flat,[]);
- if(triangles.length<ring.length-4){
-  return {sealed:false,reason:'triangulation-rejected',
-   candidateLoops:1};
+ const ring=item.ring;
+ // The lip contour is a narrow ribbon (upper and lower arcs with
+ // extensive near-collinear samples). Generic earcut discards large
+ // sections as degenerate, leaving the hole unsealed. Stitch the two
+ // monotonically increasing X arcs using a zipper. This keeps ALL the
+ // original lip boundary vertices and never inserts floating polygons.
+ let left=0,right=0;
+ for(let i=1;i<ring.length;i++){
+  if(pos.getX(ring[i])<pos.getX(ring[left]))left=i;
+  if(pos.getX(ring[i])>pos.getX(ring[right]))right=i;
  }
- // Protect against degenerate or inverted faces. The 2-D triangulation
- // is a valid front seal only if it spans the entire actual mouth opening.
- let positive=0,areaSum=0;
+ const buildArc=step=>{
+  let current=left;
+  const arc=[ring[current]];
+  while(current!==right&&arc.length<=ring.length){
+   current=(current+step+ring.length)%ring.length;
+   arc.push(ring[current]);
+  }
+  return arc;
+ };
+ const upper=buildArc(1),lower=buildArc(-1);
+ if(upper.length+lower.length!==ring.length+2 ||
+  [upper,lower].some(arc=>arc.slice(1).some((id,k)=>
+   pos.getX(id)+size.x*.0002<pos.getX(arc[k])))){
+  return {sealed:false,reason:'nonmonotone-original-lip-rim',
+   ringVertexCount:ring.length};
+ }
+ let ia=0,ib=0,positive=0,areaSum=0;
  const patch=[];
- for(const ids of triangles){
-  const [a,b,c]=ids.map(i=>ring[i]);
+ while(ia<upper.length-1||ib<lower.length-1){
+  const moveUpper=ib===lower.length-1||
+   (ia<upper.length-1&&pos.getX(upper[ia+1])<=pos.getX(lower[ib+1]));
+  const a=upper[ia],b=lower[ib];
+  const c=moveUpper?upper[++ia]:lower[++ib];
   const x1=pos.getX(b)-pos.getX(a),y1=pos.getY(b)-pos.getY(a);
   const x2=pos.getX(c)-pos.getX(a),y2=pos.getY(c)-pos.getY(a);
   let zArea=x1*y2-y1*x2;
