@@ -84,6 +84,15 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
    assert.equal(carapace.material.userData.m024SurfaceRevision,M024_PBR_REVISION);
    assert.ok(carapace.material.map?.isDataTexture);
    assert.ok(carapace.material.roughnessMap?.isDataTexture);
+   // The original PBR writer accidentally converted 0..255 byte values
+   // twice, flattening albedo to white; ensure proper color variation.
+   const rgb=carapace.material.map.image.data;
+   const colors=new Set();
+   for(let px=0;px<rgb.length;px+=4)colors.add(rgb[px]+','+rgb[px+1]+','+rgb[px+2]);
+   assert.ok(colors.size>12,
+    'albedo must carry visible chitin striations, not uniform white pixels');
+   assert.ok([...colors].some(value=>value!=='255,255,255'),
+    'all-white chitin texture is invalid');
    if(detail==='high')assert.ok(carapace.material.normalMap?.isDataTexture);
    else assert.equal(carapace.material.normalMap,null);
    if(id==='m021'){
