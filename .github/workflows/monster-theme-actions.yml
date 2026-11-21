@@ -39,5 +39,7 @@ jobs:
         run: node --test qa/monster-gargoyle-species.test.mjs qa/monster-humanoid-armor-articulation.test.mjs
       - name: Verify six-limbed articulated mantis mesh and mobile LOD
         run: node --test qa/m023-mantis-sculpt.test.mjs
+      - name: Verify skeleton faces, angel material and CC0 native animations
+        run: node --test qa/skeleton-seraph-summon-motion.test.mjs
       - name: Verify Kraken and beetle parity without altering approved masters
         run: node --test qa/monster-kraken-reference-parity.test.mjs

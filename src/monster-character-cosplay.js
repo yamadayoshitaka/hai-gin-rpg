@@ -7,6 +7,13 @@
  * licensed canonical assets have been loaded and verified.
  */
 import * as THREE from 'three';
+import {isFacialHairSourceMesh,SERAPH_NO_BEARD_REVISION}
+ from './seraph-facial-hair-guard.js?v=seraph-nobeard-v2-20261121';
+import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
+ from './summon-humanoid-pbr.js?v=summons-pbr-v1-20261121';
+import {buildMonsterNativeMotionVariants,selectMonsterMotionVariant,
+ monsterMotionCoverage,MONSTER_LICENSED_MOTION_REVISION}
+ from './monster-licensed-motion-variants.js?v=ual2-source-clips-v1-20261121';
 import {resolveMonsterThemeAction} from './monster-theme-actions.js';
 import {enhanceMonsterHumanoidCostumeMaterial} from './monster-reference-finish.js';
 import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
@@ -54,6 +61,8 @@ import {addGargoyleMonsterAnatomy,createGargoyleStoneTexture,
  from './monster-gargoyle-sculpt.js?v=m042-slender-talon-safe-sword-v3-20261121';
 import {createMineralLimbArticulator}
  from './monster-mineral-limb-articulator.js?v=bone-to-bone-20261121';
+import {buildM031SkeletonAnatomy,M031_SKELETON_ANATOMY_REVISION}
+ from './m031-skeleton-anatomy.js?v=m031-real-skeleton-v1-20261121';
 import {applyHumanlikeConceptFinish}
  from './monster-humanoid-concept-finish.js?v=humanoid-concept-sculpt-v1-20261121';
 
@@ -198,6 +207,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // diameter for a slim female, heavy guard and broad male actor.
  const outfitFit=measureRegalShoulderFit(joints.arms[0],joints.arms[1]);
  const ownedGeo=[],ownedMats=[],ownedTextures=[];
+ const skeletal=profile.id==='m031'&&profile.costume==='skeleton';
  const construct=isConstructCostume(profile);
  const fullBody=isFullBodyMonsterShell(profile);
  const mineral=fullBody?CONSTRUCT_SHELL_SPECIES[profile.costume]:null;
@@ -269,6 +279,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
         family:'golem',role:'skin',detail});
     }
     decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
+   applySummonHumanoidPBR(m,{id:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
    }
@@ -290,17 +301,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
       role==='rune'?.14:0,
     side:THREE.DoubleSide,
    });
-   // Use the original Guardian's own bundled linen photograph on the
-   // borrowed feather geometry, with its existing vertex-colour gradients.
-   if(role==='seraphWing'&&typeof document!=='undefined'){
-    const wingMap=new THREE.TextureLoader().load(
-     new URL('../assets/textures/outfits/linen.jpg',import.meta.url).href);
-    wingMap.colorSpace=THREE.SRGBColorSpace;
-    wingMap.wrapS=wingMap.wrapT=THREE.RepeatWrapping;
-    wingMap.repeat.set(1.8,1.8);
-    wingMap.anisotropy=4;
-    m.map=wingMap;m.needsUpdate=true;ownedTextures.push(wingMap);
-   }
+   // Guardian wings are FEATHERS, not sheets of linen.
+   if(role==='seraphWing')applySummonHumanoidPBR(m,{
+     id:profile.id,role,detail
+   });
    // Reuse the exact bundled photographic texture cache that already serves
    // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
    const surfaceRole={
@@ -314,9 +318,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
     cloth:profile.forestGreen?'bandage':'fabric',
     edge:'metal',membrane:'leather'
    }[role];
-   if(surfaceRole)decorateMonsterPhotoMaterial(m,{
-     family:'undead',speciesId:profile.id,role:surfaceRole,detail
-   });
+   if(surfaceRole&&!(profile.id==='forest_archer'&&
+       ['leaf','forestMint','forestDeep'].includes(role))&&
+       !(profile.id==='dragon_lord'&&role==='membrane')&&
+       !(profile.id==='seraph_guardian'&&role==='gold'))
+     decorateMonsterPhotoMaterial(m,{
+       family:'undead',speciesId:profile.id,role:surfaceRole,detail
+     });
    if(profile.forestGreen&&
       ['leaf','forestMint','forestDeep','cloth'].includes(role)){
      // The neutral linen detail retains folds, unlike a dark velvet map.
@@ -385,7 +393,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // Original source materials remain untouched and maps/normals are retained.
  let suppressedFacialHair=0;
  model.traverse(node=>{
-  if(construct&&node.isMesh){
+  if((construct||skeletal)&&node.isMesh){
    // Keep bones and imported animation clips, not the donor's naked skin,
    // ordinary human face, opaque clothing, hair or eye geometry.
    concealedDonorMeshes.push({node,visible:node.visible});
@@ -401,7 +409,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   }
   // The seraph is explicitly beardless. Do not hide scalp hair, eyelashes,
   // eyebrows or the whole face; only named moustache/beard meshes.
-  if(profile.noBeard===true&&/(?:^|[_\\s-])(?:beard|moustache|mustache|goatee|stubble|facialhair)(?:$|[_\\s-])/i.test(node.name||'')){
+  if(profile.noBeard===true&&isFacialHairSourceMesh(node)){
    node.visible=false;suppressedFacialHair++;
    return;
   }
@@ -421,7 +429,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  // identity (e.g. mummy wraps) and fitted folds; no replacement mannequin.
  // attach a single continuous head-grown scalp and long, tapered hair:
  // source Quaternius hair is intentionally hidden by canonical actor loader.
- const groom=construct?null:fullBody?null:attachCanonicalCharacterGroom({
+ const groom=construct||skeletal||fullBody?null:attachCanonicalCharacterGroom({
   THREE,model,frames:{...frames,head:frames.headGroom},
   headBone:joints.head,profile,detail,
   attach:(frame,g,role,name,p,r)=>
@@ -431,9 +439,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  const gothic=hasGothicMonsterSculpt(costume);
  const demonic=hasDemonCosmetics(profile);
  const femaleSummon=isFemaleSummonCostume(profile);
- if(gothic&&!fullBody)addGothicMonsterSculpt({
+ if(gothic&&!fullBody&&!skeletal)addGothicMonsterSculpt({
    THREE,profile,detail,frames,attach,tube,torus
  });
+ const skeletonSculpt=skeletal?buildM031SkeletonAnatomy({
+  profile,detail,frames,attach,tube
+ }):null;
  if(profile.id==='m042')addGargoyleMonsterAnatomy({
    profile,detail,frames,attach,tube
  });
@@ -471,7 +482,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
  }):null;
  // Structural garment layers are essential: the canonical full-body donor
  // wears little clothing. A cape or set of wings is not an outfit.
- const royalOutfit=fullBody?null:wardrobeFor(profile);
+ const royalOutfit=fullBody||skeletal?null:wardrobeFor(profile);
  if(royalOutfit)addRegalHumanoidOutfit({
    profile,detail,frames,attach,tube
  });
@@ -641,8 +652,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(profile.mage){
   bands(frames.chest,'rune-hem',-.38,-.21,.23,.17,1.9,'accent');
  }
- const conceptFinish=fullBody?Object.freeze({id:profile.id,
-  revision:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
+ const conceptFinish=fullBody||skeletal?Object.freeze({id:profile.id,
+  revision:skeletal?M031_SKELETON_ANATOMY_REVISION:
+   profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
    CONSTRUCT_FULL_SHELL_REVISION,
   skeletonAnchored:true,visualApproved:false}):
   applyHumanlikeConceptFinish({THREE,profile,detail,frames,attach,tube});
@@ -665,7 +677,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
   id:profile.id,kind:costume,heroSource:profile.modelId,
   humanConceptFinish:conceptFinish,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
-  gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
+  gothicSculptEdition:gothic&&!skeletal?'gothic-horror-2026-11':null,
+  skeletonSculptEdition:skeletonSculpt?.revision??null,
+  skeletonRealBones:skeletonSculpt?.longBones??0,
+  skeletonRibs:skeletonSculpt?.ribs??0,
+  skeletonDonorSkinConcealed:skeletal&&concealedDonorMeshes.length>0,
   constructSculptEdition:fullBody?(profile.id==='m042'?GARGOYLE_SPECIES_REVISION:
     CONSTRUCT_FULL_SHELL_REVISION):null,
   gargoyleSculptEdition:profile.id==='m042'?GARGOYLE_SPECIES_REVISION:null,
@@ -677,7 +693,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   gargoyleFlight:profile.id==='m042',
   gargoyleStoneTexture:profile.id==='m042'?!!gargoyleTexture:false,
   armourSourceHumanFaceHidden:fullBody&&concealedDonorMeshes.length>0,
-  noHumanoidUnderwear:fullBody,
+  noHumanoidUnderwear:fullBody||skeletal,
   anatomicalLimbFitting:fullBody?model.userData.mineralArticulator.revision:null,
   fullBodyShellParts:fullBody?frames.chest.userData.golemShellParts??0:0,
   constructDonorMeshesConcealed:concealedDonorMeshes.length,
@@ -686,7 +702,9 @@ function buildMonsterCostume(THREE,model,profile,detail){
   constructShellParts:construct?frames.chest.userData.golemShellParts??0:0,
   skinColor:profile.skin,skinMaterialIsolation:true,
   noBeard:profile.noBeard===true,beardSourceMeshesSuppressed:suppressedFacialHair,
+  beardGuardRevision:profile.noBeard===true?SERAPH_NO_BEARD_REVISION:null,
   skinTone:profile.skinTone??null,
+  summonPbrRevision:femaleSummon?SUMMON_HUMANOID_PBR_REVISION:null,
   demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
@@ -711,7 +729,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   modelUprightGroom:!!frames.headGroom.userData.modelUprightGroom,
   fullBodyOutfit:royalOutfit?.style||null,
   fullBodySkirt:!!royalOutfit,
-  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||fullBody,
+  fullLegCoverage:!!royalOutfit||profile.costume==='mummy'||fullBody||skeletal,
   clothCoverageValidated:!!royalOutfit,
   shoulderYokeAttached:!!royalOutfit,neckCollarTapered:!!royalOutfit,
   shoulderFitCalibrated:outfitFit.calibrated,
@@ -782,6 +800,7 @@ export function createCosplayedHumanoidMonster(spec,{
  let disposed=false,ready=false,failed=false,rig=null,visual=null;
  let seraphWingPivots=[],combatMotion=null;
  let disposeCostume=null,activeAction='idle',lastTime=null,lastAction='idle';
+ let motionSequence=0;
  // A GLB may finish loading after a user switches species. The late visual
  // must not remain attached to an already disposed preview host.
  const releaseLateCharacterLoad=()=>{
@@ -800,6 +819,7 @@ export function createCosplayedHumanoidMonster(spec,{
   start(action,time=0){
    if(root.userData.action!==action||root.userData.actionAt!==time){
     root.userData.action=action;root.userData.actionAt=time;
+    motionSequence++;
    }
    if(!ready&&fallback)startMonsterAction(fallback,action,time);
   },
@@ -829,11 +849,16 @@ export function createCosplayedHumanoidMonster(spec,{
    const clip=(isFlyingTengu||isFlyingGargoyle)&&
     ['run','walk','leap'].includes(action)?'idle':
     action==='special'?'idle':(DEFAULT_MOTION[action]||'idle');
-   const chosen=motion.actions[clip]?clip:'idle';
+   // Play only source clips proven to target the SAME canonical skeleton.
+   const eligible=['idle','walk','run','attack','guard','hit','dodge','leap'];
+   const variant=!theme&&eligible.includes(action)?
+     selectMonsterMotionVariant(motion.monsterVariants,action,
+       motionSequence-1):null;
+   const chosen=variant?.key||(motion.actions[clip]?clip:'idle');
    if(lastAction!==chosen||!motion.active){
     if(motion.active&&motion.active!==motion.actions[chosen])
      motion.active.fadeOut(.16);
-    const target=motion.actions[chosen];
+    const target=variant?.action||motion.actions[chosen];
     if(target){
      target.reset().fadeIn(.16).play();motion.active=target;
     }
@@ -917,6 +942,17 @@ export function createCosplayedHumanoidMonster(spec,{
    if(disposed){releaseLateCharacterLoad();return {source:'cancelled'};}
    disposeCostume=buildMonsterCostume(THREE,visual,profile,detail);
    state.metadata=visual.userData.monsterCostume;
+   const native=host.userData.canonicalMotion;
+   if(native?.mixer){
+     native.monsterVariants=buildMonsterNativeMotionVariants(THREE,{
+       clips:native.sourceCompatibleClips||[],
+       targetNames:native.targetBoneNames,
+       mixer:native.mixer,profile
+     });
+     state.metadata.nativeMotionCoverage=monsterMotionCoverage(
+       native.monsterVariants);
+     state.metadata.nativeMotionRevision=MONSTER_LICENSED_MOTION_REVISION;
+   }
    combatMotion=createHumanoidMonsterCombatMotion(visual,profile);
    state.metadata.combatMotionLayer='native-clip-plus-procedural-charge-release-v1';
    seraphWingPivots=[];

@@ -133,7 +133,10 @@ export function createCharacterHairStrandsGeometry({
     cz+rz*sin*Math.sin(phi));
   // Frontal bangs are cropped above the eyes, while rear hair reaches
   // behind shoulder plates; side locks transition without bald temples.
-  const tLen=maxLength*(front>.62?
+  const tLen=maxLength*(style==='seraph-face-open'&&front>.24?
+    // No long frontal locks may hang across the mouth and look like
+    // a detached moustache on the white-skinned seraph guardian.
+    .15+rand()*.07:front>.62?
     (style==='seraph-face-open'?.075+rand()*.085:.23+rand()*.17):
     side>.68?.63+rand()*.30:.80+rand()*.20)*
     (.65+.35*Math.sin(Math.min(1,theta/1.32)*Math.PI*.5));

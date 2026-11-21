@@ -578,7 +578,10 @@ function selectSpecies(id){
        if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
        if(result.source==='canonical-character-cosplay'){
          refreshGeometry();focusCamera();
-         byId('assetStatus').textContent=pending.metadata?.armourSourceHumanFaceHidden?
+         byId('assetStatus').textContent=pending.metadata?.skeletonDonorSkinConcealed?
+           ('骸骨剣士：人肌・ローブを非表示／頭蓋骨・肋骨・四肢の骨を実造形／骨格追従 '+
+             pending.metadata.skeletonSculptEdition):
+           pending.metadata?.armourSourceHumanFaceHidden?
            ('ゴーレム専用全身鉱物メッシュ / 人肌・人間服非表示 / 骨格追従 '+(pending.metadata?.constructSculptEdition??'')):
            ('人型モンスター：人外肌色＋人物GLB＋種族別衣装 '+result.modelId+' / 肌色 #'+(pending.profile.skin>>>0).toString(16).padStart(6,'0'));
          notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
