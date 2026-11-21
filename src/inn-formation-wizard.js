@@ -123,13 +123,13 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const options=TOWN_SHOP.filter(x=>x.category===gearCategory&&(!x.jobs||x.jobs.includes(s?.job)));
   body='<small class="innWizardInfo">'+(s?esc(s.job):'隊員未選択')+' ／ '+esc(gearCategory)+'</small>'+
    '<div class="sortieWizardChoices">'+
-   button('data-inn-wizard-equip=""','装備を外す',!s?.equipment?.[slot])+
+   button('data-inn-wizard-equip=""','<span class="sortieWizardStrategyIcon">×</span><span class="sortieWizardStrategyDetails"><b>装備を外す</b></span>',!s?.equipment?.[slot])+
    options.map(item=>{
     const used=game.campaign.squads.filter(x=>x.id!==s?.id&&x.count>0&&x.equipment?.[slot]===item.id).length;
     const own=Number(game.inventory[item.id]||0);
     const equipped=s?.equipment?.[slot]===item.id;
     return button('data-inn-wizard-equip="'+esc(item.id)+'" '+(own<=used&&!equipped?'disabled':''),
-     '<span class="sortieWizardStrategyDetails"><b>'+esc(item.name)+'</b><small>'+esc(item.description)+'</small>'+
+     '<span class="sortieWizardStrategyIcon">'+(gearCategory==='防具'?'🛡':'⚔')+'</span><span class="sortieWizardStrategyDetails"><b>'+esc(item.name)+'</b><small>'+esc(item.description)+'</small>+
      '<small>所持 '+own+'／他の隊が使用 '+used+(own<=used&&!equipped?' · 在庫不足':'')+'</small></span>',equipped);
    }).join('')+'</div>';
   back='equipment';
