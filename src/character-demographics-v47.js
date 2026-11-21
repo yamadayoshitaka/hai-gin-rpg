@@ -1,7 +1,7 @@
 /**
  * v47 age × build character identity profiles.
  * Age and build are independent of sex, cosmetics, job and hair selection.
- * Valid grid: 8 age bands × 4 builds × 2 sexes = 64 deterministic recipes.
+ * Valid grid: 9 age bands × 4 builds × 2 sexes = 72 deterministic recipes.
  */
 export const AGE_PROFILES=Object.freeze({
  under10:Object.freeze({id:'under10',label:'10歳以下',heightScale:.72,headScale:.84,sag:0,wrinkles:0,
@@ -14,6 +14,8 @@ export const AGE_PROFILES=Object.freeze({
   cheekRound:.03,jawAge:.09,eyelidScale:1,lipFullness:1,browDensity:1,beard:.25}),
  forties:Object.freeze({id:'forties',label:'40代',heightScale:1,headScale:.99,sag:.24,wrinkles:.31,
   cheekRound:-.08,jawAge:.19,eyelidScale:.94,lipFullness:.97,browDensity:1.08,beard:.30}),
+ fifties:Object.freeze({id:'fifties',label:'50代',heightScale:.987,headScale:.985,sag:.375,wrinkles:.475,
+  cheekRound:-.13,jawAge:.28,eyelidScale:.90,lipFullness:.91,browDensity:1.095,beard:.34}),
  sixties:Object.freeze({id:'sixties',label:'60代',heightScale:.965,headScale:.98,sag:.51,wrinkles:.64,
   cheekRound:-.18,jawAge:.36,eyelidScale:.86,lipFullness:.85,browDensity:1.11,beard:.38}),
  seventies:Object.freeze({id:'seventies',label:'70代',heightScale:.935,headScale:.97,sag:.75,wrinkles:.83,
