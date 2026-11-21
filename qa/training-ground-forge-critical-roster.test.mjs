@@ -58,7 +58,7 @@ test('formation selection shows all presets, remaining headcount and missing rar
  ensureSortiePlan(game);
  const team=game.sortiePlan.teams[0];
  team.slots=[null,null,null];team.counts={};team.divisions={};team.grid=Array(16).fill(null);team.formation='free';
- const preview=renderInnFormationWizard({game,view:'roster',teamId:1,rosterFormationPage:2,rosterPreviewId:'dragon'});
+ const preview=renderInnFormationWizard({game,view:'roster',teamId:1,rosterFormationPage:4,rosterPreviewId:'dragon'});
  assert.match(preview,/陣形一覧/);
  assert.match(preview,/龍牙陣形/);
  assert.match(preview,/trainingLocked/);
