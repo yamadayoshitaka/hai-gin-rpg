@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-scalp-first-gravity-v52';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-unified-scalp-area-roots-v53';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -435,7 +435,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    };
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
-   if(shortHair)return buzzHairlineFractionAtPoint(v,box,d,center);
+   if(shortHair||styleId==='sadako-straight-long')
+    return buzzHairlineFractionAtPoint(v,box,d,center);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
@@ -520,7 +521,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // Restore only small, closed donor crown holes for buzz cuts.
  // microOnly rejects wide boundary loops to avoid flat scalp fans.
  const crownRepair=repairRealCrownScalpHoles(
-  sourceScalpVerts,donorNormals,box,{microOnly:shortHair});
+  sourceScalpVerts,donorNormals,box,
+   {microOnly:shortHair||styleId==='sadako-straight-long'});
  for(let i=originalScalpCount;i<sourceScalpVerts.length/3;i++){
   const p=f3(sourceScalpVerts[i*3],sourceScalpVerts[i*3+1],
    sourceScalpVerts[i*3+2]);
@@ -536,6 +538,9 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  const crownUnderlay=shortHair||styleId==='sadako-straight-long'?
   {triangles:0,source:shortHair?'disabled-for-short-hair':'sadako-no-overlapping-crown'}:
   appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile);
+ // Exclude rear decorative underlocks from follicle sampling. Only the
+ // real source-donor scalp (plus compact repairs) may spawn new roots.
+ const donorScalpVertexCount=verts.length/3;
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
  const rearCandidates=[];
@@ -647,6 +652,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  mesh.name='REAL_SCALP_TRIANGLE_HAIR_CAP';
  if(shortHair){mesh.renderOrder=2;mesh.userData.shortHairDepthPriority=true;}
  mesh.userData.scalpSource='sculpted-real-head-triangles';
+ mesh.userData.donorScalpVertexCount=donorScalpVertexCount;
+ mesh.userData.unifiedBuzzContour=shortHair||styleId==='sadako-straight-long';
  mesh.userData.hairColoredOpaqueRoot=true;
  mesh.userData.v63RootMelaninShading=true;
  mesh.userData.v65CrownTopologyRepairCount=crownRepair.repairCount;
