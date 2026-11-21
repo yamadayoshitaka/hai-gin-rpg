@@ -6,6 +6,7 @@ import {inspectInnFormation} from './inn-formation-rules.js';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
 import {captainBonus} from './army-groups.js';
 import {squadEquipmentBonus} from './game-core-flow.js';
+import {INN_CONSUMABLES} from './inn-team-items.js';
 import {storyStageContext} from './story-narrative-flow.js';
 import {recommendBattlePlans,battleStageContext} from './battle-plan-recommendations.js';
 import {allocateThreeTeamSortie,availableSortieOrders,sortieDebuffTypes,sortieFormationBuff,sortieLevel,sortieTeamCount,sortieTeams,SORTIE_FORMATION_CELLS,SORTIE_FORMATIONS} from './three-team-sortie.js';
@@ -18,6 +19,19 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
  const chosen=allocateThreeTeamSortie(game,stage);
  const teams=sortieTeams(game).filter(t=>sortieTeamCount(t)>0);
  if(teams.length>3)throw Error('出撃できる隊は最大3隊です。');
+ // Reserve finite town inventory once per battle; item assignment never mints supplies.
+ const supportedItems=new Set(INN_CONSUMABLES.map(x=>x.id));
+ const remainingStock=Object.fromEntries(Object.entries(game.inventory||{})
+  .map(([id,n])=>[id,Math.max(0,Math.trunc(Number(n)||0))]));
+ const townItemLoadouts=Object.fromEntries(teams.map(team=>{
+  const stacks={};
+  for(const [id,requested] of Object.entries(team.items||{})){
+   if(!supportedItems.has(id))continue;
+   const qty=Math.min(Math.max(0,Math.trunc(Number(requested)||0)),remainingStock[id]||0);
+   if(qty){stacks[id]=qty;remainingStock[id]-=qty;}
+  }
+  return [String(team.id),stacks];
+ }));
  const formationIntegrity=Object.fromEntries(teams.map(team=>{
   const deployed=chosen.filter(item=>item.teamId===team.id),
    requiredSources=team.slots.filter(Boolean).map(String),
@@ -125,6 +139,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   enemyCount:monsterBattle?Math.min(20,Math.max(4,stage.monsters.length*3)):Math.min(50,12+stage.difficulty),
   units,commanders,armyGroupBySquad,initialSquadOrders:orders,
   deploymentLimit:stage.deploymentLimit??50,formationIntegrity,formationBattleOptions,
+  townItemLoadouts,
   availableSquadOrders:allowed,subdivisionMap,sortieLevel:level,
   formationBonuses:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].bonus])),
   squadDebuffProfiles:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?sortieDebuffTypes(game,t.id):[]])),
