@@ -199,7 +199,7 @@ $('continueGame').onclick=()=>{
   label.append(heading,sub);button.append(label);
   if(saved)button.onclick=()=>{
    sessionStorage.setItem('hai-gin-core-active-v1',JSON.stringify(saved));
-   location.href='./town-hub.html?v=load-slot-'+slot+'&t='+Date.now();
+   location.href='./town-hub.html?v='+Date.now()+'&slot='+slot;
   };
   $('loadSlotList').append(button);
  }
