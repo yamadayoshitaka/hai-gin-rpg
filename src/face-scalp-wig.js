@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-top-to-side-canopy-v57';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-headhug-rear-drape-v58';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1045,7 +1045,7 @@ export function createScalpFirstLongGuide({
  // Crown overlay is its own scalp-rooted grooming route: sweep ACROSS
  // the head first, then fall down the near side. Normal crown/fringe
  // guides may still travel forward/backward and keep the central part.
- const rootSweepX=crownOverSide?side*.94:temple?side*.035:
+ const rootSweepX=crownOverSide?side*.62:temple?side*.035:
   THREE.MathUtils.clamp(relativeX*.42,-.24,.24);
  const rootSweepZ=crownOverSide?-.065:back?-1:zone.startsWith('fringe')?1:
   relativeZ>-.025?1:-1;
@@ -1068,9 +1068,9 @@ export function createScalpFirstLongGuide({
  // Let the top layer cross the rounded crown to the sides BEFORE the
  // hair falls. Only these top-grown overlay guides use the longer arc.
  const gravityStart=crownOverSide?
-  Math.min(.32,d.y*.25/length):Math.min(.15,d.y*.075/length);
+  Math.min(.18,d.y*.12/length):Math.min(.15,d.y*.075/length);
  const gravityEnd=crownOverSide?
-  Math.max(gravityStart+.020,Math.min(.54,d.y*.54/length)):
+  Math.max(gravityStart+.020,Math.min(.34,d.y*.32/length)):
   Math.max(gravityStart+.015,Math.min(.38,d.y*.26/length));
  const centerCurtain=!crownOverSide&&front&&
   (zone.startsWith('fringe')||zone==='crown');
@@ -1133,8 +1133,16 @@ export function createScalpFirstLongGuide({
     next.x-=side*(sideDistance-maxEarOut);
    }
   }
+  if(crownOverSide){
+   // Crown-born strands follow the cranium, not a radial umbrella.
+   const headY=(next.y-box.min.y)/Math.max(d.y,1e-6);
+   const lateral=side*(next.x-center.x);
+   const maxLateral=d.x*(.255+.078*(1-smooth(headY,.60,.94)));
+   if(headY>.57&&lateral>maxLateral)
+    next.x-=side*(lateral-maxLateral);
+  }
   if(projectOutside)projectOutside(next,j===1,front,
-   j*length/segments<=d.y*.27);
+   next.y>box.min.y+d.y*.59);
   result.push(next);
   last=next;
  }
@@ -1311,8 +1319,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // scalp. A fully radial guide without this attraction floats like a
     // hard helmet above the rounded crown.
     const excess=radius-safe;
-    if(excess>d.x*.015&&excess<d.x*.16){
-     const pull=Math.min(excess-d.x*.015,d.x*.042)*.58;
+    if(excess>d.x*.012){
+     const pull=Math.min(excess-d.x*.012,d.x*.20)*.85;
      point.x-=dx/radius*pull;
      point.z-=dz/radius*pull;
      changed=true;
