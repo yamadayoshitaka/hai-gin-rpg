@@ -126,8 +126,8 @@ for(const detail of ['low','high']){
  });
 }
 
-test('other beetles and spiders keep their original family anatomy',()=>{
- for(const id of ['m021','m022','m023','m025','m026','m027']){
+test('mantis and eight-legged spiders retain their original family anatomy',()=>{
+ for(const id of ['m023','m026','m027','m028','m029','m030']){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
    assert.equal(model.userData.m024ConceptBasedSculpt,undefined,id+' was overwritten');
