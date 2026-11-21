@@ -57,3 +57,16 @@ test('both armies report three command teams and preserve division HP and effect
  assert.equal(summary.find(s=>s.id==='enemy-team:1').members.length,2);
  assert.equal(summary.find(s=>s.id==='enemy-team:1').effects[0].label,'防御低下');
 });
+
+test('the full in-page battle module parses after wiring group orders and startup plans',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {spawnSync}=await import('node:child_process');
+ const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const scripts=[...html.matchAll(/<script\b[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/g)]
+  .map(match=>match[1]);
+ const battle=scripts.find(script=>script.includes('createRealtimeBattleCommands'));
+ assert.ok(battle&&battle.length>10000,'the main module was extracted from the HTML');
+ const checked=spawnSync(process.execPath,['--input-type=module','--check'],
+  {input:battle,encoding:'utf8'});
+ assert.equal(checked.status,0,checked.stderr||checked.stdout);
+});
