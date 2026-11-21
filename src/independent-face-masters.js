@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=49';
+import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=76';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
 
@@ -355,6 +356,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  face.visible=true;
  face.name=gender.toUpperCase()+'_INDEPENDENT_CLAY_FACE';
  face.userData.colorRole='skin';
+ // Photographic pore/roughness upgrade is a browser-only, asynchronous
+ // *material* change to this owned clone. Male and female share this path.
+ const photographicMicrodetail=applyRealSkinPhotoToFace(face);
  if(partSelection)face.userData.v32SelectedPartIds={...partSelection};
  // Anatomical parts are child meshes of the cloned face. Their vertices
  // follow its original local coordinate frame; there is no face-photo plane.
@@ -369,6 +373,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   code:spec.code,gender,sourceVertices:most,
   v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
   v49AgeCreases:ageDetail,
+  v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
+   sourceCC0:!!photographicMicrodetail.sourceCC0,
+   originalPigmentPreserved:true},
   v64SoftAnatomicalAgeContours:true,
   headTemplate:spec.sourceHead||(gender==='male'?'realistic-head-animation.glb':'unknown'),
   triangles:triangleCount,modifiedVertices:changed,
