@@ -528,3 +528,17 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  border:1px solid #e2c184!important;border-radius:4px;
  box-shadow:0 0 0 1px #583c17;overflow:hidden;
 }
+
+/* 2026-11-22: contact is independent of the hidden stance glyph.
+   Anchor inside each tiny mobile card; column 3 was an implicit overflow
+   track and got clipped by the narrow rails. */
+#battleRpgSquadHud .rpgSquadRow{position:relative}
+#battleRpgSquadHud .rpgSquadRowTitle .rpgSquadEngaged{
+ position:absolute;right:2px;top:2px;z-index:4;
+ grid-column:auto;grid-row:auto;
+ min-width:15px;width:17px;height:17px;padding:0;
+ border:1px solid #ffe28f;background:#784019;
+ color:#fff0a2;font:900 12px/1 system-ui;
+ box-shadow:0 0 4px #111b;
+}
+#battleRpgSquadHud .rpgSquadRowTitle .rpgSquadEngaged[hidden]{display:none!important}
