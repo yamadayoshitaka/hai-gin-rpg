@@ -178,3 +178,46 @@
 #panel.formation-command-ui .sortieViewBody .sortieFormationGrid button{min-height:72px!important;padding:8px 4px!important}
 .sortieGridHint{padding-top:3px}
 @media(max-height:700px){#panel.formation-command-ui .sortieViewBody .sortieFormationGrid button{min-height:53px!important}}
+
+
+/* Strategy-first inn wizard: one decision per page, not six panels at once. */
+#panel.formation-command-ui:has(.sortieWizard) #panelSummary{display:none}
+#panel.formation-command-ui:has(.sortieWizard) .sortieWizard{gap:9px;max-width:650px;width:100%;margin:0 auto}
+.sortieWizardHeader{display:grid;gap:5px;padding:4px 2px 10px;border-bottom:1px solid #5d7690}
+.sortieWizardHeader small{font-size:11px;letter-spacing:.04em;color:#a9d0ed}
+.sortieWizardHeader strong{font-size:clamp(18px,4.6vw,23px);color:#ffe2a4;line-height:1.25}
+.sortieWizardHeader span{font-size:12px;color:#cce2ef;line-height:1.5}
+.sortieWizardBody{display:grid;gap:9px;align-content:start;min-height:0}
+.sortieWizardChoices{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+#panel.formation-command-ui .sortieWizardChoices button{display:grid;text-align:left;gap:5px;min-height:72px!important;
+ padding:10px 14px!important;border-radius:9px;align-content:center;line-height:1.4;white-space:normal}
+.sortieWizardChoices button b{font-size:16px;color:#ffe8b6;font-weight:700}
+.sortieWizardChoices button small{font-size:11px;color:#cbdce9;overflow-wrap:anywhere;line-height:1.4}
+.sortieWizardChoices button em{font-size:10px;color:#ffd68f;font-style:normal;font-weight:500}
+.sortieWizardChoices button:disabled{opacity:.44}
+.sortieWizardChoices button.selected{border-color:#f2c779!important;background:#56462d!important}
+.sortieWizardTeamState{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
+.sortieWizardTeamState b{color:#ffe4a4;font-size:13px}
+.sortieWizardTeamState small{margin-left:auto;color:#bad3e8}
+.sortieWizardPager{display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center}
+.sortieWizardPager button{min-height:36px!important;font-size:11px!important;padding:5px!important}
+.sortieWizardPager small{text-align:center;font-size:11px;color:#daeaf3}
+.sortieWizardReview{display:grid;gap:8px}
+.sortieWizardReviewTeam{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px;
+ border:1px solid #6d8e9f;border-radius:8px;background:#18354c;align-items:center}
+.sortieWizardReviewTeam>div{display:grid;gap:4px;min-width:0}
+.sortieWizardReviewTeam b{font-size:14px;color:#ffe2a4}
+.sortieWizardReviewTeam small{font-size:11px;line-height:1.3;color:#cce0ef}
+.sortieWizardReviewTeam button{min-width:70px;min-height:40px!important;font-size:12px!important}
+.sortieWizardSummary{display:grid;gap:4px;padding:8px;font-size:13px;background:#11283b;border-radius:7px}
+.sortieWizardSummary small,.sortieWizardSaved{font-size:11px;color:#bad2e1}
+#panel.formation-command-ui .sortieWizardBody button[data-sortie-plan-save]{min-height:49px!important;
+ background:#6b502c!important;border:1px solid #f8cf84!important;color:#fff1c5!important;font-size:14px!important;font-weight:700}
+.sortieWizardFooter{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.sortieWizardFooter button{min-height:35px!important;font-size:11px!important;padding:6px 9px!important}
+.sortieWizardAdvanced{border-top:1px solid #46647b;padding-top:8px;font-size:11px}
+.sortieWizardAdvanced summary{cursor:pointer;color:#b8d5e7;padding:5px}
+.sortieWizardAdvanced p{margin:6px 0;color:#c8dfed}
+@media(min-width:690px){.sortieWizardChoices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-height:650px){#panel.formation-command-ui .sortieWizardChoices button{min-height:58px!important;padding:6px 10px!important}
+ .sortieWizardHeader{gap:3px;padding-bottom:5px}.sortieWizard{gap:5px!important}}
