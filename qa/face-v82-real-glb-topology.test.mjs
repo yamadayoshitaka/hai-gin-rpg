@@ -182,7 +182,7 @@ test('V84 actual GLB skin avoids mouth-triangle reversal for ALL 22 expressions'
  animator.dispose();geo.dispose();face.material.dispose();
 });
 
-test('V85 public CC0 face preserves original mouth geometry and neutralises laugh folds',()=>{
+test('V85 donor protection remains exact at V87 neutral mouthWidth=1; expressions remain stable',()=>{
  const {geo}=sourceGeometry();
  const positions=geo.getAttribute('position').array.slice();
  geo.computeBoundingBox();
@@ -193,7 +193,7 @@ test('V85 public CC0 face preserves original mouth geometry and neutralises laug
  head.name='CC0_SOURCE_GEO-head_animation_realistic';
  root.add(head);
  const model=makeIndependentFaceMaster(root,'female',{
-  femaleControls:{ageBand:'twenties'}
+  femaleControls:{ageBand:'twenties',mouthWidth:1}
  });
  const face=model.face,rest=face.geometry.getAttribute('position');
  const rgb=face.geometry.getAttribute('color');
