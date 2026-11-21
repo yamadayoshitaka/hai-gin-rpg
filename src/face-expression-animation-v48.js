@@ -333,10 +333,15 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   const expressiveSquint=state.expression==='sleepy'?squint:
    Math.max(0,squint)*.48;
   const closure=clamp(blink+(1-blink)*expressiveSquint,0,1);
+  // Shock/laughter visibly open the actual eyelid edges instead of only
+  // tinting the eye. Preserve full automatic blinks at their peak.
+  const widen=['surprised','startled','afraid'].includes(state.expression)?.24:
+   state.expression==='laugh'?.095:0;
+  const eyelidTravel=closure-(1-closure)*widen;
   for(const side of sides){
-   moveGrid(side.a,side.b.rest,closure,true);
-   moveGrid(side.b,side.a.rest,closure,false);
-   moveDecorations(side,closure);
+   moveGrid(side.a,side.b.rest,eyelidTravel,true);
+   moveGrid(side.b,side.a.rest,eyelidTravel,false);
+   moveDecorations(side,eyelidTravel);
    coverEye(side,closure,size);
    // Eyeliner belongs to the eyelid and follows the moved lid,
    // iris and pupil retain their individual natural geometry.
