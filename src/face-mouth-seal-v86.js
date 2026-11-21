@@ -156,6 +156,59 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   return {sealed:false,reason:'invalid-cap-area',
    positive,projectedArea,areaSum};
  }
+ // The original GLB has THREE nested oral boundary rings: a shallow
+ // 38-vertex inner lip slit and two bigger 40/46-vertex exterior rims.
+ // Sealing only the small slit left an obvious black oval in the real
+ // Chromium screenshot. Cap the foremost projection of the wider 40-edge
+ // ring too; each triangle remains part of the SAME original face geometry.
+ const outerCandidates=[];
+ for(const candidate of loops){
+  if(candidate===ring||candidate.length<39||candidate.length>55)continue;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  let minZ=Infinity,maxZ=-Infinity;
+  for(const id of candidate){
+   const x=pos.getX(id),y=pos.getY(id),z=pos.getZ(id);
+   minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+   minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+   minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+  }
+  if(Math.abs((minY+maxY)/2-mouthNominal)>size.y*.11||
+   maxX-minX<size.x*.20||maxX-minX>size.x*.31||
+   maxY-minY>size.y*.075||maxY-minY<size.y*.02||
+   maxZ-minZ<size.z*.24||maxZ-minZ>size.z*.62)continue;
+  const contour=candidate.map(id=>new THREE.Vector2(pos.getX(id),pos.getY(id)));
+  let signedArea=0;
+  for(let k=0;k<contour.length;k++){
+   const q=contour[k],n=contour[(k+1)%contour.length];
+   signedArea+=q.x*n.y-n.x*q.y;
+  }
+  outerCandidates.push({candidate,contour,area:Math.abs(signedArea)*.5});
+ }
+ outerCandidates.sort((a,b)=>b.area-a.area);
+ let outerPatchCount=0,outerRingSize=0,outerPatchReason=null;
+ if(outerCandidates.length>=1){
+  const selected=outerCandidates[0];
+  // Earcut handles this wider, non-X-monotone lip rim, unlike the very
+  // narrow 38-edge slit that needs the zipper strip above.
+  const ears=THREE.ShapeUtils.triangulateShape(selected.contour,[]);
+  const fill=[];
+  let covered=0;
+  for(const triple of ears){
+   const [a,b,c]=triple.map(i=>selected.candidate[i]);
+   const cross=(pos.getX(b)-pos.getX(a))*(pos.getY(c)-pos.getY(a))-
+    (pos.getY(b)-pos.getY(a))*(pos.getX(c)-pos.getX(a));
+   if(Math.abs(cross)<size.x*size.y*1e-9)continue;
+   if(cross<0)fill.push(a,c,b);
+   else fill.push(a,b,c);
+   covered+=Math.abs(cross)*.5;
+  }
+  if(fill.length>=selected.candidate.length*1.75&&
+   Math.abs(covered-selected.area)<=selected.area*.20){
+   patch.push(...fill);
+   outerPatchCount=fill.length/3;
+   outerRingSize=selected.candidate.length;
+  }else outerPatchReason='wider-lip-earcut-area-validation-failed';
+ }else outerPatchReason='no-wider-oral-ring-candidate';
  const indices=Array.from(geometry.getIndex().array);
  const initialTriangleCount=indices.length/3;
  const initialVertexCount=pos.count;
@@ -169,6 +222,9 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   addedVertices:0,addedTriangles:patch.length/3,
   initialTriangleCount,
   ringVertexCount:ring.length,
+  outerRingVertexCount:outerRingSize,
+  outerPatchTriangles:outerPatchCount,
+  outerPatchReason,
   area:projectedArea,
   originalBoundaryLoops:loops.length,
   lipRing: ring.slice(),
