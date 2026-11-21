@@ -72,20 +72,13 @@ export function sortieFormationStatus(game,teamId){
  const team=teamOf(game,teamId),spec=formationTemplate(team?.formation);
  const status=formationStatus(team,ownSquads(game),SORTIE_FORMATION_CELLS,sortieSquadCap(game));
  if(team?.formation===FREE_FORMATION||!spec||!status.valid)return status;
- // The canonical rarity template lists 4-16 historical positions, but battle
- // teams now contain only 2-3 job contingents. Never demand the old 4+ cells.
- const occupied=team.slots.filter(Boolean).length;
- if(occupied<2||occupied>sortieSquadCap(game))
-  return {id:'free',valid:false,reason:'陣形未完成：2〜3ジョブを編成してください'};
- const assignedCells=SORTIE_FORMATION_CELLS[team.formation].slice(0,sortieSquadCap(game))
-  .filter(cell=>Boolean(team.grid[cell]));
- if(assignedCells.length!==occupied)
-  return {id:'free',valid:false,reason:'陣形未完成：選択したジョブを配置してください'};
+ const expected=SORTIE_FORMATION_CELLS[team.formation].slice(0,spec.slots);
+ if(spec.slots>sortieSquadCap(game)||expected.some(cell=>!team.grid[cell]))
+  return {id:'free',valid:false,reason:'陣形未完成：テンプレートの'+spec.slots+'隊を配置してください'};
  const budget=sortieTemplateCapacity(game,teamId);
  if(!budget.valid)return {id:'free',valid:false,reason:budget.error};
- const required=formationJobMinimums(team,ownSquads(game),SORTIE_FORMATION_CELLS,sortieSquadCap(game))
-  .filter(entry=>Boolean(team.grid[entry.cell]));
- const missing=required.filter(entry=>!entry.valid);
+ const missing=formationJobMinimums(team,ownSquads(game),SORTIE_FORMATION_CELLS,spec.slots)
+  .filter(entry=>!entry.valid);
  if(missing.length){
   const first=missing[0];
   return {id:'free',valid:false,reason:'陣形の最低人数が不足：'+
