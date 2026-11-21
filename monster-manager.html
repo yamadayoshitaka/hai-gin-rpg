@@ -192,7 +192,7 @@ import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterL
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
   monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=concept-trio-v2-20261121';
 import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
-import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=golem-anatomical-facets-v3-20261121';
+import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=monster-arm-articulated-m042-m045-v1-20261121';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
 import {beastfolkRecipeFor,BEASTFOLK_PROTOTYPE_IDS}
@@ -579,7 +579,7 @@ function selectSpecies(id){
        if(ticket!==requestSerial||costumeHandle!==pending||selected!==id)return;
        if(result.source==='canonical-character-cosplay'){
          refreshGeometry();focusCamera();
-         byId('assetStatus').textContent=pending.profile.construct?
+         byId('assetStatus').textContent=pending.metadata?.armourSourceHumanFaceHidden?
            ('ゴーレム専用全身鉱物メッシュ / 人肌・人間服非表示 / 骨格追従 '+(pending.metadata?.constructSculptEdition??'')):
            ('人型モンスター：人外肌色＋人物GLB＋種族別衣装 '+result.modelId+' / 肌色 #'+(pending.profile.skin>>>0).toString(16).padStart(6,'0'));
          notice('人型の顔・体・アニメーションを既存キャラ素体へ切替済み：'+id);
