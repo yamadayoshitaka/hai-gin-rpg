@@ -10,7 +10,7 @@ const box=new THREE.Box3(new THREE.Vector3(-1,-1,-1),
  new THREE.Vector3(1,1,1));
 
 test('v54 uses skull distance for gravity; no sideways plate-length sweep',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v60$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v61$/);
  const sample=createScalpFirstLongGuide({
   root:new THREE.Vector3(0,1,0),
   normal:new THREE.Vector3(0,1,0),box,
@@ -98,6 +98,6 @@ test('face and body studios expose only one visible style/volume/density selecto
  assert.match(selector,/if\(!hideHairVolume\)panel\.append\(baseLabel\)/);
  assert.match(body,/hideHairType:true,hideHairVolume:true/);
  assert.match(body,/label\[for="v32HairDensity"\]/);
- assert.match(face,/sadako-mantle-crown-v60/);
- assert.match(body,/sadako-mantle-crown-v60/);
+ assert.match(face,/shared-scalp-angle-coverage-v61/);
+ assert.match(body,/shared-scalp-angle-coverage-v61/);
 });

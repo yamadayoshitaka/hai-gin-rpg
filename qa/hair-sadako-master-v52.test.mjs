@@ -7,7 +7,7 @@ import {scalpToGravityWeight,createScalpFirstLongGuide,
 import {WIG_STYLES} from '../src/face-wig-styles.js';
 
 test('v52 root tangent hugs scalp to 15%, then gravity blends until 38%',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v60$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v61$/);
  assert.equal(scalpToGravityWeight(0),0);
  assert.equal(scalpToGravityWeight(.15),0);
  assert.ok(Math.abs(scalpToGravityWeight(.265)-.5)<1e-8);
@@ -104,7 +104,7 @@ test('Android studio provides a real one-tap underside hair view',()=>{
  assert.match(page,/view==='underside'\?new THREE.Vector3\(0,-1,0\)/);
  assert.match(page,/\['front','threeQuarter','side','back','crown','underside'\]/);
  assert.match(page,/for\(const id of \['female','male','front','threeQuarter','side','back','crown','underside'/);
- assert.match(page,/sadako-mantle-crown-v60/);
+ assert.match(page,/shared-scalp-angle-coverage-v61/);
 });
 
 test('v53 independent follicle sampling covers crown and front without topology density bias',()=>{
@@ -149,5 +149,5 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  assert.match(page,/v53-sadako-matched-donor-clipping/);
  assert.match(hair,/if\(shortHair\|\|styleId==='sadako-straight-long'\)/);
  assert.match(hair,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/);
- assert.match(page,/sadako-mantle-crown-v60/);
+ assert.match(page,/shared-scalp-angle-coverage-v61/);
 });

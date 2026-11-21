@@ -14,6 +14,7 @@ on:
       - 'qa/hair-sadako-headhug-rear-v58.test.mjs'
       - 'qa/hair-sadako-curved-dynamic-v59.test.mjs'
       - 'qa/hair-sadako-mantle-crown-v60.test.mjs'
+      - 'qa/hair-shared-scalp-temple-v61.test.mjs'
       - 'src/face-mantle-hair-collision.js'
       - '.github/workflows/hair-reselect-regression.yml'
   push:
@@ -31,6 +32,7 @@ on:
       - 'qa/hair-sadako-headhug-rear-v58.test.mjs'
       - 'qa/hair-sadako-curved-dynamic-v59.test.mjs'
       - 'qa/hair-sadako-mantle-crown-v60.test.mjs'
+      - 'qa/hair-shared-scalp-temple-v61.test.mjs'
       - 'src/face-mantle-hair-collision.js'
 permissions:
   contents: read
@@ -49,4 +51,4 @@ jobs:
         run: |
           node --check src/face-scalp-wig.js
           node --check src/face-mantle-hair-collision.js
-          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs qa/hair-sadako-ear-crown-bust-v55.test.mjs qa/hair-sadako-ear-density-crown-v56.test.mjs qa/hair-sadako-crown-canopy-v57.test.mjs qa/hair-sadako-headhug-rear-v58.test.mjs qa/hair-sadako-curved-dynamic-v59.test.mjs qa/hair-sadako-mantle-crown-v60.test.mjs
+          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs qa/hair-sadako-ear-crown-bust-v55.test.mjs qa/hair-sadako-ear-density-crown-v56.test.mjs qa/hair-sadako-crown-canopy-v57.test.mjs qa/hair-sadako-headhug-rear-v58.test.mjs qa/hair-sadako-curved-dynamic-v59.test.mjs qa/hair-sadako-mantle-crown-v60.test.mjs qa/hair-shared-scalp-temple-v61.test.mjs
