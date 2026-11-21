@@ -8,7 +8,7 @@ import {decorateM024PBRMaterial,isScarabPBRSpecies}
  from './m024-scarab-pbr-surface.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
-import {realismPaletteFor} from './monster-realistic-palettes.js?v=m024-purple-venom-armored-scarab-v1-20261121';
+import {realismPaletteFor} from './monster-realistic-palettes.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {createMonsterAnatomicalLoft} from './monster-realistic-loft.js?v=4.4.99';
 import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from './creature-seam-geometry.js';
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
