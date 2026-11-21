@@ -86,8 +86,8 @@ export function createFemaleSummonLeaf({
    const x=u*width*serrate+.027*size*Math.sin(t*2.5+mod)*t;
    const y=size*t+
     .009*size*Math.sin(Math.PI*t)*Math.cos(u*Math.PI*.5);
-   const z=.026*Math.sin(Math.PI*t)+
-    .024*(1-u*u)*Math.sin(Math.PI*t)+
+   const z=.038*Math.sin(Math.PI*t)+
+    .033*(1-u*u)*Math.sin(Math.PI*t)+
     .011*u*u*t+bent;
    p.push(x,y,z);
    uv.push(j/columns,t);
