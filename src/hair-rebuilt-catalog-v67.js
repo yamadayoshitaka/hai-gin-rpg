@@ -80,7 +80,7 @@ const oldApproved=[
 ];
 export const REBUILT_HAIR_PARTS=Object.freeze({
  female:Object.freeze([
-  ...REBUILT_HAIR_CATALOG.female.map((v,i)=>Object.freeze({
+  ...[...REBUILT_HAIR_CATALOG.female].sort((a,b)=>(a.id==='rb-f-long'?-1:b.id==='rb-f-long'?1:0)).map((v,i)=>Object.freeze({
    id:'female-hair-rebuilt-'+String(i+1).padStart(2,'0'),
    label:v.label,values:Object.freeze({styleId:v.id})})),
   ...oldApproved.map(([id,label],i)=>Object.freeze({
@@ -88,7 +88,7 @@ export const REBUILT_HAIR_PARTS=Object.freeze({
    label,values:Object.freeze({styleId:id})}))
  ]),
  male:Object.freeze([
-  ...REBUILT_HAIR_CATALOG.male.map((v,i)=>Object.freeze({
+  ...[...REBUILT_HAIR_CATALOG.male].sort((a,b)=>(a.id==='rb-m-natural-short'?-1:b.id==='rb-m-natural-short'?1:0)).map((v,i)=>Object.freeze({
    id:'male-hair-rebuilt-'+String(i+1).padStart(2,'0'),
    label:v.label,values:Object.freeze({styleId:v.id})})),
   Object.freeze({id:'male-hair-donor-buzz',label:'バズカット',
