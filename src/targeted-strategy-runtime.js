@@ -3,6 +3,7 @@
  * Multiple methods can be combined and physical squads are shared without duplication.
  */
 import {STRATEGY_TREE,STRATEGY_METHODS} from './three-step-strategy-catalog.js';
+import {formationAllowsTactic,formationUnlockLabels} from './formation-strategy-unlocks.js';
 import {makeSelectableMapOverlay,isSelectableMapPoint} from './battle-target-highlight.js?v=20261116-map1';
 export const TARGETED_STRATEGY_KINDS=Object.freeze({
  charge:{label:'攻撃',type:'enemy'},defend:{label:'守備',type:'map'},
@@ -39,7 +40,9 @@ export function createTargetedStrategyUi({
  getAllyTargets=()=>[],getRadarTargets=()=>[],
  onMapPick=()=>false,getRadarCanvas=()=>null,getMapSize=()=>232,
  getMapCellEligible=()=>true,
- getItems=()=>[],getTemplates=()=>[],onItemExecute=()=>false,onOpen=()=>{},onClose=()=>{}
+ getItems=()=>[],getTemplates=()=>[],onItemExecute=()=>false,
+ getFormationId=()=> 'balanced',getFormationActive=()=>true,onMoveExecute=()=>false,
+ onOpen=()=>{},onClose=()=>{}
 }){
  const panel=document.createElement('section');
  panel.id='targetedStrategyPanel';panel.hidden=true;
@@ -52,6 +55,9 @@ export function createTargetedStrategyUi({
  let radarHotspots=[],mapTileOverlay=null,overviewGroupOnly=false;
  const b=(attr,label,active=false,disabled=false)=>button(attr,label,active,disabled);
  const planFor=(id=groupId)=>getPlan(String(id))||{squads:[],allowed:[]};
+ const formationFor=()=>getFormationId(String(groupId))||'balanced';
+ const isFormationActive=()=>getFormationActive(String(groupId))!==false;
+ const tacticUnlocked=id=>formationAllowsTactic(formationFor(),id,isFormationActive());
  const liveSquads=(p=planFor())=>(p.squads||[]).filter(s=>Number(s.soldiers)>0);
  const grouped=()=>[1,2,3].map(id=>({id,plan:planFor(id)}));
  const allSquadGroups=()=>grouped().flatMap(g=>liveSquads(g.plan).map((s,i)=>({
@@ -67,7 +73,7 @@ export function createTargetedStrategyUi({
    .map(([job,count])=>job+count+'人').join('・')||'未編成';
  };
  const groupColor=id=>({'1':'#59dcfa','2':'#c7a0ff','3':'#93e5a1'}[String(id)]||'#59dcfa');
- const available=()=>Object.values(STRATEGY_METHODS).filter(m=>
+ const available=()=>Object.values(STRATEGY_METHODS).filter(m=>tacticUnlocked(m.id)&&
   [...selectedSquads].some(sid=>{
    const s=liveSquads().find(x=>String(x.id)===String(sid));
    return s&&(s.allowed||planFor().allowed||[]).includes(m.mode)&&
@@ -96,7 +102,7 @@ export function createTargetedStrategyUi({
    if(chosenItem)return allyTargets();
   return targets();
  };
- const stepText={scope:'① 指示する単位',family:'② 作戦を選択',intent:'③ 目的を選択',method:'④ 実行方法を選択',target:'⑤ 対象を選択',confirm:'⑥ 作戦内容の確認',items:'③ アイテムを選択'};
+ const stepText={menu:'① 指示の種類',scope:'① 指示する単位',family:'② 作戦を選択',intent:'③ 目的を選択',method:'④ 実行方法を選択',target:'⑤ 対象を選択',confirm:'⑥ 作戦内容の確認',items:'② アイテムを選択',moveTarget:'② 移動先を指定',moveConfirm:'③ 移動を確定'};
  const controls=(back,next,nextLabel='次へ',disable=false)=>
   '<div class="centerActions">'+b('data-strategy-back',back)+
   b('data-strategy-next',nextLabel,false,disable)+'</div>';
@@ -106,7 +112,26 @@ export function createTargetedStrategyUi({
   const plan=planFor(),skills=available(),eligible=new Set(skills.map(x=>x.id));
   const dist=distribution(),kind=type(),groupInfo=grouped(),activeMethod=[...selectedMethods].map(id=>STRATEGY_METHODS[id]).filter(Boolean);
   let html='';
-  if(step==='scope'){
+  if(step==='menu'){
+   const unlocked=formationUnlockLabels(formationFor(),isFormationActive());
+   html='<div class="centerStep">第'+esc(groupId)+'隊への指示を選択</div>'+
+    '<div class="centerGrid">'+
+    b('data-strategy-start="plan"','⚔ 作戦・陣形固有作戦')+
+    b('data-strategy-start="move"','🗺 移動先を指定')+
+    b('data-strategy-start="item"','🎒 アイテムを使う',false,!getItems().some(x=>x.quantity>0))+'</div>'+
+    '<small class="centerHelp">現在の陣形：'+esc(formationFor())+' ／ 解放作戦：'+
+    esc(unlocked.join('・')||'基本作戦のみ')+'</small>';
+  }else if(step==='moveTarget'){
+   html='<div class="centerStep">第'+esc(groupId)+'隊の移動地点をレーダーから選択</div>'+
+    radarMarkup('🗺 地図をタップして目的地を選択。確定までは移動しません。')+
+    '<small class="centerHelp">選択地点：'+(mapPoint?'('+mapPoint.x+', '+mapPoint.z+')':'未選択')+'</small>'+
+    controls('◀ 指示選択へ','次へ','移動を確認',!mapPoint);
+  }else if(step==='moveConfirm'){
+   html='<div class="centerStep">③ 移動指示の確認</div><div class="centerQuota"><b>第'+
+    esc(groupId)+'隊</b><div>移動先：'+esc(mapPoint?'('+mapPoint.x+', '+mapPoint.z+')':'未選択')+
+    '</div><div>対象 '+selectedSquads.size+'分隊</div></div>'+
+    controls('◀ 移動先を選び直す','確定','✓ 移動を発令');
+  }else if(step==='scope'){
    html='<div class="centerStep">① 班単位か個別の作戦を選択</div>'+
     '<div class="centerScopeGrid">'+b('data-strategy-scope="group"','🛡 班単位の作戦',scope==='group')+
     b('data-strategy-scope="squad"','⚔ 個別の作戦（分隊）',scope==='squad')+'</div>'+
@@ -124,7 +149,7 @@ export function createTargetedStrategyUi({
    const recommended=getTemplates(String(groupId)).filter(x=>STRATEGY_METHODS[x.methodId])
      .sort((a,b)=>Number(eligible.has(b.methodId))-Number(eligible.has(a.methodId))||
       (Number(b.score)||0)-(Number(a.score)||0));
-   html='<div class="centerStep">② 戦場に合う宿屋テンプレート</div>'+
+   html='<div class="centerStep">② 作戦を選択｜現在の陣形：'+esc(formationFor())+'</div>'+
     '<div class="centerBattleRecommendations">'+recommended.slice(0,5).map((x,i)=>
       b('data-strategy-template="'+esc(x.id)+'"',(i===0?'★ 推奨 ':'')+x.name+
       ' · 適合'+x.score+'/100'+(x.reason?' · '+x.reason:''),false,!eligible.has(x.methodId))).join('')+
@@ -146,7 +171,8 @@ export function createTargetedStrategyUi({
    const entry=STRATEGY_TREE[family]?.intents[intent];
    html='<div class="centerStep">④ '+esc(entry?.name||'')+'：実行方法を選択</div>'+
     '<div class="centerGrid">'+(entry?.methods||[]).map(m=>
-      b('data-strategy-method="'+m.id+'"',(selectedMethods.has(m.id)?'☑ ':'□ ')+m.name,
+      b('data-strategy-method="'+m.id+'"',(!tacticUnlocked(m.id)?'🔒 ':(selectedMethods.has(m.id)?'☑ ':'□ '))+m.name+
+       (!tacticUnlocked(m.id)?'（対応陣形で解放）':''),
       selectedMethods.has(m.id),!eligible.has(m.id))).join('')+'</div>'+
     '<small class="centerHelp">複数方法を選択できます。ただし敵・地点・オブジェクトは種類ごとに別の指示となります。</small>'+
     '<div class="centerShares">'+dist.rows.map(x=>'<div><span>'+esc(x.method.name)+' · '+x.soldiers+'人</span><b>'+x.percent+'%</b></div>').join('')+'</div>'+
@@ -193,7 +219,7 @@ export function createTargetedStrategyUi({
    '<div class="centerTopRow"><span>第'+esc(groupId)+'班</span><span>'+
    (scope==='group'?'班単位':'個別分隊')+'</span><span>'+esc(stepText[step])+'</span></div>'+
    html+(error?'<small class="centerDanger" role="alert">'+esc(error)+'</small>':'')+'</div>';
-  if(step==='target'||step==='scope')drawLargeRadar();
+  if(step==='target'||step==='scope'||step==='moveTarget')drawLargeRadar();
  }
  function radarMarkup(hint){
   return '<div class="centerMapBoard"><canvas id="centralCommandMap" width="464" height="464" '+
@@ -216,7 +242,7 @@ export function createTargetedStrategyUi({
   if(radar)ctx.drawImage(radar,0,0,width,height);
   // Paint actual selectable WALKABLE ground from the authoritative map.
   // This is a single cached 232x232 CPU bitmap used only while paused.
-  if(step==='target'&&!chosenItem&&type()==='map'){
+  if(step==='moveTarget'||(step==='target'&&!chosenItem&&type()==='map')){
    if(!mapTileOverlay){
     const data=makeSelectableMapOverlay(size,getMapCellEligible);
     const layer=document.createElement('canvas');layer.width=size;layer.height=size;
@@ -296,7 +322,7 @@ export function createTargetedStrategyUi({
    }
    }
   radarHotspots=hotspots;
-  if(mapPoint&&type()==='map'){
+  if(mapPoint&&(type()==='map'||step==='moveTarget')){
    const x=mapPoint.x/size*width,y=mapPoint.z/size*height;
    ctx.strokeStyle='#ffe08a';ctx.lineWidth=4;ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.stroke();
    ctx.beginPath();ctx.moveTo(x-18,y);ctx.lineTo(x+18,y);ctx.moveTo(x,y-18);ctx.lineTo(x,y+18);ctx.stroke();
@@ -318,7 +344,7 @@ export function createTargetedStrategyUi({
   groupId=String(id&&liveSquads(planFor(id)).length?id:first.id);
   overviewGroupOnly=true;
   scope='group';preferredSquad=null;
-  selectGroup(groupId);step=startAtRecommendations?'family':'scope';family='attack';intent='melee';
+  selectGroup(groupId);step='menu';family='attack';intent='melee';
   selectedMethods=new Set();selectedTargets=new Set();chosenItem=null;mapPoint=null;error='';
   mapTileOverlay=null;
   if(onOpen()===false)return false;
@@ -332,14 +358,21 @@ export function createTargetedStrategyUi({
  }
  function back(){
   error='';
-  if(overviewGroupOnly&&step==='family'){close();return;}
+  if(step==='menu'){close();return;}
   if(step==='scope'){close();return;}
-  step={family:'scope',intent:'family',method:'intent',items:'family',target:chosenItem?'items':'method',confirm:'target'}[step]||'scope';
+  step={family:'menu',intent:'family',method:'intent',items:'menu',target:chosenItem?'items':'method',confirm:'target',moveTarget:'menu',moveConfirm:'moveTarget'}[step]||'menu';
   render();
  }
  function next(){
   error='';
-  if(step==='scope'){if(!selectedSquads.size){error='生存する部隊を選択してください';render();return;}step='family';}
+  if(step==='menu'){error='指示する操作を選択してください';}
+  else if(step==='moveTarget'){if(!mapPoint)error='移動先を選んでください';else step='moveConfirm';}
+  else if(step==='moveConfirm'){
+   if(!mapPoint){error='移動先を選んでください';}
+   else{const result=onMoveExecute({groupId,squadIds:[...selectedSquads],point:mapPoint});
+    if(result===true){close();return;}error=String(result||'移動先へ進めません');}
+  }
+  else if(step==='scope'){if(!selectedSquads.size){error='生存する部隊を選択してください';render();return;}step='family';}
   else if(step==='family'){step='intent';}
   else if(step==='intent'){step='method';}
   else if(step==='items'){if(!chosenItem){error='アイテムを選択してください';}else step='target';}
@@ -363,6 +396,7 @@ export function createTargetedStrategyUi({
    if(result===true){close();return;}
    error=String(result||'アイテムを使えませんでした');render();return;
   }
+  if([...selectedMethods].some(id=>!tacticUnlocked(id))){error='現在の陣形では選択した追加作戦を使えません';render();return;}
   if(!shares.total||kind==='mixed'||!kind){error='対応する部隊と方法を確認してください';render();return;}
   if(kind==='map'){
    const payload={groupId,mode:shares.rows[0].method.mode,
@@ -386,6 +420,14 @@ export function createTargetedStrategyUi({
  panel.addEventListener('click',event=>{
   const t=event.target.closest('button');if(!t||t.disabled)return;
   if(t.hasAttribute('data-strategy-close')){close();return;}
+  if(t.hasAttribute('data-strategy-start')){
+   const kind=t.dataset.strategyStart;
+   chosenItem=null;selectedMethods.clear();selectedTargets.clear();mapPoint=null;
+   if(kind==='move')step='moveTarget';
+   else if(kind==='item')step='items';
+   else step='family';
+   error='';render();return;
+  }
   if(t.hasAttribute('data-strategy-back')){back();return;}
   if(t.hasAttribute('data-strategy-next')){next();return;}
   if(t.hasAttribute('data-strategy-scope')){
@@ -424,12 +466,12 @@ export function createTargetedStrategyUi({
  panel.addEventListener('pointerup',event=>{
   const canvas=event.target.closest('#centralCommandMap');
   if(!canvas)return;
-  if(step!=='target'&&step!=='scope')return;
+  if(step!=='target'&&step!=='scope'&&step!=='moveTarget')return;
   const rect=canvas.getBoundingClientRect();
   if(!rect.width||!rect.height)return;
   const px=(event.clientX-rect.left)/rect.width*canvas.width,
    py=(event.clientY-rect.top)/rect.height*canvas.height;
-  if(step==='target'&&!chosenItem&&type()==='map'){
+  if(step==='moveTarget'||(step==='target'&&!chosenItem&&type()==='map')){
    const size=Number(getMapSize())||232;
    const point={x:Math.max(0,Math.min(size-1,Math.round(px/canvas.width*size))),
     z:Math.max(0,Math.min(size-1,Math.round(py/canvas.height*size)))};
