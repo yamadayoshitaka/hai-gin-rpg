@@ -803,9 +803,10 @@ export function createCosplayedHumanoidMonster(spec,{
     clamp(elapsed/(TIME_LIMITS[action]||1),0,1),time);
    // Source mesh is hidden for mineral/armoured creatures: fit shells
    // between each moving pair of joints AFTER the native animation mixer.
-   visual?.userData.mineralArticulator?.update(action);
    if(isFlyingTengu)updateCanonicalTenguFlight(root,host,visual,action,time,elapsed);
    if(isFlyingGargoyle)updateCanonicalGargoyleFlight(root,host,visual,action,time,elapsed);
+   // Fit all mineral shells AFTER flight has folded the real leg joints.
+   visual?.userData.mineralArticulator?.update(action);
    if(profile.costume==='seraph_female'){
     for(const pivot of seraphWingPivots){
      const side=pivot.userData.seraphFlightWingSide,beat=Math.sin(time*4.1);
