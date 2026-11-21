@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 import {decorateM024PBRMaterial,isScarabPBRSpecies}
- from './m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3-20261121';
+ from './m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3b-20261121';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {nonhumanMonsterStage} from './nonhuman-model-quality.js';
 import {realismPaletteFor} from './monster-realistic-palettes.js?v=m024-purple-venom-armored-scarab-v1-20261121';
