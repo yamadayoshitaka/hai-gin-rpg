@@ -819,7 +819,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  for(let i=0;i<verts.length;i+=3){
   // Stable continuous pigment on the short cap: adjacent donor triangles
   // must not receive visibly different tint at the same scalp boundary.
-  const shade=shortHair?1.0:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
+  // Match cap pigment to the unlit close-cut fibres on all camera angles.
+  const shade=shortHair?.955:v63WigScalpTone(verts[i],verts[i+1],verts[i+2],box);
   melanin.push(shade,shade*.995,shade*.988);
  }
  buffer.setAttribute('color',new THREE.Float32BufferAttribute(melanin,3));
@@ -868,7 +869,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
 export function createCloseCutScalpFibres(cap,box,color,hairCount){
  const position=cap.geometry.getAttribute('position');
  const normal=cap.geometry.getAttribute('normal');
- const triangleCount=Math.floor(position.count/3);
+ const triangleCount=Math.floor(Math.min(position.count,
+  cap.userData.donorScalpVertexCount||position.count)/3);
  const cumulative=new Float64Array(triangleCount);
  let area=0;
  const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
@@ -986,7 +988,8 @@ export function createSadakoCrownFlow(cap,box,color){
  const norm=cap?.geometry?.getAttribute?.('normal');
  if(!pos||!norm)throw Error('Sadako crown needs real donor scalp triangles');
  const d=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
- const triangleCount=Math.floor(pos.count/3);
+ const triangleCount=Math.floor(Math.min(pos.count,
+  cap.userData.donorScalpVertexCount||pos.count)/3);
  const step=Math.max(1,Math.floor(triangleCount/1600));
  const points=[],shades=[],indices=[],pigment=new THREE.Color(color);
  const root=new THREE.Vector3(),outward=new THREE.Vector3(),
