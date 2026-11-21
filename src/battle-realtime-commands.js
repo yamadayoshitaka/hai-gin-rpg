@@ -409,10 +409,16 @@ export function createRealtimeBattleCommands({
   else{ctx.fillStyle='#24433e';ctx.fillRect(0,0,w,h);}
   ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
   for(let i=0;i<=8;i++){const v=i*w/8;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,h);ctx.stroke();}
-  // Before battle, only the ten friendly squad leader markers are useful.
-  // Enemy squads enter the map only after combat begins.
-  const allies=squads(),enemies=mode==='deploy'?[]:getEnemies();
-  const markers=visibleBattleSquadPins(allies,enemies,mode);
+  // Expanded radar uses the same real friendly and opposing team anchors
+  // as the compact radar; no second independent 12-slot map representation.
+  if(mode==='deploy'){
+   ctx.fillStyle='rgba(31,117,198,.16)';ctx.fillRect(0,0,w*.50,h);
+   ctx.fillStyle='rgba(203,58,74,.16)';ctx.fillRect(w*.50,0,w*.50,h);
+   ctx.strokeStyle='rgba(223,246,255,.42)';ctx.lineWidth=2;
+   ctx.beginPath();ctx.moveTo(w*.50,0);ctx.lineTo(w*.50,h);ctx.stroke();
+  }
+  const allies=squads(),enemies=mode==='deploy'?(getRadarEnemies?.()||[]):getEnemies();
+  const markers=visibleBattleSquadPins(allies,enemies,'live');
   for(const s of markers){
    if(!Number.isFinite(s.x)||!Number.isFinite(s.z))continue;
    const x=(s.x-minX)/span*w,z=(s.z-minZ)/span*h;
@@ -1035,7 +1041,8 @@ export function createRealtimeBattleCommands({
   $('realtimeMapActionSheet').hidden=next==='deploy';
   if(started)onMapOverview({x:Math.round(worldSize/2),z:Math.round(worldSize/2)});
   $('realtimeBattleMapOverlay').hidden=false;
-  $('realtimeMapClose').hidden=next==='deploy';
+  $('realtimeMapClose').hidden=false;
+  $('realtimeMapClose').textContent=next==='deploy'?'⤢ 縮小':'✕ 戻る';
   $('realtimeStart').hidden=next!=='deploy';
   $('realtimeMapTitle').textContent=next==='deploy'?'⛶ 部隊レーダー拡大・初期配置':'移動先を選択';
   $('realtimeMapPlanningClock').hidden=next==='deploy';
@@ -1054,7 +1061,9 @@ export function createRealtimeBattleCommands({
   drawMap();
  }
  function closeMap(){
-  if(mode==='deploy')return;
+  if(mode==='deploy'&&!started){
+   $('realtimeBattleMapOverlay').hidden=true;drawRadar(true);return;
+  }
   hideActionSheet();$('realtimeBattleMapOverlay').hidden=true;mode='live';
   if($('realtimeBattleDock').hidden)exitPlanning();
  }
