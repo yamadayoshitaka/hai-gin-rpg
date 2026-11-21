@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import {detachMonsterPhotoMaterial} from './monster-photo-pbr.js';
 
-export const SUMMON_FOOTWEAR_PBR_REVISION='summon-cc0-leather-boots-v2-20261122';
+export const SUMMON_FOOTWEAR_PBR_REVISION='seraph-matte-leather-no-chocolate-v4-20261122';
 export const SUMMON_FOOTWEAR_SOURCE=Object.freeze({
  name:'Poly Haven Fabric Leather 01',license:'CC0',
  page:'https://polyhaven.com/a/fabric_leather_01',
@@ -27,9 +27,52 @@ const slots=Object.freeze([
  ['map','diffuse',true],['normalMap','normal',false],
  ['roughnessMap','roughness',false]
 ]);
+let seraphFallback=null;
+// Offline wrinkle/pebble relief for matte boots, never a diffuse photograph.
+// Online high detail swaps only its normal/roughness for real CC0 leather PBR.
+function seraphMatteLeatherFallback(){
+ if(seraphFallback)return seraphFallback;
+ const size=128,normalBytes=new Uint8Array(size*size*4),
+  roughBytes=new Uint8Array(size*size*4);
+ const heights=new Float32Array(size*size);
+ const height=(u,v)=>
+  Math.cos(u*198+Math.sin(v*24)*2.4)*Math.sin(v*165)+
+  .32*Math.sin(u*43+v*27);
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++)
+  heights[y*size+x]=height(x/size,y/size);
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const i=y*size+x,k=i*4;
+  const dx=(heights[y*size+(x+1)%size]-
+   heights[y*size+(x+size-1)%size])*.054;
+  const dy=(heights[((y+1)%size)*size+x]-
+   heights[((y+size-1)%size)*size+x])*.054;
+  const inv=1/Math.hypot(dx,dy,1);
+  normalBytes[k]=Math.round(127.5*(1-dx*inv));
+  normalBytes[k+1]=Math.round(127.5*(1-dy*inv));
+  normalBytes[k+2]=Math.round(127.5*(1+inv));
+  normalBytes[k+3]=255;
+  const r=Math.round(255*Math.max(.72,Math.min(.94,.81+.027*heights[i])));
+  roughBytes[k]=r;roughBytes[k+1]=r;roughBytes[k+2]=r;roughBytes[k+3]=255;
+ }
+ const tex=bytes=>{
+  const t=new THREE.DataTexture(bytes,size,size,THREE.RGBAFormat);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.repeat.set(2,2);t.generateMipmaps=true;
+  t.magFilter=THREE.LinearFilter;
+  t.minFilter=THREE.LinearMipmapLinearFilter;
+  t.anisotropy=2;t.needsUpdate=true;
+  return t;
+ };
+ seraphFallback=Object.freeze({
+  normal:tex(normalBytes),roughness:tex(roughBytes)
+ });
+ return seraphFallback;
+}
 
 function attachLoaded(material,entry){
  if(!active.has(material)||entry.state!=='ready')return;
+ // Do not overwrite the Seraph's charcoal leather with brown upholstery.
+ if(entry.slot==='map'&&material.userData.seraphFootwear)return;
  // The bundled leather texture is a shared reference. Release its user
  // reference before swapping; never dispose a global atlas here.
  if(entry.slot==='map'&&material.map!==entry.texture){
@@ -78,6 +121,22 @@ export function applySummonFootwearPBR(material,{role='',detail='high'}={}){
  material.needsUpdate=true;
  // The distant LOD uses the bundled local photograph. No 1K downloads
  // for crowds, only for the high-quality near-camera gallery/battle actor.
+ if(material.userData.seraphFootwear){
+  // The prior photo's chestnut albedo made both boots look like melted
+  // chocolate. Preserve actual CC0 scanned roughness/normal maps, but
+  // use neutral dyed charcoal-leather color and a much less glossy finish.
+  detachMonsterPhotoMaterial(material);
+  material.map=null;
+  material.color.setHex(0x554b4a);
+  material.metalness=0;
+  material.roughness=.87;
+  const fallback=seraphMatteLeatherFallback();
+  material.normalMap=fallback.normal;
+  material.roughnessMap=fallback.roughness;
+  material.normalScale.set(.15,.15);
+  material.userData.seraphMatteLeather=true;
+  material.needsUpdate=true;
+ }
  if(!loader||detail==='low')return true;
  active.add(material);
  for(const [slot,source,srgb] of slots){
