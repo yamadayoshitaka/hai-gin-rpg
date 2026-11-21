@@ -782,3 +782,23 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
  #realtimeBattleDock #realtimeCommandTabs button{font-size:9px!important;padding:3px!important}
  #realtimeBattleDock #realtimeFormationChoices button{padding:5px;min-height:72px!important}
 }
+
+/* 2026-11-21: command-team setup is one full-screen decision at a time.
+   Page 1: legal position on the radar. Page 2: initial strategy only. */
+#realtimeBattleMapOverlay #realtimeMapViewport[hidden]{display:none!important}
+#realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapViewport[hidden]){
+ overflow:hidden!important;
+}
+#realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapViewport[hidden]) #realtimeInitialTeamPlanning{
+ flex:1 1 auto;min-height:0;justify-content:center;
+ overflow:hidden;
+}
+#realtimeBattleMapOverlay .realtimeMapCard:has(#realtimeMapViewport[hidden]) #realtimeInitialTeamPlanning small{
+ overflow:hidden;max-height:none;
+}
+#realtimeBattleMapOverlay #realtimeMapHelp{
+ flex:0 0 auto;
+}
+#realtimeBattleMapOverlay #realtimeStart{
+ flex:0 0 auto;white-space:normal;
+}
