@@ -78,7 +78,7 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
    if(m024Surface)decorateM024PBRMaterial(mat,{
      surface,detail,speciesId:spec.id,finish
    });
-   else if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
+   else if(role==='skin'||role==='light'||role==='shadow'||role==='bone'||role==='mortalSkin'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,
