@@ -160,6 +160,8 @@ export const WIG_STYLES=deepFreeze({
   },
   'sadako-straight-long':{
    id:'sadako-straight-long',label:'貞子風・重力ストレートロング（試作）',part:'center',
+   groomMaster:'sadako-straight-long',cuttingWorkflow:'groom-then-trim',
+   scalpFollowUntil:.15,gravityFullyAt:.38,
    whorl:{x:0,y:.965,z:-.08},partWidth:.001,fringeSweep:0,
    gravityMps2:9.81,gravityScale:1.1,scalpClearance:.002,
    faceClearance:.006,faceAvoidanceX:.014,backSweep:0,
