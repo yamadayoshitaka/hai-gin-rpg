@@ -382,7 +382,7 @@ export function createRealtimeBattleCommands({
     }
     choices.dataset.signature=signature;
    }
-   for(const b of choices.querySelectorAll('[data-prebattle-strategy]')){
+   for(const b of choices.querySelectorAll?.('[data-prebattle-strategy]')||[]){
     const chosen=b.dataset.prebattleStrategy===strategy;
     b.classList.toggle('selected',chosen);
     b.setAttribute('aria-pressed',String(chosen));
@@ -390,8 +390,10 @@ export function createRealtimeBattleCommands({
    const pager=$('realtimeInitialStrategyPager');
    pager.hidden=totalPages<=1;
    $('realtimeInitialStrategyPageInfo').textContent=(page+1)+' / '+totalPages;
-   pager.querySelector('[data-prebattle-strategy-page="-1"]').disabled=page===0;
-   pager.querySelector('[data-prebattle-strategy-page="1"]').disabled=page>=totalPages-1;
+   const prevPage=pager.querySelector?.('[data-prebattle-strategy-page="-1"]');
+   const nextPage=pager.querySelector?.('[data-prebattle-strategy-page="1"]');
+   if(prevPage)prevPage.disabled=page===0;
+   if(nextPage)nextPage.disabled=page>=totalPages-1;
    $('realtimeInitialStrategyLabel').textContent='② 第'+key+'隊の初期作戦';
    const formationId=formationPreviewId(defaults),formationRule=signatureStrategyFor(formationId);
    const preview=$('realtimeInitialFormationPreview'),active=defaults.formationActive!==false;
