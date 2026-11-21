@@ -6,7 +6,8 @@ import {GARGOYLE_SPECIES_REVISION,GARGOYLE_MATERIAL_ROLES,
  addGargoyleMonsterAnatomy,createGargoyleWingGeometry,
  createGargoyleHeadGeometry,createGargoyleTorsoGeometry,
  createGargoyleTailGeometry,createGargoyleLimbGeometry,
- createGargoyleSpireGeometry,createGargoyleSwordBladeGeometry,createGargoyleStoneTexture,
+ createGargoyleSpireGeometry,createGargoyleSwordBladeGeometry,
+ createGargoyleToeClawGeometry,poseGargoyleSwordClearance,createGargoyleStoneTexture,
  createGargoylePbrMaterial} from '../src/monster-gargoyle-sculpt.js';
 import {createMineralLimbArticulator}
  from '../src/monster-mineral-limb-articulator.js';
@@ -18,13 +19,15 @@ assert.match(runtime,/createGargoylePbrMaterial\(role,gargoyleTexture\)/);
 assert.match(runtime,/updateCanonicalGargoyleFlight\(root,host,visual,action,time,elapsed\)/);
 assert.match(runtime,/gargoyleWingPivots=frames\.chest\.userData\.gargoyleWingPivots/);
 assert.match(runtime,/gargoyleFlightMode=true/);
+assert.match(runtime,/poseGargoyleSwordClearance\(\{/);
+assert.match(runtime,/gargoyleSwordPivot=frames\.chest\.userData\.gargoyleSwordPivot/);
 assert.match(runtime,/gargoyleSculptEdition:profile\.id==='m042'\?GARGOYLE_SPECIES_REVISION/);
 const design=humanoidMonsterCostumeFor('m042');
 assert.equal(design.costume,'gargoyle');
 assert.equal(design.body,'slim');
 assert.equal(design.equipment,'sword');
 assert.equal(design.construct,undefined);
-assert.equal(GARGOYLE_SPECIES_REVISION,'m042-slim-sword-flight-v2-20261121');
+assert.equal(GARGOYLE_SPECIES_REVISION,'m042-slender-talon-safe-sword-v3-20261121');
 assert.equal(Object.keys(GARGOYLE_MATERIAL_ROLES).length,10);
 const atlas=createGargoyleStoneTexture({size:64});
 assert.equal(atlas.image.width,64);
@@ -53,6 +56,7 @@ for(const [name,create] of [
  ['upperArm',()=>createGargoyleLimbGeometry({detail:'high',part:'upperArm'})],
  ['wing',()=>createGargoyleWingGeometry({detail:'high'})],
  ['sword',()=>createGargoyleSwordBladeGeometry({detail:'high'})],
+ ['toe',()=>createGargoyleToeClawGeometry({detail:'high'})],
  ['tail',()=>createGargoyleTailGeometry({detail:'high'})],
  ['horn',()=>createGargoyleSpireGeometry({detail:'high'})]
 ]){
@@ -138,7 +142,50 @@ for(const detail of ['source','high','medium','low']){
    'Toy golem geometry leaked: '+forbidden);
  }
  const blade=meshes.find(m=>m.name.includes('sword-faceted-blade'));
- assert.equal(blade.parent,frames.hands[1],'sword must follow right-hand bone');
+ const swordPivot=frames.chest.userData.gargoyleSwordPivot;
+ assert.equal(blade.parent,swordPivot,'blade belongs to the safe-swing group');
+ assert.equal(swordPivot.parent,frames.hands[1],
+  'swing group must stay attached to the right-hand bone');
+ const toe=meshes.find(m=>m.name.includes('raptor-stone-toe-1-0'));
+ const paw=meshes.find(m=>m.name.includes('long-demon-paw-1'));
+ assert.equal(toe.parent,frames.feet[1],'toe is on the same animated foot');
+ assert.equal(toe.geometry.userData.rootEmbedded,true);
+ assert.ok(Math.abs(toe.position.y-paw.position.y)<.02);
+ assert.ok(toe.position.z<paw.position.z&&
+  toe.position.z>paw.position.z-.169,
+  'toe root must overlap paw volume');
+ toe.geometry.computeBoundingBox();
+ assert.ok(toe.geometry.boundingBox.min.z<-.23,
+  'toe meshes must point forward rather than below the foot');
+ for(const [name,geo,width] of [
+  ['torso',createGargoyleTorsoGeometry({detail}),.205],
+  ['pelvis',createGargoyleTorsoGeometry({detail,region:'pelvis'}),.145],
+  ['thigh',createGargoyleLimbGeometry({detail,part:'thigh'}),.110]
+ ]){
+  geo.computeBoundingBox();
+  assert.ok(geo.boundingBox.max.x<width,name+' too bulky '+detail);
+  geo.dispose();
+ }
+ for(const action of ['idle','attack','special','run']){
+  for(const progress of [0,.25,.5,.75,1]){
+   model.updateMatrixWorld(true);
+   assert.equal(poseGargoyleSwordClearance({
+    swordPivot,chest:frames.chest,body:model,action,progress
+   }),true,'sword clearance pose failed');
+   model.updateMatrixWorld(true);
+   const worldDirection=new THREE.Vector3(0,-1,0)
+    .applyQuaternion(swordPivot.getWorldQuaternion(new THREE.Quaternion()));
+   const front=new THREE.Vector3(0,0,1)
+    .applyQuaternion(model.getWorldQuaternion(new THREE.Quaternion()));
+   assert.ok(worldDirection.dot(front)>.43,
+    'sword points through torso '+action+' '+progress);
+   const right=new THREE.Vector3(1,0,0)
+    .applyQuaternion(model.getWorldQuaternion(new THREE.Quaternion()));
+   assert.ok(Math.abs(worldDirection.dot(right))>.45,
+    'blade points down through thigh '+action+' '+progress);
+   assert.equal(swordPivot.userData.gargoyleBladeOutsideThigh,true);
+  }
+ }
  assert.ok(createGargoyleTorsoGeometry({detail:'low'}).attributes.position.count>20);
  const rig=createMineralLimbArticulator({model,frames,id:'m042'});
  assert.equal(rig.segments.length,8);
