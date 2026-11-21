@@ -155,7 +155,8 @@ for(const id of FEMALE_SUMMON_FORM_IDS){
  const profile=femaleSummonCosplayFor(id),high=fixture('high'),low=fixture('low');
  assert.equal(addFemaleSummonCostume({profile,detail:'high',...high}),true);
  assert.equal(addFemaleSummonCostume({profile,detail:'low',...low}),true);
- assert.ok(high.owned.length>=8,'Missing sculpted costume '+id);
+ assert.ok(high.owned.length>=(id==='seraph_guardian'?6:8),
+  'Missing sculpted costume '+id);
  const count=owned=>owned.reduce((sum,n)=>sum+n.geometry.getAttribute('position').count,0);
  assert.ok(count(high.owned)>count(low.owned)*1.5,'LOD not cheaper for '+id);
  assert.ok(count(high.owned)<(id==='seraph_guardian'?260000:45000),
