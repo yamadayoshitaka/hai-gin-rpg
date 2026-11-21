@@ -3,7 +3,7 @@
  * Independent of the generic insect and arachnid silhouettes.
  * All moving details follow their anatomical leg/wing/head pivots.
  */
-export const M024_SCARAB_REVISION='m024-poison-scarab-pbr-quality-v2-20261121';
+export const M024_SCARAB_REVISION='beetle-four-reference-sculpt-v1-20261121';
 
 const leftRight=[-1,1];
 const suffix=side=>side<0?'L':'R';
@@ -123,13 +123,13 @@ function sculptToxicCrown(g,torso,low){
  for(let i=0;i<(low?4:crown.length);i++){
   const [x,z,height]=crown[i],n='m024-venom-crystal-'+i;
   g.curvedHorn(torso,i%2?'#d3f6a0':'#aee779',
-   [x,1.70,z],[x*.9,1.95+height*.25,z-.08],
-   [x*.72,1.80+height,z-.18],i===1?.155:.112,{
+   [x,1.70,z],[x*.9,1.87+height*.09,z-.08],
+   [x*.72,1.83+height*.21,z-.18],i===1?.105:.083,{
     name:n,capRoot:true,surface:'crystal',
    });
   if(!low)g.curvedHorn(torso,'#709c4e',
-   [x+.047,1.73,z+.02],[x+.06,1.87+height*.14,z-.03],
-   [x+.032,1.80+height*.73,z-.18],.027,{
+   [x+.047,1.73,z+.02],[x+.06,1.80+height*.09,z-.03],
+   [x+.032,1.83+height*.15,z-.18],.020,{
     name:n+'-facet',capRoot:true,surface:'crystal',
    });
  }
@@ -195,7 +195,7 @@ function sculptSixInsectLegs(g,torso,low){
  }
 }
 
-function sculptVeinedWings(g,torso,low){
+function sculptVeinedWings(g,torso,low,spec){
  // Each wing pivot owns TWO true 3D membranes (4 wings total) and ribs.
  // No flat "ear" cards fixed to the torso while the rig flaps.
  for(const side of leftRight){
@@ -203,10 +203,10 @@ function sculptVeinedWings(g,torso,low){
   const wing=g.group('wing'+n,p(.43,1.76,-.28),torso);
   g.sphere(wing,'#563168',[0,0,0],[.18,.13,.22],
    {name:'m024-wing-socket-'+n});
-  const upper=g.fin(wing,'#b994e6',[0,0,0],p(1.63,.73,-.28),
+  const upper=g.fin(wing,spec.id==='m024'?'#c0d98a':'#b994e6',[0,0,0],p(1.63,.73,-.28),
    .47,{translucent:true,name:'m024-upper-translucent-wing-'+n,
     surface:'wing'});
-  const lower=g.fin(wing,'#9370c8',[0,0,-.10],p(1.34,.28,-.90),
+  const lower=g.fin(wing,spec.id==='m024'?'#a2bf69':'#9370c8',[0,0,-.10],p(1.34,.28,-.90),
    .35,{translucent:true,name:'m024-lower-translucent-wing-'+n,
     surface:'wing'});
   upper.userData.venomScarabMembrane=true;
@@ -216,13 +216,13 @@ function sculptVeinedWings(g,torso,low){
    const t=(i+.6)/(veinCount+.5);
    const a=p(.16+t*.99,.12+t*.42,-.04-t*.13);
    const b=p(.37+t*1.23,.18+t*.48,-.10-t*.25);
-   g.tube(wing,i%2?'#e4c8ee':'#c8a6e6',[
+   g.tube(wing,spec.id==='m024'?'#c5ed59':i%2?'#e4c8ee':'#c8a6e6',[
     [0,0,0],p(.34+t*.46,.07+t*.25,-.04-t*.15),a,b
    ],low?.008:.010,{name:'m024-upper-wing-vein-'+n+'-'+i});
   }
   for(let i=0;i<(low?2:4);i++){
    const t=(i+1)/(low?3:5);
-   g.tube(wing,'#bd9bd4',[
+   g.tube(wing,spec.id==='m024'?'#9fc24e':'#bd9bd4',[
     [0,0,-.10],p(.24+t*.50,.08,-.19-t*.20),
     p(.32+t*.97,.12+t*.22,-.35-t*.44)
    ],low?.007:.009,{name:'m024-lower-wing-vein-'+n+'-'+i});
@@ -237,7 +237,7 @@ export function sculptM024PoisonScarab(g,spec){
  sculptHeadAndVenom(g,torso,low);
  sculptToxicCrown(g,torso,low);
  sculptSixInsectLegs(g,torso,low);
- sculptVeinedWings(g,torso,low);
+ sculptVeinedWings(g,torso,low,spec);
  g.root.scale.setScalar(spec.size*.91);
  g.root.userData.m024ConceptBasedSculpt=true;
  g.root.userData.m024Anatomy={legPairs:3,wings:4,crystalCrown:true,venomMandibles:2};
