@@ -139,9 +139,17 @@ export function addSeraphCelestialVestment({frames,detail='high',attach,tube}={}
   {y:-.35,rx:.184,rz:.150},{y:-.43,rx:.193,rz:.154}
  ],{detail,pleat:.014,kind:'fitted-ivory-satin-bodice'}),
  'seraphSatin','waist-fitted-bodice');
+ // The shoulder mantle overlays the donor's dark triangular undersuit
+ // around the collarbone instead of exposing it beside the satin bodice.
  add(frames.chest,loft([
-  {y:.23,rx:.143,rz:.111},{y:.255,rx:.177,rz:.131},
-  {y:.31,rx:.142,rz:.107},{y:.355,rx:.112,rz:.09}
+  {y:.315,rx:.133,rz:.11},{y:.245,rx:.218,rz:.172},
+  {y:.156,rx:.272,rz:.211},{y:.038,rx:.260,rz:.209},
+  {y:-.062,rx:.246,rz:.195}
+ ],{detail,pleat:.012,kind:'layered-covered-shoulders'}),
+ 'seraphSatin','covered-shoulder-yoke');
+ add(frames.chest,loft([
+  {y:.335,rx:.113,rz:.087},{y:.345,rx:.127,rz:.099},
+  {y:.395,rx:.105,rz:.081}
  ],{detail,kind:'narrow-high-neckline'}),'seraphBrocade','tailored-collar');
  // Layered robe with independent slightly-open lower silhouette.
  add(frames.pelvis,loft([
