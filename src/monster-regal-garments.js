@@ -9,6 +9,7 @@
  */
 import * as THREE from 'three';
 import {addSeraphCelestialVestment} from './seraph-celestial-wardrobe.js?v=tailored-angel-v3-20261122';
+import {addForestSpiritTailoredOutfit} from './forest-spirit-tailored-wardrobe.js?v=forest-drapery-v2-20261122';
 
 export const REGAL_HUMANOID_WARDROBE=Object.freeze({
  seraph_female:Object.freeze({style:'celestial-vestment',bodice:'seraphSatin',
@@ -17,7 +18,8 @@ export const REGAL_HUMANOID_WARDROBE=Object.freeze({
   bootTrim:'seraphGold',head:'none',tailoredCelestial:true}),
  forest_spirit_female:Object.freeze({style:'living-leaf-robe',bodice:'leaf',
   hem:'leaf',trim:'gold',skirt:.82,flare:.40,sleeve:'leaf',
-  sleeveLength:.36,leggings:'leaf',bootMaterial:'summonBootLeather',head:'none'}),
+  sleeveLength:.36,leggings:'leaf',bootMaterial:'summonBootLeather',
+  head:'none',tailoredForest:true}),
  dragonkin_female:Object.freeze({style:'scaled-regalia',bodice:'metal',
   hem:'velvet',trim:'gold',skirt:.72,flare:.30,sleeve:'metal',
   sleeveLength:.39,leggings:'metal',bootMaterial:'summonBootLeather',head:'draconic-mask'}),
@@ -220,6 +222,9 @@ export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube
  // Angel's outfit is deliberately not the generic cone-and-sphere uniform.
  if(plan.tailoredCelestial)return addSeraphCelestialVestment({
   frames,detail,attach,tube
+ });
+ if(plan.tailoredForest)return addForestSpiritTailoredOutfit({
+  profile,frames,detail,attach,tube
  });
  if(!frames?.chest||!frames?.pelvis||frames.arms?.length!==2||
     frames.legs?.length!==2||frames.calves?.length!==2)
