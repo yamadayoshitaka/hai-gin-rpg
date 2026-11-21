@@ -23,6 +23,8 @@ export function attachAgeDetails(face,ageBand='twenties'){
  const size=box.getSize(new THREE.Vector3());
  const width=Math.max(1e-8,size.x),height=Math.max(1e-8,size.y);
  const depth=Math.max(1e-8,size.z),center=(box.min.x+box.max.x)*.5;
+ const oralY=(Number(face.userData.actualMouthCreaseY)??NaN);
+ const oral=Number.isFinite(oralY)?(oralY-box.min.y)/height:.509;
  let affected=0,maxOffset=0;
  for(let i=0;i<position.count;i++){
   const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
@@ -37,12 +39,17 @@ export function attachAgeDetails(face,ageBand='twenties'){
    bell(nx,.23,.35);
   const crow=bell(nx,.40,.080)*bell(ny,.676,.065)*
    (0.65+0.35*Math.cos((ny-.682)*90));
-  const nasolabial=bell(nx,.17+.065*(.60-ny),.056)*
-   bell(ny,.51,.079);
-  const mouthCorner=bell(nx,.15,.045)*bell(ny,.468,.045);
-  const fold=forehead*.70+crow*.40+nasolabial*.95+
-   mouthCorner*.31;
-  const displacement=-depth*strength*.0072*front*fold;
+  // Genuine nasolabial oblique trough: from alar base to the age-adjusted
+  // mouth corner. Counter-relief adjacent to the crease makes it visible
+  // under neutral lighting, without floating painted lines.
+  const route=.16+.115*THREE.MathUtils.clamp((ny-oral)/.19,0,1);
+  const nasolabial=bell(nx,route,.036)*bell(ny,oral+.067,.097);
+  const cheekMound=bell(nx,route+.055,.063)*bell(ny,oral+.082,.082);
+  const mouthCorner=bell(nx,.15,.045)*bell(ny,oral-.015,.043);
+  const fold=forehead*.70+crow*.44+nasolabial*1.23+
+   mouthCorner*.27;
+  const displacement=depth*strength*front*
+   (-.0079*fold+.0025*cheekMound);
   if(Math.abs(displacement)<1e-8)continue;
   position.setZ(i,z+displacement);
   affected++;maxOffset=Math.max(maxOffset,Math.abs(displacement));
