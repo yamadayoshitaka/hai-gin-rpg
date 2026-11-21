@@ -193,6 +193,56 @@ export function equipSquadItem(game,squadId,itemId,category){
  squad.equipment={...(squad.equipment||{}),[slot]:item?.id||null};
  return {squad,item,bonus:squadEquipmentBonus(squad)};
 }
+/** Identify who owns an equipped copy, including soldiers not deployed in any team. */
+export function squadEquipmentUsers(game,itemId,excludeSquadId=null){
+ const item=TOWN_SHOP.find(entry=>entry.id===itemId&&['武器','防具'].includes(entry.category));
+ if(!item)return [];
+ const slot=item.category==='武器'?'weapon':'armor';
+ const teams=game?.sortiePlan?.teams||[];
+ return (game?.campaign?.squads||[]).filter(s=>Number(s.count)>0&&
+  s.equipment?.[slot]===itemId&&String(s.id)!==String(excludeSquadId))
+  .map(s=>({squadId:s.id,job:s.job,
+   name:s.characterName||s.name||s.job+'代表',
+   teamIds:teams.filter(t=>Number(t.counts?.[String(s.id)]||0)>0).map(t=>t.id)}));
+}
+/** Buy an additional physical copy and equip it to a specified squad atomically. */
+export function buyAndEquipSquadItem(game,squadId,itemId,category){
+ const item=TOWN_SHOP.find(entry=>entry.id===itemId&&entry.category===category);
+ const squad=game?.campaign?.squads?.find(s=>String(s.id)===String(squadId)&&s.count>0);
+ if(!item||!['武器','防具'].includes(category)||!squad)
+  throw Error('購入する装備と対象の隊員を確認してください。');
+ if(item.jobs&&!item.jobs.includes(squad.job))
+  throw Error(squad.job+'は'+item.name+'を装備できません。');
+ const purchase=buyTownItem(game,itemId);
+ try{
+  const equipped=equipSquadItem(game,squad.id,itemId,category);
+  return {...equipped,price:purchase.price,balance:game.wallet};
+ }catch(error){
+  game.wallet+=purchase.price;
+  game.inventory[itemId]-=purchase.quantity;
+  throw error;
+ }
+}
+/** Move an existing piece of gear without cloning it or charging gold. */
+export function transferSquadItem(game,fromSquadId,toSquadId,itemId,category){
+ if(!validGame(game)||game.location!=='town')throw Error('装備の移し替えは町で行ってください。');
+ const item=TOWN_SHOP.find(entry=>entry.id===itemId&&entry.category===category);
+ const slot=category==='武器'?'weapon':category==='防具'?'armor':null;
+ const source=game.campaign.squads.find(s=>String(s.id)===String(fromSquadId)&&s.count>0);
+ const target=game.campaign.squads.find(s=>String(s.id)===String(toSquadId)&&s.count>0);
+ if(!item||!slot||!source||!target||source===target||source.equipment?.[slot]!==itemId)
+  throw Error('移し替え元の装備が見つかりません。');
+ if(item.jobs&&!item.jobs.includes(target.job))
+  throw Error(target.job+'は'+item.name+'を装備できません。');
+ source.equipment={...source.equipment,[slot]:null};
+ try{
+  const equipped=equipSquadItem(game,target.id,itemId,category);
+  return {...equipped,from:source};
+ }catch(error){
+  source.equipment[slot]=itemId;
+  throw error;
+ }
+}
 export function acceptTownEvent(game,eventId){
  if(!validGame(game)||game.location!=='town')throw Error('依頼は酒場で受けてください。');
  const event=TOWN_EVENTS.find(e=>e.id===eventId);

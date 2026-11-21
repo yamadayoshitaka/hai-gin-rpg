@@ -149,7 +149,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .forgePanel b{font-size:14px;color:#ffe0a2}.forgePanel small{font-size:11px;color:#d4e0e7}
 #panel .forgePanel button{background:#79552c;border-color:#d9ba7d;min-height:42px}
 </style>
-<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=no-scroll-roster-gear-20261122"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=training-gear-buy-transfer-20261122"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、軍訓練所、鍛冶屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -184,7 +184,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inn-formation-only-20261121';
-import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=no-scroll-roster-gear-20261122';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=training-gear-buy-transfer-20261122';
 import {purchaseAndArrangeTrainingFormation} from './src/training-formation-purchase.js?v=training-stock-by-job-20261122';
 import {setInnTeamItem} from './src/inn-team-items.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=roster-first-20261121';
@@ -210,7 +210,7 @@ import {tavernQuestStages,runTavernSideQuest,tavernQuestBattleSettings} from './
 import {makeCoreBattleRequest,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
 import {createTownAudioDirector} from './src/town-audio-director.js';
 import {createStoryVoiceDirector} from './src/story-voice-director.js';
-import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,hireTownSoldiers,trainingHireCapacity,equipSquadItem,forgeSquadWeapon,MAX_WEAPON_FORGE_LEVEL,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
+import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,hireTownSoldiers,trainingHireCapacity,equipSquadItem,buyAndEquipSquadItem,transferSquadItem,forgeSquadWeapon,MAX_WEAPON_FORGE_LEVEL,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
 import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,ensureMajorCharacterSquads,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
@@ -645,6 +645,18 @@ $('panelContent').onclick=event=>{
     innWizardGearSourceId=data.innWizardGearSource;
     innWizardGearCategory=data.category||'武器';
     innWizardStep='equipmentPick';redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-buy-equip')){
+    const result=buyAndEquipSquadItem(game,Number(innWizardGearSourceId),data.innWizardBuyEquip,innWizardGearCategory);
+    saveAndDraw();townAudio.effect('buy');
+    notice(result.item.name+'を'+result.price+'Gで購入し、'+result.squad.job+'に装備しました。所持金 '+result.balance+'G。');
+    return;
+   }
+   if(target.hasAttribute('data-inn-wizard-transfer')){
+    const result=transferSquadItem(game,Number(data.fromSquad),Number(innWizardGearSourceId),data.innWizardTransfer,innWizardGearCategory);
+    saveAndDraw();
+    notice((result.from.characterName||result.from.name||result.from.job+'代表')+'の装備を外し、'+result.squad.job+'に'+result.item.name+'を移しました（支払なし）。');
+    return;
    }
    if(target.hasAttribute('data-inn-wizard-equip')){
     equipSquadItem(game,Number(innWizardGearSourceId),data.innWizardEquip||null,innWizardGearCategory);
