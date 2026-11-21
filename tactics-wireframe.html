@@ -315,7 +315,7 @@ body[data-circle-target] #destinationPrompt{border:2px solid #ffed9c;box-shadow:
   }
 }
 </style>
-<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-radar-placement-battle-strategy"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
+<link rel="stylesheet" href="./src/battle-realtime-commands.css?v=20261121-two-step-placement"><link rel="stylesheet" href="./src/battle-rpg-squad-hud.css?v=20261121-captain-monster-icons"><link rel="stylesheet" href="./src/battle-three-group-panel.css?v=20261118-group-hp1"><link rel="stylesheet" href="./src/battle-objective-turn-panel.css?v=20261119-overlay-spacing1">
 <link rel="stylesheet" href="./src/central-battle-orders.css?v=20261116-templates">
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -906,14 +906,15 @@ body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261117-recommend2';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261121-split-commands-formation';
 import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
+import {formationAllowsTactic} from './src/formation-strategy-unlocks.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-formation-change-v1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-two-step-placement';
 import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
@@ -1791,6 +1792,36 @@ function townBox(parent,w,h,d,x,y,z,mat){
 }
 const townInstances=[];
 const roomItemRegistry=new RoomItemRegistry();
+const innItemIds=new Set(['potion','ether','antidote']);
+const loadedInnItemTeams=new Set();
+const innSupplyOwnerGroups=new Map();
+const spentInnItems={};
+/** Distribute actual inn-reserved quantities to a living owner in each team once. */
+function loadInnSuppliesOnce(){
+ const loadouts=storyRequest?.townItemLoadouts;
+ if(!loadouts)return;
+ const units=massSim?.units??actors;
+ for(const [groupId,stacks] of Object.entries(loadouts)){
+  if(loadedInnItemTeams.has(groupId))continue;
+  const owner=units.find(u=>u.team===0&&u.alive!==false&&u.hp>0&&
+   Number(u.armyGroupId??armyGroupBySquad[String(u.squadId)])===Number(groupId));
+  if(!owner)continue;
+  loadedInnItemTeams.add(groupId);
+  innSupplyOwnerGroups.set(String(owner.id),String(groupId));
+  for(const [id,qty] of Object.entries(stacks||{})){
+   if(!innItemIds.has(id))continue;
+   const amount=Math.min(99,Math.max(0,Math.trunc(Number(qty)||0)));
+   if(amount&&!roomItemRegistry.grant(String(owner.id),id,amount))
+    log('持参アイテムを登録できません：第'+groupId+'隊 '+id);
+  }
+ }
+}
+/** The item's real owner determines which inn team had carried it. */
+function innItemOwnerGroup(ownerId){
+ if(innSupplyOwnerGroups.has(String(ownerId)))return innSupplyOwnerGroups.get(String(ownerId));
+ const unit=(massSim?.units??actors).find(u=>String(u.id)===String(ownerId));
+ return unit?String(unit.armyGroupId??armyGroupBySquad[String(unit.squadId)]??''):null;
+}
 const destroyedTownBuildings=new Set();
 const destroyedHuts=new Set();
 const townCatalogTemplates=new Map();
@@ -4337,7 +4368,7 @@ function recordStoryBattleOutcome(victory){
  const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory:Boolean(victory&&!playerCommanderDead),playerCommanderDead,
   ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,objectiveCompleted:Boolean(victory)}:{}),
   casualties:[...casualties].map(([squadId,count])=>({squadId,count})),
-  loot:victory?battleTreasureReceipt():[]};
+  loot:victory?battleTreasureReceipt():[],townItemsSpent:spentInnItems};
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
 }
@@ -6191,11 +6222,13 @@ function toggleBattleItems(side){
 $('allyItemToggle').onclick=()=>toggleBattleItems('ally');
 $('enemyItemToggle').onclick=()=>toggleBattleItems('enemy');
 /** Shared army inventory: show only items that friendly units actually own. */
-function allyItemStocks(){
+function allyItemStocks(groupId=null){
+ loadInnSuppliesOnce();
  // Every friendly pickup and stolen consumable remains available to all
  // squads via the commander inventory, regardless of the collecting soldier.
  const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
- return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
+ return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId))&&
+  (groupId==null||!innItemIds.has(stack.itemId)||innItemOwnerGroup(stack.ownerId)===String(groupId)));
 }
 function sharedInventoryCommanderId(preferredId=null){
  const ids=squadIds.map(String),preferred=String(preferredId??'');
@@ -6340,6 +6373,10 @@ function issueInnFormationChange(issuerSquadId,formationId){
   updateSquadTarget(squadId,{x,z});
  }
  current.formation=option.id;
+ if(storyRequest.initialTeamPlans?.[group]){
+  storyRequest.initialTeamPlans[group].formation=option.id;
+  storyRequest.initialTeamPlans[group].formationActive=true;
+ }
  current.requiredSources=option.assignment.map(String);
  current.minBySource=option.roleMinimums;
  current.initialCount=live.length;
@@ -6364,23 +6401,47 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
   return issueCommanderReinforcements(squadId,itemId,{issuerSquadId,arrival,automatic});
  // The objective-turn item slot is only available after actions resolve.
  if(objectiveTurnUI&&(!turnEnd||objectiveTurnUI.engine.status().phase!=='report'))return false;
- const id=String(squadId),commandSquad=sharedInventoryCommanderId(issuerSquadId??squadId),stocks=allyItemStocks();
+ const id=String(squadId),commandSquad=sharedInventoryCommanderId(issuerSquadId??squadId);
+ const issuerGroup=String(armyGroupBySquad[String(issuerSquadId??commandSquad??id)]||'');
+ const stocks=allyItemStocks(issuerGroup||null);
  if(!automatic&&(!commandSquad||(!arrival&&!canChangeSquadOrder(commandSquad))))return false;
  const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
  const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
- if(!battleReady||finished||!stack||!type||!['heal','squad_buff'].includes(type.kind)||!members.length)return false;
+ if(!battleReady||finished||!stack||!type||!['heal','squad_buff','mp_restore','cleanse'].includes(type.kind)||!members.length)return false;
  if(type.kind==='heal'&&!members.some(u=>u.hp<u.maxHp)){
   log(squadName(id)+'は負傷者がいません。アイテムを消費しません');return false;
+ }
+ if(type.kind==='mp_restore'&&!members.some(u=>Number(u.maxMp)>Number(u.mp))){
+  log(squadName(id)+'のMPは満タンです。アイテムを消費しません');return false;
+ }
+ if(type.kind==='cleanse'&&!massSim?.squadDebuffs?.has('0:'+id)){
+  log(squadName(id)+'には解除できる状態異常がありません。アイテムを消費しません');return false;
  }
  const supply=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
  if(!supply)return false;
  spendBattleTreasure(stack.itemId);
+ if(innItemIds.has(itemId)){
+  const group=innItemOwnerGroup(stack.ownerId);
+  if(group){spentInnItems[group]??={};spentInnItems[group][itemId]=(spentInnItems[group][itemId]||0)+1;}
+ }
  let effect='';
  if(supply.kind==='heal'){
   const result=massSim?massSim.healSquadFromItem(id,supply.squadHealHp):
     applySquadHeal(actors,id,supply.squadHealHp);
   if(massWorker?.active)massWorker.healSquadItem(id,supply.squadHealHp);
   effect='部隊合計HP +'+Math.round(result.total)+'／回復 '+result.affected+'人（上限'+supply.squadHealHp+'HP）';
+ }else if(supply.kind==='mp_restore'){
+  const gain=members.reduce((total,u)=>{
+   const before=Number(u.mp)||0,max=Number(u.maxMp)||0;
+   const delta=Math.max(0,Math.min(supply.restoreMp,max-before));
+   u.mp=before+delta;return total+delta;
+  },0);
+  if(massWorker?.active)massWorker.restoreSquadMp?.(id,supply.restoreMp,0);
+  effect='MP合計 +'+Math.round(gain);
+ }else if(supply.kind==='cleanse'){
+  massSim?.cleanseSquad?.(id,0);
+  massWorker?.cleanseSquad?.(id,0);
+  effect='毒・弱体化を解除';
  }else{
   const buff={attack:supply.attack||0,defense:supply.defense||0,speed:supply.speed||0};
   if(massSim){
@@ -6396,7 +6457,7 @@ function performSquadBattleItem(itemId,squadId,{automatic=false,issuerSquadId=nu
   id:item.itemId,name:item.name,quantity:item.quantity
  }));
  if(!automatic)itemPanel.hidden=true;
- registerActiveSquadBuffVfx(id,supply);
+ if(supply.kind==='heal'||supply.kind==='squad_buff')registerActiveSquadBuffVfx(id,supply);
  battleCeremony.showOrder('🎒 軍師から物資支給：'+squadName(id),supply.name+'／'+effect);
  if(!automatic)beginCommanderCinematic(id);
  emitSquadBuffEffect(id,supply.kind==='heal'?'nature':
@@ -8361,6 +8422,9 @@ function issueTargetedPlan({groupId,mode,squadIds:members,targetIds,tacticId=nul
  if(!battleReady||finished)return '戦闘開始後に選択してください。';
  const method=tacticId?STRATEGY_METHODS[tacticId]:null;
  if(tacticId&&(!method||method.mode!==mode))return '未対応の作戦です。';
+ const savedFormation=storyRequest?.formationIntegrity?.[String(groupId)]||storyRequest?.initialTeamPlans?.[String(groupId)]||{};
+ if(tacticId&&!formationAllowsTactic(savedFormation.formation||'balanced',tacticId,savedFormation.formationActive!==false))
+  return '現在の陣形ではこの作戦は未解放です。';
  const valid=members.filter(id=>squadIds.includes(String(id))&&
   normalizeArmyGroup(armyGroupBySquad[String(id)])===Number(groupId)&&
   !individualCommanderUnavailableReason(id)&&
@@ -8420,6 +8484,8 @@ function issueTargetedMapCommand(point){
  for(const id of plan.squadIds){
   const assigned=plan.plans?.find(entry=>entry.squadIds.includes(String(id)));
   const orderMode=assigned?.mode||plan.mode,tactic=STRATEGY_METHODS[assigned?.tacticId];
+  const formation=storyRequest?.formationIntegrity?.[String(plan.groupId)]||storyRequest?.initialTeamPlans?.[String(plan.groupId)]||{};
+  if(tactic&&!formationAllowsTactic(formation.formation||'balanced',tactic.id,formation.formationActive!==false))continue;
   const allowed=storyRequest?.availableSquadOrders?.[String(id)]||[];
   if(!allowed.includes(orderMode)||individualCommanderUnavailableReason(id))continue;
   if(tactic?.buff){
@@ -8525,6 +8591,20 @@ const targetedStrategyUi=createTargetedStrategyUi({
  },
  getRadarCanvas:()=>miniBase,
  getMapSize:()=>WORLD_SIZE,
+ getFormationId:groupId=>storyRequest?.formationIntegrity?.[String(groupId)]?.formation||storyRequest?.initialTeamPlans?.[String(groupId)]?.formation||'balanced',
+ getFormationActive:groupId=>Boolean(storyRequest?.formationIntegrity?.[String(groupId)]?.active??(storyRequest?.initialTeamPlans?.[String(groupId)]?.formationActive!==false)),
+ onMoveExecute:({groupId,squadIds:members,point})=>{
+  if(!battleReady||finished||!traversableCell(point.x,point.z))return '移動できない地点です。';
+  let applied=0;
+  for(const id of members){
+   if(normalizeArmyGroup(armyGroupBySquad[String(id)])!==Number(groupId)||
+      individualCommanderUnavailableReason(id))continue;
+   if(issueTargetedPlatoon(id,'move',point)){targetedArrivalOrders.delete(String(id));applied++;}
+  }
+  if(!applied)return '隊長の状態と移動可能な隊を確認してください。';
+  log('🗺 第'+groupId+'隊：'+applied+'分隊が('+point.x+','+point.z+')へ移動');
+  refreshSquadOrderLabel();drawSquadMiniMap();return true;
+ },
  // The highlight uses the very same terrain test as issuing the map order.
  getMapCellEligible:(x,z)=>traversableCell(x,z),
  getTemplates:groupId=>{
@@ -8549,11 +8629,11 @@ const targetedStrategyUi=createTargetedStrategyUi({
   const fresh=liveRecommendations.filter(plan=>!existing.has(String(plan.id)));
   return [...saved,...fresh].slice(0,8);
  },
- getItems:()=>{
+ getItems:groupId=>{
   const byId=new Map();
-  for(const item of allyItemStocks()){
+  for(const item of allyItemStocks(groupId)){
    const info=ROOM_ITEM_TYPES[item.itemId];
-   if(!info||!['heal','squad_buff'].includes(info.kind))continue;
+   if(!info||!['heal','squad_buff','mp_restore','cleanse'].includes(info.kind))continue;
    const row=byId.get(String(item.itemId))||{id:String(item.itemId),label:info.name||item.name||'アイテム',quantity:0};
    row.quantity+=item.quantity;byId.set(String(item.itemId),row);
   }
@@ -9481,7 +9561,7 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
   else selectedEnemySquadId=String(id);
   for(const [key,marker] of squadMarkers)
    marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
-  beginSquadFocusCinematic(String(id),team,'result');
+  zoomToSquadMember(String(id),team);
  }
 }):null;
 if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,

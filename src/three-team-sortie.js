@@ -142,7 +142,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
-const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',tactics:[],deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
+const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',tactics:[],items:{},deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
 /** Normalize old free-layout saves as well: no rarity can bypass its ceiling. */
 function clampFreeTeam(team,squads){
  const spec=formationTemplate('free'),byId=new Map(squads.map(x=>[String(x.id),x]));
@@ -211,6 +211,10 @@ export function ensureSortiePlan(game){
    arrangeFormation(team,sources,team.formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
   team.initialOrder=ACTIVE_ORDER_IDS.includes(old.initialOrder)?old.initialOrder:'charge';
   team.tactics=Array.isArray(old.tactics)?old.tactics.filter((id,index,arr)=>STRATEGY_METHODS[id]&&arr.indexOf(id)===index).slice(0,16):[];
+  // Item reservations survive old-save normalization without consuming town stock.
+  team.items=Object.fromEntries(Object.entries(old.items||{}).filter(([id,n])=>
+   /^[a-z0-9_-]+$/i.test(id)&&Number.isInteger(Number(n))&&Number(n)>0)
+   .map(([id,n])=>[id,Math.min(99,Number(n))]));
   return team;
  });
  if(!saved?.length){

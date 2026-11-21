@@ -343,3 +343,42 @@
  }
  #panel.formation-command-ui .innWizardFormations button .sortieWizardOldMiniGrid i{width:13px;height:13px;font-size:8px}
 }
+
+/* Seven-step inn: formation cards are one per page, without a nested scrollbar.
+   All controls and the back/next buttons remain inside the phone viewport. */
+#panel.formation-command-ui:has(.innWizardFormations) .innWizardBody{
+ overflow:hidden!important;display:flex!important;flex-direction:column;
+}
+#panel.formation-command-ui .innWizardFormations{
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+ flex:1;min-height:0;align-content:center;gap:0!important;
+}
+#panel.formation-command-ui .innWizardFormations button{
+ min-height:0!important;max-height:100%;padding:8px 11px!important;
+ gap:3px!important;overflow:hidden!important;
+}
+#panel.formation-command-ui .innWizardFormations .sortieWizardOldMiniGrid{
+ grid-template-columns:repeat(4,14px)!important;
+ grid-template-rows:repeat(4,14px)!important;gap:2px!important;
+}
+#panel.formation-command-ui .innWizardFormations .sortieWizardOldMiniGrid i{
+ width:14px;height:14px;
+}
+#panel.formation-command-ui .innWizardFormations~.sortieWizardPager{
+ flex-shrink:0;
+}
+#panel.formation-command-ui .innWizard:has(.innWizardFormations) .sortieWizardHeader{
+ flex-shrink:0;padding-bottom:4px!important;
+}
+#panel.formation-command-ui:has(.innWizardFormations) .innWizardFooter{
+ flex-shrink:0;
+}
+@media(max-height:650px){
+ #panel.formation-command-ui .innWizardFormations button>small{font-size:9px!important;line-height:1.2}
+ #panel.formation-command-ui .innWizardFormations .sortieWizardOldMiniGrid{
+  grid-template-columns:repeat(4,12px)!important;grid-template-rows:repeat(4,12px)!important;
+ }
+ #panel.formation-command-ui .innWizardFormations .sortieWizardOldMiniGrid i{
+  width:12px;height:12px;
+ }
+}

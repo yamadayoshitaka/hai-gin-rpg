@@ -3,6 +3,9 @@
  * and who collected it. Never mutate a shared town-building model template.
  */
 export const ROOM_ITEM_TYPES=Object.freeze({
+  potion:Object.freeze({id:'potion',name:'回復薬',kind:'heal',healHp:40,squadHealHp:160,maxStack:99,category:'持参道具'}),
+  ether:Object.freeze({id:'ether',name:'魔力水',kind:'mp_restore',restoreMp:35,maxStack:99,category:'持参道具'}),
+  antidote:Object.freeze({id:'antidote',name:'解毒薬',kind:'cleanse',maxStack:99,category:'持参道具'}),
   healing_potion:Object.freeze({id:'healing_potion',name:'援軍の兵符',kind:'heal',healHp:50,squadHealHp:200,maxStack:99,category:'援軍'}),
   high_potion:Object.freeze({id:'high_potion',name:'精鋭援軍の兵符',kind:'heal',healHp:150,squadHealHp:600,maxStack:99,category:'援軍'}),
   elixir:Object.freeze({id:'elixir',name:'大援軍の兵符',kind:'heal',healHp:300,squadHealHp:1500,maxStack:20,category:'援軍'}),
@@ -84,7 +87,7 @@ export class RoomItemRegistry {
     this.inventory=new Map();
   }
   defineItem(type){
-    if(!type?.id||!type.name||!['heal','squad_buff','material','key','quest'].includes(type.kind)||
+    if(!type?.id||!type.name||!['heal','squad_buff','material','key','quest','mp_restore','cleanse'].includes(type.kind)||
       (type.kind==='heal'&&!(type.healHp>0))||
       (type.kind==='squad_buff'&&(!(type.duration>0)||!(type.attack>0||type.defense>0||type.speed>0))))throw Error('アイテム定義が不正です');
     this.types.set(type.id,{...type});
@@ -182,7 +185,7 @@ export class RoomItemRegistry {
   consumeSquad(ownerId,itemId){
     const stack=this.inventory.get(keyOf(ownerId,itemId));
     const type=this.types.get(itemId);
-    if(!stack||stack.quantity<=0||!type||!['heal','squad_buff'].includes(type.kind))return null;
+    if(!stack||stack.quantity<=0||!type||!['heal','squad_buff','mp_restore','cleanse'].includes(type.kind))return null;
     if(type.kind==='heal'&&!(type.squadHealHp>0))return null;
     if(type.kind==='squad_buff'&&!(type.duration>0))return null;
     if(--stack.quantity<=0)this.inventory.delete(keyOf(ownerId,itemId));

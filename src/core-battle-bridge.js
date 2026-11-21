@@ -106,6 +106,22 @@ export function settleCoreBattle(game,request,result){
   allowed.set(source,(allowed.get(source)||0)+1);
  }
  const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
+ // Validate battle-consumed inn items against the launch reservation before changing stock.
+ const townItemDeductions=[];
+ for(const [teamId,items] of Object.entries(result.townItemsSpent||{})){
+  const reserved=request.townItemLoadouts?.[String(teamId)];
+  if(!reserved||!items||typeof items!=='object')throw Error('持参アイテムの戦闘結果が不正です。');
+  for(const [itemId,value] of Object.entries(items)){
+   const used=Number(value),limit=Number(reserved[itemId]||0);
+   if(!Number.isInteger(used)||used<0||used>limit||
+      used>Number(game.inventory?.[itemId]||0))throw Error('持参アイテムの消費数が不正です。');
+   townItemDeductions.push({teamId:Number(teamId),itemId,used});
+  }
+ }
+ const combined=new Map();
+ for(const row of townItemDeductions)combined.set(row.itemId,(combined.get(row.itemId)||0)+row.used);
+ if([...combined].some(([id,n])=>n>Number(game.inventory?.[id]||0)))
+  throw Error('複数隊で持参品の在庫を超過しました。');
  if(result.victory&&(stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
   throw Error('討伐したモンスター数を確認できませんでした。');
  let casualties=0;
@@ -117,6 +133,16 @@ export function settleCoreBattle(game,request,result){
  }
  for(const [squad,n] of changes)squad.count-=n;
  game.campaign.squads=game.campaign.squads.filter(x=>x.count>0);
+ // Consumed supplies never reappear in town stock or a team's reserved bag.
+ for(const {teamId,itemId,used} of townItemDeductions){
+  if(!used)continue;
+  game.inventory[itemId]-=used;
+  const team=game.sortiePlan?.teams?.find(t=>Number(t.id)===teamId);
+  if(team?.items){
+   const left=Math.max(0,Number(team.items[itemId]||0)-used);
+   if(left)team.items[itemId]=left;else delete team.items[itemId];
+  }
+ }
 
  const protagonistDead=result.playerCommanderDead===true;
  const victory=Boolean(result.victory&&!protagonistDead);
