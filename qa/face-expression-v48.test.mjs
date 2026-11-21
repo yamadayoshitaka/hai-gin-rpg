@@ -91,3 +91,36 @@ test('normal and fat are fuller and fat has a visible abdomen morph',()=>{
  applySkinnedBuildMorph(avatar,'normal');
  assert.deepEqual(torso.geometry.getAttribute('position').array,normalPoints);
 });
+
+
+// Regression: screenshot showed '大笑い' with a nearly closed mouth and
+// drooping eyes. Distinct 3D motions must remain pronounced at rest.
+test('laugh and surprise visibly open both lips and eyelids, then reset',()=>{
+ const model=exampleFace();
+ const animator=createFaceExpressionAnimator(model,{autoBlink:false});
+ const lip=model.parts.getObjectByName('LOWER_3D_VERMILION_LIP');
+ const upperEye=model.parts.getObjectByName('LEFT_UPPER_ANATOMICAL_EYELID');
+ animator.setExpression('neutral');
+ const lipY=lip.position.y;
+ const neutralEye=upperEye.geometry.getAttribute('position').array.slice();
+ const neutralSkin=model.face.geometry.getAttribute('position').array.slice();
+ animator.setExpression('laugh');
+ assert.ok(animator.getState().mouthOpen>.90);
+ assert.ok(lipY-lip.position.y>.017,
+  'Laughing should actually lower the lip, not merely show a mouth label');
+ const cavity=model.face.getObjectByName('V48_3D_INNER_MOUTH');
+ assert.ok(cavity?.visible);
+ assert.ok(cavity.scale.y>.016,'Mouth opening must be visibly tall');
+ assert.notDeepEqual(upperEye.geometry.getAttribute('position').array,neutralEye,
+  'Laughing should widen eyelid opening');
+ assert.notDeepEqual(model.face.geometry.getAttribute('position').array,neutralSkin,
+  'Laughing should deform real lower jaw and cheeks');
+ animator.setExpression('surprised');
+ assert.ok(animator.getState().mouthOpen>.65);
+ assert.notDeepEqual(upperEye.geometry.getAttribute('position').array,neutralEye);
+ animator.setExpression('neutral');
+ assert.equal(animator.getState().mouthOpen,0);
+ assert.equal(lip.position.y,lipY);
+ assert.deepEqual(model.face.geometry.getAttribute('position').array,neutralSkin);
+ animator.dispose();
+});

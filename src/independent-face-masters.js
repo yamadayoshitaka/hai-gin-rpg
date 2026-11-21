@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261121-photo-optics-v76';
-import {attachAgeDetails} from './face-age-detail-v49.js?v=77-integrated';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-age-pigment-v78';
+import {attachAgeDetails} from './face-age-detail-v49.js?v=78-visible-aging';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=51';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
@@ -290,7 +290,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    (x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
   nx+=demographicWidthDelta;
   const ageSag=d.y*demo.age.sag*
-   (.010*lowerCheek+.005*bell(yn,.58,.13)*front);
+   (.034*lowerCheek+.010*bell(yn,.58,.13)*front);
   const faceAgeY=-ageSag+
    d.y*demo.age.cheekRound*.009*cheek;
   const forehead=bell(xn,0,.76)*front;
@@ -301,7 +301,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   const smileCrease=bell(Math.abs(xn),.31,.068)*
    bell(yn,.495,.095)*front;
   const ageLines=d.z*demo.age.wrinkles*
-   (-.0055*foreheadLines+.0042*crowsFeet-.0064*smileCrease-
+   (-.0090*foreheadLines+.0062*crowsFeet-.0105*smileCrease-
     .0035*bell(Math.abs(xn),.32,.13)*bell(yn,.636,.036)*front);
   ny+=faceAgeY;
   const nz=z+d.z*(spec.cheekFill*(.74*cheek+1.11*lowerCheek)
@@ -313,7 +313,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
      .005*controls.mouthPositionZ*mouthMask)+
     d.z*fullness*(.065*cheek+.040*lowerCheek+.022*chin)+
     d.z*demo.age.cheekRound*.014*cheek-
-    d.z*demo.age.sag*(.012*lowerCheek+.010*chin)+ageLines;
+    d.z*demo.age.sag*(.038*lowerCheek+.016*chin)+ageLines;
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
