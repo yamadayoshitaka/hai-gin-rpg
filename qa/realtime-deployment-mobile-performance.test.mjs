@@ -94,18 +94,15 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,false,
   'after placement a separate strategy page appears');
  dom.root.querySelector('#realtimeStart').onclick();
- command.selectSquad('2');
- canvas.tap('pointerdown',{pointerId:2,clientX:60,clientY:120});
- canvas.tap('pointerup',{pointerId:2,clientX:60,clientY:120});
- dom.root.querySelector('#realtimeStart').onclick();
- dom.root.querySelector('#realtimeStart').onclick();
+ // Both teams already have valid default positions; the second confirmation
+ // starts battle without an unnecessary second manual placement.
  assert.ok(seen.some(x=>x[0]==='start'));
  assert.equal(command.openMove(),false,'standalone movement stays retired');
  assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,true);
  assert.equal(seen.some(x=>x[0]==='move'),false,
   'deployment does not dispatch a live move without a confirmed action and target');
 });
-test('three teams must each be placed and given an initial strategy on the enlarged battle radar',()=>{
+test('preplaced three teams can override all initial strategies and then start',()=>{
  const dom=mockDocument(),began=[];
  const teams=[1,2,3].map(n=>({id:'team'+n,groupId:n,label:'第'+n+'隊',
   job:'騎士',alive:4,total:4,hp:400,maxHp:400,x:65+n*2,z:90+n*5}));
@@ -125,19 +122,21 @@ test('three teams must each be placed and given an initial strategy on the enlar
  assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,false);
  assert.equal(dom.root.querySelector('#realtimeInitialStrategy').value,'assault',
   'the first allowed strategy is preselected');
- const map=dom.root.querySelector('#realtimeBattleCanvas');
+ const selector=dom.root.querySelector('#realtimeInitialStrategy');
  for(let n=1;n<=3;n++){
   ui.selectSquad('team'+n);
-  map.tap('pointerdown',{pointerId:n,clientX:36+n*17,clientY:98+n*18});
-  map.tap('pointerup',{pointerId:n,clientX:36+n*17,clientY:98+n*18});
-  dom.root.querySelector('#realtimeStart').onclick();
-  assert.equal(dom.root.querySelector('#realtimeMapViewport').hidden,true);
-  const selector=dom.root.querySelector('#realtimeInitialStrategy');
   selector.value=['assault','defense','explore'][n-1];
   selector.onchange();
-  dom.root.querySelector('#realtimeStart').onclick();
-  if(n===1)assert.equal(began.length,0,'team 2 and 3 still need their own selections');
  }
+ ui.selectSquad('team1');
+ const map=dom.root.querySelector('#realtimeBattleCanvas');
+ map.tap('pointerdown',{pointerId:1,clientX:59,clientY:113});
+ map.tap('pointerup',{pointerId:1,clientX:59,clientY:113});
+ assert.equal(began.length,0,'repositioning one team does not start combat');
+ dom.root.querySelector('#realtimeStart').onclick();
+ assert.equal(dom.root.querySelector('#realtimeMapViewport').hidden,true,
+  'placement and opening tactics remain separate pages');
+ dom.root.querySelector('#realtimeStart').onclick();
  assert.equal(began.length,1);
  assert.deepEqual(began[0].initialPlans,{'1':'assault','2':'defense','3':'explore'});
  assert.equal(ui.started,true);
