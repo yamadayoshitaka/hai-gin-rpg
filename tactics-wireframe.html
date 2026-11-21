@@ -913,15 +913,15 @@ import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261120-three-team-radar2';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261121-three-team-initial3';
 import {battleThreeTeamRadarSquads} from './src/battle-center-radar.js?v=three-team-radar2-20261120';
 import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=20261120-skillfirst1';
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
-import {planSkirmishDeployment} from './src/battle-realtime-deployment.js?v=20261119-skirmish1';
+import {planSkirmishDeployment,planSkirmishGroupDeployment} from './src/battle-realtime-deployment.js?v=20261121-three-team-initial3';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261120-three-team-hud2';
-import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from './src/battle-rpg-squad-source.js?v=20261120-three-team-hud2';
+import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from './src/battle-rpg-squad-source.js?v=20261121-three-team-initial3';
 import * as THREE from 'three';
 import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
@@ -6553,6 +6553,11 @@ if(!storyRequest)for(const team of [0,1]){
 }
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+const enemyGroupBySquad=THREE_TEAM_BATTLE?
+ resolveBattleThreeTeamGroups(enemySquadIds,id=>squadPrimaryJob(id,1)):null;
+if(THREE_TEAM_BATTLE)for(const unit of squadRoster){
+ if(unit.team===1)unit.armyGroupId=enemyGroupBySquad[String(unit.squadId)];
+}
 for(const team of [0,1])for(const id of team===0?squadIds:enemySquadIds)
  selectedSquadFormations.set(team+':'+id,squadJobComposition(squadRoster.filter(u=>u.team===team&&String(u.squadId)===id)).type);
 // Opening-screen defaults use the SAME capabilities as the Worker simulation.
@@ -6787,10 +6792,15 @@ function updateEnemyTacticalDecisions(){
  const allies=indexed.allies,friendlyArmy=indexed.enemies;
  if(!allies.length)return;
  let availableBuildings=null;
- for(const id of enemySquadIds){
-  const own=indexed.roster(1,id),living=indexed.living(1,id);
+ const enemyCommands=THREE_TEAM_BATTLE?[1,2,3].map(group=>
+  enemySquadIds.filter(id=>Number(enemyGroupBySquad[id])===group)).filter(group=>group.length):
+  enemySquadIds.map(id=>[id]);
+ for(const groupIds of enemyCommands){
+  const id=groupIds[0];
+  const own=groupIds.flatMap(sid=>indexed.roster(1,sid));
+  const living=groupIds.flatMap(sid=>indexed.living(1,sid));
   if(!living.length)continue;
-  if(massSim&&!indexed.livingStrategists[1].has(id))continue;
+  if(massSim&&!groupIds.some(sid=>indexed.livingStrategists[1].has(sid)))continue;
   const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
   // The ordinary command cooldown is preserved except for defending squads
   // whose whole army now decisively outnumbers the opponent.
@@ -6817,15 +6827,20 @@ function updateEnemyTacticalDecisions(){
     if(nearest){mode='explore';buildingId=nearest.id;}
    }
   }
-  if(mode===previous)continue;
-  const success=mode==='explore'
-   ?issueBuildingExploration(1,id,buildingId,{beforeBattle:true})
-   :setStartingSquadOrder(1,id,mode);
-  if(!success)continue;
-  lastEnemyTacticalOrderAt.set(id,elapsed);
+  if(mode===previous&&groupIds.every(sid=>
+   startingSquadOrders.get(squadOrderKey(1,sid))?.mode===mode))continue;
+  let successful=0;
+  for(const sid of groupIds){
+   const success=mode==='explore'
+    ?issueBuildingExploration(1,sid,buildingId,{beforeBattle:true})
+    :setStartingSquadOrder(1,sid,mode);
+   if(success){successful++;lastEnemyTacticalOrderAt.set(sid,elapsed);}
+  }
+  if(!successful)continue;
   battleDialogue.push({key:'enemy-tactical:'+id+':'+Math.floor(elapsed),speaker:'斥候',
-   kind:'warning',priority:67,text:squadName(id,1)+'が'+(INITIAL_ORDER_LABELS[mode]||mode)+
-   'に変更：'+choice.reason});
+   kind:'warning',priority:67,text:(THREE_TEAM_BATTLE?
+    '敵第'+enemyGroupBySquad[id]+'隊':squadName(id,1))+'が'+
+    (INITIAL_ORDER_LABELS[mode]||mode)+'に変更：'+choice.reason});
  }
 }
 /** Enemy squads spend their own collected supplies under the same finite rules. */
@@ -7497,10 +7512,25 @@ function issueSquadOrder(mode,point=null){
  if(!canChangeSquadOrder(id))return false;
  const targets=commandGroupIds(id);
  const speaker=targets.find(sid=>!individualCommanderUnavailableReason(sid))||String(id);
+ // During movement, preserve the same 4x4 slot offsets chosen at the inn.
+ // Each physical job division has its own nearby destination instead of
+ // collapsing onto one point and destroying the army's formation spacing.
+ const cells=targets.map((sid,index)=>{
+  const raw=Number(storyRequest?.subdivisionMap?.[sid]?.formationCell);
+  return Number.isInteger(raw)&&raw>=0&&raw<16?raw:4+index;
+ });
+ const centerRow=cells.reduce((n,c)=>n+Math.floor(c/4),0)/Math.max(1,cells.length);
+ const centerCol=cells.reduce((n,c)=>n+c%4,0)/Math.max(1,cells.length);
  let accepted=false;
- for(const sid of targets){
+ for(const [index,sid] of targets.entries()){
   selectedSquadId=String(sid);
-  accepted=issueIndividualSquadOrder(mode,point,String(sid)!==String(speaker))||accepted;
+  let formationPoint=point;
+  if(THREE_TEAM_BATTLE&&mode==='move'&&point&&targets.length>1){
+   const candidate={x:Math.round(point.x-(Math.floor(cells[index]/4)-centerRow)*4),
+    z:Math.round(point.z+(cells[index]%4-centerCol)*4)};
+   if(traversableCell(candidate.x,candidate.z))formationPoint=candidate;
+  }
+  accepted=issueIndividualSquadOrder(mode,formationPoint,String(sid)!==String(speaker))||accepted;
  }
  selectedSquadId=String(id);refreshSquadOrderLabel();
  return accepted;
@@ -9342,6 +9372,12 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  },
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
+  if(team===1&&THREE_TEAM_BATTLE&&String(id).startsWith('enemy-team:')){
+   const group=Number(String(id).slice('enemy-team:'.length));
+   id=enemySquadIds.find(sid=>Number(enemyGroupBySquad?.[sid])===group&&
+    squadRoster.some(u=>u.team===1&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
+   if(!id)return;
+  }
   if(team===0&&THREE_TEAM_BATTLE&&String(id).startsWith('team:')){
    const group=Number(String(id).slice(5));
    id=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
@@ -9371,7 +9407,7 @@ function refreshBattleRpgSquadHud(sums){
  // Aggregate only the campaign presentation. Live commands, MP and AI still
  // read the original per-job rows, never a synthetic three-team HUD row.
  battleRpgHud.update(THREE_TEAM_BATTLE?
-  aggregateBattleRpgTeams(rows,armyGroupBySquad):rows,
+  aggregateBattleRpgTeams(rows,armyGroupBySquad,enemyGroupBySquad):rows,
   {show:battleReady&&!finished&&!battleCeremony.locked});
  realtimeCommandUI?.update(rows);
 }
@@ -9461,7 +9497,12 @@ const threeGroupPanel=!TOWN_MODE?createBattleThreeGroupPanel({
  enemyInitial:storyRequest?.enemyCount??(massSim?.sideCount??actors.filter(a=>a.team===1).length),
  allowRecompose:!massSim,
  onSquadSelect:id=>{trackedAllySquadId=String(id);refreshBattleTargetSummary(lastRibbonSums);},
- onStrategy:(groupId,id)=>{if(battleReady&&!finished){const squad=id||squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[String(sid)])===groupId);if(squad){realtimeCommandUI?.showSquadControls(squad);}}},
+ onStrategy:(groupId,id)=>{
+  if(!battleReady||finished||battleCeremony.locked)return;
+  if(THREE_TEAM_BATTLE){targetedStrategyUi.open(groupId,{startAtRecommendations:true,groupOnly:true});return;}
+  const squad=id||squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[String(sid)])===groupId);
+  if(squad)realtimeCommandUI?.showSquadControls(squad);
+ },
  onInspect:id=>openVitals(id),
  onReinforce:result=>{
   const point=squadCenter(result.toId,0);
@@ -10609,6 +10650,43 @@ function realtimeSharedItems(){
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
+ getDeploymentTeams:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
+  squadIds.map(id=>{
+   const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
+   const alive=members.filter(u=>u.hp>0&&u.alive!==false),center=squadCenter(id,0);
+   return {id,team:0,alive:alive.length,total:members.length,x:center?.x,z:center?.z};
+  }),armyGroupBySquad).map(team=>{
+   const ids=squadIds.filter(id=>Number(armyGroupBySquad[id])===team.groupId);
+   const stats=squadRoster.filter(u=>u.team===0&&ids.includes(String(u.squadId)));
+   return {...team,label:'第'+team.groupId+'隊',job:squadPrimaryJob(ids[0]),
+    hp:stats.reduce((n,u)=>n+(u.hp>0?u.hp:0),0),
+    maxHp:stats.reduce((n,u)=>n+(Number(u.maxHp)||0),0)};
+  }):null,
+ getInitialTeamPlan:team=>{
+  const group=Number(team?.groupId)||1,saved=storyRequest?.initialTeamPlans?.[String(group)]||{};
+  const ids=squadIds.filter(id=>Number(armyGroupBySquad[id])===group);
+  const allowed=[...new Set(ids.flatMap(id=>storyRequest?.availableSquadOrders?.[id]||
+   ['charge','defend','hold','retreat','support','explore']))];
+  const strategies=[...(allowed.includes('charge')?['assault']:[]),
+   ...(allowed.includes('defend')||allowed.includes('hold')?['defense','balanced']:[]),
+   ...(allowed.includes('explore')?['explore']:[])];
+  const byOrder={charge:'assault',defend:'defense',hold:'balanced',support:'defense',explore:'explore'};
+  const names={attack:'前進陣形',balanced:'標準陣形',support:'後衛陣形',wall:'防壁陣形',
+   spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
+   circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
+   dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
+  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',
+   formationActive:saved.formationActive!==false,
+   allowedStrategies:strategies.length?strategies:['assault','defense','balanced'],
+   reason:saved.formationActive===false?'陣形補正なし':''};
+ },
+ getRadarEnemies:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
+  enemySquadIds.map(id=>{
+   const members=squadRoster.filter(u=>u.team===1&&String(u.squadId)===String(id));
+   const center=squadCenter(id,1);
+   return {id,team:1,alive:members.filter(u=>u.hp>0&&u.alive!==false).length,
+    total:members.length,x:center?.x,z:center?.z};
+  }),enemyGroupBySquad):null,
  worldSize:WORLD_SIZE,
  getMapBackground:()=>miniBase,
  // The public radar presents three command teams, never job division IDs.
@@ -10659,11 +10737,18 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }
   // Ordinary 50v50 and story battles use real actors, not the mass grid.
   // Move their physics occupancy, render root and mounted object together.
-  const slots=planSkirmishDeployment(actors,{
-   squadId:id,team:0,x:point.x,z:point.z,
-   width:WORLD_SIZE,height:WORLD_SIZE,passable:(x,z)=>traversableCell(x,z),
-   homeRiverX:z=>riverAt(z)
-  });
+  const teamMembers=THREE_TEAM_BATTLE?
+   squadIds.filter(sid=>Number(armyGroupBySquad[sid])===Number(armyGroupBySquad[String(id)])):[id];
+  const formationCells=Object.fromEntries(teamMembers.map((sid,index)=>[
+   sid,Number.isInteger(storyRequest?.subdivisionMap?.[sid]?.formationCell)&&
+    storyRequest.subdivisionMap[sid].formationCell>=0?
+    storyRequest.subdivisionMap[sid].formationCell:4+index
+  ]));
+  const options={team:0,x:point.x,z:point.z,width:WORLD_SIZE,height:WORLD_SIZE,
+   passable:(x,z)=>traversableCell(x,z),homeRiverX:z=>riverAt(z)};
+  const slots=THREE_TEAM_BATTLE?
+   planSkirmishGroupDeployment(actors,{...options,squadIds:teamMembers,formationCells}):
+   planSkirmishDeployment(actors,{...options,squadId:id});
   if(!slots)return false;
   for(const {actor} of slots)occupiedCells.delete(cellKey(actor.cell.x,actor.cell.z));
   for(const {actor,x,z} of slots){
@@ -10678,7 +10763,29 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }
   return true;
  },
- onStart:()=>{
+ onStart:({initialPlans={}}={})=>{
+  // One chosen plan is applied to all job divisions before the first AI tick.
+  if(THREE_TEAM_BATTLE)for(const group of [1,2,3]){
+   const members=squadIds.filter(id=>Number(armyGroupBySquad[id])===group);
+   if(!members.length)continue;
+   const saved=storyRequest?.initialTeamPlans?.[String(group)];
+   const strategy=initialPlans[String(group)]||
+    ({charge:'assault',defend:'defense',hold:'balanced',explore:'explore'}[saved?.order])||'assault';
+   for(const [index,id] of members.entries()){
+    const allowed=storyRequest?.availableSquadOrders?.[id]||['charge','defend','hold','retreat','explore'];
+    const preferred=strategy==='defense'?'defend':strategy==='balanced'?
+     (index%2===0?'charge':'defend'):strategy==='explore'?'explore':'charge';
+    let mode=allowed.includes(preferred)?preferred:
+     allowed.includes('defend')?'defend':allowed.includes('charge')?'charge':'hold';
+    if(mode==='explore'){
+     const building=availableExplorationBuildings()[0];
+     if(!building||!setStartingSquadOrder(0,id,'explore',building.id))
+      mode=allowed.includes('hold')?'hold':allowed.includes('defend')?'defend':'charge';
+     else continue;
+    }
+    setStartingSquadOrder(0,id,mode);
+   }
+  }
   commandOverviewLocked=false;document.body.classList.remove('battle-command-active');
   controls.enabled=true;
   battleAudio.unlock().catch(()=>{});reportSpeech.unlock();
@@ -10718,7 +10825,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
     !hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
   const prior=selectedSquadId;selectedSquadId=String(id);
   try{
-   if(storyRequest){
+   if(THREE_TEAM_BATTLE){
     if(commandGroupIds(id).some(sid=>!canChangeSquadOrder(sid)))return false;
     return issueSquadOrder('move',point);
    }
@@ -10750,7 +10857,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   }
   const prior=selectedSquadId;selectedSquadId=String(id);
   try{
-   if(storyRequest&&!arrival){
+   if(THREE_TEAM_BATTLE&&!arrival){
     if(commandGroupIds(id).some(sid=>!canChangeSquadOrder(sid)))return false;
     return issueSquadOrder(mode);
    }
@@ -10766,7 +10873,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   const prior=selectedSquadId;selectedSquadId=String(id);
   try{
    const directive={type:'eliminate_squad',targetSquadId:String(target.squadId),x,z};
-   if(storyRequest){
+   if(THREE_TEAM_BATTLE){
     if(commandGroupIds(id).some(sid=>!canChangeSquadOrder(sid)))return false;
     return issueSquadOrder('mission',directive);
    }
@@ -12240,9 +12347,9 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   refreshCommanderOrderOptions();
   // Each allied squad can be positioned once, before the first AI tick.
-  // Unassigned squads enter an ordinary encounter on automatic charge.
+  // Unassigned squads stay on hold until initial planning is confirmed.
   // Explicit hold, defend or movement orders still override this per squad.
-  for(const id of squadIds)setStartingSquadOrder(0,id,'charge');
+  for(const id of squadIds)setStartingSquadOrder(0,id,THREE_TEAM_BATTLE?'hold':'charge');
   for(const id of enemySquadIds)setStartingSquadOrder(1,id,'charge');
   // Initialize the camera at squad 1, matching the highlighted first HUD row.
   if(squadIds.length){trackedAllySquadId=String(squadIds[0]);followSelectedCommander(squadIds[0]);}

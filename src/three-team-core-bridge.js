@@ -60,7 +60,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
    // The initial order selection screen is retired: every team starts
    // automatically, and only the central battle panel issues tactics.
    orders[key]='hold';
-   allowed[key]=formationIntegrity[String(teamId)].active?availableSortieOrders(game,teamId):[];
+   // Incomplete formations lose their buffs and special orders, but basic battle
+   // tactics must stay selectable; otherwise the command screen is a dead end.
+   allowed[key]=formationIntegrity[String(teamId)].active?availableSortieOrders(game,teamId):['charge','defend','hold','retreat'];
    armyGroupBySquad[key]=teamId;
    subdivisionMap[key]={parentGroup:teamId,sourceSquadId:squad.id,part:part+1,parts,formationCell,leaderHeldInMain:mainSource&&part===0};
    return Array.from({length:size},()=>{
@@ -108,6 +110,10 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   formationBonuses:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].bonus])),
   squadDebuffProfiles:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?sortieDebuffTypes(game,t.id):[]])),
   sortieTacticTemplate:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?t.tactics||[]:[]])),
+  initialTeamPlans:Object.fromEntries(teams.map(t=>[String(t.id),{
+   order:t.initialOrder||'charge',formation:formationIntegrity[String(t.id)].formation,
+   formationActive:formationIntegrity[String(t.id)].active,tactics:t.tactics||[]
+  }])),
   battlePlanStage:battleStageContext(stage),
   battlePlanRecommendations:Object.fromEntries(teams.map(t=>[String(t.id),recommendBattlePlans(game,stage,t.id,{limit:7})])),
   battlePlanSelected:Object.fromEntries(teams.map(t=>[String(t.id),game.activeBattlePlanByTeam?.[String(t.id)]||null])),

@@ -701,3 +701,11 @@ body.battle-realtime-clean #battleMenu{z-index:190!important;top:10px!important}
 @media(max-width:600px){
  #battleRealtimeControls #battleActiveOrderNotice{left:6px;right:6px;font-size:10px}
 }
+
+/* Compact prebattle: position each actual command team, then set its plan. */
+#realtimeBattleMapOverlay #realtimeInitialTeamPlanning{display:flex;flex-direction:column;gap:5px;padding:8px 10px;border:1px solid #7f9fae;border-radius:9px;background:#102c43;color:#edf5fc;flex-shrink:0}
+#realtimeBattleMapOverlay #realtimeInitialTeamPlanning[hidden]{display:none!important}
+#realtimeBattleMapOverlay #realtimeInitialTeamPlanning label{font:700 13px/1.3 system-ui}
+#realtimeBattleMapOverlay #realtimeInitialTeamPlanning select{width:100%;min-height:43px;padding:7px;border:1px solid #98c1d5;border-radius:7px;background:#143b54;color:#fff;font-size:13px}
+#realtimeBattleMapOverlay #realtimeInitialTeamPlanning small{font:11px/1.5 system-ui;color:#bfdce6;max-height:3em;overflow:auto}
+#realtimeBattleMapOverlay #realtimeMapActionSheet[hidden]{display:none!important}

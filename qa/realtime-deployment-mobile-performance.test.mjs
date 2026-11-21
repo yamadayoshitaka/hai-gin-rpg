@@ -63,11 +63,15 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
  assert.match(dom.root.innerHTML,/class="realtimeMapViewport"/);
  assert.ok(dom.root.innerHTML.indexOf('data-realtime-zoom="1"')<
   dom.root.innerHTML.indexOf('id="realtimeBattleCanvas"'));
- assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
+ assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,true,
+  'old independent post-move commands are hidden during three-team opening setup');
+ assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,false);
  dom.actions.get('hold').tap();
  assert.deepEqual(command.preferredActions,[['1','hold']]);
  command.selectSquad('2');
- assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,false);
+ assert.equal(dom.root.querySelector('#realtimeMapActionSheet').hidden,true,
+  'old independent post-move commands are hidden during three-team opening setup');
+ assert.equal(dom.root.querySelector('#realtimeInitialTeamPlanning').hidden,false);
  dom.actions.get('support').tap();
  assert.deepEqual(command.preferredActions,[['1','hold']]);
  assert.equal(dom.root.querySelector('#realtimeMapSupportChoices').hidden,false);
