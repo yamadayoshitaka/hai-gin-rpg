@@ -346,6 +346,11 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const innerCanthus=bell(nx,.075,.043)*bell(ny,lidY-.014,.028)*front;
    const naturalEyeMakeup=v67NaturalEyeMakeup({nx,ny,front,lidY,gender});
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
+  // v76: an alar groove and the shaded UNDERSIDE of each nostril are
+  // pigment variations on the actual nose cartilage, not fake black dots.
+  const nasalAlarFold=bell(nx,.106,.022)*bell(ny,.539,.022)*front;
+  const nostrilUnderRim=bell(nx,.069,.032)*bell(ny,.524,.011)*front;
+
   // A subtle bridge-side contour follows the actual raised cartilage and
   // strengthens the ridge in frontal light without a floating nose decal.
   const noseBridgeContour=gender==='female'?
@@ -354,6 +359,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    bell(nx,.014,.026)*bell(ny,.645,.082)*front:0;
   const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
   const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
+  const cupidBow=bell(nx,.058,.027)*bell(ny,.523,.013)*front;
+  const lowerLipContact=bell(nx,0,.095)*bell(ny,.482,.012)*front;
   const foreheadBands=[.758,.794,.823].reduce((v,y)=>
    v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
   const crows=bell(nx,.52,.13)*bell(ny,.675,.085)*front;
@@ -366,8 +373,10 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // AGE independently of cosmetic presets; no permanent young wrinkles.
   const youthFade=skinAgeShadowFactor(age.id);
   const contactShade=(.018+.132*youthFade)*underEye+
-   (.035+.05*youthFade)*noseWing+.028*philtrum+
-   (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
+   (.035+.05*youthFade)*noseWing+.024*nasalAlarFold+
+   .019*nostrilUnderRim+.028*philtrum+
+   (.018+.052*youthFade)*lipShade+.013*cupidBow+
+   .017*lowerLipContact+age.sag*.15*underEye+ageShade+
    .047*upperLidOcclusion+.021*innerCanthus+.105*noseBridgeContour+
    (.015+.028*youthFade)*nasolabial+
    (.010+.020*youthFade)*lowerLidOcclusion+
@@ -392,6 +401,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.v64EyeShadowFollowsAnatomicalEyes=true;
   face.userData.v67NaturalEyeMakeupOnRealSkin=gender==='female';
   face.userData.v70AnatomicalChiaroscuro=true;
+ face.userData.v76NasalAlarNostrilCartilageShading=true;
+ face.userData.v76CupidBowAndVermilionContactShading=true;
  face.userData.v64AgeWrinkleIntensity=age.wrinkles;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
