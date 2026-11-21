@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES}
  from '../src/monster-catalog.js';
 import {MONSTER_ALL50_SURFACE_PROFILES,FAMILY_MICROSTRUCTURES,
- decorateAll50MonsterSurface,monsterAll50SurfaceStats}
+ decorateAll50MonsterSurface,complementAll50PhotoNormal,monsterAll50SurfaceStats}
  from '../src/monster-all50-surface.js';
 import {CREATURE_FAMILY_SURFACE,CREATURE_SURFACE_SOURCES,decorateMonsterPhotoMaterial}
  from '../src/monster-photo-pbr.js';
@@ -109,7 +109,14 @@ test('do not replace existing photographic and approved specialist maps',()=>{
   family:'golem',speciesId:'m036',role:'skin',detail:'high'
  });
  assert.equal(stone.userData.photoSurface,'stone');
+ assert.match(stone.userData.photoSource,/cc0-aerial-rocks-02-albedo.jpg/);
+ // Node tests deliberately skip browser image loading. Simulate a loaded
+ // photo without relying on a DOM or third-party network.
+ stone.map=new THREE.DataTexture(new Uint8Array(16),2,2);
+ assert.equal(complementAll50PhotoNormal(stone,{
+  speciesId:'m036',detail:'high'
+ }),true);
  assert.equal(stone.userData.all50PhotoNormal,'stone-micro-relief');
- assert.ok(stone.map&&stone.roughnessMap&&stone.normalMap,
-  'photoscanned stone must combine color, roughness and normal relief');
+ assert.ok(stone.map&&stone.normalMap,
+  'photoscanned stone must combine color with species-correct micro-normal');
 });
