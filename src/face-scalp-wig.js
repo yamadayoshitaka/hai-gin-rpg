@@ -96,6 +96,84 @@ function actualScalpCandidates(geo,box){
  }
  return {pools,all};
 }
+/** V53 scalp follicle distribution: uniform over actual donor triangle
+ * AREA, not raw source vertex count. Photo-derived head topology is much
+ * denser at the eyes/ears than at the forehead and crown; using source
+ * vertices directly clumped roots behind the face and exposed the front.
+ * Do not sample the decorative nape strips included in the wig cap mesh. */
+export function createAreaWeightedScalpRootSampler(cap,box){
+ const pos=cap?.geometry?.getAttribute?.('position');
+ const normal=cap?.geometry?.getAttribute?.('normal');
+ if(!pos||!normal)throw Error('Real donor-backed scalp cap required');
+ const maxCount=Math.min(pos.count,
+  cap.userData?.donorScalpVertexCount??pos.count);
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const pools=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,[]]));
+ const totals=Object.fromEntries(WIG_ZONE_WEIGHTS.map(([zone])=>[zone,0]));
+ const pa=new THREE.Vector3(),pb=new THREE.Vector3(),pc=new THREE.Vector3();
+ const edgeA=new THREE.Vector3(),edgeB=new THREE.Vector3();
+ let donorTriangles=0;
+ const add=(zone,t,area)=>{
+  const next=totals[zone]+area;
+  pools[zone].push({index:t,area,cumulative:next});
+  totals[zone]=next;
+ };
+ for(let t=0;t+2<maxCount;t+=3){
+  pa.fromBufferAttribute(pos,t);pb.fromBufferAttribute(pos,t+1);
+  pc.fromBufferAttribute(pos,t+2);
+  const area=edgeA.subVectors(pb,pa).cross(edgeB.subVectors(pc,pa)).length()*.5;
+  if(!Number.isFinite(area)||area<1e-9)continue;
+  const x=(pa.x+pb.x+pc.x)/3,y=(pa.y+pb.y+pc.y)/3,
+   z=(pa.z+pb.z+pc.z)/3;
+  const nx=(x-c.x)/Math.max(d.x,1e-6),
+   nz=(z-c.z)/Math.max(d.z,1e-6),
+   yn=(y-box.min.y)/Math.max(d.y,1e-6);
+  const side=nx<0?'Left':'Right';
+  donorTriangles++;
+  // Crown must include the forward sweep all the way to the forehead.
+  if(yn>.82&&Math.abs(nx)<.46)add('crown',t,area);
+  if(yn>.835&&nz>.005&&Math.abs(nx)<.37)
+   add('fringe'+side,t,area);
+  if(yn>.74&&yn<.975&&nz>-.14&&Math.abs(nx)>.13)
+   add('temple'+side,t,area);
+  if(yn>.615&&nz<-.04)add('back'+side,t,area);
+  if(yn>.525&&yn<.81&&nz<-.045)add('nape'+side,t,area);
+ }
+ const fract=x=>x-Math.floor(x);
+ function sample(zone,index){
+  const list=pools[zone],total=totals[zone];
+  if(!list?.length||!(total>0))return null;
+  // A low-discrepancy sequence chooses triangle surface AREA instead of
+  // sampling arbitrarily repeated existing GLB vertices.
+  const target=fract((index+.5)*.618033988749895+
+   (WIG_ZONE_WEIGHTS.findIndex(([name])=>name===zone)+1)*.17320508075)*total;
+  let lo=0,hi=list.length-1;
+  while(lo<hi){
+   const m=(lo+hi)>>1;
+   if(list[m].cumulative<target)lo=m+1;
+   else hi=m;
+  }
+  const t=list[lo].index;
+  const u=Math.sqrt(fract((index+1)*.7548776662466927)),
+   v=fract((index+1)*.5698402909980532+
+    (WIG_ZONE_WEIGHTS.findIndex(([name])=>name===zone)+1)*.38196601125);
+  const weights=[1-u,u*(1-v),u*v];
+  const p=new THREE.Vector3(),n=new THREE.Vector3();
+  for(let j=0;j<3;j++){
+   const k=t+j,w=weights[j];
+   p.x+=pos.getX(k)*w;p.y+=pos.getY(k)*w;p.z+=pos.getZ(k)*w;
+   n.x+=normal.getX(k)*w;n.y+=normal.getY(k)*w;
+   n.z+=normal.getZ(k)*w;
+  }
+  n.normalize();
+  if(n.dot(p.clone().sub(c))<0)n.negate();
+  return {p,n,index:t,source:'donor-triangle-area-v53'};
+ }
+ return {sample,donorTriangles,
+  zoneTriangleCounts:Object.fromEntries(Object.entries(pools)
+   .map(([zone,entries])=>[zone,entries.length])),
+  zoneAreas:{...totals}};
+}
 /**
  * Real head envelope for growth->relax. Density is supplied by the continuous
  * scalp shell, not by artificially multiplying strand count to 100,000.
