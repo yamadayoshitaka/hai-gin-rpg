@@ -63,5 +63,9 @@ test('both Worker and browser battle use the collision-aware monotonic nav',()=>
  assert.match(worker,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
  assert.match(page,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
  assert.match(page,/battle-movement-recovery\.js\?v=20261122-cell-pingpong2/);
+ assert.match(page,/neighbors:exitCandidates,maxWorsening:1,requireEscape:true/,
+  'skirmish crowded doors must verify a second-step escape');
+ assert.doesNotMatch(page,/if\(alternate&&startCellMove/,
+  'bridges must no longer have an immediate back-and-forth side scan');
  assert.match(page,/occupiedCells\.get\(cellKey\(a\.cell\.x,a\.cell\.z\)\)===a\)occupiedCells\.delete/);
 });
