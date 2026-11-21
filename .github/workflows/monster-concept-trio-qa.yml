@@ -13,6 +13,7 @@ on:
       - 'src/monster-mineral-limb-articulator.js'
       - 'src/monster-demon-cosmetics.js'
       - 'qa/monster-humanoid-armor-articulation.test.mjs'
+      - 'qa/capture-monster-body-cdp.mjs'
       - 'src/monster-construct-anatomy-v3.js'
       - 'src/monster-humanoid-concept-finish.js'
       - 'src/monster-character-cosplay-manifest.js'
@@ -86,53 +87,13 @@ jobs:
             base64 -w 2048 "qa-reports/monster-concept-v2/${id}.png" | sed 's/^/CONCEPT-V2-B64:/'
             echo "CONCEPT-V2-SCREENSHOT:${id}:END"
           done
-      - name: Render golem arm movement and gargoyle/black knight from canonical GLTF
+      - name: Verify actual GLTF poses through Chrome DevTools (not screenshots of errors)
         run: |
           mkdir -p qa-reports/golem-full-shell
+          node --check qa/capture-monster-body-cdp.mjs
           for selection in m038:idle m038:walk m042:idle m045:idle; do
             IFS=: read -r id pose <<< "$selection"
-            target="qa-reports/golem-full-shell/${id}-${pose}.png"
-            timeout 45s google-chrome --headless --no-sandbox --disable-dev-shm-usage \
-              --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader \
-              --hide-scrollbars --virtual-time-budget=20000 \
-              --window-size=900,1000 \
-              --screenshot="${target}" \
-              "http://127.0.0.1:8765/qa/monster-golem-full-shell-visual.html?id=${id}&pose=${pose}" \
-              2>/tmp/golem-visual-chrome.log
-            test -s "${target}"
-            bytes=$(stat -c%s "${target}")
-            if [ "${bytes}" -lt 45000 ]; then
-              echo "::error::Insufficient rendered 3D image for ${selection}: ${bytes} bytes"
-              tail -40 /tmp/golem-visual-chrome.log
-              exit 1
-            fi
-            # A screenshot containing only a JS exception can exceed 45 KB.
-            # Require the live page to confirm actual GLTF loaded, original
-            # human meshes hidden, and a real WebGL snapshot created.
-            timeout 45s google-chrome --headless --no-sandbox --disable-dev-shm-usage \
-              --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader \
-              --virtual-time-budget=20000 --dump-dom \
-              "http://127.0.0.1:8765/qa/monster-golem-full-shell-visual.html?id=${id}&pose=${pose}" \
-              > /tmp/rigged-shell-dom.html 2>>/tmp/golem-visual-chrome.log
-            if ! grep -q 'data-ready="true"' /tmp/rigged-shell-dom.html; then
-              echo "::error::Real WebGL renderer never reported ready for ${selection}"
-              grep -o 'data-ready="[^"]*"\|data-error="[^"]*"\|<div id="status">[^<]*' /tmp/rigged-shell-dom.html | head -5 || :
-              tail -25 /tmp/golem-visual-chrome.log || :
-              exit 1
-            fi
-            if ! grep -q 'data-original-visible="0"' /tmp/rigged-shell-dom.html; then
-              echo "::error::Original human body remained visible for ${selection}"
-              exit 1
-            fi
-            if ! grep -q 'id="actual-golem-render-snapshot"' /tmp/rigged-shell-dom.html; then
-              echo "::error::Rendered WebGL image was not produced for ${selection}"
-              exit 1
-            fi
-            if grep -q 'data-error=' /tmp/rigged-shell-dom.html; then
-              echo "::error::Visible humanoid has runtime error for ${selection}"
-              exit 1
-            fi
-            echo "SHELL-RENDER:${selection}:OK size=${bytes}"
+            node qa/capture-monster-body-cdp.mjs "$id" "$pose" "qa-reports/golem-full-shell/${id}-${pose}.png"
           done
       - name: Retain all rigged fullbody humanoid screenshots
         if: always()
