@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {AGE_BAND_IDS,AGE_PROFILES} from '../src/character-demographics-v47.js';
-import {skinAgeShadowFactor,createAnatomicalFaceParts} from '../src/face-feature-meshes.js';
+import {skinAgeShadowFactor,createAnatomicalFaceParts,applyFaceColorMode} from '../src/face-feature-meshes.js';
 import {createFaceExpressionAnimator} from '../src/face-expression-animation-v48.js';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from '../src/face-anatomy-rig-v80.js';
@@ -76,6 +76,82 @@ test('real eye contains lacrimal caruncle and blinking wet rim',()=>{
  assert.equal(oral.visible,true);
  animator.dispose();
  assert.equal(face.getObjectByName('V80_INTRAORAL_ANATOMY'),undefined);
+ built.root.traverse(o=>{
+  if(o.isMesh){o.geometry.dispose();o.material?.dispose?.();}
+ });
+ face.geometry.dispose();face.material.dispose();
+});
+
+test('v81 lipstick lives on deforming lip mesh without static head ghost',()=>{
+ const face=new THREE.Mesh(new THREE.SphereGeometry(.2,52,38),
+  new THREE.MeshStandardMaterial());
+ face.name='FEMALE_INDEPENDENT_CLAY_FACE';
+ const built=createAnatomicalFaceParts(face,{
+  gender:'female',controls:{ageBand:'seventies'}
+ });
+ face.add(built.root);
+ applyFaceColorMode(face,'color',{makeupType:2});
+ assert.equal(face.userData.v81NoStaticLipstickGhost,true);
+ assert.equal(face.userData.mouthPigmentSource,'deforming-vermilion-vertices-v81');
+ const lip=built.root.getObjectByName('UPPER_3D_VERMILION_LIP');
+ assert.equal(lip.userData.v81PigmentBoundToAnimatedLip,true);
+ assert.equal(lip.userData.lipstickOnSourceHead,false);
+ const before=lip.geometry.getAttribute('position').array.slice();
+ const skinPigment=face.geometry.getAttribute('color').array.slice();
+ const animator=createFaceExpressionAnimator({face,parts:built.root},{autoBlink:false});
+ animator.setExpression('laugh');
+ const after=lip.geometry.getAttribute('position').array;
+ const corner=0,mid=16*3;
+ assert.ok(after[corner+1]>before[corner+1],
+  'Smile muscle must raise the corner of the top lip');
+ assert.ok(Math.abs(after[corner]-before[corner])>0,
+  'Laughter spreads the commissure out, not just lowering the jaw');
+ assert.ok(after[corner+1]-before[corner+1]>
+  after[mid+1]-before[mid+1],
+  'The oral corner must lift more than the upper-lip centre');
+ assert.deepEqual(face.geometry.getAttribute('color').array,skinPigment,
+  'Old lipstick must not remain behind on the cheek/philtrum');
+ animator.setExpression('neutral');
+ assert.deepEqual(lip.geometry.getAttribute('position').array,before,
+  'Lip colour belongs to geometry that returns to the neutral pose');
+ animator.dispose();
+ built.root.traverse(o=>{
+  if(o.isMesh){o.geometry.dispose();o.material?.dispose?.();}
+ });
+ face.geometry.dispose();face.material.dispose();
+});
+
+test('v81 dental crowns are short rounded enamel, tongue is low and recessed',()=>{
+ const face=new THREE.Mesh(new THREE.SphereGeometry(.2,52,38),
+  new THREE.MeshStandardMaterial());
+ const built=createAnatomicalFaceParts(face,{gender:'female'});
+ face.add(built.root);
+ const animator=createFaceExpressionAnimator({face,parts:built.root},{autoBlink:false});
+ animator.setExpression('laugh');
+ const oral=face.getObjectByName('V80_INTRAORAL_ANATOMY');
+ assert.ok(oral.visible);
+ const crown=oral.getObjectByName('V80_UPPER_TOOTH_06');
+ assert.equal(crown.userData.anatomicalCrown,'rounded-short-v81');
+ assert.ok(crown.scale.y/crown.scale.x<1.25,
+  'Dentition must never become long vampire fangs');
+ assert.ok(crown.position.z<0,'Teeth recede behind the oral vestibule');
+ const tongue=oral.getObjectByName('V80_TONGUE_DORSUM');
+ assert.ok(tongue.scale.x>tongue.scale.y*3,
+  'Tongue dorsum must be flattened and broad, not a sphere');
+ assert.ok(tongue.position.z<0,'Tongue must remain in the oral cavity');
+ const eye=built.root.getObjectByName('LEFT_ORBITAL_EYEBALL');
+ assert.equal(eye.userData.v81ScleralMicrovascularPBR,true);
+ assert.ok(eye.material.map?.isTexture);
+ assert.equal(animator.getState().v81AnatomicalSmileEyeCoupling,true);
+ const upper=built.root.getObjectByName('LEFT_UPPER_ANATOMICAL_EYELID');
+ const lower=built.root.getObjectByName('LEFT_LOWER_ANATOMICAL_EYELID');
+ animator.setExpression('neutral');
+ const upperRest=upper.geometry.getAttribute('position').array.slice();
+ const lowerRest=lower.geometry.getAttribute('position').array.slice();
+ animator.setExpression('laugh');
+ assert.notDeepEqual(upper.geometry.getAttribute('position').array,upperRest);
+ assert.notDeepEqual(lower.geometry.getAttribute('position').array,lowerRest);
+ animator.dispose();
  built.root.traverse(o=>{
   if(o.isMesh){o.geometry.dispose();o.material?.dispose?.();}
  });
