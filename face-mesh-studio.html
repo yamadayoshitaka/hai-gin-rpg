@@ -420,7 +420,29 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
   setBlink(value){expressions.get(gender)?.setBlinkProgress(value);},
-   setMouth(value){expressions.get(gender)?.setMouthOpen(value);}
+   setMouth(value){expressions.get(gender)?.setMouthOpen(value);},
+   nativeLipProbe(){
+    const current=models.get(gender),face=current?.face;
+    if(!face)return null;
+    face.geometry.computeBoundingBox();
+    const b=face.geometry.boundingBox,d=b.getSize(new THREE.Vector3());
+    face.updateWorldMatrix(true,false);
+    camera.updateMatrixWorld(true);
+    const mouth=face.userData.actualMouthCreaseY??(b.min.y+d.y*.509);
+    const worldToCanvas=(x,y,z)=>{
+     const p=new THREE.Vector3(x,y,z);
+     face.localToWorld(p);p.project(camera);
+     return {x:(p.x*.5+.5)*canvas.getBoundingClientRect().width,
+      y:(.5-p.y*.5)*canvas.getBoundingClientRect().height};
+    };
+    const centerX=(b.min.x+b.max.x)/2,front=b.max.z;
+    const lhs=worldToCanvas(centerX-d.x*.20,mouth+d.y*.105,front),
+     rhs=worldToCanvas(centerX+d.x*.20,mouth-d.y*.105,front);
+    return {seal:face.userData.v86OralSealSummary,
+     rect:{x:Math.max(0,Math.min(lhs.x,rhs.x)),
+      y:Math.max(0,Math.min(lhs.y,rhs.y)),
+      width:Math.abs(rhs.x-lhs.x),height:Math.abs(rhs.y-lhs.y)}};
+   }
  };
 }
 function refreshExpression(sex){
