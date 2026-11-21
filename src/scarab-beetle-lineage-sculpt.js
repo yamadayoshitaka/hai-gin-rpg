@@ -29,7 +29,16 @@ function shadeFor(spec,source,surface){
  if(surface==='wing'){
   return {m021:'#bb835b',m022:'#ec914b',m025:'#f9d36f'}[spec.id]||source;
  }
- // Preserve semantic palette roles (skin/bone/etc.) supplied by the species.
+ // Some donor meshes use semantic color names instead of literal hex.
+ // Supply the receiving species' 2D-reference pigment to both kinds of
+ // mesh, otherwise inherited m021 "skin" would stay olive green beneath
+ // its steel armor and the m025 underbody would stay mustard yellow.
+ const semantic={
+  m021:{skin:'#643642',light:'#8b8e96',accent:'#bf9b79'},
+  m022:{skin:'#772836',light:'#af3b47',accent:'#f0a057'},
+  m025:{skin:'#853045',light:'#d5b769',accent:'#f3de93'}
+ }[spec.id];
+ if(typeof source==='string'&&semantic?.[source])return semantic[source];
  if(typeof source!=='string'||!source.startsWith('#'))return source;
  const original=new THREE.Color(source);
  const hsl={};original.getHSL(hsl);
