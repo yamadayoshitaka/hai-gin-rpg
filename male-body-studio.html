@@ -246,7 +246,7 @@ function refreshExpression(){
 }
 $('faceExpression').addEventListener('change',()=>{
  expressionPrefs.expression=$('faceExpression').value;
- expressionAnimator?.setExpression(expressionPrefs.expression);
+ expressionAnimator?.transitionToExpression(expressionPrefs.expression,.28);
  if(ready){zoomMode='portrait';fitCamera();}
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
