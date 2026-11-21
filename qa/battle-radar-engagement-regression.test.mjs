@@ -67,7 +67,7 @@ test('compact phone rows and radar show contact independently from the hidden st
  const commands=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
  const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.equal((hud.match(/engaged.hidden=!row.inContact;/g)||[]).length,2);
- assert.doesNotMatch(hud,/engaged.hidden=!row.inContact\\|\\|/);
+ assert.doesNotMatch(hud,/engaged.hidden=!row.inContact.*value==='⚔'/);
  assert.match(css,/\.rpgSquadRow\{position:relative\}/);
  assert.match(css,/\.rpgSquadRowTitle \.rpgSquadEngaged\{[\s\S]*?position:absolute/);
  assert.match(commands,/if\(pin.inContact\)/);
