@@ -35,6 +35,8 @@ import {BEETLE_LINEAGE_REVISION,isBeetleLineage,sculptBeetleLineage}
  from './scarab-beetle-lineage-sculpt.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {sculptBeetleConceptDetails}
  from './beetle-concept-upgrade.js?v=beetle-four-reference-sculpt-v1-20261121';
+import {M023_MANTIS_SCULPT_REVISION,sculptM023Mantis}
+ from './m023-mantis-sculpt.js?v=m023-six-limb-v2-20261121';
 import {M024_SCARAB_REVISION,sculptM024PoisonScarab}
  from './m024-poison-scarab-sculpt.js?v=beetle-four-reference-sculpt-v1-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
@@ -2992,7 +2994,8 @@ export function createMonsterModel(spec,{detail='high'}={}){
    case 'feline':quadruped(g,spec,{feline:true});break;
    case 'reptile':spec.id==='m020'?seaSerpent(g,spec):quadruped(g,spec,{reptile:true});break;
    case 'avian':bird(g,spec);break;
-   case 'insect':isBeetleLineage(spec.id)?sculptBeetleLineage(g,spec):insect(g,spec);break;
+   case 'insect':spec.id==='m023'?sculptM023Mantis(g,spec):
+     isBeetleLineage(spec.id)?sculptBeetleLineage(g,spec):insect(g,spec);break;
    case 'arachnid':sculptConceptTrio(g,spec);break;
    case 'undead':upright(g,spec,{undead:true});break;
    case 'golem':upright(g,spec,{rock:true});break;
@@ -3006,6 +3009,7 @@ if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
  if(spec.id==='m018')g.root.userData.gameModelRevision=M018_HYDRA_REVISION;
  if(spec.id==='m050')g.root.userData.gameModelRevision=M050_CORAL_REVISION;
  if(spec.id==='m024')g.root.userData.gameModelRevision=M024_SCARAB_REVISION;
+  if(spec.id==='m023')g.root.userData.gameModelRevision=M023_MANTIS_SCULPT_REVISION;
  if(isBeetleLineage(spec.id))g.root.userData.gameModelRevision=BEETLE_LINEAGE_REVISION;
  // The optional effects are created lazily only when a rendered near-LOD
  // m001 performs an action. Pure timing tests can import monster-animation
