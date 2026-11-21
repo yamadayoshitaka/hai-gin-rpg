@@ -97,6 +97,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
  return {
   version:1,battleId:String(battleId),territoryId:stage.territoryId,
   territoryName:stage.name,terrain:stage.biome,stageId:stage.id,
+  winCondition:stage.winCondition||'',
   stagePreset:stage.scenePreset,origin:'game-core',stageKind:stage.kind,
   storyRoute:storyContext?.route||'silver',storyCooperator:storyContext?.routeName||'灰銀軍師',
   storyCoalition:storyContext?.coalition||false,storyDecision:storyContext?.decision||null,
@@ -112,6 +113,9 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
   sortieTacticTemplate:Object.fromEntries(teams.map(t=>[String(t.id),formationIntegrity[String(t.id)].active?t.tactics||[]:[]])),
   initialTeamPlans:Object.fromEntries(teams.map(t=>[String(t.id),{
    order:t.initialOrder||'charge',formation:formationIntegrity[String(t.id)].formation,
+   captain:(()=>{const captain=captainById.get(t.id);return captain?{
+    id:captain.id,name:captain.characterName||captain.name||captain.job+'代表',
+    job:captain.job,rarity:captain.rarity}:null;})(),
    formationActive:formationIntegrity[String(t.id)].active,tactics:t.tactics||[]
   }])),
   battlePlanStage:battleStageContext(stage),
