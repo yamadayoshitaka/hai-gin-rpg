@@ -3,8 +3,8 @@
  * and full-body editors. Each of the 16 catalog entries must resolve to a
  * finite guide length. No silently undefined length when indexes reach 13-15.
  */
-import {PART_CATALOG,normalizePartSelection} from './face-part-catalog-v32.js?v=67';
-import {getWigStyle} from './face-wig-styles.js?v=67';
+import {PART_CATALOG,normalizePartSelection} from './face-part-catalog-v32.js?v=67-v69';
+import {getWigStyle} from './face-wig-styles.js?v=67-v69';
 
 export const MALE_HAIR_LENGTH_V43=Object.freeze({
  'center-part-gravity-long':.57,'salon-layered-long':.33,
