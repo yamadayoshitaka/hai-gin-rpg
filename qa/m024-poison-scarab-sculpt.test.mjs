@@ -7,7 +7,7 @@ import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.j
 import {registeredMonsterModel} from '../src/creature-game-model-routing.js';
 import {M024_SCARAB_REVISION} from '../src/m024-poison-scarab-sculpt.js';
 import {M024_PBR_REVISION,m024PBRTextureStats}
- from '../src/m024-scarab-pbr-surface.js';
+ from '../src/m024-scarab-pbr-surface.js?v=m024-shared-beetle-chitin-pbr-v3b-20261121';
 
 for(const detail of ['low','high']){
  test('m024 '+detail+' matches concept-art armor, six limbs, wings and venom',()=>{
@@ -126,8 +126,8 @@ for(const detail of ['low','high']){
  });
 }
 
-test('other beetles and spiders keep their original family anatomy',()=>{
- for(const id of ['m021','m022','m023','m025','m026','m027']){
+test('mantis and eight-legged spiders retain their original family anatomy',()=>{
+ for(const id of ['m023','m026','m027','m028','m029','m030']){
   const model=createMonsterModel(MONSTER_BY_ID[id],{detail:'low'});
   try{
    assert.equal(model.userData.m024ConceptBasedSculpt,undefined,id+' was overwritten');

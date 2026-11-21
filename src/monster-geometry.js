@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m024-chitin-crystal-wing-eye-pbr-v2-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m024-shared-beetle-chitin-pbr-v3-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -30,6 +30,8 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw}
  from './m019-hero-sculpt.js?v=reptile-sculpture-v2-20261121';
+import {BEETLE_LINEAGE_REVISION,isBeetleLineage,sculptBeetleLineage}
+ from './scarab-beetle-lineage-sculpt.js?v=m024-donor-beetle-lineage-v1-20261121';
 import {M024_SCARAB_REVISION,sculptM024PoisonScarab}
  from './m024-poison-scarab-sculpt.js?v=m024-poison-scarab-pbr-quality-v2-20261121';
 import {REPTILE_DETAIL_REVISION,hasReptileDetail,sculptSalamanderDetailTail,
@@ -2986,7 +2988,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
    case 'feline':quadruped(g,spec,{feline:true});break;
    case 'reptile':spec.id==='m020'?seaSerpent(g,spec):quadruped(g,spec,{reptile:true});break;
    case 'avian':bird(g,spec);break;
-   case 'insect':insect(g,spec);break;
+   case 'insect':isBeetleLineage(spec.id)?sculptBeetleLineage(g,spec):insect(g,spec);break;
    case 'arachnid':insect(g,spec,{spider:true});break;
    case 'undead':upright(g,spec,{undead:true});break;
    case 'golem':upright(g,spec,{rock:true});break;
@@ -3000,6 +3002,7 @@ if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
  if(spec.id==='m018')g.root.userData.gameModelRevision=M018_HYDRA_REVISION;
  if(spec.id==='m050')g.root.userData.gameModelRevision=M050_CORAL_REVISION;
  if(spec.id==='m024')g.root.userData.gameModelRevision=M024_SCARAB_REVISION;
+ if(isBeetleLineage(spec.id))g.root.userData.gameModelRevision=BEETLE_LINEAGE_REVISION;
  // The optional effects are created lazily only when a rendered near-LOD
  // m001 performs an action. Pure timing tests can import monster-animation
  // without importing Three.js or allocating a GPU mesh.
@@ -3040,5 +3043,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m024-chitin-crystal-wing-eye-pbr-v2-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m024-shared-beetle-chitin-pbr-v3-20261121';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=sea-dragon-summon-silhouette-v3-20261121';

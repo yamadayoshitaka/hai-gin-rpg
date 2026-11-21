@@ -9,7 +9,9 @@
  */
 import * as THREE from 'three';
 
-export const M024_PBR_REVISION='m024-chitin-crystal-wing-eye-pbr-v2-20261121';
+export const M024_PBR_REVISION='m024-shared-beetle-chitin-pbr-v3b-20261121';
+export const SCARAB_PBR_SPECIES=Object.freeze(['m021','m022','m024','m025']);
+export const isScarabPBRSpecies=id=>SCARAB_PBR_SPECIES.includes(id);
 const kinds=new Set(['chitin','crystal','wing','eye','enamel']);
 const atlases=new Map();
 const clamp=(v,min=0,max=1)=>Math.max(min,Math.min(max,v));
@@ -55,31 +57,31 @@ function palette(kind,u,v){
  if(kind==='chitin'){
   // Fine cuticle striations, cool iridescent bands and darker plate seams.
   const shimmer=.5+.5*Math.sin(7*u+11*v+g*.5);
-  return [byte(.82+.10*g-.065*shimmer),
-   byte(.79+.055*g+.032*shimmer),
-   byte(.85+.075*g+.045*shimmer)];
+  return [clamp(.82+.10*g-.065*shimmer),
+   clamp(.79+.055*g+.032*shimmer),
+   clamp(.85+.075*g+.045*shimmer)];
  }
  if(kind==='crystal'){
   const layers=crystalStrata(u,v),core=.5+.5*Math.sin(v*11+u*8);
-  return [byte(.81+.16*layers),
-   byte(.87+.12*layers+.04*core),
-   byte(.70+.17*layers+.045*core)];
+  return [clamp(.81+.16*layers),
+   clamp(.87+.12*layers+.04*core),
+   clamp(.70+.17*layers+.045*core)];
  }
  if(kind==='wing'){
   // Interference and physical venation, not a uniform opaque purple fin.
   const lines=wingVeins(u,v),interference=Math.sin(u*30-v*19);
-  return [byte(.83-.18*lines+.07*interference),
-   byte(.81-.14*lines-.04*interference),
-   byte(.93-.055*lines+.025*interference)];
+  return [clamp(.83-.18*lines+.07*interference),
+   clamp(.81-.14*lines-.04*interference),
+   clamp(.93-.055*lines+.025*interference)];
  }
  if(kind==='eye'){
   const facets=hexFacet(u,v),glitter=.5+.5*Math.sin(u*28+v*9);
-  return [byte(.43+.10*glitter-.16*facets),
-   byte(.37+.06*glitter-.11*facets),
-   byte(.54+.13*glitter-.19*facets)];
+  return [clamp(.43+.10*glitter-.16*facets),
+   clamp(.37+.06*glitter-.11*facets),
+   clamp(.54+.13*glitter-.19*facets)];
  }
  const enamel=.5+.5*Math.sin(u*97+v*5);
- return [byte(.95-.06*enamel),byte(.93-.07*enamel),byte(.85-.10*enamel)];
+ return [clamp(.95-.06*enamel),clamp(.93-.07*enamel),clamp(.85-.10*enamel)];
 }
 
 function roughness(kind,u,v){
@@ -155,7 +157,9 @@ function surfaceAtlas(kind,detail){
  * Called only from the shared material cache for explicitly tagged
  * m024 meshes. The material remains cache-owned; no clones or leaks.
  */
-export function decorateM024PBRMaterial(material,{surface,detail='high'}={}){
+export function decorateM024PBRMaterial(material,{surface,detail='high',speciesId='m024'}={}){
+ if(!isScarabPBRSpecies(speciesId))
+  throw Error('Only registered scarab species may inherit the m024 PBR atlas');
  const maps=surfaceAtlas(surface,detail);
  material.map=maps.albedo;
  material.roughnessMap=maps.rough;
@@ -172,9 +176,13 @@ export function decorateM024PBRMaterial(material,{surface,detail='high'}={}){
   material.alphaMap=maps.alpha;
   material.alphaTest=.035;
  }else if(surface==='crystal'){
-  material.emissive=new THREE.Color('#4b9229');
-  material.emissiveMap=maps.emit;
-  material.emissiveIntensity=maps.emit?.28:0;
+  // The donor's green poison emission is never carried into steel beetles.
+  // Fire gets ember orange, divine gets warm gold and m024 stays green.
+  material.emissive=new THREE.Color(speciesId==='m022'?'#da6420':
+   speciesId==='m025'?'#e6c64f':'#4b9229');
+  material.emissiveMap=speciesId==='m021'?null:maps.emit;
+  material.emissiveIntensity=speciesId==='m021'?0:
+   maps.emit?(speciesId==='m025'?.38:.28):0;
  }
  if(material.isMeshPhysicalMaterial){
   material.clearcoat=surface==='wing'?.31:
@@ -185,6 +193,8 @@ export function decorateM024PBRMaterial(material,{surface,detail='high'}={}){
   if(surface==='crystal')material.thickness=.36;
  }
  material.userData.m024PBR=surface;
+ material.userData.scarabPBRDonorId='m024';
+ material.userData.scarabPBRSpeciesId=speciesId;
  material.userData.m024SurfaceRevision=M024_PBR_REVISION;
  material.userData.m024TextureResolution=maps.size;
  material.userData.m024TextureOrigin='bundled-deterministic-DataTexture';
