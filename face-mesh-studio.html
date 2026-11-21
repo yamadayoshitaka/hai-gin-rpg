@@ -493,7 +493,11 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
     const lhs=worldToCanvas(centerX-d.x*.095,mouth+d.y*.045,front),
      rhs=worldToCanvas(centerX+d.x*.095,mouth-d.y*.045,front);
     const lipIds=face.userData.v86OralSeal?.lipRing||[];
-    const now=face.geometry.getAttribute('position');
+    // Hair-specific scalp clipping reindexes the visible geometry.
+    // The original lip-ring indices remain attached to the uncut owned
+    // source head, NOT the 16k-vertex hair-clipped preview clone.
+    const owned=face.userData.originalHairScalpGeometry||face.geometry;
+    const now=owned.getAttribute('position');
     const donor=face.userData.v86OriginalDonorPositions||[];
     const spanOf=values=>values.length?
      Math.max(...values)-Math.min(...values):0;
