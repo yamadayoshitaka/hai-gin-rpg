@@ -658,21 +658,31 @@ function setHairHiddenScalp(face,enabled,wig=null){
  const source=original.index;
  const triangleCount=source?source.count/3:position.count/3;
  const retained=[];
+ const retainedGroups=[];
  let removed=0;
- for(let t=0;t<triangleCount;t++){
-  const a=source?source.getX(t*3):t*3;
-  const b=source?source.getX(t*3+1):t*3+1;
-  const c=source?source.getX(t*3+2):t*3+2;
-  if(inScalp(a)&&inScalp(b)&&inScalp(c)){removed++;continue;}
-  retained.push(a,b,c);
+ // Preserve the original material assignments and their index ranges.
+ const groups=original.groups.length?original.groups:
+  [{start:0,count:triangleCount*3,materialIndex:0}];
+ for(const group of groups){
+  const groupStart=retained.length;
+  const stop=Math.min(triangleCount*3,group.start+group.count);
+  for(let k=group.start;k+2<stop;k+=3){
+   const a=source?source.getX(k):k;
+   const b=source?source.getX(k+1):k+1;
+   const c=source?source.getX(k+2):k+2;
+   if(inScalp(a)&&inScalp(b)&&inScalp(c)){removed++;continue;}
+   retained.push(a,b,c);
+  }
+  if(retained.length>groupStart)
+   retainedGroups.push({start:groupStart,count:retained.length-groupStart,
+    materialIndex:group.materialIndex});
  }
  if(!removed)return;
  const clone=original.clone();
  clone.setIndex(retained);
- // Groups can refer to removed index ranges; a single index range
- // preserves the donor's primary material and avoids stale draw groups.
  clone.clearGroups();
- clone.addGroup(0,retained.length,0);
+ for(const group of retainedGroups)
+  clone.addGroup(group.start,group.count,group.materialIndex);
  face.geometry=clone;
  face.userData.hairScalpMaskActive=true;
  face.userData.hairScalpMaskedTriangles=removed;
