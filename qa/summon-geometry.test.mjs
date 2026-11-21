@@ -52,7 +52,10 @@ if(threeAvailable){
   }
   const scene=new THREE.Scene();
   const camera=new THREE.PerspectiveCamera();
-  camera.position.set(1,2,9);
+  // Inspect the near/high LOD directly; the former camera (1,2,9)
+  // put flying dragons into medium LOD, leaving high mesh matrices at
+  // identity and making the wing-animation assertion meaningless.
+  camera.position.set(-4,4,-2);
   const renderer=createCombatWorldObjectRenderer(scene,{camera});
   const entries=['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse'].map((type,i)=>({
     id:'creature-'+i,type,alive:true,team:0,x:i,z:0,flying:!!COMBAT_OBJECT_SPECS[type].flying,
