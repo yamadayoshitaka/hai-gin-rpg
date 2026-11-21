@@ -906,10 +906,11 @@ body.battle-realtime-clean #squadScreenLabels .squadScreenLabel:not([hidden]){
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import {normalizeArmyGroup,battleGroupMembers} from './src/army-groups.js';
-import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261117-recommend2';
+import {createTargetedStrategyUi} from './src/targeted-strategy-runtime.js?v=20261121-split-commands-formation';
 import {createBattleObjectiveCheckpoints} from './src/battle-objective-checkpoints.js?v=20261116-team3';
 import {BATTLE_PLAN_PRESETS} from './src/battle-plan-recommendations.js?v=20261116';
 import {STRATEGY_METHODS} from './src/three-step-strategy-catalog.js';
+import {formationAllowsTactic} from './src/formation-strategy-unlocks.js';
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
@@ -8361,6 +8362,9 @@ function issueTargetedPlan({groupId,mode,squadIds:members,targetIds,tacticId=nul
  if(!battleReady||finished)return '戦闘開始後に選択してください。';
  const method=tacticId?STRATEGY_METHODS[tacticId]:null;
  if(tacticId&&(!method||method.mode!==mode))return '未対応の作戦です。';
+ const savedFormation=storyRequest?.initialTeamPlans?.[String(groupId)]||{};
+ if(tacticId&&!formationAllowsTactic(savedFormation.formation||'balanced',tacticId,savedFormation.formationActive!==false))
+  return '現在の陣形ではこの作戦は未解放です。';
  const valid=members.filter(id=>squadIds.includes(String(id))&&
   normalizeArmyGroup(armyGroupBySquad[String(id)])===Number(groupId)&&
   !individualCommanderUnavailableReason(id)&&
@@ -8420,6 +8424,8 @@ function issueTargetedMapCommand(point){
  for(const id of plan.squadIds){
   const assigned=plan.plans?.find(entry=>entry.squadIds.includes(String(id)));
   const orderMode=assigned?.mode||plan.mode,tactic=STRATEGY_METHODS[assigned?.tacticId];
+  const formation=storyRequest?.initialTeamPlans?.[String(plan.groupId)]||{};
+  if(tactic&&!formationAllowsTactic(formation.formation||'balanced',tactic.id,formation.formationActive!==false))continue;
   const allowed=storyRequest?.availableSquadOrders?.[String(id)]||[];
   if(!allowed.includes(orderMode)||individualCommanderUnavailableReason(id))continue;
   if(tactic?.buff){
@@ -8525,6 +8531,20 @@ const targetedStrategyUi=createTargetedStrategyUi({
  },
  getRadarCanvas:()=>miniBase,
  getMapSize:()=>WORLD_SIZE,
+ getFormationId:groupId=>storyRequest?.initialTeamPlans?.[String(groupId)]?.formation||'balanced',
+ getFormationActive:groupId=>storyRequest?.initialTeamPlans?.[String(groupId)]?.formationActive!==false,
+ onMoveExecute:({groupId,squadIds:members,point})=>{
+  if(!battleReady||finished||!traversableCell(point.x,point.z))return '移動できない地点です。';
+  let applied=0;
+  for(const id of members){
+   if(normalizeArmyGroup(armyGroupBySquad[String(id)])!==Number(groupId)||
+      individualCommanderUnavailableReason(id))continue;
+   if(issueTargetedPlatoon(id,'move',point)){targetedArrivalOrders.delete(String(id));applied++;}
+  }
+  if(!applied)return '隊長の状態と移動可能な隊を確認してください。';
+  log('🗺 第'+groupId+'隊：'+applied+'分隊が('+point.x+','+point.z+')へ移動');
+  refreshSquadOrderLabel();drawSquadMiniMap();return true;
+ },
  // The highlight uses the very same terrain test as issuing the map order.
  getMapCellEligible:(x,z)=>traversableCell(x,z),
  getTemplates:groupId=>{
@@ -9481,7 +9501,7 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
   else selectedEnemySquadId=String(id);
   for(const [key,marker] of squadMarkers)
    marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
-  beginSquadFocusCinematic(String(id),team,'result');
+  zoomToSquadMember(String(id),team);
  }
 }):null;
 if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,
