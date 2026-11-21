@@ -4,6 +4,9 @@ import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId }
 import { elevatedRangedStats } from './elevation-combat.js';
 import {defensiveDamageMultiplier} from './battle-defensive-doctrine.js';
 import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.6.39';
+import {SUMMON_SUPPORT_PROFILES,DRAGON_LORD_STARFLARE,
+ selectSummonHealTarget,selectSummonReviveTarget}
+ from './summon-battle-doctrine.js?v=support-first-starflare-v1-20261121';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 /** Closest distance to an actual footprint, not merely its centre tile. */
@@ -767,6 +770,60 @@ export class CombatActionRuntime {
     this.removeObject(o, 'exploded');
   }
 
+  /**
+   * An ally who needs restoration wins over a fresh damage attack.
+   * The angel revives first when allowed, then heals; the forest spirit
+   * heals first and uses its bow when everybody in range is healthy.
+   * Return true ONLY when a real unit HP/alive change was performed.
+   */
+  performSummonSupport(o,units){
+    const p=SUMMON_SUPPORT_PROFILES[o.type];
+    if(!p)return false;
+    if(p.revival&&this.time >= (o.nextReviveAt??(o.createdAt+p.firstReviveDelay))){
+      const fallen=selectSummonReviveTarget(units,o);
+      if(fallen){
+        const prevHp=fallen.hp,prevAlive=fallen.alive;
+        fallen.hp=Math.max(1,Math.ceil(fallen.maxHp*p.reviveFraction));
+        fallen.alive=true;
+        if(this.onRevive&&!this.onRevive(fallen)){
+          fallen.hp=prevHp;fallen.alive=prevAlive;
+          o.nextReviveAt=this.time+1.5;
+        }else{
+          o.nextReviveAt=this.time+p.reviveCooldown;
+          o.poseAction='special';o.poseStartedAt=this.time;
+          this.event('revive',{targetId:fallen.id,sourceId:o.ownerId,
+            objectId:o.id,objectType:o.type,skillId:p.reviveSkillId,
+            skillName:p.reviveSkillName,x:fallen.x,z:fallen.z,
+            team:fallen.team,effect:'heal'});
+          return true;
+        }
+      }
+    }
+    if(this.time<(o.nextHealAt??0))return false;
+    const center=selectSummonHealTarget(
+      this.nearby(o.team,o.x,o.z,p.range),o);
+    if(!center)return false;
+    const allies=this.nearby(o.team,center.x,center.z,p.area)
+      .filter(u=>isAlive(u)&&u.hp<u.maxHp&&distance(u,center)<=p.area)
+      .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||String(a.id).localeCompare(String(b.id)))
+      .slice(0,p.maxTargets);
+    let total=0;
+    for(const u of allies){
+      const before=u.hp;
+      u.hp=Math.min(u.maxHp,u.hp+p.heal);
+      total+=u.hp-before;
+    }
+    if(total<=0)return false;
+    o.nextHealAt=this.time+p.cooldown;
+    o.poseAction='special';o.poseStartedAt=this.time;
+    this.event('skill',{skillId:p.skillId,skillName:p.skillName,
+      jobId:'summoner',sourceId:o.ownerId,objectId:o.id,objectType:o.type,
+      team:o.team,x:o.x,z:o.z,targetX:center.x,targetZ:center.z,
+      radius:p.area,effect:'heal',skillKind:'heal',count:allies.length,
+      heal:total});
+    return true;
+  }
+
   tickSummons(dt, units) {
     for (const o of this.objects) {
       if (!o.alive || !['summon','mount'].includes(o.category)) continue;
@@ -789,12 +846,33 @@ export class CombatActionRuntime {
         const targetHeight=this.flightRoofHeight(o.x,o.z);
         o.height+=(targetHeight-o.height)*Math.min(1,dt*3);
       }
+      // A healer who can actually treat a living ally takes priority over
+      // an already queued attack; animations track a real skill event.
+      if(this.performSummonSupport(o,units)){
+        o.pendingAttack=null;
+        o.nextAttackAt=Math.max(o.nextAttackAt||0,this.time+.8);
+        continue;
+      }
       // Windup, contact and recovery are game-state events, not fake
       // particles emitted before the actual hit.
       if(o.pendingAttack&&this.time>=o.pendingAttack.impactAt){
         const pending=o.pendingAttack,target=unitById(units,pending.targetId);
         o.pendingAttack=null;
-        if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
+        if(pending.kind==='royal_starflare'){
+          const flare=DRAGON_LORD_STARFLARE;
+          const victims=this.nearby(1-o.team,pending.targetX,pending.targetZ,
+            flare.radius).filter(u=>isAlive(u)&&u.team!==o.team)
+            .slice(0,flare.maxTargets);
+          for(const victim of victims)this.damageUnit(victim,flare.damage,null,flare.element);
+          this.damageStructures(pending.targetX,pending.targetZ,
+            flare.radius,flare.structureDamage,flare.element);
+          o.lastAttackHitAt=this.time;
+          this.event('objectAttack',{objectId:o.id,objectType:o.type,
+            sourceSkill:flare.id,skillName:flare.name,
+            attackType:flare.attackType,x:o.x,z:o.z,
+            targetX:pending.targetX,targetZ:pending.targetZ,
+            radius:flare.radius,effect:flare.element,hitCount:victims.length});
+        }else if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
           const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
           // Native monster descendants keep their own fire, water, frost,
           // lightning or nature attribute rather than becoming generic physical
@@ -820,36 +898,6 @@ export class CombatActionRuntime {
               o.type.includes('dragon')?'fire':o.type==='seraph_guardian'?'arcane':
               o.type==='forest_archer'?'nature':o.type==='wyvern'?'arcane':'slash')
           });
-        }
-      }
-      // The angel supports nearby friends regardless of enemy line of sight.
-      if(o.type==='seraph_guardian'){
-        if(this.time >= (o.nextHealAt??0)){
-          o.nextHealAt=this.time+7.5;
-          const wounded=this.nearby(o.team,o.x,o.z,6)
-            .filter(u=>isAlive(u)&&u.hp<u.maxHp)
-            .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
-          const center=wounded[0];
-          if(center){
-            for(const friend of wounded){
-              if(distance(friend,center)<=2)
-                friend.hp=Math.min(friend.maxHp,friend.hp+28);
-            }
-            this.event('skill',{skillId:'seraph_blessing',jobId:'summoner',
-              sourceId:o.ownerId,team:o.team,x:o.x,z:o.z,targetX:center.x,
-              targetZ:center.z,effect:'heal',skillKind:'heal',radius:2});
-          }
-        }
-        if(this.time >= (o.nextReviveAt??(o.createdAt+16))){
-          o.nextReviveAt=this.time+20;
-          const fallen=units.find(u=>u.team===o.team&&!isAlive(u)&&u.hp===0&&distance(u,o)<=5);
-          if(fallen){
-            const previousAlive=fallen.alive,previousHp=fallen.hp;
-            fallen.hp=Math.max(1,Math.ceil(fallen.maxHp*.3));fallen.alive=true;
-            if(this.onRevive&&!this.onRevive(fallen)){
-              fallen.hp=previousHp;fallen.alive=previousAlive;
-            }else this.event('revive',{targetId:fallen.id,x:fallen.x,z:fallen.z,team:fallen.team});
-          }
         }
       }
       let target=null,best=Infinity;
@@ -879,12 +927,25 @@ export class CombatActionRuntime {
       if (best <= o.spec.range ** 2) {
         if (!o.pendingAttack&&this.time >= o.nextAttackAt) {
           const style=CREATURE_PERFORMANCE[o.type];
+          const flare=o.type==='dragon_lord'&&
+            this.time>=(o.nextStarflareAt??(o.createdAt+DRAGON_LORD_STARFLARE.initialDelay))
+            ?DRAGON_LORD_STARFLARE:null;
           o.attackStartedAt=this.time;
           o.attackTarget={x:target.x,z:target.z};
           const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
-          o.pendingAttack={targetId:target.id,impactAt:this.time+(style?.windup??.1)/attackRate};
-          o.nextAttackAt = this.time + o.spec.interval/attackRate;
-          this.event('objectWindup',{objectId:o.id,objectType:o.type,attackType:style?.attack,
+          o.pendingAttack=flare?{kind:'royal_starflare',targetId:target.id,
+            targetX:target.x,targetZ:target.z,impactAt:this.time+flare.windup}:
+            {targetId:target.id,impactAt:this.time+(style?.windup??.1)/attackRate};
+          o.nextAttackAt=flare?
+            this.time+flare.windup+1:
+            this.time+o.spec.interval/attackRate;
+          if(flare){
+            o.nextStarflareAt=this.time+flare.cooldown;
+            o.poseAction='special';o.poseStartedAt=this.time;
+          }
+          this.event('objectWindup',{objectId:o.id,objectType:o.type,
+            attackType:flare?.attackType??style?.attack,
+            sourceSkill:flare?.id??null,skillName:flare?.name??null,
             x:o.x,z:o.z,targetX:target.x,targetZ:target.z});
         }
       } else if(o.mountedBy==null&&!o.pendingAttack) {
