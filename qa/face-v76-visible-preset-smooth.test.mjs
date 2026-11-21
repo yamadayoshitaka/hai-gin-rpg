@@ -7,15 +7,15 @@ import {chooseHeroFacePreset,HERO_FACE_PRESETS} from '../src/hero-face-presets-v
 import {defaultPartSelection,resolvePartSelection} from '../src/face-part-catalog-v32.js';
 
 const studio=()=>readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
-test('v76 release is clearly labelled separately from v72 hair and actual photo state is visible',()=>{
+test('v77 age/expressions are clearly labelled separately from v72 hair and actual photo state is visible',()=>{
  const html=studio();
- assert.match(html,/<h1>顔・髪の編集｜顔品質 v76・髪造形 v72<\/h1>/);
+ assert.match(html,/<h1>顔・髪の編集｜顔品質 v77・髪造形 v72<\/h1>/);
  assert.match(html,/id="faceQualityRelease"/);
  assert.match(html,/function facePhotoRuntimeStatus\(\)/);
  assert.match(html,/v76RealSkinPhoto/);
  assert.match(html,/state==='CC0-real-photo-microrelief'\?'反映済'/);
  assert.match(html,/実写肌PBR：/);
- assert.match(html,/face-expression-animation-v48\.js\?v=76-smooth-shading-fix/);
+ assert.match(html,/face-expression-animation-v48\.js\?v=77-soft-expressions/);
  assert.doesNotMatch(html,/<h1>顔・髪の編集 v75/);
 });
 test('16 complete face choices per sex are not cosmetic-only, retain existing hair',()=>{
