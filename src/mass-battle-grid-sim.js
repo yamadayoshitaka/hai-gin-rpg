@@ -1434,6 +1434,14 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
+    // A corpse stays visible for the death animation but immediately frees
+    // its collision footprint, including the interpolated departure cell.
+    // This also applies to killAtCells() outside the regular AI step.
+    const occupied=this._occupancy;
+    for(const [x,z] of [[u.x,u.z],[u.fromX,u.fromZ]]){
+      const tile=z*this.width+x;
+      if(occupied[tile]===u.id)occupied[tile]=-1;
+    }
     if(u.highGroundRouteIndex>=0){
       const route=this.highGroundRoutes[u.highGroundRouteIndex];
       this._releaseHighGroundClaimIfEmpty(u,route);
