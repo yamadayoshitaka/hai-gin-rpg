@@ -53,10 +53,10 @@ function renderThreeTeamStrategyWizard({game,teamId,view,templatePage}){
    '<div class="sortieWizardChoices" role="group" aria-label="第'+current.id+'隊の陣形を1つ選択">'+
    ids.slice(page*limit,(page+1)*limit).map(id=>{
     const f=SORTIE_FORMATIONS[id],enabled=f.level<=sortieLevel(game);
-    const jobs=FORMATION_ROLES[id].slice(0,f.slots).map(x=>ROLE_NAMES[x]).join('・');
+    const jobs=FORMATION_ROLES[id].slice(0,Math.min(3,f.slots)).map(x=>ROLE_NAMES[x]).join('・');
     return button('data-sortie-plan-formation="'+id+'" '+(!enabled?'disabled':''),
      '<b>'+esc(f.name)+(suggestions.has(id)?' <em>推奨</em>':'')+'</b>'+
-     '<small>'+f.slots+'ジョブ・'+esc(jobs)+' · Lv.'+f.level+(!enabled?' 未解放':'')+'</small>'+
+     '<small>最大3ジョブ・'+esc(jobs)+' · Lv.'+f.level+(!enabled?' 未解放':'')+'</small>'+
      '<small>攻撃 '+Math.round((f.attack||0)*100)+'% / 防御 '+Math.round((f.defense||0)*100)+
      '% / 移動 '+Math.round((f.mobility||0)*100)+'%</small>',current.formation===id);
    }).join('')+'</div>'+
@@ -262,7 +262,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  '<select data-battle-plan-method aria-label="実行方法">'+
  Object.values(STRATEGY_METHODS).map(m=>'<option value="'+esc(m.id)+'">'+esc(m.name)+'</option>').join('')+
  '</select><button type="button" data-sortie-battle-save>現在のステージ目的で保存</button></div>';
- const tabList=[['templates','①陣形'],['setup','②配置'],['orders','③作戦'],['battlePlans','テンプレ'],['assessment','評価'],['captains','隊長']];
+ const tabList=[['review','◀ 確認'],['templates','①陣形'],['setup','②配置'],['orders','③作戦'],['battlePlans','テンプレ'],['assessment','評価'],['captains','隊長']];
  const tabBar='<nav class="sortieModeTabs" aria-label="宿屋の機能">'+tabList.map(([key,label])=>
  button('data-sortie-view="'+key+'"',esc(label),view===key)).join('')+'</nav>';
  const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel,battlePlans,assessment};
