@@ -1069,6 +1069,65 @@ export function createSadakoCrownFlow(cap,box,color){
 
 /** Reusable long-hair groom foundation. Future haircuts alter length,
  * layers and the endpoint, NOT the rooted scalp-to-gravity transition. */
+/** Head-local modifiers for the FIVE Sadako descendants.
+ * Exact approved scalp roots, crown-side card shape and collision are reused.
+ * Changes start below the crown. The root at t=0 is always unchanged. */
+export function sadakoVariantGuideOffset(variant,t,{
+ side=1,front=false,zone='crown',rootIndex=0,width=1,depth=1
+}={}){
+ const u=THREE.MathUtils.clamp(t,0,1);
+ const smooth=(a,b)=>THREE.MathUtils.smoothstep(u,a,b);
+ if(variant==='inward'){
+  const end=smooth(.60,.98);
+  return {x:-side*width*.088*end,z:depth*.020*end,y:0};
+ }
+ if(variant==='outward'){
+  const end=smooth(.61,.98);
+  return {x:side*width*.098*end,z:-depth*.018*end,y:0};
+ }
+ if(variant==='sauvage'){
+  const wave=smooth(.22,.43);
+  const phase=(u-.21)*Math.PI*7.4+Math.floor(rootIndex/11)*.38;
+  return {x:width*.055*wave*Math.sin(phase),
+   z:depth*.037*wave*Math.cos(phase),y:width*.012*wave*Math.sin(phase*2)};
+ }
+ if(variant==='center'&&front){
+  // Move down-growing facial curtains AROUND eyes without moving roots,
+  // preserving a true parted front rather than a bald artificial cap.
+  return {x:side*width*.245*smooth(.08,.34),
+   z:-depth*.012*smooth(.13,.4),y:0};
+ }
+ if(variant==='bangs'&&front){
+  const fringeTip=smooth(.09,.90);
+  // Keep the bang mesh on the face plane, not a flat plate sticking out.
+  return {x:width*.009*Math.sin(rootIndex*2.39996)*fringeTip,
+   z:depth*.018*fringeTip,y:0};
+ }
+ return {x:0,y:0,z:0};
+}
+
+/** Mutate guide free ends ONLY; callers keep all original donor roots.
+ * Fringe variant stops just ABOVE the eyes, centre part opens both pupils.
+ * Curled lengths retain the parent mantle/shoulder collision solver. */
+export function shapeSadakoVariantGuide(points,{variant='straight',
+ box,zone='crown',side=1,rootIndex=0,front=false}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ if(variant==='straight')return points;
+ const d=box.getSize(new THREE.Vector3()),root=points[0];
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),p=points[j];
+  const delta=sadakoVariantGuideOffset(variant,t,{
+   side,front,zone,rootIndex,width:d.x,depth:d.z});
+  p.x+=delta.x;p.y+=delta.y;p.z+=delta.z;
+  if(variant==='bangs'&&front){
+   const browY=box.min.y+d.y*(.765+.014*Math.sin(rootIndex*.73));
+   const tipY=Math.min(root.y-d.y*.055,browY);
+   const blend=THREE.MathUtils.smoothstep(t,.025,.94);
+   p.y=THREE.MathUtils.lerp(root.y,tipY,blend);
+  }
+ }
+ return points;
+}
 export function scalpToGravityWeight(t,start=.15,end=.38){
  const q=THREE.MathUtils.clamp((t-start)/Math.max(end-start,1e-5),0,1);
  return q*q*(3-2*q);
@@ -1593,6 +1652,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      if(projectSadakoOutside(point,nearRoot,front,followScalp))
       sadakoGuideScalpPushes++;
     }
+   });
+   // Variant shape runs AFTER anatomical root-to-gravity grooming and
+   // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
+   if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
+    variant:sadakoVariant,box,zone,side:partSide,
+    rootIndex:i,front:fringe||overFace
    });
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
