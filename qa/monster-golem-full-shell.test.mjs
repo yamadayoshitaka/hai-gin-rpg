@@ -16,7 +16,7 @@ assert.match(source,/const groom=construct\?null:fullBody\?null:attachCanonicalC
  'No human hair or wig should grow on a crystal/stone golem');
 assert.match(source,/const conceptFinish=fullBody\?Object\.freeze/,
  'Old floating humanoid decorations must not obscure new golem shell');
-assert.match(source,/const mineral=construct\?CONSTRUCT_SHELL_SPECIES/,
+assert.match(source,/const mineral=fullBody\?CONSTRUCT_SHELL_SPECIES/,
  'Golem mineral palette must not come from human skin/clothes');
 assert.match(source,/photographicHumanAlbedo:false/,
  'A donor velvet photograph must not darken the amethyst shell');
