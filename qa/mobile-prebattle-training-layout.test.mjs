@@ -49,9 +49,12 @@ test('three-team prebattle strategy touch cards store selections and keep footer
   getLegalPoint:(x,z)=>({x,z}),canDeploy:()=>true,
   onDeploy:()=>true,onStart:()=>true
  });
+ // linkedom exposes a read-only select.value descriptor; real browsers
+ // allow the assignment. Override that single test double property.
+ const chooser=document.querySelector('#realtimeInitialStrategy');
+ Object.defineProperty(chooser,'value',{value:'',writable:true,configurable:true});
  ui.openDeployment();
  ui.selectSquad('team3');
- const chooser=document.querySelector('#realtimeInitialStrategy');
  assert.equal(chooser.hidden,true);
  const choices=document.querySelector('#realtimeInitialStrategyChoices');
  assert.equal(choices.querySelectorAll('button').length,4);
