@@ -129,7 +129,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     const own=Number(game.inventory[item.id]||0);
     const equipped=s?.equipment?.[slot]===item.id;
     return button('data-inn-wizard-equip="'+esc(item.id)+'" '+(own<=used&&!equipped?'disabled':''),
-     '<span class="sortieWizardStrategyIcon">'+(gearCategory==='防具'?'🛡':'⚔')+'</span><span class="sortieWizardStrategyDetails"><b>'+esc(item.name)+'</b><small>'+esc(item.description)+'</small>+
+     '<span class="sortieWizardStrategyIcon">'+(gearCategory==='防具'?'🛡':'⚔')+'</span><span class="sortieWizardStrategyDetails"><b>'+esc(item.name)+'</b><small>'+esc(item.description)+'</small>'+
      '<small>所持 '+own+'／他の隊が使用 '+used+(own<=used&&!equipped?' · 在庫不足':'')+'</small></span>',equipped);
    }).join('')+'</div>';
   back='equipment';
