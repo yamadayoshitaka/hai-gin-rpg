@@ -272,6 +272,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   const e=Object.fromEntries(Object.entries(preset).map(([k,v])=>[
    k,typeof v==='number'?v*strength:v
   ]));
+  const neutralPose=channels.every(k=>Math.abs(Number(e[k])||0)<1e-8);
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
   const xd=Math.max(.000001,faceSize.x),yd=Math.max(.000001,faceSize.y);
@@ -301,10 +302,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
-  if(state.expression==='neutral')facialAttr.array.set(facialRest);
+  if(neutralPose)facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
   const normals=face.geometry.getAttribute('normal');
-  if(state.expression==='neutral'&&normals&&sculptNormalRest&&
+  if(neutralPose&&normals&&sculptNormalRest&&
      normals.array.length===sculptNormalRest.length){
    normals.array.set(sculptNormalRest);
    normals.needsUpdate=true;
