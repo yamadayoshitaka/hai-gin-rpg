@@ -217,7 +217,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261118-facial-relief-v75';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=68';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261121-buzz-fibre-only-v24';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD} from './src/face-scalp-wig.js?v=20261121-buzz-native-cut-v25';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=41';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=41';
 import {listWigStyles,DEFAULT_WIG_STYLE_ID} from './src/face-wig-styles.js?v=44';
@@ -612,18 +612,81 @@ updateHairRuntimeDiagnostics();
 // Shader-space masking avoids deleting ear, face, neck, UV or blendshape data.
 // Emergency stable path: preserve native GLB face materials and shader pipeline.
 // Earlier injected fragment shaders broke face and hair rendering on mobile.
-function setHairHiddenScalp(face,enabled){
- // Emergency rollback of the expensive per-triangle v9 head rewrite.
- // Never modify the live donor geometry while the editor is rendering.
+// v25: non-destructive scalp removal for buzzcuts only.
+// Retain the complete donor geometry for hair roots and restore it when hair
+// is hidden. Remove only triangles fully inside a contoured hairline;
+// triangles touching the face/ears/neck are kept to avoid cutting those parts.
+function setHairHiddenScalp(face,enabled,wig=null){
  if(!face?.isMesh)return;
- const original=face.userData.originalHairScalpGeometry;
- if(original&&face.geometry!==original){
+ const original=face.userData.originalHairScalpGeometry||face.geometry;
+ face.userData.originalHairScalpGeometry=original;
+ if(face.geometry!==original){
   face.geometry.dispose();
   face.geometry=original;
  }
  face.userData.hairScalpMaskActive=false;
  face.userData.hairScalpMaskedTriangles=0;
- face.userData.hairScalpMaskMode='v9-disabled-loading-hotfix';
+ face.userData.hairScalpMaskMode='native-restored';
+ if(!enabled||!wig?.root?.userData?.buzzFibreOnly)return;
+ const position=original.getAttribute('position');
+ if(!position||position.count<3)return;
+ original.computeBoundingBox();
+ const box=original.boundingBox;
+ const d=box.getSize(new THREE.Vector3());
+ const center=box.getCenter(new THREE.Vector3());
+ if(d.x<=0||d.y<=0||d.z<=0)return;
+ const smooth=(a,b,x)=>{
+  const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);
+  return t*t*(3-2*t);
+ };
+ // Same curved hairline as the buzz scalp generator (v23), with a
+ // conservative +0.015 safety margin protecting the facial boundary.
+ const inScalp=(i)=>{
+  const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
+  const zn=(z-center.z)/d.z;
+  const xn=Math.abs(x-center.x)/d.x;
+  const back=smooth(-.45,-.10,zn);
+  const temple=smooth(-.06,.24,zn);
+  const napeCenter=.58+.105*smooth(.10,.39,xn);
+  const rearSide=THREE.MathUtils.lerp(napeCenter,.715,back);
+  const front=THREE.MathUtils.lerp(rearSide,.81,temple);
+  const earArc=.105*smooth(.22,.38,xn)*
+   (1-smooth(.10,.36,zn))*smooth(-.38,-.12,zn);
+  const threshold=THREE.MathUtils.clamp(front+earArc,.56,.90)+.015;
+  return y>box.min.y+d.y*threshold;
+ };
+ const source=original.index;
+ const triangleCount=source?source.count/3:position.count/3;
+ const retained=[];
+ const retainedGroups=[];
+ let removed=0;
+ // Preserve the original material assignments and their index ranges.
+ const groups=original.groups.length?original.groups:
+  [{start:0,count:triangleCount*3,materialIndex:0}];
+ for(const group of groups){
+  const groupStart=retained.length;
+  const stop=Math.min(triangleCount*3,group.start+group.count);
+  for(let k=group.start;k+2<stop;k+=3){
+   const a=source?source.getX(k):k;
+   const b=source?source.getX(k+1):k+1;
+   const c=source?source.getX(k+2):k+2;
+   if(inScalp(a)&&inScalp(b)&&inScalp(c)){removed++;continue;}
+   retained.push(a,b,c);
+  }
+  if(retained.length>groupStart)
+   retainedGroups.push({start:groupStart,count:retained.length-groupStart,
+    materialIndex:group.materialIndex});
+ }
+ if(!removed)return;
+ const clone=original.clone();
+ clone.setIndex(retained);
+ clone.clearGroups();
+ for(const group of retainedGroups)
+  clone.addGroup(group.start,group.count,group.materialIndex);
+ face.geometry=clone;
+ face.userData.hairScalpMaskActive=true;
+ face.userData.hairScalpMaskedTriangles=removed;
+ face.userData.hairScalpMaskMode='v25-contoured-native-cut';
 }
 
 function hideDuplicateHairCap(wig){
@@ -638,7 +701,7 @@ function hideDuplicateHairCap(wig){
 function updateAllHiddenScalps(){
  for(const sex of ['female','male']){
   const face=models.get(sex)?.face;
-  if(face)setHairHiddenScalp(face,Boolean(wigOn&&wigs.get(sex)));
+  if(face)setHairHiddenScalp(face,Boolean(wigOn&&wigs.get(sex)),wigs.get(sex));
  }
 }
 function rebuildWig(){
@@ -665,7 +728,7 @@ function rebuildWig(){
    color:hairPalette[v32PartMode?v32Parts.female.hairColor:wigColor]||hairPalette.blonde
   });
   models.get('female').face.add(wig.root);wigs.set('female',wig);
-  setHairHiddenScalp(models.get('female').face,true);
+  setHairHiddenScalp(models.get('female').face,true,wig);
   updateHairRuntimeDiagnostics(wig);
    $('activeHairStyle').textContent='反映済：'+wig.root.userData.hairStyleName+
     '／'+wig.getReport().rootCount+'束・'+(wig.getReport().closeCutFibreCount?wig.getReport().closeCutFibreCount+'本の実毛': '微細毛10倍');
@@ -730,7 +793,7 @@ function rebuildMaleHair(){
   color:hairPalette[v32Parts.male.hairColor]||hairPalette.blonde
  });
  models.get('male').face.add(hair.root);wigs.set('male',hair);
- setHairHiddenScalp(models.get('male').face,true);
+ setHairHiddenScalp(models.get('male').face,true,hair);
  const size=models.get('male').face.geometry.boundingBox.getSize(new THREE.Vector3());
  hair.root.position.set(size.x*.008*v32Parts.male.hairX,
   size.y*.007*v32Parts.male.hairY,0);
