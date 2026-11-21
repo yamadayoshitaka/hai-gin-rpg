@@ -93,5 +93,7 @@ try{
 }finally{
  try{socket?.close()}catch{}
  try{chrome.kill('SIGTERM')}catch{}
- rmSync(tmp,{recursive:true,force:true});
+ await sleep(180); // Chrome may still be flushing its profile directory
+ try{rmSync(tmp,{recursive:true,force:true,maxRetries:15,retryDelay:120});}
+ catch(error){console.warn('Chrome profile cleanup skipped:',error.code);}
 }
