@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {SourceTextModule} from 'node:vm';
 import {availableFormationOpeningTactics} from '../src/prebattle-opening-tactics.js';
 
 const division=(jobs,orders,hasSummon=false)=>({jobs,orders,hasSummon});
@@ -36,6 +37,9 @@ test('opening UI, runtime execution and enlarged no-scroll animation stay connec
  const ui=file('src/battle-realtime-commands.js'),battle=file('tactics-wireframe.html'),
   inn=file('src/inn-formation-wizard.js'),css=file('src/three-team-sortie-ui.css'),
   town=file('town-hub.html');
+ const inline=battle.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(inline,'battle inline module exists');
+ new SourceTextModule(inline,{identifier:'tactics-wireframe-inline.js'});
  assert.match(ui,/optgroup label="基本作戦"/);
  assert.match(ui,/陣形・ジョブの追加作戦/);
  assert.match(ui,/ADVANCED_FORMATION_TACTICS/);
