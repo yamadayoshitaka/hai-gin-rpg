@@ -13,6 +13,7 @@ on:
       - 'src/battle-stage-identity.js'
       - 'world-map.html'
       - 'qa/battle-rpg-squad-hud.test.mjs'
+      - 'qa/battle-contact-and-recovery-regression.test.mjs'
       - 'qa/battle-stage-deployment-portraits.test.mjs'
       - 'qa/inn-strategy-three-team-wizard.test.mjs'
       - 'qa/inn-roster-first-formation.test.mjs'
@@ -68,6 +69,8 @@ jobs:
         run: npm install --no-save --package-lock=false linkedom@0.18.12
       - name: Verify real DOM with three teams and nested job divisions
         run: node --test qa/battle-rpg-squad-hud.test.mjs qa/battle-three-team-hud-dom.test.mjs qa/battle-three-team-radar.test.mjs qa/battle-three-team-prebattle.test.mjs qa/realtime-deployment-mobile-performance.test.mjs
+      - name: Verify squad engagement from real fighters and blocked-path recovery
+        run: node --check src/mass-battle-grid-sim.js && node --test qa/battle-contact-and-recovery-regression.test.mjs
       - name: Verify stage identity, one deployment and captain/species portraits
         run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
       - name: Verify formation-only inn and three-team stage handoff
