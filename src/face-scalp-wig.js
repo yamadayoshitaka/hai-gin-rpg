@@ -1139,7 +1139,8 @@ export function sadakoVariantGuideOffset(variant,t,{
 }
 
 export function shapeSadakoVariantGuide(points,{variant='straight',
- box,zone='crown',side=1,rootIndex=0,front=false,bangsCut=false}={}){
+ box,zone='crown',side=1,rootIndex=0,front=false,bangsCut=false,
+ lateralScale=1}={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  if(variant==='straight')return points;
  const d=box.getSize(new THREE.Vector3()),root=points[0];
@@ -1154,6 +1155,9 @@ export function shapeSadakoVariantGuide(points,{variant='straight',
   // Unseen perm-rod cross-section is sampled into the visible hair guide.
   const delta=sadakoVariantGuideOffset(variant,t,{
    side,front,zone,rootIndex,width:d.x,depth:d.z});
+  // Only the rebuilt catalog uses reduced center-part opening. Retain
+  // the approved donor masters' original full-strength face framing.
+  if(variant==='center'||variant==='bangs')delta.x*=lateralScale;
   if(rolled&&j>=station){
    const f=(t-rodStart)/(1-rodStart);
    const tail=Math.max(0,Math.min(1,f));
@@ -1176,8 +1180,47 @@ export function shapeSadakoVariantGuide(points,{variant='straight',
    p.y=THREE.MathUtils.lerp(root.y,tipY,blend);
    // Short fringe stays in front of the brow. Its sides are graduated
    // but are not pushed outwards like the remaining long crown curtains.
-   p.x-=side*d.x*.34*THREE.MathUtils.smoothstep(t,.075,.33);
+   p.x-=side*d.x*.34*lateralScale*THREE.MathUtils.smoothstep(t,.075,.33);
    p.z+=d.z*.045*THREE.MathUtils.smoothstep(t,.075,.50);
+  }
+ }
+ return points;
+}
+/** v68: catalog cuts keep their scalp-first donor drape. A salon curl
+ * turns only the free hair TIPS; the approved Sadako donor's large 1.5π
+ * perm rod is intentionally not reused at full head-width on medium/bob
+ * cuts. Otherwise the entire hairstyle forms horizontal wings even with
+ * the 'soft / close-fitting' volume profile selected. */
+export function shapeRebuiltCatalogCurl(points,{
+ variant='straight',box,side=1,rootIndex=0
+}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ if(!['inward','outward','sauvage'].includes(variant))return points;
+ const d=box.getSize(new THREE.Vector3());
+ const center=box.getCenter(new THREE.Vector3());
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),p=points[j];
+  if(variant==='sauvage'){
+   // Smaller staggered waves, not a thick fan across face and shoulders.
+   const envelope=THREE.MathUtils.smoothstep(t,.30,.83);
+   const wave=t*Math.PI*2*3.3+Math.floor(rootIndex/14)*.16;
+   p.x+=d.x*.029*envelope*Math.sin(wave);
+   p.y+=d.y*.009*envelope*Math.sin(wave*2);
+   p.z+=d.z*.018*envelope*Math.cos(wave);
+  }else{
+   // From 73% of the strand onward. The first 73%, including the crown
+   // and ear-height fall, stays on the original gravity-hugging guide.
+   if(t<=.73)continue;
+   const u=THREE.MathUtils.smoothstep(t,.73,1);
+   const bend=.5*(1-Math.cos(Math.PI*u));
+   p.x+=(variant==='outward'?side:-side)*d.x*.067*bend;
+   p.y+=d.y*.045*bend*bend;
+   p.z+=(variant==='outward'?-1:1)*d.z*.024*bend;
+   // The curled ends may flare slightly, but not beyond the head's
+   // natural side silhouette. Do not move the rooted or ear-level guides.
+   const maxSide=d.x*(variant==='outward'?.47:.45);
+   if(side*(p.x-center.x)>maxSide)
+    p.x=center.x+side*maxSide;
   }
  }
  return points;
@@ -1721,14 +1764,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
    if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
     variant:sadakoVariant,box,zone,side:partSide,
-    rootIndex:i,front:faceFrame,bangsCut
+    rootIndex:i,front:faceFrame,bangsCut,
+    lateralScale:style.rebuiltBase==='sadako'?.26:1
    });
    // Face-parting and invisible-rod curls are INDEPENDENT components.
    // Earlier old styles used one variant switch and silently lost curls.
    if(style.catalogCurl&&style.catalogCurl!=='straight'&&!bangsCut)
-    shapeSadakoVariantGuide(shape,{
-     variant:style.catalogCurl,box,zone,side:partSide,
-     rootIndex:i,front:false,bangsCut:false
+    shapeRebuiltCatalogCurl(shape,{
+     variant:style.catalogCurl,box,side:partSide,rootIndex:i
     });
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
