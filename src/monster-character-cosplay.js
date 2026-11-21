@@ -11,6 +11,9 @@ import {isFacialHairSourceMesh,SERAPH_NO_BEARD_REVISION}
  from './seraph-facial-hair-guard.js?v=seraph-nobeard-v2-20261121';
 import {applySummonHumanoidPBR,SUMMON_HUMANOID_PBR_REVISION}
  from './summon-humanoid-pbr.js?v=summons-pbr-v1-20261121';
+import {applySummonFootwearPBR,detachSummonFootwearPBR,
+ SUMMON_FOOTWEAR_PBR_REVISION}
+ from './summon-footwear-pbr.js?v=summon-leather-v2-20261122';
 import {buildMonsterNativeMotionVariants,selectMonsterMotionVariant,
  monsterMotionCoverage,MONSTER_LICENSED_MOTION_REVISION}
  from './monster-licensed-motion-variants.js?v=ual2-source-clips-v1-20261121';
@@ -243,6 +246,11 @@ function buildMonsterCostume(THREE,model,profile,detail){
    profile.costume==='forest_spirit_female'?0xb1a26a:0xa88152,
   dragonScale:0x665162,dragonRim:0x503e50,
   seraphWing:0xffffff,
+  // Dyed photo-leather must not inherit the bright green foliage tint.
+  summonBootLeather:profile.costume==='forest_spirit_female'?0xcabbaa:
+   profile.costume==='seraph_female'?0xc9c9c0:
+   profile.costume?.startsWith('dragonkin')?0x8b7880:0xb09c8a,
+  summonBootSole:0x33302b,
   dragonEye:0xe4b564
  };
  const materials=new Map();
@@ -309,7 +317,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
    // the nonhumanoid bestiary. No new API, CDN request or per-monster textures.
    const surfaceRole={
     velvet:'fabric',lining:'fabric',linen:'bandage',
-    metal:'metal',gold:'metal',ivoryCloth:'fabric',
+    metal:'metal',gold:'metal',ivoryCloth:'bandage',
+    summonBootLeather:'leather',summonBootSole:'leather',
     // The user's screenshot showed a BLACK forest robe: the library's
     // 'fabric' category loads dark burgundy/black velvet ALBEDO and
     // multiplies the leaf green tint almost to zero. Forest greens
@@ -337,6 +346,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
    }
    decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
+   applySummonFootwearPBR(m,{role,detail});
    materials.set(role,m);ownedMats.push(m);
   }
   return materials.get(role);
@@ -705,6 +715,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   beardGuardRevision:profile.noBeard===true?SERAPH_NO_BEARD_REVISION:null,
   skinTone:profile.skinTone??null,
   summonPbrRevision:femaleSummon?SUMMON_HUMANOID_PBR_REVISION:null,
+   summonFootwearRevision:femaleSummon?SUMMON_FOOTWEAR_PBR_REVISION:null,
   demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
    (profile.costume==='dragonkin_male'?'male-dragon-sovereign-plate-wings-v1':
@@ -756,6 +767,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   for(const geo of ownedGeo)geo.dispose();
   for(const texture of ownedTextures)texture.dispose();
   for(const material of ownedMats){
+   detachSummonFootwearPBR(material);
    detachMonsterPhotoMaterial(material);
    material.dispose();
   }
