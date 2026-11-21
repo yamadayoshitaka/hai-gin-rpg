@@ -2670,6 +2670,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
+   strands.filter(lock=>
+    (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&
+    lock.rest.some(p=>{
+     const yn=(p.y-box.min.y)/Math.max(d.y,1e-6);
+     return yn>.69&&yn<.83&&
+      Math.abs(p.x-center.x)<d.x*.215&&p.z>center.z+d.z*.090;
+    })).length:null,
   v70HairPinMeshCount:earClipMeshes.length,
   v70MasculineGroom:style.maleGroom||null,
   v70HimeFringe:style.himeFringe||null,
