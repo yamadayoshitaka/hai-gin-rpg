@@ -27,6 +27,11 @@ export const CREATURE_SURFACE_SOURCES=Object.freeze({
     label:'既存の竜鱗テクスチャ',
     kind:'scales',
   }),
+  stone:Object.freeze({
+    albedo:'../assets/creatures/cc0-aerial-rocks-02-albedo.jpg',
+    roughness:'../assets/creatures/cc0-aerial-rocks-02-roughness.jpg',
+    normal:null,label:'Poly Haven Aerial Rocks 02 CC0 rock scan',kind:'stone'
+  }),
   linen:Object.freeze({
     albedo:'../assets/textures/outfits/linen.jpg',normal:null,
     label:'既存の麻布写真素材',kind:'cloth',
@@ -65,6 +70,7 @@ function texture(file,colorData){
  const tex=loader.load(url,undefined,undefined,()=>{
    // Missing texture must not become a white/black creature or block loading.
    for(const m of tex.userData.materialUsers||[]){
+     if(m.roughnessMap===tex)m.roughnessMap=null;
      if(m.map===tex)m.map=null;
      if(m.normalMap===tex)m.normalMap=null;
      m.needsUpdate=true;
@@ -148,7 +154,7 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
    role==='leather'?'leather':
    role==='seaDragonSkin'||((speciesId==='m048'||speciesId==='m050')&&role==='skin')?'scales':
    (family==='undead'||family==='fiend')?null:
-   (family==='golem'&&speciesId==='m036')?null:
+   (family==='golem'&&speciesId==='m036')?'stone':
    CREATURE_FAMILY_SURFACE[family];
  if(!surfaceId){
    decorateAll50MonsterSurface(material,{
@@ -159,6 +165,8 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  const src=CREATURE_SURFACE_SOURCES[surfaceId];
  if(!src)return material;
  const albedo=texture(src.albedo,true),normal=texture(src.normal,false);
+ const roughness=texture(src.roughness,false);
+ if(roughness)material.roughnessMap=attachUser(roughness,material);
  if(albedo)material.map=attachUser(albedo,material);
  if(normal&&detail!=='low'){
    material.normalMap=attachUser(normal,material);
@@ -167,9 +175,9 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  // The source texture supplies microdetail; the specimen's phenotype tint
  // remains in material.color. Roughness & metalness are physically distinct.
  material.roughness=src.kind==='metal'?.38:src.kind==='coat'?.86:
-   src.kind==='scales'?.53:src.kind==='leather'?.72:.9;
+   src.kind==='scales'?.53:src.kind==='leather'?.72:src.kind==='stone'?.96:.9;
  material.metalness=src.kind==='metal'?.66:src.kind==='scales'?.11:
-   src.kind==='leather'?.035:Math.min(metal,.05);
+   src.kind==='leather'?.035:src.kind==='stone'?.015:Math.min(metal,.05);
  material.userData.photoSurface=surfaceId;
  material.userData.photoSource=src.albedo;
  material.needsUpdate=true;
@@ -179,6 +187,7 @@ export function detachMonsterPhotoMaterial(material){
  if(!material)return;
  if(material.map?.userData?.materialUsers)material.map.userData.materialUsers.delete(material);
  if(material.normalMap?.userData?.materialUsers)material.normalMap.userData.materialUsers.delete(material);
+ if(material.roughnessMap?.userData?.materialUsers)material.roughnessMap.userData.materialUsers.delete(material);
 }
 export function monsterPhotoCacheStats(){
  return Object.freeze({
