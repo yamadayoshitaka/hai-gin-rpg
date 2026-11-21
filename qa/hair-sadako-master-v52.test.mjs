@@ -145,7 +145,7 @@ test('v53 studio reselect clips long donor scalp and leaves buzz path unchanged'
  const page=readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
  const hair=readFileSync(new URL('../src/face-scalp-wig.js',import.meta.url),'utf8');
  assert.match(page,/sadakoCover=isSadakoFamilyStyle\(wig\?\.root\?\.userData\?\.hairStyleId\)/);
- assert.match(page,/if\(!wig\?\.root\?\.userData\?\.buzzFibreOnly&&!sadakoCover\)/);
+ assert.match(page,/if\(!isBuzzFamilyStyle\(wig\?\.root\?\.userData\?\.hairStyleId\)&&!sadakoCover\)/);
  assert.match(page,/v53-sadako-matched-donor-clipping/);
  assert.match(hair,/if\(shortHair\)return buzzHairlineFractionAtPoint/);
  assert.match(hair,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/);
