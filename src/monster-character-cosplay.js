@@ -345,6 +345,10 @@ function buildMonsterCostume(THREE,model,profile,detail){
      m.userData.forestColorRole=role;
    }
    decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
+   // The forest leaves, divine wings and dragon scales already have their
+   // own anatomical normal/roughness atlases. These were formerly wired
+   // only for angel wings, leaving most summon costume parts flat.
+   applySummonHumanoidPBR(m,{id:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
    applySummonFootwearPBR(m,{role,detail});
    materials.set(role,m);ownedMats.push(m);
