@@ -7,6 +7,8 @@
  * licensed canonical assets have been loaded and verified.
  */
 import * as THREE from 'three';
+import {resolveMonsterThemeAction} from './monster-theme-actions.js';
+import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
@@ -635,6 +637,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(fullBody)model.userData.mineralArticulator=createMineralLimbArticulator({
   model,frames,id:profile.id
  });
+ model.userData.monsterThemeFamily=profile.id==='m015'?'avian':
+  ['m031','m032','m033','m034','m035'].includes(profile.id)?'undead':
+  ['m036','m037','m038','m039','m040'].includes(profile.id)?'golem':'fiend';
+ model.userData.monsterThemeBones={
+  head:joints.head,spine:joints.spine,arms:joints.arms
+ };
  if(profile.id==='m042'){
   model.userData.gargoyleWingPivots=frames.chest.userData.gargoyleWingPivots;
   model.userData.gargoyleFlightLegBones=joints.legs.filter(Boolean);
@@ -701,6 +709,8 @@ function buildMonsterCostume(THREE,model,profile,detail){
  };
  return ()=>{
   delete model.userData.mineralArticulator;
+  delete model.userData.monsterThemeBones;
+  delete model.userData.monsterThemeFamily;
   delete model.userData.gargoyleSwordPivot;
   delete model.userData.gargoyleChestFrame;
   delete model.userData.gargoyleFlightLegBones;
@@ -783,9 +793,15 @@ export function createCosplayedHumanoidMonster(spec,{
   },
   update(time){
    if(disposed)return;
-   let action=root.userData.action||'idle',elapsed=Math.max(0,time-(root.userData.actionAt??0));
-   if(TIME_LIMITS[action]&&elapsed>TIME_LIMITS[action]){
-    action='idle';root.userData.action='idle';root.userData.actionAt=time;
+   let requested=root.userData.action||'idle';
+   let theme=resolveMonsterThemeAction(spec,requested);
+   let action=theme?.base||requested;
+   let elapsed=Math.max(0,time-(root.userData.actionAt??0));
+   const duration=theme?.duration??TIME_LIMITS[action];
+   if(Number.isFinite(duration)&&elapsed>duration){
+    action='idle';requested='idle';theme=null;
+    root.userData.action='idle';root.userData.actionAt=time;
+    elapsed=0;
    }
    if(!ready){
     if(fallback?.parent){
@@ -819,6 +835,12 @@ export function createCosplayedHumanoidMonster(spec,{
    // between each moving pair of joints AFTER the native animation mixer.
    if(isFlyingTengu)updateCanonicalTenguFlight(root,host,visual,action,time,elapsed);
    if(isFlyingGargoyle)updateCanonicalGargoyleFlight(root,host,visual,action,time,elapsed);
+   if(theme)applyCanonicalMonsterThemeMotion(visual,{
+    tech:theme,progress:Number.isFinite(duration)?
+     clamp(elapsed/duration,0,1):0,time
+   });
+   if(visual?.userData?.monsterCostume)
+    visual.userData.monsterCostume.activeThemeAction=theme?.id??null;
    // Fit all mineral shells AFTER flight has folded the real leg joints.
    visual?.userData.mineralArticulator?.update(action);
    if(profile.costume==='seraph_female'){
