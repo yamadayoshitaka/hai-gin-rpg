@@ -35,7 +35,8 @@ export function withDemonColorTheme(profile,theme='species'){
  return Object.freeze({...profile,...t,makeup:t.makeup,lip:t.lip});
 }
 
-export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tube}={}){
+export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tube,
+ wingTailOnly=false}={}){
  const preset=DEMON_MAKEUP_PRESETS[profile?.id];
  if(!preset)return false;
  const refined=detail!=='low';
@@ -47,7 +48,7 @@ export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tub
   g.scale(...size);
   return add(parent,g,role,name,pos);
  };
- for(const side of [-1,1]){
+ if(!wingTailOnly){for(const side of [-1,1]){
   // Brow/eyeliner is a shaped 3D curve hugging the skinned face; there is
   // no separate toy-like eyeball, and the native source cornea remains intact.
   const extra=preset.eyeliner*.013;
@@ -93,6 +94,7 @@ export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tub
    [-.09,.11,-.205],[0,-.03,-.262],[.09,.11,-.205]
   ],.008);
  }
+ }
  if(preset.wings){
   for(const side of [-1,1]){
    add(frames.chest,createGothicBatWing({
@@ -118,7 +120,7 @@ export function addDemonicFaceCosmetics({profile,frames,detail='high',attach,tub
  }
  // Unlike a human wearing black underwear, gargoyles and infernal demons
  // must have a complete lower-body silhouette and connected armour seams.
- if(['m041','m042','m043'].includes(profile.id)){
+ if(!wingTailOnly&&['m041','m042','m043'].includes(profile.id)){
   if(!frames.pelvis)throw Error('Demon loin armour requires hips');
   const gargoyle=profile.id==='m042';
   const stone=gargoyle?'skin':'metal';

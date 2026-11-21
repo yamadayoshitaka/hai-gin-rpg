@@ -19,8 +19,9 @@ import {MONSTER_BY_ID} from '../src/monster-catalog.js';
 import {createCosplayedHumanoidMonster} from '../src/monster-character-cosplay.js';
 const params=new URLSearchParams(location.search);
 const id=params.get('id')||'m038';
+const pose=params.get('pose')||'idle';
 const spec=MONSTER_BY_ID[id];
-if(!spec||!['m036','m037','m038','m039','m040'].includes(id))
+if(!spec||!['m036','m037','m038','m039','m040','m042','m045'].includes(id))
  throw Error('Expected one of the five canonical golems');
 const status=document.getElementById('status');
 const scene=new THREE.Scene();scene.background=new THREE.Color('#605b67');
@@ -50,9 +51,12 @@ try{
  const loaded=await handle.ready;
  if(loaded.source!=='canonical-character-cosplay')
   throw Error('Native rig failed: '+JSON.stringify(loaded));
- handle.update(0.12);
+ handle.start(pose,0);
+ // Several true mixer frames are essential: first update has delta=0,
+ // otherwise screenshots silently capture the imported bind (T) pose.
+ for(const time of [.15,.30,.45,.60,.75,.90,1.05])handle.update(time);
  const shell=handle.metadata;
- if(!shell||shell.constructDonorMeshesConcealed<1||shell.constructShellParts<45)
+ if(!shell||shell.constructDonorMeshesConcealed<1||shell.fullBodyShellParts<45)
   throw Error('Construct is not fully mineralized: '+JSON.stringify(shell));
  handle.root.updateMatrixWorld(true);
  const box=new THREE.Box3(),local=new THREE.Box3();
@@ -65,12 +69,14 @@ try{
  handle.root.traverse(o=>{
   if(!o.isMesh||!actualVisible(o))return;
   drawCount++;
-  if(!o.userData?.golemFullShell)originalVisible++;
+  if(!o.userData?.golemFullShell&&!o.userData?.monsterCosplay)originalVisible++;
   else protection++;
   local.setFromObject(o);
   box.union(local);
  });
- if(drawCount===0||originalVisible!==0||protection<45||box.isEmpty())
+ if(drawCount===0||originalVisible!==0||protection<45||box.isEmpty()||
+  (id==='m042'&&!shell.noHumanoidUnderwear)||
+  (id==='m045'&&!shell.armourSourceHumanFaceHidden))
   throw Error('Human donor leaked or live render missing: '+JSON.stringify({
    drawCount,originalVisible,protection}));
  const size=box.getSize(new THREE.Vector3());
@@ -89,12 +95,14 @@ try{
  snapshot.src=renderer.domElement.toDataURL('image/png');
  snapshot.style.cssText='display:block;width:100%;height:calc(100vh - 50px);object-fit:contain';
  renderer.domElement.replaceWith(snapshot);
- status.textContent=id+' '+spec.name+' • REAL SKINNED GOLEM • '+shell.constructSculptEdition+
+ status.textContent=id+' '+spec.name+' • RIGGED SPECIES BODY • '+pose+' • '+shell.constructSculptEdition+
   ' | visible '+drawCount+' | humanoid donor faces '+originalVisible+
   ' | mineral parts '+protection+' | center pixel '+[...pixel].join(',');
  document.body.dataset.ready='true';
  document.body.dataset.originalVisible=String(originalVisible);
  document.body.dataset.mineralParts=String(protection);
+ document.body.dataset.pose=pose;
+ document.body.dataset.limbUpdates=String(handle.root.userData?.limbUpdates??1);
 }catch(error){
  status.textContent='FAILED '+id+': '+String(error?.stack||error);
  document.body.dataset.error=String(error);
