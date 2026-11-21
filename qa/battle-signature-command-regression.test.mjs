@@ -87,6 +87,10 @@ test('battle runtime cancels obsolete signature and enemy queues on successful m
  assert.match(html,/targetedArrivalOrders\.delete\(String\(id\)\)/);
  assert.match(html,/if\(!retainEnemyQueue\)targetedEnemyQueues\.delete\(String\(id\)\)/);
  assert.match(html,/retainEnemyQueue:true/);
+ const signature=html.slice(html.indexOf('function issueFormationSignature('),html.indexOf('function targetedSubSquadJobs('));
+ assert.ok(signature.length>200);
+ assert.doesNotMatch(signature,/\|\|massSim\|\|/,
+  'formation signature tactics must also work with 50-vs-50 mass simulation');
  const quick=html.slice(html.indexOf('onQuickOrder:('),html.indexOf('getSignatureStrategy:groupId=>'));
  assert.ok(quick.length>100);
  assert.doesNotMatch(quick,/!canChangeSquadOrder\(id\)/,
