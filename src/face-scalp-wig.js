@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-native-cut-v25';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-no-baked-helmet-v26';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -1487,9 +1487,14 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // Preserve the original per-surface materials using geometry draw groups.
  let consolidatedHair=null;
  if(staticGroom&&normalLayeredSingleMesh){
-  const nodes=[cap,locks,...root.children.filter(node=>
-   node.name==='DETACHABLE_WIG_FINE_FIBRES'||
-   node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
+  // Invisible source meshes were previously baked into SINGLE_MESH_NORMAL_LAYERED_HAIR.
+  // In particular cap.visible=false had no effect once the cap triangles were
+  // copied into the consolidated mesh. Never bake the buzz cap or long locks.
+  const nodes=style.shortCutKind==='buzz'
+   ?root.children.filter(node=>node.name==='CLOSE_CUT_SCALP_FIBRES_V18')
+   :[cap,locks,...root.children.filter(node=>
+    node.name==='DETACHABLE_WIG_FINE_FIBRES'||
+    node.name==='CLOSE_CUT_SCALP_FIBRES_V18'||node.userData?.styledHairGeometry)];
   const positions=[],normals=[],colors=[],indices=[],materials=[];
   const normalLayers=clamp(Math.trunc(normalLayerCount),1,3),normalStep=d.x*.0018;
   let vertexOffset=0;
