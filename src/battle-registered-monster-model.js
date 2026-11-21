@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=concept-trio-v1-20261121';
+ from './monster-geometry.js?v=concept-trio-v2-20261121';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {resolveRegisteredMonsterModel}
