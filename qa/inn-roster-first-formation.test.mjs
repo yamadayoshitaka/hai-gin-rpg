@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createNewGame,equipSquadItem} from '../src/game-core-flow.js';
-import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieFormationStatus,sortiePlanningLimit} from '../src/three-team-sortie.js';
+import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieFormationStatus,sortiePlanningLimit,SORTIE_FORMATIONS} from '../src/three-team-sortie.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation,inspectInnFormation} from '../src/inn-formation-rules.js';
 import {renderInnFormationWizard} from '../src/inn-formation-wizard.js';
 
@@ -23,7 +23,7 @@ assert.match(renderInnFormationWizard({game}),/どの隊を編成する/);
 const teamPage=renderInnFormationWizard({game});
 assert.equal((teamPage.match(/data-inn-wizard-team=/g)||[]).length,3);
 assert.ok(!teamPage.includes('どの作戦で戦う？'));
-for(const view of ['roster','equipment','leader','formation','review']){
+for(const view of ['roster','equipment','items','leader','formation','review']){
  assert.match(renderInnFormationWizard({game,view,teamId:1}),/第1隊/);
 }
 assert.match(renderInnFormationWizard({game,view:'roster'}),/隊員・人数/);
@@ -49,7 +49,7 @@ assert.equal(sortieTeamCount(team),28);
 const dragon=inspectInnFormation(game,1,'dragon');
 assert.equal(dragon.eligible,true,'28 soldiers with R, SR, SSR and proper roles qualify');
 assert.equal(dragon.assignment.length,3);
-const canPick=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:3});
+const canPick=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:Object.keys(SORTIE_FORMATIONS).indexOf('dragon')});
 assert.match(canPick,/龍牙陣形/);
 assert.match(canPick,/目的：/);
 assert.match(canPick,/動き：/);
@@ -86,9 +86,9 @@ const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 assert.match(town,/innWizardStep='teamPick'/);
 assert.match(town,/renderInnFormationWizard/);
 for(const key of ['data-inn-wizard-team','data-inn-wizard-roster-job','data-inn-wizard-count',
- 'data-inn-wizard-gear-source','data-inn-wizard-equip','data-inn-wizard-leader',
+ 'data-inn-wizard-gear-source','data-inn-wizard-equip','data-inn-wizard-item','data-inn-wizard-leader',
  'data-inn-wizard-formation','data-inn-wizard-save'])
  assert.ok(town.includes(key),'town click handler for '+key);
 const css=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
 assert.match(css,/\.innWizardBody/);
-console.log('PASS: team-first six-screen wizard, roster rarity gates, gear, captain, persistence and no troop cloning');
+console.log('PASS: team-first seven-screen wizard, roster rarity gates, gear, captain, persistence and no troop cloning');
