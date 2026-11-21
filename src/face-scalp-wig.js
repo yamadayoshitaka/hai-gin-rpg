@@ -2150,7 +2150,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   sadakoCrownLayerOrder:sadakoMaster?'crown-outer-shell-over-temple-fringe-v56':null,
   sadakoCrownOuterMaxFraction:sadakoMaster?.038:null,
   sadakoCrownOuterOnlyAboveEar:sadakoMaster,
-  sadakoEarRibbonWidthFactor:sadakoMaster?.93:null,
+  sadakoEarRibbonWidthFactor:sadakoMaster?.90:null,
   sadakoCrownScalpFollow:sadakoMaster,
   sadakoRearBustSampler:sadakoMaster?rearBustSampler.source:null,
   sadakoRearBustVertexSamples:rearBustSampler.vertexSamples,
