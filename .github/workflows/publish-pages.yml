@@ -107,6 +107,9 @@ jobs:
       - name: Verify 8 concept-matched spiders, slime and octopuses in high and low LOD
         # Fail Pages publication if any reference-matched 3D creature regresses.
         run: node --test qa/monster-concept-trio.test.mjs
+      - name: Verify 16 humanoid monster 2D-reference sculpt and 4 LODs
+        # Never publish a broken humanoid costume or non-bone-attached overlay.
+        run: node --test qa/monster-humanoid-concept-finish.test.mjs
       - name: Verify 4 beetle species actual 3D anatomy, PBR and donor preservation
         id: qa_m024_concept
         # Block Pages publication if any 3D beetle cannot be constructed.
