@@ -93,6 +93,13 @@ function armoredSpider(g,s){
   radii:[.42,.34,.42],color:p.deep,light:p.skin,
   role:'spider-skull',roughness:.39,metalness:.22,deform:.065
  });
+ // Species-specific crown horns keep every spider unique in actual mesh count.
+ const crownN=3+s.variant;
+ for(let j=0;j<crownN;j++){
+  const k=(j-(crownN-1)/2);
+  g.spike(head,j%3===0?'accent':'skin',
+   [k*.075,.245,.04],[k*.12,.39+.025*(j%3),-.05],.034);
+ }
  const frontPlate=conformalCarapace(g,head,{
   center:[0,0,.16],radii:[.415,.34,.41],
   start:-.02,end:.25,role:'spider-forehead-armor',
