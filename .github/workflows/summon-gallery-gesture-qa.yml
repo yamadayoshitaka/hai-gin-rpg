@@ -5,6 +5,11 @@ on:
     paths:
       - 'summon-showcase.html'
       - 'src/monster-character-cosplay.js'
+      - 'src/seraph-celestial-wardrobe.js'
+      - 'src/seraph-celestial-materials.js'
+      - 'src/female-summon-costumes.js'
+      - 'src/monster-regal-garments.js'
+      - 'qa/seraph-tailored-vestment-regression.test.mjs'
       - 'src/monster-regal-garments.js'
       - 'src/summon-footwear-pbr.js'
       - 'qa/summon-leather-boots.test.mjs'
@@ -34,6 +39,9 @@ jobs:
           node --check src/summon-gallery-motion-route.js
           node --check src/summon-gallery-action-catalog.js
           node --check src/monster-character-cosplay.js
+          node --check src/seraph-celestial-wardrobe.js
+          node --check src/seraph-celestial-materials.js
+          node --test qa/seraph-tailored-vestment-regression.test.mjs
           node --check src/summon-footwear-pbr.js
           node --check src/monster-regal-garments.js
           node --test qa/summon-leather-boots.test.mjs
