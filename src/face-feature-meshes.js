@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=80-iris';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture} from './face-optics-v76.js?v=81-eye-vascular';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -233,7 +233,8 @@ function tintRealLipSurface(lip,settings,mode='color',lipColor=FACE_V7_PALETTE.l
  colorizedMakeup(lip,mode==='color');
  lip.userData.lipstickOnSameTriangles=true;
  lip.userData.softSatinFinish=true;
- lip.userData.lipstickOnSourceHead=true;
+ lip.userData.lipstickOnSourceHead=false;
+  lip.userData.v81PigmentOnAnimatedVermilion=true;
 }
 // Bake iris radial fibres, crypts and catchlights into the curved geometry.
 export function v63IrisOpticalTones(r,angle,{female=true}={}){
@@ -333,6 +334,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
+  // The static head gets NO lipstick. Its baked pigment formed the
+  // detached purple ghost when the animated lip volumes moved.
   const lipMask=gender==='male'?0:lipX*lipY*front*bound;
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
@@ -367,11 +370,13 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const foreheadBands=[.758,.794,.823].reduce((v,y)=>
    v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
   const crows=bell(nx,.208,.066)*bell(ny,.675,.073)*front;
-  const nasolabial=bell(nx,.084+.032*(.63-ny),.034)*
-   bell(ny,.51,.099)*front;
-  const mouthCorners=bell(nx,.076,.023)*bell(ny,.483,.032)*front;
-  const ageShade=age.wrinkles*(.17*foreheadBands+.30*crows+
-   .65*nasolabial+.26*mouthCorners);
+  // From alar crease to oral commissure, following the actual aged mouth.
+  const oralY=(lipCenter-box.min.y)/Math.max(1e-8,d.y);
+  const nasolabial=bell(nx,.079+.075*Math.max(0,ny-oralY),.029)*
+   bell(ny,oralY+.064,.084)*front;
+  const mouthCorners=bell(nx,.076,.023)*bell(ny,oralY-.008,.032)*front;
+  const ageShade=age.wrinkles*(.15*foreheadBands+.30*crows+
+   .81*nasolabial+.21*mouthCorners);
   // 20s must not inherit the adult under-eye bag. Skin shades rise with
   // AGE independently of cosmetic presets; no permanent young wrinkles.
   const youthFade=skinAgeShadowFactor(age.id);
@@ -386,7 +391,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    v70FaceReliefShadow({nx,ny,front,lidY});
   const s=Math.max(.55,1-contactShade);
   const rgb=pigmentFactor(skin,blush,cheek)
-   .multiply(pigmentFactor(skin,lipstick,cosmeticOpacity(.30)*lipMask))
+   // Lip makeup is exclusively on the moving anatomical vermilion.
    .multiply(pigmentFactor(skin,softEyeshadow,naturalEyeMakeup.shadow))
    .multiplyScalar(s*(1+naturalEyeMakeup.lowerLift+.037*noseBridgeHighlight));
   colors.push(rgb.x,rgb.y,rgb.z);
@@ -395,7 +400,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  colorizedMakeup(face,mode==='color');
  face.userData.facePigmentControls={...settings};
  face.userData.activeMakeupType=gender==='female'?Math.max(0,Math.min(9,Math.round(Number(makeupType)||0))):null;
- face.userData.mouthPigmentSource='sculpted-head-vertices';
+ face.userData.mouthPigmentSource='deforming-vermilion-vertices-v81';
+ face.userData.v81NoStaticLipstickGhost=true;
  face.userData.softNaturalLipTint=true;
  face.userData.lipTintVertexCount=actualLipTintVertices;
  face.userData.cheekTintVertexCount=actualCheekTintVertices;
@@ -604,7 +610,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
-  color:0xe6e3df,roughness:.22,metalness:0,
+  color:0xe0ded9,roughness:.31,metalness:0,
+  map:getScleraMicrovascularTexture(),
   clearcoat:.46,clearcoatRoughness:.075,ior:1.376,specularIntensity:.68
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
@@ -646,12 +653,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // aspect factors so the aperture doesn't accidentally scale twice.
  const eyeScale=Math.sqrt(settings.eyeWidth*settings.eyeHeight);
  const eyeWidth=settings.eyeWidth/eyeScale,eyeHeight=settings.eyeHeight/eyeScale;
- const baseEyeRadius=d.x*.052;
+ const baseEyeRadius=d.x*.049;
  // Blender Studio: expose convex corneal volume above the real socket and
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
  // Male .34 made even the 20-year-old protagonist look sleepy/elderly.
  // Restore a natural, expressive eye opening without artificial bulging.
- const eyeApertureRatio=female?.476:.440;
+ // Anatomically wider than tall: the old huge open oval read as doll eyes.
+ const eyeApertureRatio=female?.408:.394;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
  const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.105:.120):.130;
@@ -801,6 +809,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    new THREE.Float32BufferAttribute(whiteShading,3));
   eyeMat.vertexColors=true;eyeMat.needsUpdate=true;
   eyePatch.userData.scleralLidOcclusion=true;
+  eyePatch.userData.v81ScleralMicrovascularPBR=true;
    eyePatch.userData.v70CornealWetness=true;
    eyePatch.userData.v65MoistScleraPBR=true;
   root.add(eyePatch);
@@ -817,7 +826,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    // Keep a real circle and a thin white sclera ring; never clip the
    // actual iris geometry into an ugly horizontal stripe.
-   const physicalRadius=Math.min(requested,opening*(isIris?(female?(settings.irisDiameter>=1.30?.962:.935):.90):.73));
+   const physicalRadius=Math.min(requested,opening*(isIris?(female?.840:.815):.72));
    // The pupil and colored iris share one gentle nasal gaze shift, not
    // independent offsets that could create strabismus in oblique views.
    const gazeX=x-side*eyeRadius*.055*eyeWidth;
@@ -1164,6 +1173,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    },material);
   mesh.userData.faceSurfaceConforming=true;
   mesh.userData.colorRole='lipBase';
+  mesh.userData.v81PigmentBoundToAnimatedLip=true;
   actualLips.set(upper,mesh);
   root.add(mesh);
  }
@@ -1171,7 +1181,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  for(const upper of [true,false]){
   const lip=actualLips.get(upper);
   tintRealLipSurface(lip,settings);
-  lip.userData.lipstickOnSourceHead=true;
+  lip.userData.lipstickOnSourceHead=false;
+  lip.userData.v81PigmentOnAnimatedVermilion=true;
   lip.userData.lipstickCoverage={x:settings.lipstickX,y:settings.lipstickY,
    width:settings.lipstickWidth,height:settings.lipstickHeight};
  }
@@ -1428,8 +1439,8 @@ export function applyFaceColorMode(face,mode='clay',{contactColor,makeupType=0}=
    male?'male':'female',styleIndex);
  }
  const palette={
-  ...FACE_V7_PALETTE,lipBase:male?(styleIndex===0?0xc9998b:makeup[0]):
-   (styleIndex===0?0xd9a699:makeup[0]),
+  // Natural lip material and vertex lipstick tint: never tint twice.
+  ...FACE_V7_PALETTE,lipBase:male?0xc9998b:0xd9a699,
   upperShadow:makeup[1],blush:makeup[2],eyeliner:makeup[3],
   lipstick:makeup[0],
   iris:male?0x50413b:parseInt(safeContactColor(contactColor).slice(1),16)

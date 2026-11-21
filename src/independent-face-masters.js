@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-anatomical-eye-v80';
-import {attachAgeDetails} from './face-age-detail-v49.js?v=80-fifties';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-lip-ocular-v81';
+import {attachAgeDetails} from './face-age-detail-v49.js?v=81-nasolabial';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js';
@@ -303,8 +303,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // the original face vertices, never disconnected wrinkle strips.
   const lowerLidBag=bell(Math.abs(xn),.30,.17)*bell(yn,.628,.029)*front;
   const lowerLidCrease=bell(Math.abs(xn),.32,.17)*bell(yn,.605,.018)*front;
+  const agedOralY=.509-.073*demo.age.sag;
   const smileCrease=bell(Math.abs(xn),.31,.068)*
-   bell(yn,.495,.095)*front;
+   bell(yn,agedOralY+.030,.095)*front;
   const ageLines=d.z*demo.age.wrinkles*
    (-.0090*foreheadLines+.0062*crowsFeet-.0105*smileCrease+
     .0070*lowerLidBag-.0052*lowerLidCrease-
