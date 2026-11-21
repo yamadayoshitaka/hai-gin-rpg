@@ -329,7 +329,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
   const cheek=gender==='male'?0:cosmeticOpacity(.64)*bell(nx,.260,.125)*bell(ny,.563,.074)*front;
-  const mouthX=(px-cx)/Math.max(.00001,d.x*.066*settings.lipstickWidth);
+  const mouthX=(px-cx)/Math.max(.00001,d.x*.066*settings.lipstickWidth*settings.mouthWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
    Math.max(.00001,d.y*.012*settings.lipstickHeight);
   const lipX=smoothstep((1-Math.abs(mouthX-settings.lipstickX/.12*.15))/.20);
@@ -337,7 +337,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // Cosmetic controls may move the color within the lips, but cannot
   // push the pigment onto the chin or philtrum outside the oral region.
   const anatomicalLipY=(py-lipCenter)/(d.y*.019);
-  const anatomicalLipX=(px-cx)/(d.x*.073*
+  const anatomicalLipX=(px-cx)/(d.x*.073*settings.mouthWidth*
    Math.min(1.62,Math.pow(settings.lipstickWidth,.46)));
   const bound=smoothstep((1-Math.abs(anatomicalLipY))/.25)*
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
