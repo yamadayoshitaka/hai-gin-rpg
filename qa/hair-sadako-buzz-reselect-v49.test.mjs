@@ -37,7 +37,7 @@ test('buzz can be selected, replaced by Sadako, then selected again',()=>{
   'reparenting a wig must preserve scalp correction');
  assert.match(page,/buzzHairlineFractionAtPoint\(/,
   'native scalp clipping and the buzz root must share one anatomical contour');
- assert.match(page,/sadakoCover=wig\?\.root\?\.userData\?\.hairStyleId==='sadako-straight-long'/,
+ assert.match(page,/sadakoCover=isSadakoFamilyStyle\(wig\?\.root\?\.userData\?\.hairStyleId\)/,
   'Sadako must clip the donor skin in the same way as buzzcut');
  assert.match(page,/v53-sadako-matched-donor-clipping/,
   'Sadako must report actual native scalp clipping, not the old no-op underlay mode');
@@ -47,7 +47,7 @@ test('buzz can be selected, replaced by Sadako, then selected again',()=>{
 
 test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  const page=read('face-mesh-studio.html'),hair=read('src/face-scalp-wig.js');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v64$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v65$/);
  assert.match(page,/Math\.max\(wigDensity,1200\)/,
   'restored low-density user preferences must not expose the entire crown');
  assert.match(hair,/sadakoGravity\?d\.y\*\(longFactor/,
@@ -57,9 +57,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/sadako-side-ribbon-blend-v64/,
+ assert.match(page,/sadako-five-variants-v65/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/sadako-side-ribbon-blend-v64/,
+ assert.match(read('face-body-studio.html'),/sadako-five-variants-v65/,
   'full-body studio must not silently use the old hair shader');
 });
 
@@ -86,7 +86,7 @@ test('Sadako v50 crown microfibres are a stable real-donor matte mesh',()=>{
 });
 test('v50 Sadako falls in front of the face without artificial centre parting',()=>{
  const src=read('src/face-scalp-wig.js');
- assert.match(src,/const partGap=style.id==='sadako-straight-long'\?0:/);
+ assert.match(src,/const partGap=\(sadakoMaster&&sadakoVariant!=='center'\)\?0:/);
  assert.match(src,/const crownUnderlay=shortHair\?/);
  assert.match(src,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/,
   'Do not hide missing long roots under synthetic short black stubble');
@@ -126,11 +126,11 @@ test('v51 face studio disables buzz shadow only, preserves full-colour rear hair
  const hair=read('src/face-scalp-wig.js');
  const studio=read('face-mesh-studio.html');
  const body=read('face-body-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/v64$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/v65$/);
  assert.match(hair,/consolidatedHair.castShadow=style.shortCutKind!=='buzz'/);
  assert.match(hair,/closeCutFibreShadeRange:closeCutFibres\?\.userData\.fibreShadeRange/);
  assert.match(hair,/createCloseCutScalpFibres\(\s*cap,box,color,lockCount\*fiberMultiplier/);
- assert.match(studio,/sadako-side-ribbon-blend-v64/);
- assert.match(body,/sadako-side-ribbon-blend-v64/);
+ assert.match(studio,/sadako-five-variants-v65/);
+ assert.match(body,/sadako-five-variants-v65/);
  assert.match(studio,/report\.closeCutPigmentHex/);
 });

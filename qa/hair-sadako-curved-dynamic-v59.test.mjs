@@ -8,13 +8,13 @@ import {FACE_HAIR_RUNTIME_BUILD,createScalpAnchoredWig,
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('v59 deployable preview uses the dynamic Sadako implementation',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-side-ribbon-blend-v64$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-five-variants-v65$/);
  const body=read('face-body-studio.html'),face=read('face-mesh-studio.html');
  for(const html of [body,face])
-  assert.match(html,/20261121-sadako-side-ribbon-blend-v64/);
+  assert.match(html,/20261121-sadako-five-variants-v65/);
  assert.match(body,/wig\?\.update\(dt\)/);
- assert.match(body,/staticGroom:hairSpec.styleId!=='sadako-straight-long'/);
- assert.match(face,/staticGroom:chosen.styleId!=='sadako-straight-long'/);
+ assert.match(body,/staticGroom:!isSadakoFamilyStyle\(hairSpec.styleId\)/);
+ assert.match(face,/staticGroom:!isSadakoFamilyStyle\(chosen.styleId\)/);
 });
 
 test('v59 crown root overlap is thin, follows the scalp and not a floating plate',()=>{

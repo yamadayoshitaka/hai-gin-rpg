@@ -97,9 +97,9 @@ test('Sadako retains side-crown coverage and movement while costume native scalp
 test('full-body studio applies the same donor mask ONLY after real costume fitting',()=>{
  const body=read('face-body-studio.html');
  const salon=read('face-mesh-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-side-ribbon-blend-v64$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-five-variants-v65$/);
  for(const html of [body,salon])
-  assert.match(html,/20261121-sadako-side-ribbon-blend-v64/);
+  assert.match(html,/20261121-sadako-five-variants-v65/);
  assert.match(body,/import \{setCostumeHairScalpMask,releaseCostumeHairScalpMask\}/);
  assert.match(body,/if\(v32PartMode&&!battleCostume\)return/);
  assert.match(body,/battleCostume=bridge;[\s\S]*?syncCostumeScalpMask\(\)/);

@@ -21,6 +21,24 @@ export const WIG_BASE_VOLUME_PROFILES=deepFreeze({
  full:{label:'最大に広げる',crown:.086,side:.048,spread:1.5}
 });
 export const DEFAULT_WIG_STYLE_ID='center-part-gravity-long';
+export const SADAKO_FAMILY_STYLE_IDS=Object.freeze([
+ 'sadako-straight-long','sadako-inward-long','sadako-outward-long',
+ 'sadako-sauvage-long','sadako-center-part-long','sadako-bangs-long'
+]);
+export const isSadakoFamilyStyle=id=>SADAKO_FAMILY_STYLE_IDS.includes(id);
+// All descendants retain the original rooted scalp, hair collision and
+// long-guide parameters; each style changes only the approved free ends.
+const SADAKO_MASTER_STYLE=Object.freeze({
+ part:'center',groomMaster:'sadako-straight-long',
+ cuttingWorkflow:'groom-then-trim',scalpFollowUntil:.15,
+ gravityFullyAt:.38,whorl:{x:0,y:.965,z:-.08},
+ partWidth:.001,fringeSweep:0,gravityMps2:9.81,gravityScale:1.1,
+ scalpClearance:.002,faceClearance:.006,faceAvoidanceX:.014,
+ backSweep:0,restFallExponent:1.18,cut:'soft-u-layered',
+ longLayers:true,styleLength:1.28,templeVolume:0,strandWave:0,
+ wigType:'independent-3d-asset',
+ collisions:['scalp','face','neck','shoulder','chest']
+});
 export const WIG_STYLES=deepFreeze({
  'center-part-gravity-long':{
   id:'center-part-gravity-long',
@@ -161,16 +179,31 @@ export const WIG_STYLES=deepFreeze({
    collisions:['scalp','face','neck']
   },
   'sadako-straight-long':{
-   id:'sadako-straight-long',label:'貞子風・重力ストレートロング（試作）',part:'center',
-   groomMaster:'sadako-straight-long',cuttingWorkflow:'groom-then-trim',
-   scalpFollowUntil:.15,gravityFullyAt:.38,
-   whorl:{x:0,y:.965,z:-.08},partWidth:.001,fringeSweep:0,
-   gravityMps2:9.81,gravityScale:1.1,scalpClearance:.002,
-   faceClearance:.006,faceAvoidanceX:.014,backSweep:0,
-   restFallExponent:1.18,cut:'soft-u-layered',longLayers:true,
-   styleLength:1.28,templeVolume:0,strandWave:0,
-   wigType:'independent-3d-asset',
-   collisions:['scalp','face','neck','shoulder','chest']
+   ...SADAKO_MASTER_STYLE,
+   id:'sadako-straight-long',label:'貞子風・重力ストレートロング（試作）',
+   sadakoVariant:'straight'
+  },
+  'sadako-inward-long':{
+   ...SADAKO_MASTER_STYLE,
+   id:'sadako-inward-long',label:'貞子風・内巻きロング',sadakoVariant:'inward'
+  },
+  'sadako-outward-long':{
+   ...SADAKO_MASTER_STYLE,
+   id:'sadako-outward-long',label:'貞子風・外巻きロング',sadakoVariant:'outward'
+  },
+  'sadako-sauvage-long':{
+   ...SADAKO_MASTER_STYLE,
+   id:'sadako-sauvage-long',label:'貞子風・ソバージュロング',sadakoVariant:'sauvage'
+  },
+  'sadako-center-part-long':{
+   ...SADAKO_MASTER_STYLE,
+   id:'sadako-center-part-long',label:'貞子風・センター分けロング（目が見える）',
+   sadakoVariant:'center',partWidth:.016,fringeSweep:.024
+  },
+  'sadako-bangs-long':{
+   ...SADAKO_MASTER_STYLE,
+   id:'sadako-bangs-long',label:'貞子風・前髪ありロング（目が見える）',
+   sadakoVariant:'bangs',fringeSweep:.012
   },
   'soft-wave-long':{
    id:'soft-wave-long',label:'ゆるウェーブ・ロング',part:'side',
@@ -244,6 +277,11 @@ export const WIG_STYLES=deepFreeze({
 export const WIG_SILHOUETTE_PROFILES=deepFreeze({
  'center-part-gravity-long':{fringeDrop:.052,rearWidth:.58,rearCutShift:-.018,sideFlare:.006,rearDepth:.016},
  'sadako-straight-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
+ 'sadako-inward-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
+ 'sadako-outward-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
+ 'sadako-sauvage-long':{fringeDrop:.165,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
+ 'sadako-center-part-long':{fringeDrop:.065,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
+ 'sadako-bangs-long':{fringeDrop:.07,rearWidth:.72,rearCutShift:-.10,sideFlare:.008,rearDepth:.032},
  'salon-layered-long':{fringeDrop:.073,rearWidth:.68,rearCutShift:.025,sideFlare:.013,rearDepth:.034},
  'princess-long':{fringeDrop:.086,rearWidth:.56,rearCutShift:-.030,sideFlare:.006,rearDepth:.014},
  'curtain-bangs-long':{fringeDrop:.058,rearWidth:.76,rearCutShift:.010,sideFlare:.016,rearDepth:.025},
@@ -289,7 +327,9 @@ export const WIG_SILHOUETTE_PROFILES=deepFreeze({
 const FEMALE_ONLY_LEGACY_STYLES=new Set([
  'princess-long','curtain-bangs-long','knight-long','mature-layer-long',
  'fringe-long','shag-long','rounded-bob','soft-wave-long',
- 'full-fringe-straight','airy-shoulder-layers'
+ 'full-fringe-straight','airy-shoulder-layers',
+ 'sadako-straight-long','sadako-inward-long','sadako-outward-long',
+ 'sadako-sauvage-long','sadako-center-part-long','sadako-bangs-long'
 ]);
 export function listWigStyles(gender=null){
  return Object.values(WIG_STYLES)

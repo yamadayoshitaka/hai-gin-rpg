@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {buzzHairlineFractionAtPoint} from './face-scalp-wig.js';
+import {isSadakoFamilyStyle} from './face-wig-styles.js?v=65';
 
 /**
  * Hide ONLY the native skin underneath the independent wig in the full-body
@@ -18,7 +19,7 @@ export function setCostumeHairScalpMask(face,styleId,{
  if(face.geometry!==donor){
   face.geometry.dispose();face.geometry=donor;
  }
- const useMask=wigVisible&&['buzz-cut','sadako-straight-long'].includes(styleId);
+ const useMask=wigVisible&&(styleId==='buzz-cut'||isSadakoFamilyStyle(styleId));
  data.costumeScalpMaskActive=false;
  data.costumeScalpMaskRemovedTriangles=0;
  data.costumeScalpMaskClippedTriangles=0;
