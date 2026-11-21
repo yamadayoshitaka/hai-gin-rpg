@@ -6,7 +6,7 @@ import {GARGOYLE_SPECIES_REVISION,GARGOYLE_MATERIAL_ROLES,
  addGargoyleMonsterAnatomy,createGargoyleWingGeometry,
  createGargoyleHeadGeometry,createGargoyleTorsoGeometry,
  createGargoyleTailGeometry,createGargoyleLimbGeometry,
- createGargoyleSpireGeometry,createGargoyleStoneTexture,
+ createGargoyleSpireGeometry,createGargoyleSwordBladeGeometry,createGargoyleStoneTexture,
  createGargoylePbrMaterial} from '../src/monster-gargoyle-sculpt.js';
 import {createMineralLimbArticulator}
  from '../src/monster-mineral-limb-articulator.js';
@@ -15,12 +15,17 @@ assert.match(runtime,/if\(profile\.id==='m042'\)addGargoyleMonsterAnatomy/);
 assert.match(runtime,/else if\(fullBody\)addConstructMonsterCostume/);
 assert.match(runtime,/if\(demonic&&!fullBody\)addDemonicFaceCosmetics/);
 assert.match(runtime,/createGargoylePbrMaterial\(role,gargoyleTexture\)/);
+assert.match(runtime,/updateCanonicalGargoyleFlight\(root,host,visual,action,time,elapsed\)/);
+assert.match(runtime,/gargoyleWingPivots=frames\.chest\.userData\.gargoyleWingPivots/);
+assert.match(runtime,/gargoyleFlightMode=true/);
 assert.match(runtime,/gargoyleSculptEdition:profile\.id==='m042'\?GARGOYLE_SPECIES_REVISION/);
 const design=humanoidMonsterCostumeFor('m042');
 assert.equal(design.costume,'gargoyle');
+assert.equal(design.body,'slim');
+assert.equal(design.equipment,'sword');
 assert.equal(design.construct,undefined);
-assert.equal(GARGOYLE_SPECIES_REVISION,'m042-gothic-gargoyle-v1-20261121');
-assert.equal(Object.keys(GARGOYLE_MATERIAL_ROLES).length,8);
+assert.equal(GARGOYLE_SPECIES_REVISION,'m042-slim-sword-flight-v2-20261121');
+assert.equal(Object.keys(GARGOYLE_MATERIAL_ROLES).length,10);
 const atlas=createGargoyleStoneTexture({size:64});
 assert.equal(atlas.image.width,64);
 assert.equal(atlas.image.height,64);
@@ -47,6 +52,7 @@ for(const [name,create] of [
  ['pelvis',()=>createGargoyleTorsoGeometry({detail:'high',region:'pelvis'})],
  ['upperArm',()=>createGargoyleLimbGeometry({detail:'high',part:'upperArm'})],
  ['wing',()=>createGargoyleWingGeometry({detail:'high'})],
+ ['sword',()=>createGargoyleSwordBladeGeometry({detail:'high'})],
  ['tail',()=>createGargoyleTailGeometry({detail:'high'})],
  ['horn',()=>createGargoyleSpireGeometry({detail:'high'})]
 ]){
@@ -108,6 +114,11 @@ for(const detail of ['source','high','medium','low']){
  assert.equal(frames.chest.userData.golemFullShellRevision,GARGOYLE_SPECIES_REVISION);
  assert.equal(frames.chest.userData.golemShellParts,meshes.length);
  assert.equal(frames.chest.userData.gargoyleWingCount,2,'both wings missing');
+ assert.equal(frames.chest.userData.gargoyleSwordCount,4,'sword must have four fitted parts');
+ assert.equal(frames.chest.userData.gargoyleWingPivots.length,2,
+  'wings must use articulating shoulder pivots');
+ assert.ok(frames.chest.userData.gargoyleWingPivots.every(p=>p.isGroup&&
+  p.children.some(c=>c.name.includes('scalloped-leather-stone-wing'))));
  assert.equal(frames.chest.userData.gargoyleClawCount,14,
   'each hand and foot requires visible articulated talons');
  assert.ok(meshes.length>65&&meshes.length<180,
@@ -115,7 +126,8 @@ for(const detail of ['source','high','medium','low']){
  const names=meshes.map(m=>m.name);
  for(const required of ['angular-demon-face','chiseled-muscular-torso',
   'sinewy-rock-pelvis','upper-arm-shell-0','forearm-shell-1',
-  'long-jointed-stone-tail','scalloped-leather-stone-wing-0',
+  'long-jointed-stone-tail','sword-faceted-blade',
+  'sword-crossguard','sword-leather-grip','scalloped-leather-stone-wing-0',
   'scalloped-leather-stone-wing-1','recurved-temple-horn-0',
   'curved-stone-hand-claw-1','raptor-stone-toe-1']){
   assert.ok(names.some(n=>n.includes(required)),required+' missing /'+detail);
@@ -125,6 +137,9 @@ for(const detail of ['source','high','medium','low']){
   assert.ok(!names.some(n=>n.includes(forbidden)),
    'Toy golem geometry leaked: '+forbidden);
  }
+ const blade=meshes.find(m=>m.name.includes('sword-faceted-blade'));
+ assert.equal(blade.parent,frames.hands[1],'sword must follow right-hand bone');
+ assert.ok(createGargoyleTorsoGeometry({detail:'low'}).attributes.position.count>20);
  const rig=createMineralLimbArticulator({model,frames,id:'m042'});
  assert.equal(rig.segments.length,8);
  for(const action of ['idle','walk','attack','special']){

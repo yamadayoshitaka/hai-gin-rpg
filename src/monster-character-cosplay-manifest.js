@@ -32,7 +32,7 @@ export const HUMANOID_MONSTER_COSTUMES=Object.freeze({
    'lich',[0x547b83,0x343f54,0x8b9bab,0x91b9c9],{mage:true}),
  m041:define('m041','male','civilian','slim','stern','bald','rogue','dagger',
    'imp',[0x635079,0x3a2d3a,0x805961,0x966e4d],{horns:true,wings:true,scale:.80}),
- m042:define('m042','male','guard','sturdy','stern','bald','guard','fists',
+ m042:define('m042','male','guard','slim','stern','bald','guard','sword',
    'gargoyle',[0x52636f,0x424852,0x8994a2,0x605961],{horns:true,wings:true}),
  m043:define('m043','male','guard','sturdy','stern','short','knight','sword',
    'demon',[0x87373c,0x402b34,0x66535c,0xd17752],{horns:true,wings:true,armor:true}),
