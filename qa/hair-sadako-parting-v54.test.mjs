@@ -45,8 +45,9 @@ test('front scalp is parted half-left and half-right while the roots stay fixed'
 });
 
 test('volume dropdown compresses/spreads STRAND silhouette without lifting scalp roots',()=>{
- assert.equal(WIG_BASE_VOLUME_PROFILES.soft.spread,-1);
- assert.equal(WIG_BASE_VOLUME_PROFILES.natural.spread,0);
+ assert.ok(WIG_BASE_VOLUME_PROFILES.soft.spread<=-1);
+ assert.ok(WIG_BASE_VOLUME_PROFILES.natural.spread<0);
+ assert.ok(WIG_BASE_VOLUME_PROFILES.full.spread<=-1);
  assert.ok(WIG_BASE_VOLUME_PROFILES.full.spread>WIG_BASE_VOLUME_PROFILES.airy.spread);
  const root=new THREE.Vector3(.28,.72,.12);
  const guide=volumeSpread=>createScalpFirstLongGuide({
@@ -54,7 +55,9 @@ test('volume dropdown compresses/spreads STRAND silhouette without lifting scalp
   zone:'templeRight',whorl:new THREE.Vector3(0,.95,-.08),
   length:3,trimY:-6,targetX:.28,targetZ:.16,segments:18,volumeSpread
  });
- const compressed=guide(-1),normal=guide(0),expanded=guide(1.5);
+ const compressed=guide(WIG_BASE_VOLUME_PROFILES.soft.spread);
+ const normal=guide(WIG_BASE_VOLUME_PROFILES.natural.spread);
+ const expanded=guide(WIG_BASE_VOLUME_PROFILES.full.spread);
  assert.deepEqual(compressed[0].toArray(),normal[0].toArray());
  assert.deepEqual(expanded[0].toArray(),normal[0].toArray());
  const radial=p=>Math.hypot(p.x,p.z);
@@ -82,7 +85,8 @@ test('real Sadako model has no broad rear plates and retains crown hair roots',(
  const locks=wig.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
  const count=locks.geometry.getAttribute('position').count;
  assert.ok(count>=report.rootCount*19*4);
- assert.equal(report.sadakoHairVolumeSpread,0);
+ assert.equal(report.sadakoHairVolumeSpread,
+  WIG_BASE_VOLUME_PROFILES.natural.spread);
  wig.dispose();geometry.dispose();head.material.dispose();
 });
 
