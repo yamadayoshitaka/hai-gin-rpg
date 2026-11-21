@@ -12,16 +12,16 @@ import * as THREE from 'three';
 export const REGAL_HUMANOID_WARDROBE=Object.freeze({
  seraph_female:Object.freeze({style:'celestial-vestment',bodice:'ivoryCloth',
   hem:'ivoryCloth',trim:'gold',skirt:.99,flare:.49,sleeve:'ivoryCloth',
-  sleeveLength:.42,leggings:'metal',bootTrim:'gold',head:'none'}),
+  sleeveLength:.42,leggings:'metal',bootMaterial:'summonBootLeather',bootTrim:'gold',head:'none'}),
  forest_spirit_female:Object.freeze({style:'living-leaf-robe',bodice:'leaf',
   hem:'leaf',trim:'gold',skirt:.82,flare:.40,sleeve:'leaf',
-  sleeveLength:.36,leggings:'leaf',head:'none'}),
+  sleeveLength:.36,leggings:'leaf',bootMaterial:'summonBootLeather',head:'none'}),
  dragonkin_female:Object.freeze({style:'scaled-regalia',bodice:'metal',
   hem:'velvet',trim:'gold',skirt:.72,flare:.30,sleeve:'metal',
-  sleeveLength:.39,leggings:'metal',head:'draconic-mask'}),
+  sleeveLength:.39,leggings:'metal',bootMaterial:'summonBootLeather',head:'draconic-mask'}),
  dragonkin_male:Object.freeze({style:'sovereign-dragon-battleplate',bodice:'metal',
   hem:'velvet',trim:'gold',skirt:.73,flare:.30,sleeve:'metal',
-  sleeveLength:.43,leggings:'metal',bootTrim:'gold',head:'dragon-helm'}),
+  sleeveLength:.43,leggings:'metal',bootMaterial:'summonBootLeather',bootTrim:'gold',head:'dragon-helm'}),
  succubus:Object.freeze({style:'violet-gothic-gown',bodice:'velvet',
   hem:'velvet',trim:'edge',skirt:.77,flare:.37,sleeve:'velvet',
   sleeveLength:.30,leggings:'velvet',head:'none'}),
@@ -251,13 +251,28 @@ export function addRegalHumanoidOutfit({profile,frames,detail='high',attach,tube
   add(frames.legs[i],createRegalLimbGeometry({
    detail,length:.51,kind:'trouser',top:.185,bottom:.137
   }),legMaterial(plan),plan.style+'-full-thigh-'+i);
+  const bootRole=plan.bootMaterial||legMaterial(plan);
   add(frames.calves[i],createRegalLimbGeometry({
    detail,length:.49,kind:'boot',top:.147,bottom:.112
-  }),legMaterial(plan),plan.style+'-full-shin-boot-'+i);
+  }),bootRole,plan.style+'-full-shin-boot-'+i);
   const footBone=frames.feet?.[i]||frames.calves[i];
   const footOffset=frames.feet?.[i]?[0,0,0]:[0,-.49,0];
   add(footBone,createRegalFootGeometry({detail}),
-   legMaterial(plan),plan.style+'-full-foot-boot-'+i,footOffset);
+   bootRole,plan.style+'-full-foot-boot-'+i,footOffset);
+  if(plan.bootMaterial){
+   // The outsole stays fixed to the real animated foot, never a loose ball.
+   const sole=new THREE.SphereGeometry(1,
+    detail==='low'?12:24,detail==='low'?8:14);
+   sole.scale(.162,.047,.281);
+   sole.translate(0,-.179,-.125);
+   add(footBone,sole,'summonBootSole',
+    plan.style+'-leather-outsole-'+i,footOffset);
+   const cuff=new THREE.TorusGeometry(.131,.009,
+    detail==='low'?6:8,detail==='low'?14:28);
+   cuff.rotateX(Math.PI*.5);
+   add(frames.calves[i],cuff,'summonBootSole',
+    plan.style+'-leather-boot-cuff-'+i,[0,.010,0]);
+  }
   // A bright metal toe cap separates boots from skin, especially
   // on the Seraph where ivory cloth matched the donor complexion.
   if(plan.bootTrim){

@@ -12,7 +12,7 @@ import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battl
 import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=concept-trio-v2-20261121';
 import {createCosplayedHumanoidMonster}
- from './monster-character-cosplay.js?v=monster-50-family-actions-v1-20261121';
+ from './monster-character-cosplay.js?v=summon-cc0-leather-boots-v2-20261122';
 import {humanoidMonsterCostumeFor}
  from './monster-character-cosplay-manifest.js?v=4.5.03';
 import {resolveMonsterThemeAction,defaultMonsterThemeAttack} from './monster-theme-actions.js';
