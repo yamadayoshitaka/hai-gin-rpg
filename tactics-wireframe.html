@@ -7851,7 +7851,7 @@ function issueSquadOrder(mode,point=null){
  selectedSquadId=String(id);refreshSquadOrderLabel();
  return accepted;
 }
-function issueIndividualSquadOrder(mode,point=null,silent=false){
+function issueIndividualSquadOrder(mode,point=null,silent=false,{retainEnemyQueue=false}={}){
  const id=orderedSquad();if(id==null)return false;
 
  let accepted=true;
@@ -7882,7 +7882,7 @@ function issueIndividualSquadOrder(mode,point=null,silent=false){
  // targets, which must not seize the division back on the next AI update.
  activeFormationSignatures.delete(String(id));
  targetedArrivalOrders.delete(String(id));
- targetedEnemyQueues.delete(String(id));
+ if(!retainEnemyQueue)targetedEnemyQueues.delete(String(id));
  // Each order applies to the ENTIRE squad, not a selected soldier subset.
  // Clear obsolete partial-squad orders from any existing battle state.
  if(!massSim)for(const u of actors){
@@ -8575,10 +8575,10 @@ function expireSkirmishDebuffs(){
   }
  }
 }
-function issueTargetedPlatoon(squadId,mode,target=null){
+function issueTargetedPlatoon(squadId,mode,target=null,{retainEnemyQueue=false}={}){
  const original=selectedSquadId;selectedSquadId=String(squadId);
  let accepted=false;
- try{accepted=issueIndividualSquadOrder(mode,target,true);}
+ try{accepted=issueIndividualSquadOrder(mode,target,true,{retainEnemyQueue});}
  finally{selectedSquadId=original;}
  return accepted;
 }
@@ -9062,7 +9062,7 @@ const targetedOrderWatcher=setInterval(()=>{
   if(!next){targetedEnemyQueues.delete(id);continue;}
   const center=squadCenter(next,1);
   if(center)issueTargetedPlatoon(id,'mission',{type:'eliminate_squad',targetSquadId:next,
-   x:Math.round(center.x),z:Math.round(center.z)});
+   x:Math.round(center.x),z:Math.round(center.z)},{retainEnemyQueue:true});
  }
 },600);
 window.addEventListener('pagehide',()=>clearInterval(targetedOrderWatcher));
