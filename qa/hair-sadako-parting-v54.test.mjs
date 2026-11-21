@@ -99,9 +99,9 @@ test('face and body studios expose only one visible style/volume/density selecto
  assert.doesNotMatch(face,/id="wigStyle"/);
  assert.match(face,/hairVolume=\$\('wigVolume'\)\.value/);
  assert.match(face,/hideHairType:true,hideHairVolume:true/);
- assert.match(face,/populateQuickHairStyles\\(next\\)/);
- assert.match(face,/listWigStyles\\(sex\\)/);
- assert.doesNotMatch(face,/quickHairControl'\\)\\.hidden=next!=='female'/);
+ assert.match(face,/populateQuickHairStyles\(next\)/);
+ assert.match(face,/listWigStyles\(sex\)/);
+ assert.doesNotMatch(face,/quickHairControl'\)\.hidden=next!=='female'/);
  assert.match(selector,/if\(!hideHairVolume\)panel\.append\(baseLabel\)/);
  assert.match(body,/hideHairType:true,hideHairVolume:true/);
  assert.match(body,/label\[for="v32HairDensity"\]/);
