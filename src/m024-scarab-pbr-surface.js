@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 
-export const M024_PBR_REVISION='m022-polished-horn-surface-v4-20261121';
+export const M024_PBR_REVISION='four-beetles-concept-pbr-v5-20261121';
 export const SCARAB_PBR_SPECIES=Object.freeze(['m021','m022','m024','m025']);
 export const isScarabPBRSpecies=id=>SCARAB_PBR_SPECIES.includes(id);
 const kinds=new Set(['chitin','crystal','wing','eye','enamel']);
@@ -200,16 +200,57 @@ export function decorateM024PBRMaterial(material,{
  // Reuse the SAME real PBR maps as the shell, but reduce the normal amplitude
  // and put a bright, continuous clearcoat over the smooth hero geometry.
  // Do not mutate the shared texture or other beetle materials.
- if(finish==='polishedHorn'){
-  if(speciesId!=='m022'||surface!=='chitin')
-   throw Error('Polished forehead horn is exclusive to m022 chitin');
+ if(finish==='polishedHorn'||finish==='ironHorn'||
+    finish==='toxicHorn'||finish==='divineHorn'){
+  if(surface!=='chitin')
+   throw Error('Hero beetle horns must use chitin surface maps');
   material.roughness=.70;
-  material.metalness=.24;
+  material.metalness=finish==='ironHorn'?.40:.24;
   material.clearcoat=.93;
   material.clearcoatRoughness=.105;
   material.ior=1.48;
   if(material.normalScale)material.normalScale.set(.095,.095);
   material.userData.polishedBeetleHorn=true;
+ }
+ if(finish==='ironPlate'&&surface==='chitin'){
+  material.roughness=.40;
+  material.metalness=.76;
+  material.clearcoat=.59;
+  material.clearcoatRoughness=.18;
+  if(material.normalScale)material.normalScale.multiplyScalar(.55);
+ }
+ if(finish==='divineGold'&&surface==='chitin'){
+  material.roughness=.34;
+  material.metalness=.63;
+  material.clearcoat=.79;
+  material.clearcoatRoughness=.12;
+  if(material.normalScale)material.normalScale.multiplyScalar(.60);
+ }
+ if((finish==='crimsonLacquer'||finish==='toxicLacquer')&&surface==='chitin'){
+  material.roughness=.48;
+  material.metalness=.21;
+  material.clearcoat=.94;
+  material.clearcoatRoughness=.085;
+  if(material.normalScale)material.normalScale.multiplyScalar(.55);
+ }
+ if(finish==='toxicGlass'&&surface==='crystal'){
+  material.roughness=.23;
+  material.metalness=0;
+  material.clearcoat=1;
+  material.clearcoatRoughness=.055;
+  material.emissive=new THREE.Color('#69e91c');
+  material.emissiveMap=maps.emit;
+  material.emissiveIntensity=detail==='low'?.22:.52;
+  if(material.normalScale)material.normalScale.multiplyScalar(.3);
+ }
+ if(finish==='rubyGem'&&surface==='crystal'){
+  material.roughness=.26;
+  material.metalness=.05;
+  material.clearcoat=.97;
+  material.clearcoatRoughness=.075;
+  material.emissive=new THREE.Color('#9a0926');
+  material.emissiveMap=null;
+  material.emissiveIntensity=.10;
  }
  material.userData.m024PBR=surface;
  material.userData.scarabPBRDonorId='m024';
