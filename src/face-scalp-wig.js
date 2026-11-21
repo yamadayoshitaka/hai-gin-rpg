@@ -1763,6 +1763,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     }
    }
   }
+  // The animated mantle remains the outermost contact surface; bare-body
+  // drape attraction may not pull the hair through it on the same frame.
+  projectSadakoMantle(p,zone,rearFacing);
  }
  function writeGeometry(){
   for(let i=0;i<strands.length;i++){
