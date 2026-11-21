@@ -7,6 +7,11 @@ on:
       - 'src/monster-character-cosplay.js'
       - 'src/monster-regal-garments.js'
       - 'src/summon-footwear-pbr.js'
+      - 'src/seraph-ceremonial-regalia.js'
+      - 'src/seraph-ceremonial-material.js'
+      - 'src/monster-cosplay-pigmentation.js'
+      - 'src/female-summon-costumes.js'
+      - 'qa/seraph-ceremonial-regalia.test.mjs'
       - 'qa/summon-leather-boots.test.mjs'
       - 'src/monster-humanoid-combat-poses.js'
       - 'src/summon-gallery-action-catalog.js'
@@ -37,6 +42,9 @@ jobs:
           node --check src/summon-footwear-pbr.js
           node --check src/monster-regal-garments.js
           node --test qa/summon-leather-boots.test.mjs
+          node --check src/seraph-ceremonial-regalia.js
+          node --check src/seraph-ceremonial-material.js
+          node --test qa/seraph-ceremonial-regalia.test.mjs
           node --check src/monster-humanoid-combat-poses.js
           node --test qa/summon-gallery-actions-walk.test.mjs
           node qa/monster-humanoid-combat-poses.test.mjs
