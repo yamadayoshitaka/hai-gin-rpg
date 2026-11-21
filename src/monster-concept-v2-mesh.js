@@ -260,8 +260,7 @@ export function slimeMembrane(g,parent,{name='translucent-main-gel'}={}){
  const profile=[
   [.06,1.46],[.20,1.49],[.43,1.40],[.61,1.21],
   [.72,1.02],[.77,.77],[.82,.56],[.92,.39],
-  [1.09,.21],[1.20,.13],[1.22,.08],[1.12,.075],
-  [.70,.065],[.22,.07],[.045,.08]
+  [1.09,.21],[1.20,.13],[1.22,.08]
  ];
  const sides=conceptDensity(g,100,70,48,26);
  const pos=[],uv=[],color=[],indices=[];
@@ -290,13 +289,10 @@ export function slimeMembrane(g,parent,{name='translucent-main-gel'}={}){
  // The previous open radial poles produced black starburst artifacts.
  const crown=pos.length/3;
  pos.push(0,1.51,0);uv.push(.5,0);color.push(col1.r,col1.g,col1.b);
- const base=pos.length/3;
- pos.push(0,.070,0);uv.push(.5,1);color.push(col2.r,col2.g,col2.b);
- const endRing=(profile.length-1)*(sides+1);
- for(let j=0;j<sides;j++){
-  indices.push(crown,j+1,j);
-  indices.push(base,endRing+j,endRing+j+1);
- }
+ // The gel is intentionally open underneath, where it meets the ground.
+ // A second underside shell previously showed through the transparent dome
+ // as a black starburst/fan. Never render those hidden radial triangles.
+ for(let j=0;j<sides;j++)indices.push(crown,j+1,j);
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
  geo.setAttribute('color',new THREE.Float32BufferAttribute(color,3));
