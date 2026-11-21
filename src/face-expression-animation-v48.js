@@ -15,11 +15,11 @@ export const FACE_EXPRESSIONS=Object.freeze({
  neutral:Object.freeze({label:'通常',brow:0,tilt:0,squint:0,smile:0,open:0,cheek:0}),
  softSmile:Object.freeze({label:'微笑み',brow:.07,tilt:0,squint:.10,smile:.35,open:0,cheek:.24}),
  smile:Object.freeze({label:'笑顔',brow:.09,tilt:0,squint:.18,smile:.75,open:.10,cheek:.50}),
- laugh:Object.freeze({label:'大笑い',brow:.11,tilt:0,squint:.22,smile:1,open:.67,cheek:.66}),
+ laugh:Object.freeze({label:'大笑い',brow:.11,tilt:0,squint:.055,smile:1,open:.98,cheek:.70}),
  angry:Object.freeze({label:'怒り',brow:-.18,tilt:-.27,squint:.28,smile:-.28,open:0,cheek:-.12}),
  shout:Object.freeze({label:'怒鳴る',brow:-.21,tilt:-.33,squint:.23,smile:-.2,open:.96,cheek:-.09}),
  sad:Object.freeze({label:'悲しい',brow:-.06,tilt:.20,squint:.19,smile:-.45,open:.05,cheek:-.13}),
- surprised:Object.freeze({label:'驚き',brow:.36,tilt:.04,squint:-.16,smile:0,open:.38,cheek:0}),
+ surprised:Object.freeze({label:'驚き',brow:.36,tilt:.04,squint:-.16,smile:0,open:.70,cheek:0}),
  troubled:Object.freeze({label:'困る',brow:.12,tilt:.23,squint:.11,smile:-.19,open:.04,cheek:0}),
  serious:Object.freeze({label:'真剣',brow:-.12,tilt:-.08,squint:.13,smile:0,open:0,cheek:-.03}),
  determined:Object.freeze({label:'決意',brow:-.19,tilt:-.10,squint:.22,smile:.03,open:0,cheek:.09}),
@@ -176,7 +176,7 @@ function buildMouth(face,parts,headSize){
  const b=geou.boundingBox;
  const mid=new THREE.Vector3().addVectors(b.min,b.max).multiplyScalar(.5);
  const lipPos=geou.getAttribute('position'), n=Math.floor(lipPos.count/2);
- const frontZ=Math.max(mid.z,lipPos.getZ(n))+headSize.z*.0038;
+ const frontZ=Math.max(mid.z,lipPos.getZ(n))+headSize.z*.011;
  const material=new THREE.MeshStandardMaterial({
   color:0x301b25,roughness:.98,metalness:0,
   side:THREE.DoubleSide,depthWrite:false
@@ -243,7 +243,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  // On sparse donor polygons large cheek displacement creates visible triangular
  // folds. Retain part-rig motion while damping whole-skin deformation only.
- const skinDeformationGain=.64;
+ const skinDeformationGain=.78;
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Keep smooth skin normals across blendshape expressions, including
  // split geometry vertices around UV seams (raw recompute causes facets).
@@ -274,19 +274,23 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const ax=Math.abs((x-centerX)/xd),ny=(y-faceBox.min.y)/yd;
    const front=clamp(((z-faceBox.min.z)/depth-.50)/.18);
    const fall=(a,c,w)=>Math.exp(-.5*((a-c)/w)**2);
-   const lipCorner=fall(ax,.245,.09)*fall(ny,.493,.075)*front;
-   const cheek=fall(ax,.31,.13)*fall(ny,.545,.10)*front;
-   const brow=fall(ax,.31,.14)*fall(ny,.745,.057)*front;
-   const jaw=fall(ax,.12,.23)*fall(ny,.28,.095)*front;
+   const lipCorner=fall(ax,.065,.048)*fall(ny,.502,.050)*front;
+   const cheek=fall(ax,.20,.11)*fall(ny,.565,.085)*front;
+   const brow=fall(ax,.135,.090)*fall(ny,.745,.057)*front;
+   const jaw=fall(ax,.10,.17)*fall(ny,.403,.105)*front;
+   const lowerLip=fall(ax,.055,.068)*fall(ny,.478,.039)*front;
+   const mouthInterior=fall(ax,.050,.070)*fall(ny,.503,.020)*front;
    const inner=fall(ax,.16,.10)*fall(ny,.745,.05)*front;
    const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:e});
    const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:e});
    facialAttr.array[k]=x;
-   facialAttr.array[k+1]=y+yd*skinDeformationGain*(.018*e.smile*lipCorner+
+   facialAttr.array[k+1]=y+yd*skinDeformationGain*(.033*e.smile*lipCorner+
     .012*e.cheek*cheek+.008*e.brow*brow+
-    .013*e.tilt*inner-.020*e.open*jaw+muscle.dy+micro.dy);
+    .013*e.tilt*inner-.050*Math.max(0,e.open)*jaw-
+    .024*Math.max(0,e.open)*lowerLip+muscle.dy+micro.dy);
    facialAttr.array[k+2]=z+depth*skinDeformationGain*(.009*e.cheek*cheek+
-    .008*Math.max(0,e.smile)*lipCorner+muscle.dz+micro.dz);
+    .008*Math.max(0,e.smile)*lipCorner-
+    .014*Math.max(0,e.open)*mouthInterior+muscle.dz+micro.dz);
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
@@ -314,7 +318,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
      attr.array[k]=centerX+(original[k]-centerX)*
       (1+.09*Math.max(0,e.smile));
      attr.array[k+1]=original[k+1]+
-      faceSize.y*(.008*e.smile*corner+.0015*e.cheek);
+      faceSize.y*(.019*e.smile*corner+.0015*e.cheek);
      attr.array[k+2]=original[k+2];
     }
     attr.needsUpdate=true;
@@ -326,7 +330,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const setBlink=value=>{
   blink=clamp(value);
   const squint=FACE_EXPRESSIONS[state.expression].squint*strength;
-  const closure=clamp(blink+(1-blink)*squint,0,1);
+  const expressiveSquint=state.expression==='sleepy'?squint:
+   Math.max(0,squint)*.48;
+  const closure=clamp(blink+(1-blink)*expressiveSquint,0,1);
   for(const side of sides){
    moveGrid(side.a,side.b.rest,closure,true);
    moveGrid(side.b,side.a.rest,closure,false);
@@ -342,11 +348,13 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const setMouthOpen=value=>{
   mouthOpen=clamp(Math.max(value,FACE_EXPRESSIONS[state.expression].open*strength));
   if(!mouth)return;
-  const delta=mouth.height*.027*mouthOpen;
-  mouth.upper.position.y=mouth.restU+delta*.22;
-  mouth.lower.position.y=mouth.restL-delta*.75;
+  const delta=mouth.height*.053*mouthOpen;
+  mouth.upper.position.y=mouth.restU+delta*.23;
+  mouth.lower.position.y=mouth.restL-delta*.86;
   mouth.cavity.visible=mouthOpen>.025;
-  mouth.cavity.scale.set(mouth.width*.37,Math.max(.000001,delta*.62),1);
+  mouth.cavity.position.y=(face.userData.actualMouthCreaseY??mouth.cavity.position.y)-
+   delta*.17;
+  mouth.cavity.scale.set(mouth.width*.52,Math.max(.000001,delta*.78),1);
  };
  const update=dt=>{
   if(disposed)return;
