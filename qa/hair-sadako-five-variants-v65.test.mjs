@@ -58,7 +58,7 @@ test('all five groom differences move only loose guides; approved roots are iden
  const data={};
  for(const variant of Object.values(expected)){
   const points=guide(),before=points.map(x=>x.clone());
-  shapeSadakoVariantGuide(points,{...sample,variant});
+  shapeSadakoVariantGuide(points,{...sample,variant,bangsCut:variant==='bangs'});
   roots.push(points[0].clone());
   data[variant]=points;
   assert.deepEqual(points[0].toArray(),before[0].toArray());
@@ -69,7 +69,7 @@ test('all five groom differences move only loose guides; approved roots are iden
  assert.deepEqual(data.straight.map(p=>p.toArray()),base.map(p=>p.toArray()));
  assert.ok(data.inward.at(-1).x>base.at(-1).x);
  assert.ok(data.outward.at(-1).x<base.at(-1).x);
- assert.ok(Math.abs(data.sauvage[10].x-base[10].x)>.015);
+ assert.ok(Math.max(...data.sauvage.map((p,j)=>Math.abs(p.x-base[j].x)))>.12);
  assert.ok(data.center[10].x<base[10].x-.02);
  const browY=box.min.y+box.getSize(new THREE.Vector3()).y*.765;
  assert.ok(Math.abs(data.bangs.at(-1).y-browY)<.04);
@@ -121,10 +121,10 @@ test('costume skin clipping is available for new descendants, reversible and doe
  }
 });
 test('both comboboxes bind new IDs and retain animation/mantle on all Sadako variants',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-five-variants-v65$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/sadako-invisible-perm-rods-v66$/);
  const mesh=read('face-mesh-studio.html'),body=read('face-body-studio.html');
  for(const src of [mesh,body]){
-  assert.match(src,/20261121-sadako-five-variants-v65/);
+  assert.match(src,/20261121-sadako-invisible-perm-rods-v66/);
   assert.match(src,/isSadakoFamilyStyle/);
   assert.match(src,/face-part-catalog-v32\.js\?v=65/);
  }
