@@ -120,7 +120,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    const id=team.slots[index],s=game.campaign.squads.find(x=>String(x.id)===String(id));
    const count=s?team.counts[String(s.id)]||0:0;
    return '<div class="innWizardRosterRow"><div><b>'+(index+1)+'枠：'+(s?esc(s.job):'空き')+'</b>'+
-    '<small>'+(s?esc(s.rarity||'N')+' · '+sourceLabel(s)+' · '+count+'人':'ジョブを追加できます')+'</small></div>'+
+    '<small>'+(s?'⚔ '+esc(gearName(s.equipment?.weapon))+' ／ 🛡 '+esc(gearName(s.equipment?.armor))+' · '+esc(s.rarity||'N'):'ジョブを追加できます')+'</small></div>'+
     '<div class="innWizardRosterControls">'+
     (s?button('data-inn-wizard-count="'+esc(s.id)+'" data-delta="-1"','−1')+
       '<b>'+count+'人</b>'+button('data-inn-wizard-count="'+esc(s.id)+'" data-delta="1"','＋1'):'')+
