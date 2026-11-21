@@ -104,4 +104,12 @@ test('do not replace existing photographic and approved specialist maps',()=>{
    'approved salamander PBR retained '+id);
   assert.notEqual(mat.userData.all50SurfaceKind,'stone');
  }
+ const stone=new THREE.MeshStandardMaterial();
+ decorateMonsterPhotoMaterial(stone,{
+  family:'golem',speciesId:'m036',role:'skin',detail:'high'
+ });
+ assert.equal(stone.userData.photoSurface,'stone');
+ assert.equal(stone.userData.all50PhotoNormal,'stone-micro-relief');
+ assert.ok(stone.map&&stone.roughnessMap&&stone.normalMap,
+  'photoscanned stone must combine color, roughness and normal relief');
 });
