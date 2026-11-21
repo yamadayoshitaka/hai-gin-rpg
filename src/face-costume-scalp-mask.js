@@ -9,7 +9,8 @@ import {buzzHairlineFractionAtPoint} from './face-scalp-wig.js';
  *
  * Source donor geometry is never edited. Clothing, neck and eyebrows remain.
  */
-export function setCostumeHairScalpMask(face,styleId,{wigVisible=true}={}){
+export function setCostumeHairScalpMask(face,styleId,{
+ wigVisible=true,scalpReferenceGeometry=null}={}){
  if(!face?.isMesh)return {active:false,reason:'no-head'};
  const data=face.userData;
  const donor=data.originalCostumeScalpGeometry||face.geometry;
@@ -25,14 +26,26 @@ export function setCostumeHairScalpMask(face,styleId,{wigVisible=true}={}){
  if(!useMask)return {active:false,restored:true};
  const pos=donor.getAttribute('position');
  if(!pos||pos.count<3)return {active:false,reason:'no-position'};
- donor.computeBoundingBox();
- const box=donor.boundingBox,sz=box.getSize(new THREE.Vector3());
+ // Fitted costume geometry includes a WELDED neck / jaw bridge. Its
+ // bounding box is NOT the immutable follicle donor bounds used by the
+ // wig and salon. Using the neck-extended bounds was responsible for
+ // view-dependent bare patches and an artificial neckline cut.
+ const reference=scalpReferenceGeometry?.getAttribute?.('position')?
+  scalpReferenceGeometry:donor;
+ reference.computeBoundingBox();
+ const box=reference.boundingBox,sz=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
  if(sz.x<=0||sz.y<=0||sz.z<=0)return {active:false,reason:'invalid-bounds'};
  // The exact same curved donor hairline as face-mesh-studio.html.
  // Never use a hemisphere threshold, which cuts a visible horizontal line.
  const distance=p=>p[1]-box.min.y-sz.y*(
-  buzzHairlineFractionAtPoint({x:p[0],y:p[1],z:p[2]},box,sz,center)+.003);
+  buzzHairlineFractionAtPoint({x:p[0],y:p[1],z:p[2]},box,sz,center)+
+  (styleId==='buzz-cut' ? -.012 : -.018));
+ // Only crop the actual face donor. The lower collar is a second sewn
+ // surface and must NEVER become a clipped hairline polygon.
+ const originalStitchedVertices=donor.userData?.studioOriginalFaceVertexCount;
+ const protectedNeckIndex=Number.isInteger(originalStitchedVertices)?
+  originalStitchedVertices:Infinity;
  const attrs=Object.entries(donor.attributes);
  const morphs=Object.entries(donor.morphAttributes||{});
  const index=donor.index,groups=donor.groups.length?donor.groups:
@@ -75,8 +88,10 @@ export function setCostumeHairScalpMask(face,styleId,{wigVisible=true}={}){
  for(const g of groups){
   const start=vertices,stop=Math.min(g.start+g.count,index?index.count:pos.count);
   for(let k=g.start;k+2<stop;k+=3){
-   const source=[0,1,2].map(j=>read(index?index.getX(k+j):k+j));
-   const inside=source.map(v=>v.dist<=0);
+   const ids=[0,1,2].map(j=>index?index.getX(k+j):k+j);
+   const source=ids.map(read);
+   const stitchedNeck=ids.some(id=>id>=protectedNeckIndex);
+   const inside=stitchedNeck?[true,true,true]:source.map(v=>v.dist<=0);
    const poly=[];
    for(let j=0;j<3;j++){
     const a=source[j],b=source[(j+1)%3];
@@ -115,8 +130,10 @@ export function setCostumeHairScalpMask(face,styleId,{wigVisible=true}={}){
  data.costumeScalpMaskActive=true;
  data.costumeScalpMaskRemovedTriangles=removed;
  data.costumeScalpMaskClippedTriangles=clipped;
- data.costumeScalpMaskMode='shared-donor-hairline-v62';
- return {active:true,removed,clipped,styleId};
+ data.costumeScalpMaskMode='donor-reference-neck-safe-v63';
+ data.costumeScalpMaskReference=reference===donor?'displayed-face':'uncut-follicle-donor';
+ return {active:true,removed,clipped,styleId,
+  source: data.costumeScalpMaskReference,protectedNeckIndex};
 }
 
 export function releaseCostumeHairScalpMask(face){
