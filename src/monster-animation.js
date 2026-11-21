@@ -168,7 +168,19 @@ export function animateMonsterModel(model,time=0){
    }else if(name==='jaw'){
      part.rotation.x=(action==='roar'?.55:pulse*.42)+
        Math.sin(motionTime*3)*.022+dying*.08;
-   }else if(name==='tail'){
+   }else if(name==='hydraJawL'||name==='hydraJawR'){
+      // Additional dragon jaws follow the same attack as the center head.
+      const side=name.endsWith('L')?-1:1;
+      part.rotation.x=(action==='roar'?.58:Math.max(strike,special)*.46)+
+        .024*Math.sin(motionTime*3+side*.6)+dying*.08;
+    }else if(name==='hydraHeadL'||name==='hydraHeadR'){
+      const side=name.endsWith('L')?-1:1;
+      // Neck and skull share the same torso-rooted pivot.
+      part.rotation.x=-.15*strike-.22*special+
+        .034*Math.sin(motionTime*1.6+side)+hit*.11;
+      part.rotation.y=side*(.17+.085*Math.sin(motionTime*.93+side)+
+        .10*special);
+    }else if(name==='tail'){
      part.rotation.y=Math.sin(motionTime*2.8)*.19+strike*.35+special*.58;
    }else if(name==='abdomen'){
      part.rotation.z=Math.sin(motionTime*2.2)*.06;

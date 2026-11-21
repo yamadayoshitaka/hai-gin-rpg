@@ -77,7 +77,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.35</small></h1>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.5.36</small></h1>
  <a href="./summon-showcase.html?v=4.5.18">召喚獣一覧</a><a href="./creature-model-adoption.html">モデルを選択・採用（簡単）</a><a href="./monster-quality-review.html?monster=m001">品質KPI管理</a><a href="./creature-reconstruction-plan.html">108体再構成</a></header>
 <main id="bestiaryMain">
  <aside id="catalogPanel" aria-label="モンスター一覧">
@@ -190,8 +190,8 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {m019FullBodyFit} from './src/m019-full-body-camera.js?v=20261120-mobile-leg-fit';
 import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.92';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m016-m017-salamander-quality-v21-20261121';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m019-matched-charcoal-limbs-v20-20261121';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
 import {createCosplayedHumanoidMonster} from './src/monster-character-cosplay.js?v=tengu-canonical-flight-v14-20261118';
 import {createBeastfolkMonsterModel,disposeBeastfolkMonsterModel}
  from './src/monster-beastfolk-geometry.js?v=4.5.23';
@@ -394,6 +394,23 @@ function focusCamera(full=false){
  }
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
+ if(selected==='m018'&&model?.userData?.m018DragonHeadCount===3){
+  // Fit all three long dragon necks AND original feet on narrow screens.
+  const aspect=Math.max(.20,view.clientWidth/Math.max(1,view.clientHeight));
+  camera.aspect=aspect;camera.updateProjectionMatrix();
+  const vfov=THREE.MathUtils.degToRad(camera.fov);
+  const hfov=2*Math.atan(Math.tan(vfov/2)*aspect);
+  const distance=Math.max(4.8,
+    size.y/(2*Math.tan(vfov/2))*1.25,
+    size.x/(2*Math.tan(hfov/2))*1.35,
+    size.z/(2*Math.tan(vfov/2))*1.20);
+  const offset=new THREE.Vector3(.20,.09,.98).normalize().multiplyScalar(distance);
+  controls.target.set(center.x,Math.max(.7,center.y),center.z);
+  camera.position.copy(controls.target).add(offset);
+  controls.maxDistance=85;
+  model.userData.m018LastFit={threeDragonHeads:true,fullBody:true,distance,aspect};
+  controls.update();return;
+ }
  if(selected==='m019'&&model?.userData?.m019ModelFollowsFourView){
   // The previous portrait camera fitted only vertical FOV, clipping the
   // long tail off-screen. Fit the real X/Z bounds in the viewport H-FOV.
@@ -446,6 +463,22 @@ byId('zoomOut').onclick=()=>zoomModel(1.30);
 byId('resetCamera').onclick=()=>{if(model){m019CameraUserAdjusted=false;focusCamera(true)}};
 byId('portraitCamera').onclick=()=>{
  if(!model)return;
+ if(selected==='m018'&&model.userData.m018DragonHeadCount===3){
+  // Face view frames all three moving dragon skulls.
+  model.updateMatrixWorld(true);
+  const heads=['hydraSkullL','hydraSkullC','hydraSkullR']
+    .map(id=>model.userData.pivots?.[id]).filter(Boolean);
+  if(heads.length===3){
+   const center=new THREE.Vector3();
+   for(const h of heads)center.add(h.getWorldPosition(new THREE.Vector3()));
+   center.divideScalar(3);
+   controls.target.copy(center);
+   const scale=Math.max(1,model.scale.x);
+   camera.position.set(center.x+.36*scale,
+     center.y+.13*scale,center.z+3.6*scale);
+   controls.update();return;
+  }
+ }
  if(selected==='m013'&&model.userData.avianRebuildRevision){
   const head=model.userData.pivots?.head||model.getObjectByName('head');
   if(head){

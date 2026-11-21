@@ -99,6 +99,11 @@ jobs:
         # Preserve existing Pages policy but expose failure in Actions.
         continue-on-error: true
         run: node --test qa/salamander-lineage-remesh.test.mjs qa/salamander-lineage-surface.test.mjs
+      - name: Verify m018 existing-body three-dragon hydra anatomy and animated heads
+        id: qa_m018_three_heads
+        # Keep established Pages publication policy; expose QA outcome.
+        continue-on-error: true
+        run: node --test qa/m018-hydra-dragon-heads.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
         id: qa_10
         # Owner permits deployment despite QA failure; leave the outcome visible.

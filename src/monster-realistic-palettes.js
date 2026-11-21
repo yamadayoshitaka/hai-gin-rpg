@@ -10,6 +10,10 @@ export const MONSTER_REALISTIC_PALETTE=Object.freeze({
    shadow:'#283e34',bone:'#4a5341',eye:'#dfc67a'}),
  m017:Object.freeze({skin:'#4a6066',light:'#65777a',
    shadow:'#303f45',bone:'#819091',metal:'#73868a',eye:'#e2b46b'}),
+ // Existing m018 body identity now uses reference-matched violet scales
+ // with emerald toxic crests. No other reptile receives these colors.
+ m018:Object.freeze({skin:'#3d304d',light:'#60556a',shadow:'#211d30',
+   bone:'#a9a4ab',accent:'#58e85c',eye:'#a9ff63'}),
  m019:Object.freeze({skin:'#30292a',light:'#49393b',accent:'#ff792b',
    bone:'#514141',eye:'#ffbb55',shadow:'#151316'}),
  m031:Object.freeze({skin:'#777b72',light:'#a6a89a',bone:'#d2c5ab',

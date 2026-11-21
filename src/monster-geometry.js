@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m016-m017-salamander-quality-v21-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -30,6 +30,8 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
  from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
+import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns}
+ from './m018-hydra-sculpt.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
@@ -343,6 +345,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const v=s.variant,k=s.size;
  const salamanderLineage=reptile?salamanderLineageFor(s.id):null;
  const magmaSalamander=!!salamanderLineage&&s.id==='m019';
+ const hydra=s.id==='m018';
  const derivativeSalamander=!!salamanderLineage&&!magmaSalamander;
  const canine=!feline&&!reptile;
  const felineMaster=feline?felineMasterVariant(s.id):null;
@@ -540,11 +543,22 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
   collar.userData.salamanderBuriedNeckSocket=true;
  }else g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',
+   hydra?[0,1.315,.45]:
    magmaSalamander?[0,1.265,1.235]:
    [0,beastRemesh?1.300:1.56,.70+v*.06+(beastRemesh?.086:0)],
-   // m002 and felines need the same moving frame as the rib cage.
-   (s.id==='m002'||felineMaster||magmaSalamander)?torso:g.root);
+   // Three hydra necks have their articulated roots INSIDE the
+   // existing rib cage; do not shift or replace the body or limbs.
+   (hydra||s.id==='m002'||felineMaster||magmaSalamander)?torso:g.root);
  if(salamanderLineage&&!magmaSalamander)head.position.y-=salamanderLineage.bodyDrop;
+ // Legacy wolf/cat mouth/fur code later in this function still reads
+ // faceCore. Keep its lexical binding outside the hydra-only branch so
+ // every existing non-hydra species stays unchanged.
+ let faceCore=null;
+ if(hydra){
+  // Replace ONLY the inherited single generic reptile muzzle.
+  // The original m018 torso, four legs, tail and combat behavior survive.
+  sculptM018Hydra(g,torso,head,{detail:coatDetail});
+ }else{
  if(s.id==='m002'){
    // The donor m001's tiny face is already compressed in DISPLAY space.
    // Undo m002's enlarged morph on the complete head pivot, ensuring
@@ -569,7 +583,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  // The earlier 1/3-scale inner "ball face" floated in front of the muzzle.
  // The new compact anatomical skull is a surface loft with directly fitted
  // eye sockets. Nose, jaw and the moving mane retain independent pivots.
- const faceCore=s.id==='m001'?
+ faceCore=s.id==='m001'?
    g.group('m001-face-core',[0,.025,.055],head):head;
  if(s.id==='m001'){
    // Keep the skull, nose and jaw on the same forward centerline, but
@@ -1434,6 +1448,7 @@ cloneCanine?
  }else for(let i=0;i<4;i++)g.spike(jaw,'bone',
    [(i-1.5)*.12,.01,.27],
    [(i-1.5)*.12,-.10,.29],.025);
+ } // end non-hydra generic one-head assembly
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
    // Former limb pivot at y=1.13 kept all four feet half a metre above
@@ -2468,9 +2483,11 @@ const wolfKingMane=(s.id==='m001'||cloneCanine)?[
    if(feline&&!felineMaster){for(let i=0;i<5;i++)for(const side of [-1,1]){
      g.spike(head,'light',[side*.24,.12-i*.06,.1],[side*(.36+i*.02),.02-i*.06,.22],.027);
    }}
-}else if(salamanderLineage){
+ }else if(salamanderLineage){
    sculptSalamanderLineageBack(g,torso,{id:s.id,detail:coatDetail});
    sculptSalamanderSurface(g,torso,head,{id:s.id,detail:coatDetail});
+ }else if(hydra){
+   sculptM018HydraThorns(g,torso,tail,tailMid,{detail:coatDetail});
  }else{
    for(let i=0;i<12+v*3;i++){
      const z=-.65+i*.12;
@@ -3062,6 +3079,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  addNonhumanMonsterWardrobe(g,spec);
 if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
  if(spec.id==='m019')markMagmaSalamander(g.root);
+ if(spec.id==='m018')g.root.userData.gameModelRevision=M018_HYDRA_REVISION;
  // The optional effects are created lazily only when a rendered near-LOD
  // m001 performs an action. Pure timing tests can import monster-animation
  // without importing Three.js or allocating a GPU mesh.
@@ -3103,5 +3121,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m016-m017-salamander-quality-v21-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m018-existing-body-three-long-dragon-necks-v22-20261121';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m016-m017-salamander-quality-v21-20261121';
