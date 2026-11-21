@@ -6,7 +6,7 @@
  */
 import * as THREE from 'three';
 
-export const GARGOYLE_SPECIES_REVISION='m042-slim-sword-flight-v2-20261121';
+export const GARGOYLE_SPECIES_REVISION='m042-slender-talon-safe-sword-v3-20261121';
 export const GARGOYLE_MATERIAL_ROLES=Object.freeze({
  gargoyleStone:0x5b5c63,
  gargoyleRidge:0x77767a,
@@ -61,15 +61,15 @@ function rockLoft(rings,detail,{ridge=.015,grain=.022,kind='gargoyle'}={}){
 }
 export function createGargoyleTorsoGeometry({detail='high',region='chest'}={}){
  return region==='pelvis'?rockLoft([
-  {y:.19,rx:.145,rz:.118},{y:.11,rx:.169,rz:.132},
-  {y:-.01,rx:.158,rz:.129},{y:-.18,rx:.140,rz:.115},
-  {y:-.27,rx:.104,rz:.085}
+  {y:.19,rx:.119,rz:.099},{y:.11,rx:.139,rz:.111},
+  {y:-.01,rx:.130,rz:.108},{y:-.18,rx:.116,rz:.095},
+  {y:-.27,rx:.085,rz:.072}
  ],detail,{kind:'gargoyle-muscular-pelvis',ridge:.013}):
  rockLoft([
-  {y:.389,rx:.092,rz:.093},{y:.321,rx:.191,rz:.139},
-  {y:.225,rx:.247,rz:.155},{y:.116,rx:.239,rz:.164},
-  {y:.014,rx:.211,rz:.153},{y:-.139,rx:.172,rz:.133},
-  {y:-.296,rx:.156,rz:.122},{y:-.395,rx:.117,rz:.098}
+  {y:.389,rx:.080,rz:.080},{y:.321,rx:.158,rz:.118},
+  {y:.225,rx:.197,rz:.129},{y:.116,rx:.194,rz:.137},
+  {y:.014,rx:.171,rz:.127},{y:-.139,rx:.141,rz:.112},
+  {y:-.296,rx:.125,rz:.101},{y:-.395,rx:.098,rz:.083}
  ],detail,{kind:'gargoyle-lean-sculpted-pectorals-and-abs',ridge:.029});
 }
 export function createGargoyleHeadGeometry({detail='high'}={}){
@@ -95,9 +95,9 @@ export function createGargoyleRibPlateGeometry({detail='high',side=1}={}){
   const t=r/rows;
   for(let c=0;c<=cols;c++){
    const u=c/cols;
-   const x=side*(.030+u*(.173-.039*t));
+   const x=side*(.025+u*(.135-.031*t));
    const y=.265-t*.365+.020*u;
-   const stone=-.148-.018*Math.sin(u*Math.PI)
+   const stone=-.117-.014*Math.sin(u*Math.PI)
     -.014*Math.cos(t*Math.PI)+.007*Math.sin(u*14+t*17);
    pts.push(x,y,stone);
    uv.push(u,t);
@@ -116,10 +116,10 @@ export function createGargoyleRibPlateGeometry({detail='high',side=1}={}){
 }
 export function createGargoyleLimbGeometry({detail='high',part='upperArm'}={}){
  const sizes={
-  upperArm:[.405,.109,.103,.076],
-  forearm:[.44,.088,.104,.073],
-  thigh:[.525,.125,.137,.095],
-  shin:[.49,.097,.099,.063]
+  upperArm:[.405,.079,.076,.057],
+  forearm:[.44,.068,.079,.057],
+  thigh:[.525,.094,.103,.072],
+  shin:[.49,.071,.075,.049]
  };
  const p=sizes[part];if(!p)throw Error('Unknown gargoyle limb '+part);
  const [len,top,middle,bottom]=p;
@@ -163,6 +163,45 @@ export function createGargoyleSwordBladeGeometry({detail='high'}={}){
  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  g.setIndex(indices);g.computeVertexNormals();
  g.userData={kind:'gargoyle-sword-double-edge',detail};
+ return g;
+}
+/** A single closed toe-to-talon mesh rooted INSIDE the front of the paw.
+ * Earlier claws used upright horn meshes rotated the wrong way and appeared
+ * as detached shards below the feet. This grows toward the creature's -Z
+ * forward direction without a break at the joint, in every LOD.
+ */
+export function createGargoyleToeClawGeometry({detail='high'}={}){
+ const steps=detail==='low'?6:detail==='medium'?9:15;
+ const sides=detail==='low'?7:11,vertices=[],uv=[],indices=[];
+ for(let j=0;j<=steps;j++){
+  const t=j/steps;
+  const w=.033*Math.pow(1-t,.8)+.0012;
+  const z=-.245*t;
+  const y=-.016*t-.032*t*t;
+  for(let i=0;i<=sides;i++){
+   const theta=i/sides*Math.PI*2;
+   vertices.push(Math.cos(theta)*w,y+Math.sin(theta)*w*.78,z);
+   uv.push(i/sides,t);
+   if(j>0&&i<sides){
+    const a=(j-1)*(sides+1)+i,b=j*(sides+1)+i;
+    indices.push(a,b,a+1,a+1,b,b+1);
+   }
+  }
+ }
+ const bottom=vertices.length/3;
+ vertices.push(0,0,0);uv.push(.5,0);
+ const end=vertices.length/3;
+ vertices.push(0,-.048,-.245);uv.push(.5,1);
+ for(let i=0;i<sides;i++){
+  indices.push(bottom,i+1,i);
+  const offset=steps*(sides+1);
+  indices.push(end,offset+i,offset+i+1);
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(indices);g.computeVertexNormals();
+ g.userData={kind:'gargoyle-paw-integrated-toe-talon',detail,rootEmbedded:true};
  return g;
 }
 /** Curved backward-facing horn/crown or finger claw, NOT a rounded sphere. */
@@ -350,12 +389,12 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
  add(frames.head,createGargoyleHeadGeometry({detail}),
   'gargoyleStone','angular-demon-face');
  gem(frames.neck||frames.head,'tendoned-rock-neck','gargoyleStone',
-  [0,0,.019],[.086,.128,.093]);
+  [0,0,.019],[.073,.123,.079]);
  // Stone cheek arches, V-shaped horn crown and brow, narrow inlaid eyes.
  for(const side of [-1,1]){
   const i=side<0?0:1;
   gem(frames.head,'high-cheekbone-'+i,'gargoyleRidge',
-   [side*.090,-.032,-.090],[.058,.059,.063]);
+   [side*.090,-.032,-.090],[.049,.057,.058]);
   add(frames.head,new THREE.BoxGeometry(.080,.019,.014),
    'gargoyleShadow','sunken-eye-'+i,
    [side*.071,.047,-.154],[0,0,side*.19]);
@@ -382,39 +421,39 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
   add(frames.chest,createGargoyleRibPlateGeometry({detail,side}),
    'gargoyleRidge','fitted-chiseled-pectoral-'+i);
   line(frames.chest,'gargoyleShadow','sternum-fissure-'+i,[
-   [side*.090,.28,-.125],[side*.160,.165,-.165],
-   [side*.088,.012,-.176],[side*.114,-.218,-.148]
+   [side*.076,.28,-.103],[side*.135,.165,-.135],
+   [side*.071,.012,-.144],[side*.091,-.218,-.120]
   ],.007);
   for(let k=0;k<(near?3:2);k++)
    line(frames.chest,'gargoyleRidge','layered-rib-chisel-'+i+'-'+k,[
-    [side*.035,.055-k*.096,-.175],
-    [side*.123,.049-k*.096,-.167],
-    [side*.182,.020-k*.096,-.121]
+    [side*.032,.055-k*.096,-.142],
+    [side*.102,.049-k*.096,-.136],
+    [side*.149,.020-k*.096,-.100]
    ],.009);
  }
  gem(frames.head,'angular-chin-point','gargoyleRidge',
   [0,-.168,-.092],[.053,.062,.078]);
  for(let k=0;k<3;k++)
   line(frames.chest,'gargoyleShadow','carved-abdominals-'+k,[
-   [-.11,-.09-k*.096,-.150],[0,-.085-k*.096,-.172],
-   [.11,-.09-k*.096,-.150]
+   [-.086,-.09-k*.096,-.120],[0,-.085-k*.096,-.137],
+   [.086,-.09-k*.096,-.120]
   ],.007);
  for(let i=0;i<2;i++){
   const side=i===0?-1:1;
   const upper=frames.arms[i],fore=frames.forearms[i],hand=frames.hands[i];
   const thigh=frames.legs[i],calf=frames.calves[i],foot=frames.feet[i];
   add(upper,createGargoyleSpireGeometry({detail,height:.18,
-    width:.09,curve:.04,side}),
+    width:.058,curve:.04,side}),
    'gargoyleRidge','angular-shoulder-crest-'+i,
    [side*.035,.09,-.023],[0,0,side*.67]);
   add(upper,createGargoyleLimbGeometry({detail,part:'upperArm'}),
    'gargoyleStone','upper-arm-shell-'+i);
   gem(fore,'sinewy-elbow-'+i,'gargoyleRidge',
-   [0,0,0],[.073,.062,.078]);
+   [0,0,0],[.057,.053,.062]);
   add(fore,createGargoyleLimbGeometry({detail,part:'forearm'}),
    'gargoyleStone','forearm-shell-'+i);
   gem(hand,'sculpted-talon-palm-'+i,'gargoyleStone',
-   [0,-.069,0],[.085,.104,.083]);
+   [0,-.069,0],[.069,.092,.073]);
   for(let finger=0;finger<4;finger++){
    const x=(finger-1.5)*.051;
    horn(hand,'curved-stone-hand-claw-'+i+'-'+finger,'gargoyleClaw',
@@ -422,21 +461,23 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
      rotation:[Math.PI,0,side*.07]});clawCount++;
   }
   gem(thigh,'pelvis-side-muscle-'+i,'gargoyleStone',
-   [0,-.01,0],[.096,.104,.092]);
+   [0,-.01,0],[.080,.088,.078]);
   add(thigh,createGargoyleLimbGeometry({detail,part:'thigh'}),
    'gargoyleStone','thigh-shell-'+i);
   gem(calf,'angular-kneecap-'+i,'gargoyleRidge',
-   [0,0,-.041],[.081,.071,.080]);
+   [0,0,-.041],[.062,.060,.068]);
   add(calf,createGargoyleLimbGeometry({detail,part:'shin'}),
    'gargoyleStone','shin-shell-'+i);
   gem(foot,'stone-ankle-'+i,'gargoyleStone',
-   [0,.008,0],[.080,.073,.084]);
+   [0,.008,0],[.064,.067,.073]);
   gem(foot,'long-demon-paw-'+i,'gargoyleStone',
-   [0,-.076,-.114],[.096,.070,.175]);
+   [0,-.076,-.114],[.082,.063,.169]);
+  // Roots overlap the paw shell so no floating pieces or floor spikes.
+  // The tapered toes curve forward, with a visible claw point on each toe.
   for(let toe=0;toe<3;toe++){
-   horn(foot,'raptor-stone-toe-'+i+'-'+toe,'gargoyleClaw',
-    [(toe-1)*.081,-.105,-.277],
-    {height:.13,width:.026,curve:.016,side,rotation:[Math.PI*.56,0,0]});
+   add(foot,createGargoyleToeClawGeometry({detail}),
+    'gargoyleClaw','raptor-stone-toe-'+i+'-'+toe,
+    [(toe-1)*.058,-.078,-.215]);
    clawCount++;
   }
   if(near){
@@ -497,13 +538,17 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
  // The sword is attached to the right hand BONE, not a static world prop.
  // Its tip points down in idle and follows native attack arm animation.
  const swordHand=frames.hands[1];
- add(swordHand,new THREE.CylinderGeometry(.027,.03,.20,far(detail)?8:12),
+ const swordPivot=new THREE.Group();
+ swordPivot.name='gargoyle-m042-hand-weapon-clearance';
+ swordPivot.userData.gargoyleSwordBoneMounted=true;
+ swordHand.add(swordPivot);
+ add(swordPivot,new THREE.CylinderGeometry(.027,.03,.20,far(detail)?8:12),
   'gargoyleHilt','sword-leather-grip',[0,-.13,-.025]);swordCount++;
- add(swordHand,new THREE.BoxGeometry(.244,.030,.045),
+ add(swordPivot,new THREE.BoxGeometry(.244,.030,.045),
   'gargoyleHilt','sword-crossguard',[0,-.238,-.025]);swordCount++;
- add(swordHand,createGargoyleSwordBladeGeometry({detail}),
+ add(swordPivot,createGargoyleSwordBladeGeometry({detail}),
   'gargoyleBlade','sword-faceted-blade',[0,-.256,-.025]);swordCount++;
- add(swordHand,new THREE.OctahedronGeometry(.040,0),
+ add(swordPivot,new THREE.OctahedronGeometry(.040,0),
   'gargoyleHilt','sword-pommel',[0,.006,-.025]);swordCount++;
  add(frames.pelvis,createGargoyleTailGeometry({detail}),
   'gargoyleStone','long-jointed-stone-tail');
@@ -525,5 +570,6 @@ export function addGargoyleMonsterAnatomy({profile,detail='high',frames,attach,t
  frames.chest.userData.gargoyleWingPivots=wingPivots;
  frames.chest.userData.gargoyleClawCount=clawCount;
  frames.chest.userData.gargoyleSwordCount=swordCount;
+ frames.chest.userData.gargoyleSwordPivot=swordPivot;
  return true;
 }
