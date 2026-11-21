@@ -53,9 +53,9 @@ test('Sadako is a long, face-draping style with an opaque low-gloss crown',()=>{
  assert.match(hair,/roughness:\.95,metalness:0,clearcoat:0/);
  assert.match(hair,/roughness:\.90,metalness:0/);
  assert.match(hair,/roughness:\.91,metalness:0/);
- assert.match(page,/sadako-crown-fibre-curtain-v50/,
+ assert.match(page,/buzz-uniform-pigment-v51/,
   'studio cache URL must import the new version');
- assert.match(read('face-body-studio.html'),/sadako-crown-fibre-curtain-v50/,
+ assert.match(read('face-body-studio.html'),/buzz-uniform-pigment-v51/,
   'full-body studio must not silently use the old hair shader');
 });
 
