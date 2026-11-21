@@ -87,7 +87,7 @@ test('Sadako v50 crown microfibres are a stable real-donor matte mesh',()=>{
 test('v50 Sadako falls in front of the face without artificial centre parting',()=>{
  const src=read('src/face-scalp-wig.js');
  assert.match(src,/const partGap=style.id==='sadako-straight-long'\?0:/);
- assert.match(src,/const crownUnderlay=appendRealCrownUnderlay/);
+ assert.match(src,/const crownUnderlay=shortHair\?/);
  assert.match(src,/const sadakoCrownFlow=sadakoMaster\?createSadakoCrownFlow/,
   'Do not hide missing long roots under synthetic short black stubble');
  assert.match(src,/node.userData\?\.styledHairGeometry/,
