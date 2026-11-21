@@ -287,7 +287,7 @@ export function renderThreeTeamPlanner({game,teamId=1,cellIndex=5,view='setup',j
  '<select data-battle-plan-method aria-label="実行方法">'+
  Object.values(STRATEGY_METHODS).map(m=>'<option value="'+esc(m.id)+'">'+esc(m.name)+'</option>').join('')+
  '</select><button type="button" data-sortie-battle-save>現在のステージ目的で保存</button></div>';
- const tabList=[['review','◀ 確認'],['templates','①陣形'],['setup','②配置'],['orders','③作戦'],['battlePlans','テンプレ'],['assessment','評価'],['captains','隊長']];
+ const tabList=[['formationReview','◀ 陣形確認'],['templates','陣形'],['setup','ジョブ・人数'],['captains','隊長']];
  const tabBar='<nav class="sortieModeTabs" aria-label="宿屋の機能">'+tabList.map(([key,label])=>
  button('data-sortie-view="'+key+'"',esc(label),view===key)).join('')+'</nav>';
  const pagesByView={setup:main,templates,jobs,count:countPanel,orders:orderPanel,captains:captainPage,divisions:divisionPanel,battlePlans,assessment};
