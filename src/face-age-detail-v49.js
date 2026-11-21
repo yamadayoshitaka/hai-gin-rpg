@@ -6,7 +6,7 @@
  * eye/mouth openings, especially after an expression changed the face.
  */
 import * as THREE from 'three';
-import {resolveAgeBand} from './character-demographics-v47.js?v=49';
+import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 const bell=(x,center,width)=>Math.exp(-.5*((x-center)/width)**2);
 export function attachAgeDetails(face,ageBand='twenties'){
  if(!face?.isMesh||!face.geometry?.getAttribute('position'))
