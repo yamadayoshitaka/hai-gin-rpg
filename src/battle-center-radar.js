@@ -7,7 +7,7 @@ export function squadRadarPins(allies=[],enemies=[],worldSize=232,rows=[]){
   for(let i=0;i<group.length;i++){
    const squad=group[i];if(!squad)continue;
    if(!Number.isFinite(squad.x)||!Number.isFinite(squad.z))continue;
-   if(sideCount.has(team+':'+String(squad.id))&&sideCount.get(team+':'+String(squad.id))<=0)continue;
+   if(!(Number(squad.alive)>0)&&sideCount.has(team+':'+String(squad.id))&&sideCount.get(team+':'+String(squad.id))<=0)continue;
    result.push({team,id:String(squad.id),number:i+1,
     inContact:Boolean(squad.inContact),
     x:Math.max(0,Math.min(1,squad.x/Math.max(1,worldSize-1))),
