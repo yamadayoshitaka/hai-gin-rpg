@@ -1157,6 +1157,7 @@ import {installBattleSituationPause} from './src/battle-situation-pause.js?v=202
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=20261117-horse-saddle-fix1';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {bridgeSafetySnapshot} from './src/battle-bridge-safety.js?v=20261120-bridge1';
+import {BATTLE_BRIDGE_WIDTH_CELLS,BATTLE_BRIDGE_HALF_WIDTH_CELLS,BATTLE_BRIDGE_LANE_OFFSETS,monsterHasClearance} from './src/battle-wide-bridge-clearance.js?v=20261121-wide1';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG} from './src/monster-catalog.js';
@@ -3102,7 +3103,7 @@ function createRaisedBridge(row,type,index){
  model.traverse(part=>{if(part.isMesh){part.castShadow=true;part.receiveShadow=true}});
  scene.add(model);
  const record={index,row,type,model,origin:model.position.clone(),cells:new Set(),destroyed:false};
- for(let x=start;x<=end;x++)for(let z=row-(type==='stone'?1:0);z<=row+(type==='stone'?1:0);z++){
+ for(let x=start;x<=end;x++)for(let z=row-BATTLE_BRIDGE_HALF_WIDTH_CELLS;z<=row+BATTLE_BRIDGE_HALF_WIDTH_CELLS;z++){
   const key=x+','+z;record.cells.add(key);bridgeCells.add(key);bridgeByCell.set(key,record);bridgeHeights.set(key,deckY+.09);
  }
  // High bridge supports: columns extend toward the river beneath the deck.
@@ -3111,7 +3112,7 @@ function createRaisedBridge(row,type,index){
   const groundY=smoothHeight(center+x,row);
   const h=Math.max(.8,deckY-groundY);
   const column=new THREE.Mesh(new THREE.BoxGeometry(type==='stone'?.9:.48,h,type==='stone'?.9:.48),supportMat);
-  column.position.set(x*CELL, -h/2, z*(type==='stone'?CELL*1.25:CELL*.42));
+  column.position.set(x*CELL, -h/2, z*(BATTLE_BRIDGE_WIDTH_CELLS*CELL/2-.45));
   column.castShadow=true;column.receiveShadow=true;model.add(column);
  }
  // Both banks get five ascending steps, with posts and handrails.
@@ -3123,11 +3124,14 @@ function createRaisedBridge(row,type,index){
    const x=side<0?start-step:end+step;
    const base=smoothHeight(x,row),rise=(6-step)/6;
    const y=base+(deckY-base)*rise;
-   const width=type==='stone'?CELL*3:CELL;
+   const width=BATTLE_BRIDGE_WIDTH_CELLS*CELL;
    const stair=new THREE.Mesh(new THREE.BoxGeometry(CELL*.98,.18,width),stairMaterial);
    stair.position.set((x-6)*CELL,y-.09,(row-6)*CELL);stair.castShadow=true;stair.receiveShadow=true;stairs.add(stair);
-   const key=x+','+row;stairCells.set(key,{height:y,bridge:record});bridgeApproachCells.add(key);
-   bridgeByCell.set(key,record);record.cells.add(key);
+   for(let dz=-BATTLE_BRIDGE_HALF_WIDTH_CELLS;dz<=BATTLE_BRIDGE_HALF_WIDTH_CELLS;dz++){
+    const key=x+','+(row+dz);
+    stairCells.set(key,{height:y,bridge:record});bridgeApproachCells.add(key);
+    bridgeByCell.set(key,record);record.cells.add(key);
+   }
    for(const edge of [-1,1]){
     const z=(row-6)*CELL+edge*(width*.49);
     const post=new THREE.Mesh(new THREE.BoxGeometry(.13,1.05,.13),railMaterial);
@@ -3143,7 +3147,7 @@ function createRaisedBridge(row,type,index){
  }
  // Guard rails run along both sides of the full bridge deck.
  for(const edge of [-1,1]){
-  const z=(row-6)*CELL+edge*(type==='stone'?CELL*1.48:CELL*.49);
+  const z=(row-6)*CELL+edge*(BATTLE_BRIDGE_WIDTH_CELLS*CELL/2+.13);
   for(let x=start;x<=end;x+=2){
    const post=new THREE.Mesh(new THREE.BoxGeometry(.14,1.1,.14),railMaterial);
    post.position.set((x-6)*CELL,deckY+.55,z);post.castShadow=true;stairs.add(post);
@@ -3282,8 +3286,8 @@ const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
 const bridgeSafeCells=new Set();
 for(const b of bridges){
  const center=116+Math.round(5*Math.sin(b.row*.055));
- for(let x=center-14;x<=center+14;x++){
-  bridgeSafeCells.add(x+','+b.row);
+ for(let x=center-14;x<=center+14;x++)for(let dz=-BATTLE_BRIDGE_HALF_WIDTH_CELLS;dz<=BATTLE_BRIDGE_HALF_WIDTH_CELLS;dz++){
+  bridgeSafeCells.add(x+','+(b.row+dz));
  }
 }
 // Shared navigation collision map built from the *accepted* object placements.
@@ -3539,7 +3543,11 @@ function collapseMissionTree(id){
  if(massSim){massSim.updateWalkable(passable);massSim.updateOpaque(opaque);massWorker?.updateTerrain(passable,new Set(),opaque);}
  return true;
 }
-function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z,actor)&&(!skirmishObjectOccupancy||skirmishObjectOccupancy[z*WORLD_SIZE+x]!==-2)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
+function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z,actor)&&
+ (!skirmishObjectOccupancy||skirmishObjectOccupancy[z*WORLD_SIZE+x]!==-2)&&
+ (!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&
+ (!reservedCells.has(k)||reservedCells.get(k)===actor)&&
+ monsterHasClearance(x,z,actor?.monsterSpec,actors,actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){
  if(!availableCell(x,z,a))return false;
@@ -3611,7 +3619,7 @@ function placeStoryFormation(team,unit){
  const z=rowByLane[lane]+(column-2)*3.25;
  return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
 }
-const spawnOutside=(x,z,team)=>{
+const spawnOutside=(x,z,team,monsterSpec=null)=>{
  const base=team===0?{x:104,z:116}:{x:128,z:116};
  for(let radius=0;radius<75;radius++){
   for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
@@ -3620,10 +3628,11 @@ const spawnOutside=(x,z,team)=>{
    const inHut=(nx>=hutBounds.minX-2&&nx<=hutBounds.maxX+2&&nz>=hutBounds.minZ-2&&nz<=hutBounds.maxZ+2)||
     (nx>=secondHutBounds.minX-2&&nx<=secondHutBounds.maxX+2&&nz>=secondHutBounds.minZ-2&&nz<=secondHutBounds.maxZ+2);
    if(inHut||townBuildings.some(b=>Math.abs(nx-b.x)<=b.w/2+2&&Math.abs(nz-b.z)<=b.d/2+2))continue;
-   if(availableCell(nx,nz,null))return {x:nx,z:nz};
+   if(availableCell(nx,nz,null)&&monsterHasClearance(nx,nz,monsterSpec,actors))return {x:nx,z:nz};
   }
  }
- return freeCellNear(base.x,base.z,null);
+ // Never fall back to an intersecting spawn for an oversized monster.
+ return monsterSpec?null:freeCellNear(base.x,base.z,null);
 };
 // Standard battles always assign one job to exactly one of ten squads.
  // Story imports and town NPCs keep their authored data/roles.
@@ -3687,7 +3696,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
  if(massSim){for(const child of [...root.children])if(child!==root.userData.ring)root.remove(child);root.userData.ring.visible=false;}
  let cell=null;
- if(!cell)cell=spawnOutside(candidate.x,candidate.z,team);
+ if(!cell)cell=spawnOutside(candidate.x,candidate.z,team,monsterSpec);
  if(!cell)continue;
  const pos=cellPosition(cell.x,cell.z);
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
@@ -4439,12 +4448,12 @@ function crossingWaypoint(actor,worldGoal){
   // The final stair is not the exit: the unit must step onto land
   // before bridge mode is cleared, otherwise it can stall on the landing.
   const landedX=farX-actor.crossing.fromSide*2;
-  if((current.x-landedX)*actor.crossing.fromSide<=0&&Math.abs(current.z-b.row)<=2)actor.crossing=null;
+  if((current.x-landedX)*actor.crossing.fromSide<=0&&Math.abs(current.z-(b.row+(actor.crossing.laneOffset||0)))<=2)actor.crossing=null;
  }
- // Directional bridge admission: never send two opposing queues onto the
- // same one-cell lane. Reserve three clear cells beyond the exit as a buffer.
- const bridgeAdmissionClear=(bridge,fromSide)=>{
-  const center=riverX(bridge.row),row=bridge.row;
+ // Directional bridge admission is per lane, not one bottleneck for nine lanes.
+ // Opposing units use distinct lanes with a physical gap between queues.
+ const bridgeAdmissionClear=(bridge,fromSide,laneOffset)=>{
+  const center=riverX(bridge.row),row=bridge.row+laneOffset;
   const exitX=center-fromSide*14;
   for(let n=0;n<3;n++){
    const x=exitX-fromSide*n,k=cellKey(x,row);
@@ -4453,7 +4462,7 @@ function crossingWaypoint(actor,worldGoal){
   // Allow the currently crossing direction to drain before reversing.
   for(const other of actors){
    if(other===actor||other.hp<=0||other.defeated||!other.crossing||other.crossing.bridge!==bridge)continue;
-   if(other.crossing.fromSide!==fromSide)return false;
+   if(other.crossing.fromSide!==fromSide&&Math.abs((other.crossing.laneOffset||0)-laneOffset)<2)return false;
   }
   return true;
  };
@@ -4463,13 +4472,16 @@ function crossingWaypoint(actor,worldGoal){
   for(const b of viable){
    if(actor._bridgeAvoidUntil>elapsed&&actor._bridgeAvoid===b)continue;
    const center=riverX(b.row),x=center+currentSide*12;
-   const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-x)*.3;
-   // Exclude bridges whose approach is blocked by scenery or destroyed.
-   if(!traversableCell(Math.round(x),b.row))continue;
-   if(!bridgeAdmissionClear(b,currentSide))continue;
-   if(score<best){best=score;chosen=b}
+   for(const laneOffset of BATTLE_BRIDGE_LANE_OFFSETS){
+    const laneZ=b.row+laneOffset;
+    if(!traversableCell(Math.round(x),laneZ))continue;
+    if(!bridgeAdmissionClear(b,currentSide,laneOffset))continue;
+    const score=Math.abs(current.z-laneZ)+Math.abs(target.z-laneZ)*.5+
+      Math.abs(current.x-x)*.3+Math.abs(laneOffset)*.15;
+    if(score<best){best=score;chosen={bridge:b,laneOffset};}
+   }
   }
-  if(chosen)actor.crossing={bridge:chosen,fromSide:currentSide};
+  if(chosen)actor.crossing={bridge:chosen.bridge,fromSide:currentSide,laneOffset:chosen.laneOffset};
   else {
    // A full bridge is a queue, not a license to run into river water.
    // Wait on traversable bank tiles and retry another crossing next tick.
@@ -4479,23 +4491,24 @@ function crossingWaypoint(actor,worldGoal){
  }
  if(!actor.crossing)return null;
  const {bridge,fromSide}=actor.crossing;
- const center=riverX(bridge.row);
- // The only safe bridge lane is its centerline; do not steer sideways into water.
+ const center=riverX(bridge.row),laneZ=bridge.row+(actor.crossing.laneOffset||0);
+ // Keep the chosen physical lane across the river rather than funneling
+ // all nine rows back into the same center tile.
  const nearX=center+fromSide*12,farX=center-fromSide*14;
  // If a nominal bank cell is occupied by scenery, find the nearest legal
  // approach on the bridge centreline without steering into the river.
  const safeApproach=(x)=>{
-  if(traversableCell(x,bridge.row))return x;
+  if(traversableCell(x,laneZ))return x;
   for(const offset of [1,-1,2,-2,3,-3]){
    const nx=x+offset;
-   if(Math.abs(nx-center)<=12&&traversableCell(nx,bridge.row))return nx;
+   if(Math.abs(nx-center)<=12&&traversableCell(nx,laneZ))return nx;
   }
   return x;
  };
- if(current.z!==bridge.row||Math.abs(current.x-nearX)>1&&Math.abs(current.x-center)>8){
-  return {x:safeApproach(nearX),z:bridge.row};
+ if(current.z!==laneZ||Math.abs(current.x-nearX)>1&&Math.abs(current.x-center)>8){
+  return {x:safeApproach(nearX),z:laneZ};
  }
- return {x:safeApproach(farX),z:bridge.row};
+ return {x:safeApproach(farX),z:laneZ};
 }
 function recoverBlockedActor(a,goal){
   if(a.blockedSince==null)a.blockedSince=elapsed;
