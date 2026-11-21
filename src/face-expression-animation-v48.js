@@ -17,9 +17,9 @@ const smooth=t=>{const x=clamp(t);return x*x*(3-2*x);};
  * Every expression preset changes actual 3D skin and part geometry, not labels. */
 export const FACE_EXPRESSIONS=Object.freeze({
  neutral:Object.freeze({label:'通常',brow:0,tilt:0,squint:0,smile:0,open:0,cheek:0}),
- softSmile:Object.freeze({label:'微笑み',brow:.07,tilt:0,squint:.10,smile:.35,open:0,cheek:.24}),
- smile:Object.freeze({label:'笑顔',brow:.09,tilt:0,squint:.18,smile:.75,open:.10,cheek:.50}),
- laugh:Object.freeze({label:'大笑い',brow:.11,tilt:0,squint:.055,smile:1,open:.98,cheek:.70}),
+ softSmile:Object.freeze({label:'微笑み',brow:.07,tilt:0,squint:.26,smile:.40,open:0,cheek:.33}),
+ smile:Object.freeze({label:'笑顔',brow:.09,tilt:0,squint:.44,smile:.83,open:.12,cheek:.70}),
+ laugh:Object.freeze({label:'大笑い',brow:.11,tilt:0,squint:.69,smile:1,open:.98,cheek:.91}),
  angry:Object.freeze({label:'怒り',brow:-.18,tilt:-.27,squint:.28,smile:-.28,open:0,cheek:-.12}),
  shout:Object.freeze({label:'怒鳴る',brow:-.21,tilt:-.33,squint:.23,smile:-.2,open:.96,cheek:-.09}),
  sad:Object.freeze({label:'悲しい',brow:-.06,tilt:.20,squint:.19,smile:-.45,open:.05,cheek:-.13}),
@@ -180,23 +180,32 @@ function buildMouth(face,parts,headSize){
  const b=geou.boundingBox;
  const mid=new THREE.Vector3().addVectors(b.min,b.max).multiplyScalar(.5);
  const lipPos=geou.getAttribute('position'), n=Math.floor(lipPos.count/2);
- const frontZ=Math.max(mid.z,lipPos.getZ(n))+headSize.z*.011;
+ const frontZ=Math.max(mid.z,lipPos.getZ(n))+headSize.z*.003;
  const material=new THREE.MeshStandardMaterial({
-  color:0x301b25,roughness:.98,metalness:0,
-  side:THREE.DoubleSide,depthWrite:false
+  color:0x43272d,roughness:.94,metalness:0,
+  side:THREE.DoubleSide,depthWrite:false,depthTest:false
  });
- const cavity=new THREE.Mesh(new THREE.CircleGeometry(1,32),material);
+ const cavity=new THREE.Mesh(new THREE.SphereGeometry(1,48,20),material);
  cavity.name='V48_3D_INNER_MOUTH';
  cavity.position.set(mid.x,face.userData.actualMouthCreaseY??mid.y,frontZ);
- cavity.renderOrder=3;cavity.visible=false;
+ cavity.renderOrder=6;cavity.visible=false;
  cavity.frustumCulled=false;
  face.add(cavity);
  const oral=createFaceOralAnatomy(face,{
   x:mid.x,y:face.userData.actualMouthCreaseY??mid.y,
-  z:frontZ+headSize.z*.006,
+  z:frontZ-headSize.z*.002,
   width:Math.max(.0001,b.max.x-b.min.x),
   height:headSize.y,depth:headSize.z
  });
+ oral.root.traverse(o=>{
+  if(!o.isMesh)return;
+  o.material.depthWrite=false;o.material.depthTest=false;
+  o.renderOrder=7;
+ });
+ for(const lip of [upper,lower]){
+  lip.material.depthTest=false;lip.material.depthWrite=false;
+  lip.renderOrder=9;
+ }
  return {upper,lower,cavity,oral,restU:upper.position.y,restL:lower.position.y,
   height:headSize.y,width:Math.max(.0001,b.max.x-b.min.x)};
 }
@@ -281,6 +290,32 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   upper:mouth.upper.geometry.getAttribute('position').array.slice(),
   lower:mouth.lower.geometry.getAttribute('position').array.slice()
  }:null;
+ const poseLips=(frame,delta)=>{
+  if(!mouth||!mouthRest)return;
+  const smile=clamp(Number(frame.smile)||Number(frame.au12)||0);
+  const cheek=clamp(Number(frame.cheek)||Number(frame.au06)||0);
+  const halfWidth=mouth.width*.5;
+  for(const [lip,original,isUpper] of [
+   [mouth.upper,mouthRest.upper,true],
+   [mouth.lower,mouthRest.lower,false]
+  ]){
+   const attr=lip.geometry.getAttribute('position');
+   for(let i=0;i<attr.count;i++){
+    const k=i*3,t=THREE.MathUtils.clamp(
+     (original[k]-centerX)/Math.max(1e-8,halfWidth),-1,1);
+    const corner=Math.pow(Math.abs(t),1.85);
+    const center=Math.pow(Math.max(0,1-t*t),.63);
+    attr.array[k]=centerX+(original[k]-centerX)*(1+.145*smile+.02*cheek);
+    const lift=faceSize.y*(.034*smile+.006*cheek)*corner;
+    const edgeCorrection=isUpper?-delta*.14*corner:delta*.69*corner;
+    attr.array[k+1]=original[k+1]+lift+edgeCorrection;
+    attr.array[k+2]=original[k+2]-faceSize.z*.006*smile*center;
+   }
+   attr.needsUpdate=true;
+   lip.geometry.computeVertexNormals();lip.geometry.computeBoundingSphere();
+  }
+ };
+
  function applyExpression(){
   const preset=expressionFrame();
   const e=Object.fromEntries(Object.entries(preset).map(([k,v])=>[
@@ -339,37 +374,19 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    side.brow.position.y=side.browRest.y+faceSize.y*e.brow*.012;
    side.brow.rotation.z=side.browRest.z+(side.side==='LEFT'?-1:1)*e.tilt*.21;
   }
-  if(mouth&&mouthRest){
-   for(const [mesh,original] of [[mouth.upper,mouthRest.upper],
-    [mouth.lower,mouthRest.lower]]){
-    const attr=mesh.geometry.getAttribute('position');
-    for(let i=0;i<attr.count;i++){
-     const k=i*3;
-     const t=(original[k]-centerX)/Math.max(.0001,faceSize.x*.05);
-     const corner=Math.min(1,t*t);
-     attr.array[k]=centerX+(original[k]-centerX)*
-      (1+.09*Math.max(0,e.smile));
-     attr.array[k+1]=original[k+1]+
-      faceSize.y*(.019*e.smile*corner+.0015*e.cheek);
-     attr.array[k+2]=original[k+2];
-    }
-    attr.needsUpdate=true;
-    // Small lip-corner movements preserve the author's smooth normal map.
-    if(!mesh.geometry.getAttribute('normal'))mesh.geometry.computeVertexNormals();
-   }
-  }
+  // Lip poses are solved with the jaw opening in setMouthOpen.
  }
  const setBlink=value=>{
   blink=clamp(value);
   const frame=expressionFrame();
   const squint=Math.max(Number(frame.squint)||0,Number(frame.au07)||0)*strength;
   const expressiveSquint=state.expression==='sleepy'?squint:
-   Math.max(0,squint)*.48;
+   Math.max(0,squint)*(state.expression==='laugh'?.78:.59);
   const closure=clamp(blink+(1-blink)*expressiveSquint,0,1);
   // Shock/laughter visibly open the actual eyelid edges instead of only
   // tinting the eye. Preserve full automatic blinks at their peak.
   const widen=['surprised','startled','afraid'].includes(state.expression)?.24:
-   state.expression==='laugh'?.095:0;
+   state.expression==='laugh'?0:0;
   const eyelidTravel=closure-(1-closure)*widen;
   for(const side of sides){
    moveGrid(side.a,side.b.rest,eyelidTravel,true);
@@ -389,12 +406,15 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    Number(frame.au26)||0)*strength));
   if(!mouth)return;
   const delta=mouth.height*.053*mouthOpen;
-  mouth.upper.position.y=mouth.restU+delta*.23;
-  mouth.lower.position.y=mouth.restL-delta*.86;
+  mouth.upper.position.y=mouth.restU+delta*.14;
+  mouth.lower.position.y=mouth.restL-delta*.69;
+  poseLips(frame,delta);
   mouth.cavity.visible=mouthOpen>.025;
+  const grin=clamp(Number(frame.smile)||Number(frame.au12)||0);
   mouth.cavity.position.y=(face.userData.actualMouthCreaseY??mouth.cavity.position.y)-
-   delta*.17;
-  mouth.cavity.scale.set(mouth.width*.52,Math.max(.000001,delta*.78),1);
+   delta*.19+mouth.height*.009*grin;
+  mouth.cavity.scale.set(mouth.width*(.45+.16*grin),
+   Math.max(.000001,delta*(.68-.045*grin)),mouth.height*.0045);
   mouth.oral.update({openness:mouthOpen,jawDrop:mouthOpen,
    smile:Number(frame.smile)||Number(frame.au12)||0});
  };
@@ -408,7 +428,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    if(t>=1||t-transition.lastApplied>=.13){
     transition.lastApplied=t;
     manualActionUnits=t>=1?null:Object.fromEntries(
-     channels.map(k=>[k,(transition.from[k]||0)*(1-t)+
+     channels.slice(0,6).map(k=>[k,(transition.from[k]||0)*(1-t)+
       (transition.to[k]||0)*t]));
     if(t>=1)transition=null;
     applyExpression();
@@ -453,7 +473,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    state.expression=id;
    const seconds=THREE.MathUtils.clamp(Number(duration)||.28,.08,1);
    transition={from,to,duration:seconds,elapsed:0,lastApplied:0};
-   manualActionUnits=Object.fromEntries(channels.map(k=>[k,Number(from[k])||0]));
+   manualActionUnits=Object.fromEntries(channels.slice(0,6).map(k=>[k,Number(from[k])||0]));
    applyExpression();setBlink(blink);
    setMouthOpen(manualMouth??(state.speaking?speechEnvelope(elapsed):0));
   },
@@ -489,6 +509,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v80MouthAnatomy:mouth?.oral.report||null,
    v80OralLandmarkFollowsAge:true,
    v80SmoothMuscleTransitions:true,
+   v81AnatomicalSmileEyeCoupling:true,
+   v81LipstickFollowsVermilion:true,
+   v81MouthCornersLiftAndSpread:true,
    v80TransitionProgress:transition?Number(smooth(
     transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,
