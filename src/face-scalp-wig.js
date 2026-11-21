@@ -380,19 +380,24 @@ export function appendRealCrownUnderlay(geo,box,vertices,normals,volumeProfile='
  return {triangles,source:'real-source-head',sameDrawMesh:true};
 }
 
-/** Shared hairline ensures native donor clipping matches buzz fibres. */
-export function buzzHairlineFractionAtPoint(v,box){
- const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+/** Shared hairline ensures native donor clipping matches buzz fibres.
+ * Optional precomputed box metrics avoid allocations during polygon clipping. */
+const BUZZ_HAIRLINE_STATIONS=Object.freeze([[-Math.PI/2,.495],[-1.18,.505],
+ [-.78,.575],[-.43,.685],[-.18,.705],[.02,.625],[.20,.755],
+ [.46,.855],[Math.PI/2,.885]]);
+export function buzzHairlineFractionAtPoint(v,box,size=null,center=null){
+ const d=size||box.getSize(new THREE.Vector3());
+ const c=center||box.getCenter(new THREE.Vector3());
  const angle=Math.atan2((v.z-c.z)/Math.max(d.z,1e-6),
   Math.abs(v.x-c.x)/Math.max(d.x,1e-6));
- const stations=[[-Math.PI/2,.495],[-1.18,.505],[-.78,.575],[-.43,.685],
-  [-.18,.705],[.02,.625],[.20,.755],[.46,.855],[Math.PI/2,.885]];
- let boundary=stations[stations.length-1][1];
- for(let k=1;k<stations.length;k++)if(angle<=stations[k][0]){
-  const [a,y]=stations[k-1],[b,z]=stations[k];
-  const t=THREE.MathUtils.clamp((angle-a)/(b-a),0,1);
-  boundary=THREE.MathUtils.lerp(y,z,t*t*(3-2*t));break;
- }
+ let boundary=BUZZ_HAIRLINE_STATIONS[BUZZ_HAIRLINE_STATIONS.length-1][1];
+ for(let k=1;k<BUZZ_HAIRLINE_STATIONS.length;k++)
+  if(angle<=BUZZ_HAIRLINE_STATIONS[k][0]){
+   const [a,y]=BUZZ_HAIRLINE_STATIONS[k-1],
+    [b,z]=BUZZ_HAIRLINE_STATIONS[k];
+   const t=THREE.MathUtils.clamp((angle-a)/(b-a),0,1);
+   boundary=THREE.MathUtils.lerp(y,z,t*t*(3-2*t));break;
+  }
  return THREE.MathUtils.clamp(boundary,.495,.91);
 }
 
@@ -430,7 +435,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
    };
    // Buzz hair must cover the donor's actual crown and sides.
    // Preserve the forehead/eyes and the ears below the temporal line.
-   if(shortHair)return buzzHairlineFractionAtPoint(v,box);
+   if(shortHair)return buzzHairlineFractionAtPoint(v,box,d,center);
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
    const temple=THREE.MathUtils.lerp(side,.71,smooth(.15,.24,xn));
