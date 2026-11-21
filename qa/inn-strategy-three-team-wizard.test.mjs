@@ -32,6 +32,13 @@ assert.equal(suggestedThreeTeamFormations(game,'attack').length,3);
 const start=renderThreeTeamPlanner({game,view:'strategy'});
 assert.match(start,/どの作戦で戦う/);
 assert.equal((start.match(/data-sortie-plan-strategy=/g)||[]).length,4);
+assert.equal((start.match(/sortieWizardStrategyIcon/g)||[]).length,4,'each strategy has a visible icon');
+assert.match(start,/⚔️/);
+assert.match(start,/🛡️/);
+assert.match(start,/⚖️/);
+assert.match(start,/🧭/);
+assert.ok(!start.includes('<header class="sortieWizardHeader"'),
+ 'do not use a nested header: the town-level fixed header CSS hides the first strategy');
 assert.ok(!start.includes('sortieAutoOptions'),'no automatic-composition bar on the main screen');
 assert.ok(!start.includes('sortieModeTabs'),'no 6-tab board on the main screen');
 
@@ -40,6 +47,12 @@ assert.equal(game.sortieStrategyFamily,'attack');
 const pick=renderThreeTeamPlanner({game,teamId:1,view:'formationPick'});
 assert.match(pick,/第1隊の陣形は/);
 assert.equal((pick.match(/data-sortie-plan-formation=/g)||[]).length,4);
+assert.equal((pick.match(/class="sortieWizardOldMiniGrid sortieMiniGrid"/g)||[]).length,4,
+ 'all four choices show the original miniature formation map');
+assert.equal((pick.match(/<i class="/g)||[]).length,64,
+ 'each formation card shows a full 4 by 4 grid');
+assert.match(pick,/sortieWizardFormationIcon/);
+assert.match(pick,/攻撃\d+% \/ 防御\d+%/);
 assert.ok(!pick.includes('data-sortie-plan-strategy'),'one decision topic per screen');
 assert.ok(!pick.includes('sortieModeTabs'));
 
@@ -77,6 +90,11 @@ for(const attr of ['data-sortie-plan-strategy','data-sortie-plan-formation','dat
  assert.ok(town.includes(attr),'inn click handler: '+attr);
 }
 assert.ok(town.includes("sortieView='strategy'"),'inn opens the wizard first');
+assert.ok(town.includes("scrollTop=0"),'every wizard step starts with the first option visible');
+assert.match(town,/inn-wizard-classic-icons-20261121/,'Android receives refreshed JS and CSS');
+const styles=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
+assert.match(styles,/\.sortieWizardOldMiniGrid/);
+assert.match(styles,/\.sortieWizardStrategyIcon/);
 for(const f of ['src/three-team-strategy-presets.js','src/three-team-sortie-ui.js','src/three-team-sortie.js']){
  new SourceTextModule(readFileSync(new URL('../'+f,import.meta.url),'utf8'),{identifier:f});
 }
