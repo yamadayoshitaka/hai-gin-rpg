@@ -5,13 +5,13 @@
  * No missing actor while loading, no per-instance 1000v1000 GLB request.
  */
 import * as THREE from 'three';
-import {m018BattleScale} from './m018-battle-size.js';
+import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
- from './monster-geometry.js?v=sea-dragon-summon-silhouette-v3-20261121';
+ from './monster-geometry.js?v=sea-dragon-colossal-length-v4-20261121';
 import {startMonsterAction,animateMonsterModel}
  from './monster-animation.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
 import {resolveRegisteredMonsterModel}
- from './creature-game-model-routing.js?v=sea-dragon-summon-silhouette-v3-20261121';
+ from './creature-game-model-routing.js?v=sea-dragon-colossal-length-v4-20261121';
 import {fetchCreatureRegistry} from './creature-external-runtime.js';
 import {loadCreatureMeshSource}
  from './creature-real-source-catalog.js?v=real-body-only-v4';
@@ -37,9 +37,9 @@ export function createRegisteredBattleMonster(spec,{
  root.userData.modelLoadStatus='procedural-ready';
  let native=createMonsterModel(spec,{detail}),external=null;
  let disposed=false,lastAction='idle',lastTime=null;
- const hydra=spec.id==='m018';
- const restBounds=hydra?boundsOf(native):null;
- if(hydra)root.scale.setScalar(m018BattleScale(restBounds,cellSize));
+ const lengthCells=monsterBattleLengthCells(spec.id);
+ const restBounds=lengthCells?boundsOf(native):null;
+ if(lengthCells)root.scale.setScalar(monsterBattleLengthScale(restBounds,cellSize,lengthCells));
  root.add(native);
  startMonsterAction(native,'idle',0);
  let ready=Promise.resolve(root);
@@ -58,9 +58,9 @@ export function createRegisteredBattleMonster(spec,{
       detail,allowExternal,storage}).selected){
      loaded.dispose();return root;
     }
-    const previous=hydra?restBounds:boundsOf(native);
+    const previous=restBounds??boundsOf(native);
     const next=boundsOf(loaded.root);
-    const axis=hydra?'z':'y';
+    const axis=lengthCells?'z':'y';
     const span=bounds=>bounds.max[axis]-bounds.min[axis];
     if(![span(previous),span(next)].every(n=>Number.isFinite(n)&&n>.001))
       throw Error('Source GLB has no valid geometry bounds');

@@ -151,7 +151,9 @@ if(THREE){
   const bb=new THREE.Box3().setFromObject(actor),sz=new THREE.Vector3();
   bb.getSize(sz);
   const reference=MONSTER_SUMMON_MODEL_HEIGHT*MONSTER_SUMMON_BY_TYPE[type].size;
-  if(id==='m018')assert.ok(Math.abs(sz.z-4*1.12)<.08,
+  if(id==='m020')assert.ok(sz.z>12*1.12*.82,
+   'Leviathan summon must keep most of its twelve-cell span in the initial pose');
+  else if(id==='m018')assert.ok(Math.abs(sz.z-4*1.12)<.08,
    'hydra summon must span four cells nose-to-tail');
   else assert.ok(Math.abs(sz.y-reference)<reference*.06,
    id+' must retain its source species height; actual '+sz.y+' expected '+reference);
