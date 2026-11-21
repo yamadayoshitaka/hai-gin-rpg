@@ -26,7 +26,7 @@ test('costume clipping hides native scalp beneath wig but keeps donor and ear/fa
  assert.equal(head.userData.originalCostumeScalpGeometry,geometry);
  assert.equal(head.material,oldMaterial);
  assert.ok(head.matrix.equals(oldMatrix),'head bone pose must be unchanged');
- assert.equal(head.userData.costumeScalpMaskMode,'shared-donor-hairline-v62');
+ assert.equal(head.userData.costumeScalpMaskMode,'donor-reference-neck-safe-v63');
  const second=setCostumeHairScalpMask(head,'sadako-straight-long');
  assert.equal(second.active,true);
  assert.equal(head.userData.originalCostumeScalpGeometry,geometry);
@@ -97,9 +97,9 @@ test('Sadako retains side-crown coverage and movement while costume native scalp
 test('full-body studio applies the same donor mask ONLY after real costume fitting',()=>{
  const body=read('face-body-studio.html');
  const salon=read('face-mesh-studio.html');
- assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-mask-buzz-restored-v62$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-neck-buzz-crown-v63$/);
  for(const html of [body,salon])
-  assert.match(html,/20261121-costume-mask-buzz-restored-v62/);
+  assert.match(html,/20261121-costume-neck-buzz-crown-v63/);
  assert.match(body,/import \{setCostumeHairScalpMask,releaseCostumeHairScalpMask\}/);
  assert.match(body,/if\(v32PartMode&&!battleCostume\)return/);
  assert.match(body,/battleCostume=bridge;[\s\S]*?syncCostumeScalpMask\(\)/);
