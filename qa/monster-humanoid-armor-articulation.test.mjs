@@ -14,8 +14,8 @@ import {addDemonicFaceCosmetics}
 
 const source=readFileSync(new URL('../src/monster-character-cosplay.js',import.meta.url),'utf8');
 const gothic=readFileSync(new URL('../src/monster-gothic-sculpt.js',import.meta.url),'utf8');
-assert.match(source,/if\(gothic&&!fullBody\)addGothicMonsterSculpt/);
-assert.match(source,/const royalOutfit=fullBody\?null:wardrobeFor\(profile\)/);
+assert.match(source,/if\(gothic&&!fullBody&&!skeletal\)addGothicMonsterSculpt/);
+assert.match(source,/const royalOutfit=fullBody\|\|skeletal\?null:wardrobeFor\(profile\)/);
 assert.match(source,/wingTailOnly:fullBody/);
 assert.match(source,/createMineralLimbArticulator/);
 assert.match(source,/mineralArticulator\?\.update\(action\)/);
