@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=80-iris';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture} from './face-optics-v76.js?v=81-eye-vascular';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -611,6 +611,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
   color:0xe0ded9,roughness:.31,metalness:0,
+  map:getScleraMicrovascularTexture(),
   clearcoat:.46,clearcoatRoughness:.075,ior:1.376,specularIntensity:.68
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
@@ -808,6 +809,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    new THREE.Float32BufferAttribute(whiteShading,3));
   eyeMat.vertexColors=true;eyeMat.needsUpdate=true;
   eyePatch.userData.scleralLidOcclusion=true;
+  eyePatch.userData.v81ScleralMicrovascularPBR=true;
    eyePatch.userData.v70CornealWetness=true;
    eyePatch.userData.v65MoistScleraPBR=true;
   root.add(eyePatch);
