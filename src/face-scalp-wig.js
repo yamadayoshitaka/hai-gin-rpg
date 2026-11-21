@@ -1253,7 +1253,10 @@ export function shapeRebuiltEarTuck(points,{box,side=1}={}){
   p.x=THREE.MathUtils.lerp(p.x,earX,tuck*.985);
   p.z=THREE.MathUtils.lerp(p.z,earZ,tuck*.96);
   const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
-  if(t>=.22&&h>=.52&&h<=.91){
+  // Anatomical eye-band clearance must depend on actual head HEIGHT,
+  // not percentage of total hairstyle. A long lock reaches eye height at
+  // t < .22 and previously crossed the eyes before the tuck engaged.
+  if(h>=.61&&h<=.86){
    const lateral=side*(p.x-c.x),clear=d.x*.32;
    if(lateral<clear)p.x=c.x+side*clear;
    p.z=Math.min(p.z,c.z+d.z*.065);
