@@ -135,7 +135,6 @@ test('three teams must each be placed and given an initial strategy on the enlar
  assert.deepEqual(began[0].initialPlans,{'1':'assault','2':'defense','3':'explore'});
  assert.equal(ui.started,true);
  assert.equal(ui.isMapOpen,false,'enlarged radar closes when combat starts');
- ui.dispose();
 });
 
 test('map controls and roster aggregation retain real 3D movement and squad identities',()=>{
