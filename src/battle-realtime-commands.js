@@ -496,7 +496,7 @@ export function createRealtimeBattleCommands({
   if(mode==='deploy'){
    // Sample the REAL terrain/deployment callbacks, not a misleading flat
    // blue rectangle that includes blocked bridges, river and structures.
-   const cellStep=Math.max(4,Math.round(span/30));
+   const cellStep=Math.max(6,Math.round(span/22));
    for(let z=Math.floor(minZ/cellStep)*cellStep;z<minZ+span;z+=cellStep){
     for(let x=Math.floor(minX/cellStep)*cellStep;x<minX+span;x+=cellStep){
      const point=getLegalPoint(Math.round(x),Math.round(z),true);
@@ -1593,7 +1593,7 @@ radarCanvas.addEventListener('keydown',event=>{
    $('realtimeSquadRadar').hidden=false;
    $('realtimeRadarSetupPrompt').hidden=true;
    refreshOptions();
-   onPrebattleMusic(); // May require the first explicit touch on mobile.
+   try{Promise.resolve(onPrebattleMusic()).catch(()=>{});}catch{} // Android may require the first touch.
    openMap('deploy');
    $('realtimeMapClose').hidden=true;
    $('realtimeMapMessage').textContent='✅ 推奨位置に配置済み。水色のマスをタップして調整するか、そのまま次へ進めます。';
