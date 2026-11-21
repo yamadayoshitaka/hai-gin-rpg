@@ -249,7 +249,7 @@ test('V86: real CC0 donor native 38-vertex lip fissure is safely sealed, no blac
  const originalMorphCounts=geo.morphAttributes.position.map(p=>p.count);
  const r=sealOriginalOralAperture(face);
  assert.equal(r.sealed,true,
-  'The real GLB has an existing lip opening; it must be capped, not hidden');
+  'The real GLB has an existing lip opening; it must be capped: '+JSON.stringify(r));
  assert.ok(r.ringVertexCount>=32&&r.ringVertexCount<=48,
   'Only the small front lip ring must be selected');
  assert.ok(r.addedTriangles>=25&&r.addedTriangles<70);
@@ -283,7 +283,7 @@ test('V86: actual independent male/female head has no exposed original lip hole'
   });
   const summary=model.face.userData.v86OralSealSummary;
   assert.equal(summary.sealed,true,
-   gender+' should render a closed natural mouth at neutral expression');
+   gender+' should seal native lip opening: '+JSON.stringify(summary));
   assert.ok(summary.addedTriangles>=25);
   assert.equal(model.face.userData.v83SafeOriginalMouthTopology,true);
   const animator=createFaceExpressionAnimator({face:model.face,parts:model.parts},
