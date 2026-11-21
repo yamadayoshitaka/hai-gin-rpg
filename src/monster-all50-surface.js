@@ -168,6 +168,26 @@ function atlas(kind,detail){
  cache.set(key,result);
  return result;
 }
+/** Keep an authentic scanned colour/roughness image but add matching stone
+ * micro-normal when its original photograph has no bundled normal texture.
+ * Never overwrite a verified model normal map or use in low crowd LOD.
+ */
+export function complementAll50PhotoNormal(material,{
+ speciesId='',detail='high'
+}={}){
+ const profile=byId[speciesId];
+ if(!profile||detail==='low'||material.normalMap||!material.map)
+  return false;
+ // Only photoscanned golem stone; approved reptile photos already have normals.
+ if(profile.kind!=='stone')return false;
+ const maps=atlas('stone',detail);
+ material.normalMap=maps.normal;
+ material.normalScale=new THREE.Vector2(.21,.21);
+ material.userData.all50PhotoNormal='stone-micro-relief';
+ material.needsUpdate=true;
+ return true;
+}
+
 /** A safe, family-wide surface pass for missing non-photo materials. */
 export function decorateAll50MonsterSurface(material,{
  speciesId='',family='',role='skin',detail='high',glow=false,
