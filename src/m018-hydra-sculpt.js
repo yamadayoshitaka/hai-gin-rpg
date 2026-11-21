@@ -119,10 +119,12 @@ function dragonCranium(g,neck,definition,end,{detail='high'}={}){
  return {skull,jaw};
 }
 
-function sculptThroatScutes(g,neck,path,curve,radius,suffix,low){
+export function sculptThroatScutes(g,neck,skin,{name,low}){
+ const {path:curve,radius}=skin.geometry.parameters;
+ const taper=skin.userData.tailTaper;
  // Use a single mesh with overlaps at the edges of the ventral plates.
- const plateMesh=g.tube(neck,'light',path,radius,{
-  name:'m018-throat-scute-'+suffix,tubularSegments:4,radialSegments:4,
+ const plateMesh=g.tube(neck,'light',curve.points.map(p=>p.toArray()),radius,{
+  name,tubularSegments:4,radialSegments:4,
  });
  const geometry=plateMesh.geometry;
  const Position=geometry.getAttribute('position').constructor;
@@ -142,7 +144,7 @@ function sculptThroatScutes(g,neck,path,curve,radius,suffix,low){
     forward.addScaledVector(tangent,-tangent.z).normalize();
     const outward=forward.clone().cross(tangent);
     const angle=across*(.93-.10*depth);
-    const shell=radius*(1-.35*t*t*(3-2*t));
+    const shell=radius*(1+(taper-1)*t*t*(3-2*t));
     // The low-LOD tube is faceted, so allow clearance for the outer corners
     // of each plate as it spans the curve between neighboring tube rings.
     const rise=shell*(1.035+.042*Math.sin(depth*Math.PI));
@@ -195,7 +197,7 @@ export function sculptM018Hydra(g,torso,centralHead,{detail='high'}={}){
   tube.userData.m018NeckLength=def.neckHeight;
   const curve=tube.geometry.parameters.path;
   const radius=side===0?.269:.229;
-  sculptThroatScutes(g,neck,path,curve,radius,def.suffix,low);
+  sculptThroatScutes(g,neck,tube,{name:'m018-throat-scute-'+def.suffix,low});
   const rows=low?5:9;
   for(let i=0;i<rows;i++){
    const t=.16+.71*i/(rows-1);
@@ -217,7 +219,7 @@ export function sculptM018Hydra(g,torso,centralHead,{detail='high'}={}){
  g.root.userData.m018PhysicalDragonHeads=true;
 }
 
-export function sculptM018Leg(g,leg,name,side,fore){
+export function sculptHydraLeg(g,leg,name,side,fore,{speciesId='m018'}={}){
  // Bury the proximal joint into the same rib cage. Bend the upper limb
  // outwards into a broad, lower, claw-bearing reptilian stance.
  leg.position.y=1.19;
@@ -231,23 +233,23 @@ export function sculptM018Leg(g,leg,name,side,fore){
   {x:side*.105,y:-.090,z:fore?-.008:-.031,rx:thighWidth*.98,rz:thighWidth*1.02},
   {x:side*.225,y:-.365,z:joint[2]*.81,rx:.164,rz:.169},
   {x:joint[0],y:joint[1]-.081,z:joint[2],rx:.127,rz:.132},
- ],{name:'m018-continuous-upper-'+name});
+ ],{name:speciesId+'-continuous-upper-'+name});
  g.limbLoft(lower,'skin',[
   {x:0,y:.134,z:0,rx:.123,rz:.129},
   {x:side*.013,y:-.045,z:.012,rx:.146,rz:.149},
   {x:side*.036,y:-.172,z:.033,rx:.125,rz:.123},
   {x:palm[0],y:-.390,z:palm[2]*.60,rx:.090,rz:.102},
   {x:palm[0],y:palm[1]+.011,z:palm[2],rx:.103,rz:.109},
- ],{name:'m018-continuous-lower-'+name});
+ ],{name:speciesId+'-continuous-lower-'+name});
  const toe=g.group('toe'+name,palm,lower);
- g.sphere(toe,'skin',[0,-.010,.037],[.150,.070,.169],{name:'m018-palm-'+name});
+ g.sphere(toe,'skin',[0,-.010,.037],[.150,.070,.169],{name:speciesId+'-palm-'+name});
  const digits=g.root.userData.detail==='low'?3:4;
  for(let digit=0;digit<digits;digit++){
   const x=(digit-(digits-1)/2)*.069,z=.139-.028*Math.abs(x)/.1035;
   const flesh=g.bridge(toe,'skin',[x*.59,.004,.053],[x,-.018,z+.044],.041,.031);
-  flesh.name='m018-digit-'+name;
+  flesh.name=speciesId+'-digit-'+name;
   g.curvedHorn(toe,'bone',[x,-.009,z+.012],[x*1.12,-.016,z+.088],
-   [x*1.22,-.061,z+.131],.027,{name:'m018-rooted-talon-'+name});
+   [x*1.22,-.061,z+.131],.027,{name:speciesId+'-rooted-talon-'+name});
  }
 }
 
@@ -284,6 +286,36 @@ function sculptVenomBlade(g,parent,center,tangent,out,radius,height,width,name,{
  return blade;
 }
 
+export function sculptArticulatedReptileTail(g,tail,{name,path,radius,shade='tailScale'}){
+ const low=g.root.userData.detail==='low';
+ const tube=g.tube(tail,shade,path,radius(0),{
+  name,capEnds:true,radiusProfile:radius,
+  tubularSegments:low?20:40,radialSegments:low?10:18,rough:.72,
+ });
+ const geometry=tube.geometry,curve=geometry.parameters.path;
+ if(shade==='tailScale'){
+  const {tubularSegments,radialSegments}=geometry.parameters;
+  const pos=geometry.getAttribute('position');
+  const colors=[];
+  const sideCount=(tubularSegments+1)*(radialSegments+1);
+  for(let i=0;i<pos.count;i++){
+   const t=i<sideCount?Math.floor(i/(radialSegments+1))/tubularSegments:
+    i===sideCount?0:1;
+   const blend=Math.min(1,t/.26);
+   const value=.26+.74*blend*blend*(3-2*blend);
+   colors.push(value,value,value);
+  }
+  geometry.setAttribute('color',new pos.constructor(colors,3));
+ }
+ const midAt=.39,tipAt=.72,blend=.092;
+ const midLocal=curve.getPointAt(midAt),tipLocal=curve.getPointAt(tipAt);
+ const mid=g.group('tailMid',midLocal.toArray(),tail);
+ const tip=g.group('tailTip',tipLocal.clone().sub(midLocal).toArray(),mid);
+ const skin=g.skinAxialTube(tube,[{pivot:tail,at:0},
+  {pivot:mid,at:midAt,blend},{pivot:tip,at:tipAt,blend}]);
+ return {curve,skin,mid,tip,midAt,tipAt,midLocal,tipLocal};
+}
+
 export function sculptM018Tail(g,tail){
  const low=g.root.userData.detail==='low';
  // Broad tail base flows into a low sweeping curve and a rising, pointed tip.
@@ -291,29 +323,9 @@ export function sculptM018Tail(g,tail){
   [.10,-.13,-.94],[.28,-.12,-1.39],[.51,.01,-1.77],
   [.67,.24,-2.04],[.68,.45,-2.20]];
  const radius=t=>.012+.275*(1-t)**.96;
- const tube=g.tube(tail,'tailScale',path,radius(0),{
-  name:'m018-continuous-caudal-skin',capEnds:true,radiusProfile:radius,
-  tubularSegments:low?20:40,radialSegments:low?10:18,rough:.72,
+ const {curve,skin,mid,tip,midAt,tipAt,midLocal,tipLocal}=sculptArticulatedReptileTail(g,tail,{
+  name:'m018-continuous-caudal-skin',path,radius,
  });
- const geometry=tube.geometry,curve=geometry.parameters.path;
- const {tubularSegments,radialSegments}=geometry.parameters;
- const pos=geometry.getAttribute('position');
- const colors=[];
- const sideCount=(tubularSegments+1)*(radialSegments+1);
- for(let i=0;i<pos.count;i++){
-  const t=i<sideCount?Math.floor(i/(radialSegments+1))/tubularSegments:
-   i===sideCount?0:1;
-  const blend=Math.min(1,t/.26);
-  const value=.26+.74*blend*blend*(3-2*blend);
-  colors.push(value,value,value);
- }
- geometry.setAttribute('color',new pos.constructor(colors,3));
- const midAt=.39,tipAt=.72,blend=.092;
- const midLocal=curve.getPointAt(midAt),tipLocal=curve.getPointAt(tipAt);
- const mid=g.group('tailMid',midLocal.toArray(),tail);
- const tip=g.group('tailTip',tipLocal.clone().sub(midLocal).toArray(),mid);
- const skin=g.skinAxialTube(tube,[{pivot:tail,at:0},
-  {pivot:mid,at:midAt,blend},{pivot:tip,at:tipAt,blend}]);
  skin.userData.m018ContinuousTail=true;
  const pivots=[tail,mid,tip],offsets=[tail.position.clone().set(0,0,0),midLocal,tipLocal];
  const count=low?7:12;

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {buildGuardianDerivedBird,buildPhoenixDerivedTenguWing,
  buildPhoenixDerivedTenguTail,AVIAN_REALISM_REVISION}
  from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=m050-hydra-derived-coral-beast-v1-20261121';
 import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides,generateCanineAxialFurGuides} from './canine-fur-guides.js?v=beast-coat-20261116';
 import {monsterEvidenceFor} from './monster-anatomy-reference.js';
@@ -30,8 +30,9 @@ import {M019_HERO_REVISION,M019_BODY_DROP,M019_TAIL_LENGTH,
  m019HeroSkullRings,m019HeroTorsoRings,sculptM019Muzzle,
  sculptM019Jaw,sculptM019Limb,sculptM019Paw,sculptM019TailTip}
  from './m019-hero-sculpt.js?v=m019-matched-charcoal-limbs-v20-20261121';
-import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptM018Leg,sculptM018Tail}
- from './m018-hydra-sculpt.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
+import {M050_CORAL_REVISION,sculptM050CoralBeast} from './m050-coral-beast-sculpt.js';
+import {M018_HYDRA_REVISION,sculptM018Hydra,sculptM018HydraThorns,sculptHydraLeg,sculptM018Tail}
+ from './m018-hydra-sculpt.js?v=m050-hydra-derived-coral-beast-v1-20261121';
 import {SALAMANDER_LINEAGE_REVISION,salamanderLineageFor,
  salamanderSkullFromMagma,salamanderTorsoFromMagma,
  sculptSalamanderLineageEye,sculptSalamanderLineageHorn,
@@ -1474,7 +1475,7 @@ cloneCanine?
      pelvisMounted?g.pivots.pelvis:
        (s.id==='m001'||s.id==='m002'||felineMaster||magmaSalamander?torso:g.root));
    if(hydra){
-     sculptM018Leg(g,leg,name,side,fore>0);
+     sculptHydraLeg(g,leg,name,side,fore>0);
      continue;
    }
 if(salamanderLineage){
@@ -2970,6 +2971,7 @@ function seaSerpent(g,s){
 function aquatic(g,s){
  const v=s.variant;
  if(s.id==='m048'){seaSerpent(g,s);return;}
+ if(s.id==='m050'){sculptM050CoralBeast(g,s);return;}
  if(v===0){
    const torso=g.group('torso');
    g.sphere(torso,'skin',[0,.70,0],[.55,.62,.53],{rough:.19,translucent:true});
@@ -3085,6 +3087,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
 if(salamanderLineageFor(spec.id))markSalamanderLineage(g.root,spec.id);
  if(spec.id==='m019')markMagmaSalamander(g.root);
  if(spec.id==='m018')g.root.userData.gameModelRevision=M018_HYDRA_REVISION;
+ if(spec.id==='m050')g.root.userData.gameModelRevision=M050_CORAL_REVISION;
  // The optional effects are created lazily only when a rendered near-LOD
  // m001 performs an action. Pure timing tests can import monster-animation
  // without importing Three.js or allocating a GPU mesh.
@@ -3126,5 +3129,5 @@ overrides:salamanderLineageFor(spec.id)?{
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m018-webgl-skin-rooted-horns-v26-20261121';
-export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m016-m017-salamander-quality-v21-20261121';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=m050-hydra-derived-coral-beast-v1-20261121';
+export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=m050-hydra-derived-coral-beast-v1-20261121';
