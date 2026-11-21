@@ -170,17 +170,17 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
            Math.max(0,(previewEntry.requirements?.people||0)-previewEntry.total)+'人　':'')+
          esc(previewEntry.reason))+
       '</small>'+
-      renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
-      '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small>'+
       '<div class="trainingFormationQuote" aria-live="polite">'+
-       '<b>所持金 '+stock.wallet+'G ／ 在庫兵 '+stock.unassigned+'人 ／ 必要人数 '+(purchase?.total||0)+'人</b>'+
+       '<b>所持金 '+stock.wallet+'G ／ 在庫兵 '+stock.unassigned+'人 ／ 必要人数 '+(purchase?.total||previewEntry?.requirements?.people||0)+'人</b>'+
        (purchase?.allocations?.length?'<small>'+purchase.allocations.map(p=>
          esc(p.job)+' '+esc(p.rarity)+' '+p.count+'人（既存'+(p.count-p.hire)+'／補充'+p.hire+'）').join(' · ')+'</small>':'')+
        '<small>追加雇用 '+(purchase?.hireCount||0)+'人 ／ 支払 '+(purchase?.cost||0)+'G'+
         (purchase?.possible?' ／ 支払後 '+(stock.wallet-(purchase.cost||0))+'G':' ／ '+esc(purchase?.reason||'編成不可'))+'</small>'+
        button('data-training-auto-formation="'+esc(previewId)+'" '+(!purchase?.possible?'disabled':''),
         purchase?.possible?'✓ '+(purchase.hireCount?'在庫＋雇用で配置する':'在庫兵だけで配置する')+'（'+purchase.cost+'G）':'条件不足：雇用・配置できません')+
-      '</div></div>':'')+
+      '</div>'+
+      renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
+      '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small></div>':'')+
    '</div>';
   back='teamPick';next='equipment';
  }else if(view==='rosterPick'){
