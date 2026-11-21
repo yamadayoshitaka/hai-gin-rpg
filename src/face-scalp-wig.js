@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-temple-nape-v33';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-region-contour-v34';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -425,23 +425,26 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     // v32: one continuous anatomical boundary for scalp clipping AND fibre sampling.
     // Rear nape descends at the midline, rises toward the mastoid behind the ears.
     // Temple and forehead stay exposed; avoid the straight buzz-cap silhouette.
-    // Keep forehead clear: no extra widow peak or forward fringe growth.
-    // The short-hair cut follows the ear with a narrow sideburn taper.
-    const rearToSide=smooth(-.43,-.10,zn);
-    const sideToFront=smooth(.02,.31,zn);
-    const midNape=1-smooth(.08,.31,xn);
-    const nape=.615-.055*midNape;
-    const lateral=THREE.MathUtils.lerp(nape,.705,rearToSide);
-    const forehead=.805+.014*smooth(.12,.35,xn);
-    const front=THREE.MathUtils.lerp(lateral,forehead,sideToFront);
-    // Lower only a slim strip directly ahead of the ear, not the ear itself.
-    const templeBand=smooth(.18,.29,zn)*(1-smooth(.33,.45,zn));
-    const sideburnBand=smooth(.24,.35,xn)*(1-smooth(.40,.49,xn));
-    const sideburn=.082*templeBand*sideburnBand;
-    // Behind the ear, lift the boundary to leave the pinna unobstructed.
-    const earClearance=.070*smooth(.22,.36,xn)*
-     (1-smooth(-.02,.16,zn))*smooth(-.32,-.13,zn);
-    return THREE.MathUtils.clamp(front+earClearance-sideburn,.55,.91);
+    // v34: five independently blended anatomical zones, not a helmet rim.
+    // zn: rear (-) to face (+); xn: central scalp (0) to lateral ear (1).
+    // Raise the FRONT boundary significantly to preserve visible forehead.
+    const forehead=.875+.015*smooth(.16,.37,xn);
+    // Taper the nape: a lower center point, higher behind each ear.
+    const nape=.535+.145*smooth(.12,.40,xn);
+    const occipital=.645+.040*smooth(.22,.40,xn);
+    const temple=.765+.025*smooth(.23,.39,xn);
+    let boundary=THREE.MathUtils.lerp(nape,occipital,smooth(-.48,-.22,zn));
+    boundary=THREE.MathUtils.lerp(boundary,temple,smooth(-.20,.12,zn));
+    boundary=THREE.MathUtils.lerp(boundary,forehead,smooth(.13,.42,zn));
+    // Ear clearance is a local arch centered on the pinna, not a flat cut.
+    const earArch=smooth(.24,.37,xn)*
+      smooth(-.30,-.15,zn)*(1-smooth(.06,.23,zn));
+    boundary+=.070*earArch;
+    // Sideburn is a narrow, forward-facing downward tongue before the ear.
+    const sideburn=smooth(.23,.34,xn)*(1-smooth(.43,.51,xn))*
+      smooth(.08,.21,zn)*(1-smooth(.30,.43,zn));
+    boundary-=.125*sideburn;
+    return THREE.MathUtils.clamp(boundary,.51,.93);
    }
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
