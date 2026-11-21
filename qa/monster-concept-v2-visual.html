@@ -29,7 +29,7 @@ scene.background=new THREE.Color('#77747c');
 const camera=new THREE.PerspectiveCamera(36,1,.1,300);
 const renderer=new THREE.WebGLRenderer({
  canvas:document.getElementById('viewport'),
- antialias:true,powerPreference:'high-performance'
+ antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:true
 });
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -68,8 +68,20 @@ const resize=()=>{
 };
 resize();
 window.addEventListener('resize',resize);
+// Snapshot the WebGL drawing buffer into a normal <img>. Headless Chrome's
+// GPU compositor may omit live WebGL canvases from window screenshots.
 renderer.render(scene,camera);
+renderer.getContext().finish();
+const pixels=new Uint8Array(4),gl=renderer.getContext();
+gl.readPixels(Math.floor(renderer.domElement.width*.5),
+  Math.floor(renderer.domElement.height*.5),1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+const snapshot=new Image();
+snapshot.id='captured-three-viewport';
+snapshot.src=renderer.domElement.toDataURL('image/png');
+snapshot.style.cssText='width:100%;height:calc(100vh - 45px);object-fit:contain;display:block';
+renderer.domElement.replaceWith(snapshot);
+document.body.dataset.centerPixel=[...pixels].join(',');
 document.getElementById('status').textContent=
- id+' '+spec.name+' / V2 full 3D • '+model.userData.gameModelRevision;
+ id+' '+spec.name+' / V2 full 3D • '+model.userData.gameModelRevision+' | pixel '+[...pixels].join(',');
 document.body.dataset.ready='true';
 </script></body></html>
