@@ -76,7 +76,7 @@ test('formation pricing respects rarity and occupation of other teams',()=>{
  assert.equal(sortieTeams(game)[1].counts[String(knight.id)],27);
  const elite=inspectTrainingFormationPurchase(game,1,'dragon');
  assert.equal(elite.possible,false);
- assert.match(elite.reason,/レアリティ|在庫|軍師/);
+ assert.match(elite.reason,/出撃可能人数/,'another squad consumes the deployment limit');
 });
 
 test('town click, cached module version and compact layout remain wired',()=>{
