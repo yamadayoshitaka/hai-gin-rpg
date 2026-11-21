@@ -347,7 +347,16 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    k,typeof v==='number'?v*strength:v
   ]));
   const neutralPose=channels.every(k=>Math.abs(Number(e[k])||0)<1e-8);
-  const actionUnits=deriveFacialActionUnits(e);
+  // v84 public safety: the original CC0 head lacks a valid movable
+  // oral aperture. v83 hid fake teeth but DID NOT stop e.open from
+  // dragging existing facial triangles into an inverted black fan.
+  // Jaw opening awaits genuine manifold topology and visual review.
+  const safeOriginalMouth=face.userData.v83SafeOriginalMouthTopology===true;
+  const skinPose=safeOriginalMouth?{
+   ...e,open:0,au26:0,
+   smile:THREE.MathUtils.clamp(Number(e.smile)||0,-.30,.35)
+  }:e;
+  const actionUnits=deriveFacialActionUnits(skinPose);
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
   const xd=Math.max(.000001,faceSize.x),yd=Math.max(.000001,faceSize.y);
@@ -364,19 +373,26 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const lowerLip=fall(ax,.055,.068)*fall(ny,mouthY-.025,.039)*front;
    const mouthInterior=fall(ax,.050,.070)*fall(ny,mouthY,.020)*front;
    const inner=fall(ax,.16,.10)*fall(ny,.745,.05)*front;
-   const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:e});
-   const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:e});
+   const muscle=v65ExpressionMuscleDelta({ax,ny,front,expression:skinPose});
+   const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:skinPose});
    const anatomical=v80FaceMuscleDelta({ax,ny,front,mouthY,
     ageStrength,actionUnits});
-   facialAttr.array[k]=x+xd*skinDeformationGain*
+   // Do not tear or invert the lip/philtrum/chin triangles of an intact
+   // face. Retain cheek and eyelid expressions outside the guard.
+   const oralGuard=safeOriginalMouth?
+    1-.94*fall(ax,.105,.20)*fall(ny,mouthY-.010,.072)*front:1;
+   const skinGain=skinDeformationGain*oralGuard;
+   facialAttr.array[k]=x+xd*skinGain*
     Math.sign(x-centerX)*anatomical.dxOut;
-   facialAttr.array[k+1]=y+yd*skinDeformationGain*(.033*e.smile*lipCorner+
-    .012*e.cheek*cheek+.008*e.brow*brow+
-    .013*e.tilt*inner-.050*Math.max(0,e.open)*jaw-
-    .024*Math.max(0,e.open)*lowerLip+muscle.dy+micro.dy+anatomical.dy);
-   facialAttr.array[k+2]=z+depth*skinDeformationGain*(.009*e.cheek*cheek+
-    .008*Math.max(0,e.smile)*lipCorner-
-    .014*Math.max(0,e.open)*mouthInterior+muscle.dz+micro.dz+anatomical.dz);
+   facialAttr.array[k+1]=y+yd*skinGain*(.033*skinPose.smile*lipCorner+
+    .012*skinPose.cheek*cheek+.008*skinPose.brow*brow+
+    .013*skinPose.tilt*inner-.050*Math.max(0,skinPose.open)*jaw-
+    .024*Math.max(0,skinPose.open)*lowerLip+
+    muscle.dy+micro.dy+anatomical.dy);
+   facialAttr.array[k+2]=z+depth*skinGain*(.009*skinPose.cheek*cheek+
+    .008*Math.max(0,skinPose.smile)*lipCorner-
+    .014*Math.max(0,skinPose.open)*mouthInterior+
+    muscle.dz+micro.dz+anatomical.dz);
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
@@ -428,6 +444,12 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  };
  const setMouthOpen=value=>{
   const frame=expressionFrame();
+  // Never show a fictitious 96% opening while the real donor face has
+  // a safely closed topology. Lip deformation is intentionally limited.
+  if(face.userData.v83SafeOriginalMouthTopology){
+   mouthOpen=0;
+   return;
+  }
   mouthOpen=clamp(Math.max(value,Math.max(Number(frame.open)||0,
    Number(frame.au26)||0)*strength));
   if(!mouth)return;
@@ -553,6 +575,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v83ForegroundOverlaysDisabled:!!face.userData.v83SafeOriginalMouthTopology,
    v83OralCavityDeferredUntilTopologyValidated:
     !!face.userData.v83SafeOriginalMouthTopology,
+   v84JawOpeningQuarantined:!!face.userData.v83SafeOriginalMouthTopology,
+   v84OralSkinInversionGuard:!!face.userData.v83SafeOriginalMouthTopology,
    v80TransitionProgress:transition?Number(smooth(
     transition.elapsed/transition.duration).toFixed(3)):null,
    expressionIntensity:strength,
