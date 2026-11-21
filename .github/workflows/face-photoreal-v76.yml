@@ -74,7 +74,7 @@ jobs:
           node --check src/face-integrated-mouth-v82.js
           node --check qa/face-v82-integrated-mouth.test.mjs
           node --check qa/face-v83-public-safe.test.mjs
-          node --check qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs
+          node --check qa/face-v82-real-glb-topology.test.mjs
           node --check src/face-anatomy-rig-v80.js
           node --check src/face-oral-anatomy-v80.js
           node --check qa/face-v80-anatomy.test.mjs
@@ -87,3 +87,26 @@ jobs:
       - name: Validate source phototexture, real eye/lip meshes, expressions and ageing
         run: |
           node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs qa/face-v76-visible-preset-smooth.test.mjs qa/face-v80-anatomy.test.mjs
+          # IMPORTANT: these were previously syntax-checked but never RUN.
+          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs
+
+      - name: Diagnose current public face version before merging
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          html_url="https://yamadayoshitaka.github.io/hai-gin-rpg/face-mesh-studio.html?ci_probe=${GITHUB_SHA:0:12}"
+          js_url="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-expression-animation-v48.js?ci_probe=${GITHUB_SHA:0:12}"
+          if curl -fsSL --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' "${html_url}" -o /tmp/live-face.html; then
+            echo 'Public HTML face version:'
+            grep -oE '顔品質 v[0-9]+' /tmp/live-face.html | sort -u || true
+            echo 'Public HTML import code:'
+            grep -oE 'v=[0-9]+-[a-z0-9-]+' /tmp/live-face.html | grep -E '(mouth|face|oral)' | sort -u || true
+          else
+            echo "::warning::Unable to read live face HTML from GitHub Pages"
+          fi
+          if curl -fsSL --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' "${js_url}" -o /tmp/live-face.js; then
+            echo 'Public runtime implementation markers:'
+            grep -oE 'v8[345](BuildSignature|JawOpeningQuarantined|ProductionSafetyMode)' /tmp/live-face.js | sort -u || true
+          else
+            echo "::warning::Unable to read public face JavaScript"
+          fi
