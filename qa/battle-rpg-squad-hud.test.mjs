@@ -112,7 +112,8 @@ test('approved face atlas uses canonical campaign job rows, stable variants, and
  assert.ok(JOB_PORTRAIT_FILES.a.endsWith('frontline-v1.webp'));
  const js=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/battle-rpg-squad-hud.css',import.meta.url),'utf8');
- assert.match(js,/setBattleJobPortrait\(job,row\.job,row\.id,team\)/);
+ assert.match(js,/setBattleSquadHudPortrait\(job,row,team\)/);
+ assert.match(js,/setBattleJobPortrait\(element,choice\.job,choice\.id,team\)/);
  assert.match(js,/expanded=\[true,true\]/);
  assert.match(css,/grid-template-columns:26px minmax\(0,1fr\)/);
  assert.match(css,/background-size:400% 400%/);
@@ -242,7 +243,7 @@ test('three inn teams aggregate nine job squads in the combat HUD without changi
  assert.equal(physical[0].id,'1001','physical battle squad ID must remain unchanged');
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  const hud=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
- assert.match(html,/aggregateBattleRpgTeams\(rows,armyGroupBySquad,enemyGroupBySquad\)/);
+ assert.match(html,/aggregateBattleRpgTeams\(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup\)/);
  assert.match(html,/targetedStrategyUi\.open\(group,\{startAtRecommendations:true,groupOnly:true\}\)/);
  assert.match(hud,/expandedTeamId/);
  assert.match(hud,/rpgJobDivision/);
@@ -302,10 +303,10 @@ test('every playable battle link and display refresh route to the three-team HUD
  assert.match(battle,/const THREE_TEAM_BATTLE=!TOWN_MODE&&!MASS_SIZE/);
  assert.match(battle,/resolveBattleThreeTeamGroups\(squadIds,id=>squadPrimaryJob\(id\)/);
  assert.match(battle,/battleRpgHud\.update\(THREE_TEAM_BATTLE\?/);
- assert.match(battle,/aggregateBattleRpgTeams\(rows,armyGroupBySquad,enemyGroupBySquad\)/);
+ assert.match(battle,/aggregateBattleRpgTeams\(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup\)/);
  assert.match(battle,/if\(THREE_TEAM_BATTLE\)for\(const unit of squadRoster\)/);
  assert.doesNotMatch(battle,/battleRpgHud\.update\(storyRequest\?\.sortieTeamCount\?/);
- assert.match(map,/v=three-team-radar2-20261120/);
+ assert.match(map,/v=three-team-stage-type-single-deploy-20261121/);
  assert.match(game,/v=three-team-radar2-20261120/);
  assert.match(story,/storyBattle=1&v=three-team-radar2-20261120/);
 });

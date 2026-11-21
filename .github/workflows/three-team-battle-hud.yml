@@ -6,6 +6,12 @@ on:
       - 'src/battle-realtime-commands.css'
       - 'src/battle-realtime-deployment.js'
       - 'src/battle-rpg-squad-source.js'
+      - 'src/battle-rpg-squad-hud.js'
+      - 'src/battle-portrait-identity.js'
+      - 'src/battle-stage-identity.js'
+      - 'world-map.html'
+      - 'qa/battle-rpg-squad-hud.test.mjs'
+      - 'qa/battle-stage-deployment-portraits.test.mjs'
       - 'src/three-team-core-bridge.js'
       - 'tactics-wireframe.html'
       - 'qa/battle-three-team-*'
@@ -22,8 +28,10 @@ jobs:
         with:
           node-version: '22'
       - name: Check JavaScript syntax
-        run: node --check src/battle-rpg-squad-source.js && node --check src/battle-rpg-squad-hud.js && node --check src/battle-realtime-commands.js && node --check src/battle-realtime-deployment.js && node --check src/three-team-core-bridge.js
+        run: node --check src/battle-portrait-identity.js && node --check src/battle-stage-identity.js && node --check src/battle-rpg-squad-source.js && node --check src/battle-rpg-squad-hud.js && node --check src/battle-realtime-commands.js && node --check src/battle-realtime-deployment.js && node --check src/three-team-core-bridge.js
       - name: Install lightweight DOM test dependency
         run: npm install --no-save --package-lock=false linkedom@0.18.12
       - name: Verify real DOM with three teams and nested job divisions
         run: node --test qa/battle-rpg-squad-hud.test.mjs qa/battle-three-team-hud-dom.test.mjs qa/battle-three-team-radar.test.mjs qa/battle-three-team-prebattle.test.mjs qa/realtime-deployment-mobile-performance.test.mjs
+      - name: Verify stage identity, one deployment and captain/species portraits
+        run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
