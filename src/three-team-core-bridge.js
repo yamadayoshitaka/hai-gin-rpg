@@ -106,7 +106,7 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
    return {id,name:formation.name,purpose:FORMATION_BATTLE_PURPOSES[id]?.purpose||'',
     movement:FORMATION_BATTLE_PURPOSES[id]?.movement||'',
     eligible:assessment.eligible,reason:assessment.reason,
-    assignment,roleMinimums,requirements:required,
+    assignment,roleMinimums,cells:SORTIE_FORMATION_CELLS[id].slice(0,formation.slots),requirements:required,
     bonus:{attack:formation.attack||0,defense:formation.defense||0,
      mobility:formation.mobility||0,magic:formation.magic||0,healing:formation.healing||0}};
   })]));
