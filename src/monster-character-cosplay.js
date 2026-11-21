@@ -436,7 +436,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     [side*.13,.29,-.12],[side*.08,.05,-.16],[side*.19,-.21,-.14]
    ],.014);
  }
- if(!gothic&&['death_knight','dark_knight','demon','gargoyle'].includes(costume)){
+ if(!gothic&&!fullBody&&['death_knight','dark_knight','demon','gargoyle'].includes(costume)){
   // Armour uses the same upper-arm bone as the game character.
   for(const side of [-1,1]){
    const k=side<0?0:1;
