@@ -53,7 +53,9 @@ const REBUILT_STYLE_RECORDS=Object.fromEntries(
   part:r.part,partWidth:r.part==='side'?.024:.008,
   sadakoVariant:r.front==='bangs'?'bangs':'center',
   catalogCurl:r.curl,catalogFront:r.front,rebuiltBase:'sadako',
-  styleLength:r.length,catalogTempleRatio:r.templeRatio
+  styleLength:r.length,catalogTempleRatio:r.templeRatio,
+  maleGroom:r.gender==='male'?'tailored-male-v70':null,
+  himeFringe:r.id==='rb-f-hime'?'glabella-long-v70':null
  }:{
   id:r.id,label:r.label,gender:r.gender,rebuiltBase:'buzz',
   groomMaster:'buzz-cut',part:r.part,
@@ -65,6 +67,7 @@ const REBUILT_STYLE_RECORDS=Object.fromEntries(
   shortCutKind:'short',styleLength:r.length,
   rebuiltShortLength:r.length,catalogCurl:r.curl,
   catalogFront:r.front,catalogTempleRatio:r.templeRatio,
+  maleGroom:r.gender==='male'?'tailored-male-v70':null,
   templeVolume:0,strandWave:0,wigType:'independent-3d-asset',
   collisions:['scalp','face','neck','shoulder','chest']
  }
