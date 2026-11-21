@@ -23,6 +23,8 @@ on:
       - 'qa/hair-rebuilt-catalog-v67.test.mjs'
       - 'qa/hair-natural-volume-cast-v69.test.mjs'
       - 'qa/hair-face-clear-male-hime-v70.test.mjs'
+      - 'qa/hair-catalog-silhouettes-v71.test.mjs'
+      - 'src/hair-shape-catalog-v71.js'
       - 'qa/character-cast-v46.test.mjs'
       - 'src/character-cast-v46.js'
       - 'src/hair-rebuilt-catalog-v67.js'
@@ -61,6 +63,8 @@ on:
       - 'qa/hair-rebuilt-catalog-v67.test.mjs'
       - 'qa/hair-natural-volume-cast-v69.test.mjs'
       - 'qa/hair-face-clear-male-hime-v70.test.mjs'
+      - 'qa/hair-catalog-silhouettes-v71.test.mjs'
+      - 'src/hair-shape-catalog-v71.js'
       - 'qa/character-cast-v46.test.mjs'
       - 'src/character-cast-v46.js'
       - 'src/hair-rebuilt-catalog-v67.js'
@@ -95,8 +99,10 @@ jobs:
           node --check src/face-part-catalog-v32.js
           node --check src/hero-hair-controls-v43.js
           node --check src/hair-rebuilt-catalog-v67.js
+          node --check src/hair-shape-catalog-v71.js
+          node --check qa/hair-catalog-silhouettes-v71.test.mjs
           node --check src/character-cast-v46.js
           node --check src/face-mantle-hair-collision.js
           node --check src/face-costume-scalp-mask.js
           node --check src/heroine-battle-costume-bridge.js
-          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs qa/hair-sadako-ear-crown-bust-v55.test.mjs qa/hair-sadako-ear-density-crown-v56.test.mjs qa/hair-sadako-crown-canopy-v57.test.mjs qa/hair-sadako-headhug-rear-v58.test.mjs qa/hair-sadako-curved-dynamic-v59.test.mjs qa/hair-sadako-mantle-crown-v60.test.mjs qa/hair-shared-scalp-temple-v61.test.mjs qa/hair-costume-scalp-mask-v62.test.mjs qa/hair-costume-neck-crown-v63.test.mjs qa/hair-sadako-side-ribbons-v64.test.mjs qa/hair-sadako-five-variants-v65.test.mjs qa/hair-sadako-perm-rods-eyes-v66.test.mjs qa/hair-rebuilt-catalog-v67.test.mjs qa/character-cast-v46.test.mjs qa/hair-natural-volume-cast-v69.test.mjs qa/hair-face-clear-male-hime-v70.test.mjs
+          node --test qa/hair-sadako-buzz-reselect-v49.test.mjs qa/hair-sadako-master-v52.test.mjs qa/hair-sadako-parting-v54.test.mjs qa/hair-sadako-ear-crown-bust-v55.test.mjs qa/hair-sadako-ear-density-crown-v56.test.mjs qa/hair-sadako-crown-canopy-v57.test.mjs qa/hair-sadako-headhug-rear-v58.test.mjs qa/hair-sadako-curved-dynamic-v59.test.mjs qa/hair-sadako-mantle-crown-v60.test.mjs qa/hair-shared-scalp-temple-v61.test.mjs qa/hair-costume-scalp-mask-v62.test.mjs qa/hair-costume-neck-crown-v63.test.mjs qa/hair-sadako-side-ribbons-v64.test.mjs qa/hair-sadako-five-variants-v65.test.mjs qa/hair-sadako-perm-rods-eyes-v66.test.mjs qa/hair-rebuilt-catalog-v67.test.mjs qa/character-cast-v46.test.mjs qa/hair-natural-volume-cast-v69.test.mjs qa/hair-face-clear-male-hime-v70.test.mjs qa/hair-catalog-silhouettes-v71.test.mjs

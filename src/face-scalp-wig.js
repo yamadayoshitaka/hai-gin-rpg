@@ -2,7 +2,8 @@ export const FACE_HAIR_RUNTIME_BUILD='20261121-two-donor-unisex-catalog-v67';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
-import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67-v70';
+import {getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,WIG_SILHOUETTE_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './face-wig-styles.js?v=67-v71';
+import {selectCatalogCutLevel} from './hair-shape-catalog-v71.js?v=71';
 import {makeStyleSpecificHair} from './face-wig-ornaments-v49.js?v=20261118-braid-root-v1';
 import {catalogHairGroom,groomGuideOffset} from './face-hair-groom-v50.js?v=20261118-wig-coiffure-v74';
 
@@ -1268,7 +1269,7 @@ export function shapeRebuiltEarTuck(points,{box,side=1}={}){
  * reuse a measured head donor for follicles, but NOT a female bob guide. */
 export function shapeRebuiltMaleGuide(points,{
  box,zone='crown',side=1,part='center',long=false,bangsCut=false,
- frontRoot=false
+ frontRoot=false,profile=null
 }={}){
  if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
@@ -1278,7 +1279,9 @@ export function shapeRebuiltMaleGuide(points,{
   const p=points[j],t=j/(points.length-1);
   const sweep=THREE.MathUtils.smoothstep(t,.055,.30);
   if((fringe||temple||(zone==='crown'&&frontRoot))&&!bangsCut){
-   const goalX=c.x+side*d.x*(temple?.37:part==='side'?.36:.32);
+   const partStrength=profile?.partStrength??.22;
+   const goalX=c.x+side*d.x*(temple?.37:
+    part==='side'?.335+partStrength*.07:.30+partStrength*.08);
    p.x=THREE.MathUtils.lerp(p.x,goalX,
     sweep*(temple?.90:.78));
    if(t>.20){
@@ -1288,6 +1291,13 @@ export function shapeRebuiltMaleGuide(points,{
    }
    p.z=THREE.MathUtils.lerp(p.z,
     c.z-d.z*(temple?.15:.055),sweep*(temple?.83:.59));
+   if(profile?.family?.includes('perm')||profile?.family?.includes('wave')){
+    const wave=THREE.MathUtils.smoothstep(t,.22,.80);
+    p.x+=d.x*.018*wave*Math.sin(t*9.2+side*2.1);
+    p.z+=d.z*.013*wave*Math.cos(t*9.2+side*2.1);
+   }
+   if(profile?.family==='slickback'&&fringe)
+    p.z-=d.z*.125*sweep;
   }
   if(temple&&!long){
    const taper=THREE.MathUtils.smoothstep(t,.40,.92);
@@ -1309,6 +1319,44 @@ export function shapeRebuiltNaturalContour(points,{box}={}){
   const p=points[j],yn=(p.y-box.min.y)/Math.max(d.y,1e-6);
   const cap=d.x*(.40+.075*(1-THREE.MathUtils.smoothstep(yn,.50,.83)));
   p.x=THREE.MathUtils.clamp(p.x,c.x-cap,c.x+cap);
+ }
+ return points;
+}
+/** Deterministic catalog-layer cut: source donor scalp remains untouched.
+ * A bob, medium, semi-long, and long must have ALL posterior guide tips in
+ * a consistent length band, instead of a short curtain with random tails. */
+export function shapeCatalogLengthGuide(points,{
+ box,tipY,rootIndex=0
+}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3||
+  !Number.isFinite(tipY))return points;
+ const d=box.getSize(new THREE.Vector3());
+ const root=points[0].clone();
+ const variation=d.y*.012*Math.sin(rootIndex*2.3999632);
+ const target=Math.min(root.y-d.y*.024,tipY+variation);
+ const prevTip=points.at(-1).y;
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),w=THREE.MathUtils.smoothstep(t,.07,.96);
+  // Preserve donor crown/ear tangent for the first stations; groom the
+  // lower length to its haircut's actual shoulder/neck/chin cut line.
+  const smoothTarget=THREE.MathUtils.lerp(root.y,target,Math.pow(t,.90));
+  points[j].y=THREE.MathUtils.lerp(points[j].y,smoothTarget,w);
+ }
+ points.at(-1).y=target;
+ return points;
+}
+/** Traditional hime cut has two separate FACE-FRAMING blunt side locks at
+ * cheek/jaw height, independent of its much longer back hair curtain.
+ * This is a real scalp-rooted section, not a fake labelled center bob. */
+export function shapeHimeSideGuide(points,{box,side=1,rootIndex=0}={}){
+ if(!Array.isArray(points)||points.length<2||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const lane=(Math.floor(rootIndex/4)%3-1)*.010;
+ for(let j=1;j<points.length;j++){
+  const t=j/(points.length-1),blend=THREE.MathUtils.smoothstep(t,.025,.33);
+  const p=points[j];
+  p.x=THREE.MathUtils.lerp(p.x,c.x+side*d.x*(.315+lane),blend*.96);
+  p.z=THREE.MathUtils.lerp(p.z,c.z+d.z*.275,blend*.88);
  }
  return points;
 }
@@ -1744,6 +1792,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    (zone==='crown'&&frontRoot&&midFace));
   const bangsCut=sadakoVariant==='bangs'&&
    (style.rebuiltBase==='sadako'?fringe:(fringe||overFace));
+  const salonCutLevel=selectCatalogCutLevel(style.catalogShape,zone,
+   {frontRoot,bangsCut});
+  const salonCutY=Number.isFinite(salonCutLevel)?
+   box.min.y+d.y*salonCutLevel:null;
   if(overFace&&!sadakoGravity)faceTrimmedStrands++;
   // Real full-body preview: extend posterior/temple locks below the cropped
   // head into the shoulder area. A head-only wig keeps its old cut lengths.
@@ -1792,6 +1844,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const lateral=2*Math.abs(wigRoot.x-center.x)/d.x;
   const baseTrimY=bangsCut?box.min.y+d.y*
    ((style.himeFringe?.735:.760)+.004*Math.sin(i*.73)):
+   Number.isFinite(salonCutY)?Math.min(salonCutY,wigRoot.y-d.y*.024):
    sadakoGravity?wigRoot.y-length*1.04:cutKind?wigRoot.y-length*1.06:
    Math.min(wigRoot.y-d.y*.012,
     (fringe||overFace)?browLimit:
@@ -1802,7 +1855,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // nape. Existing one-mesh layered cards follow these individual cuts.
   const floorRatio=back?catalogGroom.backFloor:
    zone.startsWith('temple')?catalogGroom.templeFloor:0;
-  const trimY=sadakoGravity?baseTrimY:floorRatio?Math.max(baseTrimY,
+  const trimY=Number.isFinite(salonCutY)?baseTrimY:
+   sadakoGravity?baseTrimY:floorRatio?Math.max(baseTrimY,
    Math.min(wigRoot.y-d.y*.014,box.min.y+d.y*floorRatio)):baseTrimY;
   // Salon-guided locks: the real scalp root stays fixed. After a brief
   // head-conforming section, each lock DROPS DOWN, not out in a radial
@@ -1861,6 +1915,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    if(style.rebuiltBase==='sadako'&&style.catalogFront==='bangs'){
     if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i,
      tipLevel:style.himeFringe?.752:.786});
+    else if(style.catalogShape?.himeSide&&zone.startsWith('temple'))
+     shapeHimeSideGuide(shape,{box,side:partSide,rootIndex:i});
     else if(faceFrame||zone.startsWith('temple'))
      shapeRebuiltEarTuck(shape,{box,side:partSide});
    }else if(sadakoVariant!=='straight')shapeSadakoVariantGuide(shape,{
@@ -1876,7 +1932,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     shapeRebuiltEarTuck(shape,{box,side:partSide});
    if(style.maleGroom)shapeRebuiltMaleGuide(shape,{
     box,zone,side:partSide,part:style.part,
-    long:style.styleLength>.74,bangsCut,frontRoot
+    long:style.styleLength>.74,bangsCut,frontRoot,
+    profile:style.catalogShape
    });
    // Face-parting and invisible-rod curls are INDEPENDENT components.
    // Earlier old styles used one variant switch and silently lost curls.
@@ -1885,6 +1942,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      variant:style.catalogCurl,box,side:partSide,rootIndex:i
     });
    if(style.rebuiltBase==='sadako')shapeRebuiltNaturalContour(shape,{box});
+   if(Number.isFinite(salonCutY))
+    shapeCatalogLengthGuide(shape,{box,tipY:salonCutY,rootIndex:i});
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
    }
@@ -1954,7 +2013,10 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   }
   if(style.maleGroom&&style.rebuiltBase==='buzz')
    shapeRebuiltMaleGuide(rest,{box,zone,side:partSide,part:style.part,
-    long:false,bangsCut:style.catalogFront==='bangs'&&fringe,frontRoot});
+    long:false,bangsCut:style.catalogFront==='bangs'&&fringe,frontRoot,
+    profile:style.catalogShape});
+  if(!sadakoGravity&&Number.isFinite(salonCutY))
+   shapeCatalogLengthGuide(rest,{box,tipY:salonCutY,rootIndex:i});
   // Natural grooming relaxes tangents, preserving the real root and cut tip.
   for(let pass=0;pass<(sadakoGravity?1:3);pass++){
    const filtered=rest.map(p=>p.clone());
@@ -2659,6 +2721,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   root.add(consolidatedHair);
   root.userData.renderMeshCount=1;
  }
+ function medianStrandTipY(locks){
+  if(!locks.length)return null;
+  const list=locks.map(x=>x.rest.at(-1)?.y)
+   .filter(Number.isFinite).sort((a,b)=>a-b);
+  return list.length?list[Math.floor(list.length*.5)]:null;
+ }
  root.userData.wigReport={
   style:'real-scalp-shell-growing-then-trimmed',gender,rooted:true,rootCount:lockCount,
   hairstyleId:style.id,styleLabel:style.label,
@@ -2681,6 +2749,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      return yn>.69&&yn<.83&&
       Math.abs(p.x-center.x)<d.x*.215&&p.z>center.z+d.z*.090;
     })).length:null,
+  v71CatalogFamily:style.catalogShape?.family||null,
+  v71LengthRecipe:style.catalogShape||null,
+  v71RearTipMedian:medianStrandTipY(strands.filter(x=>
+   x.zone.startsWith('back')||x.zone.startsWith('nape'))),
+  v71TempleTipMedian:medianStrandTipY(strands.filter(x=>
+   x.zone.startsWith('temple'))),
   v70HairPinMeshCount:earClipMeshes.length,
   v70MasculineGroom:style.maleGroom||null,
   v70HimeFringe:style.himeFringe||null,
