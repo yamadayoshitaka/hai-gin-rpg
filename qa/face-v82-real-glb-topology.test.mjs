@@ -311,9 +311,9 @@ test('V86: actual independent male/female head has no exposed original lip hole'
  }
 });
 
-test('V87 native mouth corners widen on actual CC0 donor while cheeks, eyes and scalp remain fixed',()=>{
+test('V87 native mouth corners narrow on actual CC0 donor while cheeks, eyes and scalp remain fixed',()=>{
  const snapshots=[];
- for(const width of [0.8,1,1.24,1.6]){
+ for(const width of [0.65,0.85,1,1.25]){
   const {geo}=sourceGeometry();
   const scene=new THREE.Group();
   const donor=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
@@ -333,12 +333,13 @@ test('V87 native mouth corners widen on actual CC0 donor while cheeks, eyes and 
   assert.equal(face.userData.v87MouthWidthOnOriginalSkin,true);
   snapshots.push({width,span,positions:pos.array.slice(),model});
  }
- const [,neutral,wider,maximum]=snapshots;
- assert.ok(wider.span>neutral.span*1.12&&wider.span<neutral.span*1.35,
-  'Default new mouth should be visibly wider without unnaturally stretching corners');
- assert.ok(maximum.span>wider.span*1.08,
+ const [minimum,narrower,neutral,maximum]=snapshots;
+ assert.ok(narrower.span<neutral.span*.97&&narrower.span>neutral.span*.75,
+  'V87 default mouth must be visibly narrower without crushing the native lip seal');
+ assert.ok(minimum.span<narrower.span*.96,
+  'Narrower slider setting should actually move native mouth corners');
+ assert.ok(maximum.span>neutral.span*1.08,
   'The real-mouth slider must affect actual head vertices');
- assert.ok(neutral.span>snapshots[0].span*1.08);
  // The multiplier must only modify the oral skin area, not cheeks/eyes.
  const source=snapshots[0].model.face.userData.v86OriginalDonorPositions;
  const origGeo=snapshots[0].model.face.geometry;
@@ -354,7 +355,7 @@ test('V87 native mouth corners widen on actual CC0 donor while cheeks, eyes and 
    protectedCount++;
    for(let k=0;k<3;k++)
     assert.ok(Math.abs(snapshots[0].positions[i*3+k]-
-      wider.positions[i*3+k])<1e-8,
+      narrower.positions[i*3+k])<1e-8,
      'Mouth width should not modify any other part of the face');
   }
  }
