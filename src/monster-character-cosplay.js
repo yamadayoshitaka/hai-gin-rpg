@@ -8,6 +8,7 @@
  */
 import * as THREE from 'three';
 import {resolveMonsterThemeAction} from './monster-theme-actions.js';
+import {enhanceMonsterHumanoidCostumeMaterial} from './monster-reference-finish.js';
 import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
@@ -260,6 +261,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
     });
     m.userData={golemMaterial:true,photographicHumanAlbedo:false,
      species:profile.id,role};
+    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
    }
    const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
@@ -317,6 +319,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
      m.userData.forestVisibleGreen=true;
      m.userData.forestColorRole=role;
    }
+   enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
    materials.set(role,m);ownedMats.push(m);
   }
   return materials.get(role);
