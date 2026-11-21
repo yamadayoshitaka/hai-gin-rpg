@@ -145,16 +145,19 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .questBattleTag{color:#f6d18a;font-size:12px;font-weight:700}
 #panel .questSortieActions button{max-width:none;background:#765a39;border-color:#d9bc83}
 @media(max-height:650px){#panelSceneBanner{height:70px}#panelKeeper{min-height:56px}.keeperFace{width:51px;height:55px}}
+.forgePanel{border:1px solid #ae9364;background:#1c3040;padding:9px;border-radius:8px;display:grid;gap:5px}
+.forgePanel b{font-size:14px;color:#ffe0a2}.forgePanel small{font-size:11px;color:#d4e0e7}
+#panel .forgePanel button{background:#79552c;border-color:#d9ba7d;min-height:42px}
 </style>
-<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=inn-signature-motion-20261121"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=training-roster-20261121b"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
-<img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、宿屋、武器屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
+<img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、軍訓練所、鍛冶屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
 <button data-facility="story" style="--x:50%;--y:20%">♛ 城<small>物語・謁見</small></button>
 <button data-facility="save" style="--x:20%;--y:36%">✚ 教会<small>セーブ</small></button>
-<button data-facility="formation" style="--x:25%;--y:56%">⌂ 宿屋<small>陣形テンプレート</small></button>
-<button data-facility="weapons" style="--x:77%;--y:48%">⚔ 武器屋<small>武器・防具</small></button>
-<button data-facility="tavern" style="--x:74%;--y:70%">♜ 酒場<small>仲間ガチャ</small></button>
+<button data-facility="formation" style="--x:25%;--y:56%">⌂ 軍訓練所<small>編成・雇用・陣形</small></button>
+<button data-facility="weapons" style="--x:77%;--y:48%">⚒ 鍛冶屋<small>購入・装備・鍛錬</small></button>
+<button data-facility="tavern" style="--x:74%;--y:70%">♜ 酒場<small>請負・仲間ガチャ</small></button>
 <button data-facility="items" style="--x:39%;--y:78%">▣ 道具屋<small>買い物</small></button>
 </div><p id="townSelectHint">行きたい施設をタップ</p></main><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
@@ -181,7 +184,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=inn-formation-only-20261121';
-import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=inn-signature-motion-20261121';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=training-roster-20261121b';
 import {setInnTeamItem} from './src/inn-team-items.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=roster-first-20261121';
 import {registerBattlePlan,selectBattlePlan,allBattlePlans} from './src/battle-plan-recommendations.js?v=20261116';
@@ -206,10 +209,10 @@ import {tavernQuestStages,runTavernSideQuest,tavernQuestBattleSettings} from './
 import {makeCoreBattleRequest,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
 import {createTownAudioDirector} from './src/town-audio-director.js';
 import {createStoryVoiceDirector} from './src/story-voice-director.js';
-import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
+import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,forgeSquadWeapon,MAX_WEAPON_FORGE_LEVEL,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
 import {STAGE_PRESETS} from './src/stage-library.js';
-import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
+import {RARITIES,JOBS,recruit,ensureMajorCharacterSquads,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
 import {squadPower,tacticalCooldownSeconds,STRATEGIST_SPECIALTIES,evaluateTacticalOrder} from './src/tactical-command-evaluation.js?v=2.1';
 import {DEPLOYMENT_CAPACITY,DEPLOYMENT_RANK_LABELS} from './src/inn-deployment.js?v=1';
 import {commanderList,commanderGroup,resolvedCommanderDeployment,placeCommander,autoDeployCommanders} from './src/inn-commander-formation.js?v=1';
@@ -275,12 +278,12 @@ function renderState(){
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
 const KEEPERS={
- weapons:['武具屋の店主','隊列の武器・防具'],items:['道具屋の店主','冒険の消耗品'],
- formation:['宿屋の主人','部隊編成と陣形'],tavern:['酒場の主人','仲間募集と任意依頼'],
+ weapons:['鍛冶屋の親方','武器・防具と鍛錬'],items:['道具屋の店主','冒険の消耗品'],
+ formation:['ガラン・訓練教官','部隊編成・雇用・陣形'],tavern:['酒場の主人','戦闘依頼と仲間ガチャ'],
  save:['教会の司祭','旅の記録'],story:['王城の侍従','物語と謁見']
 };
 function keeperFace(kind){
- return '<img class="keeperFace" src="./assets/town/portraits/'+kind+'.svg" alt="" loading="eager">';
+ return '<img class="keeperFace" src="'+(kind==='formation'?'./assets/story-cinema/cast/garan.webp':'./assets/town/portraits/'+kind+'.svg')+'" alt="" loading="eager">';
 }
 function facilityArt(kind){return KEEPERS[kind]?'./assets/town/facilities/'+kind+'.svg':'';}
 function setFacilityArt(kind){
@@ -313,14 +316,14 @@ $('townDialogueNext').onclick=()=>{
 $('townDialogueService').onclick=()=>{if(!activeTalk?.panel)return;const service=activeTalk.panel;hideTownDialogue();openPanel(service);};
 $('townDialogueClose').onclick=()=>{hideTownDialogue();stopNarration();};
 function openPanel(which){if(!townReady)return;hideTownDialogue();resetTownMovement();tavernGachaResults=null;panel=which;
- townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){innWizardStep='teamPick';sortieView='teamPick';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
+ townAudio.setScene(which==='formation'?'inn':which==='weapons'||which==='items'?'shop':which==='save'?'church':which==='story'?'castle':which==='tavern'?'tavern':'town');if(which==='formation'){ensureMajorCharacterSquads(game.campaign);innWizardStep='teamPick';innWizardRosterPreviewId='';innWizardRosterFormationPage=0;sortieView='teamPick';sortieTeamId=1;sortieCellIndex=5;sortieJobPage=0;sortieTemplatePage=0;sortieStrategyFamily='attack';sortieStrategyIntent='melee';ensureSortiePlan(game);persistSession(game,sessionStorage);}
  if(which==='tavern'){tavernSection='quests';sideQuestPage=Math.max(0,tavernQuestStages(game).length-1);tavernQuestIndex=0;}
  townAudio.effect('open');page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){tavernGachaResults=null;$('facilityBackdrop').hidden=true;$('panel').classList.remove('has-gacha-result','tavern-gacha-ui');$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';townAudio.effect('cancel');
  townAudio.setScene(insideFacility==='formation'?'inn':insideFacility==='save'?'church':insideFacility==='story'?'castle':insideFacility==='tavern'?'tavern':insideFacility?'shop':'town');}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 // Direct buying from the top navigation is intentionally disabled.
-function facilityLabel(kind){return ({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[kind]||kind;}
+function facilityLabel(kind){return ({weapon:'鍛冶屋',weapons:'鍛冶屋',shop:'道具屋',inn:'軍訓練所',formation:'軍訓練所',tavern:'酒場',church:'教会',castle:'王城'})[kind]||kind;}
 function mapCoord(value){return Math.max(3,Math.min(97,(Number(value)||0)/232*100));}
 function drawTownMap(){
  const canvases=[$('townGuideCanvas'),$('townRadarCanvas')];
@@ -474,13 +477,13 @@ function renderInnPages(){
  root.replaceChildren(heading,nav,pages.strategies,pages.deployment,pages.overview,pages.squads,pages.recruit);
 }
 let sortieView='teamPick',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
-let innWizardStep='teamPick',innWizardSlot=0,innWizardRosterPage=0,innWizardFormationPage=0,innWizardGearSourceId='',innWizardGearCategory='武器';
+let innWizardStep='teamPick',innWizardSlot=0,innWizardRosterPage=0,innWizardFormationPage=0,innWizardGearSourceId='',innWizardGearCategory='武器',innWizardRosterPreviewId='',innWizardRosterFormationPage=0,trainingHireCount=1;
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
  $('panel').classList.toggle('tavern-gacha-ui',panel==='tavern');
  $('panel').classList.toggle('has-gacha-result',panel==='tavern'&&Boolean(tavernGachaResults));
- $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・陣形テンプレート',tavern:'酒場・戦闘依頼',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
+ $('panelTitle').textContent=({weapons:'鍛冶屋・武器鍛錬',items:'道具屋・消耗品',formation:'軍訓練所・陣形テンプレート',tavern:'酒場・請負／仲間ガチャ',save:'教会・旅の記録',story:'王城・物語',dialogue:activeTalk?.name||'町人との会話'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
  const keeperKey=panel==='dialogue'?activeTalk?.panel:panel;
  setFacilityArt(keeperKey);
@@ -505,23 +508,31 @@ function renderPanel(){
   const selector=armory?'<div class="armorySelect"><label for="equipSquadSelect">装備する隊列（'+squads.length+'隊）</label>'+
    '<select id="equipSquadSelect" aria-label="装備対象の隊列">'+squads.map(s=>'<option value="'+s.id+'" '+(s.id===selectedSquadId?'selected':'')+'>#'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人 / '+escapeHtml(s.rarity||'N')+'</option>').join('')+'</select>'+
    '<div class="armoryGear"><span>武器：'+escapeHtml(weapon?.name||'未装備')+'</span><span>防具：'+escapeHtml(armor?.name||'未装備')+'</span></div></div>':'';
+  const forgeLevel=Math.max(0,Math.min(MAX_WEAPON_FORGE_LEVEL,Math.trunc(Number(selected?.weaponForgeLevels?.[weapon?.id]||0))));
+  const forging=armory?(weapon?
+   '<div class="forgePanel"><b>⚒ '+escapeHtml(weapon.name)+' ＋'+forgeLevel+'</b>'+
+   '<small>攻撃補正 ＋'+Math.round(squadEquipmentBonus(selected).attack*100)+'%'+
+   (forgeLevel>=MAX_WEAPON_FORGE_LEVEL?' ／ 最大まで鍛錬済み':' → 鍛錬後 ＋'+Math.round((squadEquipmentBonus(selected).attack+.05)*100)+'%')+'</small>'+
+   '<button type="button" data-forge-weapon="'+selected.id+'" '+(forgeLevel>=MAX_WEAPON_FORGE_LEVEL||game.wallet<(forgeLevel+1)*100?'disabled':'')+'>'+
+   (forgeLevel>=MAX_WEAPON_FORGE_LEVEL?'鍛錬済み（＋5）':'武器を鍛える（'+((forgeLevel+1)*100)+'G）')+'</button></div>':
+   '<div class="forgePanel"><small>鍛錬する武器を選んで装備してください。</small></div>'):'';
   $('panelContent').innerHTML=
-   '<p>'+(armory?'装備する隊列を1つ選び、武器・防具を購入または装備してください。効果は出撃開始時から常時有効です。':'消耗品を購入します。武器・防具は武具屋で購入します。')+'</p>'+
-   (armory?selector+'<div class="controls">'+['武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>':'')+
+   '<p>'+(armory?'装備する隊列を1つ選び、武器・防具を購入または装備してください。効果は出撃開始時から常時有効です。':'消耗品を購入します。武器・防具は鍛冶屋で購入します。')+'</p>'+
+   (armory?selector+'<div class="controls">'+['武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>'+forging:'')+
    '<div class="entries">'+rowsHtml(stock,item=>{
     const compatible=!item.jobs||!selected||item.jobs.includes(selected.job);
     return '<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+(compatible?'':' · '+escapeHtml(selected?.job||'')+'は装備不可')+'</small></div><div class="saveSlotActions"><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!selected||!compatible?'disabled':'')+'>装備</button>':'')+'</div></div>';
    })+'</div>'+
    '<p>所持金：'+game.wallet+'G'+(armory?'　※装備在庫は隊列ごとに1個必要です。':'')+'</p>';
  }else if(panel==='formation'){
-   $('panelContent').innerHTML=renderInnFormationWizard({game,teamId:sortieTeamId,view:innWizardStep,rosterSlot:innWizardSlot,rosterPage:innWizardRosterPage,formationPage:innWizardFormationPage,gearSourceId:innWizardGearSourceId,gearCategory:innWizardGearCategory});
+   $('panelContent').innerHTML=renderInnFormationWizard({game,teamId:sortieTeamId,view:innWizardStep,rosterSlot:innWizardSlot,rosterPage:innWizardRosterPage,formationPage:innWizardFormationPage,gearSourceId:innWizardGearSourceId,gearCategory:innWizardGearCategory,rosterPreviewId:innWizardRosterPreviewId,rosterFormationPage:innWizardRosterFormationPage,hireCount:trainingHireCount});
    // Every new wizard page begins with its first option fully visible.
    $('panelContent').scrollTop=0;
   }else if(panel==='tavern'){
   const unlocked=tavernQuestStages(game);
   sideQuestPage=Math.min(Math.max(0,sideQuestPage),Math.max(0,unlocked.length-1));
   const group=unlocked[sideQuestPage];
-  const tabs='<div class="controls"><button type="button" data-tavern-section="quests" '+(tavernSection==='quests'?'class="primary"':'')+'>任意依頼（'+unlocked.length*2+'件）</button><button type="button" data-tavern-section="recruit" '+(tavernSection==='recruit'?'class="primary"':'')+'>仲間募集</button></div>';
+  const tabs='<div class="controls"><button type="button" data-tavern-section="quests" '+(tavernSection==='quests'?'class="primary"':'')+'>任意依頼（'+unlocked.length*2+'件）</button><button type="button" data-tavern-section="recruit" '+(tavernSection==='recruit'?'class="primary"':'')+'>仲間ガチャ</button></div>';
   const quest=group?.quests[tavernQuestIndex]||null;
   const questPanel=!quest?'<p>最初の戦闘ステージをクリアすると、シナリオ以外の戦闘依頼が2件解放されます。</p>':
    '<p class="questBattleTag">⚔ 戦闘依頼：1ステージクリアで2件解放／勝利時のみ報酬</p>'+
@@ -574,9 +585,26 @@ $('panelContent').onclick=event=>{
    const data=target.dataset,step=innWizardStep;
    const redraw=()=>{renderPanel();};
    const saveAndDraw=()=>{persist();redraw();};
-   if(target.hasAttribute('data-inn-wizard-team')){
+   if(target.hasAttribute('data-training-open')){innWizardStep='hire';redraw();return;}
+    if(target.hasAttribute('data-training-hire-count')){
+     trainingHireCount=[1,5,10].includes(Number(data.trainingHireCount))?Number(data.trainingHireCount):1;
+     redraw();return;
+    }
+    if(target.hasAttribute('data-training-hire')){
+     recruit(game.campaign,{job:data.trainingHire,rarity:'N',count:trainingHireCount,
+      purpose:'前線',commanderId:'player',faceId:0});
+     saveAndDraw();notice(data.trainingHire+'を'+trainingHireCount+'人雇用しました。隊員選択から配属できます。');return;
+    }
+    if(target.hasAttribute('data-inn-wizard-roster-formation-page')){
+     innWizardRosterFormationPage=Math.max(0,innWizardRosterFormationPage+Number(data.innWizardRosterFormationPage));
+     redraw();return;
+    }
+    if(target.hasAttribute('data-inn-wizard-preview')){
+     innWizardRosterPreviewId=data.innWizardPreview;redraw();return;
+    }
+    if(target.hasAttribute('data-inn-wizard-team')){
     sortieTeamId=Number(data.innWizardTeam);innWizardStep='roster';innWizardSlot=0;
-    innWizardRosterPage=0;innWizardFormationPage=0;redraw();return;
+    innWizardRosterPage=0;innWizardFormationPage=0;innWizardRosterPreviewId='';innWizardRosterFormationPage=0;redraw();return;
    }
    if(target.hasAttribute('data-inn-wizard-slot')){
     innWizardSlot=Number(data.innWizardSlot);innWizardRosterPage=0;
@@ -914,7 +942,7 @@ $('panelContent').onclick=event=>{
    tavernGachaResults=draw;
    persist();renderPanel();
    townAudio.effect(draw.highestRarity==='UR'?'gachaUR':draw.highestRarity==='R'?'gachaRare':'gacha');
-   notice(draw.entries.length+'人が予備隊に加わりました。宿屋で編成できます。');
+   notice(draw.entries.length+'人が予備隊に加わりました。軍訓練所で編成できます。');
    return;
   }
   if(target.hasAttribute('data-gacha-draw')){
@@ -924,7 +952,12 @@ $('panelContent').onclick=event=>{
   }
   if(target.hasAttribute('data-page')){page+=Number(target.dataset.page);renderPanel();return;}
   if(target.hasAttribute('data-shop-category')){shopCategory=target.dataset.shopCategory;page=0;renderPanel();return;}
-  if(target.hasAttribute('data-buy')){
+  if(target.hasAttribute('data-forge-weapon')){
+    const crafted=forgeSquadWeapon(game,Number(target.dataset.forgeWeapon));
+    persist();renderPanel();townAudio.effect('buy');
+    notice(crafted.item.name+'を＋'+crafted.level+'まで鍛錬しました（-'+crafted.cost+'G）。');return;
+   }
+   if(target.hasAttribute('data-buy')){
    const purchase=buyTownItem(game,target.dataset.buy,1);
    persist();renderPanel();townAudio.effect('buy');notice(purchase.item.name+'を購入しました（-'+purchase.price+'G）。');return;
   }

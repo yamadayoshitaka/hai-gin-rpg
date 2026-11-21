@@ -1,7 +1,7 @@
 /**
  * Tavern's in-game-currency companion lottery.
  * All rolls are planned and validated before mutating wallet or army.
- * Recruits go to reserve, where the inn's formation planner can assign them.
+ * Recruits go to reserve, where the training-ground formation planner can assign them.
  * No real-money payments or external APIs.
  */
 import {JOBS,RARITIES,JOB_FACE_VARIANTS,troopCount} from './story-campaign.js';
@@ -78,7 +78,7 @@ export function drawTavernGacha(game,modeId='normal',random=Math.random){
 export function renderTavernGacha(game){
  const left=Math.max(0,1000-troopCount(game.campaign));
  const wallet=Number(game.wallet)||0;
- return '<div class="gachaIntro"><p>酒場で冒険者を募集します。獲得した仲間は<strong>予備隊</strong>に登録され、宿屋で編成できます。</p>'+
+ return '<div class="gachaIntro"><p>酒場で冒険者を募集します。獲得した仲間は<strong>予備隊</strong>に登録され、軍訓練所で編成できます。</p>'+
   '<div class="gachaBalance"><span>所持金 <b>'+wallet+'G</b></span><span>空き兵士枠 <b>'+left+'人</b></span></div></div>'+
   '<div class="gachaOptions">'+Object.values(TAVERN_GACHA).map(mode=>
    '<div class="gachaOption"><div><strong>'+mode.title+'</strong><small>'+mode.description+'</small>'+

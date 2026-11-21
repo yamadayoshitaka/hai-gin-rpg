@@ -16,6 +16,7 @@ on:
       - 'qa/battle-stage-deployment-portraits.test.mjs'
       - 'qa/inn-strategy-three-team-wizard.test.mjs'
       - 'qa/inn-roster-first-formation.test.mjs'
+      - 'qa/training-ground-forge-critical-roster.test.mjs'
       - 'qa/battle-formation-switch.test.mjs'
       - 'src/battle-formation-orders.js'
       - 'src/inn-formation-wizard.js'
@@ -73,6 +74,8 @@ jobs:
         run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs
       - name: Verify roster-first inn, equipment, captain and high-tier eligibility
         run: node --experimental-vm-modules qa/inn-roster-first-formation.test.mjs
+      - name: Verify training ground, forge upgrades, gacha preservation and story-critical losses
+        run: node --test qa/training-ground-forge-critical-roster.test.mjs
       - name: Verify paged inn, per-team items and formation-gated tactics
         run: node --test qa/mobile-formation-command-items.test.mjs
       - name: Verify battle-time formation changes and regrouping

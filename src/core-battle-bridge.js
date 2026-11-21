@@ -1,5 +1,6 @@
 import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 import {makeThreeTeamBattleRequest} from './three-team-core-bridge.js';
+import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 /**
  * Adapter from the 20x10 campaign to the existing 3D 50-person battle.
  * The battle remains authoritative for wins, unit casualties and monster clears.
@@ -146,11 +147,16 @@ export function settleCoreBattle(game,request,result){
   }
  }
 
- const protagonistDead=result.playerCommanderDead===true;
- const victory=Boolean(result.victory&&!protagonistDead);
- if(protagonistDead){
-  game.campaign.commander.active=false;
-  game.campaign.gameOver='主人公が戦死しました。GAME OVER';
+ const fallenHero=changes.find(([s,n])=>Boolean(s.criticalCharacter)&&n>0)?.[0]||null;
+ const protagonistDead=result.playerCommanderDead===true||
+  String(fallenHero?.characterId||'').startsWith('commander-');
+ const criticalDead=Boolean(fallenHero);
+ const gameOverDead=protagonistDead||criticalDead;
+ const victory=Boolean(result.victory&&!gameOverDead);
+ if(gameOverDead){
+  if(protagonistDead)game.campaign.commander.active=false;
+  game.campaign.gameOver=protagonistDead?'主人公が戦死しました。GAME OVER':
+   (fallenHero.characterName||'主要人物')+'が戦死しました。GAME OVER';
   game.location='gameover';
  }
  game.lastCoreBattleId=request.battleId;
@@ -190,7 +196,7 @@ export function settleCoreBattle(game,request,result){
   }
  }
  if(optionalQuest&&!victory)settleTavernQuestBattle(game,request,{victory:false});
- game.history.unshift((optionalQuest?optionalQuest.title:stage.name)+'：'+(protagonistDead?'主人公戦死・GAME OVER':victory?'勝利':'敗北')+'。損害'+casualties+'人。');
+ game.history.unshift((optionalQuest?optionalQuest.title:stage.name)+'：'+(protagonistDead?'主人公戦死・GAME OVER':criticalDead?'主要人物戦死・GAME OVER':victory?'勝利':'敗北')+'。損害'+casualties+'人。');
  game.history=game.history.slice(0,50);
- return {victory,playerCommanderDead:protagonistDead,gameOver:game.campaign.gameOver||null,casualties,stage,next,rewards:result.settledRewards||{gold:0,xp:0,loot:[]}};
+ return {victory,playerCommanderDead:protagonistDead,majorCharacterDead:criticalDead,gameOver:game.campaign.gameOver||null,casualties,stage,next,rewards:result.settledRewards||{gold:0,xp:0,loot:[]}};
 }

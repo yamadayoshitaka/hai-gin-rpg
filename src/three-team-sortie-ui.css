@@ -411,3 +411,59 @@
 @media(prefers-reduced-motion:reduce){
  .signatureTroop animateTransform{display:none}
 }
+
+
+/* Training-ground roster: no vertical or nested scrolling on phone portrait.
+   Formation list is paged (6 at a time); the shared battle preview stays in view. */
+#panel.formation-command-ui:has(.innWizardRosterPreview){height:calc(100dvh - 14px);max-height:calc(100dvh - 14px);padding:8px 10px;gap:4px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) #panelSceneBanner{display:none!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) #panelKeeper{min-height:0;padding:3px 6px;gap:7px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .keeperFace{height:42px;width:40px;object-fit:cover}
+#panel.formation-command-ui:has(.innWizardRosterPreview) #panelContent{flex:1 1 auto;min-height:0;overflow:hidden!important;display:flex!important;flex-direction:column}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizard{gap:4px!important;height:100%;width:100%}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .sortieWizardHeader{gap:1px!important;padding:2px 0 3px!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .sortieWizardHeader strong{font-size:16px!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .sortieWizardHeader span{font-size:10px!important;line-height:1.2}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardBody{overflow:hidden!important;display:flex!important;flex-direction:column;gap:3px;padding:0!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRoster{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:4px;min-height:0;flex:0 1 180px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterRow{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px;padding:4px 6px;min-height:0}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterRow b{font-size:12px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterRow small{font-size:10px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterControls{gap:3px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterControls button{min-height:32px!important;min-width:30px!important;padding:3px!important;font-size:11px!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterControls button:last-child{margin-left:2px;min-width:39px!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterControls b{font-size:12px}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardInfo{font-size:10px;line-height:1.1}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRosterPreview{min-height:0;flex:1 1 0;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.trainingFormationHeading{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#ffe1a6;font-size:12px}
+.trainingFormationHeading small{font-size:10px;color:#c3dcea}
+.trainingFormationList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;flex-shrink:0}
+#panel.formation-command-ui .trainingFormationList button{min-width:0;min-height:30px!important;padding:3px 2px!important;font-size:10px!important;line-height:1.15;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+#panel.formation-command-ui .trainingFormationList button.selected{border-color:#f2c779!important;background:#775630!important}
+.trainingFormationPager{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:5px}
+.trainingFormationPager small{text-align:center;font-size:10px}
+#panel.formation-command-ui .trainingFormationPager button{min-height:25px!important;padding:1px!important}
+.trainingFormationDemo{display:grid;gap:2px;min-height:0;flex:1 1 0;overflow:hidden;align-content:start}
+.trainingFormationDemo>b{font-size:11px;color:#ffe6b4}
+.trainingFormationDemo>small{font-size:10px;color:#c6dce9;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.trainingFormationDemo .signaturePreview{min-height:0;display:grid;gap:2px}
+.trainingFormationDemo .signaturePreview svg{height:clamp(66px,12dvh,102px)}
+.trainingFormationDemo .signaturePhaseCaptions span{font-size:8px;padding:2px 1px}
+.trainingFormationEmpty{font-size:11px;color:#f6ceab}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardFooter{flex:none;margin:0;padding:1px 0}
+#panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardFooter button{min-height:37px!important;padding:5px!important}
+#panel.formation-command-ui:has(.innWizardRosterPreview) #toast{min-height:0;font-size:10px}
+.trainingHireCount{display:grid;grid-template-columns:1fr repeat(3,58px);align-items:center;gap:5px}
+.trainingHireCount b{font-size:12px}
+#panel.formation-command-ui .trainingHireCount button{min-width:0;min-height:35px;padding:4px!important}
+.trainingHireCount button.selected{border-color:#f2c779!important;background:#775630!important}
+.trainingHireJobs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#panel.formation-command-ui .trainingHireJobs button{display:flex;justify-content:space-between;gap:4px;align-items:center;min-width:0;min-height:45px!important;padding:6px!important}
+.trainingHireJobs b{font-size:12px;color:#ffe2aa}
+.trainingHireJobs small{font-size:10px;color:#c8dbea}
+@media(max-height:650px){
+ #panel.formation-command-ui:has(.innWizardRosterPreview) .sortieWizardHeader span{display:none}
+ #panel.formation-command-ui:has(.innWizardRosterPreview) .innWizardRoster{flex-basis:153px}
+ .trainingFormationDemo .signaturePreview svg{height:clamp(55px,11dvh,76px)}
+ .trainingFormationDemo .signaturePhaseCaptions span{font-size:7px;padding:1px}
+}

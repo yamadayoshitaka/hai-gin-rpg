@@ -85,6 +85,13 @@ export function selectInnRosterJob(game,teamId,slotIndex,squadId){
  const tierRoom=spec.rarityCaps[rarity]-rarities[rarity]+(previous&&rarityOf(previousSource)===rarity?replacing:0);
  const count=sid?Math.min(5,free,Math.max(0,budget),spec.maxTroops-inGroup,tierRoom):0;
  if(sid&&count<1)throw Error('空き兵員がありません。他の隊の人数を調整してください。');
+ // A tavern-gacha recruit stays in reserve until selected for a formation.
+ if(source&&String(source.commanderId)==='reserve'){
+  const active=game.campaign.squads.filter(s=>String(s.commanderId??'player')==='player')
+   .reduce((n,s)=>n+Number(s.count||0),0);
+  if(active+source.count>100)throw Error('軍師1人の配下は100人までです。別の軍師を編成してください。');
+  source.commanderId='player';
+ }
  team.formation='free';
  if(previous){
   delete team.counts[String(previous)];delete team.divisions[String(previous)];

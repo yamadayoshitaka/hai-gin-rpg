@@ -13,13 +13,14 @@ import {TOWN_SHOP,squadEquipmentBonus} from './game-core-flow.js';
 import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
 import {formationUnlockLabels} from './formation-strategy-unlocks.js';
 import {signatureStrategyFor,renderFormationSignaturePreview} from './formation-signature-strategies.js';
+import {JOBS,RARITIES} from './story-campaign.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const button=(attr,title,selected=false)=>'<button type="button" '+attr+' class="'+(selected?'selected':'')+'">'+title+'</button>';
 const sourceLabel=s=>esc(s.characterName||s.name||s.job+'代表');
 const gearName=id=>TOWN_SHOP.find(x=>x.id===id)?.name||'装備なし';
 const names=['隊の選択','隊員と人数','装備','持参アイテム','リーダー','陣形','編成確認'];
-const stageByStep={teamPick:0,roster:1,rosterPick:1,equipment:2,equipmentPick:2,items:3,leader:4,formation:5,review:6};
+const stageByStep={hire:0,teamPick:0,roster:1,rosterPick:1,equipment:2,equipmentPick:2,items:3,leader:4,formation:5,review:6};
 const purpose=id=>FORMATION_BATTLE_PURPOSES[id]||{purpose:'汎用隊列',movement:'隊列を維持'};
 const requirement=id=>{
  const r=FORMATION_ENTRY_REQUIREMENTS[id];
@@ -52,18 +53,20 @@ function rosterBreakdown(game,team){
 }
 
 export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSlot=0,
- rosterPage=0,formationPage=0,gearSourceId='',gearCategory='武器',gearPage=0}={}){
+ rosterPage=0,formationPage=0,gearSourceId='',gearCategory='武器',gearPage=0,
+ rosterPreviewId='',rosterFormationPage=0,hireCount=1}={}){
  ensureSortiePlan(game);
  const teams=sortieTeams(game),team=currentTeam(game,teamId),members=currentSources(game,team);
  const step=stageByStep[view]??0;
  const total=teams.reduce((n,t)=>n+sortieTeamCount(t),0),limit=sortiePlanningLimit(game);
- const header='<div class="sortieWizardHeader"><small>宿屋｜'+names[step]+'　'+(step+1)+' / 7</small>'+
-  '<strong>'+(view==='teamPick'?'どの隊を編成する？':view==='rosterPick'?'ジョブを選択':view==='equipmentPick'?'装備品を選択':
+ const header='<div class="sortieWizardHeader"><small>軍訓練所｜'+names[step]+'　'+(step+1)+' / 7</small>'+
+  '<strong>'+(view==='teamPick'?'どの隊を編成する？':view==='hire'?'兵士を雇用':view==='rosterPick'?'ジョブを選択':view==='equipmentPick'?'装備品を選択':
    view==='roster'?'第'+team.id+'隊の隊員・人数':view==='equipment'?'第'+team.id+'隊の装備':view==='items'?'第'+team.id+'隊の持参アイテム':
    view==='leader'?'第'+team.id+'隊のリーダー':view==='formation'?'第'+team.id+'隊で使える陣形':
    '第'+team.id+'隊の編成内訳')+'</strong>'+
-  '<span>'+(view==='teamPick'?'編成する隊を選ぶと、その隊の隊員から順に設定します。':
-   view==='roster'?'最大3ジョブ。先に隊員と人数を決め、条件に合う陣形を後から選びます。':
+  '<span>'+(view==='teamPick'?'編成する隊を選ぶか、兵士を雇用してください。酒場のガチャも利用できます。':
+   view==='hire'?'軍資金でジョブを指定して雇用。兵士は予備隊に入り、編成時に選択できます。':
+   view==='roster'?'最大3ジョブ。下の陣形一覧は人数に応じて即時更新されます。':
    view==='equipment'?'武器と防具はジョブごとの装備です。変更・解除ができます。':
    view==='items'?'道具屋で買ったアイテムを隊に分配します。共有在庫を超えて配布できません。':
    view==='leader'?'この隊に配属したジョブの代表からリーダーを選びます。':
@@ -79,7 +82,16 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     '<span class="sortieWizardStrategyIcon">⚑</span><span class="sortieWizardStrategyDetails"><b>第'+t.id+'隊</b>'+
     '<small>'+sortieTeamCount(t)+'人・'+tMembers.length+'ジョブ・'+esc(formation?.name||'未設定')+'</small>'+
     '<small>リーダー：'+(captain?sourceLabel(captain):'未選択')+'</small></span>');
-  }).join('')+'</div>';
+  }).join('')+'</div>'+button('data-training-open="1"','⚔ 兵士を雇用する（軍資金 '+Math.floor(game.campaign.treasury)+'G）');
+ }else if(view==='hire'){
+  const n=[1,5,10].includes(Number(hireCount))?Number(hireCount):1;
+  body='<div class="trainingHireCount"><b>雇用人数</b>'+[1,5,10].map(q=>button('data-training-hire-count="'+q+'"',q+'人',q===n)).join('')+'</div>'+
+   '<div class="trainingHireJobs">'+JOBS.map(job=>{
+    const price=n*RARITIES.N.hire;
+    return button('data-training-hire="'+esc(job)+'" '+(game.campaign.treasury<price?'disabled':''),
+     '<b>'+esc(job)+'</b><small>Ｎ兵 '+n+'人／'+price+'G</small>');
+   }).join('')+'</div><small class="innWizardInfo">全軍1000人上限。酒場のランダムガチャは別に利用できます。</small>';
+  back='teamPick';
  }else if(view==='roster'){
   const rows=Array.from({length:3},(_,index)=>{
    const id=team.slots[index],s=game.campaign.squads.find(x=>String(x.id)===String(id));
@@ -91,8 +103,36 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
       '<b>'+count+'人</b>'+button('data-inn-wizard-count="'+esc(s.id)+'" data-delta="1"','＋1'):'')+
     button('data-inn-wizard-slot="'+index+'"',s?'変更':'選択')+'</div></div>';
   }).join('');
+
+  const eligible=Object.keys(SORTIE_FORMATIONS).filter(id=>inspectInnFormation(game,team.id,id).eligible);
+  const allCount=Object.keys(SORTIE_FORMATIONS).length,per=6;
+  const maxPage=Math.max(0,Math.ceil(eligible.length/per)-1);
+  const currentPage=Math.max(0,Math.min(maxPage,Number(rosterFormationPage)||0));
+  const display=eligible.slice(currentPage*per,(currentPage+1)*per);
+  const previewId=eligible.includes(rosterPreviewId)?rosterPreviewId:
+   eligible.includes(team.formation)?team.formation:display[0];
+  const preview=previewId?SORTIE_FORMATIONS[previewId]:null;
+  const plan=previewId?signatureStrategyFor(previewId):null;
   body='<div class="innWizardRoster">'+rows+'</div>'+
-   '<small class="innWizardInfo">全隊の出撃予定 '+total+'/'+limit+'人。兵員の複製はせず、ほかの隊で編成中の人数を除外します。</small>';
+   '<small class="innWizardInfo">出撃予定 '+total+'/'+limit+'人 · 他隊との重複配属なし</small>'+
+   '<div class="innWizardRosterPreview" aria-label="現在の隊員で利用可能な陣形と動きの確認">'+
+    '<div class="trainingFormationHeading"><b>使用可能な陣形 '+eligible.length+' / '+allCount+'</b>'+
+    '<small>タップで動きを確認</small></div>'+
+    (eligible.length?
+     '<div class="trainingFormationList" role="group" aria-label="編成条件を満たした陣形一覧">'+
+      display.map(id=>button('data-inn-wizard-preview="'+esc(id)+'"',esc(SORTIE_FORMATIONS[id].name),id===previewId)).join('')+
+     '</div>':
+     '<small class="trainingFormationEmpty">使用可能な陣形はありません。人数・ジョブ・レアリティを調整してください。</small>')+
+    (maxPage?'<div class="trainingFormationPager">'+
+     button('data-inn-wizard-roster-formation-page="-1" '+(!currentPage?'disabled':''),'◀')+
+     '<small>'+(currentPage+1)+' / '+(maxPage+1)+'</small>'+
+     button('data-inn-wizard-roster-formation-page="1" '+(currentPage===maxPage?'disabled':''),'▶')+
+     '</div>':'')+
+    (preview?
+     '<div class="trainingFormationDemo"><b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+
+      renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
+      '<small>'+esc(plan?.summary||purpose(previewId).movement)+'</small></div>':'')+
+   '</div>';
   back='teamPick';next='equipment';
  }else if(view==='rosterPick'){
   const options=game.campaign.squads.filter(s=>s.count>0);
@@ -208,7 +248,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    button('data-inn-wizard-save="1"','✓ この隊の編成を保存');
   back='formation';
  }
- return '<section class="sortiePlanner sortieWizard innWizard" aria-label="宿屋の隊員から始める陣形編成">'+
+ return '<section class="sortiePlanner sortieWizard innWizard" aria-label="軍訓練所の隊員から始める陣形編成">'+
   header+'<div class="sortieWizardBody innWizardBody">'+body+'</div>'+
   endActions(back,next)+'</section>';
 }

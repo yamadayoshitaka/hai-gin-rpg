@@ -1,8 +1,8 @@
 /** Each battle team fields two or three distinct job contingents. */
 export const ROLE_JOBS=Object.freeze({
- front:['騎士','盾騎士','格闘家'],guard:['盾騎士','騎士'],
+ front:['騎士','剣士','盾騎士','格闘家'],guard:['盾騎士','騎士','剣士'],
  scout:['忍者','シーフ'],ranged:['魔法使い','召喚士','弓使い'],
- support:['僧侶','召喚士'],any:['騎士','盾騎士','忍者','シーフ','僧侶','魔法使い','召喚士','格闘家','弓使い']
+ support:['僧侶','召喚士'],any:['騎士','剣士','盾騎士','忍者','シーフ','僧侶','魔法使い','召喚士','格闘家','弓使い']
 });
 export const FREE_FORMATION='free';
 export const FREE_FORMATION_NAME='自由陣形';

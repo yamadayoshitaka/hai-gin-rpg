@@ -65,7 +65,7 @@ export const STRATEGY_TREE=Object.freeze({
  }}
 });
 export const STORY_JOB_TO_STRATEGY_JOB=Object.freeze({
- '騎士':'sword','盾騎士':'shield','忍者':'ninja','シーフ':'thief',
+ '剣士':'sword','騎士':'sword','盾騎士':'shield','忍者':'ninja','シーフ':'thief',
  '僧侶':'priest','魔法使い':'mage','召喚士':'summoner','格闘家':'fighter','弓使い':'archer'
 });
 export const STRATEGY_METHODS=Object.freeze(Object.fromEntries(
