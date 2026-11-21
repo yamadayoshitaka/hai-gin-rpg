@@ -29,7 +29,7 @@ export function createRealtimeBattleCommands({
  battleTypeLabel='戦闘',victoryCondition='敵を撃破',requirePrebattleChoices=false,
  getRadarSquads=null,getRadarGroup=null,onRadarTeamCommand=null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,
- onDeploy=()=>false,onStart=()=>{},onMove=()=>false,onOrder=()=>false,
+ onDeploy=()=>false,onStart=()=>{},onPrebattleMusic=()=>false,onMove=()=>false,onOrder=()=>false,
   onTargetOrder=()=>false,
  onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},onManageItems=()=>{},
  onPause=()=>{},getPaused=()=>false,
@@ -147,6 +147,10 @@ export function createRealtimeBattleCommands({
      <span id="realtimeMapPlanningClock" hidden>作戦選択中</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
+    <div class="realtimeDeploymentLegend" id="realtimeDeploymentLegend" role="status">
+     <span>🟩 水色のマス：配置可能</span><span>🟥 赤いマス：配置不可</span>
+     <button type="button" id="realtimePrebattleMusic">♪ 配置中のBGMを再生</button>
+    </div>
     <div class="realtimeMapSquadPager" id="realtimeMapSquadPager" role="group" aria-label="配置する味方隊をページ切替">
      <button type="button" id="realtimeMapPrev" aria-label="前の味方隊">◀</button>
      <span class="realtimeMapPortrait" id="realtimeMapPortrait" aria-hidden="true"></span><strong id="realtimeMapSquadName" aria-live="polite">味方隊</strong>
@@ -282,12 +286,13 @@ export function createRealtimeBattleCommands({
   const row=getSelected(),key=String(row?.groupId??row?.id??'1');
   const placing=deployStep==='placement';
   $('realtimeMapViewport').hidden=!placing;
+  $('realtimeDeploymentLegend').hidden=!placing;
   $('realtimeInitialTeamPlanning').hidden=placing;
   $('realtimeMapActionSheet').hidden=true;
   $('realtimeStart').hidden=false;
-  $('realtimeMapTitle').textContent=placing?'① 第'+key+'隊の初期配置':'② 第'+key+'隊の初期作戦';
+  $('realtimeMapTitle').textContent=placing?'① 第'+key+'隊の初期配置（推奨配置済み）':'② 第'+key+'隊の初期作戦';
   $('realtimeMapHelp').textContent=placing?
-   '味方陣地（青い範囲）をタップして隊を配置し、「次へ」で作戦を選択します。':
+   '水色の配置可能マスをタップすると隊が移動します。推奨初期位置のままでも「次へ」で進めます。':
    '配置済みの第'+key+'隊について、使用できる初期作戦を1つ選んでください。';
   $('realtimeStart').textContent=placing?'配置を確定して作戦選択 ▶':
    '作戦を保存して次の隊へ ▶';
@@ -489,10 +494,20 @@ export function createRealtimeBattleCommands({
   // Expanded radar uses the same real friendly and opposing team anchors
   // as the compact radar; no second independent 12-slot map representation.
   if(mode==='deploy'){
-   ctx.fillStyle='rgba(31,117,198,.16)';ctx.fillRect(0,0,w*.50,h);
-   ctx.fillStyle='rgba(203,58,74,.16)';ctx.fillRect(w*.50,0,w*.50,h);
-   ctx.strokeStyle='rgba(223,246,255,.42)';ctx.lineWidth=2;
-   ctx.beginPath();ctx.moveTo(w*.50,0);ctx.lineTo(w*.50,h);ctx.stroke();
+   // Sample the REAL terrain/deployment callbacks, not a misleading flat
+   // blue rectangle that includes blocked bridges, river and structures.
+   const cellStep=Math.max(4,Math.round(span/30));
+   for(let z=Math.floor(minZ/cellStep)*cellStep;z<minZ+span;z+=cellStep){
+    for(let x=Math.floor(minX/cellStep)*cellStep;x<minX+span;x+=cellStep){
+     const point=getLegalPoint(Math.round(x),Math.round(z),true);
+     const nearby=point&&Math.abs(point.x-x)<=2&&Math.abs(point.z-z)<=2;
+     const legal=canDeploy(x,z)&&nearby;
+     ctx.fillStyle=legal?'rgba(40,224,193,.34)':'rgba(176,56,70,.23)';
+     ctx.fillRect((x-minX)/span*w,(z-minZ)/span*h,cellStep/span*w+.5,cellStep/span*h+.5);
+    }
+   }
+   ctx.strokeStyle='rgba(114,254,225,.90)';ctx.lineWidth=2;
+   ctx.strokeRect(1,1,w-2,h-2);
   }
   const goal=getVictoryObjective();
   if(goal?.kind==='capture'){
@@ -1506,7 +1521,7 @@ radarCanvas.addEventListener('keydown',event=>{
   const own=squads(),selected=getSelected(),key=String(selected?.groupId??selected?.id??'');
   if(deployStep==='placement'){
    if(!placedTeams.has(key)){
-    $('realtimeMapMessage').textContent='先に青い陣地内の配置先をタップしてください。';
+    $('realtimeMapMessage').textContent='初期位置を確認し、水色の配置可能マスから変更してください。';
     return;
    }
    deployStep='strategy';syncPrebattleScreen();
@@ -1543,6 +1558,11 @@ radarCanvas.addEventListener('keydown',event=>{
   setPreferred:(id,action)=>preferredActions.set(String(id),action),
   onClose:closeSquadControls
  });
+ $('realtimePrebattleMusic').onclick=()=>{
+  const result=onPrebattleMusic();
+  $('realtimePrebattleMusic').textContent='♪ BGM再生を要求しました';
+  if(result?.catch)result.catch(()=>{$('realtimePrebattleMusic').textContent='♪ もう一度タップしてBGM再生';});
+ };
  $('realtimeInitialStrategy').onchange=()=>{
   const group=getSelected()?.groupId??getSelected()?.id;
   if(group==null||started)return;
@@ -1553,17 +1573,30 @@ radarCanvas.addEventListener('keydown',event=>{
  return {
   openDeployment(){started=false;mode='deploy';deployStep='placement';exitPlanning();commandWizard.reset();planningOwnsPause=false;
    initialTeamPlans.clear();placedTeams.clear();
+   // Real units already spawned at valid home positions: commit these as
+   // defaults so a player can start without manually tapping three tiles.
+   const teams=typeof getDeploymentTeams==='function'?getDeploymentTeams():getSquads();
+   for(const team of teams||[]){
+    const key=String(team.groupId??team.id),preset=getInitialTeamPlan(team)||{};
+    const allowed=Array.isArray(preset.allowedStrategies)&&preset.allowedStrategies.length?
+     preset.allowedStrategies:['assault','defense','balanced','explore'];
+    const initial=allowed.includes(preset.strategy)?preset.strategy:allowed[0];
+    if(initial)initialTeamPlans.set(key,initial);
+    if(Number.isFinite(team.x)&&Number.isFinite(team.z)&&canDeploy(team.x,team.z))
+     placedTeams.add(key);
+   }
    deploymentActions.clear();arrivalActions.clear();preferredActions.clear();
    invalidateSquadSnapshot();$('realtimeBattleDock').hidden=true;
-   // The small, real in-battle radar is the only entry point to positioning.
-   // The player explicitly selects ⛶ 拡大; no forced fullscreen modal.
+   // Open the full positioning screen immediately. Initial teams are visible
+   // and playable without an extra radar tap or preliminary splash page.
    $('realtimeBattleMapOverlay').hidden=true;inspectedMapPin=null;
    $('realtimeSquadRadar').hidden=false;
-   $('realtimeRadarSetupPrompt').hidden=false;
-   $('realtimeRadarExpand').textContent='⛶ 拡大';
-   $('realtimeRadarExpand').setAttribute('aria-label','レーダーを拡大して初期配置');
-   refreshOptions();drawRadar(true);
-   $('realtimeRadarSetupPrompt').textContent='⛶ レーダーを拡大 → 配置 → 各隊の作戦 → 開戦';
+   $('realtimeRadarSetupPrompt').hidden=true;
+   refreshOptions();
+   onPrebattleMusic(); // May require the first explicit touch on mobile.
+   openMap('deploy');
+   $('realtimeMapClose').hidden=true;
+   $('realtimeMapMessage').textContent='✅ 推奨位置に配置済み。水色のマスをタップして調整するか、そのまま次へ進めます。';
   },
   selectSquad:setSelected,
   showSquadControls,
