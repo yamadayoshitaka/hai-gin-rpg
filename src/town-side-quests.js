@@ -80,7 +80,7 @@ export function settleTavernQuestBattle(game,request,result){
  if(!result.victory)return {quest,completed:false,gold:0,xp:0};
  const {gold,xp}=tavernQuestBattleReward(request);
  game.tavernSideQuestDone??={};
- game.tavernSideQuestDone[quest.id]={completedAt:new Date().toISOString(),choice,gold,xp,battleId:request.battleId};
+ game.tavernSideQuestDone[quest.id]={completedAt:new Date().toISOString(),choice:request.sideQuestChoice,gold,xp,battleId:request.battleId};
  game.wallet=(Number(game.wallet)||0)+gold;
  game.history??=[];
  game.history.unshift('酒場の戦闘依頼「'+quest.title+'」勝利。'+gold+'G・'+xp+'EXPを獲得。');
