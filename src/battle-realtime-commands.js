@@ -42,6 +42,7 @@ export function createRealtimeBattleCommands({
  documentRef=globalThis.document,worldSize=232,
  getSquads=()=>[],getEnemies=()=>[],getMapBackground=()=>null,
  getDeploymentTeams=null,getInitialTeamPlan=()=>({strategy:'assault'}),getRadarEnemies=null,
+ getMapBuildings=()=>[],
  battleTypeLabel='戦闘',victoryCondition='敵を撃破',requirePrebattleChoices=false,
  getRadarSquads=null,getRadarGroup=null,onRadarTeamCommand=null,
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,previewDeploy=()=>true,
@@ -66,7 +67,7 @@ export function createRealtimeBattleCommands({
  let deployStep='placement';
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
- let inspectedMapPin=null,mapInspectionPins=[],lastInspectionRefreshAt=-Infinity;
+ let inspectedMapPin=null,mapInspectionPins=[],inspectedBuilding=null,mapInspectionBuildings=[],lastInspectionRefreshAt=-Infinity;
   let deploymentTiles=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
@@ -420,9 +421,9 @@ export function createRealtimeBattleCommands({
   ctx.clearRect(0,0,w,h);
   const background=getMapBackground();
   if(background)try{
-   ctx.save();ctx.globalAlpha=started?.54:.88;ctx.drawImage(background,0,0,w,h);ctx.restore();
+   ctx.save?.();ctx.globalAlpha=started?.37:.72;ctx.drawImage(background,0,0,w,h);ctx.restore?.();ctx.globalAlpha=1;
   }catch{}
-  ctx.fillStyle=started?'rgba(7,27,45,.09)':'rgba(7,27,45,.22)';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=started?'rgba(7,27,45,.04)':'rgba(7,27,45,.13)';ctx.fillRect(0,0,w,h);
   ctx.strokeStyle='rgba(194,222,239,.17)';ctx.lineWidth=1;
   for(let k=1;k<4;k++){
    ctx.beginPath();ctx.moveTo(k*w/4,0);ctx.lineTo(k*w/4,h);ctx.stroke();
@@ -488,6 +489,37 @@ export function createRealtimeBattleCommands({
  function renderMapInspectionDetail(){
   if(mode!=='inspect')return;
   const detail=$('realtimeMapDetail');detail.hidden=false;
+  if(inspectedBuilding){
+   const known=(getMapBuildings()||[]).find(b=>String(b.id)===String(inspectedBuilding.id));
+   if(known){
+    const floors=Math.max(1,Math.min(12,Number(known.floors)||1));
+    const level=clamp(Number(inspectedBuilding.floor)||1,1,floors);
+    detail.replaceChildren();
+    const heading=doc.createElement('strong');
+    heading.textContent='🏠 '+String(known.label||'建物')+'｜階数を選択';
+    const label=doc.createElement('label');
+    label.textContent='表示する階：';
+    label.setAttribute('for','realtimeInspectBuildingFloor');
+    const selection=doc.createElement('select');
+    selection.id='realtimeInspectBuildingFloor';
+    selection.setAttribute('aria-label','戦場マップの建物の表示階');
+    for(let n=1;n<=floors;n++){
+     const option=doc.createElement('option');option.value=String(n);
+     option.textContent=n+'階';selection.append(option);
+    }
+    selection.value=String(level);
+    selection.onchange=()=>{
+     inspectedBuilding.floor=Number(selection.value);
+     $('realtimeMapMessage').textContent=String(known.label||'建物')+'・'+selection.value+'階を表示中';
+     drawMap();
+    };
+    const info=doc.createElement('small');
+    info.textContent=level+'階 / '+floors+'階　｜　探索する階も部隊の探索指示から選べます。';
+    detail.append(heading,label,selection,info);
+    return;
+   }
+   inspectedBuilding=null;
+  }
   const pin=inspectedMapPin;
   if(!pin){detail.textContent='🔵 味方・🔴 敵の番号をタップすると、人数・HP/MP・作戦・行動状態・強化/弱体を表示します。';return;}
   const data=getSquadDetails(pin.team,pin.id,pin.groupId)||{};
@@ -522,9 +554,9 @@ export function createRealtimeBattleCommands({
   centerX=minX+span/2;centerZ=minZ+span/2;
   ctx.clearRect(0,0,w,h);
   const background=getMapBackground();
-  if(background){ctx.save();ctx.globalAlpha=mode==='inspect'?.56:1;
-   ctx.drawImage(background,minX,minZ,span,span,0,0,w,h);ctx.restore();}
-  else{ctx.fillStyle=mode==='inspect'?'rgba(36,67,62,.42)':'#24433e';ctx.fillRect(0,0,w,h);}
+  if(background){ctx.save?.();ctx.globalAlpha=mode==='inspect'?.38:1;
+   ctx.drawImage(background,minX,minZ,span,span,0,0,w,h);ctx.restore?.();ctx.globalAlpha=1;}
+  else{ctx.fillStyle=mode==='inspect'?'rgba(36,67,62,.18)':'#24433e';ctx.fillRect(0,0,w,h);}
   ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
   for(let i=0;i<=8;i++){const v=i*w/8;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,h);ctx.stroke();}
   // Expanded radar uses the same real friendly and opposing team anchors
@@ -572,7 +604,23 @@ export function createRealtimeBattleCommands({
   const enemies=mode==='deploy'||mode==='inspect'&&typeof getRadarEnemies==='function'?
    (getRadarEnemies?.()||getEnemies()):getEnemies();
   const markers=visibleBattleSquadPins(allies,enemies,'live');
-  mapInspectionPins=[];
+  mapInspectionPins=[];mapInspectionBuildings=[];
+  if(mode==='inspect'){
+   for(const building of getMapBuildings()||[]){
+    if(!Number.isFinite(building?.x)||!Number.isFinite(building?.z))continue;
+    const bx=(building.x-minX)/span*w,bz=(building.z-minZ)/span*h;
+    if(bx<0||bx>w||bz<0||bz>h)continue;
+    mapInspectionBuildings.push({id:String(building.id),px:bx,py:bz});
+    const focused=String(inspectedBuilding?.id)===String(building.id);
+    ctx.fillStyle=focused?'#ffe2a0':'#75dbbe';
+    ctx.fillRect(bx-7,bz-7,14,14);
+    ctx.strokeStyle=focused?'#fff2c7':'#193b47';ctx.lineWidth=focused?3:1.5;
+    ctx.strokeRect?.(bx-7,bz-7,14,14);
+    ctx.fillStyle='#0b2734';ctx.font='bold 13px system-ui';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('⌂',bx,bz+1);
+   }
+  }
   for(const s of markers){
    if(!Number.isFinite(s.x)||!Number.isFinite(s.z))continue;
    const x=(s.x-minX)/span*w,z=(s.z-minZ)/span*h;
@@ -1231,11 +1279,11 @@ export function createRealtimeBattleCommands({
   if(next==='deploy')deployStep='placement';
   refreshOptions();
   if(next==='inspect'&&started){
-   inspectedMapPin=null;mapInspectionPins=[];lastInspectionRefreshAt=-Infinity;
+   inspectedMapPin=null;inspectedBuilding=null;mapInspectionPins=[];mapInspectionBuildings=[];lastInspectionRefreshAt=-Infinity;
    $('realtimeBattleMapOverlay').hidden=false;
    $('realtimeMapClose').hidden=false;$('realtimeMapClose').textContent='✕ 戻る';
    $('realtimeMapTitle').textContent='⛶ 戦場マップ';
-   $('realtimeMapHelp').textContent='＋／－で拡大縮小。青い味方隊・赤い敵隊をタップすると、作戦と詳細状態を確認できます。';
+   $('realtimeMapHelp').textContent='＋／－で拡大縮小。青・赤の隊番号で戦況、緑の建物マークで表示階を選択できます。';
    $('realtimeMapSquadPager').hidden=true;
    $('realtimeInitialTeamPlanning').hidden=true;
    $('realtimeMapActionSheet').hidden=true;
@@ -1338,31 +1386,55 @@ export function createRealtimeBattleCommands({
    scheduleMapDraw();
   }
  });
+ let lastMapTapAt=-Infinity,lastMapTapX=NaN,lastMapTapY=NaN;
+ function handleMapCanvasTap(e,origin='pointer'){
+  const rect=canvas.getBoundingClientRect();
+  if(!(rect.width>0&&rect.height>0))return;
+  const now=nowMs();
+  if(origin==='click'&&now-lastMapTapAt<600&&
+   Math.hypot(e.clientX-lastMapTapX,e.clientY-lastMapTapY)<22)return;
+  const px=(e.clientX-rect.left)/rect.width,pz=(e.clientY-rect.top)/rect.height;
+  if(px<0||px>1||pz<0||pz>1)return;
+  lastMapTapAt=now;lastMapTapX=e.clientX;lastMapTapY=e.clientY;
+  if(mode==='inspect'){
+   const ix=px*(canvas.width||464),iy=pz*(canvas.height||464);
+   const pin=findBattleMapPin(mapInspectionPins,ix,iy,{radius:26});
+   if(pin){
+    inspectedMapPin={...pin};inspectedBuilding=null;
+    $('realtimeMapMessage').textContent='';drawMap();return;
+   }
+   const building=mapInspectionBuildings.map(b=>({...b,
+     distance:Math.hypot(b.px-ix,b.py-iy)})).sort((a,b)=>a.distance-b.distance)[0];
+   if(building&&building.distance<=23){
+    inspectedBuilding={id:building.id,floor:1};inspectedMapPin=null;
+    $('realtimeMapMessage').textContent='建物を選択しました。表示する階を選んでください。';
+    drawMap();return;
+   }
+   $('realtimeMapMessage').textContent='隊番号、または緑の建物マークをタップしてください。';
+   return;
+  }
+  if(mode==='deploy'){
+   const ix=px*(canvas.width||464),iy=pz*(canvas.height||464);
+   const hit=deploymentTiles.find(tile=>ix>=tile.left&&ix<tile.right&&
+    iy>=tile.top&&iy<tile.bottom);
+   if(!hit?.legal){
+    $('realtimeMapMessage').textContent='赤いマスは配置不可です。青いマスをタップしてください。';
+    return;
+   }
+   chooseMapCell(hit.x,hit.z);return;
+  }
+  const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
+ }
  canvas.addEventListener('pointerup',e=>{
   if(!pointer||pointer.id!==e.pointerId)return;
   const dragged=pointer.pan;pointer=null;
   if(dragged){drawMap();return;}
-  const rect=canvas.getBoundingClientRect();
-  const px=(e.clientX-rect.left)/rect.width,pz=(e.clientY-rect.top)/rect.height;
-  if(px<0||px>1||pz<0||pz>1)return;
-  if(mode==='inspect'){
-   const pin=findBattleMapPin(mapInspectionPins,px*canvas.width,pz*canvas.height,{radius:26});
-   if(pin){inspectedMapPin={...pin};$('realtimeMapMessage').textContent='';drawMap();}
-   else $('realtimeMapMessage').textContent='青・赤の隊番号をタップすると詳細を確認できます。';
-   return;
-  }
-  if(mode==='deploy'){
-    const hit=deploymentTiles.find(tile=>
-     px*(canvas.width||464)>=tile.left&&px*(canvas.width||464)<tile.right&&
-     pz*(canvas.height||464)>=tile.top&&pz*(canvas.height||464)<tile.bottom);
-    if(!hit?.legal){
-     $('realtimeMapMessage').textContent='赤いマスは配置不可です。青いマスをタップしてください。';
-     return;
-    }
-    chooseMapCell(hit.x,hit.z);return;
-   }
-   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
+  e.preventDefault?.();
+  handleMapCanvasTap(e);
  });
+ // Some Android WebViews deliver click after a lost pointerup. Never issue
+ // the same order twice when both events arrive for a single touch.
+ canvas.addEventListener('click',e=>handleMapCanvasTap(e,'click'));
  canvas.addEventListener('pointercancel',()=>{pointer=null;});
  function activateRadarPin(px,py,{strategy=false}={}){
  const pin=radarHitPin(radarPins,px,py);
