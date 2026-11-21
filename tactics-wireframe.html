@@ -10625,6 +10625,43 @@ function realtimeSharedItems(){
 const objectiveTurnUI=null; // Turn engine disabled: no phases or countdown.
 let realtimeCommandUI=null;
 realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
+ getDeploymentTeams:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
+  squadIds.map(id=>{
+   const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id));
+   const alive=members.filter(u=>u.hp>0&&u.alive!==false),center=squadCenter(id,0);
+   return {id,team:0,alive:alive.length,total:members.length,x:center?.x,z:center?.z};
+  }),armyGroupBySquad).map(team=>{
+   const ids=squadIds.filter(id=>Number(armyGroupBySquad[id])===team.groupId);
+   const stats=squadRoster.filter(u=>u.team===0&&ids.includes(String(u.squadId)));
+   return {...team,label:'第'+team.groupId+'隊',job:squadPrimaryJob(ids[0]),
+    hp:stats.reduce((n,u)=>n+(u.hp>0?u.hp:0),0),
+    maxHp:stats.reduce((n,u)=>n+(Number(u.maxHp)||0),0)};
+  }):null,
+ getInitialTeamPlan:team=>{
+  const group=Number(team?.groupId)||1,saved=storyRequest?.initialTeamPlans?.[String(group)]||{};
+  const ids=squadIds.filter(id=>Number(armyGroupBySquad[id])===group);
+  const allowed=[...new Set(ids.flatMap(id=>storyRequest?.availableSquadOrders?.[id]||
+   ['charge','defend','hold','retreat','support','explore']))];
+  const strategies=[...(allowed.includes('charge')?['assault']:[]),
+   ...(allowed.includes('defend')||allowed.includes('hold')?['defense','balanced']:[]),
+   ...(allowed.includes('explore')?['explore']:[])];
+  const byOrder={charge:'assault',defend:'defense',hold:'balanced',support:'defense',explore:'explore'};
+  const names={attack:'前進陣形',balanced:'標準陣形',support:'後衛陣形',wall:'防壁陣形',
+   spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
+   circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
+   dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
+  return {strategy:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',
+   formationActive:saved.formationActive!==false,
+   allowedStrategies:strategies.length?strategies:['assault','defense','balanced'],
+   reason:saved.formationActive===false?'陣形補正なし':''};
+ },
+ getRadarEnemies:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
+  enemySquadIds.map(id=>{
+   const members=squadRoster.filter(u=>u.team===1&&String(u.squadId)===String(id));
+   const center=squadCenter(id,1);
+   return {id,team:1,alive:members.filter(u=>u.hp>0&&u.alive!==false).length,
+    total:members.length,x:center?.x,z:center?.z};
+  }),enemyGroupBySquad):null,
  worldSize:WORLD_SIZE,
  getMapBackground:()=>miniBase,
  // The public radar presents three command teams, never job division IDs.
