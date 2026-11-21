@@ -1,5 +1,6 @@
 import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 import {makeThreeTeamBattleRequest} from './three-team-core-bridge.js';
+import {armyGroupFor,armyCaptain,captainBonus} from './army-groups.js';
 /**
  * Adapter from the 20x10 campaign to the existing 3D 50-person battle.
  * The battle remains authoritative for wins, unit casualties and monster clears.
