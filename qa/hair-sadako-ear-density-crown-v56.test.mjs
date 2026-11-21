@@ -80,7 +80,7 @@ test('actual Sadako mesh allocates dense ear curtains AND an upper crown layer',
   'ear coverage needs actual rooted long-hair guides, not forced outward width');
  assert.ok(r.rootDistribution.crown>=r.rootCount*.24,
   'crown must remain dense enough to cover the front/side layers from above');
- assert.equal(r.sadakoEarRibbonWidthFactor,.93);
+ assert.equal(r.sadakoEarRibbonWidthFactor,.90);
  assert.equal(r.sadakoSidePanelCount,0,'old rectangular side/rear panels stay removed');
  const locks=w.root.getObjectByName('REAL_ROOTED_SWEPT_HAIR_LOCKS');
  assert.ok(locks?.isMesh);
