@@ -974,6 +974,9 @@ export async function createRealBattleOutfitStudio({scene,faceModel,getFaceModel
    // Always graft the newest live face, never an already-disposed preview.
    const latestFace=getFaceModel?.()||faceModel;
    headRoot=latestFace.root;face=latestFace.face;
+   // Changing job/armour must not measure a disposable scalp-mask head.
+   // The following applyBodyShape call remasks after the neck is welded.
+   onBeforeNeckRefit?.(face);
    enhanceHeroineFaceSurface(face);
    scene.add(actor.object3D);
    headFit=attachIndependentFaceToBattleHead({faceRoot:headRoot,
