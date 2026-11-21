@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-anatomical-line-v32';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-temple-nape-v33';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -425,16 +425,23 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     // v32: one continuous anatomical boundary for scalp clipping AND fibre sampling.
     // Rear nape descends at the midline, rises toward the mastoid behind the ears.
     // Temple and forehead stay exposed; avoid the straight buzz-cap silhouette.
+    // Keep forehead clear: no extra widow peak or forward fringe growth.
+    // The short-hair cut follows the ear with a narrow sideburn taper.
     const rearToSide=smooth(-.43,-.10,zn);
     const sideToFront=smooth(.02,.31,zn);
-    const nape=.565+.105*smooth(.08,.36,xn);
-    const lateral=THREE.MathUtils.lerp(nape,.695,rearToSide);
-    const forehead=.775+.020*smooth(.12,.35,xn);
+    const midNape=1-smooth(.08,.31,xn);
+    const nape=.615-.055*midNape;
+    const lateral=THREE.MathUtils.lerp(nape,.705,rearToSide);
+    const forehead=.805+.014*smooth(.12,.35,xn);
     const front=THREE.MathUtils.lerp(lateral,forehead,sideToFront);
-    const aroundEar=.105*smooth(.19,.36,xn)*
-     (1-smooth(.08,.28,zn))*smooth(-.34,-.11,zn);
-    const widowCurve=.014*(1-smooth(.03,.16,xn))*smooth(.18,.36,zn);
-    return THREE.MathUtils.clamp(front+aroundEar+widowCurve,.55,.91);
+    // Lower only a slim strip directly ahead of the ear, not the ear itself.
+    const templeBand=smooth(.18,.29,zn)*(1-smooth(.33,.45,zn));
+    const sideburnBand=smooth(.24,.35,xn)*(1-smooth(.40,.49,xn));
+    const sideburn=.082*templeBand*sideburnBand;
+    // Behind the ear, lift the boundary to leave the pinna unobstructed.
+    const earClearance=.070*smooth(.22,.36,xn)*
+     (1-smooth(-.02,.16,zn))*smooth(-.32,-.13,zn);
+    return THREE.MathUtils.clamp(front+earClearance-sideburn,.55,.91);
    }
    const rear=.525;
    const side=THREE.MathUtils.lerp(rear,.625,smooth(-.11,.025,zn));
