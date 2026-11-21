@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture} from './face-optics-v76.js?v=76';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
@@ -138,7 +139,7 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
    const lift=(upper?1:-1)*length*(.43*t+.57*t*t);
    const forward=eyeRadius*(upper?.09:.035)*t+
     eyeRadius*.23*curl*Math.pow(t,2.25);
-   const swing=side*spread*eyeRadius*.065*Math.pow(t,1.3);
+   const swing=side*spread*eyeRadius*.052*Math.pow(t,1.3);
    const center=baseCentre.clone().add(new THREE.Vector3(
     swing,lift,forward+eyeRadius*.018));
    const width=baseWidth*Math.pow(1-t,1.45)+eyeRadius*.00022;
@@ -157,7 +158,7 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
  const material=new THREE.MeshBasicMaterial({
   color:FACE_V7_PALETTE.lashes,side:THREE.DoubleSide,
-  transparent:true,opacity:upper?.97:.67,depthWrite:false
+  transparent:true,opacity:upper?.95:.64,depthWrite:false
  });
  const lash=new THREE.Mesh(geo,material);
  lash.name=name;lash.renderOrder=7;
@@ -345,6 +346,11 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const innerCanthus=bell(nx,.075,.043)*bell(ny,lidY-.014,.028)*front;
    const naturalEyeMakeup=v67NaturalEyeMakeup({nx,ny,front,lidY,gender});
   const noseWing=bell(nx,.115,.045)*bell(ny,.551,.025)*front;
+  // v76: an alar groove and the shaded UNDERSIDE of each nostril are
+  // pigment variations on the actual nose cartilage, not fake black dots.
+  const nasalAlarFold=bell(nx,.106,.022)*bell(ny,.539,.022)*front;
+  const nostrilUnderRim=bell(nx,.069,.032)*bell(ny,.524,.011)*front;
+
   // A subtle bridge-side contour follows the actual raised cartilage and
   // strengthens the ridge in frontal light without a floating nose decal.
   const noseBridgeContour=gender==='female'?
@@ -353,6 +359,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    bell(nx,.014,.026)*bell(ny,.645,.082)*front:0;
   const philtrum=bell(nx,0,.075)*bell(ny,.528,.015)*front;
   const lipShade=bell(nx,0,.18)*bell(ny,.468,.026)*front;
+  const cupidBow=bell(nx,.058,.027)*bell(ny,.523,.013)*front;
+  const lowerLipContact=bell(nx,0,.095)*bell(ny,.482,.012)*front;
   const foreheadBands=[.758,.794,.823].reduce((v,y)=>
    v+bell(ny,y,.0055),0)*bell(nx,0,.70)*front;
   const crows=bell(nx,.52,.13)*bell(ny,.675,.085)*front;
@@ -365,8 +373,10 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // AGE independently of cosmetic presets; no permanent young wrinkles.
   const youthFade=skinAgeShadowFactor(age.id);
   const contactShade=(.018+.132*youthFade)*underEye+
-   (.035+.05*youthFade)*noseWing+.028*philtrum+
-   (.018+.052*youthFade)*lipShade+age.sag*.15*underEye+ageShade+
+   (.035+.05*youthFade)*noseWing+.024*nasalAlarFold+
+   .019*nostrilUnderRim+.028*philtrum+
+   (.018+.052*youthFade)*lipShade+.013*cupidBow+
+   .017*lowerLipContact+age.sag*.15*underEye+ageShade+
    .047*upperLidOcclusion+.021*innerCanthus+.105*noseBridgeContour+
    (.015+.028*youthFade)*nasolabial+
    (.010+.020*youthFade)*lowerLidOcclusion+
@@ -391,6 +401,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  face.userData.v64EyeShadowFollowsAnatomicalEyes=true;
   face.userData.v67NaturalEyeMakeupOnRealSkin=gender==='female';
   face.userData.v70AnatomicalChiaroscuro=true;
+ face.userData.v76NasalAlarNostrilCartilageShading=true;
+ face.userData.v76CupidBowAndVermilionContactShading=true;
  face.userData.v64AgeWrinkleIntensity=age.wrinkles;
  for(const name of ['UPPER','LOWER']){
   const lip=face.getObjectByName(name+'_3D_VERMILION_LIP');
@@ -582,8 +594,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const lidMat=mat(0xbcbfc5);
  const lipMat=new THREE.MeshPhysicalMaterial({
-  color:0xbfc3cb,roughness:.54,metalness:0,
-  clearcoat:.24,clearcoatRoughness:.27,side:THREE.DoubleSide
+  color:0xbfc3cb,roughness:.52,metalness:0,
+  clearcoat:.19,clearcoatRoughness:.32,side:THREE.DoubleSide,
+  normalMap:getLipVermilionNormalTexture(),
+  normalScale:new THREE.Vector2(.105,.085)
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.
@@ -591,7 +605,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   clearcoat:.46,clearcoatRoughness:.075,ior:1.376,specularIntensity:.68
  });
  const irisMat=new THREE.MeshPhysicalMaterial({
-  color:0x747a83,roughness:.21,metalness:0,
+  color:0x747a83,roughness:.22,metalness:0,
+  map:getFaceIrisStromaTexture(),
   clearcoat:.53,clearcoatRoughness:.085,ior:1.376,specularIntensity:.75
  });
  const pupilMat=new THREE.MeshPhysicalMaterial({
@@ -829,7 +844,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
-  iris.userData.opticalDetailVersion='v70-collagen-stroma-limbal-moisture';
+  iris.userData.opticalDetailVersion='v76-polar-crypt-stroma-limbal-photoreal';
+   iris.userData.v76PolarIrisMap=true;
+   iris.userData.v76CorneaMaterialsPreserved=true;
    iris.userData.v65MultiscaleIrisFibers=true;
   iris.userData.v63RadialCrypts=true;
   iris.userData.v63DualGlints=true;
@@ -864,14 +881,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
+   mesh.userData.v76SubtleSkinLidTransition=true;
    mesh.userData.v75MirroredAnatomicalCanthi=true;
    mesh.userData.colorRole='eyelid';
    root.add(mesh);
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
-     color:0x3b2b35,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?1:.55,depthWrite:false,depthTest:true,
+     color:0x3a2c32,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?.93:.43,depthWrite:false,depthTest:true,
      polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5
     });
     const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
@@ -1190,6 +1208,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisNotSquashedAtLids:true,
   v65CurvedIrisOpticalDetail:true,v65NoExtraEyeDrawCalls:true,
   irisGeometry:'true-round-circular-disk-fitted-inside-almond-opening',
+  v76IrisDetailMap:'actual-polar-UV-stroma-crypts-limbus',
+  v76LipFineNormalOnAnatomicalSurface:true,
+  v76EyelinerReducedThickness:true,
+  v76NoDetachedPhotoEyeCards:true,
   eyeBulgeStartsAtEyeliner:true,eyeBulgeFraction:anteriorGlobeRatio,
   anteriorEyeGlobeReconstructed:true,
   smoothCornealCore:true,

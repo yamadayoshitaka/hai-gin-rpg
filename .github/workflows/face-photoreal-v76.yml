@@ -1,0 +1,53 @@
+name: Real-face CC0 PBR and anatomy regression
+on:
+  pull_request:
+    paths:
+      - 'src/face-photo-microdetail-v76.js'
+      - 'src/face-optics-v76.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/face-age-detail-v49.js'
+      - 'src/independent-face-masters.js'
+      - 'assets/textures/face/**'
+      - 'qa/face-photoreal-v76.test.mjs'
+      - '.github/workflows/face-photoreal-v76.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/face-photo-microdetail-v76.js'
+      - 'src/face-optics-v76.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/face-expression-animation-v48.js'
+      - 'src/face-age-detail-v49.js'
+      - 'src/independent-face-masters.js'
+      - 'assets/textures/face/**'
+      - 'qa/face-photoreal-v76.test.mjs'
+      - '.github/workflows/face-photoreal-v76.yml'
+permissions:
+  contents: read
+jobs:
+  face-realism:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Three.js to validate both gender face meshes
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Verify 3D face feature and texture source syntax
+        run: |
+          node --check src/face-photo-microdetail-v76.js
+          node --check src/face-optics-v76.js
+          node --check src/face-feature-meshes.js
+          node --check src/independent-face-masters.js
+          node --check src/face-expression-animation-v48.js
+          node --check src/face-age-detail-v49.js
+          node --check qa/face-photoreal-v76.test.mjs
+      # The legacy v50 preset catalogue tests require an obsolete 24-style
+      # selector and unrelated armor proportions; they already fail on main.
+      # This gate protects v76 photo/face anatomy plus current expression QA.
+      - name: Validate source phototexture, real eye/lip meshes, expressions and ageing
+        run: |
+          node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs

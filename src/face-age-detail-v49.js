@@ -4,13 +4,14 @@
  * Age strength is monotonic and young faces receive no marks.
  */
 import * as THREE from 'three';
-import {createFastFaceSurfaceSampler} from './face-feature-meshes.js';
+import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261121-photo-optics-v76';
 import {resolveAgeBand} from './character-demographics-v47.js?v=49';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const makeLine=(name,points,sampler,box,opacity)=>{
  const d=box.getSize(new THREE.Vector3()),cx=(box.max.x+box.min.x)*.5;
  const vertices=[],indices=[],colors=[];
- const c=new THREE.Color(0x654d4d);
+ // Neutral skin-tone folds, rather than painted red/brown eyeliner strokes.
+ const c=new THREE.Color(0xb39489);
  for(let i=0;i<points.length;i++){
   const [nx,ny]=points[i],x=cx+nx*d.x,y=box.min.y+ny*d.y;
   const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
@@ -19,12 +20,12 @@ const makeLine=(name,points,sampler,box,opacity)=>{
   const acrossX=-dy/magnitude,acrossY=dx/magnitude;
   const fade=Math.sin(Math.PI*i/(points.length-1))**.72;
   for(const sign of [-1,1]){
-   const spread=d.x*.0017*fade*sign;
+   const spread=d.x*.00195*fade*sign;
    const xx=x+acrossX*spread,yy=y+acrossY*spread;
    const zz=sampler.query(xx,yy);
    const base=sampler.query(x,y);
    vertices.push(xx,yy,(zz??base??box.max.z)+d.z*.00065);
-   const light=sign<0?.89:1.02;
+   const light=sign<0?.955:1.025;
    colors.push(c.r*light,c.g*light,c.b*light);
   }
   if(i>0){const k=(i-1)*2;indices.push(k,k+1,k+2,k+2,k+1,k+3);}
@@ -86,10 +87,13 @@ export function attachAgeDetails(face,ageBand='twenties'){
  let count=0,vertices=0;
  for(const [name,pts] of lines){
   const mesh=makeLine('V49_AGE_'+name,pts,sampler,box,
-    clamp(strength*.29,.04,.30));
+    clamp(strength*.17,.023,.17));
   if(!mesh)continue;
   face.add(mesh);count++;vertices+=mesh.geometry.getAttribute('position').count;
  }
- face.userData.v49AgeDetails={ageBand,strength,count,vertices,source:'actual-sculpted-face'};
+ face.userData.v49AgeDetails={ageBand,strength,count,vertices,
+  source:'actual-sculpted-face',
+  v76RealSkinToneWrinkles:true,
+  noDarkAppliedLines:true,youngFaceProtected:true};
  return {...face.userData.v49AgeDetails};
 }
