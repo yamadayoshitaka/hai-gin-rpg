@@ -243,7 +243,8 @@ export function createRealtimeBattleCommands({
  function squads(){
   const now=nowMs();
   if(squadSnapshotAt<0||now-squadSnapshotAt>=300){
-   const source=!started&&mode==='deploy'&&typeof getDeploymentTeams==='function'?getDeploymentTeams():getSquads();
+   const planned=!started&&mode==='deploy'&&typeof getDeploymentTeams==='function'?getDeploymentTeams():null;
+   const source=Array.isArray(planned)?planned:getSquads();
    squadSnapshot=(source||[]).filter(x=>x&&x.id!=null);
    squadSnapshotAt=now;
   }
@@ -313,7 +314,8 @@ export function createRealtimeBattleCommands({
   const now=nowMs();if(!force&&now-lastRadarRenderAt<350)return;
   lastRadarRenderAt=now;
   const w=radarCanvas.width,h=radarCanvas.height,ctx=radarCtx;
-  const own=squads(),enemies=typeof getRadarEnemies==='function'?getRadarEnemies():getEnemies();
+  const own=squads(),plannedEnemies=typeof getRadarEnemies==='function'?getRadarEnemies():null;
+  const enemies=Array.isArray(plannedEnemies)?plannedEnemies:getEnemies();
   const visibleAllies=typeof getRadarSquads==='function'?getRadarSquads(own):own;
   radarPins=squadRadarPins(visibleAllies,enemies,worldSize,currentRows);
   if(typeof getRadarSquads==='function'){
