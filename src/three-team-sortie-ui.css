@@ -493,3 +493,42 @@
  .trainingFormationDemo .trainingFormationRequirements{-webkit-line-clamp:1}
  .trainingHireCapacity{padding:5px 6px}
 }
+
+
+/* Training-ground inventory / atomic formation purchase, compact portrait mode. */
+.trainingStockOverview{flex:none;display:grid;gap:2px;border:1px solid #476d7e;
+ background:#102a3b;border-radius:7px;padding:4px 6px;min-width:0}
+.trainingStockOverview>b{font-size:11px;line-height:1.2;color:#ffde9f}
+.trainingStockOverview>small{font-size:9px;line-height:1.2;color:#d0e5ee}
+.trainingStockJobs{display:flex;flex-wrap:wrap;gap:2px 4px;max-height:38px;overflow:hidden}
+.trainingStockJobs span{color:#e7f1ef;background:#214255;border-radius:3px;
+ font-size:9px;padding:1px 4px;white-space:nowrap}
+.trainingFormationQuote{display:grid;gap:2px;padding:4px 6px;background:#132e3d;
+ border:1px solid #b7a27f;border-radius:7px;flex-shrink:0}
+.trainingFormationQuote>b{font-size:11px;color:#f6dfac}
+.trainingFormationQuote>small{font-size:9px;line-height:1.25;color:#d8e8f1;
+ white-space:normal;max-height:27px;overflow:hidden}
+#panel.formation-command-ui .trainingFormationQuote button{
+ width:100%;min-height:33px!important;padding:4px!important;
+ background:#496d4a!important;border-color:#c9d3a0!important;
+ color:#fff4dc;font-weight:750;font-size:12px!important}
+#panel.formation-command-ui .trainingFormationQuote button:disabled{
+ background:#354453!important;border-color:#657584!important;opacity:.8}
+#panel.formation-command-ui:has(.trainingStockOverview) .innWizardRoster{flex-basis:133px}
+#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo{gap:1px}
+#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePreview svg{
+ height:clamp(47px,8dvh,75px)}
+#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo>small{
+ font-size:9px;line-height:1.12;-webkit-line-clamp:1}
+#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePhaseCaptions{
+ gap:2px}
+#panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePhaseCaptions span{
+ padding:1px;font-size:7px}
+@media(max-height:700px){
+ #panel.formation-command-ui:has(.trainingStockOverview) .innWizardRoster{flex-basis:117px}
+ .trainingStockOverview{padding:3px 5px}
+ .trainingStockJobs{max-height:22px}
+ #panel.formation-command-ui:has(.trainingStockOverview) .trainingFormationDemo .signaturePreview svg{
+ height:43px}
+ .trainingFormationQuote{padding:3px 4px}
+}

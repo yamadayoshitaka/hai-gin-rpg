@@ -21,6 +21,8 @@ on:
       - 'src/battle-formation-orders.js'
       - 'src/inn-formation-wizard.js'
       - 'src/inn-formation-rules.js'
+      - 'src/training-formation-purchase.js'
+      - 'qa/training-formation-purchase.test.mjs'
       - 'src/sortie-formation-template-rules.js'
       - 'qa/formation-minimum-deployment-radar.test.mjs'
       - 'qa/three-team-sortie.test.mjs'
@@ -76,6 +78,8 @@ jobs:
         run: node --experimental-vm-modules qa/inn-roster-first-formation.test.mjs
       - name: Verify training ground, forge upgrades, gacha preservation and story-critical losses
         run: node --test qa/training-ground-forge-critical-roster.test.mjs
+      - name: Verify training soldier stock, wallet quote and atomic deployment
+        run: node --check src/training-formation-purchase.js && node --test qa/training-formation-purchase.test.mjs
       - name: Verify paged inn, per-team items and formation-gated tactics
         run: node --test qa/mobile-formation-command-items.test.mjs
       - name: Verify battle-time formation changes and regrouping
