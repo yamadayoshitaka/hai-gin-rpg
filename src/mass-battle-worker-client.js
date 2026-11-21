@@ -68,6 +68,8 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     warpStrategist(unitId,x,z){if(!failed)worker.postMessage({type:'strategistWarp',unitId,x,z});},
     healItem(unitId,amount){if(!failed)worker.postMessage({type:'healItem',unitId,amount});},
     healSquadItem(squadId,amount,team=0){if(!failed)worker.postMessage({type:'healSquadItem',squadId,amount,team});},
+    restoreSquadMp(squadId,amount,team=0){if(!failed)worker.postMessage({type:'restoreSquadMp',squadId,amount,team});},
+    cleanseSquad(squadId,team=0){if(!failed)worker.postMessage({type:'cleanseSquad',squadId,team});},
     reinforceSquad(squadId,count,team=0){if(!failed)worker.postMessage({type:'reinforceSquad',squadId,count,team});},
     summonSquadCreature(squadId,team=0){if(!failed)worker.postMessage({type:'summonSquadCreature',squadId,team});},
     commandSquadSummonAttack(squadId,targetSquadId,team=0){
