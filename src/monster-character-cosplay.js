@@ -7,6 +7,8 @@
  * licensed canonical assets have been loaded and verified.
  */
 import * as THREE from 'three';
+import {isFacialHairSourceMesh,SERAPH_NO_BEARD_REVISION}
+ from './seraph-facial-hair-guard.js?v=seraph-nobeard-v2-20261121';
 import {resolveMonsterThemeAction} from './monster-theme-actions.js';
 import {enhanceMonsterHumanoidCostumeMaterial} from './monster-reference-finish.js';
 import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
@@ -404,7 +406,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   }
   // The seraph is explicitly beardless. Do not hide scalp hair, eyelashes,
   // eyebrows or the whole face; only named moustache/beard meshes.
-  if(profile.noBeard===true&&/(?:^|[_\\s-])(?:beard|moustache|mustache|goatee|stubble|facialhair)(?:$|[_\\s-])/i.test(node.name||'')){
+  if(profile.noBeard===true&&isFacialHairSourceMesh(node)){
    node.visible=false;suppressedFacialHair++;
    return;
   }
@@ -697,6 +699,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
   constructShellParts:construct?frames.chest.userData.golemShellParts??0:0,
   skinColor:profile.skin,skinMaterialIsolation:true,
   noBeard:profile.noBeard===true,beardSourceMeshesSuppressed:suppressedFacialHair,
+  beardGuardRevision:profile.noBeard===true?SERAPH_NO_BEARD_REVISION:null,
   skinTone:profile.skinTone??null,
   demonCosmeticsEdition:demonic&&profile.id!=='m042'?'horns-makeup-runes-v1':null,
   femaleSummonCostumeEdition:femaleSummon?
