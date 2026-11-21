@@ -67,7 +67,7 @@ export function createMineralLimbArticulator({model,frames,id}={}){
  const joints=Object.fromEntries(Object.entries(candidates).map(([key,names])=>
   [key,names.map(name=>findByName(model,name))]));
  const chestBone=findByName(model,'spine_02')||findByName(model,'spine_01');
- const pelvisBone=findByName(model,'hips');
+ const pelvisBone=findByName(model,'hips')||findByName(model,'pelvis');
  const segments=[];
  for(const [part,startName,endName,nominal] of pairs){
   for(let side=0;side<2;side++){
