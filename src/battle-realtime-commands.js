@@ -14,7 +14,7 @@ import {formationUnlockLabels,ADVANCED_FORMATION_TACTICS} from './formation-stra
 import {BASIC_OPENING_TACTICS} from './prebattle-opening-tactics.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
-import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=three-team-radar2-20261120';
+import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=20261122-contact-frontline2';
 import {findBattleMapPin,formatBattleMapPercent} from './battle-map-inspection.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const PREBATTLE_FORMATION_IDS=Object.freeze({
@@ -458,6 +458,11 @@ export function createRealtimeBattleCommands({
    ctx.strokeStyle=focus?'#ffea92':'#132c40';ctx.lineWidth=focus?3.2:1.6;ctx.stroke();
    ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 10px system-ui';
    ctx.fillStyle='#071625';ctx.fillText(String(pin.number),x,y);
+   // Contact marker follows the exact fighting-front coordinates.
+   if(pin.inContact){
+    ctx.beginPath();ctx.arc(x,y,focus?14:12,0,Math.PI*2);
+    ctx.strokeStyle='#ffe091';ctx.lineWidth=2;ctx.stroke();
+   }
   }
  }
  function actionDescription(id=String(selectedId||'')){

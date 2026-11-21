@@ -38,7 +38,7 @@ test('public radar and team HUD use the same group source, while job controls st
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  const realtime=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
  assert.match(html,/getRadarSquads:own=>THREE_TEAM_BATTLE\?/);
- assert.match(html,/battleThreeTeamRadarSquads\(own,armyGroupBySquad\)/);
+ assert.match(html,/battleThreeTeamRadarSquads\(own,armyGroupBySquad,liveRadarEngagementPoints\(0\)\)/);
  assert.match(html,/getRadarGroup:id=>THREE_TEAM_BATTLE/);
  assert.match(html,/onRadarTeamCommand:groupId=>/);
  assert.match(html,/targetedStrategyUi\.open\(groupId,\{startAtRecommendations:true,groupOnly:true\}\)/);

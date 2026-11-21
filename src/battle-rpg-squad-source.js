@@ -85,8 +85,11 @@ export function makeBattleRpgStatusRows({
  for(const unit of units){
   const team=Number(unit.team),key=team+':'+String(unit.squadId);
   if(!bySquad.has(key)||unit.alive===false||!(Number(unit.hp)>0)||
-   !Number.isFinite(unit.x)||!Number.isFinite(unit.z))continue;
-  const x=Number(unit.x),z=Number(unit.z);
+   !Number.isFinite(mass?unit.x:(unit.cell?.x??unit.x))||
+   !Number.isFinite(mass?unit.z:(unit.cell?.z??unit.z)))continue;
+  // A skirmish actor's cell is authoritative; optional x/z may be stale.
+  const x=Number(mass?unit.x:(unit.cell?.x??unit.x));
+  const z=Number(mass?unit.z:(unit.cell?.z??unit.z));
   const entry={unit,team,key,x,z};
   active.push(entry);
   const bucket=team+':'+Math.floor(x/bucketSize)+':'+Math.floor(z/bucketSize);
@@ -103,7 +106,9 @@ export function makeBattleRpgStatusRows({
    unit.currentTargetSquadId!=null&&Number.isFinite(target)&&target>=0){
    const enemyRow=bySquad.get((1-team)+':'+String(target));
    if(enemyRow&&enemyRow.alive>0){
-    bySquad.get(key).inContact=true;enemyRow.inContact=true;
+    const friendly=bySquad.get(key);
+    friendly.inContact=true;enemyRow.inContact=true;
+    friendly.engagementPoint??={x,z};
    }
   }
   const bx=Math.floor(x/bucketSize),bz=Math.floor(z/bucketSize);
@@ -116,8 +121,11 @@ export function makeBattleRpgStatusRows({
     const floorB=other.unit.highGroundFloor??other.unit.indoorFloor??1;
     if(floorA!==floorB)continue;
     if((x-other.x)**2+(z-other.z)**2<=contactSquared){
-     bySquad.get(key).inContact=true;
-     bySquad.get(other.key).inContact=true;
+     const first=bySquad.get(key),second=bySquad.get(other.key);
+     const point={x:(x+other.x)/2,z:(z+other.z)/2};
+     first.inContact=true;second.inContact=true;
+     first.engagementPoint??=point;
+     second.engagementPoint??=point;
     }
    }
   }
@@ -167,7 +175,9 @@ export function aggregateBattleRpgTeams(rows,groupBySquad={},enemyGroupBySquad=n
     attackPercent:totalMaxHp>0?Math.round(members.reduce((n,row)=>
      n+(Number(row.attackPercent)||0)*(Number(row.maxHp)||0),0)/totalMaxHp):0,
     mode:members.every(row=>row.mode===members[0]?.mode)?members[0]?.mode:'mixed',
-    inContact:members.some(row=>row.inContact),effects
+    inContact:members.some(row=>row.inContact),
+    engagementPoint:members.find(row=>row.inContact&&row.engagementPoint)?.engagementPoint??null,
+    effects
    };
   });
  };

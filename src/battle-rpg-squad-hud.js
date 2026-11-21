@@ -185,7 +185,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
     if(state.textContent!==value)state.textContent=value;
     state.title=rpgHudStatus(row);
     const engaged=previous.querySelector('.rpgSquadEngaged');
-    if(engaged)engaged.hidden=!row.inContact||value==='⚔';
+    if(engaged)engaged.hidden=!row.inContact;
     for(const [type,current,max] of [['hp',row.hp,row.maxHp],['mp',row.mp,row.maxMp]]){
      const meter=previous.querySelector('.rpgSquadMeter-'+type);
      if(!meter)continue;
@@ -259,8 +259,6 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
    const engaged=doc.createElement('span');engaged.className='rpgSquadEngaged';
    engaged.textContent='⚔';engaged.title='現在交戦中';
    engaged.setAttribute('aria-label','交戦中');engaged.hidden=!row.inContact;
-   // Show engagement only as a second glyph when the guard/wait stance differs.
-   engaged.hidden=!row.inContact||rpgHudStateIcon(row)==='⚔';
    heading.append(job,title,jobName,status,engaged);
    const metrics=doc.createElement('div');metrics.className='rpgSquadMetrics';
    const effects=doc.createElement('span');effects.className='rpgSquadEffects';

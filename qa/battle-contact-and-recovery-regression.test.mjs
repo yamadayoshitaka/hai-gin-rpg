@@ -41,7 +41,7 @@ test('ranged acquired enemy and a critical team show both engagement and SOS',()
  assert.deepEqual(rows.map(r=>r.inContact),[true,true]);
  assert.equal(rpgHudStateIcon(rows[0]),'🆘');
  const hud=readFileSync(new URL('../src/battle-rpg-squad-hud.js',import.meta.url),'utf8');
- assert.match(hud,/engaged\.hidden=!row\.inContact\|\|value==='⚔'/);
+ assert.match(hud,/if\(engaged\)engaged\.hidden=!row\.inContact;/);
 });
 
 test('dead or vertically separated soldiers never create phantom contact',()=>{
