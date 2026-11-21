@@ -16,6 +16,8 @@ test('a fallen soldier remains drawable but releases the physical grid cell',()=
  sim.killAtCells(new Set([coords.x+','+coords.z]));
  assert.equal(soldier.alive,false);
  assert.ok(soldier.deathAt>=0,'corpse stays available for the death animation');
+ assert.notEqual(sim._occupancy[cell],soldier.id,
+  'dead soldier releases its tile immediately without waiting for the next AI tick');
  sim.step(.1);
  assert.notEqual(sim._occupancy[cell],soldier.id,'dead soldier must not reserve its old cell');
  const display=sim.getRenderCell(soldier);
