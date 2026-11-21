@@ -27,6 +27,9 @@ const formationPreviewId=plan=>String(plan?.formationId||
 const PREBATTLE_TACTIC_NAMES=Object.freeze({
  assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索'
 });
+const escapePrebattle=value=>String(value??'').replace(/[&<>"']/g,ch=>({
+ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[ch]));
 export function battleMapCell(clientX,clientY,rect,{worldSize=232,zoom=1,centerX=worldSize/2,centerZ=worldSize/2}={}){
  if(!(rect?.width>0&&rect?.height>0))return null;
  const px=(clientX-rect.left)/rect.width,pz=(clientY-rect.top)/rect.height;
@@ -342,13 +345,13 @@ export function createRealtimeBattleCommands({
    const preview=$('realtimeInitialFormationPreview'),active=defaults.formationActive!==false;
    const previewKey=key+'|'+formationId+'|'+active;
    if(preview.dataset.previewKey!==previewKey){
-    const name=escape(defaults.formation||'標準陣形');
+    const name=escapePrebattle(defaults.formation||'標準陣形');
     const unlocked=formationUnlockLabels(formationId,active);
-    preview.innerHTML='<strong>第'+escape(key)+'隊｜'+name+
-     (formationRule?'｜★ '+escape(formationRule.name):'')+'</strong>'+
+    preview.innerHTML='<strong>第'+escapePrebattle(key)+'隊｜'+name+
+     (formationRule?'｜★ '+escapePrebattle(formationRule.name):'')+'</strong>'+
      (renderFormationSignaturePreview(formationId)||
       '<small>この陣形は専用の動作アニメーションがありません。</small>')+
-     '<small>使用可能な追加作戦：'+escape(unlocked.join('・')||'基本作戦のみ')+'</small>';
+     '<small>使用可能な追加作戦：'+escapePrebattle(unlocked.join('・')||'基本作戦のみ')+'</small>';
     preview.dataset.previewKey=previewKey;
    }
    $('realtimeInitialFormationStatus').textContent=
