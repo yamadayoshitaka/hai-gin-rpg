@@ -63,7 +63,7 @@ for(const [index,id] of ['m036','m037','m038','m039','m040'].entries()){
    THREE,frames,profile,detail,attach,tube
   }),true);
   counts.push(meshes.length);total+=meshes.length;
-  assert.ok(meshes.length>(detail==='low'?42:50),
+  assert.ok(meshes.length>(detail==='high'?50:42),
    id+' has incomplete all-body geometry');
   assert.ok(meshes.length<140,id+' is too expensive for mobile LOD');
   assert.equal(frames.chest.userData.golemFullShellRevision,
