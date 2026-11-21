@@ -15,8 +15,8 @@ export function deriveIrisPolarDetail(width=384,height=128){
    .046*Math.sin(theta*83-r*74)+
    .027*Math.sin(theta*211+r*93);
   const crypt=.040*Math.sin(theta*31+r*68)*
-   Math.exp(-((r-.57)/.23)**2);
-  const collarette=.074*Math.exp(-((r-.48)/.072)**2);
+   Math.exp(-Math.pow((r-.57)/.23,2));
+  const collarette=.074*Math.exp(-Math.pow((r-.48)/.072,2));
   const limbus=-.15*THREE.MathUtils.smoothstep(r,.78,.99);
   const central=-.10*(1-THREE.MathUtils.smoothstep(r,.18,.39));
   const tone=THREE.MathUtils.clamp(.91+fiber+crypt+collarette+
