@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-hairline-reselect-sadako-matte-v49';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-sadako-crown-fibre-curtain-v50';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -533,8 +533,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
  // posterior underlay over the same donor triangles causes overlapping
  // surfaces (z-fighting), polygon-shaped shade patches and hard seams.
  // Retain the underlay only for longer styles with sparse hair coverage.
- const crownUnderlay=shortHair?
-  {triangles:0,source:'disabled-for-short-hair'}:
+ const crownUnderlay=shortHair||styleId==='sadako-straight-long'?
+  {triangles:0,source:shortHair?'disabled-for-short-hair':'sadako-no-overlapping-crown'}:
   appendRealCrownUnderlay(geo,box,verts,smoothNormals,volumeProfile);
  // 52 independent tapered underlocks: rooted on actual posterior head
  // vertices, rather than a rectangular curtain hanging across the neck.
@@ -773,6 +773,69 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
  mesh.userData.source='donor-backed-clipped-scalp-surface';
  return mesh;
 }
+/** Natural, tangential fibres above the donor-backed Sadako crown.
+ * Close-cut spiky fibres must not be reused for straight long hair. */
+export function createSadakoCrownFlow(cap,box,color){
+ const pos=cap?.geometry?.getAttribute?.('position');
+ const norm=cap?.geometry?.getAttribute?.('normal');
+ if(!pos||!norm)throw Error('Sadako crown needs real donor scalp triangles');
+ const d=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+ const triangleCount=Math.floor(pos.count/3);
+ const step=Math.max(1,Math.floor(triangleCount/1600));
+ const points=[],shades=[],indices=[],pigment=new THREE.Color(color);
+ const root=new THREE.Vector3(),outward=new THREE.Vector3(),
+  tangent=new THREE.Vector3(),widthAxis=new THREE.Vector3(),fromCenter=new THREE.Vector3();
+ let strands=0;
+ for(let tri=0;tri<triangleCount;tri+=step){
+  root.set(0,0,0);outward.set(0,0,0);
+  for(let k=0;k<3;k++){
+   const i=tri*3+k;
+   root.x+=pos.getX(i)/3;root.y+=pos.getY(i)/3;root.z+=pos.getZ(i)/3;
+   outward.x+=norm.getX(i)/3;outward.y+=norm.getY(i)/3;
+   outward.z+=norm.getZ(i)/3;
+  }
+  const yn=(root.y-box.min.y)/Math.max(d.y,1e-6);
+  if(yn<.78||yn>.995||outward.lengthSq()<1e-9)continue;
+  outward.normalize();fromCenter.copy(root).sub(center);
+  if(outward.dot(fromCenter)<0)outward.negate();
+  tangent.set(.065*(root.x>=center.x?1:-1),-.28,root.z>=center.z?1:-1);
+  tangent.addScaledVector(outward,-tangent.dot(outward)).normalize();
+  if(tangent.lengthSq()<.3)continue;
+  widthAxis.crossVectors(tangent,outward).normalize();
+  const half=d.x*(.00135+.00035*((tri*.61803398875)%1));
+  const length=d.y*(.024+.014*((tri*.75487766)%1));
+  const a=root.clone().addScaledVector(outward,d.x*.006);
+  const b=a.clone().addScaledVector(tangent,length)
+   .addScaledVector(outward,d.x*.0012);
+  const offset=strands*4;
+  for(const [p,sign] of [[a,-1],[a,1],[b,-.7],[b,.7]]){
+   const q=p.clone().addScaledVector(widthAxis,sign*half);
+   points.push(q.x,q.y,q.z);
+   const shade=.76+.10*((tri*.41421356)%1);
+   shades.push(pigment.r*shade,pigment.g*shade,pigment.b*shade);
+  }
+  indices.push(offset,offset+1,offset+2,offset+1,offset+3,offset+2);
+  strands++;
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
+ geometry.setIndex(indices);
+ if(strands){geometry.computeVertexNormals();geometry.computeBoundingSphere();}
+ const material=new THREE.MeshStandardMaterial({
+  color:0xffffff,vertexColors:true,roughness:.98,metalness:0,
+  side:THREE.DoubleSide,polygonOffset:true,
+  polygonOffsetFactor:-1,polygonOffsetUnits:-1
+ });
+ const mesh=new THREE.Mesh(geometry,material);
+ mesh.name='SADAKO_CROWN_TANGENTIAL_FIBRE_FLOW_V50';
+ mesh.userData.styledHairGeometry=true;
+ mesh.userData.anchoredOnRealDonorCap=true;
+ mesh.userData.crownFibreCount=strands;
+ mesh.userData.faceOrNapeTangential=true;
+ return mesh;
+}
+
 /**
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
@@ -1161,7 +1224,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   const yNorm=(p.y-box.min.y)/d.y;
   if(p.z>center.z+d.z*.025&&yNorm>.40&&yNorm<.82){
    const contactSide=Math.sign(p.x-whorl.x)||1;
-   const partGap=yNorm>.75?d.x*.034:d.x*.055;
+   const partGap=style.id==='sadako-straight-long'?0:
+    yNorm>.75?d.x*.034:d.x*.055;
    if(yNorm<.815&&Math.abs(p.x-center.x)<partGap){
     p.x=center.x+contactSide*partGap;
     faceContacts++;collisions++;
@@ -1479,6 +1543,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  }
  // Close crops still need visible fibres OUTSIDE the scalp foundation.
  // Their count is independently reported, not a fake 10x fibre label.
+ const sadakoCrownFlow=style.id==='sadako-straight-long'?
+  createSadakoCrownFlow(cap,box,color):null;
+ if(sadakoCrownFlow)root.add(sadakoCrownFlow);
  const closeCutFibres=style.shortCutKind==='buzz'?createCloseCutScalpFibres(
   cap,box,color,lockCount*fiberMultiplier):null;
  // Restore a dense fine-fibre underlayer beneath the original swept locks.
@@ -1631,6 +1698,9 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   wigAssetType:'independent-wig',centerPart:style.part==='center',
   visualFiberMultiplier:fiberMultiplier,visualFiberCount:lockCount*fiberMultiplier,
   staticMicroFibreCount:microFibreCount,microFibreTriangles,
+  sadakoCrownFibreCount:sadakoCrownFlow?.userData.crownFibreCount||0,
+  sadakoScalpDoubleLayerDisabled:style.id==='sadako-straight-long',
+  sadakoFacePartingDisabled:style.id==='sadako-straight-long',
   closeCutFibreCount:closeCutFibres?.userData.fibreCount||0,
   closeCutFibresOnSurface:Boolean(closeCutFibres),
   microFibresAnimated:false,
