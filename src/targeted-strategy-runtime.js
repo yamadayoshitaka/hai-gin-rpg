@@ -43,6 +43,7 @@ export function createTargetedStrategyUi({
  getItems=()=>[],getTemplates=()=>[],onItemExecute=()=>false,
  getFormationId=()=> 'balanced',getFormationActive=()=>true,onMoveExecute=()=>false,
   getVictoryObjective=()=>null,onQuickOrder=()=>false,
+ getSignatureStrategy=()=>null,onSignatureStrategy=()=>false,
  onOpen=()=>{},onClose=()=>{}
 }){
  const panel=document.createElement('section');
@@ -132,6 +133,7 @@ export function createTargetedStrategyUi({
     const allowed=new Set(liveSquads(plan).flatMap(s=>s.allowed||plan.allowed||[]));
     const canAssault=allowed.has('charge'),canDefend=allowed.has('defend')||allowed.has('hold');
     const canExplore=allowed.has('explore')||(objective?.kind==='capture'&&allowed.has('charge'));
+    const signature=getSignatureStrategy(String(groupId));
     html='<div class="centerStep">指示する隊を選択</div>'+
      '<div class="centerGrid centerGroupCards">'+groupInfo.map((g,i)=>b('data-strategy-group="'+g.id+'"',
       '第'+g.id+'隊 · '+counts[i]+'人',String(groupId)===String(g.id),counts[i]===0)).join('')+'</div>'+
@@ -141,7 +143,11 @@ export function createTargetedStrategyUi({
      b('data-strategy-quick="defense"','🛡 守備',false,!canDefend)+
      b('data-strategy-quick="balanced"','⚖ バランス',false,!canAssault||!canDefend)+
      b('data-strategy-quick="explore"','🔍 探索・目標へ進軍',false,!canExplore)+
-     '</div><div class="centerStep">またはアイテムを使う</div>'+
+     '</div>'+
+     (signature?'<div class="centerStep">★ この陣形だけの専用作戦</div><div class="centerGrid">'+
+       b('data-strategy-signature="1"','★ '+signature.name+'｜'+signature.description,false,!signature.usable)+
+       '</div>':'')+
+     '<div class="centerStep">またはアイテムを使う</div>'+
      '<div class="centerGrid">'+b('data-strategy-start="item"','🎒 アイテムを使用',false,
       !getItems(String(groupId)).some(x=>Number(x.quantity)>0))+'</div>'+
      (objective?.kind==='capture'?
@@ -154,9 +160,11 @@ export function createTargetedStrategyUi({
      '<small class="centerHelp">作戦ボタンで確定して戦闘に戻ります。使用不可の作戦は陣形・編成条件に従います。</small>';
   }else if(step==='menu'){
    const unlocked=formationUnlockLabels(formationFor(),isFormationActive());
+   const signature=getSignatureStrategy(String(groupId));
    html='<div class="centerStep">第'+esc(groupId)+'隊への指示を選択</div>'+
     '<div class="centerGrid">'+
     b('data-strategy-start="plan"','⚔ 作戦・陣形固有作戦')+
+    (signature?b('data-strategy-signature="1"','★ '+signature.name,false,!signature.usable):'')+
     b('data-strategy-start="move"','🗺 移動先を指定')+
     b('data-strategy-start="item"','🎒 アイテムを使う',false,!getItems(String(groupId)).some(x=>x.quantity>0))+'</div>'+
     '<small class="centerHelp">現在の陣形：'+esc(formationFor())+' ／ 解放作戦：'+
@@ -461,6 +469,13 @@ export function createTargetedStrategyUi({
  panel.addEventListener('click',event=>{
   const t=event.target.closest('button');if(!t||t.disabled)return;
   if(t.hasAttribute('data-strategy-close')){close();return;}
+  if(t.hasAttribute('data-strategy-signature')){
+   const signature=getSignatureStrategy(String(groupId));
+   if(!signature?.usable){error='陣形が未成立か、実行できる分隊がありません';render();return;}
+   const result=onSignatureStrategy({groupId,squadIds:[...selectedSquads]});
+   if(result===true){close();return;}
+   error=String(result||'陣形専用作戦を実行できません');render();return;
+  }
   if(t.hasAttribute('data-strategy-quick')){
     const strategy=t.dataset.strategyQuick;
     const result=onQuickOrder({groupId,strategy,squadIds:[...selectedSquads]});
