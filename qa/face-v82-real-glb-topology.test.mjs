@@ -252,7 +252,10 @@ test('V86: real CC0 donor native 38-vertex lip fissure is safely sealed, no blac
   'The real GLB has an existing lip opening; it must be capped: '+JSON.stringify(r));
  assert.ok(r.ringVertexCount>=32&&r.ringVertexCount<=48,
   'Only the small front lip ring must be selected');
- assert.ok(r.addedTriangles>=25&&r.addedTriangles<70);
+ assert.ok(r.addedTriangles>=60&&r.addedTriangles<130,
+  'Both native lip slit and wider oral opening need surface triangles: '+JSON.stringify(r));
+ assert.ok(r.outerPatchTriangles>=30,
+  'Large lip boundary must be closed too, not just the tiny inner slit');
  assert.equal(r.addedVertices,0,'Never replace head/eye/morph vertices');
  assert.deepEqual(Array.from(geo.getAttribute('position').array),originalPositions,
   'The original skin positions must be preserved');
@@ -284,7 +287,8 @@ test('V86: actual independent male/female head has no exposed original lip hole'
   const summary=model.face.userData.v86OralSealSummary;
   assert.equal(summary.sealed,true,
    gender+' should seal native lip opening: '+JSON.stringify(summary));
-  assert.ok(summary.addedTriangles>=25);
+  assert.ok(summary.addedTriangles>=60,
+   gender+' must seal both nested oral loops: '+JSON.stringify(summary));
   assert.equal(model.face.userData.v83SafeOriginalMouthTopology,true);
   const animator=createFaceExpressionAnimator({face:model.face,parts:model.parts},
     {autoBlink:false});
