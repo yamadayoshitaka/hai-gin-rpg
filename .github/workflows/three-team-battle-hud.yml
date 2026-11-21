@@ -20,6 +20,8 @@ on:
       - 'qa/training-ground-forge-critical-roster.test.mjs'
       - 'qa/battle-formation-switch.test.mjs'
       - 'src/battle-formation-orders.js'
+      - 'src/prebattle-opening-tactics.js'
+      - 'qa/prebattle-additional-tactics.test.mjs'
       - 'src/inn-formation-wizard.js'
       - 'src/inn-formation-rules.js'
       - 'src/training-formation-purchase.js'
@@ -77,6 +79,8 @@ jobs:
         run: node --experimental-vm-modules qa/battle-stage-deployment-portraits.test.mjs
       - name: Verify formation-only inn and three-team stage handoff
         run: node --experimental-vm-modules qa/inn-strategy-three-team-wizard.test.mjs
+      - name: Verify compatible formation opening tactics and enlarged training preview
+        run: node --check src/prebattle-opening-tactics.js && node --check src/battle-realtime-commands.js && node --experimental-vm-modules --test qa/prebattle-additional-tactics.test.mjs
       - name: Verify roster-first inn, equipment, captain and high-tier eligibility
         run: node --experimental-vm-modules qa/inn-roster-first-formation.test.mjs
       - name: Verify training ground, forge upgrades, gacha preservation and story-critical losses

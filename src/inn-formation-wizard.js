@@ -86,6 +86,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   }).join('')+'</div>'+button('data-training-open="1"','⚔ 兵士を雇用する（所持金 '+Math.floor(game.wallet)+'G）');
  }else if(view==='hire'){
   const capacity=trainingHireCapacity(game,'N','player');
+  const stock=trainingSoldierStock(game,team.id);
   const n=Math.max(1,Math.min(100,Math.trunc(Number(hireCount)||1)));
   const armyUsed=100-capacity.commanderSpace;
   body='<div class="trainingHireCapacity" aria-live="polite">'+
@@ -103,9 +104,15 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     (n>capacity.max?'⚠ 雇用できる最大人数を超えています':'雇用後の所持金 '+(capacity.wallet-n*capacity.unitCost)+'G')+'</small>'+
    '<div class="trainingHireJobs">'+JOBS.map(job=>{
     const price=n*RARITIES.N.hire;
-    return button('data-training-hire="'+esc(job)+'" '+(n>capacity.max||!capacity.max?'disabled':''),
-     '<b>'+esc(job)+'</b><small>Ｎ兵 '+n+'人／'+price+'G</small>');
-   }).join('')+'</div><small class="innWizardInfo">ガチャで得た仲間は酒場で獲得し、軍訓練所で編成できます。</small>';
+    const ranks=stock.byJob.filter(r=>r.job===job);
+    const onHand=ranks.reduce((sum,r)=>sum+r.available,0);
+    const byRarity=ranks.filter(r=>r.available>0).map(r=>r.rarity+':'+r.available).join(' / ')||'なし';
+    const waiting=ranks.reduce((sum,r)=>sum+r.reserve,0);
+    const label='<span class="trainingHireJobLabel"><b>'+esc(job)+'</b>'+
+     '<small>在庫兵 '+onHand+'人（'+esc(byRarity)+'）'+(waiting?' / 予備 '+waiting+'人':'')+'</small>'+
+     '<small>N兵 '+n+'人補充：'+price+'G</small></span>';
+    return button('data-training-hire="'+esc(job)+'" '+(n>capacity.max||!capacity.max?'disabled':''),label);
+   }).join('')+'</div><small class="innWizardInfo">在庫兵は各ジョブ別に表示。配置済み兵は在庫に含めません。ガチャ仲間は酒場で獲得後に編成します。</small>';
   back='teamPick';
  }else if(view==='roster'){
   const rows=Array.from({length:3},(_,index)=>{
@@ -139,12 +146,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    const peopleLeft=Math.max(0,(entry.requirements?.people||0)-entry.total);
    return peopleLeft?'あと'+peopleLeft+'人':'職業・条件不足';
   };
-  const stockByJob=stock.byJob.filter(r=>r.available>0);
   body='<div class="innWizardRoster">'+rows+'</div>'+
-   '<div class="trainingStockOverview"><b>在庫兵 '+stock.unassigned+'人 ／ 予備兵 '+stock.reserve+'人 ／ 所持金 '+stock.wallet+'G</b>'+
-    '<small>未配置 '+stock.unassigned+'人・出撃配置済 '+stock.assigned+'人 ／ 追加雇用 最大'+stock.capacity.max+'人（N兵 '+stock.capacity.unitCost+'G/人）</small>'+
-    '<div class="trainingStockJobs">'+(stockByJob.length?stockByJob.map(r=>
-     '<span>'+esc(r.job)+' '+esc(r.rarity)+' '+r.available+'人</span>').join(''):'<span>未配置の兵士なし</span>')+'</div></div>'+
    '<small class="innWizardInfo">出撃予定 '+total+'/'+limit+'人 · 人数を変えると陣形条件も即時更新</small>'+
    '<div class="innWizardRosterPreview" aria-label="陣形の使用可否と不足人数">'+
     '<div class="trainingFormationHeading"><b>陣形一覧　使用可 '+usable+' / '+allCount+'</b>'+
@@ -171,7 +173,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
          esc(previewEntry.reason))+
       '</small>'+
       '<div class="trainingFormationQuote" aria-live="polite">'+
-       '<b>所持金 '+stock.wallet+'G ／ 在庫兵 '+stock.unassigned+'人 ／ 必要人数 '+(purchase?.total||previewEntry?.requirements?.people||0)+'人</b>'+
+       '<b>所持金 '+stock.wallet+'G ／ 陣形必要人数 '+(purchase?.total||previewEntry?.requirements?.people||0)+'人</b>'+
        (purchase?.allocations?.length?'<small>'+purchase.allocations.map(p=>
          esc(p.job)+' '+esc(p.rarity)+' '+p.count+'人（既存'+(p.count-p.hire)+'／補充'+p.hire+'）').join(' · ')+'</small>':'')+
        '<small>追加雇用 '+(purchase?.hireCount||0)+'人 ／ 支払 '+(purchase?.cost||0)+'G'+
