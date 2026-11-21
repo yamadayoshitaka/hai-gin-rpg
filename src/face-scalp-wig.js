@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-scalp-coverage-v30';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-density-hairline-v31';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -424,10 +424,10 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
     // and transition continuously to a higher temple/forehead.
     const back=smooth(-.45,-.10,zn);
     const temple=smooth(-.06,.24,zn);
-    const napeCenter=.58+.105*smooth(.10,.39,xn);
+    const napeCenter=.595+.09*smooth(.08,.37,xn);
     const rearSide=THREE.MathUtils.lerp(napeCenter,.715,back);
-    const front=THREE.MathUtils.lerp(rearSide,.81,temple);
-    const earArc=.105*smooth(.22,.38,xn)*
+    const front=THREE.MathUtils.lerp(rearSide,.795,temple);
+    const earArc=.09*smooth(.19,.36,xn)*
      (1-smooth(.10,.36,zn))*
      smooth(-.38,-.12,zn);
     return THREE.MathUtils.clamp(front+earArc,.56,.90);
@@ -678,7 +678,7 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
  }
  if(!area)return null;
  const d=box.getSize(new THREE.Vector3());
- const strands=Math.min(24000,Math.max(18000,Math.round(hairCount*3)));
+ const strands=Math.min(30000,Math.max(22000,Math.round(hairCount*3.7)));
  const vertices=new Float32Array(strands*4*3);
  const colors=new Float32Array(strands*4*3);
  const indices=new Uint32Array(strands*6);
@@ -705,7 +705,13 @@ function createCloseCutScalpFibres(cap,box,color,hairCount){
   if(up.dot(root.clone().sub(scalpCenter))<0)up.negate();
   // Forward/back grooming direction is projected onto the REAL local
   // scalp tangent: no flat, radial spikes or fibres buried in skin.
-  tangent.set(Math.sin(i*2.39996323)*.18,-1,-.38);
+  // Follow a stable crown whorl, rather than rotating direction per fibre.
+  const cx=(root.x-scalpCenter.x)/Math.max(d.x,1e-6);
+  const cz=(root.z-scalpCenter.z)/Math.max(d.z,1e-6);
+  const whorlX=-.055,whorlZ=-.10;
+  const dx=cx-whorlX,dz=cz-whorlZ;
+  const swirl=Math.exp(-(dx*dx+dz*dz)*20);
+  tangent.set(dx*.42-dz*.65*swirl,-.70,dz*.42+dx*.65*swirl-.28);
   tangent.addScaledVector(up,-tangent.dot(up));
   if(tangent.lengthSq()<1e-8){
    tangent.set(0,0,-1).addScaledVector(up,up.z);
