@@ -132,7 +132,7 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
   const base=rows.filter(r=>Number(r.team)===team);
   const own=base.flatMap(row=>
    Array.isArray(row.members)&&expandedTeamId[team]===String(row.id)?
-    [row,...row.members.map(member=>({...member,isJobDivision:true,parentTeamId:row.id}))]:[row]):base;
+    [row,...row.members.map(member=>({...member,isJobDivision:true,parentTeamId:row.id}))]:[row]);
   const pageSize=expanded[team]?Math.max(1,own.length):5;
   const totalPages=Math.max(1,Math.ceil(own.length/pageSize));
   pages[team]=clamp(pages[team],0,totalPages-1);
