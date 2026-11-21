@@ -10,7 +10,7 @@ import {FORMATION_ROLES,ROLE_NAMES} from './sortie-formation-logic.js';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
 import {inspectInnFormation} from './inn-formation-rules.js';
 import {trainingSoldierStock,inspectTrainingFormationPurchase} from './training-formation-purchase.js';
-import {TOWN_SHOP,squadEquipmentBonus,trainingHireCapacity} from './game-core-flow.js';
+import {TOWN_SHOP,squadEquipmentBonus,trainingHireCapacity,squadEquipmentUsers} from './game-core-flow.js';
 import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
 import {formationUnlockLabels} from './formation-strategy-unlocks.js';
 import {signatureStrategyFor,renderFormationSignaturePreview} from './formation-signature-strategies.js';
@@ -236,16 +236,31 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const s=members.find(x=>String(x.id)===String(gearSourceId));
   const slot=gearCategory==='防具'?'armor':'weapon';
   const options=TOWN_SHOP.filter(x=>x.category===gearCategory&&(!x.jobs||x.jobs.includes(s?.job)));
-  body='<small class="innWizardInfo">'+(s?esc(s.job):'隊員未選択')+' ／ '+esc(gearCategory)+'</small>'+
-   '<div class="sortieWizardChoices">'+
-   button('data-inn-wizard-equip=""','<span class="sortieWizardStrategyIcon">×</span><span class="sortieWizardStrategyDetails"><b>装備を外す</b></span>',!s?.equipment?.[slot])+
+  body='<div class="innGearPickHead"><b>'+esc(s?.characterName||s?.name||s?.job||'隊員未選択')+' ／ '+esc(gearCategory)+'</b>'+
+   '<small>所持金 '+Math.floor(Number(game.wallet)||0)+'G ・ 在庫が足りない場合もここで購入できます。</small></div>'+
+   '<div class="innGearCatalog">'+
+   button('data-inn-wizard-equip=""','× 装備を外す',!s?.equipment?.[slot])+
    options.map(item=>{
-    const used=game.campaign.squads.filter(x=>x.id!==s?.id&&x.count>0&&x.equipment?.[slot]===item.id).length;
-    const own=Number(game.inventory[item.id]||0);
+    const users=squadEquipmentUsers(game,item.id,s?.id),used=users.length;
+    const own=Math.max(0,Math.trunc(Number(game.inventory?.[item.id])||0));
     const equipped=s?.equipment?.[slot]===item.id;
-    return button('data-inn-wizard-equip="'+esc(item.id)+'" '+(own<=used&&!equipped?'disabled':''),
-     '<span class="sortieWizardStrategyIcon">'+(gearCategory==='防具'?'🛡':'⚔')+'</span><span class="sortieWizardStrategyDetails"><b>'+esc(item.name)+'</b><small>'+esc(item.description)+'</small>'+
-     '<small>所持 '+own+'／他の隊が使用 '+used+(own<=used&&!equipped?' · 在庫不足':'')+'</small></span>',equipped);
+    const free=Math.max(0,own-used-(equipped?1:0));
+    const ownerLabel=users.length?users.map(owner=>
+      owner.name+' (#'+owner.squadId+'・'+
+      (owner.teamIds.length?owner.teamIds.map(id=>'第'+id+'隊').join('／'):'編成外')+')').join('、'):'なし';
+    const stockStatus='<small>所持 '+own+'個・未使用 '+free+'個'+
+     (users.length?' ／ 使用中：'+esc(ownerLabel):'')+'</small>';
+    const actions=[];
+    if(equipped)actions.push('<span class="innGearEquipped">✓ 現在装備中</span>');
+    else if(own>used)actions.push(button('data-inn-wizard-equip="'+esc(item.id)+'"','在庫から装備'));
+    else if(users.length===1)actions.push(
+     button('data-inn-wizard-transfer="'+esc(item.id)+'" data-from-squad="'+esc(users[0].squadId)+'"',
+      esc(users[0].name)+'から移し替え（元の装備は解除）'));
+    actions.push(button('data-inn-wizard-buy-equip="'+esc(item.id)+'" '+(game.wallet<item.price?'disabled':''),
+     '購入 '+item.price+'G ＋ 装備'));
+    return '<div class="innGearChoice"><div class="innGearDescription"><b>'+
+     esc(item.name)+'</b><small>'+esc(item.description)+'</small>'+stockStatus+'</div>'+
+     '<div class="innGearActions">'+actions.join('')+'</div></div>';
    }).join('')+'</div>';
   back='equipment';
  }else if(view==='items'){
