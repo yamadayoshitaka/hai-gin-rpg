@@ -16,21 +16,26 @@ const nearby=allies.map(u=>({u,dist:Math.hypot(u.x-priest.x,u.z-priest.z)}))
 assert.ok(nearby?.dist<22,'A wounded ally must be within healer triage range');
 const patient=nearby.u;
 patient.hp=Math.floor(patient.maxHp*.22);
+// Keep the test deterministic: this is the sole MP-capable priest.
+for(const u of sim.units)if(u.team===0&&u.jobId==='priest'&&u!==priest)u.mp=0;
 const beforeHp=patient.hp;
+const beforeMp=priest.mp;
 assert.equal(sim.setSquadCommand(priest.squadId,'hold'),true);
 const formation=priest.formationType;
 assert.notEqual(sim.squadCommands.get(String(priest.squadId)),'heal',
  'No explicit healing command should be required');
-let healed=false;
-for(let step=0;step<180;step++){
+let healed=false,spellEvent=false;
+for(let step=0;step<280;step++){
  sim.step(.1);
- if(patient.hp>beforeHp){healed=true;break;}
+ if(sim.actionEvents.some(e=>e.type==='groupHeal'&&e.sourceId===priest.id))spellEvent=true;
+ if(patient.hp>beforeHp&&spellEvent){healed=true;break;}
 }
+assert.ok(spellEvent,'The watched priest must cast a real healing spell');
 assert.ok(healed,'A priest on hold should autonomously restore actual wounded HP');
 assert.equal(priest.formationType,formation,'Healing must preserve the inn formation');
 assert.equal(sim.squadCommands.get(String(priest.squadId)),'hold',
  'Healing must not overwrite the command');
-assert.ok(priest.mp<priest.maxMp,'Real healing consumes MP');
+assert.ok(priest.mp<beforeMp,'Real healing consumes MP');
 
 const skills=readFileSync(new URL('../src/combat-action-runtime.js',import.meta.url),'utf8');
 assert.match(skills,/skills\.sort\(\(a,b\)=>Number\(b\.kind==='heal'\)/,
