@@ -42,6 +42,9 @@ import {addRegalHumanoidOutfit,wardrobeFor,measureRegalShoulderFit,
  createRegalLimbGeometry,createRegalFootGeometry}
  from './monster-regal-garments.js?v=4.5.19';
 
+import {applyHumanlikeConceptFinish}
+ from './monster-humanoid-concept-finish.js?v=humanoid-concept-sculpt-v1-20261121';
+
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const tenguWingDonors=new Map();
 function getTenguWingDonor(detail){
@@ -527,8 +530,12 @@ function buildMonsterCostume(THREE,model,profile,detail){
  if(profile.mage){
   bands(frames.chest,'rune-hem',-.38,-.21,.23,.17,1.9,'accent');
  }
+ const conceptFinish=applyHumanlikeConceptFinish({
+  THREE,profile,detail,frames,attach,tube
+ });
  model.userData.monsterCostume={
   id:profile.id,kind:costume,heroSource:profile.modelId,
+  humanConceptFinish:conceptFinish,
   originalSkeleton:true,overlayMeshes:ownedGeo.length,
   gothicSculptEdition:gothic?'gothic-horror-2026-11':null,
   constructSculptEdition:construct?'human-rigged-construct-2026-11':null,
