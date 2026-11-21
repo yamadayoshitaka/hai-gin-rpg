@@ -10,6 +10,10 @@ on:
       - 'src/independent-face-masters.js'
       - 'assets/textures/face/**'
       - 'qa/face-photoreal-v76.test.mjs'
+      - 'qa/face-v76-visible-preset-smooth.test.mjs'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
       - '.github/workflows/face-photoreal-v76.yml'
   push:
     branches: [main]
@@ -22,6 +26,10 @@ on:
       - 'src/independent-face-masters.js'
       - 'assets/textures/face/**'
       - 'qa/face-photoreal-v76.test.mjs'
+      - 'qa/face-v76-visible-preset-smooth.test.mjs'
+      - 'face-mesh-studio.html'
+      - 'face-body-studio.html'
+      - 'male-body-studio.html'
       - '.github/workflows/face-photoreal-v76.yml'
 permissions:
   contents: read
@@ -45,9 +53,10 @@ jobs:
           node --check src/face-expression-animation-v48.js
           node --check src/face-age-detail-v49.js
           node --check qa/face-photoreal-v76.test.mjs
+          node --check qa/face-v76-visible-preset-smooth.test.mjs
       # The legacy v50 preset catalogue tests require an obsolete 24-style
       # selector and unrelated armor proportions; they already fail on main.
       # This gate protects v76 photo/face anatomy plus current expression QA.
       - name: Validate source phototexture, real eye/lip meshes, expressions and ageing
         run: |
-          node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs
+          node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs qa/face-v76-visible-preset-smooth.test.mjs
