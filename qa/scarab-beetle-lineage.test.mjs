@@ -159,8 +159,12 @@ for(const id of BEETLE_LINEAGE_IDS)for(const detail of ['low','high'])
       'center and tip must share one seamless glossy keratin finish');
     }
    }else{
-    assert.ok(byName(id+'-solar-horn-L')&&byName(id+'-solar-horn-R'));
-    assert.ok(byName(id+'-solar-wing-crest-L'));
+    assert.ok(byName(id+'-solar-horn-tip-L')&&byName(id+'-solar-horn-tip-R'),
+     'the golden beetle must have one central horn with a split tip');
+    assert.equal(byName(id+'-solar-horn-L'),undefined,
+     'golden beetle must not retain extra independent side horns');
+    assert.ok(byName(id+'-concept-winged-gold-crest-L-0'),
+     'golden feather ornament should grow from the shell');
    }
    let meshCount=0,triangles=0;
    model.traverse(node=>{
