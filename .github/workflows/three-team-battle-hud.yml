@@ -5,6 +5,8 @@ on:
       - 'src/battle-realtime-commands.js'
       - 'src/battle-realtime-commands.css'
       - 'src/battle-realtime-deployment.js'
+      - 'src/battle-exploration-floor.js'
+      - 'qa/battle-transparent-radar-deploy-floor.test.mjs'
       - 'src/battle-rpg-squad-source.js'
       - 'src/battle-rpg-squad-hud.js'
       - 'src/battle-portrait-identity.js'
@@ -55,6 +57,8 @@ jobs:
         run: node --check src/battle-portrait-identity.js && node --check src/battle-stage-identity.js && node --check src/battle-rpg-squad-source.js && node --check src/battle-rpg-squad-hud.js && node --check src/battle-realtime-commands.js && node --check src/battle-realtime-deployment.js && node --check src/three-team-core-bridge.js
       - name: Verify wide bridge pathing and large-monster footprint spacing
         run: node --check src/battle-wide-bridge-clearance.js && node --test qa/battle-wide-bridge-clearance.test.mjs
+      - name: Verify transparent battle radar, exact deploy taps and building floors
+        run: node --check src/battle-exploration-floor.js && node --test qa/battle-transparent-radar-deploy-floor.test.mjs
       - name: Verify read-only battle map inspection and squad pins
         run: node --check src/battle-map-inspection.js && node --test qa/battle-map-inspection.test.mjs
       - name: Verify simplified commands and true capture victory

@@ -60,8 +60,12 @@ assert.match(strategy,/onSignatureStrategy\(\{groupId/);
 assert.match(commands,/openMap\('deploy'\);/,'Initial placement opens without a second radar tap');
 assert.match(commands,/placedTeams\.add\(key\)/,'Live spawn points are preselected');
 assert.match(commands,/initialTeamPlans\.set\(key,initial\)/,'A useful opening plan is preselected');
-assert.match(commands,/getLegalPoint\(Math\.round\(x\),Math\.round\(z\),true\)/,
- 'Deployment visibility must use the real traversable terrain');
+assert.match(commands,/getLegalPoint\(sample\.x,sample\.z,true\)/,
+ 'Deployment visibility samples real passable terrain');
+assert.match(commands,/previewDeploy\(selectedId,point\)/,
+ 'Only tiles accommodating every member of the selected team appear blue');
+assert.match(commands,/chooseMapCell\(hit\.x,hit\.z\)/,
+ 'Tapping a blue tile executes its validated placement anchor');
 assert.match(commands,/realtimeDeploymentLegend/);
 assert.match(commands,/onPrebattleMusic\(\)/);
 assert.match(battle,/battleAudio\.setPhase\('march'\); \/\/ Music starts/,
