@@ -101,9 +101,9 @@ test('long crown fibres sample original donor, not the duplicated hairline under
 });
 
 test('both studios use latest common scalp renderer and retain mantle collision',()=>{
- assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-mask-buzz-restored-v62$/);
+ assert.match(FACE_HAIR_RUNTIME_BUILD,/costume-neck-buzz-crown-v63$/);
  for(const path of ['face-mesh-studio.html','face-body-studio.html'])
-  assert.match(read(path),/20261121-costume-mask-buzz-restored-v62/);
+  assert.match(read(path),/20261121-costume-neck-buzz-crown-v63/);
  assert.match(read('face-mesh-studio.html'),/buzzHairlineFractionAtPoint/);
  assert.match(read('face-body-studio.html'),/garmentCollisionResolver:mantleCollision/);
  assert.match(read('.github/workflows/hair-reselect-regression.yml'),
