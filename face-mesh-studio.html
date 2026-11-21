@@ -644,7 +644,7 @@ function setHairHiddenScalp(face,enabled,wig=null){
  if(d.x<=0||d.y<=0||d.z<=0)return;
  // The same anatomical contour drives scalp pigment and donor clipping.
   const signed=(v)=>v.position[1]-(box.min.y+d.y*(
-   buzzHairlineFractionAtPoint(new THREE.Vector3(...v.position),box)+.003));
+   buzzHairlineFractionAtPoint({x:v.position[0],y:v.position[1],z:v.position[2]},box,d,center)+.003));
   const source=original.index;
  const attrs=Object.entries(original.attributes);
  const out=Object.fromEntries(attrs.map(([key])=>[key,[]]));
