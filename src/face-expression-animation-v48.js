@@ -92,12 +92,12 @@ function buildSide(parts,side,headSize){
  const decorations=[];
  for(const [suffix,isUpper] of [
   ['_UPPER_EYELINER',true],['_LOWER_EYELINER',false],
-  ['_UPPER_EYESHADOW',true]
+  ['_UPPER_EYESHADOW',true],['_LOWER_TEAR_MENISCUS',false]
  ]){
   const element=parts.getObjectByName(side+suffix);
   if(element?.geometry?.getAttribute('position'))
    decorations.push({...remember(element),isUpper,
-    rows:suffix.endsWith('EYESHADOW')?6:3});
+    rows:suffix.endsWith('EYESHADOW')?6:suffix.endsWith('MENISCUS')?2:3});
  }
  const brow=parts.getObjectByName(side+'_BROW_ANGLE_CONTROL');
  const browRest=brow?{y:brow.position.y,z:brow.rotation.z}:null;
