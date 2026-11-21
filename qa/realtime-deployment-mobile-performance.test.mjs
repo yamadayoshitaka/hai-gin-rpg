@@ -60,10 +60,9 @@ test('mobile map has left zoom controls, persistent actions and no repeated depl
   onOrder:(id,mode)=>{seen.push(['order',id,mode]);return true}
  });
  command.openDeployment();
- assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,true,
-  'the battle begins on the compact radar, without a large popup');
+ assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,false,
+  'the battle opens the full default deployment map without extra taps');
  assert.equal(dom.root.querySelector('#realtimeSquadRadar').hidden,false);
- dom.root.querySelector('#realtimeRadarExpand').onclick();
  assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,false);
  assert.match(dom.root.innerHTML,/class="realtimeMapViewport" id="realtimeMapViewport"/);
  assert.ok(dom.root.innerHTML.indexOf('data-realtime-zoom="1"')<
@@ -121,11 +120,11 @@ test('three teams must each be placed and given an initial strategy on the enlar
   onStart:details=>{began.push(details);return true}
  });
  ui.openDeployment();
- assert.equal(ui.started,false,'opening the small radar never starts combat');
- dom.root.querySelector('#realtimeRadarExpand').onclick();
- assert.equal(ui.isMapOpen,true,'enlarging radar opens the one prebattle setup');
- dom.root.querySelector('#realtimeStart').onclick();
- assert.equal(began.length,0,'cannot begin before placing the teams');
+ assert.equal(ui.started,false,'direct opening of deployment does not start combat');
+ assert.equal(ui.isMapOpen,true,'full deployment opens directly with preselected legal positions');
+ assert.equal(dom.root.querySelector('#realtimeBattleMapOverlay').hidden,false);
+ assert.equal(dom.root.querySelector('#realtimeInitialStrategy').value,'assault',
+  'the first allowed strategy is preselected');
  const map=dom.root.querySelector('#realtimeBattleCanvas');
  for(let n=1;n<=3;n++){
   ui.selectSquad('team'+n);
@@ -205,7 +204,6 @@ test('live panel rejects movement-only and confirms action-target approach or sh
   onPause:()=>{paused=!paused;},getPaused:()=>paused
  });
  ui.openDeployment();
- dom.root.querySelector('#realtimeRadarExpand').onclick();
  const map=dom.root.querySelector('#realtimeBattleCanvas');
  map.tap('pointerdown',{pointerId:7,clientX:65,clientY:118});
  map.tap('pointerup',{pointerId:7,clientX:65,clientY:118});
