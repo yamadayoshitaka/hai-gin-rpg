@@ -15,7 +15,7 @@ import {createCreatureGumSocketGeometry,createCreatureFittedHemGeometry} from '.
 import {createRootedCreatureHornGeometry} from './creature-anatomy-mesh.js';
 import {creatureFaceVolume,sculptAxialFacePoint} from './creature-face-volume.js?v=m001-photo-wolf-v11-20261116';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=sea-dragon-summon-silhouette-v3-20261121';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=monster-all50-pbr-v1-20261121';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[112,80],rock:4,rod:28,tube:[64,16],torus:[16,72]}),
@@ -78,7 +78,7 @@ function material(color,{metal=0.08,rough=.69,glow=false,translucent=false,
    if(m024Surface)decorateM024PBRMaterial(mat,{
      surface,detail,speciesId:spec.id,finish
    });
-   else if(role==='skin'||role==='light'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
+   else if(role==='skin'||role==='light'||role==='shadow'||role==='bone'||role==='mortalSkin'||role==='tailScale'||role==='seaDragonSkin'||role==='fabric'||role==='bandage'||
      role==='leather'||role==='metal'||(spec.family==='golem'&&role==='shadow')||(['m016','m017','m019'].includes(spec.id)&&role==='shadow')){
      decorateMonsterPhotoMaterial(mat,{
        family:spec.family,speciesId:spec.id,role,detail,metal,glow,translucent,

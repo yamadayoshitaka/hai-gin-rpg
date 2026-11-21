@@ -1,0 +1,37 @@
+name: Monster all-50 PBR surface QA
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/monster-all50-surface.js'
+      - 'src/monster-photo-pbr.js'
+      - 'src/monster-shape-kit.js'
+      - 'src/monster-character-cosplay.js'
+      - 'assets/creatures/cc0-aerial-rocks-02-*'
+      - 'qa/monster-all50-pbr-surfaces.test.mjs'
+      - '.github/workflows/monster-all50-surface-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install graphics runtime
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Syntax and material coverage
+        run: |
+          node --check src/monster-all50-surface.js
+          node --check src/monster-photo-pbr.js
+          node --check src/monster-shape-kit.js
+          node --check src/monster-character-cosplay.js
+          npm run test:monster-surfaces
+      - name: Previously approved sculpture / material regressions
+        run: |
+          node qa/monster-realistic-remesh.test.mjs
+          node qa/monster-bestiary.test.mjs

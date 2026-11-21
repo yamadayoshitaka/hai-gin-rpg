@@ -13,7 +13,7 @@ import {applyCanonicalMonsterThemeMotion} from './monster-theme-motion.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createHumanBomRig} from './human-bom-renderer.js';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js';
-import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
+import {createMonsterModel,disposeMonsterSculpture} from './monster-geometry.js?v=monster-all50-pbr-v1-20261121';
 import {startMonsterAction,animateMonsterModel} from './monster-animation.js?v=phoenix-tengu-flight-motion-v14-cere-20261118';
 import {AVIAN_REALISM_REVISION} from './avian-guardian-sculpt.js?v=phoenix-adult-raptor-v14-cere-tengu-flight-20261118';
 import {createHumanoidMonsterCombatMotion} from './monster-humanoid-combat-poses.js?v=4.5.18';
@@ -21,7 +21,9 @@ import {humanoidMonsterCostumeFor} from './monster-character-cosplay-manifest.js
 import {addGothicMonsterSculpt,hasGothicMonsterSculpt}
  from './monster-gothic-sculpt.js?v=4.5.11';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial}
- from './monster-photo-pbr.js';
+ from './monster-photo-pbr.js?v=monster-all50-pbr-v1-20261121';
+import {decorateAll50MonsterSurface}
+ from './monster-all50-surface.js?v=all50-species-materials-v1-20261121';
 import {classifyCosplaySurface,applyMonsterMaterialPigment}
  from './monster-cosplay-pigmentation.js?v=4.5.21';
 import {addConstructMonsterCostume,isConstructCostume,
@@ -261,7 +263,13 @@ function buildMonsterCostume(THREE,model,profile,detail){
     });
     m.userData={golemMaterial:true,photographicHumanAlbedo:false,
      species:profile.id,role};
-    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
+    if(profile.id==='m036'&&['constructBase','constructFacet',
+      'constructDark'].includes(role)){
+      decorateMonsterPhotoMaterial(m,{speciesId:profile.id,
+        family:'golem',role:'skin',detail});
+    }
+    decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
+   enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
     ownedMats.push(m);materials.set(role,m);return m;
    }
    const isMetal=role==='metal'||role==='gold',m=new THREE.MeshStandardMaterial({
@@ -319,6 +327,7 @@ function buildMonsterCostume(THREE,model,profile,detail){
      m.userData.forestVisibleGreen=true;
      m.userData.forestColorRole=role;
    }
+   decorateAll50MonsterSurface(m,{speciesId:profile.id,role,detail});
    enhanceMonsterHumanoidCostumeMaterial(m,{profile,role,detail});
    materials.set(role,m);ownedMats.push(m);
   }

@@ -7,6 +7,8 @@
  * and aquatic creatures use clearcoat/translucency until water scans exist.
  */
 import * as THREE from 'three';
+import {decorateAll50MonsterSurface,complementAll50PhotoNormal,monsterAll50SurfaceStats}
+ from './monster-all50-surface.js?v=all50-species-materials-v1-20261121';
 import {salamanderLineageSurface,salamanderLineageSurfaceStats}
  from './salamander-lineage-surface.js?v=m016-m017-salamander-quality-v21-20261121';
 import {m019VolcanicSurface,m019VolcanicTextureStats}
@@ -24,6 +26,11 @@ export const CREATURE_SURFACE_SOURCES=Object.freeze({
     normal:'../assets/creatures/dragon-scales-normal-v1.webp',
     label:'既存の竜鱗テクスチャ',
     kind:'scales',
+  }),
+  stone:Object.freeze({
+    albedo:'../assets/creatures/cc0-aerial-rocks-02-albedo.jpg',
+    roughness:'../assets/creatures/cc0-aerial-rocks-02-roughness.jpg',
+    normal:null,label:'Poly Haven Aerial Rocks 02 CC0 rock scan',kind:'stone'
   }),
   linen:Object.freeze({
     albedo:'../assets/textures/outfits/linen.jpg',normal:null,
@@ -43,9 +50,12 @@ export const CREATURE_SURFACE_SOURCES=Object.freeze({
   }),
 });
 export const CREATURE_FAMILY_SURFACE=Object.freeze({
-  beast:'fur', feline:'fur', avian:null, reptile:'scales',
-  insect:'scales', arachnid:'scales', undead:'linen', golem:'steel',
-  fiend:'leather', aquatic:null,
+  // Photos are only reused on anatomically matching coats and true scales.
+  // Chitin, arachnid hairs, feathers, stone and living skin get dedicated
+  // microstructure atlases instead of misleading dragon scales/steel/linen.
+  beast:'fur', feline:null, avian:null, reptile:'scales',
+  insect:null, arachnid:null, undead:null, golem:null,
+  fiend:null, aquatic:null,
 });
 
 // Each texture is uploaded to the GPU at most once regardless of monster
@@ -60,6 +70,7 @@ function texture(file,colorData){
  const tex=loader.load(url,undefined,undefined,()=>{
    // Missing texture must not become a white/black creature or block loading.
    for(const m of tex.userData.materialUsers||[]){
+     if(m.roughnessMap===tex)m.roughnessMap=null;
      if(m.map===tex)m.map=null;
      if(m.normalMap===tex)m.normalMap=null;
      m.needsUpdate=true;
@@ -82,7 +93,11 @@ function attachUser(tex,m){
 }
 export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
  detail='high',metal=0,glow=false,translucent=false}={}){
- if(!material||glow||role==='eye'||role==='bone'||role==='accent'||translucent){
+ if(!material||glow||role==='eye'||role==='accent'||translucent){
+   return material;
+ }
+ if(role==='bone'){
+   decorateAll50MonsterSurface(material,{speciesId,family,role,detail,glow,translucent});
    return material;
  }
  // The m016 swamp skin and m017 steel scales share the anatomical
@@ -139,23 +154,31 @@ export function decorateMonsterPhotoMaterial(material,{family,speciesId='',role,
    role==='leather'?'leather':
    role==='seaDragonSkin'||((speciesId==='m048'||speciesId==='m050')&&role==='skin')?'scales':
    (family==='undead'||family==='fiend')?null:
-   (family==='golem'&&speciesId==='m036')?null:
+   (family==='golem'&&speciesId==='m036')?'stone':
    CREATURE_FAMILY_SURFACE[family];
- if(!surfaceId)return material;
+ if(!surfaceId){
+   decorateAll50MonsterSurface(material,{
+     speciesId,family,role,detail,glow,translucent
+   });
+   return material;
+ }
  const src=CREATURE_SURFACE_SOURCES[surfaceId];
  if(!src)return material;
  const albedo=texture(src.albedo,true),normal=texture(src.normal,false);
+ const roughness=texture(src.roughness,false);
+ if(roughness)material.roughnessMap=attachUser(roughness,material);
  if(albedo)material.map=attachUser(albedo,material);
  if(normal&&detail!=='low'){
    material.normalMap=attachUser(normal,material);
    material.normalScale=new THREE.Vector2(.23,.23);
  }
+ if(src.kind==='stone')complementAll50PhotoNormal(material,{speciesId,detail});
  // The source texture supplies microdetail; the specimen's phenotype tint
  // remains in material.color. Roughness & metalness are physically distinct.
  material.roughness=src.kind==='metal'?.38:src.kind==='coat'?.86:
-   src.kind==='scales'?.53:src.kind==='leather'?.72:.9;
+   src.kind==='scales'?.53:src.kind==='leather'?.72:src.kind==='stone'?.96:.9;
  material.metalness=src.kind==='metal'?.66:src.kind==='scales'?.11:
-   src.kind==='leather'?.035:Math.min(metal,.05);
+   src.kind==='leather'?.035:src.kind==='stone'?.015:Math.min(metal,.05);
  material.userData.photoSurface=surfaceId;
  material.userData.photoSource=src.albedo;
  material.needsUpdate=true;
@@ -165,6 +188,7 @@ export function detachMonsterPhotoMaterial(material){
  if(!material)return;
  if(material.map?.userData?.materialUsers)material.map.userData.materialUsers.delete(material);
  if(material.normalMap?.userData?.materialUsers)material.normalMap.userData.materialUsers.delete(material);
+ if(material.roughnessMap?.userData?.materialUsers)material.roughnessMap.userData.materialUsers.delete(material);
 }
 export function monsterPhotoCacheStats(){
  return Object.freeze({
@@ -172,5 +196,6 @@ export function monsterPhotoCacheStats(){
    volcanicTextures:m019VolcanicTextureStats().textureMaps,
    lineageTextures:salamanderLineageSurfaceStats().textureMaps,
    sources:Object.keys(CREATURE_SURFACE_SOURCES).length,
+   all50Surfaces:monsterAll50SurfaceStats(),
  });
 }
