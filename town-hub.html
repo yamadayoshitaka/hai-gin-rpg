@@ -508,9 +508,17 @@ function renderPanel(){
   const selector=armory?'<div class="armorySelect"><label for="equipSquadSelect">装備する隊列（'+squads.length+'隊）</label>'+
    '<select id="equipSquadSelect" aria-label="装備対象の隊列">'+squads.map(s=>'<option value="'+s.id+'" '+(s.id===selectedSquadId?'selected':'')+'>#'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人 / '+escapeHtml(s.rarity||'N')+'</option>').join('')+'</select>'+
    '<div class="armoryGear"><span>武器：'+escapeHtml(weapon?.name||'未装備')+'</span><span>防具：'+escapeHtml(armor?.name||'未装備')+'</span></div></div>':'';
+  const forgeLevel=Math.max(0,Math.min(MAX_WEAPON_FORGE_LEVEL,Math.trunc(Number(selected?.weaponForgeLevels?.[weapon?.id]||0))));
+  const forging=armory?(weapon?
+   '<div class="forgePanel"><b>⚒ '+escapeHtml(weapon.name)+' ＋'+forgeLevel+'</b>'+
+   '<small>攻撃補正 ＋'+Math.round(squadEquipmentBonus(selected).attack*100)+'%'+
+   (forgeLevel>=MAX_WEAPON_FORGE_LEVEL?' ／ 最大まで鍛錬済み':' → 鍛錬後 ＋'+Math.round((squadEquipmentBonus(selected).attack+.05)*100)+'%')+'</small>'+
+   '<button type="button" data-forge-weapon="'+selected.id+'" '+(forgeLevel>=MAX_WEAPON_FORGE_LEVEL||game.wallet<(forgeLevel+1)*100?'disabled':'')+'>'+
+   (forgeLevel>=MAX_WEAPON_FORGE_LEVEL?'鍛錬済み（＋5）':'武器を鍛える（'+((forgeLevel+1)*100)+'G）')+'</button></div>':
+   '<div class="forgePanel"><small>鍛錬する武器を選んで装備してください。</small></div>'):'';
   $('panelContent').innerHTML=
    '<p>'+(armory?'装備する隊列を1つ選び、武器・防具を購入または装備してください。効果は出撃開始時から常時有効です。':'消耗品を購入します。武器・防具は鍛冶屋で購入します。')+'</p>'+
-   (armory?selector+'<div class="controls">'+['武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>':'')+
+   (armory?selector+'<div class="controls">'+['武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>'+forging:'')+
    '<div class="entries">'+rowsHtml(stock,item=>{
     const compatible=!item.jobs||!selected||item.jobs.includes(selected.job);
     return '<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+(compatible?'':' · '+escapeHtml(selected?.job||'')+'は装備不可')+'</small></div><div class="saveSlotActions"><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!selected||!compatible?'disabled':'')+'>装備</button>':'')+'</div></div>';
