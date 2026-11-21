@@ -1,4 +1,4 @@
-export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-pronounced-sideburn-nape-v38';
+export const FACE_HAIR_RUNTIME_BUILD='20261121-buzz-ear-clearance-v39';
 import * as THREE from 'three';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {createFastFaceSurfaceSampler} from './face-feature-meshes.js?v=20261118-facial-relief-v75';
@@ -434,8 +434,8 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
      [-Math.PI/2,.495], // substantially lower, rounded central nape
      [-1.18,.505],      // fuller lower occipital coverage
      [-.78,.575],       // descend behind the ear
-     [-.43,.685],       // fuller coverage above and behind ear
-     [-.18,.705],       // lower front-ear contour
+     [-.43,.725],       // lift hair edge slightly off upper ear
+     [-.18,.755],       // clear front ear rim while retaining sideburn
      [.02,.625],        // pronounced sideburn below the temple
      [.20,.755],        // smooth return to the temple
      [.46,.855],        // keep forehead corner
