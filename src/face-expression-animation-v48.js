@@ -285,6 +285,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    facialAttr.array[k+2]=z+depth*(.009*e.cheek*cheek+
     .008*Math.max(0,e.smile)*lipCorner+muscle.dz+micro.dz);
   }
+  // Exact neutral restoration also preserves signed zeros / donor float32
+  // geometry, eliminating cumulative drift after repeated face changes.
+  if(state.expression==='neutral')facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
   const normals=face.geometry.getAttribute('normal');
   if(normals&&sculptNormalRest&&
