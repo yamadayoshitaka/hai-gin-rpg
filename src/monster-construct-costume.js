@@ -6,6 +6,9 @@
  * bones and preserves the source skeleton/clips. Mobile low LOD is cheaper.
  */
 import * as THREE from 'three';
+import {createConstructMineralTorso,createConstructMineralCranium,
+ createConstructMineralLimb,createConstructCrystalBlade,
+ CONSTRUCT_ANATOMY_REVISION} from './monster-construct-anatomy-v3.js';
 
 const faceted=(v,n)=>Math.round(v*n)/n;
 export const CONSTRUCT_COSTUME_KINDS=Object.freeze([
@@ -84,7 +87,7 @@ export function createConstructHeadPlateGeometry({
  * The source character mesh is concealed by buildMonsterCostume only for
  * construct profiles after the canonical skeleton was successfully loaded.
  */
-export const CONSTRUCT_FULL_SHELL_REVISION='golem-whole-body-no-flesh-v2-20261121';
+export const CONSTRUCT_FULL_SHELL_REVISION=CONSTRUCT_ANATOMY_REVISION;
 export const CONSTRUCT_SHELL_SPECIES=Object.freeze({
  stone_construct:Object.freeze({base:0x737d76,facet:0x9ba59a,trim:0x46564a,
   core:0xa8c982,dark:0x29382f,theme:'jointed-moss-stone'}),
@@ -138,27 +141,31 @@ export function addConstructMonsterCostume({
  const pelvis=frames.pelvis??chest,neck=frames.neck??head;
  // The native donor is invisible. Build complete mineral anatomy including
  // skull, ears, jaw, eyes, throat, chest, waist, all limbs, wrists and soles.
- poly(head,'constructBase','complete-geometric-skull',
-  [0,.007,0],[.183,.214,.166]);
+ add(head,createConstructMineralCranium({detail}),
+  'constructBase','complete-geometric-skull');
  poly(head,'constructFacet','integrated-chin-jaw',
   [0,-.120,-.049],[.132,.095,.119]);
  poly(head,'constructTrim','forehead-brow',
   [0,.139,-.115],[.151,.047,.061]);
  beam(neck,'constructBase','solid-neck-joint',[0,.005,0],.246,.115,.142);
- poly(chest,'constructBase','full-rib-cage',
-  [0,-.036,0],[.345,.425,.270]);
- poly(chest,'constructFacet','breastplate-shoulder-mass',
-  [0,.154,-.018],[.365,.218,.273]);
- poly(pelvis,'constructBase','complete-pelvis',
-  [0,-.055,.005],[.275,.231,.205]);
+ add(chest,createConstructMineralTorso({detail,region:'chest'}),
+  'constructBase','full-rib-cage');
+ for(const side of [-1,1])add(chest,
+  createConstructCrystalBlade({detail,height:.24,waist:.104}),
+  'constructFacet','sculpted-pectoral-facet-'+side,
+  [side*.196,.090,-.207],[.23,0,side*.36]);
+ add(pelvis,createConstructMineralTorso({detail,region:'pelvis'}),
+  'constructBase','complete-pelvis');
  poly(pelvis,'constructTrim','waist-overlap-seal',
   [0,.146,0],[.243,.086,.170]);
  // No human-style round button eyes. Buried sockets and luminous slit pupils.
  for(const side of [-1,1]){
-  poly(head,'constructDark','carved-eye-socket-'+side,
-   [side*.069,.039,-.165],[.055,.036,.028]);
-  poly(head,'constructCore','mineral-inset-iris-'+side,
-   [side*.069,.042,-.190],[.022,.014,.013]);
+  add(head,new Engine.BoxGeometry(.078,.020,.014),
+   'constructDark','carved-eye-socket-'+side,
+   [side*.073,.033,-.160],[0,0,side*.19]);
+  add(head,new Engine.BoxGeometry(.046,.010,.012),
+   'constructCore','mineral-inset-iris-'+side,
+   [side*.073,.038,-.174],[0,0,side*.19]);
   poly(head,'constructFacet','temple-continuation-'+side,
    [side*.15,.055,-.010],[.059,.114,.128]);
   poly(chest,'constructTrim','collar-seam-'+side,
@@ -173,12 +180,12 @@ export function addConstructMonsterCostume({
   const foot=frames.feet?.[i]??shin;
   poly(upper,'constructFacet','sculpted-shoulder-'+i,
    [side*.012,-.012,0],[.195,.204,.188]);
-  beam(upper,'constructBase','upper-arm-shell-'+i,
-   [0,-.205,0],.420,.173,.141,[0,0,side*.045]);
+  add(upper,createConstructMineralLimb({detail,part:'upperArm'}),
+   'constructBase','upper-arm-shell-'+i);
   poly(upper,'constructTrim','upper-elbow-overlap-'+i,
    [0,-.409,0],[.157,.107,.147]);
-  beam(lower,'constructFacet','forearm-shell-'+i,
-   [0,-.205,0],.438,.152,.178);
+  add(lower,createConstructMineralLimb({detail,part:'forearm'}),
+   'constructFacet','forearm-shell-'+i);
   poly(lower,'constructBase','full-mineral-hand-'+i,
    [0,-.454,.018],[.149,.140,.143]);
   for(let j=0;j<3;j++){
@@ -188,12 +195,12 @@ export function addConstructMonsterCostume({
   }
   poly(thigh,'constructTrim','hip-connector-'+i,
    [0,-.008,0],[.181,.155,.168]);
-  beam(thigh,'constructBase','thigh-shell-'+i,
-   [0,-.250,0],.520,.207,.168);
+  add(thigh,createConstructMineralLimb({detail,part:'thigh'}),
+   'constructBase','thigh-shell-'+i);
   poly(thigh,'constructFacet','knee-guard-'+i,
    [0,-.494,-.044],[.181,.134,.188]);
-  beam(shin,'constructBase','shin-shell-'+i,
-   [0,-.244,0],.490,.154,.143);
+  add(shin,createConstructMineralLimb({detail,part:'shin'}),
+   'constructBase','shin-shell-'+i);
   poly(shin,'constructTrim','ankle-connector-'+i,
    [0,-.481,0],[.145,.105,.138]);
   poly(foot,'constructFacet','complete-arched-foot-'+i,
@@ -226,9 +233,13 @@ export function addConstructMonsterCostume({
     [side*.252,.300,.025],[.128,.235,.141],0,[0,0,side*.39]);
    poly(chest,'constructFacet','prismatic-rib-'+side,
     [side*.217,-.066,-.203],[.121,.187,.105]);
-   poly(head,'constructFacet','gemstone-crown-'+side,
-    [side*.098,.218,.011],[.069,.178,.071]);
+   add(head,createConstructCrystalBlade({detail,height:.17,waist:.06}),
+    'constructFacet','swept-crystal-brow-spire-'+side,
+    [side*.105,.152,.041],[side*.25,0,side*.22]);
   }
+  add(head,createConstructCrystalBlade({detail,height:.25,waist:.064}),
+   'constructFacet','center-crown-crystal',
+   [0,.185,.039],[-.16,0,.09]);
  }else if(profile.costume==='stone_construct'){
   for(const side of [-1,1])poly(chest,'constructTrim',
    'ancient-rock-fault-'+side,[side*.211,-.075,-.209],
