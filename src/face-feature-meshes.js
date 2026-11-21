@@ -318,6 +318,9 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const softEyeshadow=new THREE.Color(gender==='female'?makeup[1]:0xa48087);
  const age=resolveAgeBand(settings.ageBand);
  const positions=geometry.getAttribute('position'),colors=[];
+ // Never pass NaN makeup multipliers to Three.js: undefined vertex-color
+ // channels render jet black and formerly mimicked an open mouth.
+ let repairedPigmentVertices=0;
  const mouthTopology=face.userData.v82IntegratedMouth;
  const lipNatural=new THREE.Color(gender==='male'?0xb8867c:0xce9597);
  let actualLipTintVertices=0,actualCheekTintVertices=0;
@@ -412,9 +415,23 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    rgb.lerp(painted,clamp(.64+lipWeight*.36,0,1));
    actualLipTintVertices++;
   }
-  colors.push(rgb.x,rgb.y,rgb.z);
+  // Some legacy donor+makeup combinations generate non-finite colors
+  // on mouth boundary vertices. Keep the original geometry and use
+  // a neutral skin multiplier instead of passing NaNs to the GPU.
+  if(!Number.isFinite(rgb.x)||!Number.isFinite(rgb.y)||
+     !Number.isFinite(rgb.z)){
+   repairedPigmentVertices++;
+   colors.push(1,1,1);
+  }else colors.push(
+   THREE.MathUtils.clamp(rgb.x,.28,1.32),
+   THREE.MathUtils.clamp(rgb.y,.28,1.32),
+   THREE.MathUtils.clamp(rgb.z,.28,1.32));
  }
+ if(colors.length!==positions.count*3)
+  throw Error('Face makeup attribute size differs from head positions');
  setVertexMakeup(face,colors);
+ face.userData.v87RepairedNonFinitePigment=repairedPigmentVertices;
+ face.userData.v87PigmentVerticesValidated=positions.count;
  colorizedMakeup(face,mode==='color');
  face.userData.facePigmentControls={...settings};
  face.userData.activeMakeupType=gender==='female'?Math.max(0,Math.min(9,Math.round(Number(makeupType)||0))):null;
