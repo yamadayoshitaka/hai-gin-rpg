@@ -10,6 +10,7 @@ import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-express
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
 import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=82-integrated-cavity';
 import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
+import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=88';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from './face-anatomy-rig-v80.js?v=80';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
@@ -176,7 +177,7 @@ function buildMouth(face,parts,headSize){
  // V83 public safety mode: a closed original face must never render a
  // fake foreground mouth, protruding teeth or black sphere. The full
  // facial mesh still deforms for smile, jaw, cheeks and brow.
- if(face.userData.v83SafeOriginalMouthTopology)return null;
+ if(face.userData.v83SafeOriginalMouthTopology&&!face.userData.v88NativeOralRig?.ready)return null;
  const upper=parts.getObjectByName('UPPER_3D_VERMILION_LIP');
  const lower=parts.getObjectByName('LOWER_3D_VERMILION_LIP');
  if(!upper||!lower)return null;
@@ -185,7 +186,8 @@ function buildMouth(face,parts,headSize){
  const b=geou.boundingBox;
  const mid=new THREE.Vector3().addVectors(b.min,b.max).multiplyScalar(.5);
  const lipPos=geou.getAttribute('position'), n=Math.floor(lipPos.count/2);
- const integrated=!!face.userData.v82IntegratedMouth?.integrated;
+ const native=face.userData.v88NativeOralRig?.ready===true;
+ const integrated=!!face.userData.v82IntegratedMouth?.integrated||native;
  const frontZ=Math.max(mid.z,lipPos.getZ(n))+headSize.z*.003;
  const material=new THREE.MeshStandardMaterial({
   color:0x43272d,roughness:.94,metalness:0,
@@ -203,7 +205,7 @@ function buildMouth(face,parts,headSize){
  face.add(cavity);
  const oral=createFaceOralAnatomy(face,{
   x:mid.x,y:face.userData.actualMouthCreaseY??mid.y,
-  z:integrated?(face.userData.v82IntegratedMouth.surfaceZ-headSize.z*.022):
+  z:integrated?((face.userData.v82IntegratedMouth?.surfaceZ??frontZ)-headSize.z*.055):
    frontZ-headSize.z*.002,
   width:Math.max(.0001,b.max.x-b.min.x),
   height:headSize.y,depth:headSize.z
@@ -230,7 +232,7 @@ function buildMouth(face,parts,headSize){
    lip.renderOrder=9;
   }
  }
- return {upper,lower,cavity,oral,integrated,
+ return {upper,lower,cavity,oral,integrated,native,
   restU:upper.position.y,restL:lower.position.y,
   height:headSize.y,width:Math.max(.0001,b.max.x-b.min.x)};
 }
@@ -287,7 +289,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  // On sparse donor polygons large cheek displacement creates visible triangular
  // folds. Retain part-rig motion while damping whole-skin deformation only.
- const skinDeformationGain=.55;
+ const skinDeformationGain=.72;
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Muscle channels can blend emotions, dialogue and presets without
  // adding floating expression meshes or permanently changing the donor.
@@ -352,10 +354,11 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   // dragging existing facial triangles into an inverted black fan.
   // Jaw opening awaits genuine manifold topology and visual review.
   const safeOriginalMouth=face.userData.v83SafeOriginalMouthTopology===true;
+  const nativeOral=face.userData.v88NativeOralRig?.ready===true;
   const skinPose=safeOriginalMouth?{
    ...e,open:0,au26:0,
    smile:THREE.MathUtils.clamp(Number(e.smile)||0,-.30,.35)
-  }:e;
+  }:nativeOral?{...e,open:0,au26:0}:e;
   const actionUnits=deriveFacialActionUnits(skinPose);
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
@@ -414,6 +417,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    smoothStudioFaceNormals(face.geometry,{weldTolerance:.00007});
   }
   face.geometry.computeBoundingSphere();
+  captureNativeOralSkinPose(face);
   for(const side of sides)if(side.brow&&side.browRest){
    side.brow.position.y=side.browRest.y+faceSize.y*e.brow*.012;
    side.brow.rotation.z=side.browRest.z+(side.side==='LEFT'?-1:1)*e.tilt*.21;
@@ -448,7 +452,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   const frame=expressionFrame();
   // Never show a fictitious 96% opening while the real donor face has
   // a safely closed topology. Lip deformation is intentionally limited.
-  if(face.userData.v83SafeOriginalMouthTopology){
+  if(face.userData.v83SafeOriginalMouthTopology&&
+     !face.userData.v88NativeOralRig?.ready){
    mouthOpen=0;
    return;
   }
@@ -458,7 +463,11 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   const delta=mouth.height*.053*mouthOpen;
   mouth.upper.position.y=mouth.restU+delta*.14;
   mouth.lower.position.y=mouth.restL-delta*.69;
-  if(mouth.integrated){
+  if(mouth.native){
+   updateNativeOralPose(face,{open:mouthOpen,
+    smile:Number(frame.smile)||0,cheek:Number(frame.cheek)||0});
+   smoothStudioFaceNormals(face.geometry,{weldTolerance:.00007});
+  }else if(mouth.integrated){
    // These vertices are owned by the HEAD geometry; no mouth silhouette
    // is drawn above the face and the same vertices carry lipstick.
    const updated=poseIntegratedMouth(face,{
@@ -586,6 +595,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v87BuildSignature:'face-v87-anatomical-mouth-corners-20261122',
    v87MouthWidth:face.userData.v87AnatomicalMouthWidth||1,
    v87OriginalSkinMouthWidth:!!face.userData.v87MouthWidthOnOriginalSkin,
+   v88BuildSignature:'face-v88-native-oral-structural-facs-20261122',
+   v88OralAnatomy:getNativeOralRigReport(face),
+   v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
    v86OralSealTriangles:face.userData.v86OralSealSummary?.addedTriangles||0,
    v86OralSealFailure:face.userData.v86OralSealSummary?.reason||null,
