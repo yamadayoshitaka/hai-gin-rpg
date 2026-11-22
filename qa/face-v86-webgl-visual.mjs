@@ -3,7 +3,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 
-const url='http://127.0.0.1:8765/face-mesh-studio.html?qa=expression';
+const url='http://127.0.0.1:8765/face-mesh-studio.html?qa=expression&retopo=1';
 const out='qa/screenshots/face-v88';
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:[
