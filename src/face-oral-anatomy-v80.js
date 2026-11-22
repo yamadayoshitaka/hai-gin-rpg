@@ -20,15 +20,15 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
  face.add(root);
 
  const enamel=new THREE.MeshPhysicalMaterial({
-  color:0xdedbd1,roughness:.30,metalness:0,clearcoat:.18,
-  clearcoatRoughness:.27
+  color:0xe3ded4,roughness:.27,metalness:0,clearcoat:.34,
+   clearcoatRoughness:.17,ior:1.52
  });
  const gums=new THREE.MeshStandardMaterial({
-  color:0x87525a,roughness:.80,metalness:0
+  color:0x94636a,roughness:.67,metalness:0
  });
  const tongueMat=new THREE.MeshPhysicalMaterial({
-  color:0x9b5760,roughness:.59,metalness:0,clearcoat:.12,
-  clearcoatRoughness:.39
+  color:0xa65f66,roughness:.46,metalness:0,clearcoat:.28,
+   clearcoatRoughness:.24
  });
  const midlineMat=new THREE.MeshStandardMaterial({
   color:0x8d4d56,roughness:.79
