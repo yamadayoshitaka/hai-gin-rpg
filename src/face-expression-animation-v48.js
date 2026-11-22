@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
-import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=82-integrated-cavity';
+import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=88-native-dental-cache';
 import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
 import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=88';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
