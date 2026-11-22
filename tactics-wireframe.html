@@ -9298,21 +9298,14 @@ miniCanvas.addEventListener('pointerup',event=>{
   return;
  }
  if(pickingSquadDestination||pickingSquadMission||pickingStrategistWarp){handleTacticalMapTap(point);drawSquadMiniMap();return;}
- const nearest=squadIds.map(id=>({id,center:squadCenter(id)})).filter(o=>o.center)
-  .sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
- // A tap of the radar always selects the distant, near-vertical battlefield
- // view. It never preserves the close camera that previously made the radar
- // appear broken. Squad command menus must never open from radar taps.
- // Radar is navigation only. Squad commands are accessed from left-side
- // labels and the explicit squad-select control, never from radar taps.
- const focusPoint=nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<15?
-  nearest.center:point;
- const x=(focusPoint.x-6)*CELL,z=(focusPoint.z-6)*CELL;
- focusedHumanUnitId=null;followCamera=false;
- manualCameraSquad=null;manualCameraFocusUntil=0;
- battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
- setBattleCamera(new THREE.Vector3(x,terrainY(x,z),z),cameraOverviewOffset);
- setCameraActive('camOverview');
+ // Only actual numbered command-team pins move the camera.
+ const px=(event.clientX-rect.left)/rect.width;
+ const pz=(event.clientY-rect.top)/rect.height;
+ const pins=realtimeCommandUI?.radarPins??[];
+ const nearest=pins.map(pin=>({...pin,distance:Math.hypot(pin.x-px,pin.y-pz)}))
+  .sort((a,b)=>a.distance-b.distance)[0];
+ if(!nearest||nearest.distance>.085)return;
+ focusCommandTeam(nearest.team,nearest.id);
  drawSquadMiniMap();
 });
 drawSquadMiniMap();
@@ -9487,39 +9480,18 @@ function zoomToSquadMember(id,team){
  return true;
 }
 function activateSquadLabel(id,team,x=0,y=0){
- battleRpgHud?.select(team,team===0&&THREE_TEAM_BATTLE?
-  'team:'+normalizeArmyGroup(armyGroupBySquad[String(id)]):id);
- // Show the inspection strip only after the double-tap window expires.
- // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished||squadCloseupLabelsHidden||
    performance.now()-lastCircleTargetResolvedAt<1500)return;
  if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
  lastSquadCircleTap=tap.pending;
- // One tap of the ACTUAL circular squad badge reveals the camera chooser.
- // Keep the existing double-tap close-up and delay camera movement only,
- // never the inspector: Android shows immediate visual feedback.
  cancelPendingSquadCircleInfo();
- if(tap.doubleTap){
-  zoomToSquadMember(id,team);
-  return;
- }
- selectOverviewSquad(team,id);
+ if(tap.doubleTap){zoomToSquadMember(id,team);return;}
  closeSquadCircleInfo();
  if(!$('squadTactics').hidden)closeSquadTactics();
  if(!$('enemySquadIntel').hidden){$('enemySquadIntel').hidden=true;selectedEnemySquadId=null;}
- pendingSquadCircleInfoTimer=setTimeout(()=>{
-  pendingSquadCircleInfoTimer=null;
-  if(!battleReady||finished||squadCloseupLabelsHidden||!lastSquadCircleTap||
-     lastSquadCircleTap.key!==key||lastSquadCircleTap.at!==now)return;
-  // One tap selects a perspective and opens the shared view chooser;
-  // double-tap still has its original character zoom behaviour.
-  if(selectOverviewSquad(team,id)){
-   lastTeamCameraSquad.set(team,String(id));
-   applyOverviewCamera('squad');
-  }
- },SQUAD_CIRCLE_DOUBLE_TAP_MS);
+ focusCommandTeam(team,id);
 }
 function makeSquadLabel(id,team){
  // Keep an invisible world-space hit target, but show squad names as HTML:
@@ -9618,7 +9590,7 @@ for(const team of [0,1]){
   pin.append(title,count);
   pin.dataset.squadKey=key;
   pin.setAttribute('aria-label',(team?'敵':'味方')+squadName(id,team)+'の位置と作戦を表示');
-  pin.onclick=()=>selectOverviewSquad(team,id);
+  pin.onclick=()=>focusCommandTeam(team,id);
   overviewPins.append(pin);
   const line=document.createElementNS(overviewSvgNS,'path');
   line.setAttribute('stroke',team?'#ffadbb':'#a2e4ff');
@@ -9651,6 +9623,23 @@ function selectOverviewSquad(team,id){
  syncOverviewSelectionHighlight();
  if(team===0)trackedAllySquadId=String(id);
  return true;
+}
+// Group-level camera selection is the only default path from map/HUD taps.
+function resolveCameraSquadId(team,id){
+ const raw=String(id);
+ if(!THREE_TEAM_BATTLE)return raw;
+ const groupName=team===0?'team:':'enemy-team:';
+ if(!raw.startsWith(groupName))return raw;
+ const group=Number(raw.slice(groupName.length));
+ const ids=team===0?squadIds:enemySquadIds;
+ return ids.find(sid=>(team===0?normalizeArmyGroup(armyGroupBySquad[String(sid)]):
+  Number(enemyGroupBySquad?.[String(sid)]))===group&&
+  Boolean(squadCommandFocus(sid,team)))??null;
+}
+function focusCommandTeam(team,id){
+ const squadId=resolveCameraSquadId(team,id);
+ if(squadId==null||!selectOverviewSquad(team,squadId))return false;
+ return applyOverviewCamera('squad');
 }
 function renderOverviewSquadInspector(force=false){
  const node=overviewPinNodes.get(overviewSelectedKey);
