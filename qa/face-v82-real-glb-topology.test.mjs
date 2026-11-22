@@ -450,7 +450,7 @@ test('v102 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
  const measured={crest,lower,nose,crestMean:crestSum/Math.max(1,crest),
   lowerMean:lowerSum/Math.max(1,lower),crestRetreated,noseMaxY,noseMaxZ,
   noseTipMaxZ,tipSamples};
- console.log('V102_REAL_GLb_CHEEK_NOSE_AB',JSON.stringify(measured));
+ console.log('V102_REAL_GLb_CHEEK_NOSE_AB',JSON.stringify(measured),JSON.stringify(after.report.v102CheekContour));
  assert.ok(crest>8&&lower>8&&nose>8,
   'Audit must cover real CC0 malar/lower-cheek and nasal vertices');
  assert.ok(crestRetreated>8,
