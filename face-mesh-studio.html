@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#14263a">
 <!-- Pages publication retry: scalp v29 c937964d; requested visual verification 2026-11-21 -->
 <!-- FaceHair Pages redeploy checkpoint: 2026-11-21 v23 publication retry; verify runtime build badge -->
-<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v107</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v111</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -259,6 +259,7 @@ import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SE
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
 import {youngHeroMaleControls} from './src/hero-youthful-appearance-v50.js?v=50';
 import {applyHeroineSkinMaterial} from './src/heroine-skin-material.js?v=91-preserve-live-lip-shader';
+import {requestRealSkinPhotoMaps} from './src/face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {FEMALE_V7_DEFAULTS,MALE_REFERENCE_DEFAULT,FACE_SLIDER_RANGES,FACE_EYE_SPACING_DEFAULT,FACE_EYE_SPACING_RANGE,CONTACT_COLORS,CONTACT_COLOR_LABELS,safeContactColor,normalizeFemaleFaceControls,normalizeMaleFaceControls} from './src/face-v7-controls.js?v=20261122-v107-mouth-default';
 const $=id=>document.getElementById(id);
 for(const [key,preset] of Object.entries(FACE_EXPRESSIONS)){
@@ -1767,6 +1768,9 @@ async function init(){
   for(const sex of ['female','male'])refreshExpression(sex);
   if(savedHeroinePreset?.hairDensity){$('wigDensity').value=String(wigDensity);
    $('wigDensityValue').value=String(wigDensity)+'束';}
+  // Wait for photographic roughness/bump readiness or its safe fallback.
+  // It shares the very same ESM promise used by the two face materials.
+  await requestRealSkinPhotoMaps();
   // V111 atomic first paint: both head roots remain invisible until
   // topology, normals, material, expressions and all initial hair are ready.
   // No rAF yield or visible selectGender occurs between these operations.
