@@ -70,7 +70,7 @@ test('RPG status is sourced from real squads but collapsed by default to reveal 
  assert.match(battle,/createBattleRpgSquadHud/);
  assert.match(battle,/makeBattleRpgStatusRows/);
  assert.match(battle,/refreshBattleRpgSquadHud\(sums\)/);
- assert.match(battle,/battleRpgHud\?\.select\(team,team===0&&THREE_TEAM_BATTLE\?/);
+ assert.match(battle,/focusCommandTeam\(Number\(team\),id\)/);
  assert.match(battle,/label\.userDataSquadTitle\.textContent/);
  assert.match(battle,/realtimeCommandUI\?\.update\(rows\)/);
  assert.match(map,/realtimeRoster/);
@@ -202,9 +202,9 @@ test('single tap focuses camera; double tap opens allied orders; overview camera
  const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.match(js,/function handleSquadTap\(team,id\)/);
  assert.match(js,/lastTap\?\.key===key&&now-lastTap\.at<=380/);
- assert.match(js,/if\(team===0\)onCommand\(team,String\(id\)\)/);
+ assert.match(js,/if\(doubleTap&&team===0\)\{onCommand\(team,String\(id\)\);return;\}/);
  assert.match(js,/onFocus\(team,String\(id\)\)/);
- assert.match(js,/pendingTapTimer=setTimeout/);
+ assert.doesNotMatch(js,/pendingTapTimer=setTimeout/,'single-tap camera switching must be immediate');
  assert.match(js,/if\(pendingTapTimer!==null\)clearTimeout\(pendingTapTimer\)/);
  assert.match(html,/cameraOverviewOffset=new THREE\.Vector3\(110,510,110\)/);
 });
