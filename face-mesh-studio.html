@@ -254,6 +254,7 @@ import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from 
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=80-nine-age-bands';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
 import {v110InitialFemaleFaceState} from './src/face-initial-preview-v110.js?v=110-approved-normal-mesh';
+import {migrateV114UneditedAutoSavedEyes} from './src/face-v114-eye-migration.js?v=20261123-v114-natural-realistic-eyes';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=20261118-art-lash-v2';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
@@ -421,6 +422,21 @@ if(v32PartMode){
  }
  wired=initialFaceV110.defaultWireframe;
  faceMode=initialFaceV110.defaultView;
+}
+// V114 migration applies ONLY to auto-saved default round eyes, not
+// intentionally edited eyes, selected alternate eyes, hair or makeup.
+// This runs BEFORE the very first 3D GLB clone/rig build, so a reload
+// cannot show the old startled eyes first and then switch after repaint.
+if(v32PartMode&&savedHeroinePreset){
+ const defaultEye=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
+ const naturalEye=resolveEditedFaceControls('female',defaultEye.controls,
+  v32Parts.female.ageBand,v32Parts.female.bodyType,
+  manualFaceOverrides.female,false);
+ const migration=migrateV114UneditedAutoSavedEyes({
+  savedPreset:savedHeroinePreset,parts:v32Parts.female,controls:modelChanges,
+  manualOverrides:manualFaceOverrides.female,naturalControls:naturalEye
+ });
+ if(migration.changed)modelChanges=normalizeFemaleFaceControls(migration.controls);
 }
 // V107: migrate the old unedited .65/.85 female neutral mouth to .78.
  // Keep custom mouth-width overrides and all male settings unchanged.
