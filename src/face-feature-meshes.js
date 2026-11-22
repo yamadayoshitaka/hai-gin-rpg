@@ -1125,6 +1125,63 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     optic.geometry.computeBoundingSphere();
     optic.userData.eyelinerMeasuredDepthCorrection=fit.correctionZ;
    }
+   // V115: a centre-Z fit alone did not protect the optical perimeter.
+   // The sclera could poke IN FRONT OF the eyeliner near the upper outer
+   // lid, leaving the photographed white wedge above a floating liner.
+   // Preserve the curved corneal centre and pull ONLY boundary positions
+   // behind the paired 3D eyeliner rim. No additional subdivision.
+   let v115ClampedOpticalVertices=0,v115MaxBeforeRimOvershoot=0;
+   if(female){
+    const limitAt=(u,upper)=>{
+     const liner=upper?upperEyeliner:lowerEyeliner;
+     return sampleGrid(liner,48,3,u,.25).z-eyeRadius*.018;
+    };
+    const skin=eyePatch.geometry.getAttribute('position');
+    for(let j=0;j<=28;j++)for(let i=0;i<=64;i++){
+     const u=i/64,v=j/28,k=j*65+i;
+     const near=Math.max(0,(Math.abs(v-.5)*2-.70)/.30);
+     if(near<=0)continue;
+     const target=limitAt(u,v>.5),zBefore=skin.getZ(k);
+     const excess=Math.max(0,zBefore-target);
+     v115MaxBeforeRimOvershoot=Math.max(v115MaxBeforeRimOvershoot,excess);
+     if(excess>1e-9){
+      const gain=near*near*(3-2*near);
+      skin.setZ(k,zBefore-excess*gain);
+      v115ClampedOpticalVertices++;
+     }
+    }
+    skin.needsUpdate=true;
+    eyePatch.geometry.computeVertexNormals();
+    eyePatch.geometry.computeBoundingSphere();
+    // The round iris and pupil remain genuine curved circles. Tuck only
+    // the thin outer lip beneath the closest liner when near an eyelid;
+    // do not vertically clip the iris into a flat polygon stripe.
+    for(const optic of [iris,pupil]){
+     const attr=optic.geometry.getAttribute('position');
+     for(let k=0;k<attr.count;k++){
+      const px=attr.getX(k),py=attr.getY(k);
+      const u=clamp((px-(x-width))/(2*width),0,1);
+      const fitted=v114NaturalEyeAperture({t:2*u-1,side,radius:eyeRadius,
+       halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
+      const topDistance=y+fitted.top-py,lowDistance=py-(y+fitted.bottom);
+      const towardUpper=topDistance<lowDistance;
+      const clearance=Math.min(topDistance,lowDistance);
+      const gain=clamp(1-clearance/(eyeRadius*.11),0,1);
+      if(gain<=0)continue;
+      const target=limitAt(u,towardUpper)-eyeRadius*.004;
+      const current=attr.getZ(k),excess=Math.max(0,current-target);
+      if(excess>1e-9){
+       attr.setZ(k,current-excess*gain*gain*(3-2*gain));
+       v115ClampedOpticalVertices++;
+      }
+     }
+     attr.needsUpdate=true;optic.geometry.computeVertexNormals();
+     optic.geometry.computeBoundingSphere();
+    }
+   }
+   eyePatch.userData.v115ClampedOpticalVertices=v115ClampedOpticalVertices;
+   eyePatch.userData.v115LidRimOverflowBefore=v115MaxBeforeRimOvershoot;
+   eyePatch.userData.v115OpticalPerimeterSeatedInsideLiners=female;
    eyeAnteriorClearances[eyeAnteriorClearances.length-1]+=
     fit.correctionZ/eyeRadius;
    irisUpperLidRecessRatios[irisUpperLidRecessRatios.length-1]-=
@@ -1498,6 +1555,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   v114IrisOpeningFraction:female?.928:.815,
   v114PupilRelativeIrisMax:female?.49:null,
   v114ReferenceEyes:'natural-partially-lidded-brown-iris',
+  v115OpticalRimSeatedToEyeliner:female,
+  v115EyelashesFollowEachMovingLiner:female,
+  v115IndividualCurledLashFilaments:female,
   v114LowerEyelidRollOnRealMesh:female,
   v114EyeSocketCarveAlignedToLids:female,
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
