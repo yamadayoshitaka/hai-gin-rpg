@@ -16,6 +16,11 @@ test('v96 neutral mouth is identical, large smile opens an oval rather than a V'
  const midUpper=at(.55,1),midLower=at(.55,-1);
  const edgeUpper=at(1,1),edgeLower=at(1,-1);
  assert.ok(centerUpper.opening>midUpper.opening);
+  assert.ok(centerUpper.opening+centerLower.opening>.015,
+   'Large smile must expose a real oral opening');
+  assert.ok(at(.8,1).elliptical>0,'Rounded smile keeps a shoulder');
+  assert.ok(at(.9999,1).opening<at(.99,1).opening*.1,
+   'Oral aperture slope vanishes at commissures instead of a sharp V');
  assert.ok(midUpper.opening>edgeUpper.opening);
  assert.equal(edgeUpper.opening,0);
  assert.ok(centerUpper.dy>0&&centerLower.dy<0);
