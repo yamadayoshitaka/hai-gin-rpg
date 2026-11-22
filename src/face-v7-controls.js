@@ -93,7 +93,7 @@ export function normalizeFemaleFaceControls(settings={}){
  // face slider value and provide stable neutral defaults for new features.
  const extras={eyeWidth:1,eyeHeight:1,browWidth:1,browThickness:1,
   lashDensity:1,lashLength:1.4,lashThickness:1,lashCurl:.85,
-  faceMorph:0,mouthSmile:0,mouthWidth:.425,eyePositionY:0,
+  faceMorph:0,mouthSmile:0,mouthWidth:.65,eyePositionY:0,
   nosePositionX:0,nosePositionY:0,nosePositionZ:0,noseAngle:0,
   mouthPositionX:0,mouthPositionY:0,mouthPositionZ:0,mouthAngle:0};
  for(const [key,fallback] of Object.entries(extras)){
