@@ -19,13 +19,16 @@ export function naturalLaughLipDelta({t=0,sign=1,smile=0,open=0,cheek=0,
  width=1,height=1,depth=1}={}){
  const x=clamp(t,-1,1),edge=Math.abs(x),s=clamp(smile),o=clamp(open),
   c=clamp(cheek),top=sign>=0;
- const elliptical=Math.pow(Math.max(0,1-x*x),.48);
- const mouthSpread=.125*s*(.30+.70*smooth(.23,.92,edge));
+ // Zero-slope commissures avoid the pointy V from the former fractional cusp.
+  const elliptical=Math.pow(Math.max(0,1-Math.pow(edge,2.6)),1.32);
+ const mouthSpread=.085*s*(.22+.78*smooth(.23,.92,edge));
  const dx=x*width*mouthSpread;
  // Corners rise as part of the cheek, rather than forming a pointed V.
- const cornerLift=height*(.008*s+.0025*c)*smooth(.45,.97,edge);
+ const cornerLift=height*(.009*s+.0025*c)*smooth(.45,.97,edge);
  // Central aperture grows as a broad oval; lower lip has more jaw travel.
- const opening=height*.040*o*elliptical*(top?.43:.57);
+ // v96's original 4%-of-head-height opening still looked closed in
+  // the framebuffer. Give the real lip rim more central jaw travel.
+  const opening=height*.078*o*elliptical*(top?.43:.57);
  const dy=cornerLift+(top?opening:-opening);
  const dz=depth*(.0018*c*bell(edge,.62,.22)-
   .0009*o*elliptical);
@@ -39,15 +42,15 @@ export function naturalLaughLipDelta({t=0,sign=1,smile=0,open=0,cheek=0,
 export function naturalSmileCheekDelta({ax=0,ny=.56,front=1,
  smile=0,cheek=0,mouthY=.509,ageWrinkles=0}={}){
  const s=clamp(smile),c=clamp(cheek),f=clamp(front),age=clamp(ageWrinkles);
- const upper=bell(ax,.263,.105)*bell(ny,mouthY+.092,.073)*f;
- const lower=bell(ax,.283,.120)*bell(ny,mouthY+.032,.080)*f;
+ const upper=bell(ax,.263,.139)*bell(ny,mouthY+.092,.092)*f;
+ const lower=bell(ax,.283,.145)*bell(ny,mouthY+.032,.099)*f;
  const nasolabial=bell(ax,.140,.044)*bell(ny,mouthY+.058,.054)*f;
  const underEye=bell(ax,.170,.060)*bell(ny,mouthY+.162,.040)*f;
  const strength=Math.max(s*.65,c);
  // Lift cheek pad rather than cutting a deep nasolabial groove.
  const dy=.0068*strength*upper+.0028*s*lower;
  const dz=(.0090*strength*upper+.0038*s*lower)*
-  (1-.28*age)-.00055*s*nasolabial;
+  (1-.28*age)-.00020*s*nasolabial;
  return {dxOut:.0015*s*lower,dy,dz,
   cheekSupport:upper,nasolabialWeight:nasolabial,
   lowerLidCompress:.0020*strength*underEye};
