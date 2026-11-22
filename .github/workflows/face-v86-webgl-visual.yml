@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'src/face-feature-meshes.js'
+      - 'src/face-v96-smile-cosmetics.js'
       - 'src/face-mouth-seal-v86.js'
       - 'src/face-native-oral-rig-v88.js'
       - 'src/face-oral-anatomy-v80.js'
