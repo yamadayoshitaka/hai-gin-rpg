@@ -27,7 +27,7 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v91確認済');
+   ?.includes('実行JS：v92確認済');
  },null,{timeout:90000});
  // Reproduce the reported Android appearance: female / 20s / ultra-thin.
  // The former QA only exercised the default body profile.
