@@ -46,14 +46,16 @@ try{
  // Read the actual WebGL canvas immediately after an explicit render.
  // Playwright page/element screenshots intermittently time out while this
  // animated Three.js preview resizes, even with CSS animations disabled.
+ let neutralFrame=null;
  for(const expression of ['neutral','laugh','surprised']){
   await page.locator('#faceExpression').selectOption(expression);
   await page.waitForTimeout(320);
   const capture=await page.evaluate(()=>{
    const frame=window.__faceExpressionQA.captureWebGLFrame();
    const seal=window.__faceExpressionQA.nativeLipProbe();
+   const pose=window.__faceExpressionQA.nativePoseProbe();
    const canvas=document.getElementById('faceCanvas').getBoundingClientRect();
-   return {frame,seal,canvasSize:{width:canvas.width,height:canvas.height}};
+   return {frame,seal,pose,canvasSize:{width:canvas.width,height:canvas.height}};
   });
   assert.ok(capture.frame?.startsWith('data:image/png;base64,'),
    'Real WebGL framebuffer must be exported as an actual PNG');
@@ -61,6 +63,14 @@ try{
   writeFileSync(out+'/'+expression+'.png',buffer);
   const png=PNG.sync.read(buffer);
   native=capture.seal;
+  console.log('FACE_V88_POSE',JSON.stringify(capture.pose));
+  if(expression==='neutral'){
+   assert.ok((capture.pose.mouthOpen??1)<.02,'Neutral 3D jaw must be closed');
+  }else{
+   assert.ok(capture.pose.mouthOpen>.5,'Laugh/surprise must open the actual jaw');
+   assert.equal(capture.pose.nativeWallVisible,true,'Native oral vestibule must be visible');
+   assert.equal(capture.pose.teethVisible,true,'Teeth and tongue must animate with jaw');
+  }
   const {x,y,width,height}=native.rect;
   assert.ok(width>25&&height>20,'Must sample a real projected mouth region');
   let total=0,black=0,skin=0;
@@ -101,6 +111,17 @@ try{
      console.log('FATAL_MISMATCH_FACE_COLOR '+JSON.stringify(hit.geometryStats));
     }
    }
+  }
+  if(expression==='neutral')neutralFrame=png;
+  else if(neutralFrame){
+   let moved=0;
+   for(let yy=minY;yy<maxY;yy++)for(let xx=minX;xx<maxX;xx++){
+    const i=(yy*png.width+xx)*4;
+    if(Math.max(...[0,1,2].map(c=>Math.abs(png.data[i+c]-neutralFrame.data[i+c])))>12)
+     moved++;
+   }
+   console.log('FACE_V88_ORAL_VISUAL_DELTA',JSON.stringify({expression,moved,total}));
+   assert.ok(moved>60,'Jaw changed in JS but the rendered clipped 3D mouth did not move');
   }
   const blackPercent=total?black/total*100:100;
   const skinPercent=total?skin/total*100:0;
