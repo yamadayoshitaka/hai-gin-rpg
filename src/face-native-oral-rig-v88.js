@@ -205,13 +205,24 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
   if(w<.0001)continue;
   const sx=centerSign[i];
   const x=skinBase[k],y=skinBase[k+1],z=skinBase[k+2];
-  // Animate the original connected lip edge, not a 51% X stretch.
-  const pose=naturalLaughLipDelta({t:(x-cx)/Math.max(halfWidth,1e-7),
-   sign:sx,smile:s,open:o,cheek:c,width:halfWidth,
-   height:size.y,depth:size.z});
-  attr.array[k]=x+w*pose.dx;
-  attr.array[k+1]=y+w*pose.dy;
-  attr.array[k+2]=z+w*pose.dz;
+  if(face.name.startsWith('FEMALE_')){
+   // The original connected female lip loop opens as a smooth oval.
+   const pose=naturalLaughLipDelta({t:(x-cx)/Math.max(halfWidth,1e-7),
+    sign:sx,smile:s,open:o,cheek:c,width:halfWidth,
+    height:size.y,depth:size.z});
+   attr.array[k]=x+w*pose.dx;
+   attr.array[k+1]=y+w*pose.dy;
+   attr.array[k+2]=z+w*pose.dz;
+  }else{
+   // The male rig is outside this female v96 sculpt change.
+   const t=(x-cx)/Math.max(halfWidth,1e-7);
+   const arch=Math.pow(Math.max(0,1-Math.min(1,t*t)),.52);
+   const smileLift=(Math.abs(t)**1.8)*(size.y*.0075*s+size.y*.002*c);
+   const opening=arch*size.y*.042*o*(sx>=0?.24:.76);
+   attr.array[k]=x+(x-cx)*.51*s*w;
+   attr.array[k+1]=y+w*(smileLift+(sx>=0?opening:-opening));
+   attr.array[k+2]=z-size.z*.0017*o*w;
+  }
  }
  attr.needsUpdate=true;
  if(active){
