@@ -1466,14 +1466,23 @@ export function createRealtimeBattleCommands({
   if(mode==='inspect'){
    const ix=px*(canvas.width||464),iy=pz*(canvas.height||464);
    const pin=findBattleMapPin(mapInspectionPins,ix,iy,{radius:26});
-   if(!pin){
-    $('realtimeMapMessage').textContent='青・赤の部隊番号をタップしてください。';
+   if(pin){
+    inspectedMapPin={...pin};inspectedBuilding=null;
+    // One tap on a command-team pin switches the live 3D camera.
+    closeMap();
+    onRadarFocus(pin.team,pin.id);
     return;
    }
-   inspectedMapPin={...pin};inspectedBuilding=null;
-   // Expanded map selects a whole command team; no per-job/building focus.
-   closeMap();
-   onRadarFocus(pin.team,pin.id);
+   // Retain the separate building-floor picker for exploration missions.
+   // A building selection inspects a floor but never moves the 3D camera.
+   const building=mapInspectionBuildings.map(b=>({...b,
+    distance:Math.hypot(b.px-ix,b.py-iy)})).sort((a,b)=>a.distance-b.distance)[0];
+   if(building&&building.distance<=23){
+    inspectedBuilding={id:building.id,floor:1};inspectedMapPin=null;
+    $('realtimeMapMessage').textContent='建物を選択しました。表示する階を選んでください。';
+    drawMap();return;
+   }
+   $('realtimeMapMessage').textContent='青・赤の部隊番号または建物をタップしてください。';
    return;
   }
   if(mode==='deploy'){
