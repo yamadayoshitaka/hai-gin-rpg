@@ -68,16 +68,18 @@ assert.match(html,/followCamera=true;targetViewFollowing=true;battleViewMode='co
  'Double-tap must close previous squad information before a character close-up');
 assert.match(html,/syncSquadCloseupLabels\(\);\s*setCameraActive\(null\)/,
  'Camera close-up must immediately hide squad overlays without a frame of flicker');
-assert.match(html,/pendingSquadCircleInfoTimer=setTimeout\(\(\)=>\{/,
- 'Single-tap info waits until the gesture is unambiguously a single tap');
-assert.match(html,/\},SQUAD_CIRCLE_DOUBLE_TAP_MS\);/,
- 'Single-tap render delay uses the same window as double-tap detection');
+const circle=html.slice(html.indexOf('function activateSquadLabel(id,team,'),
+ html.indexOf('function makeSquadLabel(',html.indexOf('function activateSquadLabel(id,team,')));
+assert.match(circle,/focusCommandTeam\(team,id\)/,
+ 'Single tap focuses the squad without waiting for the double tap window');
+assert.doesNotMatch(circle,/pendingSquadCircleInfoTimer=setTimeout/,
+ 'The first tap must not be delayed by an inspector timer');
 assert.match(html,/if\(tap.doubleTap\)\{\s*zoomToSquadMember\(id,team\);\s*return;/,
  'Double-tap zoom never reopens the squad status strip');
 assert.match(html,/function closeSquadCircleInfo\(\)\{\s*cancelPendingSquadCircleInfo\(\);/,
  'Closing info must also cancel a pending delayed display');
-assert.match(html,/if\(!battleReady\|\|finished\|\|squadCloseupLabelsHidden\|\|!lastSquadCircleTap\|\|/,
- 'The delayed info timer must not reopen the strip in close-up mode');
+assert.match(circle,/cancelPendingSquadCircleInfo\(\)/,
+ 'Single-tap focus clears any obsolete inspector timer');
 assert.equal(SQUAD_CLOSEUP_HIDE_DISTANCE,12);
 assert.equal(SQUAD_CLOSEUP_SHOW_DISTANCE,16);
 assert.equal(shouldHideSquadLabelsAtDistance(8.8,false),true,'8.8m close-up hides all squad labels');
