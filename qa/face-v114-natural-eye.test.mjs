@@ -4,6 +4,7 @@ import {v114NaturalEyeAperture} from '../src/face-feature-meshes.js';
 import {PART_CATALOG,defaultPartSelection,resolvePartSelection} from '../src/face-part-catalog-v32.js';
 import {LIBRARY_FACE_PRESET,normalizeFemaleFaceControls} from '../src/face-v7-controls.js';
 import {resolveEditedFaceControls} from '../src/face-state-v49.js';
+import {AGE_PROFILES} from '../src/character-demographics-v47.js';
 
 test('v114 shared almond eyelid curve is closed at each canthus and has natural slightly hooded upper lid',()=>{
  for(const side of [-1,1]){
@@ -48,7 +49,7 @@ test('v114 default feminine eye profile is narrower, longer and has a larger bro
  const selected=resolvePartSelection('female',parts);
  const normal=resolveEditedFaceControls('female',selected.controls,
   'twenties','normal',{},false);
- assert.ok(Math.abs(normal.eyeHeight-a.values.eyeHeight)<1e-6);
+ assert.ok(Math.abs(normal.eyeHeight-a.values.eyeHeight*AGE_PROFILES.twenties.eyelidScale)<1e-6);
  assert.ok(Math.abs(normal.eyeWidth-a.values.eyeWidth)<1e-6);
  const thin=resolveEditedFaceControls('female',selected.controls,
   'twenties','thin',{},false);
@@ -58,7 +59,7 @@ test('v114 default feminine eye profile is narrower, longer and has a larger bro
  assert.ok(Number.isFinite(thin.eyeHeight));
  const changed=resolveEditedFaceControls('female',selected.controls,
   'twenties','normal',{eyeHeight:1.14,irisDiameter:.98},false);
- assert.equal(changed.eyeHeight,1.14,
+ assert.ok(Math.abs(changed.eyeHeight-1.14*AGE_PROFILES.twenties.eyelidScale)<1e-8,
   'Explicit eye settings must never be overwritten by new default');
  assert.equal(changed.irisDiameter,.98);
 });
