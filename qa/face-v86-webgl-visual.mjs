@@ -199,6 +199,33 @@ try{
   assert.ok(blackPercent<6,
    'Mouth still contains the large pure-black polygonal defect');
  }
+ // v95: prior QA rendered frontal only; large unflattering nose and
+ // cheek discontinuity were invisible until viewing the face from its side.
+ await page.locator('#faceExpression').selectOption('neutral');
+ await page.evaluate(()=>window.__faceExpressionQA.forceExpression('neutral'));
+ const profile=await page.evaluate(()=>window.__faceMasterQA?.()
+  ?.female?.v95NasalSideProfile);
+ console.log('FACE_V95_NASAL_TOPOLOGY',JSON.stringify(profile));
+ assert.ok(profile?.applied&&profile?.topologyDriven,
+  'Actual donor must use connected triangle flow for the side nose profile');
+ assert.ok(profile.verticesAffected>2,'Side nose profile cannot be a no-op');
+ assert.equal(profile.normalInversionRejected,0,
+  'Nasal profile must not invert donor triangles');
+ assert.equal(profile.sourceIndexPreserved,true);
+ for(const view of ['threeQuarter','side']){
+  await page.locator('#'+view).click();
+  await page.waitForTimeout(75);
+  const pngUrl=await page.evaluate(()=>window.__faceExpressionQA.captureWebGLFrame());
+  assert.ok(pngUrl?.startsWith('data:image/png;base64,'),
+   'Real 45-degree and side view WebGL frame must exist');
+  const screenshot=Buffer.from(pngUrl.slice(pngUrl.indexOf(',')+1),'base64');
+  const file=out+'/neutral-'+view+'.png';
+  writeFileSync(file,screenshot);
+  const image=PNG.sync.read(screenshot);
+  assert.ok(image.width>350&&image.height>350);
+  console.log('FACE_V95_SIDE_IMAGE',JSON.stringify({view,file}));
+ }
+ await page.locator('#front').click();
  assert.deepEqual(failures,[],
   'Face editor cannot throw JavaScript/WebGL errors during visual QA');
 }finally{
