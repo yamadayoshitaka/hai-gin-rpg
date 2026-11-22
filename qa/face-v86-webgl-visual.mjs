@@ -30,6 +30,7 @@ try{
    ?.includes('実行JS：v88確認済');
  },null,{timeout:90000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
+ console.log('FACE_V88_NATIVE_LIP_SPAN',JSON.stringify({width:native.mouthWidth,donor:native.donorLipWidth,current:native.currentLipWidth,ratio:native.currentLipWidth/native.donorLipWidth,seal:native.seal}));
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have a native lip rest-state cap: '+JSON.stringify(native));
  assert.ok(native.mouthWidth>=.42&&native.mouthWidth<=.43,
