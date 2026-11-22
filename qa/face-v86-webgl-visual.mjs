@@ -27,7 +27,7 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v90確認済');
+   ?.includes('実行JS：v91確認済');
  },null,{timeout:90000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  console.log('FACE_V88_NATIVE_LIP_SPAN',JSON.stringify({width:native.mouthWidth,donor:native.donorLipWidth,current:native.currentLipWidth,ratio:native.currentLipWidth/native.donorLipWidth,seal:native.seal}));
@@ -43,6 +43,17 @@ try{
   'Real female mouth-width adjustment slider must be present');
  assert.ok(await page.locator('#maleMouthWidth').count()===1,
   'Real male mouth-width adjustment slider must be present');
+ // Test real dropdown selection, not only the forceExpression QA shortcut.
+ // This caught the case where 大笑い was selected but opening stayed 0%.
+ await page.locator('#faceExpression').selectOption('neutral');
+ await page.locator('#faceExpression').selectOption('laugh');
+ await page.waitForFunction(()=>
+  window.__faceExpressionQA?.nativePoseProbe?.()?.mouthOpen>.55,
+  null,{timeout:30000});
+ assert.match(await page.locator('#facePoseDiagnostics').innerText(),
+  /表情：大笑い.*開口強度：(6[0-9]|7[0-9])%/,
+  'Actual UI selection must reflect an open 3D laughing mouth');
+ await page.locator('#faceExpression').selectOption('neutral');
  // Read the actual WebGL canvas immediately after an explicit render.
  // Playwright page/element screenshots intermittently time out while this
  // animated Three.js preview resizes, even with CSS animations disabled.
