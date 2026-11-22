@@ -452,7 +452,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   ageWrinkles:demo.age.wrinkles});
  // The nasal silhouette is frozen at v100. v102 trims the stacked cheek
  // crest relative to immutable donor vertices without touching the nose.
- const cheekContour=gender==='female'&&cheekContourMode==='v102'?
+ const cheekContour=gender==='female'&&
+  (cheekContourMode==='v102'||cheekContourMode==='v102-only')?
   fairV102CheekContour(geometry,{gender,
    ageWrinkles:demo.age.wrinkles,
    donorPositions:originalPoints,donorCenterX:cx,donorHalfWidth:d.x*.5
