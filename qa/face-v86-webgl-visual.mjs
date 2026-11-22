@@ -29,6 +29,12 @@ try{
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
    ?.includes('実行JS：v91確認済');
  },null,{timeout:90000});
+ // Reproduce the reported Android appearance: female / 20s / ultra-thin.
+ // The former QA only exercised the default body profile.
+ await page.locator('#v47AgeBand').selectOption('twenties');
+ await page.locator('#v47BodyType').selectOption('ultraThin');
+ await page.waitForFunction(()=>document.querySelector('#facePoseDiagnostics')
+  ?.textContent?.includes('超痩せ型'),null,{timeout:30000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  console.log('FACE_V88_NATIVE_LIP_SPAN',JSON.stringify({width:native.mouthWidth,donor:native.donorLipWidth,current:native.currentLipWidth,ratio:native.currentLipWidth/native.donorLipWidth,seal:native.seal}));
  assert.equal(native.seal.sealed,true,
