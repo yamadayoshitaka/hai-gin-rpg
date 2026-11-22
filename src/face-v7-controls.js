@@ -68,7 +68,7 @@ export const FACE_SLIDER_RANGES=Object.freeze({
  lipstickX:[-.12,.12],lipstickY:[-.12,.12],
  lipstickWidth:[.2,2.8],lipstickHeight:[.2,1.8],
  // Anatomical skin/commissure width, NOT cosmetic lipstick width.
- mouthWidth:[.65,1.25],
+ mouthWidth:[.25,1.25],
  faceMorph:[-.6,.6],mouthSmile:[-1,1],eyePositionY:[-2,2],
  nosePositionX:[-2,2],nosePositionY:[-2,2],nosePositionZ:[-2,2],
  noseAngle:[-12,12],mouthPositionX:[-2,2],mouthPositionY:[-2,2],
@@ -93,7 +93,7 @@ export function normalizeFemaleFaceControls(settings={}){
  // face slider value and provide stable neutral defaults for new features.
  const extras={eyeWidth:1,eyeHeight:1,browWidth:1,browThickness:1,
   lashDensity:1,lashLength:1.4,lashThickness:1,lashCurl:.85,
-  faceMorph:0,mouthSmile:0,mouthWidth:.85,eyePositionY:0,
+  faceMorph:0,mouthSmile:0,mouthWidth:.425,eyePositionY:0,
   nosePositionX:0,nosePositionY:0,nosePositionZ:0,noseAngle:0,
   mouthPositionX:0,mouthPositionY:0,mouthPositionZ:0,mouthAngle:0};
  for(const [key,fallback] of Object.entries(extras)){
