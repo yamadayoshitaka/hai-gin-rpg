@@ -79,14 +79,34 @@ test('v111 actual GLB: first normal equals normal after thin, byte-for-byte geom
   femaleControls:controls(parts),enableV106LocalRetopo:true,
   partSelection:resolvePartSelection('female',parts).ids
  });
+ const beforeControls=controls(first.parts);
  const initial=make(first.parts);
+ const sourceAfterInitial=source.geometry.getAttribute('position').array.slice();
  const thin=make({...first.parts,bodyType:'thin'});
+ const sourceAfterThin=source.geometry.getAttribute('position').array.slice();
  const normalAgain=make({...first.parts,bodyType:'normal'});
+ const afterControls=controls({...first.parts,bodyType:'normal'});
+ assert.deepEqual(beforeControls,afterControls,'Normal controls changed through reselect');
+ const drift=(a,b)=>{
+  let changed=0,max=0,first=-1;
+  for(let i=0;i<a.length;i++)if(a[i]!==b[i]){
+   changed++;max=Math.max(max,Math.abs(a[i]-b[i]));
+   if(first<0)first=i;
+  }
+  return {changed,max,first,count:a.length};
+ };
  for(const name of ['position','normal','uv','color']){
   const a=visibleSkin(initial).getAttribute(name)?.array,
    b=visibleSkin(normalAgain).getAttribute(name)?.array;
   assert.ok(a&&b,'Missing attribute '+name);
-  assert.deepEqual(Array.from(a),Array.from(b),name+' changed after thin -> normal');
+  const comparison=drift(a,b);
+  assert.equal(comparison.changed,0,name+' changed after thin -> normal: '+
+   JSON.stringify({comparison,
+    originalDriftAfterInitial:drift(original,sourceAfterInitial),
+    originalDriftAfterThin:drift(original,sourceAfterThin),
+    originalDriftAtEnd:drift(original,source.geometry.getAttribute('position').array),
+    firstReport:initial.report.v106LocalRetopo,
+    finalReport:normalAgain.report.v106LocalRetopo}));
  }
  assert.deepEqual(Array.from(visibleSkin(initial).getIndex().array),
   Array.from(visibleSkin(normalAgain).getIndex().array),
