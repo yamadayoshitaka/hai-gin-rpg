@@ -1420,6 +1420,8 @@ document.addEventListener('pointerdown',()=>creatureAudio.unlock(),{passive:true
 document.addEventListener('keydown',()=>creatureAudio.unlock());
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=false;controls.enablePan=true;controls.rotateSpeed=1.3;controls.zoomSpeed=1.4;controls.panSpeed=1.15;controls.minDistance=4;controls.maxDistance=340;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.46;controls.update();
 let followCamera=false;
+// Manual panning remains authoritative until the player selects a new camera target.
+let manualBattleCameraOverride=false;
 let targetViewFollowing=false; // Follow the character's heading, not a fixed compass view.
 let focusedHumanUnitId=null;
 let cameraPanMode=false;
@@ -1432,13 +1434,8 @@ function setCameraGesture(){
  controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;
 }
 setCameraGesture();
-controls.addEventListener('start',()=>{
- // Keep the selected squad anchored while pinching/rotating.
- if(!TOWN_MODE&&battleViewMode==='commander'){
-  targetViewFollowing=false;
-  commanderCinematic=null;cinematicFocusQueue.length=0;
- }else{followCamera=false;targetViewFollowing=false;}
-});
+// OrbitControls emits 'start' even on an unmoved tap. Only an actual
+// pointer drag below may cancel an actively followed command team.
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE||TOWN_MODE?1024:2048,MASS_SIZE||TOWN_MODE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-145:-65;sun.shadow.camera.right=TOWN_MODE?145:65;sun.shadow.camera.top=TOWN_MODE?145:65;sun.shadow.camera.bottom=TOWN_MODE?-145:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;if(TOWN_MODE){sun.position.set(65,180,165);sun.target.position.set(110,1,110);sun.target.updateMatrixWorld();}sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
@@ -7680,7 +7677,11 @@ function updateCommanderCinematic(){
  }else{
   camera.position.copy(shot.overPosition);controls.target.copy(shot.overTarget);
   commanderCinematic=null;
-  if(manualCameraSquad)applyOverviewCamera(manualCameraSquad.mode);
+  if(manualBattleCameraOverride){
+   // Cinematic return goes back to the exact user-selected free view.
+   camera.position.copy(shot.overPosition);controls.target.copy(shot.overTarget);
+   controls.update();setCameraActive(null);
+  }else if(manualCameraSquad)applyOverviewCamera(manualCameraSquad.mode);
   else if(battleViewMode==='commander')followSelectedCommander();
   else{setBattleCamera(shot.overTarget,cameraOverviewOffset);setCameraActive('camOverview');}
  }
@@ -11806,6 +11807,8 @@ let battleViewMode='commander';
 let manualCameraSquad=null;
 controls.maxDistance=850;
 function setBattleCamera(focus,offset){
+ // Explicit team/overview selections resume automatic camera tracking.
+ manualBattleCameraOverride=false;
  if(!TOWN_MODE){
   const fov=offset===cameraOverviewOffset?56:48;
   if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix();}
@@ -11942,6 +11945,20 @@ $('camReset').onclick=()=>{
  else followSelectedCommander();
 };
 let down=null,touchGestureEngaged=false,lastGroundTap=null;
+const battleCameraPointerStarts=new Map();
+function takeManualBattleCameraControl(){
+ if(TOWN_MODE||commandOverviewLocked||manualBattleCameraOverride)return;
+ manualBattleCameraOverride=true;
+ followCamera=false;targetViewFollowing=false;
+ commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
+ manualCameraSquad=null;manualCameraFocusUntil=0;
+ focusedHumanUnitId=null;automaticContactActorId=null;contactSquadId=null;
+ lastGroundTap=null;
+ setCameraActive(null);
+ syncTeamCameraSwitches();
+}
+// Wheel zoom and finger drag both count as intentional manual navigation.
+renderer.domElement.addEventListener('wheel',()=>takeManualBattleCameraControl(),{passive:true});
 
 // Screen-space selection works for BOTH the 50v50 detailed meshes and all
 // 2000 GPU-instanced soldiers; raycasting only the 24 detailed roots previously
@@ -12019,6 +12036,7 @@ function focusFlyingCreatureAt(screenX,screenY){
  return true;
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ battleCameraPointerStarts.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(e.pointerType==='touch'){
   activeTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(activeTouchPointers.size>1)touchGestureEngaged=true;
@@ -12032,6 +12050,9 @@ renderer.domElement.addEventListener('pointerdown',e=>{
 });
 renderer.domElement.addEventListener('pointermove',e=>{
  if(commandOverviewLocked)return;
+ const origin=battleCameraPointerStarts.get(e.pointerId);
+ if(origin&&Math.hypot(e.clientX-origin.x,e.clientY-origin.y)>=8)
+  takeManualBattleCameraControl();
  if(e.pointerType!=='touch'||!activeTouchPointers.has(e.pointerId))return;
  activeTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(activeTouchPointers.size!==2||pinchStartGap<8)return;
@@ -12046,6 +12067,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  controls.update();
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ battleCameraPointerStarts.delete(e.pointerId);
  const wasMultiTouch=touchGestureEngaged;
  if(e.pointerType==='touch'){
   activeTouchPointers.delete(e.pointerId);
@@ -12137,6 +12159,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  }
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ battleCameraPointerStarts.delete(e.pointerId);
  if(e.pointerType==='touch'){
   activeTouchPointers.delete(e.pointerId);
   if(activeTouchPointers.size<2){pinchStartGap=0;pinchStartDistance=0;}

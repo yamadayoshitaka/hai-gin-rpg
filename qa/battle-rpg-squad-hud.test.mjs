@@ -309,6 +309,6 @@ test('every playable battle link and display refresh route to the three-team HUD
  assert.doesNotMatch(battle,/battleRpgHud\.update\(storyRequest\?\.sortieTeamCount\?/);
  assert.match(map,/tactics-wireframe\.html\?storyBattle=1&core=1&stage=/);
  assert.match(map,/&v='\+Date\.now\(\)/,'battle launch must bypass stale Android pages');
- assert.match(game,/v=three-team-radar2-20261120/);
+ assert.match(game,/v=20261122-3dcam-free1/);
  assert.match(story,/storyBattle=1&v=three-team-radar2-20261120/);
 });
