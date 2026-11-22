@@ -97,7 +97,12 @@ test('v111 actual GLB: first normal equals normal after thin, byte-for-byte geom
    if(!Number.isFinite(x)){acc.count++;if(acc.first.length<8)acc.first.push([i,x]);}
    return acc;
   },{count:0,first:[]});
-  return {changed,max,first,count:a.length,nonFinite};
+  const badB=b.reduce((acc,x,i)=>{
+   if(!Number.isFinite(x)){acc.count++;if(acc.first.length<8)acc.first.push([i,x]);}
+   return acc;
+  },{count:0,first:[]});
+  return {changed,max,first,count:a.length,nonFiniteA:nonFinite,nonFiniteB:badB,
+   firstSamples:[first,first+1,first+2].map(i=>({i,a:a[i],b:b[i]}))};
  };
  for(const name of ['position','normal','uv','color']){
   const a=visibleSkin(initial).getAttribute(name)?.array,
