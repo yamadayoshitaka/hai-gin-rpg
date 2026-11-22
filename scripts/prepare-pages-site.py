@@ -31,6 +31,10 @@ REMOVED_TREE_PREFIXES = (
     "assets/characters/experimental/",
     "assets/story/chapter1-provisional-live/",
     "assets/story/chapter1-chatgpt-inbox/",  # Generation/provenance staging, never game runtime
+    # 8 MiB of duplicated review candidates are not shipped as site assets.
+    # The Pages service worker sends requests to commit-pinned GitHub raw.
+    "assets/story/chapter-drafts/c01/unapproved-native-candidates/",
+    "assets/story/chapter-drafts/c01/pending-art-review/",
 )
 ROOT_DEV_SUFFIXES = (".md", ".py", ".ps1", ".yml", ".yaml", ".zip", ".blend")
 REQUIRED = (
@@ -57,6 +61,8 @@ REMOTE_ONLY_PREFIXES = (
     "audio/voicevox/clips/", "assets/master-sources/", "assets/ai-reference/",
     "motions/candidates/", "assets/characters/experimental/",
     "assets/story/chapter1-provisional-live/",
+    "assets/story/chapter-drafts/c01/unapproved-native-candidates/",
+    "assets/story/chapter-drafts/c01/pending-art-review/",
 )
 ASSET_RELAY_NAME = "pages-asset-relay-sw.js"
 
