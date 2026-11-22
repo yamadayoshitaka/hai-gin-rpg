@@ -34,7 +34,7 @@ export function v102CheekContourField({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  const lower=bell(ax,.47,.23)*bell(yn,.455,.095)*region;
  // Pull back the isolated upper crest; fill the trough from below.
  // The broad fields overlap in a single connected cheek surface.
- const dz=-.049*crest+.019*lower;
+ const dz=-.066*crest+.045*lower;
  return {dz,mask:region,crest,lower};
 }
 /** Preserve donor triangle connectivity with local safety attenuation. */
