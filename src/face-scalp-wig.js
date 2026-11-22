@@ -1304,9 +1304,11 @@ export function shapeRebuiltEyeBand(points,{box,side=1}={}){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  for(let j=1;j<points.length;j++){
   const p=points[j],h=(p.y-box.min.y)/Math.max(d.y,1e-6);
-  if(h>.685&&h<.84&&p.z>c.z+d.z*.08&&
-     side*(p.x-c.x)<d.x*.255)
-   p.x=c.x+side*d.x*.255;
+  // For long face-framing locks, leave a whole hair-card-width margin
+  // outside the eyes rather than merely clearing the guide centreline.
+  if(h>.665&&h<.855&&p.z>c.z+d.z*.045&&
+     side*(p.x-c.x)<d.x*.325)
+   p.x=c.x+side*d.x*.325;
  }
  return points;
 }
@@ -1995,9 +1997,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // v72: update eye clearance AFTER length/curl reshaping, not before.
    // Only the fringe/face-frame guides are affected; loose side/back
    // sections retain their natural forward volume and fall.
+   // Apply pupil clearance to ALL rebuilt long cuts, not just tucked styles.
+   // Short eyebrow bangs are cut above the eyelids, so keep them intact.
    if(style.rebuiltBase==='sadako'&&style.gender==='female'&&
-      style.catalogFront==='tucked'&&
-      (fringe||faceFrame||zone.startsWith('temple')))
+      !bangsCut&&(fringe||faceFrame||zone.startsWith('temple')||
+       (zone==='crown'&&frontRoot)))
     shapeRebuiltEyeBand(shape,{box,side:partSide});
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
@@ -2813,6 +2817,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v92EyeClearanceApplied:style.rebuiltBase==='sadako'&&style.gender==='female',
   v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
    strands.filter(lock=>
     (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&
