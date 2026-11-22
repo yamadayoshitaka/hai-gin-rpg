@@ -6,6 +6,7 @@ on:
       - 'src/face-optics-v76.js'
       - 'src/face-feature-meshes.js'
       - 'src/face-mouth-seal-v86.js'
+      - 'src/face-native-oral-rig-v88.js'
       - 'src/face-expression-animation-v48.js'
       - 'src/face-integrated-mouth-v82.js'
       - 'src/face-anatomy-rig-v80.js'
@@ -21,6 +22,7 @@ on:
       - 'qa/face-v82-integrated-mouth.test.mjs'
       - 'qa/face-v83-public-safe.test.mjs'
       - 'qa/face-v82-real-glb-topology.test.mjs'
+      - 'qa/face-v88-native-oral.test.mjs'
       - 'qa/face-v76-visible-preset-smooth.test.mjs'
       - 'face-mesh-studio.html'
       - 'face-body-studio.html'
@@ -33,6 +35,7 @@ on:
       - 'src/face-optics-v76.js'
       - 'src/face-feature-meshes.js'
       - 'src/face-mouth-seal-v86.js'
+      - 'src/face-native-oral-rig-v88.js'
       - 'src/face-expression-animation-v48.js'
       - 'src/face-integrated-mouth-v82.js'
       - 'src/face-anatomy-rig-v80.js'
@@ -48,6 +51,7 @@ on:
       - 'qa/face-v82-integrated-mouth.test.mjs'
       - 'qa/face-v83-public-safe.test.mjs'
       - 'qa/face-v82-real-glb-topology.test.mjs'
+      - 'qa/face-v88-native-oral.test.mjs'
       - 'qa/face-v76-visible-preset-smooth.test.mjs'
       - 'face-mesh-studio.html'
       - 'face-body-studio.html'
@@ -72,12 +76,14 @@ jobs:
           node --check src/face-optics-v76.js
           node --check src/face-feature-meshes.js
           node --check src/face-mouth-seal-v86.js
+          node --check src/face-native-oral-rig-v88.js
           node --check src/independent-face-masters.js
           node --check src/face-expression-animation-v48.js
           node --check src/face-integrated-mouth-v82.js
           node --check qa/face-v82-integrated-mouth.test.mjs
           node --check qa/face-v83-public-safe.test.mjs
           node --check qa/face-v82-real-glb-topology.test.mjs
+          node --check qa/face-v88-native-oral.test.mjs
           node --check src/face-anatomy-rig-v80.js
           node --check src/face-oral-anatomy-v80.js
           node --check qa/face-v80-anatomy.test.mjs
@@ -91,7 +97,7 @@ jobs:
         run: |
           node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs qa/face-v76-visible-preset-smooth.test.mjs qa/face-v80-anatomy.test.mjs
           # IMPORTANT: these were previously syntax-checked but never RUN.
-          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs
+          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs qa/face-v88-native-oral.test.mjs
 
       - name: Diagnose current public face version before merging
         continue-on-error: true

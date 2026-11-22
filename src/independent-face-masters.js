@@ -35,6 +35,31 @@ export function v87AnatomicalMouthWidthDelta({
 }
 
 /**
+ * V88: narrower native oral width and V80-inspired three-dimensional
+ * vermilion relief sculpted into the REAL skin; no detached lip stickers.
+ */
+export function v88AnatomicalLipDelta({
+ xn,yn,zn,faceWidth,faceDepth,mouthWidth=.425
+}={}){
+ if(![xn,yn,zn,faceWidth,faceDepth,mouthWidth].every(Number.isFinite)||
+    faceWidth<=0||faceDepth<=0)return {dx:0,dz:0};
+ const ax=Math.abs(xn),dy=Math.abs(yn-.509);
+ if(ax>=.38||dy>=.078||zn<=.54)return {dx:0,dz:0};
+ const lateral=1-smooth(.13,.38,ax);
+ const vertical=1-smooth(.019,.078,dy);
+ const anterior=smooth(.54,.82,zn);
+ const influence=lateral*vertical*anterior;
+ const extraWidth=Math.max(.28,Math.min(1,mouthWidth/.85));
+ const cupid=bell(ax,.073,.047)*bell(yn,.519,.012);
+ const lower=bell(ax,.075,.072)*bell(yn,.495,.015);
+ const lipVolume=(.0024*cupid+.0036*lower)*anterior;
+ // The original V87 anatomical pass already applies the selected width.
+ // Applying another X multiplier pinches the lip rim to near zero and
+ // creates black folds; V88 only restores V80-style depth/volume here.
+ return {dx:0,dz:faceDepth*lipVolume};
+}
+
+/**
  * Compact-support nose and mouth sculpt.
  * This function is EXACTLY zero outside the inner 28% half-face width.
  * It cannot change cheek edges, jaw width or the outer silhouette.
@@ -388,6 +413,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   nx+=v87AnatomicalMouthWidthDelta({
    xn,yn,zn,faceWidth:d.x,mouthWidth:controls.mouthWidth
   });
+  const v88Lip=v88AnatomicalLipDelta({
+   xn,yn,zn,faceWidth:d.x,faceDepth:d.z,mouthWidth:controls.mouthWidth
+  });
+  nx+=v88Lip.dx;nz+=v88Lip.dz;
   // Mouth accessories follow the anatomically deformed lower midface.
   const oralWeight=bell(xn,0,.22)*bell(yn,.48,.047)*front;
   oralMotionSum+=(ny-y)*oralWeight;

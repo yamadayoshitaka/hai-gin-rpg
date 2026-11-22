@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture} from './face-optics-v76.js?v=81-eye-vascular';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture,getFaceBrowFiberTexture} from './face-optics-v76.js?v=81-eye-vascular';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js?v=87-mouth-width';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=86';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=88';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -1095,7 +1096,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const zz=surfaceAt(xx,yy)+d.z*(.011+.002*arch);
     return new THREE.Vector3(xx-pivot.position.x,yy-pivot.position.y,
      zz-pivot.position.z);
-   },mat(0xa2a6ac));
+   },new THREE.MeshStandardMaterial({color:0xa2a6ac,roughness:.94,metalness:0,
+    map:getFaceBrowFiberTexture(),side:THREE.DoubleSide}));
    eyebrow.userData.colorRole='brow';
    pivot.add(eyebrow);root.add(pivot);
 
@@ -1127,7 +1129,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const zz=surfaceAt(xx,yy)+d.z*.010;
     return new THREE.Vector3(xx-pivot.position.x,
       yy-pivot.position.y,zz-pivot.position.z);
-   },mat(0xa2a6ac));
+   },new THREE.MeshStandardMaterial({color:0xa2a6ac,roughness:.94,metalness:0,
+    map:getFaceBrowFiberTexture(),side:THREE.DoubleSide}));
    brow.userData.colorRole='brow';
    pivot.add(brow);root.add(pivot);
   }
@@ -1199,7 +1202,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   reason:originalOralSeal.reason||null
  };
  const halfWidth=d.x*(female?.057:.044)*
-  Math.min(1.62,Math.pow(settings.lipstickWidth,.46));
+  Math.min(1.62,Math.pow(settings.lipstickWidth,.46))*
+  THREE.MathUtils.clamp(settings.mouthWidth/.85,.3,1.45);
  // V83 emergency quarantine: v82's centroid-based cutting generated
  // disconnected boundary edges on the REAL CC0 head (black shards).
  // Never alter production head indices/vertices until a visual manifold
@@ -1210,7 +1214,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   headHeight:d.y,surfaceZ:surfaceAt(cx,lipCenter)
  }):{integrated:false,reason:'v83-production-topology-quarantine',
   removedTriangles:0,boundaryEdges:0,stitchedTriangleCount:0};
- face.userData.v83SafeOriginalMouthTopology=!experimental;
+ // Reversible anatomical opening; keep the old quarantine if donor validation fails.
+ const nativeOral=!experimental?initializeNativeOralRig(face):
+  {ready:false,reason:'legacy-experimental-v82'};
+ face.userData.v88NativeOralReport=nativeOral;
+ face.userData.v83SafeOriginalMouthTopology=!experimental&&!nativeOral.ready;
  face.userData.v83OralSurgeryQuarantined=!experimental;
  face.userData.v82MouthTopologyReport={
   integrated:!!mouthTopology.integrated,
