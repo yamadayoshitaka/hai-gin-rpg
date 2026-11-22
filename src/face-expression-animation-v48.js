@@ -6,6 +6,7 @@
  * Demo talking is SILENT, syllable-paced motion; not phoneme/audio sync.
  */
 import * as THREE from 'three';
+import {naturalSmileCheekDelta} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
 import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=92-separated-natural-arches';
@@ -291,7 +292,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  // On sparse donor polygons large cheek displacement creates visible triangular
  // folds. Retain part-rig motion while damping whole-skin deformation only.
- const skinDeformationGain=.61;
+ const skinDeformationGain=.53;
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Muscle channels can blend emotions, dialogue and presets without
  // adding floating expression meshes or permanently changing the donor.
@@ -382,6 +383,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const micro=v76ExpressionMuscleDelta({ax,ny,front,expression:skinPose});
    const anatomical=v80FaceMuscleDelta({ax,ny,front,mouthY,
     ageStrength,actionUnits});
+   const cheekPose=naturalSmileCheekDelta({ax,ny,front,mouthY,
+    smile:skinPose.smile,cheek:skinPose.cheek,ageWrinkles:ageStrength});
    // Do not tear or invert the lip/philtrum/chin triangles of an intact
    // face. Retain cheek and eyelid expressions outside the guard.
    const oralGuard=safeOriginalMouth?
@@ -391,15 +394,17 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const skinGain=skinDeformationGain*oralGuard;
    facialAttr.array[k]=x+xd*skinGain*
     Math.sign(x-centerX)*anatomical.dxOut;
-   facialAttr.array[k+1]=y+yd*skinGain*(.033*skinPose.smile*lipCorner+
-    .012*skinPose.cheek*cheek+.008*skinPose.brow*brow+
+   facialAttr.array[k+1]=y+yd*skinGain*(.013*skinPose.smile*lipCorner+
+    .006*skinPose.cheek*cheek+.008*skinPose.brow*brow+
     .013*skinPose.tilt*inner-.050*Math.max(0,skinPose.open)*jaw-
     .024*Math.max(0,skinPose.open)*lowerLip+
-    muscle.dy+micro.dy+anatomical.dy);
-   facialAttr.array[k+2]=z+depth*skinGain*(.009*skinPose.cheek*cheek+
-    .008*Math.max(0,skinPose.smile)*lipCorner-
+    .55*muscle.dy+.52*micro.dy+.58*anatomical.dy+
+    cheekPose.dy);
+   facialAttr.array[k+2]=z+depth*skinGain*(.004*skinPose.cheek*cheek+
+    .004*Math.max(0,skinPose.smile)*lipCorner-
     .014*Math.max(0,skinPose.open)*mouthInterior+
-    muscle.dz+micro.dz+anatomical.dz);
+    .45*muscle.dz+.52*micro.dz+.55*anatomical.dz+
+    cheekPose.dz);
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
@@ -604,6 +609,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v92BuildSignature:'face-v92-dental-oral-hair-visual-regression-20261122',
    v94BuildSignature:'face-v94-native-mouth-internal-skin-occlusion-20261122',
    v95BuildSignature:'face-v95-nasal-side-profile-topological-edge-flow-20261122',
+   v96BuildSignature:'face-v96-smile-cheek-lip-makeup-topology-20261122',
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
