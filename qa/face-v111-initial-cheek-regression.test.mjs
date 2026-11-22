@@ -82,6 +82,8 @@ test('v111 actual GLB: first normal equals normal after thin, byte-for-byte geom
  const beforeControls=controls(first.parts);
  const initial=make(first.parts);
  const sourceAfterInitial=source.geometry.getAttribute('position').array.slice();
+ assert.equal(source.geometry.userData.v106LocalRetopo,undefined,
+  'Retopology state must never leak to original CC0 GLB');
  const thin=make({...first.parts,bodyType:'thin'});
  const sourceAfterThin=source.geometry.getAttribute('position').array.slice();
  const normalAgain=make({...first.parts,bodyType:'normal'});
