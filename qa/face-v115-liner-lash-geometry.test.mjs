@@ -16,12 +16,17 @@ function linerGrid(){
  return mesh;
 }
 function sampleRoot(liner,u){
- const idx=Math.round(u*48);
- // All four 3D rows differ slightly; V115 uses the true root row .12.
- const first=liner.geometry.getAttribute('position');
- const lo=first.getY(idx),hi=first.getY(49+idx);
- return [first.getX(idx),lo*(1-V115_LASH_ROOT_ROW*3)+
-  hi*V115_LASH_ROOT_ROW*3,first.getZ(idx)];
+ const t=u*48,i=Math.min(47,Math.floor(t)),frac=t-i;
+ const attr=liner.geometry.getAttribute('position');
+ const at=(row,k,component)=>component===0?attr.getX(row*49+k):
+  component===1?attr.getY(row*49+k):attr.getZ(row*49+k);
+ const interp=component=>{
+  const a=at(0,i,component)*(1-frac)+at(0,i+1,component)*frac;
+  const b=at(1,i,component)*(1-frac)+at(1,i+1,component)*frac;
+  const y=V115_LASH_ROOT_ROW*3;
+  return a*(1-y)+b*y;
+ };
+ return [interp(0),interp(1),interp(2)];
 }
 function lashFrom(liner){
  const uList=[.17,.37,.58,.83],anchors=[],rest=[];
