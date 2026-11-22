@@ -541,3 +541,79 @@ test('v104 real donor rolls back v103, preserving exact v102 nose and bounded ch
  });
  geo.dispose();
 });
+
+test('v105 real GLB thin/normal cheeks lose the v102 deep indentation; nose is exactly conserved',()=>{
+ for(const bodyType of ['thin','normal']){
+  const {geo}=sourceGeometry();
+  geo.computeBoundingBox();
+  const box=geo.boundingBox.clone(),size=box.getSize(new THREE.Vector3()),
+   cx=(box.min.x+box.max.x)*.5;
+  const source=new THREE.Group();
+  const donor=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+  donor.name='CC0_SOURCE_GEO-head_animation_realistic';
+  source.add(donor);
+  const opts={femaleControls:{ageBand:'twenties',bodyType}};
+  const before=makeIndependentFaceMaster(source,'female',{
+   ...opts,cheekContourMode:'v102-only'
+  });
+  const stable=makeIndependentFaceMaster(source,'female',{
+   ...opts,cheekContourMode:'v105'
+  });
+  const base=makeIndependentFaceMaster(source,'female',{
+   ...opts,cheekContourMode:'v100'
+  });
+  const report=stable.report.v105CheekGeometry;
+  assert.equal(report?.applied,true,JSON.stringify(report));
+  assert.equal(report.version,105);
+  assert.equal(report.bodyType,bodyType);
+  assert.equal(stable.report.v103NormalCheekRepair.applied,false);
+  assert.equal(stable.report.v104CheekMicrofair.applied,false);
+  assert.equal(report.maxNoseChange,0);
+  const b=before.face.geometry.getAttribute('position'),
+   v=stable.face.geometry.getAttribute('position'),
+   original=base.face.geometry.getAttribute('position'),
+   donorPos=geo.getAttribute('position');
+  assert.deepEqual(Array.from(before.face.geometry.index.array),
+   Array.from(stable.face.geometry.index.array));
+  let relieved=0,crestPoints=0,deltaSum=0,nosePoints=0,
+   worstNose=0,maxCutFromV100=0,maxPushFromV100=0;
+  for(let i=0;i<donorPos.count;i++){
+   const ax=Math.abs((donorPos.getX(i)-cx)/(size.x*.5)),
+    y=(donorPos.getY(i)-box.min.y)/size.y,
+    z=(donorPos.getZ(i)-box.min.z)/size.z;
+   const delta=v.getZ(i)-b.getZ(i);
+   const relative=v.getZ(i)-original.getZ(i);
+   if(z>.49&&ax>.37&&ax<.64&&y>.51&&y<.62){
+    crestPoints++;deltaSum+=delta;
+    if(delta>size.z*.001)relieved++;
+   }
+   if(ax<=.345&&y>.4&&y<.72){
+    nosePoints++;
+    worstNose=Math.max(worstNose,Math.abs(relative));
+   }
+   maxCutFromV100=Math.min(maxCutFromV100,relative);
+   maxPushFromV100=Math.max(maxPushFromV100,relative);
+  }
+  console.log('V105_REAL_CC0_CHEEK',JSON.stringify({
+   bodyType,report,crestPoints,relieved,deltaMean:deltaSum/crestPoints,
+   nosePoints,worstNose,maxCutFromV100,maxPushFromV100
+  }));
+  assert.ok(crestPoints>10&&relieved>6,
+   'Remove the actual deep recessed topological cheek region');
+  assert.ok(deltaSum/crestPoints>0,
+   'Do not deepen the original v102 front-view crease');
+  assert.ok(nosePoints>150&&worstNose===0,
+   'Exact v100 nasal vertices are preserved');
+  assert.ok(maxCutFromV100>=-size.z*.0053,
+   'The new v105 cheek cannot excavate the baseline face');
+  assert.ok(maxPushFromV100<=size.z*.0105,
+   'No new swollen cheek ridge may appear');
+  for(const model of [before,stable,base])model.root.traverse(o=>{
+   if(!o.isMesh)return;
+   o.geometry?.dispose();
+   for(const m of Array.isArray(o.material)?o.material:[o.material])
+    m?.dispose?.();
+  });
+  geo.dispose();
+ }
+});
