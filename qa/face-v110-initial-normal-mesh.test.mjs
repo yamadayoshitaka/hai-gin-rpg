@@ -59,6 +59,17 @@ test('v110 explicit later ultra-thin selection is not silently discarded on subs
  assert.equal(v110InitialFemaleFaceState({savedPreset:normalSaved,
   parts:normalSaved.parts,controls:normalSaved.controls}).shouldRecompose,false);
 });
+test('v110 keeps previously stored normal and fat body choices',()=>{
+ for(const body of ['normal','fat']){
+  const preset=saved(body,false);
+  const actual=v110InitialFemaleFaceState({
+   savedPreset:preset,parts:preset.parts,controls:preset.controls
+  });
+  assert.equal(actual.parts.bodyType,body);
+  assert.equal(actual.migratedLegacyBody,false);
+  assert.equal(actual.shouldRecompose,true);
+ }
+});
 test('v110 automatically saved legacy normal keeps user hair and face edits',()=>{
  const parts={...defaultPartSelection(),bodyType:'ultraThin',
   hairColor:'silver',hairVolume:'full',face:7,eye:2};
