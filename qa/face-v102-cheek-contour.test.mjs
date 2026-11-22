@@ -36,7 +36,7 @@ test('v102 original indexed donor caps artificially raised cheek without moving 
    Math.exp(-.5*((y-.56)/.06)**2);
   const hollow=Math.exp(-.5*((x-.47)/.20)**2)*
    Math.exp(-.5*((y-.455)/.06)**2);
-  attr.setZ(i,z+depth*(.085*peak-.018*hollow));
+  attr.setZ(i,z+depth*(.135*peak-.018*hollow));
  }
  const before=attr.array.slice();
  const result=fairV102CheekContour(head,{
