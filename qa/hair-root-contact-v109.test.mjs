@@ -99,3 +99,24 @@ test('v109 eye-height fringe avoids sharp horizontal strips after scalp contact'
  assert.equal(flagged(guide),0,'Move each sharp sideways bend to an earlier safe station');
  assert.ok(guide[8].x>=.30,'Keep the eye-cleared point outside the iris');
 });
+
+test('v109 first crown station bends without a horizontal goggle strip or moving its root',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ for(const sign of [-1,1]){
+  const guide=[
+   new THREE.Vector3(sign*.07,.828,.26),
+   new THREE.Vector3(sign*.116,.814,.27),
+   new THREE.Vector3(sign*.118,.66,.28),
+   new THREE.Vector3(sign*.12,.57,.29)
+  ];
+  const root=guide[0].clone();
+  v109EaseEyeLevelCrossings(guide,{box,side:sign});
+  assert.deepEqual(guide[0].toArray(),root.toArray());
+  assert.ok(Math.abs(guide[1].x-guide[0].x)<=
+   Math.abs(guide[1].y-guide[0].y)*1.49,
+   'The first forehead station cannot jump almost horizontally at eye height');
+  assert.ok(sign*guide[1].x>sign*guide[0].x,
+   'The first station still turns outward toward the temple');
+ }
+});
