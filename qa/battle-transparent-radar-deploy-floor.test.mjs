@@ -123,5 +123,76 @@ test('mobile map accepts click without pointerup and does not double-deploy on b
  root.querySelector('#realtimeMapReset').onclick();
  assert.equal(detail.children.find(x=>x.id==='realtimeInspectBuildingFloor'),updated,
   'live map redraw should keep the same open dropdown element');
+
+ // Simulate a real two-finger pinch on Android. Both pointers must be
+ // tracked independently and no synthetic click may redeploy a squad.
+ const beforePinch=battleUi.mapView;
+ map.tap('pointerdown',{pointerId:41,clientX:65,clientY:120});
+ map.tap('pointerdown',{pointerId:42,clientX:145,clientY:120});
+ map.tap('pointermove',{pointerId:42,clientX:190,clientY:120});
+ assert.ok(battleUi.mapView.zoom>beforePinch.zoom,'pinch must zoom the tactical map');
+ map.tap('pointerup',{pointerId:41,clientX:65,clientY:120,preventDefault(){}});
+ map.tap('pointerup',{pointerId:42,clientX:190,clientY:120,preventDefault(){}});
+ map.tap('click',{clientX:190,clientY:120});
+ assert.equal(deployed.length,2,'a synthetic click after a pinch cannot move the team');
+ const beforePan=battleUi.mapView.centerX;
+ map.tap('pointerdown',{pointerId:43,clientX:125,clientY:120});
+ map.tap('pointermove',{pointerId:43,clientX:175,clientY:120});
+ map.tap('pointerup',{pointerId:43,clientX:175,clientY:120,preventDefault(){}});
+ assert.notEqual(battleUi.mapView.centerX,beforePan,'single-finger drag also pans the zoomed map');
+ battleUi.dispose();
+});
+
+test('authored initial positions remain confirmed even if their centroid is not a new deploy tile',async()=>{
+ const {createRealtimeBattleCommands}=await import('../src/battle-realtime-commands.js');
+ const {BATTLE_TEAM_COLORS}=await import('../src/battle-center-radar.js');
+ const controls=new Map(),colors=[],context={
+  fillStyle:'#000',_arcRadius:0,
+  save(){},restore(){},clearRect(){},fillRect(){},strokeRect(){},
+  beginPath(){},moveTo(){},lineTo(){},stroke(){},drawImage(){},fillText(){},
+  arc(_x,_y,r){this._arcRadius=r;},
+  fill(){if(this._arcRadius===12)colors.push(this.fillStyle);}
+ };
+ const element=()=>({
+  hidden:false,dataset:{},style:{},value:'',textContent:'',disabled:false,
+  children:[],events:new Map(),classList:{toggle(){},add(){},remove(){},contains(){return false}},
+  append(...x){this.children.push(...x);},remove(){},replaceChildren(...x){this.children=x;},
+  setAttribute(){},addEventListener(name,fn){this.events.set(name,fn);},
+  getBoundingClientRect(){return {left:0,top:0,width:240,height:240};},
+  setPointerCapture(){},getContext(){return context;},
+  tap(type,data={}){this.events.get(type)?.(data);}
+ });
+ const root=element();
+ root.querySelector=q=>{
+  const id=q.replace(/^#/,'');
+  if(!controls.has(id))controls.set(id,element());
+  return controls.get(id);
+ };
+ root.querySelectorAll=()=>[];
+ const documentRef={body:{append(){}},createElement:()=>element()};
+ const teams=[{id:'ally-one',groupId:1,alive:5,total:5,
+  x:110,z:80,label:'第1隊',job:'剣士'}];
+ let startedPlans=null;
+ const battleUi=createRealtimeBattleCommands({
+  documentRef,requirePrebattleChoices:true,worldSize:232,
+  getSquads:()=>teams,getDeploymentTeams:()=>teams,
+  getEnemies:()=>[],getRadarEnemies:()=>[{
+   id:'enemy-one',groupId:1,alive:5,total:5,x:180,z:80
+  }],
+  canDeploy:(x,z)=>x<=100,previewDeploy:()=>true,
+  getInitialTeamPlan:()=>({strategy:'assault',allowedStrategies:['assault']}),
+  onStart:plans=>{startedPlans=plans;return true;}
+ });
+ battleUi.openDeployment();
+ assert.deepEqual(colors.filter(x=>x===BATTLE_TEAM_COLORS.ally||x===BATTLE_TEAM_COLORS.enemy).slice(-2),
+  [BATTLE_TEAM_COLORS.enemy,BATTLE_TEAM_COLORS.ally],
+  'the red enemy and blue ally must be rendered with different palettes');
+ const start=root.querySelector('#realtimeStart');
+ start.onclick();
+ assert.equal(battleUi.started,false,'first click goes to strategy selection');
+ assert.match(root.querySelector('#realtimeMapTitle').textContent,/初期作戦/);
+ start.onclick();
+ assert.equal(battleUi.started,true,'an existing legal spawn needs no forced new placement');
+ assert.equal(startedPlans.initialPlans['1'],'assault');
  battleUi.dispose();
 });
