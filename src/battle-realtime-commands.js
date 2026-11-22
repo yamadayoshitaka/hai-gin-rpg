@@ -15,7 +15,7 @@ import {BASIC_OPENING_TACTICS} from './prebattle-opening-tactics.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin,BATTLE_TEAM_COLORS} from './battle-center-radar.js?v=20261122-three-team-events1';
-import {findBattleMapPin,formatBattleMapPercent,stableBattleMapPins,stableBattleMapBuildings} from './battle-map-inspection.js';
+import {findBattleMapPin,formatBattleMapPercent,stableBattleMapPins,stableBattleMapBuildings} from './battle-map-inspection.js?v=20261122-map-pan-stable2';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const PREBATTLE_FORMATION_IDS=Object.freeze({
  '前進陣形':'attack','標準陣形':'balanced','後衛陣形':'support','防壁陣形':'wall',
