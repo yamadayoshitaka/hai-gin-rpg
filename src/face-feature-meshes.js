@@ -395,7 +395,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    .019*nostrilUnderRim+.028*philtrum+
    (.018+.052*youthFade)*lipShade+.013*cupidBow+
    .017*lowerLipContact+age.sag*.15*underEye+ageShade+
-   .047*upperLidOcclusion+.021*innerCanthus+.105*noseBridgeContour+
+   .047*upperLidOcclusion+.021*innerCanthus+.042*noseBridgeContour+
    (.009+.022*youthFade)*nasolabial+
    (.010+.020*youthFade)*lowerLidOcclusion+
    v70FaceReliefShadow({nx,ny,front,lidY});
@@ -703,16 +703,16 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // aspect factors so the aperture doesn't accidentally scale twice.
  const eyeScale=Math.sqrt(settings.eyeWidth*settings.eyeHeight);
  const eyeWidth=settings.eyeWidth/eyeScale,eyeHeight=settings.eyeHeight/eyeScale;
- const baseEyeRadius=d.x*.049;
+ const baseEyeRadius=d.x*.047;
  // Blender Studio: expose convex corneal volume above the real socket and
  // wrap the lids back onto the facial skin. Do not simply translate the eyes.
  // Male .34 made even the 20-year-old protagonist look sleepy/elderly.
  // Restore a natural, expressive eye opening without artificial bulging.
  // Anatomically wider than tall: the old huge open oval read as doll eyes.
- const eyeApertureRatio=female?.408:.394;
+ const eyeApertureRatio=female?.375:.394;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
- const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.105:.120):.130;
+ const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.087:.094):.130;
  const eyeAnteriorClearances=[];
  const irisUpperLidRecessRatios=[];
   const eyelinerMeasuredFits=[];
@@ -871,7 +871,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // blue horizontal folds / stripes. A genuine round iris must fit the
    // actual opening instead, and no vertex may be clipped into a flat row.
    const isIris=label==='CURVED_IRIS';
-   const irisDisplayScale=isIris?(female?(settings.irisDiameter>=1.30?.94:.88):.67):.82;
+   const irisDisplayScale=isIris?(female?(settings.irisDiameter>=1.30?.90:.83):.67):.82;
    const requested=eyeRadius*irisDisplayScale*Math.sin(angularRadius);
    const opening=eyeRadius*eyeApertureRatio*eyeHeight;
    // Keep a real circle and a thin white sclera ring; never clip the
