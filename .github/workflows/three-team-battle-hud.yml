@@ -69,7 +69,7 @@ jobs:
       - name: Verify transparent battle radar, exact deploy taps and building floors
         run: node --check src/battle-exploration-floor.js && node --test qa/battle-transparent-radar-deploy-floor.test.mjs
       - name: Verify read-only battle map inspection and squad pins
-        run: node --check src/battle-map-inspection.js && node --test qa/battle-map-inspection.test.mjs
+        run: node --check src/battle-map-inspection.js && node --test qa/battle-map-inspection.test.mjs qa/battle-map-stability-twofinger.test.mjs
       - name: Verify simplified commands and true capture victory
         run: node --check src/battle-capture-objective.js && node --check src/targeted-strategy-runtime.js && node --test qa/battle-capture-objective.test.mjs
       - name: Install lightweight DOM test dependency
