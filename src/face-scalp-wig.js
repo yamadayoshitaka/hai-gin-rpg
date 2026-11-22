@@ -2146,6 +2146,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   if(sadakoGravity)for(let j=1;j<=segments;j++)
    if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
      zone.startsWith('temple')))sadakoGuideScalpPushes++;
+  // The real scalp projection can itself move a front-facing hair
+  // station sideways. Run the same non-root tangent guard LAST on all
+  // female long zones, including forehead/fringe and crown overlays.
+  if(sadakoGravity&&style.gender==='female')
+   v109EaseEyeLevelCrossings(rest,{box,side:partSide});
   for(let j=1;j<=segments;j++)points[j].copy(rest[j]);
   strands.push({root:wigRoot,rest,points,vel,fringe,side,crownOverSide,rearFacing,
    zone,seedIndex:seed.index,trimY,overFace,partSide,faceFrame,bangsCut,
@@ -2885,6 +2890,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      Math.abs(p.x-last.x)>d.x*.035&&
      Math.abs(p.x-last.x)>Math.abs(p.y-last.y)*1.5;
    }).length,0):null,
+  v109EyeBandDebug:style.rebuiltBase==='sadako'?
+   strands.flatMap(lock=>lock.rest.flatMap((p,j)=>{
+    if(!j)return [];
+    const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+    const prev=lock.rest[j-1];
+    const dx=p.x-prev.x,dy=p.y-prev.y;
+    return h>.67&&h<.82&&p.z>center.z+d.z*.025&&
+     Math.abs(dx)>d.x*.035&&Math.abs(dx)>Math.abs(dy)*1.5?
+     [{zone:lock.zone,index:j,h:+h.toFixed(3),x:+p.x.toFixed(3),
+       prevX:+prev.x.toFixed(3),dx:+dx.toFixed(3),
+       dy:+dy.toFixed(3),frontZ:+p.z.toFixed(3),
+       partSide:lock.partSide,bangsCut:lock.bangsCut}]:[];
+   })).slice(0,15):null,
   v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
    strands.filter(lock=>
     (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&
