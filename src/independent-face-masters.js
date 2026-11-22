@@ -217,6 +217,14 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // Do not mutate the GLB geometry, even when the same source is used twice.
  const original=face.geometry;
  const geometry=original.clone();
+ // V111: BufferGeometry.clone() retains the source userData object by
+ // reference in the Three.js runtime. A previous build's v106LocalRetopo
+ // flag must NEVER tag the immutable GLB or subsequent owned clones.
+ // Otherwise thin -> normal wrongly skips 4k+ retopo vertices, visibly
+ // changing the first portrait and making the second face faceted.
+ geometry.userData={...(geometry.userData||{})};
+ delete geometry.userData.v106LocalRetopo;
+ delete geometry.userData.v106OriginalTriCount;
  face.geometry=geometry;
  if(face.morphTargetInfluences)face.morphTargetInfluences.fill(0);
  geometry.computeBoundingBox();
