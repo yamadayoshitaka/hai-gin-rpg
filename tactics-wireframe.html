@@ -2543,23 +2543,34 @@ function reportAfterBattleCutin(text,{team=0,squadId=null,priority=86}={}){
   squadId:team===0?squadId:null,focus:false,text});
 }
 function queueBattleResultCutin(title,text,details={}){
+ // Never lose first contact behind unrelated item/healing notices.
  if(resultCutinQueue.length>=8)return;
  resultCutinQueue.push({title,text,...details});
 }
 function updateBattleResultCutins(){
  if(battleCeremony.state!=='idle')return;
+ // A newly engaged command team takes precedence over routine narration.
+ if(!finished&&battleReady&&!tacticalPlanningActive){
+  const priority=resultCutinQueue.findIndex(event=>event.kind==='engagement');
+  if(priority>=0){
+   const [contact]=resultCutinQueue.splice(priority,1);
+   battleCeremony.showEngagement(contact.text);
+   return;
+  }
+ }
  if(reportsAfterCutin.length){
   for(const report of reportsAfterCutin.splice(0,2))battleDialogue.push(report);
   return;
  }
  if(finished||!battleReady||tacticalPlanningActive||!resultCutinQueue.length)return;
  const next=resultCutinQueue.shift();
- if(/撃破|壊滅|全滅/.test(next.title))battleCeremony.showAnnihilation(next.title,next.text);
+ if(next.kind==='engagement')battleCeremony.showEngagement(next.text);
+ else if(/撃破|壊滅|全滅/.test(next.title))battleCeremony.showAnnihilation(next.title,next.text);
  else battleCeremony.showResult(next.title);
  if(next.squadId!=null&&
    (next.title.includes('撃破')||next.title.includes('壊滅')||next.title.includes('回復')))
   beginSquadFocusCinematic(next.squadId,next.cameraTeam??0,'result');
- reportAfterBattleCutin(next.text,next);
+ if(next.kind!=='engagement')reportAfterBattleCutin(next.text,next);
 }
 // Suppress *all* camera, command and menu gestures while the battle title
 // or victory/defeat animation owns the screen. A gesture may still unlock
@@ -9883,6 +9894,8 @@ squadTargetSvg.append(squadSelectedAttackArrow);
 const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map(),ribbonPageNodes=new Map();
 const ribbonPages=[0,0],ribbonPageSize=5;
 let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
+let latestBattleTeamPresentationRows=[];
+const battleTeamEventTracker=createBattleThreeTeamEventTracker();
 battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  onCommand:(team,id)=>{
   // Inn sorties are three command teams. Never submit a synthetic HUD team ID
@@ -9948,9 +9961,33 @@ function refreshBattleRpgSquadHud(sums){
   const fallback=storyRequest?.units?.find(unit=>Number(unit.armyGroupId)===group&&unit.captain)?.captain;
   return [String(group),saved||fallback||null];
  }));
- battleRpgHud.update(THREE_TEAM_BATTLE?
-  aggregateBattleRpgTeams(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup):rows,
-  {show:battleReady&&!finished&&!battleCeremony.locked});
+ const teamRows=THREE_TEAM_BATTLE?
+  aggregateBattleRpgTeams(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup):rows;
+ // Radar, badge and cut-ins consume this single authoritative contact snapshot.
+ // Do not read cached HUD DOM rows: its rendering signature intentionally
+ // ignores fast-changing frontline x/z coordinates.
+ latestBattleTeamPresentationRows=teamRows;
+ battleRpgHud.update(teamRows,{show:battleReady&&!finished&&!battleCeremony.locked});
+ if(THREE_TEAM_BATTLE&&battleReady&&!finished&&!paused){
+  const {engagements,annihilations}=battleTeamEventTracker.observe(teamRows);
+  if(engagements.length){
+   if(!firstBattleEngagement){
+    firstBattleEngagement=true;
+    battleAudio.setPhase('battle');
+   }
+   queueBattleResultCutin('⚔ 交戦開始',
+    '味方'+engagements.map(event=>'第'+event.groupId+'隊').join('・')+'が敵と交戦！',
+    {kind:'engagement'});
+  }
+  for(const event of annihilations){
+   const enemy=event.team===1;
+   queueBattleResultCutin(enemy?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅',
+    (enemy?'敵':'味方')+'第'+event.groupId+'隊が全滅。現在 0/'+event.total+
+    '人、戦闘不能 '+event.total+'人。',
+    {team:enemy?0:1,cameraTeam:event.team,
+     squadId:event.squadId||null,priority:96});
+  }
+ }
  realtimeCommandUI?.update(rows);
 }
 window.getBattleRpgSquadHudQA=()=>({
@@ -10255,7 +10292,7 @@ function renderSquadRibbons(sums){
 function updateSquadMarkerPositions(dt){
  if(paused&&commandOverviewLocked)return; // frozen positions are already cached
  squadMarkerClock+=dt;
- if(squadMarkerClock>=.25){
+ if(squadMarkerClock>=(THREE_TEAM_BATTLE?.12:.25)){
   squadMarkerClock=0;
   const sums=new Map();
   for(const u of squadRoster){
@@ -10287,14 +10324,14 @@ function updateSquadMarkerPositions(dt){
    const status=sum.n===0?'☠ 全滅':share<=.25||hpShare<=.25?'🆘 壊滅寸前':share<=.5||hpShare<=.5?'⚠ 半数以下':'';
    const previousAlive=marker.userData.previousAlive,previousHp=marker.userData.previousHp;
    marker.userData.previousAlive=sum.n;marker.userData.previousHp=sum.hp;
-   if(previousAlive>0&&sum.n===0){
+   if(!THREE_TEAM_BATTLE&&previousAlive>0&&sum.n===0){
     const defeatedEnemy=marker.userData.team===1;
     queueBattleResultCutin(defeatedEnemy?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅',
      (defeatedEnemy?'敵':'味方')+squadName(marker.userData.squadId,marker.userData.team)+
      'が全滅。現在 0/'+sum.total+'人、戦闘不能 '+sum.total+'人。',
      {team:defeatedEnemy?0:1,cameraTeam:marker.userData.team,
       squadId:String(marker.userData.squadId),priority:96});
-   }else if(marker.userData.team===0&&previousHp!=null&&sum.hp>previousHp+15&&
+   }else if(!THREE_TEAM_BATTLE&&marker.userData.team===0&&previousHp!=null&&sum.hp>previousHp+15&&
     !firstHealingReportShown){
     // HP keeps recovering normally; only the first successful healing event
     // across the ENTIRE battle gets a result cut-in/report.
@@ -11211,7 +11248,7 @@ function skirmishTeamDeploymentPlan(id,point){
 // strategist's position. Deployment continues to use leader anchors.
 function liveRadarEngagementPoints(side){
  const result=new Map();
- for(const row of battleRpgHud?.rows||[]){
+ for(const row of latestBattleTeamPresentationRows){
   if(Number(row.team)!==side||!row.inContact||
      !Number.isFinite(row.engagementPoint?.x)||
      !Number.isFinite(row.engagementPoint?.z))continue;
@@ -11730,7 +11767,7 @@ window.getBattleSharedItemQA=()=>({
 // Switch from march to combat score on actual first contact.
 let firstBattleEngagement=false,lastBattleContactCheck=-Infinity;
 function updateBattleEngagement(){
- if(TOWN_MODE||!battleReady||finished||paused||firstBattleEngagement||
+ if(THREE_TEAM_BATTLE||TOWN_MODE||!battleReady||finished||paused||firstBattleEngagement||
     elapsed-lastBattleContactCheck<.55)return;
  lastBattleContactCheck=elapsed;
  const enemies=turnEnemies();
