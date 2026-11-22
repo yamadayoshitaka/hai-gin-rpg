@@ -1,0 +1,44 @@
+name: V111 Face Geometry and First Frame Regression
+on:
+  pull_request:
+    paths:
+      - 'face-mesh-studio.html'
+      - 'src/face-v106-local-retopo.js'
+      - 'src/face-v107-natural-smile.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'qa/face-v111-initial-cheek-regression.test.mjs'
+      - '.github/workflows/face-v111-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'face-mesh-studio.html'
+      - 'src/face-v106-local-retopo.js'
+      - 'src/face-v107-natural-smile.js'
+      - 'src/face-feature-meshes.js'
+      - 'src/independent-face-masters.js'
+      - 'qa/face-v111-initial-cheek-regression.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-glb-and-face-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real 3D engine
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Check geometry pipeline JavaScript
+        run: |
+          node --check src/face-v106-local-retopo.js
+          node --check src/face-v107-natural-smile.js
+          node --check src/independent-face-masters.js
+          node --check qa/face-v111-initial-cheek-regression.test.mjs
+      - name: Compare actual CC0 GLB normals and triangle indices after body reselect
+        run: node --test qa/face-v111-initial-cheek-regression.test.mjs
+      - name: Ensure previous v106/v107/v110 face contracts still pass
+        run: node --test qa/face-v106-local-retopo.test.mjs qa/face-v107-natural-smile.test.mjs qa/face-v110-initial-normal-mesh.test.mjs
