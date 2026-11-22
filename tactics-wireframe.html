@@ -1432,7 +1432,13 @@ function setCameraGesture(){
  controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;
 }
 setCameraGesture();
-controls.addEventListener('start',()=>{followCamera=false;targetViewFollowing=false;});
+controls.addEventListener('start',()=>{
+ // Keep the selected squad anchored while pinching/rotating.
+ if(!TOWN_MODE&&battleViewMode==='commander'){
+  targetViewFollowing=false;
+  commanderCinematic=null;cinematicFocusQueue.length=0;
+ }else{followCamera=false;targetViewFollowing=false;}
+});
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE||TOWN_MODE?1024:2048,MASS_SIZE||TOWN_MODE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-145:-65;sun.shadow.camera.right=TOWN_MODE?145:65;sun.shadow.camera.top=TOWN_MODE?145:65;sun.shadow.camera.bottom=TOWN_MODE?-145:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;if(TOWN_MODE){sun.position.set(65,180,165);sun.target.position.set(110,1,110);sun.target.updateMatrixWorld();}sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
@@ -2574,9 +2580,11 @@ function updateBattleResultCutins(){
  if(next.kind==='engagement')battleCeremony.showEngagement(next.text);
  else if(/撃破|壊滅|全滅/.test(next.title))battleCeremony.showAnnihilation(next.title,next.text);
  else battleCeremony.showResult(next.title);
- if(next.squadId!=null&&
-   (next.title.includes('撃破')||next.title.includes('壊滅')||next.title.includes('回復')))
-  beginSquadFocusCinematic(next.squadId,next.cameraTeam??0,'result');
+ // Only annihilation/collapse or item acquisition may automatically focus.
+ const autoShotKind=next.kind==='loot'?'loot':
+  /撃破|壊滅|全滅/.test(next.title)?'annihilation':null;
+ if(autoShotKind&&next.squadId!=null)
+  beginSquadFocusCinematic(next.squadId,next.cameraTeam??next.team??0,autoShotKind);
  if(next.kind!=='engagement')reportAfterBattleCutin(next.text,next);
 }
 // Suppress *all* camera, command and menu gestures while the battle title
@@ -4950,13 +4958,7 @@ function moveActor(a,goal,dt,stop){
    if(e.type==='objectHit'&&creature)creatureAudio.play(creature.type,'hit',{
     objectId:e.objectId,position:{x:p.x,z:p.z},listener:camera.position,volume:.24});
    if(e.type==='skill'){
-    // Chant-start markers are excluded; only the executed UR-grade action
-    // zooms to its CASTING character, not to the target of the attack.
-    if(e.skillId&&!String(e.skillId).startsWith('chant:')&&
-       availableCombatSkills(e.jobId,'UR').some(skill=>skill.rank==='UR'&&skill.id===e.skillId)){
-     queueBattleFocusCinematic((e.x-6)*CELL,(e.z-6)*CELL,
-      {kind:'ultimate',priority:130,team:e.team,detail:e.skillId});
-    }
+    // UR skills play normally without taking over the camera.
     const a=massSim?actors.find(actor=>actor.massUnitId===e.sourceId):actors.find(actor=>actor.id===e.sourceId);
     if(a?.character){a.attackPoseUntil=elapsed+.60;requestMotion(a,e.animation==='cast'?'skill':e.animation==='ranged'?'attack':e.animation||'attack');}
     if(a)battleAudio.cue(['heal','nature'].includes(e.effect)?'heal':magic==='arcane'?'attack':'magic',a);
@@ -5303,7 +5305,7 @@ function updateUnitFloorTravel(a,dt){
     announceBattleLoot(a,loot);
     queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
      (a.team===0?'味方':'敵')+squadName(a.squadId,a.team)+'が'+loot.item+
-     'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId)});
+     'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId),kind:'loot'});
     if(!itemPanel.hidden)renderBattleItemManagement();
     updateUI();
    }
@@ -5702,7 +5704,7 @@ function collectMassRoomItems(){
   queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
     (unit.team===0?'味方':'敵')+squadName(unit.squadId,unit.team)+'が'+
     building.data.kind+'で'+loot.item+'を入手。所持品に反映しました。',
-    {team:unit.team,squadId:String(unit.squadId),priority:86});
+    {team:unit.team,squadId:String(unit.squadId),priority:86,kind:'loot'});
  }
  checkCompletedExplorations();
  if(!itemPanel.hidden)renderBattleItemManagement();
@@ -5749,7 +5751,7 @@ function collectNearbyRoomItems(){
    announceBattleLoot(a,loot);
    queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
     (a.team===0?'味方':'敵')+squadName(a.squadId,a.team)+'が'+loot.item+
-    'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId)});
+    'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId),kind:'loot'});
    pickedUp++;
   }
  }
@@ -7409,10 +7411,8 @@ const battleDialogue=createBattleStrategistDialogue({
     roster.find(u=>u.team===0&&u.id===report.unitId&&u.alive!==false&&u.hp>0&&!u.isStrategist);
   // Never zoom to a dead general or a ground position surrounded by trees.
   if(!unit)return;
-  if(!report.fromMessageTap){
-   beginSquadFocusCinematic(String(unit.squadId),0,'result');
-   return;
-  }
+  // Only an explicit report tap may focus a character.
+  if(!report.fromMessageTap)return;
   const focus=cinematicHumanWorldPoint(unit);
   if(!focus)return;
   const nearbyTrees=cameraTreeCandidates.filter(t=>{
@@ -7555,21 +7555,17 @@ function squadCommandFocus(id,team=0){
  * Keep the 1000v1000 presentation stable by throttling automatic highlights.
  */
 function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='',focusUnitId=null,focusY=null}={}){
+ // Auto shots: team wipeout/collapse and real loot pickup only.
+ if(kind!=='annihilation'&&kind!=='loot')return false;
  if(!battleReady||finished||TOWN_MODE||commandOverviewLocked||!Number.isFinite(x)||!Number.isFinite(z))return false;
  if(battleCeremony.state==='intro'||battleCeremony.state==='outro')return false;
- const stamp=performance.now(),automatic=kind==='ultimate'||kind==='result';
- // Maximum skills have their own cooldown; normal result reports never
- // steal priority from a real UR-rank action.
- if(kind==='ultimate'){
-  if(stamp-lastUltimateFocusAt<6500)return false;
-  lastUltimateFocusAt=stamp;
- }else if(kind==='result'){
-  if(stamp-lastAutomaticFocusAt<1200)return false;
-  lastAutomaticFocusAt=stamp;
- }
+ const stamp=performance.now(),automatic=true;
+ // Keep mass-casualty bursts from cutting to a new team each frame.
+ if(stamp-lastAutomaticFocusAt<1400)return false;
+ lastAutomaticFocusAt=stamp;
  const entry={x,z,kind,priority,team,detail,focusUnitId,focusY};
  if(commanderCinematic){
-  if((kind==='result'||kind==='failure')&&priority>commanderCinematic.priority){
+  if((kind==='annihilation'||kind==='loot')&&priority>commanderCinematic.priority){
    commanderCinematic=null;cinematicFocusQueue.length=0;
    return startBattleFocusCinematic(entry);
   }
@@ -7596,14 +7592,14 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
  const roster=massSim?.units??actors;
  let focusUnit=focusUnitId==null?null:roster.find(u=>u.id===focusUnitId&&u.team===team&&
   u.hp>0&&u.alive!==false&&(kind==='order'||!u.isStrategist));
- if(!focusUnit&&kind!=='explore'&&kind!=='result'&&kind!=='failure'){
+ if(!focusUnit&&kind!=='annihilation'&&kind!=='loot'){
   const nearby=closestAliveBattleFocus(roster,x,z,{
    team,gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
   });
   focusUnit=nearby?.unit??null;
  }
  const actual=focusUnit?cinematicHumanWorldPoint(focusUnit):null;
- if(kind!=='explore'&&kind!=='result'&&kind!=='failure'&&!actual)return false;
+ if(kind!=='annihilation'&&kind!=='loot'&&!actual)return false;
  const closeTarget=actual||new THREE.Vector3(x,Number.isFinite(focusY)?focusY:terrainY(x,z)+1.4,z);
  const center=(WORLD_SIZE/2-6)*CELL;
  const overTarget=new THREE.Vector3(center,terrainY(center,center)+1,center);
@@ -7633,12 +7629,12 @@ function beginSquadFocusCinematic(squadId,team=0,kind='order'){
  const unit=target?.unit||detailed||members[0];
  if(!unit){
   const location=squadMarkers?.get(squadKey(team,String(squadId)))?.userData?.visualTarget;
-  return (kind==='result'||kind==='failure')&&location?
+  return (kind==='annihilation'||kind==='loot')&&location?
    queueBattleFocusCinematic(location.x,location.z,{kind,team,focusY:location.y,priority:160}):false;
  }
  const point=target?.point||cinematicHumanWorldPoint(unit);
  return point?queueBattleFocusCinematic(point.x,point.z,{
-  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:(kind==='result'||kind==='failure')?160:100
+  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='annihilation'?160:110
  }):false;
 }
 function beginCommanderCinematic(squadId){
@@ -7769,7 +7765,7 @@ const battleTacticalUi=installBattleTacticalUI({
  onSituationChange:(id,event)=>{
   if(event.severity==='info')return false;
   const accepted=battleSituationPause.trigger(id,event);
-  if(accepted)beginSquadFocusCinematic(id,0,'result');
+  // Tactical status reports never steal the user's camera.
   return accepted;
  },
  isReady:()=>battleReady&&!finished
@@ -8839,8 +8835,7 @@ const objectiveCheckpoints=createBattleObjectiveCheckpoints({
     normalizeArmyGroup(armyGroupBySquad[x])===Number(row.groupId));
    if(id==null)continue;
    const failed=row.status==='失敗';
-   // Mission outcomes win the camera queue, not mere order confirmations.
-   beginSquadFocusCinematic(String(id),0,failed?'failure':'result');
+   // Mission checkpoints are reported without forced camera movement.
    if(failed)battleTacticalUi.reportStrategicEvent(String(id),{
     severity:'critical',title:row.label+'：作戦失敗',
     reason:'作戦目標に失敗。生存部隊の再配置・守備を検討',ratio:0
@@ -11897,23 +11892,9 @@ window.getBattlePerspectiveQA=()=>({
 let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
 let contactScanAt=-Infinity,manualCameraFocusUntil=0;
 function updateActiveCombatCamera(){
- if(TOWN_MODE||!battleReady||finished||paused||battleViewMode!=='commander'||
-  !followCamera||commandOverviewLocked||commanderCinematic||battleCeremony.locked||
-  performance.now()<manualCameraFocusUntil)return;
- const now=performance.now();
- if(now-contactScanAt<1100)return;
- contactScanAt=now;
- const contact=selectActiveBattleEngagement(massSim?.units??actors,{
-  mass:Boolean(massSim),range:massSim?8:12,preferSquadId:contactSquadId
- });
- if(!contact)return;
- if(contactSquadId!==contact.squadId&&now-contactSwitchAt<3900)return;
- if(contactSquadId!==contact.squadId)contactSwitchAt=now;
- contactSquadId=contact.squadId;
- trackedAllySquadId=contactSquadId;
- if(massSim){focusedHumanUnitId=contact.unitId;automaticContactActorId=null;}
- else automaticContactActorId=contact.unitId;
+ // No automatic target switching during ordinary fighting.
 }
+
 window.getActiveBattleCameraQA=()=>({
  focusSquadId:contactSquadId,actorId:massSim?focusedHumanUnitId:automaticContactActorId,
  mode:battleViewMode,cinematic:commanderCinematic?.kind??null
