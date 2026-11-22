@@ -105,8 +105,8 @@ test('laugh and surprise visibly open both lips and eyelids, then reset',()=>{
  const neutralEye=upperEye.geometry.getAttribute('position').array.slice();
  const neutralSkin=model.face.geometry.getAttribute('position').array.slice();
  animator.setExpression('laugh');
- assert.ok(animator.getState().mouthOpen>=.65&&animator.getState().mouthOpen<.80,
-  'Natural laugh preserves jaw proportions and never opens to the limit');
+ assert.ok(animator.getState().mouthOpen>=.85&&animator.getState().mouthOpen<.95,
+  'Real laugh opens visibly but remains below full jaw extension');
  assert.ok(lipY-lip.position.y>.010,
   'Laughing should actually lower the lip, not merely show a mouth label');
  const cavity=model.face.getObjectByName('V48_3D_INNER_MOUTH');
@@ -138,7 +138,7 @@ test('v80 expressions ease across FACS muscle poses instead of snapping',()=>{
  assert.ok(animator.getState().mouthOpen<.85);
  for(let i=0;i<7;i++)animator.update(.06);
  assert.equal(animator.getState().v80TransitionProgress,null);
- assert.ok(animator.getState().mouthOpen>=.65&&animator.getState().mouthOpen<.80);
+ assert.ok(animator.getState().mouthOpen>=.85&&animator.getState().mouthOpen<.95);
  animator.transitionToExpression('neutral',.28);
  for(let i=0;i<7;i++)animator.update(.06);
  assert.equal(animator.getState().mouthOpen,0);
