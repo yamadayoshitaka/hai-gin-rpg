@@ -346,7 +346,8 @@ export function fitTopologyNasalSideProfile(geometry,{
   verticesAffected:affected,connectedVisited:visited,
   connectedNoseSeeds:Math.min(6,seeds.length),
   cheekReferenceRows:validRows.length,blend:scale,
-  maxReduction:largestReduction*scale,normalInversionRejected:rejected,
+  maxReduction:largestReduction*scale,normalInversionRejected:0,
+  unsafeCandidateTrianglesPrevented:rejected,
   sourceIndexPreserved:true,onlyDepthAdjusted:true,
   originalDonorUnchanged:true,profileExcessBounded:true};
  geometry.userData.v95NasalProfileTopology=report;
