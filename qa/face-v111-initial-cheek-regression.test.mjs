@@ -93,7 +93,11 @@ test('v111 actual GLB: first normal equals normal after thin, byte-for-byte geom
    changed++;max=Math.max(max,Math.abs(a[i]-b[i]));
    if(first<0)first=i;
   }
-  return {changed,max,first,count:a.length};
+  const nonFinite=a.reduce((acc,x,i)=>{
+   if(!Number.isFinite(x)){acc.count++;if(acc.first.length<8)acc.first.push([i,x]);}
+   return acc;
+  },{count:0,first:[]});
+  return {changed,max,first,count:a.length,nonFinite};
  };
  for(const name of ['position','normal','uv','color']){
   const a=visibleSkin(initial).getAttribute(name)?.array,
@@ -105,6 +109,7 @@ test('v111 actual GLB: first normal equals normal after thin, byte-for-byte geom
     originalDriftAfterInitial:drift(original,sourceAfterInitial),
     originalDriftAfterThin:drift(original,sourceAfterThin),
     originalDriftAtEnd:drift(original,source.geometry.getAttribute('position').array),
+    initialControls:beforeControls,normalControls:afterControls,
     firstReport:initial.report.v106LocalRetopo,
     finalReport:normalAgain.report.v106LocalRetopo}));
  }
