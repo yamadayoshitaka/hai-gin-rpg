@@ -8527,10 +8527,16 @@ function squadCenter(id,team=0){
  // Prefer the real soldier cluster so the button never zooms to empty ground.
  const soldiers=alive.filter(u=>!u.isStrategist);
  const members=soldiers.length?soldiers:alive;
- if(!members.length)return null;
- const x=members.reduce((sum,u)=>sum+(massSim?u.x:u.cell.x),0)/members.length;
- const z=members.reduce((sum,u)=>sum+(massSim?u.z:u.cell.z),0)/members.length;
- return {x,z,n:members.length};
+ // Some worker updates temporarily contain alive units without valid
+ // coordinates. Ignore these instead of hiding the entire team's map pin.
+ const positioned=members.map(u=>({
+  x:massSim&&Number.isFinite(u.x)?u.x:u.cell?.x,
+  z:massSim&&Number.isFinite(u.z)?u.z:u.cell?.z
+ })).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z));
+ if(!positioned.length)return null;
+ const x=positioned.reduce((sum,p)=>sum+p.x,0)/positioned.length;
+ const z=positioned.reduce((sum,p)=>sum+p.z,0)/positioned.length;
+ return {x,z,n:positioned.length};
 }
 function resolveMissionTarget(type,x,z){
  if(type==='eliminate_commander'){
