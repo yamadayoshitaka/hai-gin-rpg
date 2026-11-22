@@ -519,6 +519,30 @@ function updateFacePoseDiagnostics(){
 if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
+  // V113: fingerprint the actual rendered head, not a cached control/preset
+  // label. This distinguishes the smooth 3490-vertex original from the
+  // malformed 8029-vertex v106 retopologized first frame.
+  geometrySignature(){
+   const face=models.get('female')?.face;
+   const geometry=face?.userData?.originalHairScalpGeometry||face?.geometry;
+   if(!geometry)return null;
+   const hash=attr=>{
+    if(!attr)return null;
+    const data=attr.array,bytes=new Uint8Array(data.buffer,data.byteOffset,data.byteLength);
+    let h=2166136261;
+    for(let i=0;i<bytes.length;i++)h=Math.imul(h^bytes[i],16777619)>>>0;
+    return h.toString(16).padStart(8,'0');
+   };
+   return {
+    vertices:geometry.getAttribute('position')?.count||0,
+    triangles:(geometry.getIndex()?.count||0)/3,
+    positions:hash(geometry.getAttribute('position')),
+    normals:hash(geometry.getAttribute('normal')),
+    trianglesHash:hash(geometry.getIndex()),
+    v106RetopoApplied:face.userData.v106LocalRetopo?.applied===true,
+    nativeNormal:!experimentalCheekRetopo
+   };
+  },
   setBlink(value){expressions.get(gender)?.setBlinkProgress(value);},
    setMouth(value){expressions.get(gender)?.setMouthOpen(value);},
    forceExpression(value){expressions.get(gender)?.setExpression(value);updateFacePoseDiagnostics();},
@@ -913,7 +937,7 @@ function facePhotoRuntimeStatus(){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const quick=document.getElementById('faceViewerStatus');
- if(quick)quick.textContent='顔 v113・メッシュv110｜髪 v72｜肌：'+faceStatus;
+ if(quick)quick.textContent='顔 v113・元GLB基準｜髪 v72｜肌：'+faceStatus;
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const normalCheekReport=models.get('female')?.report?.v105CheekGeometry;
  const v111CheekReport=models.get('female')?.report?.v106LocalRetopo?.v111CheekSurface;
