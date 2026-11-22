@@ -100,7 +100,9 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
    const horizontal=width*(incisor?.037:canine?.034:.038);
    // A narrower mouth also needs narrower, SHORT dental crowns;
    // retaining old crown height creates fang-like teeth in V88.
-   const vertical=Math.min(height*(incisor?.0057:canine?.0052:.0042),horizontal*.83);
+   // Scale crown height to the real aperture; long vertical enamel blocks
+   // previously protruded beyond the native rim as rabbit-like teeth.
+   const vertical=Math.min(height*(incisor?.0038:canine?.0036:.0032),horizontal*.67);
    crown.scale.set(horizontal,vertical,depth*.0050);
    crown.position.set(t*spread,
     (isUpper?-1:1)*height*.0014,
