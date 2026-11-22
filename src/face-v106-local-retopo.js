@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {v107NeutralCheekDepth} from './face-v107-natural-smile.js?v=107-soft-malar-rest-shape';
 
 /**
  * V106: local visible-skin retopology without replacing the CC0 donor.
@@ -26,6 +27,34 @@ export function v106FaceZone({xn=0,yn=0,zn=0,ageStrength=0}={}){
  const oral=smooth(.075,.145,x)*(1-smooth(.355,.46,x))*
   smooth(.445,.479,yn)*(1-smooth(.565,.603,yn))*front;
  return {cheek,oral};
+}
+
+/**
+ * V107: restore actual forward cheek thickness before the v106 one-ring
+ * fairing, on the SINGLE owned head geometry and WITHOUT modifying ring
+ * vertex IDs, UV coordinates, eye sockets or silhouette X/Y.
+ */
+function restoreV107NeutralCheeks(geometry,protectedSet,ageStrength=0){
+ const pos=geometry.getAttribute('position');
+ geometry.computeBoundingBox();
+ const b=geometry.boundingBox,dx=b.max.x-b.min.x,
+  dy=b.max.y-b.min.y,dz=b.max.z-b.min.z,cx=(b.min.x+b.max.x)/2;
+ let vertices=0,maxDelta=0,addedDepth=0;
+ for(let i=0;i<pos.count;i++){
+  if(protectedSet.has(i))continue;
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const delta=v107NeutralCheekDepth({xn:(x-cx)/(dx*.5),
+   yn:(y-b.min.y)/dy,zn:(z-b.min.z)/dz,depth:dz,ageStrength});
+  if(delta>dz*.00001){
+   pos.setZ(i,z+delta);
+   vertices++;
+   maxDelta=Math.max(maxDelta,delta);
+   addedDepth+=delta;
+  }
+ }
+ pos.needsUpdate=true;
+ geometry.computeBoundingBox();
+ return {vertices,maxDelta,addedDepth,geometryOnly:true};
 }
 
 /** Slight Z fairing of original low-poly cheek, NEVER a new cheek mound.
@@ -204,7 +233,7 @@ function subdivideOnce(geometry,protectedSet,{mouthOnly=false}={}){
  * Retained seal triangles remain at the END of the index buffer; the
  * native rig sees the updated original source triangle count.
  */
-export function refineV106CheekMouthTopology(face,{gender='female'}={}){
+export function refineV106CheekMouthTopology(face,{gender='female',ageStrength=0}={}){
  const geometry=face?.geometry,seal=face?.userData?.v86OralSeal;
  const p=geometry?.getAttribute?.('position'),idx=geometry?.getIndex?.();
  const fail=reason=>({applied:false,reason});
@@ -223,6 +252,7 @@ export function refineV106CheekMouthTopology(face,{gender='female'}={}){
   beforeTriangles=idx.count/3,beforeIndices=Array.from(idx.array);
  const geometryBackup=geometry.clone();
  try{
+  const restCheek=restoreV107NeutralCheeks(geometry,protectedSet,ageStrength);
   const fairing=regularizeCheeks(geometry,protectedSet);
   geometry.userData.v106OriginalTriCount=seal.initialTriangleCount;
   const broad=subdivideOnce(geometry,protectedSet);
@@ -245,6 +275,9 @@ export function refineV106CheekMouthTopology(face,{gender='female'}={}){
    addedVertices:totalAdded,addedTriangles:broad.addedTriangles+oral.addedTriangles,
    cheekRelaxedVertices:fairing.changed,
    maxCheekRelaxation:fairing.maxDisplacement,
+   v107RestCheekVertices:restCheek.vertices,
+   v107MaxForwardCheekDepth:restCheek.maxDelta,
+   v107TotalForwardCheekDepth:restCheek.addedDepth,
    protectedLipVertexCount:protectedSet.size,
    lipRingIndicesPreserved:true,donorPreserved:true,
    oralInteriorCapPreserved:true,noFloatingLipMesh:true};
