@@ -41,19 +41,24 @@ export function fairYoungPortraitSurface(geometry,{gender='female',ageWrinkles=0
   const x=src[i*3],y=src[i*3+1],z=src[i*3+2];
   const ax=Math.abs((x-cx)/(d.x*.5)),ny=(y-box.min.y)/d.y;
   const front=smooth(.55,.82,(z-box.min.z)/d.z);
-  // Mid/lower cheek support sits OUTSIDE nose and the real oral commissure.
-  // The top cheekbone remains rounded; the lower contour fades before neck.
-  const cheek=smooth(.19,.32,ax)*(1-smooth(.76,.90,ax))*
-   bell(ax,.49,.21)*bell(ny,.466,.118)*front;
+  // The actual severe hollow in the v92 screenshot is HIGH on the cheek
+  // (between lower lid and alar wing), not only at the lower jaw. Support
+  // the midface independently without swelling the eyelid or nasal bridge.
+  const upperCheek=smooth(.30,.42,ax)*(1-smooth(.79,.91,ax))*
+   bell(ax,.52,.18)*bell(ny,.574,.076)*front;
+  const lowerCheek=smooth(.19,.32,ax)*(1-smooth(.76,.90,ax))*
+   bell(ax,.49,.21)*bell(ny,.454,.090)*front;
   const oralSafe=1-bell(ax,.19,.11)*bell(ny,.509,.060);
-  const eyeSafe=1-bell(ax,.34,.23)*bell(ny,.685,.071);
-  const faceField=cheek*oralSafe*eyeSafe;
-  // Most of the visible dark patches were steep triangle-to-triangle
-  // normal discontinuities near the alar wings; smooth cautiously here.
-  const nostrilSafe=1-bell(ax,.14,.09)*bell(ny,.526,.021);
+  const eyeSafe=1-bell(ax,.34,.23)*bell(ny,.685,.058);
+  const faceField=(upperCheek*.90+lowerCheek*.45)*oralSafe*eyeSafe;
+  // Smooth alar sidewalls carefully to remove the black triangular ledges,
+  // while preserving real donor nostril openings and nose-tip landmarks.
+  const nostrilSafe=1-bell(ax,.14,.09)*bell(ny,.526,.018);
   const noseWall=bell(ax,.17,.085)*bell(ny,.591,.060)*front*nostrilSafe;
-  weights[i]=youth*(faceField*.66+noseWall*.18);
-  lifts[i]=youth*d.z*.050*ratio*faceField;
+  const noseAlar=bell(ax,.135,.045)*bell(ny,.550,.024)*front;
+  weights[i]=youth*(faceField*.76+noseWall*.21+noseAlar*.15);
+  lifts[i]=youth*d.z*ratio*(.069*upperCheek*oralSafe*eyeSafe+
+   .026*lowerCheek*oralSafe*eyeSafe+.004*noseAlar);
  }
  // Smooth only close triangulated neighbors; no cross-mouth interpolations.
  const maxDistance=d.x*.105;
