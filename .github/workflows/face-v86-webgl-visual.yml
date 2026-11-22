@@ -12,6 +12,7 @@ on:
       - 'src/independent-face-masters.js'
       - 'face-mesh-studio.html'
       - 'qa/face-v86-webgl-visual.mjs'
+      - 'qa/face-v112-wire-overlay.test.mjs'
       - '.github/workflows/face-v86-webgl-visual.yml'
   workflow_dispatch:
 permissions:
@@ -33,12 +34,16 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-webgl-server.log 2>&1 &
           sleep 2
+      - name: Verify wire overlay keeps shaded face and hair on mobile and after body reselect
+        run: node qa/face-v112-wire-overlay.test.mjs
       - name: Assert no large black polygons on normal/laugh/surprised faces
         run: node qa/face-v86-webgl-visual.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: face-v88-webgl-evidence
-          path: qa/screenshots/face-v88/*.png
+          path: |
+            qa/screenshots/face-v88/*.png
+            qa/screenshots/face-v112/*.png
           if-no-files-found: ignore
           retention-days: 7
