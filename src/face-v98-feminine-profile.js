@@ -40,15 +40,19 @@ export function feminineMidfaceNoseDelta({
   (1-smooth(.258,.30,ax))*front;
  const tip=bell(ax,.036,.079)*bell(yn,.571,.040)*front;
  const nostrilRim=bell(ax,.111,.048)*bell(yn,.535,.021)*front;
+ // Neutral oral surface must remain fixed for the native moving lip ring.
+ // Fade out nasal motion rapidly before the philtrum/oral commissures.
+ const oralGuard=1-bell(ax,.10,.12)*bell(yn,.505,.038);
+ const nasalWidth=(-.071*alar-.017*bridge)*oralGuard;
  // Width comes from true cheek vertices; z provides volume, not shadow.
- const dx=xn*(.010*upper+.006*lower-.071*alar-.017*bridge)*youth;
+ const dx=xn*(.010*upper+.006*lower+nasalWidth)*youth;
  // A slightly lower columella and alar underside hides the snub/pig nose
  // from the front while maintaining a continuous nose-to-philtrum slope.
- const dy=-(.0082*tip+.0035*nostrilRim)*youth;
+ const dy=-(.0082*tip+.0035*nostrilRim)*oralGuard*youth;
  // Reduce bulbous tip projection after v95's profile cap and replenish
  // BOTH inner malar and outer mid-cheek rather than the jaw.
- const dz=(.079*upper+.037*lower-.022*tip-.009*alar+
-  .0025*bridge)*youth;
+ const dz=(.079*upper+.037*lower+
+  (-.022*tip-.009*alar+.0025*bridge)*oralGuard)*youth;
  return {dx,dy,dz,cheek,alar};
 }
 
