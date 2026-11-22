@@ -482,7 +482,10 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
      renderVertexCount:geometry?.getAttribute('position')?.count,
      drawCount:geometry?.drawRange?.count,
      nativeWallVisible:face?.getObjectByName('V88_NATIVE_RECESSED_ORAL_VESTIBULE')?.visible,
-     teethVisible:face?.getObjectByName('V80_INTRAORAL_ANATOMY')?.visible};
+     teethVisible:face?.getObjectByName('V80_INTRAORAL_ANATOMY')?.visible,
+     v96LipstickVertices:face?.userData?.v96NativeRimLipPigmentVertices??0,
+     v96LipShaderPreserved:!!face?.material?.userData?.v90LipGlossFollowsHeadVertices,
+     v96EyelinerSegments:models.get(gender)?.parts?.getObjectByName('LEFT_UPPER_EYELINER')?.userData?.v96StrokeSegments??0};
    },
    // Bypass Playwright's flaky screenshots on a continuously animated
    // Three.js canvas. Capture the real WebGL frame synchronously after render.
