@@ -244,7 +244,7 @@ import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=20261122-v107-animated-laugh';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v107-cheek-rest-and-mouth';
 import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
-import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69-faceclear-v70-salon-v71-pins-v72-eye-clearance-v92-portrait-v93';
+import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69-faceclear-v70-salon-v71-pins-v72-eye-clearance-v92-portrait-v93-root-contact-v109';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=67-v72';
 import {listWigStyles,getWigStyle,DEFAULT_WIG_STYLE_ID,WIG_BASE_VOLUME_PROFILES,isSadakoFamilyStyle,isBuzzFamilyStyle} from './src/face-wig-styles.js?v=67-v72';
@@ -874,7 +874,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const report=wig?.getReport?.()||{};
  const meshCount=wig?.root?.children?.length??0;
  el.textContent='髪コード: '+FACE_HAIR_RUNTIME_BUILD+' / 造形v72'+
-  ' / 頭皮補正v9: '+mode+' / 除外三角形: '+count+
+  ' / 根元密着v109 / 頭皮補正v9: '+mode+' / 除外三角形: '+count+
   ' / モデル生成: '+(error?'失敗 '+String(error):wig?'成功':'待機')+
   ' / 極短毛色: '+(report.closeCutPigmentHex||'対象外')+
   ' / 自己影: '+(report.closeCutSelfShadowDisabled?'無効':'通常')+
