@@ -72,5 +72,5 @@ test('v107 calm rhythmic laugh has bounded moving jaw/cheek intensity',()=>{
 test('v107 female neutral mouth defaults to 0.78, without rewriting the male or selected widths',()=>{
  assert.equal(normalizeFemaleFaceControls({}).mouthWidth,.78);
  assert.equal(normalizeFemaleFaceControls({mouthWidth:.93}).mouthWidth,.93);
- assert.notEqual(normalizeMaleFaceControls({}).mouthWidth,undefined);
+ assert.equal(normalizeMaleFaceControls({}).mouthWidth,.65);
 });
