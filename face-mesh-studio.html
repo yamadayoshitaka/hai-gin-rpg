@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#14263a">
 <!-- Pages publication retry: scalp v29 c937964d; requested visual verification 2026-11-21 -->
 <!-- FaceHair Pages redeploy checkpoint: 2026-11-21 v23 publication retry; verify runtime build badge -->
-<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v111</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v112</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -77,7 +77,7 @@ button{padding:9px 11px}
 </style><style>.v64-manager-link{display:inline-flex;margin:8px 0;padding:9px 12px;border-radius:8px;background:#246b59;color:white;text-decoration:none;border:1px solid #9bd8be}</style></head>
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
 <header>
-<h1>顔・髪の編集｜顔品質 v111・髪造形 v72</h1>
+<h1>顔・髪の編集｜顔品質 v112・髪造形 v72</h1>
 <a class="studioNav" href="./face-body-studio.html?v=76" id="returnToCostume">衣装確認画面に戻る</a>
 </header>
 <main><section class="panel">
@@ -93,7 +93,7 @@ button{padding:9px 11px}
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
 <div class="previewStage" id="previewStage">
-<div id="faceViewerStatus" role="status" aria-live="polite">顔 v111・髪 v72｜3Dモデルを読込中…</div>
+<div id="faceViewerStatus" role="status" aria-live="polite">顔 v112・髪 v72｜3Dモデルを読込中…</div>
 <canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
@@ -121,8 +121,8 @@ button{padding:9px 11px}
 </div>
 <details id="studioTechnicalDetails" class="studioTechDetails">
 <summary>品質・生成ログを表示</summary>
-<div id="hairBuildBadge" class="studioBadgeDetails" aria-live="polite">顔品質 v111／髪造形 v72：読込中…</div>
-<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v111：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
+<div id="hairBuildBadge" class="studioBadgeDetails" aria-live="polite">顔品質 v112／髪造形 v72：読込中…</div>
+<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v112：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
 
 <section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
 <output id="facePoseDiagnostics" role="status" aria-live="polite"
@@ -234,13 +234,13 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v111-first-frame-cheek","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v111-guarded-cheek","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v112-opaque-wire-overlay","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v111-guarded-cheek","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v111-first-frame-cheek';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v112-opaque-wire-overlay';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=20261122-v107-animated-laugh';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v111-guarded-cheek';
 import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
@@ -694,7 +694,15 @@ function setActive(ids,id){
 }
 function metrics(){
  const model=models.get(gender);
+ const wireOverlay=model?.face?.userData?.v112WireOverlay;
+ const hair=wigs.get(gender)?.root;
+ let hairWireframeMaterials=0;
+ hair?.traverse(o=>{if(o.isMesh&&o.material?.wireframe)hairWireframeMaterials++;});
  return {loaded:ready,gender,view:angle,wire:wired,partsOn,
+  v112WireOverlay:!!wireOverlay,wireOverlayOpacity:wireOverlay?.material?.opacity??null,
+  wireOverlayGeometryMatches:wireOverlay?wireOverlay.geometry===model.face.geometry:null,
+  skinWireframe:!!model?.face?.material?.wireframe,
+  hairWireframeMaterials,
   faceMode,contactColor,performanceMetrics:{...performanceMetrics},
   expression:expressions.get(gender)?.getState()||null,
   v32PartSelection:{...v32Parts[gender]},
@@ -820,11 +828,47 @@ for(const g of ['female','male'])
  $(g).addEventListener('click',()=>selectGender(g));
 for(const view of ['front','threeQuarter','side','back','crown','underside'])
  $(view).addEventListener('click',()=>setView(view));
+// V112: changing the actual skin/eye/hair materials to wireframe made the
+// shaded portrait disappear and covered the eyes in black triangle lines.
+// Wire is now a LOW-OPACITY diagnostic overlay of the existing face mesh
+// only. The original PBR skin, face pigments, eyelids, lips and hair remain
+// opaque and unmodified. No extra geometry/tessellation is generated.
+function syncWireOverlay(face){
+ if(!face?.isMesh)return;
+ let overlay=face.userData.v112WireOverlay;
+ if(!wired){
+  if(overlay){
+   overlay.removeFromParent();
+   overlay.material.dispose();
+   delete face.userData.v112WireOverlay;
+  }
+  return;
+ }
+ if(!overlay){
+  const material=new THREE.MeshBasicMaterial({
+   color:0x89d4e4,wireframe:true,transparent:true,opacity:.17,
+   side:THREE.FrontSide,depthTest:true,depthWrite:false,toneMapped:false,
+   polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1
+  });
+  overlay=new THREE.Mesh(face.geometry,material);
+  overlay.name='V112_SKIN_WIRE_OVERLAY';
+  overlay.userData.faceTopologyOverlay=true;
+  overlay.frustumCulled=false;
+  overlay.raycast=()=>{};
+  overlay.renderOrder=face.renderOrder+1;
+  face.add(overlay);
+  face.userData.v112WireOverlay=overlay;
+ }
+ overlay.geometry=face.geometry;
+}
+function updateWireControl(){
+ $('wire').setAttribute('aria-pressed',String(wired));
+ $('wire').textContent=wired?'ワイヤー解除':'ワイヤー表示';
+ for(const m of models.values())syncWireOverlay(m.face);
+}
 $('wire').addEventListener('click',()=>{
- wired=!wired;$('wire').setAttribute('aria-pressed',String(wired));
- for(const m of models.values())m.face.traverse(o=>{
-  if(o.isMesh&&o.material)o.material.wireframe=wired;
- });
+ wired=!wired;
+ updateWireControl();
  $('metrics').textContent=JSON.stringify(metrics(),null,2);
 });
 $('parts').addEventListener('click',()=>{
@@ -859,7 +903,7 @@ function facePhotoRuntimeStatus(){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const quick=document.getElementById('faceViewerStatus');
- if(quick)quick.textContent='顔 v111・メッシュv110｜髪 v72｜肌：'+faceStatus;
+ if(quick)quick.textContent='顔 v112・メッシュv110｜髪 v72｜肌：'+faceStatus;
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const normalCheekReport=models.get('female')?.report?.v105CheekGeometry;
  const v111CheekReport=models.get('female')?.report?.v106LocalRetopo?.v111CheekSurface;
@@ -882,7 +926,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const cheekNoseStatus=cheekNoseApplied?'適用済（'+(cheekNoseReport.effectiveVertices||cheekNoseReport.verticesAffected)+'頂点）':
   cheekNoseReport?.reason?'未適用：'+cheekNoseReport.reason:'読込中';
  const release=document.getElementById('faceQualityRelease');
- if(release)release.textContent='顔品質 v111｜実写肌PBR：'+faceStatus+
+ if(release)release.textContent='顔品質 v112｜実写肌PBR：'+faceStatus+
   '｜v111頬形状：'+v111CheekStatus+'｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔・顔メッシュ：'+cheekNoseStatus+'｜髪造形 v72';
  const face=models.get('female')?.face;
  const mask=face?.userData;
@@ -890,9 +934,9 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const count=mask?.hairScalpMaskedTriangles??0;
  const active=Boolean(mask?.hairScalpMaskActive);
  const reloadButton=document.getElementById('hairForceReload');
- if(reloadButton)reloadButton.title='現在の顔品質 v111／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
+ if(reloadButton)reloadButton.title='現在の顔品質 v112／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
  const badge=document.getElementById('hairBuildBadge');
- if(badge)badge.textContent='顔品質 v111（実写肌：'+faceStatus+'）｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔補正：'+cheekNoseStatus+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
+ if(badge)badge.textContent='顔品質 v112（実写肌：'+faceStatus+'）｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔補正：'+cheekNoseStatus+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
   '｜頭皮補正：'+(active?'ON':mode==='long-pigment-underlay'?'ロング被覆':'OFF')+'（'+mode+'）';
  const el=document.getElementById('hairRuntimeDiagnostics');
@@ -934,22 +978,22 @@ function setHairHiddenScalp(face,enabled,wig=null){
  face.userData.hairScalpMaskActive=false;
  face.userData.hairScalpMaskedTriangles=0;
  face.userData.hairScalpMaskMode='native-restored';
- if(!enabled)return;
+ if(!enabled){syncWireOverlay(face);return;}
   const sadakoCover=isSadakoFamilyStyle(wig?.root?.userData?.hairStyleId);
   if(!isBuzzFamilyStyle(wig?.root?.userData?.hairStyleId)&&!sadakoCover){
    face.userData.hairScalpMaskMode='long-pigment-underlay';
-   return;
+   syncWireOverlay(face);return;
   }
   // V53: Long hair and buzz must use THE SAME contour and native donor
   // clipping. The old long-only path left the original skin in front of
   // the painted hair cap, exposing a broad white forehead/crown wedge.
  const position=original.getAttribute('position');
- if(!position||position.count<3)return;
+ if(!position||position.count<3){syncWireOverlay(face);return;}
  original.computeBoundingBox();
  const box=original.boundingBox;
  const d=box.getSize(new THREE.Vector3());
  const center=box.getCenter(new THREE.Vector3());
- if(d.x<=0||d.y<=0||d.z<=0)return;
+ if(d.x<=0||d.y<=0||d.z<=0){syncWireOverlay(face);return;}
  // The same anatomical contour drives scalp pigment and donor clipping.
   const signed=(v)=>v.position[1]-(box.min.y+d.y*(
    buzzHairlineFractionAtPoint({x:v.position[0],y:v.position[1],z:v.position[2]},box,d,center)+.003));
@@ -1021,7 +1065,7 @@ function setHairHiddenScalp(face,enabled,wig=null){
   if(vertexCount>start)
    retainedGroups.push({start,count:vertexCount-start,materialIndex:group.materialIndex});
  }
- if(!removed&&!clipped)return;
+ if(!removed&&!clipped){syncWireOverlay(face);return;}
  const clone=new THREE.BufferGeometry();
  let invalidColorComponents=0;
  for(const [key,attr] of attrs){
@@ -1058,6 +1102,7 @@ function setHairHiddenScalp(face,enabled,wig=null){
  face.userData.hairScalpClippedTriangles=clipped;
  face.userData.hairScalpMaskMode=sadakoCover?
   'v53-sadako-matched-donor-clipping':'v29-smooth-triangle-clipping';
+ syncWireOverlay(face);
 }
 
 function hideDuplicateHairCap(wig){
@@ -1217,7 +1262,7 @@ function rebuildFemale(){
  else if(wigOn)rebuildWig();
  performanceMetrics.headRebuilds++;
  persistHeroineFace();
- if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
+ syncWireOverlay(next.face);
  if(prev){
   scene.remove(prev.root);
   // Dispose only owned face/feature meshes, never donor shared GLB assets.
@@ -1251,7 +1296,7 @@ function rebuildMale(){
  refreshExpression('male');
  applyFaceColorMode(next.face,faceMode,{contactColor,makeupType:v32Makeup.male});
  performanceMetrics.headRebuilds++;
- if(wired)next.face.traverse(o=>{if(o.isMesh)o.material.wireframe=true;});
+ syncWireOverlay(next.face);
  if(prev){
   scene.remove(prev.root);
   prev.face.traverse(o=>{
@@ -1781,7 +1826,7 @@ async function init(){
   selectGender(initialGender);
   document.documentElement.dataset.faceMeshReady='v111';
   resize();orbit.update();renderer.render(scene,camera);
-  $('status').textContent='顔品質v111：完成メッシュ・法線・髪をまとめて表示しました';
+  $('status').textContent='顔品質v112：完成メッシュ・法線・髪をまとめて表示しました';
   for(const id of ['female','male','front','threeQuarter','side','back','crown','underside','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43','autoBlink','talkDemo'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
