@@ -234,7 +234,7 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v110-approved-normal-cheek-mesh","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v107-cheek-rest-and-mouth","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v110-approved-normal-cheek-mesh","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v110-balanced-cheek-mouth","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -242,7 +242,7 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v110-approved-normal-cheek-mesh';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=20261122-v107-animated-laugh';
-import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v107-cheek-rest-and-mouth';
+import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v110-balanced-cheek-mouth';
 import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
 import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69-faceclear-v70-salon-v71-pins-v72-eye-clearance-v92-portrait-v93-root-contact-v109-eye-sweep';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
