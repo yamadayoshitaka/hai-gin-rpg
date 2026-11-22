@@ -11988,7 +11988,10 @@ $('camReset').onclick=()=>{
 let down=null,touchGestureEngaged=false,lastGroundTap=null;
 const battleCameraPointerStarts=new Map();
 function takeManualBattleCameraControl(){
- if(TOWN_MODE||commandOverviewLocked||manualBattleCameraOverride)return;
+ if(TOWN_MODE||commandOverviewLocked)return;
+ // Follow may have been re-enabled by a later squad selection while the
+ // manual override flag remains set. Never skip cancelling that follow.
+ if(manualBattleCameraOverride&&!followCamera&&!targetViewFollowing&&!manualCameraSquad&&!commanderCinematic)return;
  manualBattleCameraOverride=true;
  followCamera=false;targetViewFollowing=false;
  commanderCinematic=null;cinematicFocusQueue.length=0;dialogueCameraReturn=null;
@@ -12080,7 +12083,12 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  battleCameraPointerStarts.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(e.pointerType==='touch'){
   activeTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(activeTouchPointers.size>1)touchGestureEngaged=true;
+  if(activeTouchPointers.size>1){
+   touchGestureEngaged=true;
+   // OrbitControls starts panning immediately. Cancel camera-follow before
+   // the first two-finger movement rather than waiting for 8px of travel.
+   takeManualBattleCameraControl();
+  }
   if(touchGestureEngaged&&activeTouchPointers.size>1){
    const [a,b]=[...activeTouchPointers.values()];
    pinchStartGap=Math.hypot(a.x-b.x,a.y-b.y);
@@ -12094,6 +12102,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  const origin=battleCameraPointerStarts.get(e.pointerId);
  if(origin&&Math.hypot(e.clientX-origin.x,e.clientY-origin.y)>=8)
   takeManualBattleCameraControl();
+ if(activeTouchPointers.size>=2)takeManualBattleCameraControl();
  if(e.pointerType!=='touch'||!activeTouchPointers.has(e.pointerId))return;
  activeTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(activeTouchPointers.size!==2||pinchStartGap<8)return;
