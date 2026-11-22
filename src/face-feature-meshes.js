@@ -5,7 +5,7 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
-import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=91-shared-oral-geometry';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=92-verified-oral-geometry';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
