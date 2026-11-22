@@ -511,6 +511,16 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
        point:hit.point.toArray().map(v=>Number(v.toFixed(4))),
        faceIndex:hit.faceIndex,
        triangle:hit.face?[hit.face.a,hit.face.b,hit.face.c]:null,
+       sourceTriangle:hit.face&&mesh.geometry?._v88SourceIndex?
+        [hit.face.a,hit.face.b,hit.face.c].map(i=>mesh.geometry._v88SourceIndex[i]):null,
+       originalXYZ:hit.face&&mesh.geometry?._v88SourceIndex&&
+        mesh.userData?.originalHairScalpGeometry?
+        [hit.face.a,hit.face.b,hit.face.c].map(i=>{
+         const id=mesh.geometry._v88SourceIndex[i];
+         const p=mesh.userData.originalHairScalpGeometry.getAttribute('position');
+         return id<0?null:[p.getX(id),p.getY(id),p.getZ(id)]
+          .map(v=>Number(v.toFixed(5)));
+        }):null,
        normal:hit.face?.normal?.toArray().map(v=>Number(v.toFixed(3))),
        pigment:attr&&a>=0?[attr.getX(a),attr.getY(a),attr.getZ(a)]
         .map(v=>Number(v.toFixed(3))):null,
