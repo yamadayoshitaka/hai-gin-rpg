@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#14263a">
 <!-- Pages publication retry: scalp v29 c937964d; requested visual verification 2026-11-21 -->
 <!-- FaceHair Pages redeploy checkpoint: 2026-11-21 v23 publication retry; verify runtime build badge -->
-<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v97</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v98</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -70,8 +70,8 @@ button{padding:9px 11px}
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
 <section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
 <header>
-<h1>顔・髪の編集｜顔品質 v97・髪造形 v72</h1>
-<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v97：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
+<h1>顔・髪の編集｜顔品質 v98・髪造形 v72</h1>
+<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v98：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
 <a class="studioNav" href="./face-body-studio.html?v=76" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
@@ -88,7 +88,7 @@ button{padding:9px 11px}
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
 <div class="previewStage" id="previewStage"><button type="button" id="hairForceReload" style="display:block;margin:8px 0;padding:9px 12px;border:1px solid #78bdb1;border-radius:8px;background:#196354;color:#fff;font-weight:700" onclick="location.replace(location.pathname+'?hair_reload='+Date.now())">最新版を再読込（キャッシュ回避）</button>
-<div id="hairBuildBadge" style="position:absolute;z-index:3;top:8px;left:8px;max-width:calc(100% - 16px);padding:5px 9px;border-radius:7px;background:rgba(8,22,34,.88);color:#e1f9ee;border:1px solid #6eaa9c;font-size:12px;pointer-events:none" aria-live="polite">顔品質 v97／髪造形 v72：読込中…</div><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<div id="hairBuildBadge" style="position:absolute;z-index:3;top:8px;left:8px;max-width:calc(100% - 16px);padding:5px 9px;border-radius:7px;background:rgba(8,22,34,.88);color:#e1f9ee;border:1px solid #6eaa9c;font-size:12px;pointer-events:none" aria-live="polite">顔品質 v98／髪造形 v72：読込中…</div><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
 <button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
@@ -812,8 +812,9 @@ function facePhotoRuntimeStatus(){
 }
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
+ const cheekNoseApplied=models.get('female')?.report?.v98FeminineMidfaceNose?.applied===true;
  const release=document.getElementById('faceQualityRelease');
- if(release)release.textContent='顔品質 v97｜実写肌PBR：'+faceStatus+
+ if(release)release.textContent='顔品質 v98｜実写肌PBR：'+faceStatus+
   '｜虹彩・まつ毛・鼻・唇・表情 v76｜髪造形 v72';
  const face=models.get('female')?.face;
  const mask=face?.userData;
@@ -821,9 +822,9 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const count=mask?.hairScalpMaskedTriangles??0;
  const active=Boolean(mask?.hairScalpMaskActive);
  const reloadButton=document.getElementById('hairForceReload');
- if(reloadButton)reloadButton.title='現在の顔品質 v97／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
+ if(reloadButton)reloadButton.title='現在の顔品質 v98／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
  const badge=document.getElementById('hairBuildBadge');
- if(badge)badge.textContent='顔品質 v97（実写肌：'+faceStatus+'）｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
+ if(badge)badge.textContent='顔品質 v98（実写肌：'+faceStatus+'）｜3D頬・鼻：'+(cheekNoseApplied?'補正済':'未適用')+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
   '｜頭皮補正：'+(active?'ON':mode==='long-pigment-underlay'?'ロング被覆':'OFF')+'（'+mode+'）';
  const el=document.getElementById('hairRuntimeDiagnostics');
