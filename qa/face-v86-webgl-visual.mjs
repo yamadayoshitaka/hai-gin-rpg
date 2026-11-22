@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 
 const url='http://127.0.0.1:8765/face-mesh-studio.html?qa=expression';
-const out='qa/screenshots/face-v86';
+const out='qa/screenshots/face-v88';
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:[
  '--no-sandbox','--use-gl=angle','--use-angle=swiftshader',
@@ -19,16 +19,16 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v87確認済');
+   ?.includes('実行JS：v88確認済');
  },{timeout:120000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
-  'Actual browser GLB must have the front lip aperture sealed: '+JSON.stringify(native));
- assert.ok(native.mouthWidth>=.84&&native.mouthWidth<=.86,
-  'The requested narrower-mouth preset must be applied to the actual 3D donor');
+  'Actual browser GLB must have a native lip rest-state cap: '+JSON.stringify(native));
+ assert.ok(native.mouthWidth>=.42&&native.mouthWidth<=.43,
+  'The V88 half-width native-mouth preset must reach the actual donor geometry');
  assert.ok(native.donorLipWidth>0&&
-  native.currentLipWidth/native.donorLipWidth<.97&&
-  native.currentLipWidth/native.donorLipWidth>.75,
+  native.currentLipWidth/native.donorLipWidth<.88&&
+  native.currentLipWidth/native.donorLipWidth>.32,
   'Real WebGL source-mouth lip span must visibly shrink, not lipstick only');
  assert.ok(await page.locator('#mouthWidth').count()===1,
   'Real female mouth-width adjustment slider must be present');
