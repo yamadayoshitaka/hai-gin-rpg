@@ -30,7 +30,7 @@ export function v102CheekContourField({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  const front=smooth(.51,.76,zn);
  const region=smooth(.285,.375,ax)*(1-smooth(.735,.84,ax))*
   smooth(.410,.480,yn)*(1-smooth(.655,.715,yn))*front*youth;
- const crest=bell(ax,.445,.225)*bell(yn,.557,.093)*region;
+ const crest=bell(ax,.445,.225)*bell(yn,.563,.072)*region;
  const lower=bell(ax,.47,.23)*bell(yn,.455,.095)*region;
  // Pull back the isolated upper crest; fill the trough from below.
  // The broad fields overlap in a single connected cheek surface.
@@ -78,7 +78,8 @@ export function fairV102CheekContour(geometry,{
    const lowerAllowance=bell(ny,.455,.095);
    const donorCeiling=donorZ+depth*(.022+.012*lowerAllowance);
    const excess=Math.max(0,corrected-donorCeiling);
-   const capWeight=Math.min(1,a.crest*1.35);
+   // The donor ceiling applies above the smile line, never to the soft lower cheek.
+   const capWeight=Math.min(1,a.crest*1.35)*smooth(.505,.550,ny);
    const trim=excess*capWeight;
    corrected-=trim;
    if(trim>depth*.00002){donorCapVertices++;donorCapMaxTrim=Math.max(donorCapMaxTrim,trim);}
