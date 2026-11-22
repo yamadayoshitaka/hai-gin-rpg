@@ -302,7 +302,8 @@ test('every playable battle link and display refresh route to the three-team HUD
  const story=readFileSync(new URL('../story-mode.html',import.meta.url),'utf8');
  assert.match(battle,/const THREE_TEAM_BATTLE=!TOWN_MODE&&!MASS_SIZE/);
  assert.match(battle,/resolveBattleThreeTeamGroups\(squadIds,id=>squadPrimaryJob\(id\)/);
- assert.match(battle,/battleRpgHud\.update\(THREE_TEAM_BATTLE\?/);
+ assert.match(battle,/const teamRows=THREE_TEAM_BATTLE\?/);
+ assert.match(battle,/battleRpgHud\.update\(teamRows,/);
  assert.match(battle,/aggregateBattleRpgTeams\(rows,armyGroupBySquad,enemyGroupBySquad,captainByGroup\)/);
  assert.match(battle,/if\(THREE_TEAM_BATTLE\)for\(const unit of squadRoster\)/);
  assert.doesNotMatch(battle,/battleRpgHud\.update\(storyRequest\?\.sortieTeamCount\?/);

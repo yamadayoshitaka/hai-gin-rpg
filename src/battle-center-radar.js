@@ -1,3 +1,35 @@
+/** Consistent team palette for the field radar and three-team HUD. */
+export const BATTLE_TEAM_COLORS=Object.freeze({
+ ally:'#5aceff',enemy:'#ff7884',engaged:'#ffe091'
+});
+/** A group is engaged once any live member makes actual combat contact.
+ * Only a command team's defeat (not a job subdivision's) earns a wipeout cut-in.
+ * This is presentation-only: job squads continue to exist in the simulation. */
+export function createBattleThreeTeamEventTracker(){
+ const previousAlive=new Map(),announcedContact=new Set();
+ return {
+  observe(rows=[]){
+   const engagements=[],annihilations=[];
+   for(const row of rows){
+    const team=Number(row.team),groupId=Number(row.groupId);
+    if((team!==0&&team!==1)||!Number.isInteger(groupId)||groupId<1||groupId>3)continue;
+    const key=team+':'+groupId,alive=Math.max(0,Number(row.alive)||0);
+    const previous=previousAlive.get(key);
+    if(previous>0&&alive===0)annihilations.push({
+     team,groupId,total:Math.max(0,Number(row.total)||0),
+     squadId:String(row.members?.find(member=>member.id!=null)?.id??'')
+    });
+    previousAlive.set(key,alive);
+    if(team===0&&alive>0&&row.inContact&&!announcedContact.has(key)){
+     announcedContact.add(key);
+     engagements.push({team,groupId});
+    }
+   }
+   return {engagements,annihilations};
+  }
+ };
+}
+
 /** One position per squad, sourced from the currently alive commander/leader. */
 export function squadRadarPins(allies=[],enemies=[],worldSize=232,rows=[]){
  const sideCount=new Map();

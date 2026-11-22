@@ -35,6 +35,7 @@ on:
       - 'src/three-team-core-bridge.js'
       - 'tactics-wireframe.html'
       - 'qa/battle-three-team-*'
+      - 'src/battle-center-radar.js'
       - 'qa/battle-formation-autonomy-regression.test.mjs'
       - 'qa/formation-signature-movement.test.mjs'
       - 'src/formation-signature-strategies.js'
@@ -78,7 +79,7 @@ jobs:
       - name: Verify squad engagement from real fighters, live radar alignment and blocked-path recovery
         run: |
           node --check src/mass-battle-grid-sim.js
-          node --test qa/battle-contact-and-recovery-regression.test.mjs qa/battle-radar-engagement-regression.test.mjs
+          node --test qa/battle-contact-and-recovery-regression.test.mjs qa/battle-radar-engagement-regression.test.mjs qa/battle-three-team-events.test.mjs
       - name: Verify small-screen opening strategy taps and training animation layout
         run: node --test qa/mobile-prebattle-training-layout.test.mjs
       - name: Verify stage identity, one deployment and captain/species portraits

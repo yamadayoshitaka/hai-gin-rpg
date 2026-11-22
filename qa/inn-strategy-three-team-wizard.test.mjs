@@ -118,8 +118,8 @@ assert.match(onlyReview,/3隊の陣形を確認/);
 assert.match(onlyReview,/作戦は戦闘画面で隊ごとに選択/);
 assert.doesNotMatch(onlyReview,/用に保存/);
 assert.ok(town.includes("scrollTop=0"),'every wizard step starts with the first option visible');
-assert.match(town,/src\/inn-formation-wizard\.js\?v=training-animation-after-list-20261122/,'Android loads the latest wallet and formation wizard');
-assert.match(town,/src\/three-team-sortie-ui\.css\?v=training-animation-after-list-20261122/,'Android loads matching no-scroll formation CSS');
+assert.match(town,/src\/inn-formation-wizard\.js\?v=training-gear-buy-transfer-20261122/,'Android loads the latest wallet and formation wizard');
+assert.match(town,/src\/three-team-sortie-ui\.css\?v=training-gear-buy-transfer-20261122/,'Android loads matching no-scroll formation CSS');
 
 // Entry URLs previously carried a fixed November 10 cache key, which allowed
 // Android WebView/browser cache to keep serving the old unclickable strategy

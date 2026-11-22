@@ -542,3 +542,11 @@ body.battle-command-active #battleRpgSquadHud,body.battle-finished #battleRpgSqu
  box-shadow:0 0 4px #111b;
 }
 #battleRpgSquadHud .rpgSquadRowTitle .rpgSquadEngaged[hidden]{display:none!important}
+
+/* Three-team palette: the same blue/red and contact gold as radar dots. */
+#battleRpgSquadHud .rpgSquadSide.ally{border-color:var(--battle-ally-color,#5aceff)}
+#battleRpgSquadHud .rpgSquadSide.enemy{border-color:var(--battle-enemy-color,#ff7884)}
+#battleRpgSquadHud .rpgSquadRowTitle .rpgSquadEngaged{
+ border-color:var(--battle-engaged-color,#ffe091);
+ color:var(--battle-engaged-color,#ffe091)
+}

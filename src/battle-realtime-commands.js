@@ -14,7 +14,7 @@ import {formationUnlockLabels,ADVANCED_FORMATION_TACTICS} from './formation-stra
 import {BASIC_OPENING_TACTICS} from './prebattle-opening-tactics.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
-import {squadRadarPins,radarHitPin} from './battle-center-radar.js?v=20261122-contact-frontline2';
+import {squadRadarPins,radarHitPin,BATTLE_TEAM_COLORS} from './battle-center-radar.js?v=20261122-three-team-events1';
 import {findBattleMapPin,formatBattleMapPercent} from './battle-map-inspection.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const PREBATTLE_FORMATION_IDS=Object.freeze({
@@ -454,20 +454,24 @@ export function createRealtimeBattleCommands({
  }
  function drawRadar(force=false){
   if(!radarCtx||$('realtimeSquadRadar').hidden)return;
-  const now=nowMs();if(!force&&now-lastRadarRenderAt<350)return;
+  const now=nowMs();if(!force&&now-lastRadarRenderAt<120)return;
   lastRadarRenderAt=now;
   const w=radarCanvas.width,h=radarCanvas.height,ctx=radarCtx;
   const own=squads(),plannedEnemies=typeof getRadarEnemies==='function'?getRadarEnemies():null;
   const enemies=Array.isArray(plannedEnemies)?plannedEnemies:getEnemies();
   const visibleAllies=typeof getRadarSquads==='function'?getRadarSquads(own):own;
   radarPins=squadRadarPins(visibleAllies,enemies,worldSize,currentRows);
-  if(typeof getRadarSquads==='function'){
-   const byId=new Map(visibleAllies.map(row=>[String(row.id),row]));
-   for(const pin of radarPins)if(pin.team===0){
-    const group=Number(byId.get(String(pin.id))?.groupId);
-    if(Number.isInteger(group)&&group>=1&&group<=3){
-     pin.number=group;pin.groupId=group;
-    }
+  // Display the actual 1-3 team number on BOTH sides. Otherwise a
+  // defeated enemy team makes the remaining red radar dots renumber while
+  // the right-side HUD still shows their original team numbers.
+  const radarGroups=new Map([
+   ...visibleAllies.map(row=>['0:'+String(row.id),row]),
+   ...enemies.map(row=>['1:'+String(row.id),row])
+  ]);
+  for(const pin of radarPins){
+   const group=Number(radarGroups.get(pin.team+':'+String(pin.id))?.groupId);
+   if(Number.isInteger(group)&&group>=1&&group<=3){
+    pin.number=group;pin.groupId=group;
    }
   }
   ctx.clearRect(0,0,w,h);
@@ -496,14 +500,14 @@ export function createRealtimeBattleCommands({
    const x=pin.x*w,y=pin.y*h,focus=pin.team===0&&
     (pin.id===String(selectedId)||pin.groupId!=null&&pin.groupId===focusedGroup);
    ctx.beginPath();ctx.arc(x,y,focus?10:8,0,Math.PI*2);
-   ctx.fillStyle=pin.team===0?'#5aceff':'#ff7884';ctx.fill();
+   ctx.fillStyle=pin.team===0?BATTLE_TEAM_COLORS.ally:BATTLE_TEAM_COLORS.enemy;ctx.fill();
    ctx.strokeStyle=focus?'#ffea92':'#132c40';ctx.lineWidth=focus?3.2:1.6;ctx.stroke();
    ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 10px system-ui';
    ctx.fillStyle='#071625';ctx.fillText(String(pin.number),x,y);
    // Contact marker follows the exact fighting-front coordinates.
    if(pin.inContact){
     ctx.beginPath();ctx.arc(x,y,focus?14:12,0,Math.PI*2);
-    ctx.strokeStyle='#ffe091';ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle=BATTLE_TEAM_COLORS.engaged;ctx.lineWidth=2;ctx.stroke();
    }
   }
  }

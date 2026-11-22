@@ -109,6 +109,10 @@ export function makeBattleRpgStatusRows({
     const friendly=bySquad.get(key);
     friendly.inContact=true;enemyRow.inContact=true;
     friendly.engagementPoint??={x,z};
+    // Ranged contact must mark BOTH radar teams. The defender's ring
+    // belongs at the living defender's own position, not on the shooter.
+    enemyRow.engagementPoint??=enemyRow.center?
+     {x:enemyRow.center.x,z:enemyRow.center.z}:{x,z};
    }
   }
   const bx=Math.floor(x/bucketSize),bz=Math.floor(z/bucketSize);

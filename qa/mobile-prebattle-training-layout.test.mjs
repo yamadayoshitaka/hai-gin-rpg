@@ -16,13 +16,21 @@ test('training formation animation follows template list and precedes quote, wit
  const list=markup.indexOf('class="trainingFormationList"');
  const animation=markup.indexOf('class="trainingFormationAnimation"');
  const signature=markup.indexOf('class="signaturePreview"',animation);
- const quote=markup.indexOf('class="trainingFormationQuote"');
- assert.ok(list>=0&&animation>list&&signature>animation&&quote>signature,
-  'the animation must be immediately below the paged template list, above the hire quote');
- assert.match(markup,/data-training-auto-formation=/);
+ const quick=markup.indexOf('class="trainingFormationQuick"');
+ assert.ok(list>=0&&animation>list&&signature>animation&&quick>signature,
+  'the animation must follow the paged template list, before the hire quote action');
+ assert.match(markup,/data-inn-wizard-quote=/);
+ const quoteMarkup=renderInnFormationWizard({
+  game,view:'rosterQuote',teamId:1,rosterPreviewId:'attack'
+ });
+ assert.ok(quoteMarkup.indexOf('class="trainingFormationAnimation"')>=0);
+ assert.ok(quoteMarkup.indexOf('class="trainingFormationQuote"')>
+  quoteMarkup.indexOf('class="trainingFormationAnimation"'),
+  'the separate quote page must show the animation before the hire quote');
+ assert.match(quoteMarkup,/data-training-auto-formation=/);
  const css=file('src/three-team-sortie-ui.css');
- assert.match(css,/\.innWizardRosterPreview\) \.innWizardBody\{[\s\S]*?overflow-y:auto!important/);
- assert.match(css,/\.innWizardRosterPreview\) \.innWizardRosterPreview\{[\s\S]*?overflow:visible!important/);
+ assert.match(css,/\.innWizardRosterPreview\) \.innWizardBody\{[\s\S]*?overflow:hidden!important/);
+ assert.match(css,/\.innWizardRosterPreview\) \.innWizardRosterPreview\{[\s\S]*?overflow:hidden!important/);
  assert.match(css,/\.trainingFormationAnimation \.signaturePreview svg\{/);
  assert.match(css,/\.trainingFormationQuote>small\{[\s\S]*?overflow:visible/);
 });
