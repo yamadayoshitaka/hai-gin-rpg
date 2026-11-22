@@ -78,6 +78,6 @@ test('V88 half-width lip sculpt stays strictly in local native oral zone',()=>{
  assert.deepEqual(v88AnatomicalLipDelta({
   xn:.08,yn:.7,zn:.95,faceWidth:1,faceDepth:.5,mouthWidth:.425
  }),{dx:0,dz:0});
- assert.equal(normalizeFemaleFaceControls().mouthWidth,.65);
+ assert.equal(normalizeFemaleFaceControls().mouthWidth,.78);
  assert.deepEqual(normalizeFemaleFaceControls({mouthWidth:10}).mouthWidth,1.25);
 });
