@@ -133,24 +133,15 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  }
  function handleSquadTap(team,id){
   const key=selectionKey(team,id),now=Date.now();
-  if(lastTap?.key===key&&now-lastTap.at<=380){
-   if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);
-   pendingTapTimer=null;lastTap=null;
-   select(team,id);
-   if(team===0)onCommand(team,String(id));
-   else onFocus(team,String(id));
-   return;
-  }
+  const doubleTap=lastTap?.key===key&&now-lastTap.at<=380;
   if(pendingTapTimer!==null)clearTimeout(pendingTapTimer);
-  lastTap={key,at:now};
-  const parent=rows.find(row=>Number(row.team)===team&&row.id===String(id)&&Array.isArray(row.members));
-  if(parent)expandedTeamId[team]=expandedTeamId[team]===String(id)?null:String(id);
+  pendingTapTimer=null;
+  lastTap=doubleTap?null:{key,at:now};
+  // Single tap focuses a command team immediately. Double tap on an allied
+  // team still opens its orders without first expanding job subdivisions.
   select(team,id);
-  pendingTapTimer=setTimeout(()=>{
-   if(lastTap?.key!==key)return;
-   pendingTapTimer=null;lastTap=null;
-   onFocus(team,String(id));
-  },380);
+  if(doubleTap&&team===0){onCommand(team,String(id));return;}
+  onFocus(team,String(id));
  }
  function renderSide(team){
   const side=panels[team];
