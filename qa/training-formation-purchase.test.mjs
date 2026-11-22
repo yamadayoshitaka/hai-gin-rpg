@@ -18,8 +18,11 @@ test('training stock exposes unassigned troops, ranks and wallet independently',
  assert.equal(stock.unassigned+stock.reserve+stock.assigned,
   game.campaign.squads.reduce((n,s)=>n+s.count,0));
  const html=renderInnFormationWizard({game,view:'roster',teamId:1});
+ assert.ok(html.includes('所持金'));
+ assert.ok(html.includes('data-inn-wizard-quote'));
+ const quoteHtml=renderInnFormationWizard({game,view:'rosterQuote',teamId:1,rosterPreviewId:'attack'});
  for(const label of ['所持金','追加雇用','trainingFormationQuote',
-  'data-training-auto-formation'])assert.ok(html.includes(label),label);
+  'data-training-auto-formation'])assert.ok(quoteHtml.includes(label),label);
  const hire=renderInnFormationWizard({game,view:'hire',teamId:1});
  assert.match(hire,/trainingHireJobs/);
  assert.match(hire,/在庫兵 \d+人/);
