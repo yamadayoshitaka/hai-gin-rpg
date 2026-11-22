@@ -115,5 +115,5 @@ test('v110 studio binds the correct first-frame settings before loading the orig
  assert.match(html,/bodySelectionExplicit:femaleBodySelectionExplicit/);
  assert.match(html,/faceMode=initialFaceV110.defaultView;/);
  assert.match(html,/wired=initialFaceV110.defaultWireframe;/);
- assert.match(html,/20261122-v111-guarded-cheek/);
+ assert.match(html,/20261123-v114-natural-realistic-eyes/);
 });
