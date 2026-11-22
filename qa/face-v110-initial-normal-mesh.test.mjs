@@ -34,6 +34,19 @@ test('v110 first paint is the user-approved rightmost/first screenshot: twenties
  assert.deepEqual(initialControls,clickNormal,
   'Reload and selecting 普通 must yield identical geometry control values');
 });
+test('v110 brand-new default initial face is identical to picking normal again',()=>{
+ const parts=defaultPartSelection();
+ const init=v110InitialFemaleFaceState({parts,controls:{ageBand:'twenties',bodyType:'normal'}});
+ assert.equal(init.shouldRecompose,true,
+  'Raw part defaults are not yet transformed by demographics');
+ assert.equal(init.parts.bodyType,'normal');
+ const expected=resolveEditedFaceControls('female',
+  resolvePartSelection('female',parts).controls,'twenties','normal',{},false);
+ const initial=resolveEditedFaceControls('female',
+  resolvePartSelection('female',init.parts).controls,
+  init.parts.ageBand,init.parts.bodyType,{},false);
+ assert.deepEqual(initial,expected);
+});
 test('v110 explicit later ultra-thin selection is not silently discarded on subsequent visits',()=>{
  const custom=saved('ultraThin',true);
  const initial=v110InitialFemaleFaceState({
