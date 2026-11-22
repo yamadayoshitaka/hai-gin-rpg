@@ -475,3 +475,68 @@ test('v102 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
  });
  geo.dispose();
 });
+
+test('v103 REAL CC0 young normal face matches reference cheek transition without changing v100 nasal tip',()=>{
+ const {geo}=sourceGeometry();
+ geo.computeBoundingBox();
+ const bound=geo.boundingBox.clone(),d=bound.getSize(new THREE.Vector3());
+ const cx=(bound.min.x+bound.max.x)*.5;
+ const source=new THREE.Group();
+ const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+ mesh.name='CC0_SOURCE_GEO-head_animation_realistic';source.add(mesh);
+ const base=makeIndependentFaceMaster(source,'female',{
+  cheekContourMode:'v102-only',
+  femaleControls:{ageBand:'twenties',bodyType:'normal'}
+ });
+ const refined=makeIndependentFaceMaster(source,'female',{
+  cheekContourMode:'v102',
+  femaleControls:{ageBand:'twenties',bodyType:'normal'}
+ });
+ const report=refined.report.v103NormalCheekRepair;
+ console.log('V103_REAL_CC0_CHEEK',JSON.stringify(report));
+ assert.equal(report?.applied,true,'Actual donor v103 must not silently skip: '+JSON.stringify(report));
+ assert.equal(report.nasalMax,0);
+ assert.ok(report.filledVertices>10);
+ const before=base.face.geometry.getAttribute('position'),
+  after=refined.face.geometry.getAttribute('position'),
+  original=geo.getAttribute('position');
+ assert.equal(before.count,after.count);
+ assert.deepEqual(Array.from(base.face.geometry.index.array),
+  Array.from(refined.face.geometry.index.array));
+ let filled=0,lowerCount=0,lowerDelta=0,noseCount=0,
+  noseTipMax=0,noseMax=0,unmovedBack=0;
+ for(let i=0;i<original.count;i++){
+  const ax=Math.abs((original.getX(i)-cx)/(d.x*.5)),
+   y=(original.getY(i)-bound.min.y)/d.y,
+   z=(original.getZ(i)-bound.min.z)/d.z,
+   delta=after.getZ(i)-before.getZ(i);
+  if(z>.49&&ax>.37&&ax<.65&&y>.43&&y<.545){
+   lowerDelta+=delta;lowerCount++;
+   if(delta>0)filled++;
+  }
+  if(z>.56&&ax<.20&&y>.54&&y<.67){
+   noseCount++;
+   noseMax=Math.max(noseMax,Math.abs(delta));
+   if(y<.605)noseTipMax=Math.max(noseTipMax,Math.abs(delta));
+  }
+  if(z<.15&&Math.abs(delta)<1e-12)unmovedBack++;
+  assert.equal(after.getX(i),before.getX(i));
+  assert.equal(after.getY(i),before.getY(i));
+ }
+ console.log('V103_CC0_REFERENCE_METRICS',JSON.stringify({
+  filled,lowerCount,lowerMean:lowerDelta/Math.max(1,lowerCount),
+  noseCount,noseTipMax,noseMax,unmovedBack
+ }));
+ assert.ok(lowerCount>10&&filled>8,'Actual cheek receives true surface volume');
+ assert.ok(lowerDelta/lowerCount>0,'Correct gaunt lower cheek, not add a dark new trough');
+ assert.ok(noseCount>20&&unmovedBack>30);
+ assert.equal(noseTipMax,0,'Approved v100 nose tip exactly preserved');
+ assert.ok(noseMax<.0008,'Only limited upper orbital interpolation is tolerated');
+ for(const model of [base,refined])model.root.traverse(o=>{
+  if(!o.isMesh)return;
+  o.geometry?.dispose();
+  for(const material of Array.isArray(o.material)?o.material:[o.material])
+   material?.dispose?.();
+ });
+ geo.dispose();
+});
