@@ -4415,7 +4415,7 @@ function recordStoryBattleOutcome(victory){
 }
 // Reset once per SIMULATION tick, not per actor: prevents 100 simultaneous
 // route requests from all expanding 8000 A* nodes on the main thread.
-let skirmishGridRoutingBudget=createGridRoutingBudget(320);
+let skirmishGridRoutingBudget=createGridRoutingBudget(480);
 window.getSkirmishRoutingBudget=()=>({...skirmishGridRoutingBudget});
 // Cache a collision-safe route across AI ticks for bridge and building exits.
 // Rebuilding an 8,000-node A* for every soldier every 50ms caused P95 hitches
@@ -4442,7 +4442,7 @@ function exitPathStep(actor,target){
  actor._exitRoute=result.state;
  return result.next;
 }
-function stableActorRouteStep(a,goal,maxExpanded=6500){
+function stableActorRouteStep(a,goal,maxExpanded=14000){
  const result=incrementalStableGridNext(a._stableMovementPath,a.cell,goal,{
   walkable:(x,z)=>traversableCell(x,z,a),
   occupied:(x,z)=>!availableCell(x,z,a),
@@ -5795,7 +5795,7 @@ function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;
  // A shared per-tick expansion budget preserves combat/animation updates
  // while the A* frontier of each waiting soldier is resumed next tick.
- skirmishGridRoutingBudget=createGridRoutingBudget(320);
+ skirmishGridRoutingBudget=createGridRoutingBudget(480);
  elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
  updateEnemyItemDecisions();
@@ -5857,6 +5857,25 @@ function tickAI(dt){
    }
   }
   if(!a.nextCell)pursueEnemyOnAnotherFloor(a);
+  // A fresh elimination order is stronger than an old upper-floor hold.
+  // When no enemy can be attacked on the current level, take the real stairs
+  // toward the surviving ground targets instead of staying on an empty floor.
+  if(a.team===0&&a.floorTravel&&['upstairs','roof'].includes(a.floorTravel.phase)&&
+     currentSkirmishDirective(a)?.mode==='charge'&&
+     elapsed>=(a._assaultFloorRetryAt??0)){
+   const sameLevelEnemy=actors.some(other=>other.team!==a.team&&other.hp>0&&
+     (other.indoorFloor??1)===(a.indoorFloor??1)&&
+     Math.hypot(other.root.position.x-a.root.position.x,other.root.position.z-a.root.position.z)<11*CELL);
+   const groundEnemy=actors.some(other=>other.team!==a.team&&other.hp>0&&(other.indoorFloor??1)===1);
+   const closeRange=a.job.range<=CELL*3.5;
+   const noWindowAttack=(a.floorTravel.windowAttackCount??0)===0&&
+     elapsed-(a.floorTravel.arrivedAt??elapsed)>9;
+   if(!sameLevelEnemy&&groundEnemy&&(closeRange||noWindowAttack)){
+    const building=a.floorTravel.building;
+    const started=requestUnitFloor(a,-1,building,{forceStairs:true});
+    a._assaultFloorRetryAt=elapsed+(started?3:6);
+   }
+  }
   if(a.floorTravel){updateUnitFloorTravel(a,dt);updateUpperFloorRangedCombat(a,dt);continue}
   if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
   a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
@@ -8929,8 +8948,21 @@ const targetedStrategyUi=createTargetedStrategyUi({
      index%2===0?'charge':'defend';
     if(mode)accepted=issueTargetedPlatoon(id,mode);
    }
-   if(accepted){success++;activeFormationSignatures.delete(String(id));
-    targetedArrivalOrders.delete(String(id));targetedEnemyQueues.delete(String(id));}
+   if(accepted){
+    success++;activeFormationSignatures.delete(String(id));
+    targetedArrivalOrders.delete(String(id));targetedEnemyQueues.delete(String(id));
+    if(strategy==='assault'&&!massSim)for(const actor of actors){
+     if(actor.team!==0||String(actor.squadId)!==String(id)||actor.hp<=0)continue;
+     actor.thinkTimer=0;
+     // An earlier height/standby command must not overrule 殲滅.
+     if(!actor.floorTravel)continue;
+     actor.floorTravel.manualHighGroundTarget=false;
+     actor.floorTravel.manualHighGroundAttack=true;
+     if(['approach','toStair'].includes(actor.floorTravel.phase)){
+      releaseGrappleRope(actor.floorTravel);actor.floorTravel=null;
+     }
+    }
+   }
   }
   if(!success)return '生存中の兵士と軍師の状態、移動可能な目標を確認してください。';
   const names={assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索・制圧進軍'};
