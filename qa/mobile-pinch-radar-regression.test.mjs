@@ -3,8 +3,10 @@ import fs from 'node:fs';
 
 const source=fs.readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const radar=source.slice(source.indexOf("miniCanvas.addEventListener('pointerup'"),source.indexOf('drawSquadMiniMap();\n\nlet activeSquadLabelPress'));
-assert.match(radar,/setBattleCamera\(new THREE\.Vector3\(x,terrainY\(x,z\),z\),cameraOverviewOffset\)/,
- 'A tap on the radar must move the camera to the shared angled, distant battlefield view');
+assert.match(radar,/focusCommandTeam\(nearest\.team,nearest\.id\)/,
+ 'A single radar pin tap must focus the corresponding command team');
+assert.match(radar,/if\(!nearest\|\|nearest\.distance>\.085\)return;/,
+ 'Empty radar pixels must not change camera focus');
 assert.doesNotMatch(radar,/camera\.position\.clone\(\)\.sub\(controls\.target\)/,
  'Do not preserve the current close-up zoom on a full-map radar tap');
 assert.doesNotMatch(radar,/openSquadTactics\(/,
