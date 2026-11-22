@@ -29,8 +29,8 @@ export function naturalLaughLipDelta({t=0,sign=1,smile=0,open=0,cheek=0,
  const dy=cornerLift+(top?opening:-opening);
  const dz=depth*(.0018*c*bell(edge,.62,.22)-
   .0009*o*elliptical);
- return {dx,dy,dz,elliptical,cornerLift,
-  opening,widthSpread:mouthSpread,upper:top};
+ return {dx:dx||0,dy:dy||0,dz:dz||0,elliptical,cornerLift:cornerLift||0,
+  opening:opening||0,widthSpread:mouthSpread||0,upper:top};
 }
 
 /** Skin moves with zygomaticus major, not into a hollow next to the nose.
