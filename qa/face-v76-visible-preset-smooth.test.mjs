@@ -9,13 +9,13 @@ import {defaultPartSelection,resolvePartSelection} from '../src/face-part-catalo
 const studio=()=>readFileSync(new URL('../face-mesh-studio.html',import.meta.url),'utf8');
 test('v82 actual facial aperture is clearly labelled separately from v72 hair and actual photo state is visible',()=>{
  const html=studio();
- assert.match(html,/<h1>顔・髪の編集｜顔品質 v91・髪造形 v72<\/h1>/);
+ assert.match(html,/<h1>顔・髪の編集｜顔品質 v92・髪造形 v72<\/h1>/);
  assert.match(html,/id="faceQualityRelease"/);
  assert.match(html,/function facePhotoRuntimeStatus\(\)/);
  assert.match(html,/v76RealSkinPhoto/);
  assert.match(html,/state==='CC0-real-photo-microrelief'\?'反映済'/);
  assert.match(html,/実写肌PBR：/);
- assert.match(html,/face-expression-animation-v48\.js\?v=91-responsive-laugh-20261122/);
+ assert.match(html,/face-expression-animation-v48\.js\?v=92-verified-laugh-20261122/);
  assert.doesNotMatch(html,/<h1>顔・髪の編集 v75/);
 });
 test('16 complete face choices per sex are not cosmetic-only, retain existing hair',()=>{
