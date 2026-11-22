@@ -15,7 +15,7 @@ import {BASIC_OPENING_TACTICS} from './prebattle-opening-tactics.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin,BATTLE_TEAM_COLORS} from './battle-center-radar.js?v=20261122-three-team-events1';
-import {findBattleMapPin,formatBattleMapPercent,stableBattleMapPins} from './battle-map-inspection.js';
+import {findBattleMapPin,formatBattleMapPercent,stableBattleMapPins,stableBattleMapBuildings} from './battle-map-inspection.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const PREBATTLE_FORMATION_IDS=Object.freeze({
  '前進陣形':'attack','標準陣形':'balanced','後衛陣形':'support','防壁陣形':'wall',
@@ -71,7 +71,7 @@ export function createRealtimeBattleCommands({
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  let inspectedMapPin=null,mapInspectionPins=[],inspectedBuilding=null,mapInspectionBuildings=[],lastInspectionRefreshAt=-Infinity;
-  const inspectionPinCache=new Map();
+  const inspectionPinCache=new Map(),inspectionBuildingCache=new Map();
   let deploymentTiles=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
@@ -702,7 +702,7 @@ export function createRealtimeBattleCommands({
   }):liveMarkers;
   mapInspectionPins=[];mapInspectionBuildings=[];
   if(mode==='inspect'){
-   for(const building of getMapBuildings()||[]){
+   for(const building of stableBattleMapBuildings(getMapBuildings()||[],inspectionBuildingCache,nowMs())){
     if(!Number.isFinite(building?.x)||!Number.isFinite(building?.z))continue;
     const bx=(building.x-minX)/span*w,bz=(building.z-minZ)/span*h;
     if(bx<0||bx>w||bz<0||bz>h)continue;
@@ -1385,7 +1385,7 @@ export function createRealtimeBattleCommands({
   if(next==='deploy')deployStep='placement';
   refreshOptions();
   if(next==='inspect'&&started){
-   inspectedMapPin=null;inspectedBuilding=null;mapInspectionPins=[];mapInspectionBuildings=[];inspectionPinCache.clear();lastInspectionRefreshAt=-Infinity;
+   inspectedMapPin=null;inspectedBuilding=null;mapInspectionPins=[];mapInspectionBuildings=[];inspectionPinCache.clear();inspectionBuildingCache.clear();lastInspectionRefreshAt=-Infinity;
    $('realtimeBattleMapOverlay').hidden=false;
    $('realtimeMapClose').hidden=false;$('realtimeMapClose').textContent='✕ 戻る';
    $('realtimeMapTitle').textContent='⛶ 戦場マップ';
