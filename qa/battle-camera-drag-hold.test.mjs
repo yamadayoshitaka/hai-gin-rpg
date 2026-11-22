@@ -16,9 +16,10 @@ function cameraState({town=false,locked=false}={}){
   cinematicFocusQueue:[{kind:'order'}],dialogueCameraReturn:{},
   manualCameraSquad:{id:'2',mode:'squad'},manualCameraFocusUntil:Infinity,
   focusedHumanUnitId:42,automaticContactActorId:42,contactSquadId:'2',
-  lastGroundTap:{x:20,y:30},setCameraActive(value){this.lastCameraButton=value;},
-  syncTeamCameraSwitches(){this.switchRefresh=true;}
+  lastGroundTap:{x:20,y:30}
  };
+ state.setCameraActive=value=>{state.lastCameraButton=value;};
+ state.syncTeamCameraSwitches=()=>{state.switchRefresh=true;};
  runInNewContext(manualFn+'\ntakeManualBattleCameraControl();',state);
  return state;
 }
