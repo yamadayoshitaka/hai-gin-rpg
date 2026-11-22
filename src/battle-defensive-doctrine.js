@@ -67,3 +67,18 @@ export function resolveDefensiveGuardIntent({
    enemyDistanceFromPost<=guardRadius&&distance<guardRadius-.5;
  return {returnToPost:mustReturn,allowPursuit:canAttack||canPursue};
 }
+
+/**
+ * Local defensive counter-approach: do not globally chase a kiting target.
+ * Distances are grid cells and apply to both skirmish and mass battle modes.
+ */
+export function shouldCounterNearbyThreat({
+ order='hold',enemyDistance=Infinity,attackRange=1,postDistance=0,
+ maxCounterDistance=3.6,maxPostDistance=6
+}={}){
+ if(!['hold','defend'].includes(order)||
+    !Number.isFinite(enemyDistance)||!Number.isFinite(attackRange)||
+    enemyDistance<=attackRange||enemyDistance>Math.max(maxCounterDistance,attackRange+1.5))
+  return false;
+ return Number.isFinite(postDistance)&&postDistance<=maxPostDistance;
+}
