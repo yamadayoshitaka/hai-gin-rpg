@@ -111,14 +111,15 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const nasalSidePlane=bell(ax,.108,.032)*bell(yn,.625,.074)*front;
  const cartilage=v65NasalCartilageDelta({xn,yn,zn,depth,height,controls});
  return {
-  dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
-  dy:height*(.020*controls.noseTipLift*tipLift
-    -.012*central*bell(yn,.572,.018)
-    -.009*controls.nostrilCover*rimMask)+cartilage.dy,
-  dz:depth*(.025*bridgeSupport+.015*tipSupport-.016*mouthSupport
-   +.031*controls.noseBridgeSharpness*bridgeRidge
-   +.004*controls.nostrilCover*rimMask+.004*tipLift
-   +.0070*dorsalPlane-.0028*nasalSidePlane)+cartilage.dz,
+  // V91: preserve donor nasal/philtrum cartilage instead of pinching it.
+  dx:-offsetX*(.09*noseSupport+.07*mouthSupport),
+  dy:height*(.012*controls.noseTipLift*tipLift
+    -.0035*central*bell(yn,.572,.018)
+    -.0018*controls.nostrilCover*rimMask)+cartilage.dy,
+  dz:depth*(.012*bridgeSupport+.010*tipSupport-.005*mouthSupport
+   +.011*controls.noseBridgeSharpness*bridgeRidge
+   +.003*controls.nostrilCover*rimMask+.003*tipLift
+   +.0055*dorsalPlane-.0025*nasalSidePlane)+cartilage.dz,
   noseSupport,mouthSupport
  };
 }
@@ -341,7 +342,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // older-age sag are unchanged.
   const rawFullness=demo.body.faceFullness;
   const fullness=gender==='female'&&demo.age.wrinkles<.20&&rawFullness<0?
-   rawFullness*.56:rawFullness;
+   rawFullness*.42:rawFullness;
   const demographicWidthDelta=(x-cx)*fullness*
    (.075*cheek+.052*lowerCheek+.022*chin)*contourGuard-
    (x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
@@ -376,7 +377,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
      .005*controls.mouthPositionZ*mouthMask)+
     d.z*fullness*(.065*cheek+.040*lowerCheek+.022*chin)+
     d.z*demo.age.cheekRound*.014*cheek-
-    d.z*demo.age.sag*(.038*lowerCheek+.016*chin)+ageLines;
+    d.z*demo.age.sag*(.038*lowerCheek+.016*chin)+ageLines+
+    // Only the young female thin preset gets soft mid/low cheek volume.
+    (gender==='female'?d.z*Math.max(0,-rawFullness)*
+      (1-demo.age.wrinkles)*(.034*cheek+.042*lowerCheek):0);
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
