@@ -468,6 +468,7 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
  window.__faceExpressionQA={
   setBlink(value){expressions.get(gender)?.setBlinkProgress(value);},
    setMouth(value){expressions.get(gender)?.setMouthOpen(value);},
+   forceExpression(value){expressions.get(gender)?.setExpression(value);updateFacePoseDiagnostics();},
    nativePoseProbe(){
     const face=models.get(gender)?.face,geometry=face?.geometry;
     const current=expressions.get(gender)?.getState();
