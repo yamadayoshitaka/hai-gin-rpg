@@ -814,7 +814,10 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const cheekNoseApplied=cheekNoseReport?.applied===true;
- const cheekContourVersion=models.get('female')?.report?.v93PortraitFairing?.cheekContourMode||'旧版';
+ const cheekContourReport=models.get('female')?.report?.v101CheekContour;
+ const cheekContourVersion=cheekContourReport?.applied===true?
+  'v101適用済（'+cheekContourReport.changedVertices+'頂点）':
+  cheekContourReport?.reason?'未適用：'+cheekContourReport.reason:'読込中';
  const cheekNoseStatus=cheekNoseApplied?'適用済（'+(cheekNoseReport.effectiveVertices||cheekNoseReport.verticesAffected)+'頂点）':
   cheekNoseReport?.reason?'未適用：'+cheekNoseReport.reason:'読込中';
  const release=document.getElementById('faceQualityRelease');
