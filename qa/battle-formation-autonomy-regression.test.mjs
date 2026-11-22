@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 import {CombatActionRuntime} from '../src/combat-action-runtime.js';
 import {chooseEnemyOrder} from '../src/battle-tactical-policy.js';
+import {shouldCounterNearbyThreat} from '../src/battle-defensive-doctrine.js';
 
 const size=232,walkable=new Uint8Array(size*size).fill(1);
 const sim=new MassBattleGridSimulation(50,20261121,{
@@ -56,3 +57,19 @@ const full=(hp=100,team=1)=>Array.from({length:8},(_,id)=>({
 assert.equal(chooseEnemyOrder(full(17),full(95,0),'defend').mode,'retreat',
  'Nearly defeated enemy armies do not stand and watch');
 console.log('PASS formation-aware priest triage, MP cost, preserved hold order, bridge and enemy AI contracts');
+
+const nearbyPolicy=shouldCounterNearbyThreat;
+assert.equal(nearbyPolicy({order:'hold',enemyDistance:2.7,attackRange:1.2,postDistance:1}),true,
+ 'A nearby hostile may be intercepted despite a stationary hold order');
+assert.equal(nearbyPolicy({order:'defend',enemyDistance:3.1,attackRange:1.2,postDistance:2}),true,
+ 'Defenders must not be idle against a nearby hostile');
+assert.equal(nearbyPolicy({order:'hold',enemyDistance:12,attackRange:1,postDistance:1}),false,
+ 'Hold never turns into a distant chase');
+assert.equal(nearbyPolicy({order:'defend',enemyDistance:2.5,attackRange:1,postDistance:9}),false,
+ 'Defenders never abandon their post to chase an enemy');
+const skirmish=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+const mass=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
+assert.match(skirmish,/const nearbyCounter=enemy&&shouldCounterNearbyThreat/);
+assert.match(skirmish,/if\(order==='hold'&&!nearbyCounter\)/);
+assert.match(mass,/const closeThreat=guarding&&nearest&&shouldCounterNearbyThreat/);
+assert.match(mass,/const pursuing=\(!reachable\|\|resumeCombat\|\|closeThreat\)/);

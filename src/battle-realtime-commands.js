@@ -683,7 +683,10 @@ export function createRealtimeBattleCommands({
    getRadarSquads(sourceAllies):sourceAllies;
   const enemies=mode==='deploy'||mode==='inspect'&&typeof getRadarEnemies==='function'?
    (getRadarEnemies?.()||getEnemies()):getEnemies();
-  const markers=visibleBattleSquadPins(allies,enemies,'live');
+  // Aggregated 3-team rows do not have team; restore it from the source.
+  const markers=visibleBattleSquadPins(
+   allies.map(pin=>({...pin,team:0})),
+   enemies.map(pin=>({...pin,team:1})),'live');
   mapInspectionPins=[];mapInspectionBuildings=[];
   if(mode==='inspect'){
    for(const building of getMapBuildings()||[]){
@@ -1461,20 +1464,54 @@ export function createRealtimeBattleCommands({
   }
   return applied;
  }
- let pointer=null;
+ // Independent pointer IDs are essential for Android's two-finger gestures.
+ const mapPointers=new Map();
+ let mapGesture=null,multiTouch=false,ignoreMapClicksUntil=0;
+ function pointPair(){
+  const pts=[...mapPointers.values()];
+  return {mx:(pts[0].x+pts[1].x)/2,my:(pts[0].y+pts[1].y)/2,
+   distance:Math.max(8,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y))};
+ }
+ function beginMapGesture(){
+  const rect=canvas.getBoundingClientRect();
+  if(mapPointers.size>=2){
+   const pair=pointPair();
+   mapGesture={kind:'pinch',...pair,baseZoom:zoom,baseCenterX:centerX,
+    baseCenterZ:centerZ,width:Math.max(1,rect.width),height:Math.max(1,rect.height)};
+   multiTouch=true;
+  }else if(mapPointers.size===1){
+   const pt=[...mapPointers.values()][0];
+   mapGesture={kind:'pan',x:pt.x,y:pt.y,baseCenterX:centerX,
+    baseCenterZ:centerZ,baseZoom:zoom,moved:false,
+    width:Math.max(1,rect.width),height:Math.max(1,rect.height)};
+  }else mapGesture=null;
+ }
  canvas.addEventListener('pointerdown',e=>{
-  pointer={id:e.pointerId,x:e.clientX,y:e.clientY,pan:false,baseX:centerX,baseZ:centerZ};
+  mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  beginMapGesture();
   canvas.setPointerCapture?.(e.pointerId);
  });
  canvas.addEventListener('pointermove',e=>{
-  if(!pointer||pointer.id!==e.pointerId)return;
-  const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
-  if(Math.hypot(dx,dy)>(mode==='deploy'?22:10))pointer.pan=true;
-  if(pointer.pan){
-   const rect=canvas.getBoundingClientRect(),span=worldSize/zoom;
-   centerX=pointer.baseX-dx/Math.max(1,rect.width)*span;
-   centerZ=pointer.baseZ-dy/Math.max(1,rect.height)*span;
+  if(!mapPointers.has(e.pointerId))return;
+  mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!mapGesture)return;
+  if(mapGesture.kind==='pinch'&&mapPointers.size>=2){
+   const pair=pointPair(),g=mapGesture;
+   zoom=clamp(g.baseZoom*pair.distance/g.distance,1,6);
+   // Maintain the same map location below the moving pinch midpoint.
+   const oldSpan=worldSize/g.baseZoom,newSpan=worldSize/zoom;
+   centerX=g.baseCenterX+(g.mx/g.width-.5)*oldSpan-(pair.mx/g.width-.5)*newSpan;
+   centerZ=g.baseCenterZ+(g.my/g.height-.5)*oldSpan-(pair.my/g.height-.5)*newSpan;
    scheduleMapDraw();
+  }else if(mapGesture.kind==='pan'&&mapPointers.size===1){
+   const g=mapGesture,dx=e.clientX-g.x,dy=e.clientY-g.y;
+   if(Math.hypot(dx,dy)>(mode==='deploy'?10:8))g.moved=true;
+   if(g.moved){
+    const span=worldSize/g.baseZoom;
+    centerX=g.baseCenterX-dx/g.width*span;
+    centerZ=g.baseCenterZ-dy/g.height*span;
+    scheduleMapDraw();
+   }
   }
  });
  let lastMapTapAt=-Infinity,lastMapTapX=NaN,lastMapTapY=NaN;
@@ -1482,6 +1519,7 @@ export function createRealtimeBattleCommands({
   const rect=canvas.getBoundingClientRect();
   if(!(rect.width>0&&rect.height>0))return;
   const now=nowMs();
+  if(now<ignoreMapClicksUntil)return;
   if(origin==='click'&&now-lastMapTapAt<600&&
    Math.hypot(e.clientX-lastMapTapX,e.clientY-lastMapTapY)<22)return;
   const px=(e.clientX-rect.left)/rect.width,pz=(e.clientY-rect.top)/rect.height;
@@ -1522,16 +1560,24 @@ export function createRealtimeBattleCommands({
   const point=mapPoint(px,pz);chooseMapCell(point.x,point.z);
  }
  canvas.addEventListener('pointerup',e=>{
-  if(!pointer||pointer.id!==e.pointerId)return;
-  const dragged=pointer.pan;pointer=null;
-  if(dragged){drawMap();return;}
-  e.preventDefault?.();
-  handleMapCanvasTap(e);
+  if(!mapPointers.has(e.pointerId))return;
+  const dragged=mapGesture?.kind==='pinch'||mapGesture?.moved||multiTouch;
+  mapPointers.delete(e.pointerId);
+  if(dragged){
+   ignoreMapClicksUntil=nowMs()+650;
+   if(!mapPointers.size)multiTouch=false;
+   beginMapGesture();drawMap();return;
+  }
+  beginMapGesture();e.preventDefault?.();handleMapCanvasTap(e);
  });
- // Some Android WebViews deliver click after a lost pointerup. Never issue
- // the same order twice when both events arrive for a single touch.
+ // Synthesized clicks after pinch/drag must not accidentally redeploy.
  canvas.addEventListener('click',e=>handleMapCanvasTap(e,'click'));
- canvas.addEventListener('pointercancel',()=>{pointer=null;});
+ canvas.addEventListener('pointercancel',e=>{
+  mapPointers.delete(e.pointerId);
+  ignoreMapClicksUntil=nowMs()+650;
+  if(!mapPointers.size)multiTouch=false;
+  beginMapGesture();
+ });
  function activateRadarPin(px,py,{strategy=false}={}){
  const pin=radarHitPin(radarPins,px,py);
  if(strategy&&pin){
@@ -1744,6 +1790,11 @@ radarCanvas.addEventListener('keydown',event=>{
   if(started||mode!=='deploy'){beginBattleWithPlans();return;}
   const own=squads(),selected=getSelected(),key=String(selected?.groupId??selected?.id??'');
   if(deployStep==='placement'){
+   // Revalidate the authored, unchanged positions on confirmation too.
+   if(!placedTeams.has(key)&&selected&&Number(selected.alive)>0&&
+      Number.isFinite(selected.x)&&Number.isFinite(selected.z)&&
+      selected.x>=0&&selected.x<worldSize&&selected.z>=0&&selected.z<worldSize)
+    placedTeams.add(key);
    if(!placedTeams.has(key)){
     $('realtimeMapMessage').textContent='初期位置を確認し、水色の配置可能マスから変更してください。';
     return;
@@ -1828,7 +1879,10 @@ radarCanvas.addEventListener('keydown',event=>{
      preset.allowedStrategies:['assault','defense','balanced','explore'];
     const initial=allowed.includes(preset.strategy)?preset.strategy:allowed[0];
     if(initial)initialTeamPlans.set(key,initial);
-    if(Number.isFinite(team.x)&&Number.isFinite(team.z)&&canDeploy(team.x,team.z))
+    // Already-spawned formations are valid unchanged. Team centroids may
+    // sit near the front line, where a NEW placement would be rejected.
+    if(Number(team.alive)>0&&Number.isFinite(team.x)&&Number.isFinite(team.z)&&
+       team.x>=0&&team.x<worldSize&&team.z>=0&&team.z<worldSize)
      placedTeams.add(key);
    }
    deploymentActions.clear();arrivalActions.clear();preferredActions.clear();
@@ -1902,6 +1956,7 @@ radarCanvas.addEventListener('keydown',event=>{
   get isMapOpen(){return !$('realtimeBattleMapOverlay').hidden;},
   get planningSeconds(){return planningDeadline?Math.max(0,Math.ceil((planningDeadline-nowMs())/1000)):null;},
   get radarPins(){return [...radarPins];},
+  get mapView(){return {zoom,centerX,centerZ};},
   root,dispose(){exitPlanning();commandWizard.dispose();root.remove();}
  };
 }
