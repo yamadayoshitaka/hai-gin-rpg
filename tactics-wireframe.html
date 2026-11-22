@@ -9905,23 +9905,11 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  },
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
-  if(team===1&&THREE_TEAM_BATTLE&&String(id).startsWith('enemy-team:')){
-   const group=Number(String(id).slice('enemy-team:'.length));
-   id=enemySquadIds.find(sid=>Number(enemyGroupBySquad?.[sid])===group&&
-    squadRoster.some(u=>u.team===1&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
-   if(!id)return;
-  }
-  if(team===0&&THREE_TEAM_BATTLE&&String(id).startsWith('team:')){
-   const group=Number(String(id).slice(5));
-   id=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
-    squadRoster.some(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
-   if(!id)return;
-  }
-  if(team===0){trackedAllySquadId=String(id);realtimeCommandUI?.selectSquad(id);}
-  else selectedEnemySquadId=String(id);
+  if(!focusCommandTeam(Number(team),id))return;
+  const resolved=resolveCameraSquadId(Number(team),id);
   for(const [key,marker] of squadMarkers)
-   marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
-  zoomToSquadMember(String(id),team);
+   marker.userData.screenLabel.classList.toggle('rpgHudFocus',
+    key===squadKey(Number(team),String(resolved)));
  }
 }):null;
 if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,
@@ -11480,13 +11468,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  },
  onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,
   THREE_TEAM_BATTLE?'team:'+normalizeArmyGroup(armyGroupBySquad[String(id)]):id);},
- onFocus:id=>{
-  const center=squadCenter(id,0);if(!center)return;
-  const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
-  followCamera=false;battleViewMode='commander';focusedHumanUnitId=null;
-  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.2,z),new THREE.Vector3(-12,13,18));
-  manualCameraFocusUntil=performance.now()+4500;setCameraActive(null);
- },
+ onFocus:id=>{focusCommandTeam(0,id);},
+ onRadarFocus:(team,id)=>{focusCommandTeam(Number(team),String(id));},
  onMapOverview:point=>{
   if(TOWN_MODE||!battleReady||finished||!point)return false;
   const x=(point.x-6)*CELL,z=(point.z-6)*CELL;
