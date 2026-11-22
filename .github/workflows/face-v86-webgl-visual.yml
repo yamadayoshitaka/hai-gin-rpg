@@ -15,6 +15,7 @@ on:
       - 'qa/face-v112-wire-overlay.test.mjs'
       - 'qa/face-v113-native-normal-webgl.test.mjs'
       - 'qa/face-v114-eye-webgl.test.mjs'
+      - 'qa/face-v115-eye-liner-webgl.test.mjs'
       - 'src/face-part-catalog-v32.js'
       - '.github/workflows/face-v86-webgl-visual.yml'
   workflow_dispatch:
@@ -37,6 +38,8 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-webgl-server.log 2>&1 &
           sleep 2
+      - name: Verify v115 eyeliner and individual lash roots match through real blinking
+        run: node qa/face-v115-eye-liner-webgl.test.mjs
       - name: Verify photorealistic almond eye contour and true iris/pupil in Android WebGL
         run: node qa/face-v114-eye-webgl.test.mjs
       - name: Assert actual 3490-vertex native normal face first paint, body-reselect parity and smoother cheeks
@@ -54,5 +57,6 @@ jobs:
             qa/screenshots/face-v112/*.png
             qa/screenshots/face-v113/*.png
             qa/screenshots/face-v114/*.png
+            qa/screenshots/face-v115/*.png
           if-no-files-found: ignore
           retention-days: 7
