@@ -8,7 +8,7 @@ import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formation
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.49';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
-import {updateDefensivePosture} from './battle-defensive-doctrine.js';
+import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
@@ -1821,7 +1821,11 @@ export class MassBattleGridSimulation {
       // Move, exploration and mission commands override the fallback stance.
       const guarding=squadCommand==='hold'||squadCommand==='defend'||
         (!squadCommand&&(order==='hold'||order==='defend'));
-      if(guarding&&!triageNeedsMovement){
+      // Approach a visible adjacent threat briefly, but retain the guard order.
+      const closeThreat=guarding&&nearest&&shouldCounterNearbyThreat({
+       order:'hold',enemyDistance:Math.sqrt(best),attackRange:job.range
+      });
+      if(guarding&&!triageNeedsMovement&&!closeThreat){
         u.action='hold';u.vx=0;u.vz=0;u.blockedTicks=0;continue;
       }
       const isNinja=u.jobId==='ninja';
@@ -1844,13 +1848,13 @@ export class MassBattleGridSimulation {
       const assignedReached=Boolean(reachable&&assignedFlow[cell]===0);
       const resumeCombat=assignedReached&&!['hold','defend','retreat'].includes(order)&&
         this.live[1-u.team]>0;
-      const pursuing=(!reachable||resumeCombat)&&!supporting&&order!=='retreat'&&remembered&&
+      const pursuing=(!reachable||resumeCombat||closeThreat)&&!supporting&&order!=='retreat'&&remembered&&
         Math.hypot(u.x-remembered.x,u.z-remembered.z)<26;
       const targetFlow=pursuing?this._pursuitFlow(remembered,u.jobId):null;
       const chaseFlow=targetFlow&&targetFlow[cell]<0x3fffffff?targetFlow:null;
       const missionSquad=mission&&['eliminate_squad','eliminate_commander'].includes(mission.type)?
         mission.targetSquadId:null;
-      const enemyFlow=(!reachable||resumeCombat)&&!supporting&&order!=='retreat'?
+      const enemyFlow=(!reachable||resumeCombat||closeThreat)&&!supporting&&order!=='retreat'?
         this._enemyPursuitFlow(u.team,u.jobId,missionSquad):null;
       const globalChase=!chaseFlow&&enemyFlow&&enemyFlow[cell]<0x3fffffff;
       const highRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase===0?
