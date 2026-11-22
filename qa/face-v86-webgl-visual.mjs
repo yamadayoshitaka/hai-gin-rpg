@@ -124,6 +124,29 @@ try{
    if(r<=8&&g<=8&&b<=8){black++;blackPixelCoords.push([xx,yy]);}
    if(r>90&&g>65&&b>55)skin++;
   }
+  // Identify the *rendered* white fang-like geometry by raycast, not by
+  // guessing whether it is the dental crowns or a donor lip triangle.
+  if(expression==='laugh'){
+   const candidates=[],cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+   for(let yy=minY;yy<maxY;yy+=2)for(let xx=minX;xx<maxX;xx+=2){
+    if(Math.abs(xx-cx)>(maxX-minX)*.32||
+       Math.abs(yy-cy)>(maxY-minY)*.30)continue;
+    const ii=(yy*png.width+xx)*4,r=png.data[ii],
+     g=png.data[ii+1],b=png.data[ii+2];
+    if(r>185&&g>165&&b>155&&r-g<43&&g-b<30)
+     candidates.push({x:xx,y:yy,score:r+g+b});
+   }
+   candidates.sort((a,b)=>b.score-a.score);
+   const sample=[];
+   for(const pt of candidates.slice(0,4)){
+    const hits=await page.evaluate(({x,y})=>
+     window.__faceExpressionQA.rayTraceOralPixel(x,y),
+     {x:pt.x/sx,y:pt.y/sy});
+    sample.push({pixel:[pt.x,pt.y],hits:hits.slice(0,6)
+     .map(h=>({name:h.name,parent:h.parent,distance:h.distance}))});
+   }
+   console.log('FACE_V93_WHITE_MOUTH_RAYS',JSON.stringify(sample));
+  }
   if(blackPixelCoords.length>0){
    const [px,py]=blackPixelCoords[Math.floor(blackPixelCoords.length/2)];
    const rayHits=await page.evaluate(({x,y})=>
