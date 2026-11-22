@@ -13,7 +13,9 @@ on:
       - 'src/face-v99-malar-alar-fairing.js'
       - 'src/face-v101-cheek-contour.js'
       - 'src/face-v102-cheek-contour.js'
+      - 'src/face-v103-normal-cheek.js'
       - 'qa/face-v102-cheek-contour.test.mjs'
+      - 'qa/face-v103-normal-cheek.test.mjs'
       - 'qa/face-v96-smile-cosmetics.test.mjs'
       - 'qa/face-v98-feminine-profile.test.mjs'
       - 'qa/face-v99-malar-alar-fairing.test.mjs'
@@ -61,7 +63,9 @@ on:
       - 'src/face-v99-malar-alar-fairing.js'
       - 'src/face-v101-cheek-contour.js'
       - 'src/face-v102-cheek-contour.js'
+      - 'src/face-v103-normal-cheek.js'
       - 'qa/face-v102-cheek-contour.test.mjs'
+      - 'qa/face-v103-normal-cheek.test.mjs'
       - 'qa/face-v96-smile-cosmetics.test.mjs'
       - 'qa/face-v98-feminine-profile.test.mjs'
       - 'qa/face-v99-malar-alar-fairing.test.mjs'
@@ -121,7 +125,9 @@ jobs:
           node --check src/face-v99-malar-alar-fairing.js
           node --check src/face-v101-cheek-contour.js
           node --check src/face-v102-cheek-contour.js
+          node --check src/face-v103-normal-cheek.js
           node --check qa/face-v102-cheek-contour.test.mjs
+          node --check qa/face-v103-normal-cheek.test.mjs
           node --check qa/face-v96-smile-cosmetics.test.mjs
           node --check qa/face-v98-feminine-profile.test.mjs
           node --check qa/face-v99-malar-alar-fairing.test.mjs
@@ -154,7 +160,7 @@ jobs:
         run: |
           node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs qa/face-v76-visible-preset-smooth.test.mjs qa/face-v80-anatomy.test.mjs
           # IMPORTANT: these were previously syntax-checked but never RUN.
-          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs qa/face-v88-native-oral.test.mjs qa/face-v90-reference-grade.test.mjs qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs qa/face-v93-portrait-fairing.test.mjs qa/face-v94-native-mouth-occlusion.test.mjs qa/face-v95-topology-profile.test.mjs qa/face-v96-smile-cosmetics.test.mjs qa/face-v98-feminine-profile.test.mjs qa/face-v99-malar-alar-fairing.test.mjs qa/face-v102-cheek-contour.test.mjs
+          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs qa/face-v88-native-oral.test.mjs qa/face-v90-reference-grade.test.mjs qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs qa/face-v93-portrait-fairing.test.mjs qa/face-v94-native-mouth-occlusion.test.mjs qa/face-v95-topology-profile.test.mjs qa/face-v96-smile-cosmetics.test.mjs qa/face-v98-feminine-profile.test.mjs qa/face-v99-malar-alar-fairing.test.mjs qa/face-v102-cheek-contour.test.mjs qa/face-v103-normal-cheek.test.mjs
 
       - name: Diagnose current public face version before merging
         continue-on-error: true
