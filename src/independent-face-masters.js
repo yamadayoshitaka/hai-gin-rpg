@@ -5,6 +5,7 @@ import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=97-cont
 import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 import {refineV99FemaleProfile} from './face-v99-malar-alar-fairing.js?v=100-real-donor-local-guard';
 import {fairV102CheekContour} from './face-v102-cheek-contour.js?v=102-donor-anchored-crest-repair';
+import {repairV103NormalCheek} from './face-v103-normal-cheek.js?v=103-reference-normal-contour';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -456,6 +457,14 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    ageWrinkles:demo.age.wrinkles,
    donorPositions:originalPoints,donorCenterX:cx,donorHalfWidth:d.x*.5
   }):{applied:false,reason:'v100-reference'};
+ // v103 uses the two approved picture references only as a shape target.
+ // On the REAL female normal-build GLB, soften the under-malar hollow
+ // without changing nose, hair, eyes, lip rings, or existing v102 contour.
+ const normalCheekRepair=gender==='female'&&cheekContourMode==='v102'?
+  repairV103NormalCheek(geometry,{gender,bodyType:controls.bodyType,
+   ageWrinkles:demo.age.wrinkles,donorPositions:originalPoints,
+   donorCenterX:cx,donorHalfWidth:d.x*.5
+  }):{applied:false,reason:'v100-reference'};
  // Finish with the source-indexed original lip-loop width morph. No
  // neighboring cheek smoothing may consume this slider-adjusted geometry.
  for(let i=0;i<p.count;i++){
@@ -506,6 +515,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    v95NasalSideProfile:nasalEdgeFlow,
    v99FeminineMalarAlar:feminineProfile,
    v102CheekContour:cheekContour,
+   v103NormalCheekRepair:normalCheekRepair,
   v49AgeCreases:ageDetail,
   v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
    sourceCC0:!!photographicMicrodetail.sourceCC0,
