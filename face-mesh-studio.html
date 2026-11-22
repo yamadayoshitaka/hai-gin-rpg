@@ -376,9 +376,9 @@ if(v32PartMode){
   v32Parts.male.ageBand,manualFaceOverrides.male));
 }
 // One-time migration of V87's default .85 setting. Explicitly narrowed
-// custom presets are preserved; the 0.85 legacy default becomes 0.425.
-if(Math.abs(modelChanges.mouthWidth-.85)<1e-6)modelChanges.mouthWidth=.425;
-if(Math.abs(maleChanges.mouthWidth-.85)<1e-6)maleChanges.mouthWidth=.425;
+// custom presets are preserved; the 0.85 legacy default becomes 0.65.
+if(Math.abs(modelChanges.mouthWidth-.85)<1e-6)modelChanges.mouthWidth=.65;
+if(Math.abs(maleChanges.mouthWidth-.85)<1e-6)maleChanges.mouthWidth=.65;
 // v72: one visible main combo, but separate catalogs and saved selections.
 function populateQuickHairStyles(sex){
  const select=$('quickWigStyle');
@@ -1164,7 +1164,7 @@ const eyeExtras=[
  ['lashLength','まつ毛の長さ'],
  ['lashThickness','まつ毛の太さ'],
  ['lashCurl','まつ毛のカール'],
- ['mouthWidth','口の横幅（実メッシュ・口角）']
+ ['mouthWidth','口の横幅（自然な口角・実メッシュ）']
 ];
 function addEyeExtras(male=false){
  const target=$(male?'maleEyeSpacing':'eyeSpacing')?.closest('label');
