@@ -7670,7 +7670,8 @@ function updateCommanderCinematic(){
  }else{
   camera.position.copy(shot.overPosition);controls.target.copy(shot.overTarget);
   commanderCinematic=null;
-  if(battleViewMode==='commander')followSelectedCommander();
+  if(manualCameraSquad)applyOverviewCamera(manualCameraSquad.mode);
+  else if(battleViewMode==='commander')followSelectedCommander();
   else{setBattleCamera(shot.overTarget,cameraOverviewOffset);setCameraActive('camOverview');}
  }
 }
@@ -11823,6 +11824,22 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  return true;
 }
 // Selected perspective remains anchored to its team until the user changes it.
+// The live radar and the 3D camera must follow one identical command-team
+// position, including each command team's soldiers across multiple jobs.
+function commandTeamCameraPoint(team,id){
+ const current=String(id);
+ const group=team===0?normalizeArmyGroup(armyGroupBySquad[current]):
+  Number(enemyGroupBySquad?.[current]);
+ const pins=realtimeCommandUI?.radarPins??[];
+ const pin=pins.find(p=>Number(p.team)===team&&(
+  String(p.id)===current||
+  THREE_TEAM_BATTLE&&Number(p.groupId)===group));
+ const gridPoint=pin?{x:pin.x*(WORLD_SIZE-1),z:pin.y*(WORLD_SIZE-1)}:
+  squadCenter(current,team);
+ if(!gridPoint||!Number.isFinite(gridPoint.x)||!Number.isFinite(gridPoint.z))return null;
+ const x=(gridPoint.x-6)*CELL,z=(gridPoint.z-6)*CELL;
+ return new THREE.Vector3(x,terrainY(x,z)+1.2,z);
+}
 function applyOverviewCamera(mode){
  const node=overviewPinNodes.get(overviewSelectedKey);
  if(!node||TOWN_MODE||!battleReady||finished||commandOverviewLocked)return false;
@@ -11842,10 +11859,11 @@ function applyOverviewCamera(mode){
  if(mode==='person'){
   followSelectedCommander(node.id,node.team);
  }else if(mode==='squad'){
-  focusedHumanUnitId=massSim?focus.unit.id:null;
-  if(!massSim)selected=focus.unit;
+  // Camera tracks the entire active command team, not its general/one job.
+  focusedHumanUnitId=null;
   followCamera=true;targetViewFollowing=false;
-  setBattleCamera(focus.point,new THREE.Vector3(-20,16,23));
+  setBattleCamera(commandTeamCameraPoint(node.team,node.id)||focus.point,
+   new THREE.Vector3(-20,16,23));
   setCameraActive(null);
  }else return false;
  syncOverviewCameraChoices();
@@ -12751,9 +12769,11 @@ function animate(){
    // discrete root caused a 20Hz rooftop/background judder even at stable FPS.
    const skirmishFollow=followed&&(massSim?followed.root.position:
      interpolatedSkirmishCameraAnchor(followed,skirmishCameraAnchor));
-   const anchor=tracked?.alive&&(tracked._visualMotion?
+   const groupAnchor=manualCameraSquad?.mode==='squad'?
+     commandTeamCameraPoint(manualCameraSquad.team,manualCameraSquad.id):null;
+   const anchor=groupAnchor||(tracked?.alive&&(tracked._visualMotion?
      new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
-     new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
+     new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL)))||
      skirmishFollow;
    if(anchor){
     if(targetViewFollowing&&!TOWN_MODE&&!commanderCinematic&&!commandOverviewLocked){
@@ -12771,6 +12791,7 @@ function animate(){
      controls.target.lerp(personPovLook,ease);
     }else{
      cameraFollowShift.copy(anchor).sub(controls.target);
+     if(groupAnchor)cameraFollowShift.multiplyScalar(Math.min(1,Math.max(0,dt)*7));
      controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);
     }
    }
