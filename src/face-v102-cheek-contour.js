@@ -22,7 +22,7 @@ const normal=(a,i,j,k)=>{
  const vx=a[K]-a[I],vy=a[K+1]-a[I+1],vz=a[K+2]-a[I+2];
  return [uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx];
 };
-export function v102CheekContourField({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
+export function v102CheekContourField({xn=0,yn=0,zn=0,ageWrinkles=0,mode='v102',bodyType='normal'}={}){
  const youth=1-smooth(.18,.68,ageWrinkles);
  const ax=Math.abs(xn);
  if(youth<.001||ax<=.285||ax>=.84||yn<=.405||yn>=.705||zn<=.51)
@@ -34,12 +34,20 @@ export function v102CheekContourField({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  const lower=bell(ax,.47,.23)*bell(yn,.455,.095)*region;
  // Pull back the isolated upper crest; fill the trough from below.
  // The broad fields overlap in a single connected cheek surface.
- const dz=-.066*crest+.045*lower;
+ // v105: the old -.066 crest cut made an actual depression on wireframe,
+ // especially for thin builds. Its 8 smoothing passes and donor ceiling
+ // then produced an abrupt shelf. Replace the CUT with a tiny reduction,
+ // and restore lower cheek continuity without an inflated cheek mound.
+ // v102 remains available solely as a reproducible A/B comparison.
+ const stable=mode==='v105';
+ const build=bodyType==='thin'?.85:1;
+ const dz=stable?build*(-.0045*crest+.010*lower):
+  -.066*crest+.045*lower;
  return {dz,mask:region,crest,lower};
 }
 /** Preserve donor triangle connectivity with local safety attenuation. */
 export function fairV102CheekContour(geometry,{
- gender='female',ageWrinkles=0,
+ gender='female',ageWrinkles=0,mode='v102',bodyType='normal',
  donorPositions=null,donorCenterX=null,donorHalfWidth=null
 }={}){
  const fail=reason=>({applied:false,reason});
@@ -53,6 +61,7 @@ export function fairV102CheekContour(geometry,{
   depth=box.max.z-box.min.z;
  if(Math.min(dx,dy,depth)<1e-6)return fail('head-bounds-invalid');
  const cx=(box.min.x+box.max.x)/2;
+ const stable=mode==='v105'&&(bodyType==='normal'||bodyType==='thin');
  const src=p.array.slice(),n=p.count,initial=src.slice();
  const mask=new Float32Array(n),links=Array.from({length:n},()=>new Map());
  let crestVertices=0,lowerVertices=0,nasalProtectedVertices=0;
@@ -66,14 +75,15 @@ export function fairV102CheekContour(geometry,{
    (donorHalfWidth??dx*.5));
   // A donor nose vertex can drift laterally during the v100 sculpt.
   // Always classify and guard it by the IMMUTABLE original GLB index.
-  const nasalLocked=donorAx<=.285;
+  const nasalLocked=donorAx<=(stable?.345:.285);
   const a=nasalLocked?{dz:0,mask:0,crest:0,lower:0}:
-   v102CheekContourField({xn:nx,yn:ny,zn:nz,ageWrinkles});
+   v102CheekContourField({xn:nx,yn:ny,zn:nz,ageWrinkles,
+    mode:stable?'v105':'v102',bodyType});
   // Anchor on the unchanged GLB vertex rather than the already sculpted
   // head: the v93/v99 passes can otherwise add up into a visible shelf.
   // Only upper/mid cheek is capped; the lower cheek keeps soft fullness.
   let corrected=z+depth*a.dz;
-  if(!nasalLocked&&donorPositions?.length===src.length&&a.crest>.001){
+  if(!stable&&!nasalLocked&&donorPositions?.length===src.length&&a.crest>.001){
    const donorZ=donorPositions[I+2];
    const lowerAllowance=bell(ny,.455,.095);
    const donorCeiling=donorZ+depth*(.022+.012*lowerAllowance);
@@ -84,6 +94,9 @@ export function fairV102CheekContour(geometry,{
    corrected-=trim;
    if(trim>depth*.00002){donorCapVertices++;donorCapMaxTrim=Math.max(donorCapMaxTrim,trim);}
   }
+  // Bound the v105 Z edit to a fraction of head depth. No new crater
+  // can be cut below the pre-existing v100 face in one operation.
+  if(stable)corrected=z+clamp(corrected-z,-depth*.004,depth*.010);
   initial[I+2]=corrected;
   mask[i]=a.mask;
   if(a.crest>.08)crestVertices++;
@@ -111,7 +124,7 @@ export function fairV102CheekContour(geometry,{
  // True one-ring bilateral fairing of Z. A small per-pass step reduces
  // normal discontinuity without flattening away all anatomical shape.
  let current=initial.slice();
- for(let pass=0;pass<8;pass++){
+ for(let pass=0;pass<(stable?2:8);pass++){
   const next=current.slice();
   for(let i=0;i<n;i++){
    const w=mask[i];
@@ -125,12 +138,15 @@ export function fairV102CheekContour(geometry,{
     const weight=bilateral/(dist+dx*.004);
     sum+=zz*weight;total+=weight;
    }
-   if(total)next[I+2]=z+.47*w*(sum/total-z);
+   if(total)next[I+2]=z+(stable?.18:.47)*w*(sum/total-z);
   }
   current=next;
  }
  const displacement=new Float32Array(n);
- for(let i=0;i<n;i++)displacement[i]=current[i*3+2]-src[i*3+2];
+ for(let i=0;i<n;i++){
+  const raw=current[i*3+2]-src[i*3+2];
+  displacement[i]=stable?clamp(raw,-depth*.005,depth*.010):raw;
+ }
  // For the protected nose all proposed deltas are exactly zero.
  const scales=new Float32Array(n).fill(1);
  let output=null,guardPasses=0,guardedVertices=new Set();
@@ -167,7 +183,8 @@ export function fairV102CheekContour(geometry,{
    (donorHalfWidth??dx*.5));
   if(ax<=.285)maxNoseChange=Math.max(maxNoseChange,Math.abs(zDelta));
  }
- if(altered<8||!crestBack||!lowerFill)return fail('no-balanced-cheek-remesh');
+ if(altered<8||(!stable&&(!crestBack||!lowerFill)))
+  return fail('no-balanced-cheek-remesh');
  if(maxNoseChange!==0)return fail('nose-protection-violated');
  for(let i=0;i<n;i++)if(output[i*3+2]!==src[i*3+2])
   p.setZ(i,output[i*3+2]);
@@ -175,12 +192,17 @@ export function fairV102CheekContour(geometry,{
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();
  geometry.computeBoundingSphere();
- const report={applied:true,version:102,cheekOnly:true,donorAnchored:true,
+ const report={applied:true,version:stable?105:102,
+  conservativeCheekSurface:stable,bodyType,
+  correctionMode:stable?'v105-no-deep-crest-cut':'v102-legacy',
+  maxAllowedRetreat:stable?depth*.005:null,
+  cheekOnly:true,donorAnchored:true,
   donorCapVertices,donorCapMaxTrim,
   crestVertices,lowerVertices,changedVertices:altered,crestBack,lowerFill,
   guardedVertices:guardedVertices.size,guardPasses,
   nasalProtectedVertices,maxNoseChange,
   originalTopologyPreserved:true,sourceDonorPreserved:true};
  geometry.userData.v102CheekContour=report;
+ if(stable)geometry.userData.v105CheekGeometry=report;
  return report;
 }
