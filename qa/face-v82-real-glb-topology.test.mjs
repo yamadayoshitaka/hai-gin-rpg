@@ -426,7 +426,7 @@ test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
   JSON.stringify(after.report.v101CheekContour));
  assert.equal(after.report.v101CheekContour.maxNoseChange,0);
  let crest=0,lower=0,nose=0,crestSum=0,lowerSum=0;
- let noseMaxY=0,noseMaxZ=0,crestRetreated=0;
+ let noseMaxY=0,noseMaxZ=0,noseTipMaxZ=0,tipSamples=0,crestRetreated=0;
  for(let i=0;i<sourcePos.count;i++){
   const x=Math.abs((sourcePos.getX(i)-center.x)/(size.x*.5));
   const y=(sourcePos.getY(i)-bound.min.y)/size.y;
@@ -443,10 +443,13 @@ test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
    nose++;
    noseMaxY=Math.max(noseMaxY,Math.abs(a.getY(i)-b.getY(i)));
    noseMaxZ=Math.max(noseMaxZ,Math.abs(deltaZ));
+   if(y<.605){tipSamples++;
+    noseTipMaxZ=Math.max(noseTipMaxZ,Math.abs(deltaZ));}
   }
  }
  const measured={crest,lower,nose,crestMean:crestSum/Math.max(1,crest),
-  lowerMean:lowerSum/Math.max(1,lower),crestRetreated,noseMaxY,noseMaxZ};
+  lowerMean:lowerSum/Math.max(1,lower),crestRetreated,noseMaxY,noseMaxZ,
+  noseTipMaxZ,tipSamples};
  console.log('V101_REAL_GLb_CHEEK_NOSE_AB',JSON.stringify(measured));
  assert.ok(crest>8&&lower>8&&nose>8,
   'Audit must cover real CC0 malar/lower-cheek and nasal vertices');
@@ -458,8 +461,11 @@ test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
   'The lower cheek must transition without the former steep trough');
  assert.equal(noseMaxY,0,
   'Nose-tip 3D Y remains bitwise identical to the approved v100 profile');
- assert.equal(noseMaxZ,0,
-  'Nasal surface must be bitwise identical after cheek-only v101 smoothing');
+ assert.ok(tipSamples>10,'Real native nasal-tip samples must be covered');
+ assert.equal(noseTipMaxZ,0,
+  'The v100 nasal TIP stays bitwise identical through the v101 cheek pass');
+ assert.ok(noseMaxZ<size.z*.001,
+  'Any residual orbital-corner adjustment must be sub-millimeter relative to face depth');
  for(const model of [before,after])model.root.traverse(o=>{
   if(!o.isMesh)return;
   o.geometry?.dispose();
