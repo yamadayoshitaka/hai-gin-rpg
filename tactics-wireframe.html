@@ -2361,7 +2361,16 @@ for(let n=7;n<232;n+=13){
 const hutInside=(x,z)=>selectedStage.huts&&x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
 const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-75.5)<=1;
 const secondHutWall=(x,z)=>selectedStage.huts&&!destroyedHuts.has(1)&&x>=149&&x<=168&&z>=124&&z<=143&&!(x>149&&x<168&&z>124&&z<143)&&!(z===143&&Math.abs(x-158.5)<=1);
-const townWall=(x,z)=>townBuildings.some(b=>{if(destroyedTownBuildings.has(b))return false;const dx=Math.abs(x-b.x),dz=Math.abs(z-b.z);return dx<=b.w/2&&dz<=b.d/2&&(dx>=b.w/2-1||dz>=b.d/2-1)&&!(z>=b.z+b.d/2-1&&Math.abs(x-b.x)<=1.2)});
+// Match the actual nine-cell OPEN castle gateway. Other buildings keep their
+// narrow door openings; only the castle needs squad-scale sortie clearance.
+const townWall=(x,z)=>townBuildings.some(b=>{
+ if(destroyedTownBuildings.has(b))return false;
+ const dx=Math.abs(x-b.x),dz=Math.abs(z-b.z);
+ const gateHalfWidth=b.kind==='castle'?4.2:1.2;
+ return dx<=b.w/2&&dz<=b.d/2&&
+  (dx>=b.w/2-1||dz>=b.d/2-1)&&
+  !(z>=b.z+b.d/2-1&&dx<=gateHalfWidth);
+});
 const hutWall=(x,z)=>selectedStage.huts&&!destroyedHuts.has(0)&&x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
 const hutRangedJob=a=>['弓使い','魔法使い','召喚士'].includes(a.job.name);
 function hutShotClear(from,to){
