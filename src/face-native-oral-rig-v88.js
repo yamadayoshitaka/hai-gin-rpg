@@ -136,7 +136,18 @@ export function initializeNativeOralRig(face){
   boundaryVertices:n,originalTriangleCount:originalCount/3,
   neutralTriangleCount:closedIndices.length/3,
   donorOwned:true,reversible:true,oralMeshOverlays:false,
-  v94HiddenDonorInteriorTriangles:filtered.removed};
+  v94HiddenDonorInteriorTriangles:filtered.removed,
+  v94ClassifierReason:filtered.reason||null,
+  v94ClassifierDonorName:face.name,
+  v94SourceVertexCount:attr.count,
+  v94KnownTrianglePresence:(()=>{
+   const found=new Set();
+   for(let k=0;k<originalCount;k+=3){
+    const ids=closedIndices.slice(k,k+3).sort((a,b)=>a-b).join('/');
+    if(ids==='1882/2240/2242'||ids==='1879/2244/3242')found.add(ids);
+   }
+   return [...found];
+  })()};
  face.userData.v88NativeOralRig=status;
  updateNativeOralPose(face,{open:0});
  return status;
