@@ -67,12 +67,12 @@ assert.match(circle,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,tea
  'Target selection must retain its tap handler');
 assert.match(circle,/if\(tap\.doubleTap\)\{\s*zoomToSquadMember\(id,team\);\s*return;/,
  'Double tap must retain close-up');
-assert.match(circle,/selectOverviewSquad\(team,id\);/,
- 'Single tap must select the squad');
-assert.match(circle,/pendingSquadCircleInfoTimer=setTimeout\(/,
- 'Single-tap camera change must wait for the double-tap window');
-assert.match(circle,/applyOverviewCamera\('squad'\)/,
- 'Camera chooser must apply the selected squad perspective');
+assert.match(circle,/focusCommandTeam\(team,id\)/,
+ 'A single tap must immediately focus the whole command team');
+assert.doesNotMatch(circle,/pendingSquadCircleInfoTimer=setTimeout\(/,
+ 'Single tap must not wait for the double tap timeout');
+assert.match(battle,/function focusCommandTeam\(team,id\)/,
+ 'Map, squad badges and rosters share one camera selection path');
 assert.doesNotMatch(circle,/else openSquadTactics\(id\)/,
  'Retired per-squad command popup must not return');
 assert.ok(battle.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
