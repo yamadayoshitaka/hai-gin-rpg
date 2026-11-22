@@ -317,7 +317,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  // On sparse donor polygons large cheek displacement creates visible triangular
  // folds. Retain part-rig motion while damping whole-skin deformation only.
  const v96Female=face.name.startsWith('FEMALE_');
-  const skinDeformationGain=v96Female?.53:.61;
+ // With v106 true skin-edge density, spread the expression over cheeks
+ // rather than pulling the sparse lip corner into a pointed V.
+ const v106Female=v96Female&&face.userData.v106LocalRetopo?.applied===true;
+ const skinDeformationGain=v106Female?.56:(v96Female?.53:.61);
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Muscle channels can blend emotions, dialogue and presets without
  // adding floating expression meshes or permanently changing the donor.
@@ -419,13 +422,13 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    const skinGain=skinDeformationGain*oralGuard;
    facialAttr.array[k]=x+xd*skinGain*
     Math.sign(x-centerX)*anatomical.dxOut;
-   facialAttr.array[k+1]=y+yd*skinGain*((v96Female?.013:.033)*skinPose.smile*lipCorner+
-    (v96Female?.006:.012)*skinPose.cheek*cheek+.008*skinPose.brow*brow+
+   facialAttr.array[k+1]=y+yd*skinGain*((v106Female?.010:(v96Female?.013:.033))*skinPose.smile*lipCorner+
+    (v106Female?.0085:(v96Female?.006:.012))*skinPose.cheek*cheek+.008*skinPose.brow*brow+
     .013*skinPose.tilt*inner-.050*Math.max(0,skinPose.open)*jaw-
     .024*Math.max(0,skinPose.open)*lowerLip+
     (v96Female?.55:1)*muscle.dy+(v96Female?.52:1)*micro.dy+
     (v96Female?.58:1)*anatomical.dy+cheekPose.dy);
-   facialAttr.array[k+2]=z+depth*skinGain*((v96Female?.004:.009)*skinPose.cheek*cheek+
+   facialAttr.array[k+2]=z+depth*skinGain*((v106Female?.006:(v96Female?.004:.009))*skinPose.cheek*cheek+
     (v96Female?.004:.008)*Math.max(0,skinPose.smile)*lipCorner-
     .014*Math.max(0,skinPose.open)*mouthInterior+
     (v96Female?.45:1)*muscle.dz+(v96Female?.52:1)*micro.dz+
