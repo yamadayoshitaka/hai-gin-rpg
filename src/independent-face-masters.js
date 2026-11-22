@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v97-eyeliner-lid-sync';
 import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
-import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=101-broad-malar-fairing';
+import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=97-continuous-malar';
 import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
-import {refineV99FemaleProfile} from './face-v99-malar-alar-fairing.js?v=101-cheek-rebalance-nose-locked';
+import {refineV99FemaleProfile} from './face-v99-malar-alar-fairing.js?v=100-real-donor-local-guard';
+import {fairV101CheekContour} from './face-v101-cheek-contour.js?v=101-cheek-native-only';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -439,7 +440,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // triangulation. Keeps donor lip loop and eyes' original XY positions.
  const portraitFairing=fairYoungPortraitSurface(geometry,{gender,
   ageWrinkles:demo.age.wrinkles,ageBand:demo.ageBand,
-   bodyType:controls.bodyType,cheekContourMode});
+   bodyType:controls.bodyType});
  // Side-profile fit uses the original connected donor triangle edge graph.
  const nasalEdgeFlow=fitTopologyNasalSideProfile(geometry,{gender,
   ageWrinkles:demo.age.wrinkles,strength:1});
@@ -447,7 +448,12 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // Real donor triangles are faired to a broad malar curve; nasal lower rims
  // and the tip rotate gently down to hide nostrils from the front.
  const feminineProfile=refineV99FemaleProfile(geometry,{gender,
-  ageWrinkles:demo.age.wrinkles,cheekContourMode});
+  ageWrinkles:demo.age.wrinkles});
+ // The nasal silhouette is now frozen at v100. v101 moves Z on the cheek
+ // ONLY, after the proven v100 nasal rim/tip and malar topology passes.
+ const cheekContour=gender==='female'&&cheekContourMode==='v101'?
+  fairV101CheekContour(geometry,{gender,
+   ageWrinkles:demo.age.wrinkles}):{applied:false,reason:'v100-reference'};
  // Finish with the source-indexed original lip-loop width morph. No
  // neighboring cheek smoothing may consume this slider-adjusted geometry.
  for(let i=0;i<p.count;i++){
@@ -497,6 +503,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    v93PortraitFairing:portraitFairing,
    v95NasalSideProfile:nasalEdgeFlow,
    v99FeminineMalarAlar:feminineProfile,
+   v101CheekContour:cheekContour,
   v49AgeCreases:ageDetail,
   v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
    sourceCC0:!!photographicMicrodetail.sourceCC0,
