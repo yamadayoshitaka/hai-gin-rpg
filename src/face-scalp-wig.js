@@ -2140,9 +2140,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    for(let j=1;j<segments;j++)rest[j].copy(filtered[j]);
   }
   // Shift sharp lateral transitions to earlier safe scalp stations.
-  if(sadakoGravity&&style.gender==='female'&&!bangsCut&&
-     (fringe||faceFrame||zone.startsWith('temple')||
-      (zone==='crown'&&frontRoot)))
+  if(sadakoGravity&&style.gender==='female'&&
+     (fringe||faceFrame||zone.startsWith('temple')||zone==='crown'))
    v109EaseEyeLevelCrossings(rest,{box,side:partSide});
   if(sadakoGravity)for(let j=1;j<=segments;j++)
    if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
