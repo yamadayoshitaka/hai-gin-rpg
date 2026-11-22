@@ -28,7 +28,35 @@ export function deriveIrisPolarDetail(width=768,height=192){
  }
  return {width,height,data,polarUV:true,limbalRing:true,crypts:true};
 }
-let iris=null,lip=null,sclera=null;
+let iris=null,lip=null,sclera=null,brow=null;
+/** V88: UV-aligned individual eyebrow hairs with tapered dark roots,
+ * soft separated fibres and realistic irregular lengths. This is a
+ * material texture on the physical brow mesh, not a floating brow card. */
+export function getFaceBrowFiberTexture(){
+ if(brow)return brow;
+ const width=512,height=128,data=new Uint8Array(width*height*4);
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  const u=(x+.5)/width,v=(y+.5)/height;
+  const density=(.72+.28*Math.sin(u*73+v*19))*
+   Math.max(.12,Math.sin(Math.PI*u)**.48);
+  const tapered=Math.sin(Math.PI*v)**.28;
+  const roots=Math.sin((u+v*.17+Math.sin(v*41)*.003)*Math.PI*149);
+  const fine=Math.sin((u-v*.09)*Math.PI*271);
+  const hair=THREE.MathUtils.clamp(
+   .80-.25*(Math.max(0,roots)**12)-.13*(Math.max(0,fine)**9),
+   .40,1);
+  const shade=Math.round(255*(.90+.10*density)*hair*tapered);
+  const i=(y*width+x)*4;
+  data[i]=shade;data[i+1]=shade;data[i+2]=shade;data[i+3]=255;
+ }
+ brow=new THREE.DataTexture(data,width,height,THREE.RGBAFormat);
+ brow.colorSpace=THREE.SRGBColorSpace;
+ brow.wrapS=THREE.ClampToEdgeWrapping;brow.wrapT=THREE.ClampToEdgeWrapping;
+ brow.minFilter=THREE.LinearMipmapLinearFilter;
+ brow.magFilter=THREE.LinearFilter;
+ brow.generateMipmaps=true;brow.anisotropy=4;brow.needsUpdate=true;
+ return brow;
+}
 /** Deterministic low-opacity episcleral vascular microdetail.
  * Fine capillaries only near the medial/lateral canthi: no fake red eye
  * and no oversized lines over the pupil or corneal optical zone. */
