@@ -125,7 +125,7 @@ test('both interactive studios use the same v67 reconstructed catalogs',()=>{
  assert.match(FACE_HAIR_RUNTIME_BUILD,/two-donor-unisex-catalog-v67$/);
  const salon=read('face-mesh-studio.html'),outfit=read('face-body-studio.html');
  for(const src of [salon,outfit]){
-  assert.match(src,/face-part-catalog-v32\.js\?v=67/);
+  assert.match(src,/face-part-catalog-v32\.js\?v=(?:67|20261123-v114)/);
   assert.match(src,/face-wig-styles\.js\?v=67/);
   assert.match(src,/20261121-two-donor-unisex-catalog-v67/);
  }
