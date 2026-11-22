@@ -86,7 +86,7 @@ try{
  const male=await state();
  assert.equal(male.geometryReport?.v114NaturalAlmondAperture,false);
  assert.equal(male.geometryReport?.v114UpperLidOpeningFactor,1);
- assert.equal(male.geometryReport?.v114LowerEyelidOpeningFactor,1);
+ assert.equal(male.geometryReport?.v114LowerLidOpeningFactor,1);
  await screenshot('male-unchanged-reference');
  assert.deepEqual(errors,[],'No runtime WebGL errors during actual eye expression and gender changes');
  console.log('FACE_V114_EYES_PASS: natural 3D eye contour, iris, blink, expressions, body, male');
