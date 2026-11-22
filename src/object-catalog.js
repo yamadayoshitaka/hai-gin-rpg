@@ -1087,7 +1087,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    uv.needsUpdate=true;
    groundFloor.userData.surface={floor:1,uvTileMetres:unit,pbr:true};
   }
-  const doorWidth=2.4*cellSize,doorHeight=3.5*cellSize;
+  const doorWidth=(castle?9:2.4)*cellSize,doorHeight=(castle?6:3.5)*cellSize;
   const tile=(castle?3:1.5)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
   const floorCount=castle?3:2;
   const windowRow=floor=>Math.floor((floor-.5)*rows/floorCount);
@@ -1237,14 +1237,17 @@ export function createObjectById(id,{cellSize=2.2}={}){
     mesh(roof,.15*cellSize,3.4*cellSize,.15*cellSize,tx,towerHeight+9.2*cellSize,tz,metal);
     mesh(roof,1.8*cellSize,1.1*cellSize,.12*cellSize,tx+1.0*cellSize,towerHeight+10*cellSize,tz,accent);
    }
-   const gateZ=d/2+.3*cellSize;
+   // Match the real nine-cell castle sortie corridor. Keep the iron leaves
+   // folded beside the jambs instead of barring the passage.
+   const gateZ=d/2+.3*cellSize,gateHalf=doorWidth/2;
    for(const side of [-1,1]){
-    mesh(trim,1.4*cellSize,8*cellSize,2*cellSize,side*4.1*cellSize,4*cellSize,gateZ,mats.stone[1]);
-    mesh(trim,1.2*cellSize,7*cellSize,.15*cellSize,side*2.9*cellSize,3.5*cellSize,gateZ+.35*cellSize,metal);
+    mesh(trim,1.4*cellSize,8*cellSize,2*cellSize,side*(gateHalf+1.2*cellSize),4*cellSize,gateZ,mats.stone[1]);
+    mesh(trim,.35*cellSize,7*cellSize,.15*cellSize,side*(gateHalf+.25*cellSize),3.5*cellSize,gateZ+.35*cellSize,metal);
     mesh(trim,2*cellSize,4.4*cellSize,.14*cellSize,side*8*cellSize,h-4*cellSize,gateZ,accent);
+    for(let i=0;i<4;i++)mesh(trim,.12*cellSize,6*cellSize,.13*cellSize,
+      side*(gateHalf+(.7+i*.45)*cellSize),3.1*cellSize,gateZ+.6*cellSize,metal);
    }
-   mesh(trim,8*cellSize,1.6*cellSize,2*cellSize,0,8*cellSize,gateZ,mats.stone[0]);
-   for(let i=-4;i<=4;i++)mesh(trim,.12*cellSize,7.5*cellSize,.13*cellSize,i*.65*cellSize,3.8*cellSize,gateZ+.6*cellSize,metal);
+   mesh(trim,doorWidth+3*cellSize,1.6*cellSize,2*cellSize,0,8*cellSize,gateZ,mats.stone[0]);
 
   }else{
    // Timber framing, eaves, gutters, shop sign and a small chimney.
@@ -1327,9 +1330,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
   root.userData.catalogId=id;
   root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
   root.userData.passable=true;root.userData.enterable=true;
-  root.userData.entrance={side:'south',widthCells:2.4,clearHeight:doorHeight};
+  root.userData.entrance={side:'south',widthCells:castle?9:2.4,clearHeight:doorHeight};
   root.userData.interior={width:w-2*thick,depth:d-2*thick,height:h,roofGroup:'removable_roof'};
-  root.userData.openings=[{side:'south',kind:'door',widthCells:2.4},...['south','north','east','west'].map(side=>({side,kind:'open-window',floors:floorCount,pattern:'repeated'}))];
+  root.userData.openings=[{side:'south',kind:'door',widthCells:castle?9:2.4},...['south','north','east','west'].map(side=>({side,kind:'open-window',floors:floorCount,pattern:'repeated'}))];
   return root;
  }
  const broken=id.includes('_broken_'),stoneBridge=id.startsWith('stone_');
