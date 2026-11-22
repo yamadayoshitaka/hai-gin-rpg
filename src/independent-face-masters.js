@@ -335,7 +335,13 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     browFitY+noseFitY+mouthFitY;
   // v47 age × weight: deform ORIGINAL source-head vertices, never paste
   // spheres or detachable wrinkles on top of the face.
-  const fullness=demo.body.faceFullness;
+  // Body weight still controls the jaw/cheek silhouette, but young women's
+  // ultra-thin body preset must not hollow the mid-cheeks into a skull.
+  // It remains distinctly slimmer than thin/normal; body proportions and
+  // older-age sag are unchanged.
+  const rawFullness=demo.body.faceFullness;
+  const fullness=gender==='female'&&demo.age.wrinkles<.20&&rawFullness<0?
+   rawFullness*.56:rawFullness;
   const demographicWidthDelta=(x-cx)*fullness*
    (.075*cheek+.052*lowerCheek+.022*chin)*contourGuard-
    (x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
