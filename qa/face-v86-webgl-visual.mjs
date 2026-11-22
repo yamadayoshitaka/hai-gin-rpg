@@ -49,7 +49,10 @@ try{
  let neutralFrame=null;
  for(const expression of ['neutral','laugh','surprised']){
   await page.locator('#faceExpression').selectOption(expression);
-  await page.waitForTimeout(320);
+  // Under SwiftShader 320ms may render only ~2 frames, so inspect the
+  // fully reached FACS target rather than an arbitrary partial transition.
+  await page.evaluate(id=>window.__faceExpressionQA.forceExpression(id),expression);
+  await page.waitForTimeout(80);
   const capture=await page.evaluate(()=>{
    const frame=window.__faceExpressionQA.captureWebGLFrame();
    const seal=window.__faceExpressionQA.nativeLipProbe();
