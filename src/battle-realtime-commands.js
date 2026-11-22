@@ -15,7 +15,7 @@ import {BASIC_OPENING_TACTICS} from './prebattle-opening-tactics.js';
 import {battleJobSpecialActions} from './battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {COMMAND_RALLY_TYPES} from './battle-command-doctrine.js';
 import {squadRadarPins,radarHitPin,BATTLE_TEAM_COLORS} from './battle-center-radar.js?v=20261122-three-team-events1';
-import {findBattleMapPin,formatBattleMapPercent} from './battle-map-inspection.js';
+import {findBattleMapPin,formatBattleMapPercent,stableBattleMapPins,stableBattleMapBuildings} from './battle-map-inspection.js';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const PREBATTLE_FORMATION_IDS=Object.freeze({
  '前進陣形':'attack','標準陣形':'balanced','後衛陣形':'support','防壁陣形':'wall',
@@ -71,6 +71,7 @@ export function createRealtimeBattleCommands({
  let choosingActionFor=null,actionDestination=null,planningOwnsPause=false;
  let planningDeadline=0,planningTicker=null,lastRadarRenderAt=-Infinity,radarPins=[];
  let inspectedMapPin=null,mapInspectionPins=[],inspectedBuilding=null,mapInspectionBuildings=[],lastInspectionRefreshAt=-Infinity;
+  const inspectionPinCache=new Map(),inspectionBuildingCache=new Map();
   let deploymentTiles=[];
  const root=doc.createElement('section');root.id='battleRealtimeControls';
  root.innerHTML=`
@@ -684,12 +685,24 @@ export function createRealtimeBattleCommands({
   const enemies=mode==='deploy'||mode==='inspect'&&typeof getRadarEnemies==='function'?
    (getRadarEnemies?.()||getEnemies()):getEnemies();
   // Aggregated 3-team rows do not have team; restore it from the source.
-  const markers=visibleBattleSquadPins(
+  const liveMarkers=visibleBattleSquadPins(
    allies.map(pin=>({...pin,team:0})),
    enemies.map(pin=>({...pin,team:1})),'live');
+  // Combat-worker snapshots can briefly omit a live team centroid. Preserve
+  // its last valid pin instead of blinking; remove confirmed defeated teams.
+  const aliveByGroup=new Map();
+  if(mode==='inspect')for(const row of currentRows){
+   const team=Number(row?.team),group=Number(row?.groupId);
+   if(![0,1].includes(team)||!Number.isInteger(group)||group<1||group>3)continue;
+   const key=team+':'+group;
+   aliveByGroup.set(key,(aliveByGroup.get(key)||0)+Math.max(0,Number(row.alive)||0));
+  }
+  const markers=mode==='inspect'?stableBattleMapPins(liveMarkers,inspectionPinCache,{
+   now:nowMs(),ttlMs:2200,aliveByGroup
+  }):liveMarkers;
   mapInspectionPins=[];mapInspectionBuildings=[];
   if(mode==='inspect'){
-   for(const building of getMapBuildings()||[]){
+   for(const building of stableBattleMapBuildings(getMapBuildings()||[],inspectionBuildingCache,nowMs())){
     if(!Number.isFinite(building?.x)||!Number.isFinite(building?.z))continue;
     const bx=(building.x-minX)/span*w,bz=(building.z-minZ)/span*h;
     if(bx<0||bx>w||bz<0||bz>h)continue;
@@ -1372,11 +1385,11 @@ export function createRealtimeBattleCommands({
   if(next==='deploy')deployStep='placement';
   refreshOptions();
   if(next==='inspect'&&started){
-   inspectedMapPin=null;inspectedBuilding=null;mapInspectionPins=[];mapInspectionBuildings=[];lastInspectionRefreshAt=-Infinity;
+   inspectedMapPin=null;inspectedBuilding=null;mapInspectionPins=[];mapInspectionBuildings=[];inspectionPinCache.clear();inspectionBuildingCache.clear();lastInspectionRefreshAt=-Infinity;
    $('realtimeBattleMapOverlay').hidden=false;
    $('realtimeMapClose').hidden=false;$('realtimeMapClose').textContent='✕ 戻る';
    $('realtimeMapTitle').textContent='⛶ 戦場マップ';
-   $('realtimeMapHelp').textContent='＋／－で拡大縮小。青・赤の隊番号で戦況、緑の建物マークで表示階を選択できます。';
+   $('realtimeMapHelp').textContent='二本指で地図をスライド、ピンチで拡大縮小。青・赤の隊番号で視点移動、緑の建物で階を選択できます。';
    $('realtimeMapSquadPager').hidden=true;
    $('realtimeInitialTeamPlanning').hidden=true;
    $('realtimeMapActionSheet').hidden=true;
@@ -1487,17 +1500,24 @@ export function createRealtimeBattleCommands({
   }else mapGesture=null;
  }
  canvas.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='touch')e.preventDefault?.();
   mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   beginMapGesture();
   canvas.setPointerCapture?.(e.pointerId);
  });
  canvas.addEventListener('pointermove',e=>{
   if(!mapPointers.has(e.pointerId))return;
+  if(e.pointerType==='touch')e.preventDefault?.();
   mapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(!mapGesture)return;
   if(mapGesture.kind==='pinch'&&mapPointers.size>=2){
    const pair=pointPair(),g=mapGesture;
-   zoom=clamp(g.baseZoom*pair.distance/g.distance,1,6);
+   const traveled=Math.hypot(pair.mx-g.mx,pair.my-g.my);
+   const scaleChange=Math.abs(Math.log(pair.distance/g.distance));
+   // At 100% the field fills the map, so two-finger translation would be
+   // clamped to zero. Gently zoom first to make the slide meaningful.
+   if(g.baseZoom<=1.01&&traveled>12&&scaleChange<.13)g.panZoom=1.4;
+   zoom=clamp(Math.max(g.baseZoom*pair.distance/g.distance,g.panZoom||1),1,6);
    // Maintain the same map location below the moving pinch midpoint.
    const oldSpan=worldSize/g.baseZoom,newSpan=worldSize/zoom;
    centerX=g.baseCenterX+(g.mx/g.width-.5)*oldSpan-(pair.mx/g.width-.5)*newSpan;
