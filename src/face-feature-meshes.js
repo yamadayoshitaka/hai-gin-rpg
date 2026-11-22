@@ -550,7 +550,7 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
  const eyeY=box.min.y+d.y*(.684+.006*settings.eyePositionY);
  // Both sexes share the identical source-head geometry; eyelid aperture
  // differences are applied only to the optical lid meshes, not the skull.
- const halfHeight=radius*.50*eyeHeight;
+ const halfHeight=radius*(gender==='female'?.425:.50)*eyeHeight;
  // Resolve BOTH the socket carve and the eye patch from the same original
  // anatomical eyelid landmarks, not from two unrelated depth estimates.
  const originalSkin=createFastFaceSurfaceSampler(geometry);
@@ -610,14 +610,17 @@ export function sculptEyeSocketsInFaceGeometry(geometry,settings,gender='female'
  * surrounding brow, cheek and eyelid topology; the fitted sclera is placed
  * behind the real eyelid rim and will be depth-tested normally.
  */
-export function carveAnatomicalEyeOpenings(geometry,settings){
+export function carveAnatomicalEyeOpenings(geometry,settings,gender='female'){
  geometry.computeBoundingBox();
  const box=geometry.boundingBox,d=box.getSize(new THREE.Vector3()),
   cx=box.getCenter(new THREE.Vector3()).x;
  const p=geometry.getAttribute('position'),indices=geometry.getIndex();
  const radius=d.x*.052*Math.sqrt(settings.eyeWidth*settings.eyeHeight);
- const width=d.x*.052*1.12*settings.eyeWidth;
- const height=d.x*.052*.50*settings.eyeHeight;
+ // Smaller face opening follows the now partially hooded lid geometry.
+ // The former .50R hole extended FAR beyond the sclera and left a dark
+ // triangular void below the eyes on the actual low-poly CC0 donor.
+ const width=d.x*(gender==='female'?.049:.052)*1.12*settings.eyeWidth;
+ const height=d.x*(gender==='female'?.049*.375*.93:.052*.50)*settings.eyeHeight;
  const eyeY=box.min.y+d.y*(.684+.006*settings.eyePositionY);
  const frontThreshold=box.min.z+d.z*.55;
  const retained=[];
@@ -702,7 +705,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const referenceGeometry=geometry.clone();
  const sampler=createFastFaceSurfaceSampler(referenceGeometry);
  const socketSculpt=sculptEyeSocketsInFaceGeometry(geometry,settings,gender);
- const opening=carveAnatomicalEyeOpenings(geometry,settings);
+ const opening=carveAnatomicalEyeOpenings(geometry,settings,gender);
  const localVertices=referenceGeometry.getAttribute('position');
  let projected=0,projectionFallbacks=0;
  const surfaceAt=(x,y)=>{
@@ -977,7 +980,11 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     const eyeZ=insetZ(x+t*width,nearY)+
       eyeRadius*(.075-.022*tearDuct-.010*lateralNotch);
     const skinZ=surfaceAt(x+t*width,farY)+d.z*.0033;
-    const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v);
+    // Thin fleshy lower-eyelid roll. Sculpt on the actual moving lid,
+    // not as a separate floating eye-bag card or dark makeup strip.
+    const v114LowerRoll=!upper&&female?
+     eyeRadius*.012*Math.sin(Math.PI*v)*Math.pow(fitted.arch,1.6):0;
+    const zz=eyeZ*(1-smoothstep(v))+skinZ*smoothstep(v)+v114LowerRoll;
     return new THREE.Vector3(x+t*width,farY,zz);
    },lidMat);
    mesh.userData.attachedToFace=true;
@@ -1429,6 +1436,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   v114IrisOpeningFraction:female?.928:.815,
   v114PupilRelativeIrisMax:.49,
   v114ReferenceEyes:'natural-partially-lidded-brown-iris',
+  v114LowerEyelidRollOnRealMesh:female,
+  v114EyeSocketCarveAlignedToLids:female,
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
   eyeSocketGeometry:'original-head-socket-with-open-almond-apertures',
   eyeOpeningsCutFromHeadTriangles:opening.removed,
