@@ -16,7 +16,7 @@ on:
       - 'src/face-v104-cheek-microfair.js'
       - 'qa/face-v102-cheek-contour.test.mjs'
       - 'qa/face-v105-cheek-geometry.test.mjs'
-      - 'qa/face-v104-cheek-microfair.test.mjs qa/face-v105-cheek-geometry.test.mjs'
+      - 'qa/face-v104-cheek-microfair.test.mjs'
       - 'qa/face-v96-smile-cosmetics.test.mjs'
       - 'qa/face-v98-feminine-profile.test.mjs'
       - 'qa/face-v99-malar-alar-fairing.test.mjs'
@@ -67,7 +67,7 @@ on:
       - 'src/face-v104-cheek-microfair.js'
       - 'qa/face-v102-cheek-contour.test.mjs'
       - 'qa/face-v105-cheek-geometry.test.mjs'
-      - 'qa/face-v104-cheek-microfair.test.mjs qa/face-v105-cheek-geometry.test.mjs'
+      - 'qa/face-v104-cheek-microfair.test.mjs'
       - 'qa/face-v96-smile-cosmetics.test.mjs'
       - 'qa/face-v98-feminine-profile.test.mjs'
       - 'qa/face-v99-malar-alar-fairing.test.mjs'
@@ -130,7 +130,7 @@ jobs:
           node --check src/face-v104-cheek-microfair.js
           node --check qa/face-v102-cheek-contour.test.mjs
           node --check qa/face-v105-cheek-geometry.test.mjs
-          node --check qa/face-v104-cheek-microfair.test.mjs qa/face-v105-cheek-geometry.test.mjs
+          node --check qa/face-v104-cheek-microfair.test.mjs
           node --check qa/face-v96-smile-cosmetics.test.mjs
           node --check qa/face-v98-feminine-profile.test.mjs
           node --check qa/face-v99-malar-alar-fairing.test.mjs
