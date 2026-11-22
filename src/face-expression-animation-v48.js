@@ -21,7 +21,7 @@ export const FACE_EXPRESSIONS=Object.freeze({
  neutral:Object.freeze({label:'通常',brow:0,tilt:0,squint:0,smile:0,open:0,cheek:0}),
  softSmile:Object.freeze({label:'微笑み',brow:.07,tilt:0,squint:.26,smile:.40,open:0,cheek:.33}),
  smile:Object.freeze({label:'笑顔',brow:.09,tilt:0,squint:.44,smile:.83,open:.12,cheek:.70}),
- laugh:Object.freeze({label:'大笑い',brow:.11,tilt:0,squint:.69,smile:1,open:.98,cheek:.91}),
+ laugh:Object.freeze({label:'大笑い',brow:.08,tilt:0,squint:.42,smile:.80,open:.70,cheek:.70}),
  angry:Object.freeze({label:'怒り',brow:-.18,tilt:-.27,squint:.28,smile:-.28,open:0,cheek:-.12}),
  shout:Object.freeze({label:'怒鳴る',brow:-.21,tilt:-.33,squint:.23,smile:-.2,open:.96,cheek:-.09}),
  sad:Object.freeze({label:'悲しい',brow:-.06,tilt:.20,squint:.19,smile:-.45,open:.05,cheek:-.13}),
@@ -265,7 +265,9 @@ export function v76ExpressionMuscleDelta({ax,ny,front,expression={}}={}){
  const squint=Math.max(0,Number(expression.squint)||0);
  const open=Math.max(0,Number(expression.open)||0);
  const nasalAla=bell(ax,.105,.035)*bell(ny,.552,.037)*front;
- const nasolabial=bell(ax,.20,.048)*bell(ny,.526,.047)*front;
+ // Align dynamic folds with the skin pigment and age geometry.
+  const foldX=.09+.045*clamp((ny-.509)/.16);
+  const nasolabial=bell(ax,foldX,.028)*bell(ny,.579,.077)*front;
  const forehead=bell(ax,.21,.23)*bell(ny,.802,.049)*front;
  const glabella=bell(ax,.07,.045)*bell(ny,.739,.035)*front;
  const cheekLift=bell(ax,.34,.077)*bell(ny,.606,.047)*front;
@@ -289,7 +291,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  const strength=clamp(Number(expressionIntensity)||1,.6,1.35);
  // On sparse donor polygons large cheek displacement creates visible triangular
  // folds. Retain part-rig motion while damping whole-skin deformation only.
- const skinDeformationGain=.72;
+ const skinDeformationGain=.61;
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Muscle channels can blend emotions, dialogue and presets without
  // adding floating expression meshes or permanently changing the donor.
@@ -355,10 +357,10 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   // Jaw opening awaits genuine manifold topology and visual review.
   const safeOriginalMouth=face.userData.v83SafeOriginalMouthTopology===true;
   const nativeOral=face.userData.v88NativeOralRig?.ready===true;
-  const skinPose=safeOriginalMouth?{
-   ...e,open:0,au26:0,
-   smile:THREE.MathUtils.clamp(Number(e.smile)||0,-.30,.35)
-  }:nativeOral?{...e,open:0,au26:0}:e;
+  // Native geometry supports full muscle smile; safety clamp applies to unverified mouths only.
+  const skinPose=nativeOral?{...e,open:0,au26:0}:
+   safeOriginalMouth?{...e,open:0,au26:0,
+    smile:THREE.MathUtils.clamp(Number(e.smile)||0,-.30,.35)}:e;
   const actionUnits=deriveFacialActionUnits(skinPose);
   // Face sculpt uses its ORIGINAL sampled head vertices as the baseline.
   // No expression accumulates when selections are toggled 100+ times.
@@ -596,6 +598,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v87MouthWidth:face.userData.v87AnatomicalMouthWidth||1,
    v87OriginalSkinMouthWidth:!!face.userData.v87MouthWidthOnOriginalSkin,
    v88BuildSignature:'face-v88-native-oral-structural-facs-20261122',
+   v89BuildSignature:'face-v89-natural-laugh-cosmetics-nasolabial-20261122',
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
