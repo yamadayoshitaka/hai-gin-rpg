@@ -8185,7 +8185,10 @@ function closeSquadTactics(returnToOverview=false){
  selectedSquadId=null;
  drawSquadMiniMap();
  if(returnToOverview&&battleViewMode==='overview')returnToWholeBattlefield();
- else if(battleViewMode==='commander'&&battleReady&&!finished&&!commanderCinematic)followSelectedCommander();
+ else if(battleViewMode==='commander'&&battleReady&&!finished&&!commanderCinematic){
+  if(manualCameraSquad)applyOverviewCamera(manualCameraSquad.mode);
+  else followSelectedCommander();
+ }
 }
 $('battleCancelCircleTarget').onclick=()=>{if(pendingCircleTarget)closeSquadTactics();};
 function finishSquadDestination(accepted){pendingTargetedMap=null;closeSquadTactics(Boolean(accepted));if(!accepted)log('目的地・命令の指定を取り消しました');}
@@ -11880,8 +11883,8 @@ window.getBattlePerspectiveQA=()=>({
  controlsVisible:!$('battleTeamCameraSwitches').hidden,
  chooserVisible:!overviewInspector.hidden
 });
-// Ordinary battle camera follows an ACTIVE allied engagement rather than
-// a stationary rear commander. Spatial contacts are scanned at ~1Hz.
+// The previous automatic engagement camera is intentionally retired.
+// Only confirmed command-team annihilation and loot milestones may cut views.
 let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
 let contactScanAt=-Infinity,manualCameraFocusUntil=0;
 function updateActiveCombatCamera(){
