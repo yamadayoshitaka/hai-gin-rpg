@@ -169,7 +169,7 @@ test('authored initial positions remain confirmed even if their centroid is not 
   return controls.get(id);
  };
  root.querySelectorAll=()=>[];
- const documentRef={body:{append(){}},createElement:()=>element()};
+ const documentRef={body:{append(){}},createElement:tag=>tag==='section'?root:element()};
  const teams=[{id:'ally-one',groupId:1,alive:5,total:5,
   x:110,z:80,label:'第1隊',job:'剣士'}];
  let startedPlans=null;
