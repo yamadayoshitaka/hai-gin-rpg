@@ -10,7 +10,7 @@ import * as THREE from 'three';
  * Only adjust the Z component; original silhouette and expression landmarks
  * stay in exactly the same XY locations.
  */
-export function fairYoungPortraitSurface(geometry,{gender='female',ageWrinkles=0,ageBand='twenties',bodyType='normal'}={}){
+export function fairYoungPortraitSurface(geometry,{gender='female',ageWrinkles=0,ageBand='twenties',bodyType='normal',cheekContourMode='v101'}={}){
  const p=geometry?.getAttribute?.('position'),index=geometry?.getIndex?.();
  if(!p||!index||p.count<80||index.count<90)
   return {applied:false,reason:'missing-owned-indexed-face'};
@@ -56,16 +56,41 @@ export function fairYoungPortraitSurface(geometry,{gender='female',ageWrinkles=0
   const eyeSafe=1-bell(ax,.34,.23)*bell(ny,.685,.058);
   const faceField=(upperCheek*.78+lowerCheek*.49+
    innerMalar*.82)*oralSafe*eyeSafe;
+  // v101: the 20s reference had an isolated malar high point, with a
+  // depression immediately below it. Replace the upper/inner Gaussian bump
+  // with an overlapping, wider mid/lower-cheek field. Fade the CHANGE in
+  // from the lateral nasal region, so the v100 nose tip and nostril contour
+  // remain untouched. Keep the legacy path for geometric A/B regression.
+  const broadMid=smooth(.29,.39,ax)*(1-smooth(.69,.83,ax))*
+   bell(ax,.48,.26)*bell(ny,.507,.120)*front;
+  const midSupport=(
+   .014*upperCheek+
+   .046*lowerCheek+
+   .013*innerMalar+
+   .020*broadMid
+  )*oralSafe*eyeSafe;
+  const legacySupport=(
+   .054*upperCheek+
+   .030*lowerCheek+
+   .042*innerMalar
+  )*oralSafe*eyeSafe;
+  // A strict facial-zone guard: nose (x<.28), lip edge and orbital rim
+  // have identical v100 positions. Outer cheek/ear and jaw also remain.
+  const transition=smooth(.285,.388,ax)*(1-smooth(.715,.84,ax))*
+   smooth(.404,.485,ny)*(1-smooth(.638,.695,ny));
+  const cheekBlend=cheekContourMode==='v100'?0:transition;
   // Smooth alar sidewalls carefully to remove the black triangular ledges,
   // while preserving real donor nostril openings and nose-tip landmarks.
   const nostrilSafe=1-bell(ax,.14,.09)*bell(ny,.526,.018);
   const noseWall=bell(ax,.17,.085)*bell(ny,.591,.060)*front*nostrilSafe;
   const noseAlar=bell(ax,.135,.045)*bell(ny,.550,.024)*front;
-  weights[i]=Math.min(.94,youth*(faceField*.86+noseWall*.17+noseAlar*.11));
+  const broadField=(upperCheek*.27+lowerCheek*.78+
+   innerMalar*.23+broadMid*.92)*oralSafe*eyeSafe;
+  const contourField=faceField+(broadField-faceField)*cheekBlend;
+  weights[i]=Math.min(.94,youth*(contourField*.86+noseWall*.17+noseAlar*.11));
   lifts[i]=youth*d.z*ratio*childCheek*(
-   .054*upperCheek*oralSafe*eyeSafe+
-   .030*lowerCheek*oralSafe*eyeSafe+
-   .042*innerMalar*oralSafe*eyeSafe+.0025*noseAlar);
+   legacySupport+(midSupport-legacySupport)*cheekBlend+
+   .0025*noseAlar);
  }
  // Smooth only close triangulated neighbors; no cross-mouth interpolations.
  const maxDistance=d.x*.105;
@@ -103,6 +128,8 @@ export function fairYoungPortraitSurface(geometry,{gender='female',ageWrinkles=0
  geometry.userData.v97ContinuousInnerMalarSupport=true;
  geometry.userData.v97ChildCheekSupport=ageBand==='under10';
  geometry.userData.v93PortraitFairingVertices=count;
+ geometry.userData.v101BroadCheekContour=cheekContourMode!=='v100';
  return {applied:true,vertices:count,maxMove,meanMove:count?meanMove/count:0,
-  ageProtected:youth<1,onlyDepthAdjusted:true,originalSourceUntouched:true};
+  ageProtected:youth<1,onlyDepthAdjusted:true,originalSourceUntouched:true,
+  cheekContourMode,nonNasalContourBlended:cheekContourMode!=='v100'};
 }
