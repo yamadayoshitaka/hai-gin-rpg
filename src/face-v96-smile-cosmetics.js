@@ -16,15 +16,19 @@ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
  * sign is +1 for the upper lip, -1 for lower. t=±1 keeps the opening shut.
  */
 export function naturalLaughLipDelta({t=0,sign=1,smile=0,open=0,cheek=0,
- width=1,height=1,depth=1}={}){
+ width=1,height=1,depth=1,smileWidthScale=1,cornerLiftScale=1}={}){
  const x=clamp(t,-1,1),edge=Math.abs(x),s=clamp(smile),o=clamp(open),
   c=clamp(cheek),top=sign>=0;
  // Zero-slope commissures avoid the pointy V from the former fractional cusp.
   const elliptical=Math.pow(Math.max(0,1-Math.pow(edge,2.6)),1.32);
- const mouthSpread=.085*s*(.22+.78*smooth(.23,.92,edge));
+ // v107 increases natural laugh width on VERIFIED female native oral rigs,
+ // while keeping v96's neutral and all male/reference poses identical.
+ const mouthSpread=.085*clamp(smileWidthScale,.7,1.65)*s*
+  (.22+.78*smooth(.23,.92,edge));
  const dx=x*width*mouthSpread;
  // Corners rise as part of the cheek, rather than forming a pointed V.
- const cornerLift=height*(.009*s+.0025*c)*smooth(.45,.97,edge);
+ const cornerLift=height*(.009*s+.0025*c)*
+  clamp(cornerLiftScale,.8,1.35)*smooth(.45,.97,edge);
  // Central aperture grows as a broad oval; lower lip has more jaw travel.
  // v96's original 4%-of-head-height opening still looked closed in
   // the framebuffer. Give the real lip rim more central jaw travel.

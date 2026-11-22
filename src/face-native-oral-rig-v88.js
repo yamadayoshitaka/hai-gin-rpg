@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createTopologyOralMuscleField,createThreeRingVestibuleIndices} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
-import {naturalLaughLipDelta} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
+import {naturalLaughLipDelta} from './face-v96-smile-cosmetics.js?v=107-wider-natural-laughter';
 
 /**
  * V88 native oral articulation. This operates ONLY on the owned donor-head
@@ -220,7 +220,9 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
    // The original connected female lip loop opens as a smooth oval.
    const pose=naturalLaughLipDelta({t:(x-cx)/Math.max(halfWidth,1e-7),
     sign:sx,smile:s,open:o,cheek:c,width:halfWidth,
-    height:size.y,depth:size.z});
+    height:size.y,depth:size.z,
+    smileWidthScale:face.userData.v107NaturalCheekExpression?1.48:1,
+    cornerLiftScale:face.userData.v107NaturalCheekExpression?1.20:1});
    attr.array[k]=x+w*pose.dx;
    attr.array[k+1]=y+w*pose.dy;
    attr.array[k+2]=z+w*pose.dz;

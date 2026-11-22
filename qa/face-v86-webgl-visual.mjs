@@ -38,6 +38,8 @@ try{
  assert.ok(v106.addedVertices>20&&v106.visibleVertices>v106.originalVertices,
   'The real female cheek/oral head must gain actual vertices, not cosmetic tint');
  assert.equal(v106.lipRingIndicesPreserved,true);
+ assert.ok(v106.v107RestCheekVertices>5&&v106.v107MaxForwardCheekDepth>0,
+  'v107 must restore actual cheek XYZ positions, not just colors and normals');
 
  // Reproduce the reported Android appearance: female / 20s / ultra-thin.
  // The former QA only exercised the default body profile.
@@ -63,11 +65,11 @@ try{
  console.log('FACE_V88_NATIVE_LIP_SPAN',JSON.stringify({width:native.mouthWidth,donor:native.donorLipWidth,current:native.currentLipWidth,ratio:native.currentLipWidth/native.donorLipWidth,seal:native.seal}));
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have a native lip rest-state cap: '+JSON.stringify(native));
- assert.ok(native.mouthWidth>=.64&&native.mouthWidth<=.66,
-  'The V88 half-width native-mouth preset must reach the actual donor geometry');
+ assert.ok(native.mouthWidth>=.77&&native.mouthWidth<=.79,
+  'V107 neutral female native-mouth width must migrate to 0.78');
  assert.ok(native.donorLipWidth>0&&
-  native.currentLipWidth/native.donorLipWidth<.70&&
-  native.currentLipWidth/native.donorLipWidth>.60,
+  native.currentLipWidth/native.donorLipWidth<.88&&
+  native.currentLipWidth/native.donorLipWidth>.66,
   'Real WebGL source-mouth lip span must visibly shrink, not lipstick only');
  assert.ok(await page.locator('#mouthWidth').count()===1,
   'Real female mouth-width adjustment slider must be present');

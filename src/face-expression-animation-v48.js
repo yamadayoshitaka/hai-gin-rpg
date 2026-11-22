@@ -6,12 +6,13 @@
  * Demo talking is SILENT, syllable-paced motion; not phoneme/audio sync.
  */
 import * as THREE from 'three';
-import {naturalSmileCheekDelta} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
+import {naturalSmileCheekDelta} from './face-v96-smile-cosmetics.js?v=107-natural-expression-ref';
+import {v107SmileSkinDelta,v107LaughPulse} from './face-v107-natural-smile.js?v=107-coordinated-facs';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
 import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=92-separated-natural-arches';
 import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
-import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=20261122-v106-native-rim-singleton';
+import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from './face-anatomy-rig-v80.js?v=89-live-nasolabial';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
@@ -320,6 +321,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
  // With v106 true skin-edge density, spread the expression over cheeks
  // rather than pulling the sparse lip corner into a pointed V.
  const v106Female=v96Female&&face.userData.v106LocalRetopo?.applied===true;
+ const v107Female=v106Female&&face.userData.v107NaturalCheekExpression===true;
+ let lastLaughSculpt=-1;
  const skinDeformationGain=v106Female?.56:(v96Female?.53:.61);
  const state={autoBlink:!!autoBlink,speaking:!!speaking,expression:'neutral'};
  // Muscle channels can blend emotions, dialogue and presets without
@@ -379,6 +382,11 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   const e=Object.fromEntries(Object.entries(preset).map(([k,v])=>[
    k,typeof v==='number'?v*strength:v
   ]));
+  if(v107Female&&state.expression==='laugh'&&!manualActionUnits){
+   const pulse=v107LaughPulse(elapsed);
+   e.smile*=pulse.smile;
+   e.cheek*=pulse.cheek;
+  }
   const neutralPose=channels.every(k=>Math.abs(Number(e[k])||0)<1e-8);
   // v84 public safety: the original CC0 head lacks a valid movable
   // oral aperture. v83 hid fake teeth but DID NOT stop e.open from
@@ -413,6 +421,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
     ageStrength,actionUnits});
    const cheekPose=v96Female?naturalSmileCheekDelta({ax,ny,front,mouthY,
     smile:skinPose.smile,cheek:skinPose.cheek,ageWrinkles:ageStrength}):{dy:0,dz:0};
+   const v107Pose=v107Female?v107SmileSkinDelta({ax,ny,front,mouthY,
+    smile:skinPose.smile,cheek:skinPose.cheek,ageStrength}):
+    {dxOut:0,dy:0,dz:0};
    // Do not tear or invert the lip/philtrum/chin triangles of an intact
    // face. Retain cheek and eyelid expressions outside the guard.
    const oralGuard=safeOriginalMouth?
@@ -421,18 +432,18 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
       THREE.MathUtils.smoothstep(front,.55,.99):1;
    const skinGain=skinDeformationGain*oralGuard;
    facialAttr.array[k]=x+xd*skinGain*
-    Math.sign(x-centerX)*anatomical.dxOut;
+    Math.sign(x-centerX)*(anatomical.dxOut+v107Pose.dxOut);
    facialAttr.array[k+1]=y+yd*skinGain*((v106Female?.010:(v96Female?.013:.033))*skinPose.smile*lipCorner+
     (v106Female?.0085:(v96Female?.006:.012))*skinPose.cheek*cheek+.008*skinPose.brow*brow+
     .013*skinPose.tilt*inner-.050*Math.max(0,skinPose.open)*jaw-
     .024*Math.max(0,skinPose.open)*lowerLip+
     (v96Female?.55:1)*muscle.dy+(v96Female?.52:1)*micro.dy+
-    (v96Female?.58:1)*anatomical.dy+cheekPose.dy);
+    (v96Female?.58:1)*anatomical.dy+cheekPose.dy+v107Pose.dy);
    facialAttr.array[k+2]=z+depth*skinGain*((v106Female?.006:(v96Female?.004:.009))*skinPose.cheek*cheek+
     (v96Female?.004:.008)*Math.max(0,skinPose.smile)*lipCorner-
     .014*Math.max(0,skinPose.open)*mouthInterior+
     (v96Female?.45:1)*muscle.dz+(v96Female?.52:1)*micro.dz+
-    (v96Female?.55:1)*anatomical.dz+cheekPose.dz);
+    (v96Female?.55:1)*anatomical.dz+cheekPose.dz+v107Pose.dz);
   }
   // Exact neutral restoration also preserves signed zeros / donor float32
   // geometry, eliminating cumulative drift after repeated face changes.
@@ -483,7 +494,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    }
   }
  };
- const setMouthOpen=value=>{
+ const setMouthOpen=(value,absoluteLaughPulse=false)=>{
   const frame=expressionFrame();
   // Never show a fictitious 96% opening while the real donor face has
   // a safely closed topology. Lip deformation is intentionally limited.
@@ -492,8 +503,9 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    mouthOpen=0;
    return;
   }
-  mouthOpen=clamp(Math.max(value,Math.max(Number(frame.open)||0,
-   Number(frame.au26)||0)*strength));
+  mouthOpen=clamp(absoluteLaughPulse?value:
+   Math.max(value,Math.max(Number(frame.open)||0,
+    Number(frame.au26)||0)*strength));
   if(!mouth)return;
   const delta=mouth.height*.053*mouthOpen;
   mouth.upper.position.y=mouth.restU+delta*.14;
@@ -536,9 +548,22 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
     applyExpression();
    }
   }
+  // v107: laughter is not a frozen 88% mouth-opening pose. Animate the
+  // real oral rim and refresh cheek/lower-lid FACS at a bounded 5 Hz
+  // (mobile-friendly) cadence. User-controlled mouth and dialogue win.
+  if(v107Female&&state.expression==='laugh'&&!transition&&
+   !manualActionUnits&&elapsed-lastLaughSculpt>=.20){
+   lastLaughSculpt=elapsed;
+   applyExpression();
+  }
   setBlink(forcedBlink===null?(state.autoBlink?blinkEnvelope(elapsed):0):forcedBlink);
-  setMouthOpen(manualMouth!==null?manualMouth:
-   state.speaking?speechEnvelope(elapsed):0);
+  const naturalLaugh=v107Female&&state.expression==='laugh'&&
+   manualMouth===null&&!state.speaking&&!manualActionUnits;
+  const pulsedOpen=naturalLaugh?
+   clamp((Number(FACE_EXPRESSIONS.laugh.open)||0)*strength*
+    v107LaughPulse(elapsed).mouth):0;
+  setMouthOpen(naturalLaugh?pulsedOpen:manualMouth!==null?manualMouth:
+   state.speaking?speechEnvelope(elapsed):0,naturalLaugh);
  };
  const dispose=()=>{
   if(disposed)return;
@@ -639,6 +664,8 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v95BuildSignature:'face-v95-nasal-side-profile-topological-edge-flow-20261122',
    v96BuildSignature:'face-v96-smile-cheek-lip-makeup-topology-20261122',
     v97BuildSignature:'face-v97-connected-eye-mouth-cheek-20261122',
+   v107BuildSignature:'face-v107-rest-cheek-wide-native-smile-animated-laugh-20261122',
+   v107NaturalCheekExpression:v107Female,
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
