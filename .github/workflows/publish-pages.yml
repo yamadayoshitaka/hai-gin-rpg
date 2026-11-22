@@ -424,7 +424,7 @@ jobs:
             if [[ "${html_code}" == 200 && "${js_code}" == 200 && "${topology_code}" == 200 && "${local_retopo_code}" == 200 && "${v107_code}" == 200 && "${initial_v110_code}" == 200 ]] &&
                grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/public-face-studio.html &&
                grep -Fq '顔品質 v114' /tmp/public-face-studio.html &&
-               grep -Fq 'v112-opaque-wire-overlay' /tmp/public-face-studio.html &&
+               grep -Fq 'v114-natural-realistic-eyes' /tmp/public-face-studio.html &&
                grep -Fq 'v=20261122-v107-animated-laugh' /tmp/public-face-studio.html &&
                grep -Fq 'v97BuildSignature' /tmp/public-face-expression.js &&
                grep -Fq 'fitTopologyNasalSideProfile' /tmp/public-face-topology.js &&
