@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {v107NeutralCheekDepth} from './face-v107-natural-smile.js?v=107-soft-malar-rest-shape';
+import {v107NeutralCheekDepth} from './face-v107-natural-smile.js?v=20261122-v111-soft-malar-rest-shape';
 
 /**
  * V106: local visible-skin retopology without replacing the CC0 donor.
