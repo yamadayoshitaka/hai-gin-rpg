@@ -10292,7 +10292,7 @@ function renderSquadRibbons(sums){
 function updateSquadMarkerPositions(dt){
  if(paused&&commandOverviewLocked)return; // frozen positions are already cached
  squadMarkerClock+=dt;
- if(squadMarkerClock>=(THREE_TEAM_BATTLE?.12:.25)){
+ if(squadMarkerClock>=(THREE_TEAM_BATTLE ? 0.12 : 0.25)){
   squadMarkerClock=0;
   const sums=new Map();
   for(const u of squadRoster){
