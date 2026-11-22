@@ -23,7 +23,9 @@ export function v110InitialFemaleFaceState({
   controls.ageBand!==selectedAge;
  return {
   parts:selectedParts,
-  shouldRecompose:hasLegacyPreset||controlsStale,
+  // A brand-new studio must also run the SAME demographic sculpt as
+  // selecting 普通; the raw part defaults lack that age/build transform.
+  shouldRecompose:!savedPreset||hasLegacyPreset||controlsStale,
   migratedLegacyBody:hasLegacyPreset&&parts.bodyType!==selectedBody,
   explicitBodySelection: savedPreset?.bodySelectionExplicit===true,
   defaultView:'color',defaultWireframe:false
