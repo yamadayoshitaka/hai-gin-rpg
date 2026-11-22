@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v88-native-face-cache';
-import {attachAgeDetails} from './face-age-detail-v49.js?v=81-nasolabial';
-import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v90-native-vermilion';
+import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
+import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
+import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FEMALE_V7_DEFAULTS} from './face-v7-controls.js?v=88-native-facs-cache-20261122';
 
@@ -334,7 +335,13 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     browFitY+noseFitY+mouthFitY;
   // v47 age × weight: deform ORIGINAL source-head vertices, never paste
   // spheres or detachable wrinkles on top of the face.
-  const fullness=demo.body.faceFullness;
+  // Body weight still controls the jaw/cheek silhouette, but young women's
+  // ultra-thin body preset must not hollow the mid-cheeks into a skull.
+  // It remains distinctly slimmer than thin/normal; body proportions and
+  // older-age sag are unchanged.
+  const rawFullness=demo.body.faceFullness;
+  const fullness=gender==='female'&&demo.age.wrinkles<.20&&rawFullness<0?
+   rawFullness*.56:rawFullness;
   const demographicWidthDelta=(x-cx)*fullness*
    (.075*cheek+.052*lowerCheek+.022*chin)*contourGuard-
    (x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
@@ -437,10 +444,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  face.userData.v85RestoredOralVertices=v85OralSourceRestored;
  face.userData.v87AnatomicalMouthWidth=controls.mouthWidth;
  face.userData.v87MouthWidthOnOriginalSkin=true;
- face.material=new THREE.MeshStandardMaterial({
-  color:0xbfc3cb,roughness:.70,metalness:0,
-  side:THREE.FrontSide,flatShading:false
- });
+ face.material=createReferenceFaceSkinMaterial();
  face.visible=true;
  face.name=gender.toUpperCase()+'_INDEPENDENT_CLAY_FACE';
  face.userData.colorRole='skin';

@@ -55,9 +55,10 @@ export function v80FaceMuscleDelta({ax=0,ny=.5,front=1,
  const cheek=fall(ax,.23,.10)*fall(ny,mouthY+.084,.078)*f;
  const alar=fall(ax,.105,.042)*fall(ny,mouthY+.064,.057)*f;
  // The nasolabial groove follows the nose-to-oral-commissure oblique arc.
- const foldX=.136+.065*(1-clamp((ny-mouthY)/.16));
- const groove=fall(ax,foldX,.030)*fall(ny,mouthY+.057,.092)*f;
- const foldMound=fall(ax,foldX+.043,.046)*fall(ny,mouthY+.070,.084)*f;
+ // Shared oral corner-to-nasal alar route; no offset drawn-on creases.
+  const foldX=.09+.045*clamp((ny-mouthY)/.16);
+ const groove=fall(ax,foldX,.028)*fall(ny,mouthY+.070,.088)*f;
+ const foldMound=fall(ax,foldX+.042,.050)*fall(ny,mouthY+.078,.084)*f;
  const canthus=fall(ax,.207,.047)*fall(ny,eyeY,.043)*f;
  const underEye=fall(ax,.14,.079)*fall(ny,eyeY-.059,.038)*f;
  const dy=

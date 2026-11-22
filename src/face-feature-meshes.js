@@ -5,7 +5,7 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
-import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=88';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=89-natural-jaw';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -318,7 +318,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const lipstick=new THREE.Color(gender==='female'?makeup[0]:FACE_V7_PALETTE.lipstick);
  const softEyeshadow=new THREE.Color(gender==='female'?makeup[1]:0xa48087);
  const age=resolveAgeBand(settings.ageBand);
- const positions=geometry.getAttribute('position'),colors=[];
+ const positions=geometry.getAttribute('position'),colors=[],lipGlossWeights=[];
  // Never pass NaN makeup multipliers to Three.js: undefined vertex-color
  // channels render jet black and formerly mimicked an open mouth.
  let repairedPigmentVertices=0;
@@ -329,7 +329,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
   const nx=Math.abs((px-cx)/d.x),ny=(py-box.min.y)/d.y;
   const front=smoothstep(((pz-box.min.z)/d.z-.52)/.22);
-  const cheek=gender==='male'?0:cosmeticOpacity(.64)*bell(nx,.260,.125)*bell(ny,.563,.074)*front;
+  // Blush is a translucent tint, not an opaque cheek sticker.
+   const cheek=gender==='male'?0:cosmeticOpacity(.11)*bell(nx,.260,.125)*bell(ny,.563,.074)*front;
   const mouthX=(px-cx)/Math.max(.00001,d.x*.066*settings.lipstickWidth*settings.mouthWidth);
   const mouthY=(py-lipCenter-d.y*settings.lipstickY*.08)/
    Math.max(.00001,d.y*.012*settings.lipstickHeight);
@@ -380,11 +381,12 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   const crows=bell(nx,.208,.066)*bell(ny,.675,.073)*front;
   // From alar crease to oral commissure, following the actual aged mouth.
   const oralY=(lipCenter-box.min.y)/Math.max(1e-8,d.y);
-  const nasolabial=bell(nx,.079+.075*Math.max(0,ny-oralY),.029)*
-   bell(ny,oralY+.064,.084)*front;
+  // Match the FACS groove path so skin relief and pigment remain together.
+   const foldX=.09+.045*clamp((ny-oralY)/.16,0,1);
+   const nasolabial=bell(nx,foldX,.028)*bell(ny,oralY+.070,.088)*front;
   const mouthCorners=bell(nx,.076,.023)*bell(ny,oralY-.008,.032)*front;
   const ageShade=age.wrinkles*(.15*foreheadBands+.30*crows+
-   .81*nasolabial+.21*mouthCorners);
+   .54*nasolabial+.16*mouthCorners);
   // 20s must not inherit the adult under-eye bag. Skin shades rise with
   // AGE independently of cosmetic presets; no permanent young wrinkles.
   const youthFade=skinAgeShadowFactor(age.id);
@@ -394,7 +396,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    (.018+.052*youthFade)*lipShade+.013*cupidBow+
    .017*lowerLipContact+age.sag*.15*underEye+ageShade+
    .047*upperLidOcclusion+.021*innerCanthus+.105*noseBridgeContour+
-   (.015+.028*youthFade)*nasolabial+
+   (.009+.022*youthFade)*nasolabial+
    (.010+.020*youthFade)*lowerLidOcclusion+
    v70FaceReliefShadow({nx,ny,front,lidY});
   const s=Math.max(.55,1-contactShade);
@@ -407,12 +409,16 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // The uncut head's own lip-region vertices carry pigment. Its
   // position/makeup moves together under FACS deformation, so there
   // is no stationary lipstick patch or separate lip plane.
+  // v88 native jaw uses the same original lip vertices as safe closed faces.
+  // The previous fallback accidentally omitted lipstick on ALL valid native mouths.
   const lipWeight=mouthTopology?.integrated?
    (mouthTopology.lipTintWeights.get(i)||0):
-   (face.userData.v83SafeOriginalMouthTopology?lipMask:0);
+   ((face.userData.v83SafeOriginalMouthTopology||
+     face.userData.v88NativeOralRig?.ready===true)?lipMask:0);
+  lipGlossWeights.push(mode==='color'&&gender==='female'?clamp(lipWeight,0,1):0);
   if(lipWeight>0){
    const painted=lipNatural.clone().lerp(lipstick,
-    gender==='male'?0:clamp(cosmeticOpacity(.23)*lipWeight,0,1));
+    gender==='male'?0:clamp(cosmeticOpacity(.16)*lipWeight,0,1));
    rgb.lerp(painted,clamp(.64+lipWeight*.36,0,1));
    actualLipTintVertices++;
   }
@@ -431,6 +437,13 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  if(colors.length!==positions.count*3)
   throw Error('Face makeup attribute size differs from head positions');
  setVertexMakeup(face,colors);
+ // Lower-roughness vermilion stays on the actual donor lip triangles.
+ // This PBR channel follows all 3D FACS and age changes without decals.
+ geometry.setAttribute('v90LipWetness',
+  new THREE.Float32BufferAttribute(lipGlossWeights,1));
+ face.userData.v90NativeOralLipstickReady=
+  !!face.userData.v88NativeOralRig?.ready&&actualLipTintVertices>0;
+ face.userData.v90LipRoughnessWeightCount=lipGlossWeights.filter(v=>v>.1).length;
  face.userData.v87RepairedNonFinitePigment=repairedPigmentVertices;
  face.userData.v87PigmentVerticesValidated=positions.count;
  colorizedMakeup(face,mode==='color');
@@ -640,10 +653,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  });
  const lidMat=mat(0xbcbfc5);
  const lipMat=new THREE.MeshPhysicalMaterial({
-  color:0xbfc3cb,roughness:.52,metalness:0,
-  clearcoat:.19,clearcoatRoughness:.32,side:THREE.DoubleSide,
+  color:0xbfc3cb,roughness:.43,metalness:0,
+   clearcoat:.35,clearcoatRoughness:.20,side:THREE.DoubleSide,
   normalMap:getLipVermilionNormalTexture(),
-  normalScale:new THREE.Vector2(.105,.085)
+  normalScale:new THREE.Vector2(.085,.073)
  });
  const eyeMat=new THREE.MeshPhysicalMaterial({
   // Slightly warm white, natural wet sclera sheen rather than a bright disk.

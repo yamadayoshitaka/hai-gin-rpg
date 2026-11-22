@@ -123,8 +123,9 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
   const x=skinBase[k],y=skinBase[k+1],z=skinBase[k+2];
   const t=(x-cx)/Math.max(halfWidth,1e-7);
   const arch=Math.pow(Math.max(0,1-Math.min(1,t*t)),.52);
-  const smileLift=(Math.abs(t)**1.8)*(size.y*.009*s+size.y*.002*c);
-  const opening=arch*size.y*.035*o*(sx>=0?.20:.80);
+  // Gently raise the real commissure without pinching the donor lip boundary.
+   const smileLift=(Math.abs(t)**1.8)*(size.y*.0075*s+size.y*.002*c);
+  const opening=arch*size.y*.030*o*(sx>=0?.24:.76);
   attr.array[k]=x+Math.sign(t)*size.x*.0018*s*w;
   attr.array[k+1]=y+w*(smileLift+(sx>=0?opening:-opening));
   attr.array[k+2]=z-size.z*.0017*o*w;

@@ -20,15 +20,15 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
  face.add(root);
 
  const enamel=new THREE.MeshPhysicalMaterial({
-  color:0xdedbd1,roughness:.30,metalness:0,clearcoat:.18,
-  clearcoatRoughness:.27
+  color:0xe3ded4,roughness:.27,metalness:0,clearcoat:.34,
+   clearcoatRoughness:.17,ior:1.52
  });
  const gums=new THREE.MeshStandardMaterial({
-  color:0x87525a,roughness:.80,metalness:0
+  color:0x94636a,roughness:.67,metalness:0
  });
  const tongueMat=new THREE.MeshPhysicalMaterial({
-  color:0x9b5760,roughness:.59,metalness:0,clearcoat:.12,
-  clearcoatRoughness:.39
+  color:0xa65f66,roughness:.46,metalness:0,clearcoat:.28,
+   clearcoatRoughness:.24
  });
  const midlineMat=new THREE.MeshStandardMaterial({
   color:0x8d4d56,roughness:.79
@@ -44,7 +44,26 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
  throat.position.set(0,-height*.005,-depth*.066);
  throat.userData.v82BehindHeadAperture=true;
  root.add(throat);
- const crownGeometry=new THREE.SphereGeometry(1,14,10);
+ // The central incisors are broad, gently rounded enamel crowns rather
+ // than spherical beads. All corners are bevelled in real mesh geometry,
+ // and rear premolars keep the more bulbous molar anatomy.
+ const roundedIncisor=new THREE.BoxGeometry(2,2,2,4,4,3);
+ const crownPositions=roundedIncisor.getAttribute('position');
+ const roundRadius=.25,inner=1-roundRadius;
+ for(let i=0;i<crownPositions.count;i++){
+  const x=crownPositions.getX(i),y=crownPositions.getY(i),z=crownPositions.getZ(i);
+  const ox=THREE.MathUtils.clamp(x,-inner,inner);
+  const oy=THREE.MathUtils.clamp(y,-inner,inner);
+  const oz=THREE.MathUtils.clamp(z,-inner,inner);
+  const dx=x-ox,dy=y-oy,dz=z-oz;
+  const distance=Math.hypot(dx,dy,dz)||1;
+  crownPositions.setXYZ(i,
+   ox+dx/distance*roundRadius,oy+dy/distance*roundRadius,
+   oz+dz/distance*roundRadius);
+ }
+ crownPositions.needsUpdate=true;
+ roundedIncisor.computeVertexNormals();
+ const roundedMolar=new THREE.SphereGeometry(1,20,14);
  const gumGeometry=new THREE.SphereGeometry(1,22,12);
  const upper=new THREE.Group(),lower=new THREE.Group();
  upper.name='V80_UPPER_TEETH_ARCH';
@@ -66,18 +85,20 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
    const t=(i-5.5)/5.5,axial=Math.abs(t);
    const incisor=axial<.39,canine=axial>=.39&&axial<.60;
    const family=incisor?'incisor':canine?'canine':'premolar-molar';
-   const crown=new THREE.Mesh(crownGeometry,enamel);
+   const crown=new THREE.Mesh(incisor||canine?roundedIncisor:roundedMolar,enamel);
    crown.name=(isUpper?'V80_UPPER_TOOTH_':'V80_LOWER_TOOTH_')+
     String(i+1).padStart(2,'0');
    crown.userData.colorRole='tooth';
    crown.userData.toothClass=family;
    crown.userData.anatomicalCrown='rounded-short-v81';
+    crown.userData.v90NaturalEnamelCrown=incisor?'rounded-box-incisor':
+     canine?'rounded-canine':'rounded-molar';
    crown.userData.archParameter=t;
    // The flat, wide maxillary incisors must not look like needles.
-   const horizontal=width*(incisor?.054:canine?.049:.051);
+   const horizontal=width*(incisor?.053:canine?.046:.050);
    // A narrower mouth also needs narrower, SHORT dental crowns;
    // retaining old crown height creates fang-like teeth in V88.
-   const vertical=Math.min(height*(incisor?.0050:canine?.0054:.0042),horizontal*.87);
+   const vertical=Math.min(height*(incisor?.0057:canine?.0052:.0042),horizontal*.83);
    crown.scale.set(horizontal,vertical,depth*.0050);
    crown.position.set(t*spread,
     (isUpper?-1:1)*height*.0014,
