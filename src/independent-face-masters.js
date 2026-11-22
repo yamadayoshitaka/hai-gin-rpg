@@ -53,8 +53,10 @@ export function v88AnatomicalLipDelta({
  const cupid=bell(ax,.073,.047)*bell(yn,.519,.012);
  const lower=bell(ax,.075,.072)*bell(yn,.495,.015);
  const lipVolume=(.0024*cupid+.0036*lower)*anterior;
- return {dx:xn*faceWidth*.5*(extraWidth-1)*influence,
-  dz:faceDepth*lipVolume};
+ // The original V87 anatomical pass already applies the selected width.
+ // Applying another X multiplier pinches the lip rim to near zero and
+ // creates black folds; V88 only restores V80-style depth/volume here.
+ return {dx:0,dz:faceDepth*lipVolume};
 }
 
 /**
