@@ -4,7 +4,7 @@ import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?
 import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=97-continuous-malar';
 import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 import {refineV99FemaleProfile} from './face-v99-malar-alar-fairing.js?v=100-real-donor-local-guard';
-import {fairV101CheekContour} from './face-v101-cheek-contour.js?v=101-cheek-native-only';
+import {fairV102CheekContour} from './face-v102-cheek-contour.js?v=102-donor-anchored-crest-repair';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -195,7 +195,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v101'}={}){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v102'}={}){
  const spec=FACE_MASTER_SPEC[gender];
  const controls=gender==='male'?normalizeMaleFaceControls(maleControls):
   normalizeFemaleFaceControls(femaleControls);
@@ -449,10 +449,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // and the tip rotate gently down to hide nostrils from the front.
  const feminineProfile=refineV99FemaleProfile(geometry,{gender,
   ageWrinkles:demo.age.wrinkles});
- // The nasal silhouette is now frozen at v100. v101 moves Z on the cheek
- // ONLY, after the proven v100 nasal rim/tip and malar topology passes.
- const cheekContour=gender==='female'&&cheekContourMode==='v101'?
-  fairV101CheekContour(geometry,{gender,
+ // The nasal silhouette is frozen at v100. v102 trims the stacked cheek
+ // crest relative to immutable donor vertices without touching the nose.
+ const cheekContour=gender==='female'&&cheekContourMode==='v102'?
+  fairV102CheekContour(geometry,{gender,
    ageWrinkles:demo.age.wrinkles,
    donorPositions:originalPoints,donorCenterX:cx,donorHalfWidth:d.x*.5
   }):{applied:false,reason:'v100-reference'};
@@ -505,7 +505,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    v93PortraitFairing:portraitFairing,
    v95NasalSideProfile:nasalEdgeFlow,
    v99FeminineMalarAlar:feminineProfile,
-   v101CheekContour:cheekContour,
+   v102CheekContour:cheekContour,
   v49AgeCreases:ageDetail,
   v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
    sourceCC0:!!photographicMicrodetail.sourceCC0,
