@@ -1335,6 +1335,27 @@ export function shapeRebuiltEyeBand(points,{box,side=1}={}){
  }
  return points;
 }
+/**
+ * v109: soften abrupt eye-height lateral jumps on front locks after
+ * the donor-root and volume corrections. Move the earlier station out
+ * toward the safe temple station; never move the true root or any
+ * pupil-cleared station inward toward the eyes.
+ */
+export function v109EaseEyeLevelCrossings(points,{box,side=1}={}){
+ if(!Array.isArray(points)||points.length<3||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const direction=side<0?-1:1,maxStep=d.x*.032;
+ for(let j=points.length-1;j>=2;j--){
+  const p=points[j],prior=points[j-1];
+  const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  if(h<=.67||h>=.82||p.z<=c.z+d.z*.025)continue;
+  const outward=direction*(p.x-prior.x);
+  const drop=Math.abs(p.y-prior.y);
+  if(outward>d.x*.035&&outward>drop*1.5)
+   prior.x+=direction*(outward-maxStep);
+ }
+ return points;
+}
 /** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
  * reuse a measured head donor for follicles, but NOT a female bob guide. */
 export function shapeRebuiltMaleGuide(points,{
@@ -2118,6 +2139,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
    for(let j=1;j<segments;j++)rest[j].copy(filtered[j]);
   }
+  // Shift sharp lateral transitions to earlier safe scalp stations.
+  if(sadakoGravity&&style.gender==='female'&&!bangsCut&&
+     (fringe||faceFrame||zone.startsWith('temple')||
+      (zone==='crown'&&frontRoot)))
+   v109EaseEyeLevelCrossings(rest,{box,side:partSide});
   if(sadakoGravity)for(let j=1;j<=segments;j++)
    if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
      zone.startsWith('temple')))sadakoGuideScalpPushes++;
