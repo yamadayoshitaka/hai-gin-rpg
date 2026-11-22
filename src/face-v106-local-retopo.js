@@ -169,8 +169,13 @@ function subdivideOnce(geometry,protectedSet,{mouthOnly=false}={}){
   const x=(midpoint[0]-cx)/(dx*.5),
    y=(midpoint[1]-b.min.y)/dy,z=(midpoint[2]-b.min.z)/dz;
   const zone=v106FaceZone({xn:x,yn:y,zn:z});
-  const strength=mouthOnly?zone.oral:Math.max(zone.cheek,zone.oral);
-  if(strength<.32)continue;
+  // v110 balanced topology: the original donor already has enough
+  // cheek triangles. Prior refinement split broad cheek edges twice
+  // by adjacency, producing >5000 extra vertices and visible faceting
+  // in ultra-thin first-frame portraits. Preserve fine detail primarily
+  // at the oral/commissure zone, with sparse malar support.
+  const strength=mouthOnly?zone.oral:Math.max(zone.cheek*.65,zone.oral);
+  if(strength<(mouthOnly?.45:.40))continue;
   // The original lip outline must keep exactly the same connected edges.
   // A protected endpoint is already blocked above; the ring itself cannot
   // acquire a non-donor midpoint.
@@ -278,6 +283,9 @@ export function refineV106CheekMouthTopology(face,{gender='female',ageStrength=0
    v107RestCheekVertices:restCheek.vertices,
    v107MaxForwardCheekDepth:restCheek.maxDelta,
    v107TotalForwardCheekDepth:restCheek.addedDepth,
+   v110DensityProfile:'balanced-cheek-sparse-oral-detailed',
+   v110BroadVertices:broad.addedVertices,
+   v110OralVertices:oral.addedVertices,
    protectedLipVertexCount:protectedSet.size,
    lipRingIndicesPreserved:true,donorPreserved:true,
    oralInteriorCapPreserved:true,noFloatingLipMesh:true};

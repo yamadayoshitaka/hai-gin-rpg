@@ -14,6 +14,9 @@ on:
       - 'src/face-v101-cheek-contour.js'
       - 'src/face-v102-cheek-contour.js'
       - 'src/face-v106-local-retopo.js'
+      - 'src/face-initial-preview-v110.js'
+      - 'src/heroine-face-preset-store.js'
+      - 'qa/face-v110-initial-normal-mesh.test.mjs'
       - 'src/face-v107-natural-smile.js'
       - 'qa/face-v107-natural-smile.test.mjs'
       - 'src/face-v7-controls.js'
@@ -71,6 +74,9 @@ on:
       - 'src/face-v101-cheek-contour.js'
       - 'src/face-v102-cheek-contour.js'
       - 'src/face-v106-local-retopo.js'
+      - 'src/face-initial-preview-v110.js'
+      - 'src/heroine-face-preset-store.js'
+      - 'qa/face-v110-initial-normal-mesh.test.mjs'
       - 'src/face-v107-natural-smile.js'
       - 'qa/face-v107-natural-smile.test.mjs'
       - 'src/face-v7-controls.js'
@@ -140,6 +146,8 @@ jobs:
           node --check src/face-v101-cheek-contour.js
           node --check src/face-v102-cheek-contour.js
           node --check src/face-v106-local-retopo.js
+          node --check src/face-initial-preview-v110.js
+          node --check qa/face-v110-initial-normal-mesh.test.mjs
           node --check src/face-v107-natural-smile.js
           node --check qa/face-v107-natural-smile.test.mjs
           node --check qa/face-v106-local-retopo.test.mjs
@@ -180,7 +188,7 @@ jobs:
         run: |
           node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs qa/face-v76-visible-preset-smooth.test.mjs qa/face-v80-anatomy.test.mjs
           # v107 is a REAL geometry + expression regression, not syntax only.
-          node --test qa/face-v106-local-retopo.test.mjs qa/face-v107-natural-smile.test.mjs qa/face-v108-ui-visibility.test.mjs
+          node --test qa/face-v106-local-retopo.test.mjs qa/face-v107-natural-smile.test.mjs qa/face-v108-ui-visibility.test.mjs qa/face-v110-initial-normal-mesh.test.mjs
           # IMPORTANT: these were previously syntax-checked but never RUN.
           node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs qa/face-v88-native-oral.test.mjs qa/face-v90-reference-grade.test.mjs qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs qa/face-v93-portrait-fairing.test.mjs qa/face-v94-native-mouth-occlusion.test.mjs qa/face-v95-topology-profile.test.mjs qa/face-v96-smile-cosmetics.test.mjs qa/face-v98-feminine-profile.test.mjs qa/face-v99-malar-alar-fairing.test.mjs qa/face-v102-cheek-contour.test.mjs qa/face-v104-cheek-microfair.test.mjs qa/face-v105-cheek-geometry.test.mjs
 

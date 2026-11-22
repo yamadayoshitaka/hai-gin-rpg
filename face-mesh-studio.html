@@ -234,15 +234,15 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v107-cheek-rest-natural-smile","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v107-cheek-rest-and-mouth","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v110-approved-normal-cheek-mesh","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v110-balanced-cheek-mouth","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v107-cheek-rest-natural-smile';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v110-approved-normal-cheek-mesh';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=20261122-v107-animated-laugh';
-import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v107-cheek-rest-and-mouth';
+import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v110-balanced-cheek-mouth';
 import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
 import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69-faceclear-v70-salon-v71-pins-v72-eye-clearance-v92-portrait-v93-root-contact-v109-eye-sweep';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
@@ -253,6 +253,7 @@ import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,ma
 import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from './src/character-cast-v46.js?v=64-v72';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=80-nine-age-bands';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
+import {v110InitialFemaleFaceState} from './src/face-initial-preview-v110.js?v=110-approved-normal-mesh';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=20261118-art-lash-v2';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
@@ -393,6 +394,25 @@ if(v32PartMode){
   savedMalePreset?.controls||
    resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls,
   v32Parts.male.ageBand,manualFaceOverrides.male));
+}
+// v110 FIRST FRAME: an automatically saved ultra-thin state or stale
+// demographic controls must not differ from clicking 普通 manually.
+// Normalize BEFORE GLB mesh construction and BEFORE the hair generator.
+const initialFaceV110=v110InitialFemaleFaceState({
+ savedPreset:savedHeroinePreset,parts:v32Parts.female,controls:modelChanges
+});
+let femaleBodySelectionExplicit=initialFaceV110.explicitBodySelection;
+if(v32PartMode){
+ Object.assign(v32Parts.female,initialFaceV110.parts);
+ if(initialFaceV110.shouldRecompose&&
+    !(new URLSearchParams(location.search).get('hero')==='1'&&!savedHeroinePreset)){
+  const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
+  modelChanges=resolveEditedFaceControls('female',selected.controls,
+   v32Parts.female.ageBand,v32Parts.female.bodyType,
+   manualFaceOverrides.female,false);
+ }
+ wired=initialFaceV110.defaultWireframe;
+ faceMode=initialFaceV110.defaultView;
 }
 // V107: migrate the old unedited .65/.85 female neutral mouth to .78.
  // Keep custom mouth-width overrides and all male settings unchanged.
@@ -655,7 +675,8 @@ function persistHeroineFace(){
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
   makeupType:v32Makeup.female,contactColor,
   manualOverrides:{...manualFaceOverrides.female},
-  faceMode:facePolishMode.female?'polished':'custom'});
+  faceMode:facePolishMode.female?'polished':'custom',
+  bodySelectionExplicit:femaleBodySelectionExplicit});
 }
 function persistMaleFace(){
  if(!ready||!v32PartMode||new URLSearchParams(location.search).get('preview')==='1')return;
@@ -837,7 +858,7 @@ function facePhotoRuntimeStatus(){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const quick=document.getElementById('faceViewerStatus');
- if(quick)quick.textContent='顔 v107・髪 v72｜肌：'+faceStatus;
+ if(quick)quick.textContent='顔 v107・メッシュv110｜髪 v72｜肌：'+faceStatus;
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const normalCheekReport=models.get('female')?.report?.v105CheekGeometry;
  const retopoReport=models.get('female')?.report?.v106LocalRetopo;
@@ -1653,6 +1674,8 @@ if(v32PartMode){
  }
  for(const name of ['v47AgeBand','v47BodyType']){
   $(name).addEventListener('change',()=>{
+   if(gender==='female'&&name==='v47BodyType')
+    femaleBodySelectionExplicit=true;
    const picked={...v32Parts[gender],
     ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
    partSelectionHandlers[gender](picked,false);
