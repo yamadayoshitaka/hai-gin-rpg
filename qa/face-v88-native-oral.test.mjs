@@ -70,7 +70,7 @@ test('V88 native mouth opens real indexed donor slit, restores caps, skin and no
 test('V88 half-width lip sculpt stays strictly in local native oral zone',()=>{
  const central=v88AnatomicalLipDelta({
   xn:.08,yn:.509,zn:.95,faceWidth:1,faceDepth:.5,mouthWidth:.425});
- assert.ok(central.dx<0);
+ assert.equal(central.dx,0,'V87 applies all X-mouth scaling exactly once');
  assert.ok(central.dz>0);
  assert.deepEqual(v88AnatomicalLipDelta({
   xn:.61,yn:.509,zn:.95,faceWidth:1,faceDepth:.5,mouthWidth:.425
