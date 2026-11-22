@@ -7,8 +7,9 @@ on:
       - 'src/face-feature-meshes.js'
       - 'src/face-reference-skin-pbr-v90.js'
       - 'src/heroine-skin-material.js'
-      - 'qa/face-v91-live-skin-material.test.mjs'
+      - 'qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs'
       - 'qa/face-v90-reference-grade.test.mjs'
+      - 'qa/face-v92-visual-quality-regression.test.mjs'
       - 'src/face-mouth-seal-v86.js'
       - 'src/face-native-oral-rig-v88.js'
       - 'src/face-expression-animation-v48.js'
@@ -40,8 +41,9 @@ on:
       - 'src/face-feature-meshes.js'
       - 'src/face-reference-skin-pbr-v90.js'
       - 'src/heroine-skin-material.js'
-      - 'qa/face-v91-live-skin-material.test.mjs'
+      - 'qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs'
       - 'qa/face-v90-reference-grade.test.mjs'
+      - 'qa/face-v92-visual-quality-regression.test.mjs'
       - 'src/face-mouth-seal-v86.js'
       - 'src/face-native-oral-rig-v88.js'
       - 'src/face-expression-animation-v48.js'
@@ -85,8 +87,9 @@ jobs:
           node --check src/face-feature-meshes.js
           node --check src/face-reference-skin-pbr-v90.js
           node --check src/heroine-skin-material.js
-          node --check qa/face-v91-live-skin-material.test.mjs
+          node --check qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs
           node --check qa/face-v90-reference-grade.test.mjs
+          node --check qa/face-v92-visual-quality-regression.test.mjs
           node --check src/face-mouth-seal-v86.js
           node --check src/face-native-oral-rig-v88.js
           node --check src/independent-face-masters.js
@@ -109,7 +112,7 @@ jobs:
         run: |
           node --test qa/face-photoreal-v76.test.mjs qa/face-expression-v48.test.mjs qa/face-v49-regression.test.mjs qa/eyebrow-surface-regression.test.mjs qa/face-v76-visible-preset-smooth.test.mjs qa/face-v80-anatomy.test.mjs
           # IMPORTANT: these were previously syntax-checked but never RUN.
-          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs qa/face-v88-native-oral.test.mjs qa/face-v90-reference-grade.test.mjs qa/face-v91-live-skin-material.test.mjs
+          node --test qa/face-v82-integrated-mouth.test.mjs qa/face-v82-real-glb-topology.test.mjs qa/face-v83-public-safe.test.mjs qa/face-v88-native-oral.test.mjs qa/face-v90-reference-grade.test.mjs qa/face-v91-live-skin-material.test.mjs qa/face-v92-visual-quality-regression.test.mjs
 
       - name: Diagnose current public face version before merging
         continue-on-error: true
