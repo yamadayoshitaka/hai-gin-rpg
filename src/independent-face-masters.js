@@ -4,7 +4,7 @@ import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?
 import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=97-continuous-malar';
 import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 import {refineV99FemaleProfile} from './face-v99-malar-alar-fairing.js?v=100-real-donor-local-guard';
-import {fairV102CheekContour} from './face-v102-cheek-contour.js?v=102-donor-anchored-crest-repair';
+import {fairV102CheekContour} from './face-v102-cheek-contour.js?v=105-nonexcavating-cheek-mesh';
 import {smoothV104Cheek} from './face-v104-cheek-microfair.js?v=104-v102-rollback-single-pass';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
