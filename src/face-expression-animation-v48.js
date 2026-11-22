@@ -11,7 +11,7 @@ import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-express
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
 import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=92-separated-natural-arches';
 import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
-import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=96-oval-lip-loop';
+import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=97-rim-aligned';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from './face-anatomy-rig-v80.js?v=89-live-nasolabial';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
@@ -635,6 +635,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v94BuildSignature:'face-v94-native-mouth-internal-skin-occlusion-20261122',
    v95BuildSignature:'face-v95-nasal-side-profile-topological-edge-flow-20261122',
    v96BuildSignature:'face-v96-smile-cheek-lip-makeup-topology-20261122',
+    v97BuildSignature:'face-v97-connected-eye-mouth-cheek-20261122',
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
