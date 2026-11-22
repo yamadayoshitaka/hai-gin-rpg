@@ -35,6 +35,17 @@ try{
  await page.locator('#v47BodyType').selectOption('ultraThin');
  await page.waitForFunction(()=>document.querySelector('#facePoseDiagnostics')
   ?.textContent?.includes('超痩せ型'),null,{timeout:30000});
+ // The original WebGL test never inspected hair lying directly over the eyes.
+ await page.waitForFunction(()=>window.__faceMasterQA?.()?.wigReport
+  ?.v92EyeClearanceApplied===true,null,{timeout:60000});
+ const hairEvidence=await page.evaluate(()=>{
+  const w=window.__faceMasterQA().wigReport;
+  return {style:w.hairstyleId,eyeCurtainLocks:w.v70EyeCurtainLocks,
+   clearance:w.v92EyeClearanceApplied};
+ });
+ console.log('FACE_V92_HAIR_EYE_CLEARANCE',JSON.stringify(hairEvidence));
+ assert.ok(hairEvidence.eyeCurtainLocks<=2,
+  'The long 3D hair cannot cross the real eye region (guide clearance regression)');
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  console.log('FACE_V88_NATIVE_LIP_SPAN',JSON.stringify({width:native.mouthWidth,donor:native.donorLipWidth,current:native.currentLipWidth,ratio:native.currentLipWidth/native.donorLipWidth,seal:native.seal}));
  assert.equal(native.seal.sealed,true,
