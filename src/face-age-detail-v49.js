@@ -42,14 +42,15 @@ export function attachAgeDetails(face,ageBand='twenties'){
   // Genuine nasolabial oblique trough: from alar base to the age-adjusted
   // mouth corner. Counter-relief adjacent to the crease makes it visible
   // under neutral lighting, without floating painted lines.
-  const route=.16+.115*THREE.MathUtils.clamp((ny-oral)/.19,0,1);
-  const nasolabial=bell(nx,route,.036)*bell(ny,oral+.067,.097);
+  // nx uses half-head width, so use 2x the FACS/pigment position.
+   const route=.18+.09*THREE.MathUtils.clamp((ny-oral)/.16,0,1);
+  const nasolabial=bell(nx,route,.056)*bell(ny,oral+.070,.088);
   const cheekMound=bell(nx,route+.055,.063)*bell(ny,oral+.082,.082);
   const mouthCorner=bell(nx,.15,.045)*bell(ny,oral-.015,.043);
   const fold=forehead*.70+crow*.44+nasolabial*1.23+
    mouthCorner*.27;
   const displacement=depth*strength*front*
-   (-.0079*fold+.0025*cheekMound);
+   (-.0067*fold+.0028*cheekMound);
   if(Math.abs(displacement)<1e-8)continue;
   position.setZ(i,z+displacement);
   affected++;maxOffset=Math.max(maxOffset,Math.abs(displacement));
