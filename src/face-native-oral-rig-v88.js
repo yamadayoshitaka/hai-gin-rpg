@@ -72,7 +72,7 @@ export function initializeNativeOralRig(face){
   const ny=Math.abs(y-cy)/size.y;
   // A strict oral envelope avoids the alar nose, cheekbones and lower lids.
   weights[i]=Math.pow(Math.max(0,1-smooth(.78,1.50,normalizedX)),1.3)*
-   (1-smooth(.012,.061,ny))*smooth(.52,.78,normFront);
+   (1-smooth(.008,.035,ny))*smooth(.52,.78,normFront);
   centerSign[i]=Math.tanh((y-cy)/(size.y*.0035));
  }
  const rig={face,g,attr,boundary,closedIndices,openedIndices,
