@@ -401,7 +401,7 @@ jobs:
           echo '::error::Deployed Pages did not serve the current maintenance center/PR preview for this SHA.'
           exit 1
 
-      - name: Confirm public face studio and native V88 FACS oral runtime are deployed
+      - name: Confirm public face studio v95 and topology-controlled oral runtime are deployed
         if: steps.latest.outputs.publish == 'true'
         shell: bash
         run: |
@@ -409,17 +409,20 @@ jobs:
           for attempt in $(seq 1 18); do
             url="https://yamadayoshitaka.github.io/hai-gin-rpg/face-mesh-studio.html?face_verify=${GITHUB_SHA:0:12}-${attempt}"
             js="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-expression-animation-v48.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
+            topology="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-muscle-topology-v95.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
             html_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-studio.html -w '%{http_code}' "${url}" || true)
             js_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-expression.js -w '%{http_code}' "${js}" || true)
-            if [[ "${html_code}" == 200 && "${js_code}" == 200 ]] &&
-               grep -Fq '顔品質 v88' /tmp/public-face-studio.html &&
-               grep -Fq 'v=88-native-facs-cache-20261122' /tmp/public-face-studio.html &&
-               grep -Fq 'v88BuildSignature' /tmp/public-face-expression.js &&
-               grep -Fq 'v86OralSealed' /tmp/public-face-expression.js; then
-              echo "PASS: public face viewer and its runtime JavaScript are both v88 (${GITHUB_SHA})"
+            topology_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-topology.js -w '%{http_code}' "${topology}" || true)
+            if [[ "${html_code}" == 200 && "${js_code}" == 200 && "${topology_code}" == 200 ]] &&
+               grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/public-face-studio.html &&
+               grep -Fq '顔品質 v95' /tmp/public-face-studio.html &&
+               grep -Fq 'v=95-topology-nasal-side-view-20261122' /tmp/public-face-studio.html &&
+               grep -Fq 'v95BuildSignature' /tmp/public-face-expression.js &&
+               grep -Fq 'fitTopologyNasalSideProfile' /tmp/public-face-topology.js; then
+              echo "PASS: public face studio, FACS and nose/oral topology modules are current v95 (${GITHUB_SHA})"
               exit 0
             fi
-            echo "::warning::Face v88 not publicly visible: HTML ${html_code} JS ${js_code} (attempt ${attempt}/18)"
+            echo "::warning::Face v95 not public: HTML ${html_code} JS ${js_code} topology ${topology_code} (attempt ${attempt}/18)"
             sleep 5
           done
           echo '::error::Pages still serves stale face HTML or facial animation JS; PR merge alone is not a successful release'
