@@ -403,7 +403,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
   // geometry, eliminating cumulative drift after repeated face changes.
   if(neutralPose)facialAttr.array.set(facialRest);
   facialAttr.needsUpdate=true;
-  if(mouth?.integrated)face.userData.v82IntegratedMouth.lastPoseKey=null;
+  if(face.userData.v82IntegratedMouth?.integrated)face.userData.v82IntegratedMouth.lastPoseKey=null;
   const normals=face.geometry.getAttribute('normal');
   if(neutralPose&&normals&&sculptNormalRest&&
      normals.array.length===sculptNormalRest.length){
