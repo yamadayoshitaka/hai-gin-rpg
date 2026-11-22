@@ -17,6 +17,48 @@ const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
 const fall=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 
+/**
+ * v94: remove source-head triangles which cover the inner mouth *only
+ * while open*. A closed mouth retains every original donor triangle.
+ * Previously only the additional neutral caps were hidden, leaving giant
+ * ivory skin triangles masquerading as front teeth during laughter.
+ */
+export function classifyDonorOralInterior(geometry,boundary,triangles){
+ const a=geometry?.getAttribute?.('position'),box=geometry?.boundingBox;
+ const fallback=reason=>({opened:triangles.slice(),hidden:new Set(),removed:0,reason});
+ if(!a||!box||!Array.isArray(boundary)||boundary.length<30)
+  return fallback('missing-native-outer-ring');
+ const d=box.getSize(new THREE.Vector3());
+ const poly=boundary.map(i=>[a.getX(i),a.getY(i)]);
+ const xx=poly.map(v=>v[0]),yy=poly.map(v=>v[1]);
+ const w=Math.max(...xx)-Math.min(...xx),h=Math.max(...yy)-Math.min(...yy);
+ if(w<d.x*.055||w>d.x*.31||h<d.y*.007||h>d.y*.12)
+  return fallback('unexpected-oral-boundary');
+ const inside=(x,y)=>{
+  let hit=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+   const [xi,yi]=poly[i],[xj,yj]=poly[j];
+   if(((yi>y)!==(yj>y))&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)
+    hit=!hit;
+  }
+  return hit;
+ };
+ const opened=[],hidden=new Set();
+ const minZ=box.min.z+d.z*.48;
+ for(let i=0;i<triangles.length;i+=3){
+  const ids=triangles.slice(i,i+3);
+  const x=(a.getX(ids[0])+a.getX(ids[1])+a.getX(ids[2]))/3;
+  const y=(a.getY(ids[0])+a.getY(ids[1])+a.getY(ids[2]))/3;
+  const z=(a.getZ(ids[0])+a.getZ(ids[1])+a.getZ(ids[2]))/3;
+  if(z>minZ&&inside(x,y)){
+   hidden.add(ids.slice().sort((u,v)=>u-v).join('/'));continue;
+  }
+  opened.push(...ids);
+ }
+ if(hidden.size>Math.min(250,triangles.length/3*.035))
+  return fallback('too-many-face-triangles');
+ return {opened,hidden,removed:hidden.size};
+}
 export function initializeNativeOralRig(face){
  const seal=face?.userData?.v86OralSeal;
  const g=face?.geometry,attr=g?.getAttribute('position'),index=g?.getIndex();
@@ -39,7 +81,8 @@ export function initializeNativeOralRig(face){
  const closedIndices=Array.from(index.array),originalCount=seal.initialTriangleCount*3;
  if(originalCount<=0||originalCount>=closedIndices.length)
   return {ready:false,reason:'unverified-native-cap-indices'};
- const openedIndices=closedIndices.slice(0,originalCount);
+ const filtered=classifyDonorOralInterior(g,boundary,closedIndices.slice(0,originalCount));
+ const openedIndices=filtered.opened;
  const n=boundary.length,position=new Float32Array(n*2*3),color=new Float32Array(n*2*3);
  const triangles=[];
  for(let i=0;i<n;i++){
@@ -76,13 +119,15 @@ export function initializeNativeOralRig(face){
   centerSign[i]=Math.tanh((y-cy)/(size.y*.0035));
  }
  const rig={face,g,attr,boundary,closedIndices,openedIndices,
+  removedOriginalTriKeys:filtered.hidden,removedOriginalTriangles:filtered.removed,
   size,cx,cy,halfWidth,wall,skinBase:original.slice(),
   weights,centerSign,isOpen:false,lastOpen:-1};
  rigs.set(face,rig);
  const status={ready:true,kind:'native-boundary-recessed-vestibule',
   boundaryVertices:n,originalTriangleCount:originalCount/3,
   neutralTriangleCount:closedIndices.length/3,
-  donorOwned:true,reversible:true,oralMeshOverlays:false};
+  donorOwned:true,reversible:true,oralMeshOverlays:false,
+  v94HiddenDonorInteriorTriangles:filtered.removed};
  face.userData.v88NativeOralRig=status;
  updateNativeOralPose(face,{open:0});
  return status;
