@@ -375,3 +375,25 @@ test('V87 native mouth corners narrow on actual CC0 donor while cheeks, eyes and
   });
  }
 });
+
+test('v100 actual real donor must receive cheek and nasal geometry correction, not a success label',()=>{
+ const {geo}=sourceGeometry(),source=new THREE.Group();
+ const face=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+ face.name='CC0_SOURCE_GEO-head_animation_realistic';
+ source.add(face);
+ const model=makeIndependentFaceMaster(source,'female',{
+  femaleControls:{ageBand:'twenties',bodyType:'normal'}
+ });
+ const status=model.report.v99FeminineMalarAlar;
+ console.log('ACTUAL_DONOR_V99_STATUS',JSON.stringify(status));
+ assert.equal(status?.applied,true,
+  'A real GLB may not silently bypass the cheek/nasal sculpt: '+JSON.stringify(status));
+ assert.ok(status.cheekVertices>5&&status.alarVertices>1,
+  'Must change both the native malar and nasal ring');
+ model.root.traverse(o=>{
+  if(!o.isMesh)return;
+  o.geometry?.dispose();
+  for(const mat of Array.isArray(o.material)?o.material:[o.material])
+   mat?.dispose?.();
+ });
+});
