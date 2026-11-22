@@ -215,6 +215,10 @@ export function refineV106CheekMouthTopology(face,{gender='female'}={}){
  // Native outer lip boundary and inner fissure stay EXACT donor topology.
  const rings=[...(seal.lipRing||[]),...(seal.outerSelectedRing||[])];
  const protectedSet=new Set(rings);
+ // Preserve the two ray-verified original interior folds: the native
+ // mouth rig deliberately hides these exact triangles during jaw opening.
+ if(p.count===3490)for(const id of [1882,2240,2242,1879,2244,3242])
+  protectedSet.add(id);
  const beforePositions=p.array.slice(),beforeCount=p.count,
   beforeTriangles=idx.count/3,beforeIndices=Array.from(idx.array);
  const geometryBackup=geometry.clone();
