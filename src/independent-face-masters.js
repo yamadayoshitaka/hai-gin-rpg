@@ -49,7 +49,7 @@ export function v88AnatomicalLipDelta({
  const vertical=1-smooth(.019,.078,dy);
  const anterior=smooth(.54,.82,zn);
  const influence=lateral*vertical*anterior;
- const extraWidth=Math.max(.28,Math.min(1.4,mouthWidth/.85));
+ const extraWidth=Math.max(.28,Math.min(1,mouthWidth/.85));
  const cupid=bell(ax,.073,.047)*bell(yn,.519,.012);
  const lower=bell(ax,.075,.072)*bell(yn,.495,.015);
  const lipVolume=(.0024*cupid+.0036*lower)*anterior;
