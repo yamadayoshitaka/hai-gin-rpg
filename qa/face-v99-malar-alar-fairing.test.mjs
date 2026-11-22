@@ -21,7 +21,7 @@ test('v99 broad cheek support trims the peak rather than building a hard mountai
 });
 test('v99 nose points downward and alar underside lowers instead of front-facing nostrils',()=>{
  const right=field(.16,.545),left=field(-.16,.545);
- const tip=field(.05,.567),columella=field(.065,.535);
+ const tip=field(.05,.567),columella=field(.065,.555);
  assert.ok(right.dy<-.005&&left.dy<-.005);
  assert.ok(tip.dy<-.005,'Nasal tip moves down');
  assert.ok(columella.dy<0,'Central columella extends down from tip');
@@ -29,6 +29,8 @@ test('v99 nose points downward and alar underside lowers instead of front-facing
  assert.ok(Math.abs(right.dx+left.dx)<1e-12);
  assert.ok(Math.abs(tip.dz)<.012,'No deep tip collapse causing a weird profile');
  assert.ok(noDelta(field(.08,.50)),'Native lips are never distorted');
+ assert.ok(noDelta(field(.065,.535)),
+  'Nasolabial sculpt must not pull the real donor upper lip boundary');
 });
 test('v99 respects age, sex and original indexed triangle mesh',()=>{
  const original=new THREE.SphereGeometry(.14,72,56);
