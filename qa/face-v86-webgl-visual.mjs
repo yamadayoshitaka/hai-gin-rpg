@@ -77,6 +77,8 @@ try{
    const canvas=document.getElementById('faceCanvas').getBoundingClientRect();
    return {frame,seal,pose,canvasSize:{width:canvas.width,height:canvas.height}};
   });
+  assert.equal(capture.pose.renderClipped,true,
+   'Scalp clipping and native oral lip animation must share one ESM WeakMap');
   assert.ok(capture.frame?.startsWith('data:image/png;base64,'),
    'Real WebGL framebuffer must be exported as an actual PNG');
   const buffer=Buffer.from(capture.frame.slice(capture.frame.indexOf(',')+1),'base64');
