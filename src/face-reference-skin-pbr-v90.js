@@ -10,9 +10,9 @@ import * as THREE from 'three';
  *
  * This uses no remote textures and never modifies the source GLB.
  */
-export function createReferenceFaceSkinMaterial(){
+export function createReferenceFaceSkinMaterial(gender='female'){
  const material=new THREE.MeshPhysicalMaterial({
-  color:0xbfc3cb,roughness:.79,metalness:0,
+  color:gender==='male'?0xbfc3cb:0xebc5b7,roughness:.79,metalness:0,
   clearcoat:.045,clearcoatRoughness:.48,
   sheen:.085,sheenColor:new THREE.Color(0xf0bcae),
   sheenRoughness:.80,

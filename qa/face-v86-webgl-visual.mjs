@@ -27,7 +27,7 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v95確認済');
+   ?.includes('実行JS：v96確認済');
  },null,{timeout:90000});
  // Reproduce the reported Android appearance: female / 20s / ultra-thin.
  // The former QA only exercised the default body profile.
@@ -71,7 +71,7 @@ try{
   window.__faceExpressionQA?.nativePoseProbe?.()?.mouthOpen>.55,
   null,{timeout:30000});
  assert.match(await page.locator('#facePoseDiagnostics').innerText(),
-  /表情：大笑い.*開口強度：(6[0-9]|7[0-9])%/,
+  /表情：大笑い.*開口強度：(8[0-9]|9[0-9])%/,
   'Actual UI selection must reflect an open 3D laughing mouth');
  await page.locator('#faceExpression').selectOption('neutral');
  // Read the actual WebGL canvas immediately after an explicit render.
@@ -93,6 +93,12 @@ try{
   });
   assert.equal(capture.pose.renderClipped,true,
    'Scalp clipping and native oral lip animation must share one ESM WeakMap');
+  assert.ok(capture.pose.v96LipstickVertices>0,
+   'Native moving lips must retain nonzero lipstick PBR pigment');
+  assert.equal(capture.pose.v96LipShaderPreserved,true,
+   'Real skin PBR lip wetness shader must survive hair and studio skin');
+  assert.equal(capture.pose.v96EyelinerSegments,48,
+   'Real eyeliner surface must be 48-segment tapered geometry');
   assert.ok(capture.frame?.startsWith('data:image/png;base64,'),
    'Real WebGL framebuffer must be exported as an actual PNG');
   const buffer=Buffer.from(capture.frame.slice(capture.frame.indexOf(',')+1),'base64');
@@ -200,6 +206,18 @@ try{
    'Mouth still contains the large pure-black polygonal defect');
  }
  // v95: prior QA rendered frontal only; large unflattering nose and
+ // v96: Verify the actual soft-smile preset and attached makeup, not just jaw-open.
+ await page.locator('#faceExpression').selectOption('softSmile');
+ await page.evaluate(()=>window.__faceExpressionQA.forceExpression('softSmile'));
+ const soft=await page.evaluate(()=>({
+  frame:window.__faceExpressionQA.captureWebGLFrame(),
+  pose:window.__faceExpressionQA.nativePoseProbe()
+ }));
+ assert.equal(soft.pose.expression,'softSmile');
+ assert.ok(soft.pose.v96LipstickVertices>0);
+ assert.equal(soft.pose.v96EyelinerSegments,48);
+ writeFileSync(out+'/softSmile.png',
+  Buffer.from(soft.frame.slice(soft.frame.indexOf(',')+1),'base64'));
  // cheek discontinuity were invisible until viewing the face from its side.
  await page.locator('#faceExpression').selectOption('neutral');
  await page.evaluate(()=>window.__faceExpressionQA.forceExpression('neutral'));
@@ -241,6 +259,43 @@ try{
   writeFileSync(file,Buffer.from(data.slice(data.indexOf(',')+1),'base64'));
   console.log('FACE_V95_UNOBSCURED_PROFILE',JSON.stringify({view,file}));
  }
+ // 18-frame appearance evidence: neutral / subtle smile / laugh,
+ // front / 45 degrees / profile, with and without hair. These are real
+ // rendered frames. Saving them does not constitute aesthetic approval.
+ let evidenceCount=0;
+ for(const hairVisible of [true,false]){
+  const currentHair=await page.evaluate(()=>window.__faceMasterQA?.()?.wigVisible);
+  if(currentHair!==hairVisible){
+   await page.locator('#wig').click();
+   await page.waitForFunction(w=>
+    window.__faceMasterQA?.()?.wigVisible===w,hairVisible,{timeout:30000});
+  }
+  for(const expression of ['neutral','softSmile','laugh']){
+   await page.evaluate(id=>window.__faceExpressionQA.forceExpression(id),expression);
+   for(const view of ['front','threeQuarter','side']){
+    await page.locator('#'+view).click();
+    await page.waitForTimeout(75);
+    const result=await page.evaluate(()=>({
+     png:window.__faceExpressionQA.captureWebGLFrame(),
+     pose:window.__faceExpressionQA.nativePoseProbe()
+    }));
+    assert.ok(result.png?.startsWith('data:image/png;base64,'),
+     '18-condition WebGL evidence cannot be an empty frame');
+    assert.ok(result.pose.v96LipstickVertices>0,
+     'Lipstick must survive all expression and camera conditions');
+    const png=Buffer.from(result.png.slice(result.png.indexOf(',')+1),'base64');
+    const file=out+'/v96-matrix-'+expression+'-'+view+'-'+
+      (hairVisible?'hair':'no-hair')+'.png';
+    writeFileSync(file,png);
+    const info=PNG.sync.read(png);
+    assert.ok(info.width>=350&&info.height>=350);
+    evidenceCount++;
+    console.log('FACE_V96_18_MATRIX',JSON.stringify({file,
+     expression,view,hairVisible,opening:result.pose.mouthOpen}));
+   }
+  }
+ }
+ assert.equal(evidenceCount,18,'All 18 orthographic composition cases must be saved');
  await page.locator('#front').click();
  assert.deepEqual(failures,[],
   'Face editor cannot throw JavaScript/WebGL errors during visual QA');

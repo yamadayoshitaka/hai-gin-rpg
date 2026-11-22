@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createTopologyOralMuscleField,createThreeRingVestibuleIndices} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
+import {naturalLaughLipDelta} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 
 /**
  * V88 native oral articulation. This operates ONLY on the owned donor-head
@@ -151,6 +152,7 @@ export function initializeNativeOralRig(face){
   donorOwned:true,reversible:true,oralMeshOverlays:false,
   v94HiddenDonorInteriorTriangles:filtered.removed,
   v95ThreeConnectedOralRings:true,
+  v96EllipticalSmile:true,v96MaximumLipSpread:.085,
   v95OralEdgeFlowValid:oralTopology.valid,
   v95OralEdgeFlowReason:oralTopology.valid?null:oralTopology.reason,
   v95OralEdgeConnectedVertices:oralTopology.influencedVertices??0,
@@ -203,19 +205,24 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
   if(w<.0001)continue;
   const sx=centerSign[i];
   const x=skinBase[k],y=skinBase[k+1],z=skinBase[k+2];
-  const t=(x-cx)/Math.max(halfWidth,1e-7);
-  const arch=Math.pow(Math.max(0,1-Math.min(1,t*t)),.52);
-  // Gently raise the real commissure without pinching the donor lip boundary.
+  if(face.name.startsWith('FEMALE_')){
+   // The original connected female lip loop opens as a smooth oval.
+   const pose=naturalLaughLipDelta({t:(x-cx)/Math.max(halfWidth,1e-7),
+    sign:sx,smile:s,open:o,cheek:c,width:halfWidth,
+    height:size.y,depth:size.z});
+   attr.array[k]=x+w*pose.dx;
+   attr.array[k+1]=y+w*pose.dy;
+   attr.array[k+2]=z+w*pose.dz;
+  }else{
+   // The male rig is outside this female v96 sculpt change.
+   const t=(x-cx)/Math.max(halfWidth,1e-7);
+   const arch=Math.pow(Math.max(0,1-Math.min(1,t*t)),.52);
    const smileLift=(Math.abs(t)**1.8)*(size.y*.0075*s+size.y*.002*c);
-  // A laugh must reveal the native inside of the mouth, not a pursed slit.
-   // Keep the lower lip moving farther than the upper; the donor stays watertight.
    const opening=arch*size.y*.042*o*(sx>=0?.24:.76);
-  // Real commissures widen gently during laughter but never cross each other.
-   // Widen the real oral commissures on a laugh; previous 0.15 only
-  // exposed a small pinched slit under an otherwise broad smile.
-  attr.array[k]=x+(x-cx)*.51*s*w;
-  attr.array[k+1]=y+w*(smileLift+(sx>=0?opening:-opening));
-  attr.array[k+2]=z-size.z*.0017*o*w;
+   attr.array[k]=x+(x-cx)*.51*s*w;
+   attr.array[k+1]=y+w*(smileLift+(sx>=0?opening:-opening));
+   attr.array[k+2]=z-size.z*.0017*o*w;
+  }
  }
  attr.needsUpdate=true;
  if(active){

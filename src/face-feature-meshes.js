@@ -5,7 +5,8 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
-import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=95-three-connected-oral-rings';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=96-oval-lip-loop';
+import {nativeVermilionMask,eyelinerCoverage} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 
 /**
  * Actual face-only polygon meshes. No 2D decals, portrait planes or hair.
@@ -121,7 +122,7 @@ export function v71EyeDepthFromEyeliner({upperZ,lowerZ,corneaZ,eyeRadius,eyeDept
 function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  const count=Math.max(12,Math.round((upper?84:42)*settings.lashDensity)),
   vertices=[],indices=[];
- const reference=(u)=>sampleGrid(liner,28,3,u,.24);
+ const reference=(u)=>sampleGrid(liner,48,3,u,.24);
  for(let i=0;i<count;i++){
   const u=.055+.89*(i+.5)/count;
   const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.58);
@@ -186,27 +187,18 @@ function sampleGrid(mesh,columns,rows,u,v){
   .addScaledVector(vertex(i,j+1),(1-a)*b)
   .addScaledVector(vertex(i+1,j+1),a*b);
 }
-/** Stitch the two cosmetic eyelid bands at both eye corners in the
- * exact same mesh coordinate space, without detached makeup cards. */
+/** End both real eyelid eyeliner strips at their own tapered canthi.
+ * Do not bridge the upper and lower lid with an opaque cosmetic quad. */
 function stitchLinerCorners(upper,lower,faceWidth,depth){
- const g=upper.geometry,vertices=Array.from(g.getAttribute('position').array);
- const uv=Array.from(g.getAttribute('uv').array);
- const index=Array.from(g.getIndex().array);
- for(const u of [0,1]){
-  const a=sampleGrid(upper,28,3,u,0),b=sampleGrid(lower,28,3,u,0);
-  const dx=(u===0?-1:1)*faceWidth*.0025;
-  const dz=depth*.00024;
-  const begin=vertices.length/3;
-  for(const p of [a,b]){
-   vertices.push(p.x,p.y,p.z+dz,p.x+dx,p.y,p.z+dz);
-   uv.push(u,0,u,1);
-  }
-  index.push(begin,begin+1,begin+2,begin+2,begin+1,begin+3);
+ // A black connector quad between upper/lower canthi is not skin anatomy.
+ // Both 48-segment eyelid-conforming lines end at zero width already.
+ for(const liner of [upper,lower]){
+  if(!liner)continue;
+  liner.geometry.computeVertexNormals();
+  liner.geometry.computeBoundingSphere();
+  liner.userData.eyelinerCornersClosed=true;
+  liner.userData.v96NoFloatingCanthusBridge=true;
  }
- g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
- g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
- g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
- upper.userData.eyelinerCornersClosed=true;
 }
 /**
  * Fast cosmetic-only redraw on ORIGINAL sculpted face triangles.
@@ -290,7 +282,7 @@ export function v70FaceReliefShadow({nx,ny,front,lidY=.684}={}){
  const orbital=bell(nx,.147,.077)*bell(ny,lidY+.050,.071);
  const alar=bell(nx,.127,.049)*bell(ny,.554,.042);
  const cheek=bell(nx,.286,.120)*bell(ny,.519,.097);
- return visibility*(.072*orbital+.036*alar+.023*cheek);
+ return visibility*(.046*orbital+.016*alar+.009*cheek);
 }
 export function v65ScleralShading(u,v){
  const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
@@ -323,7 +315,9 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  // channels render jet black and formerly mimicked an open mouth.
  let repairedPigmentVertices=0;
  const mouthTopology=face.userData.v82IntegratedMouth;
- const lipNatural=new THREE.Color(gender==='male'?0xb8867c:0xce9597);
+ const lipNatural=new THREE.Color(gender==='male'?0xb8867c:0xc5828d);
+ const nativeRim=face.userData.v86OralSeal?.outerSelectedRing||
+  face.userData.v86OralSeal?.lipRing||[];
  let actualLipTintVertices=0,actualCheekTintVertices=0;
  for(let i=0;i<positions.count;i++){
   const px=positions.getX(i),py=positions.getY(i),pz=positions.getZ(i);
@@ -345,7 +339,15 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
    smoothstep((1-Math.abs(anatomicalLipX))/.25);
   // The static head gets NO lipstick. Its baked pigment formed the
   // detached purple ghost when the animated lip volumes moved.
-  const lipMask=gender==='male'?0:lipX*lipY*front*bound;
+  const rimPigment=gender==='female'?nativeVermilionMask({
+    x:px,y:py,z:pz,lipCenter,centerX:cx,faceWidth:d.x,
+    faceHeight:d.y,faceDepth:d.z,
+    mouthWidth:settings.mouthWidth,lipstickWidth:settings.lipstickWidth,
+    lipstickHeight:settings.lipstickHeight,
+    rim:nativeRim,positionAttribute:positions
+   }):0;
+   const lipMask=gender==='male'?0:Math.max(
+    lipX*lipY*front*bound,rimPigment*.91*front);
   if(cheek>.12)actualCheekTintVertices++;
   if(lipMask>.12)actualLipTintVertices++;
   // Actual sculpted-skin vertex colours receive subtle occlusion in the
@@ -418,8 +420,8 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   lipGlossWeights.push(mode==='color'&&gender==='female'?clamp(lipWeight,0,1):0);
   if(lipWeight>0){
    const painted=lipNatural.clone().lerp(lipstick,
-    gender==='male'?0:clamp(cosmeticOpacity(.16)*lipWeight,0,1));
-   rgb.lerp(painted,clamp(.64+lipWeight*.36,0,1));
+    gender==='male'?0:clamp(cosmeticOpacity(.22)*lipWeight,0,1));
+   rgb.lerp(painted,clamp(.57+lipWeight*.37,0,1));
    actualLipTintVertices++;
   }
   // Some legacy donor+makeup combinations generate non-finite colors
@@ -441,7 +443,9 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  // This PBR channel follows all 3D FACS and age changes without decals.
  geometry.setAttribute('v90LipWetness',
   new THREE.Float32BufferAttribute(lipGlossWeights,1));
- face.userData.v90NativeOralLipstickReady=
+ face.userData.v96NativeRimLipPigmentVertices=lipGlossWeights.filter(v=>v>.08).length;
+  face.userData.v96NativeRimLipstick=true;
+  face.userData.v90NativeOralLipstickReady=
   !!face.userData.v88NativeOralRig?.ready&&actualLipTintVertices>0;
  face.userData.v90LipRoughnessWeightCount=lipGlossWeights.filter(v=>v>.1).length;
  face.userData.v87RepairedNonFinitePigment=repairedPigmentVertices;
@@ -954,16 +958,19 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    if(female){
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
-     color:0x3a2c32,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?.93:.43,depthWrite:false,depthTest:true,
-     polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5
+     color:0x403039,side:THREE.DoubleSide,transparent:true,
+     opacity:upper?.82:.34,depthWrite:false,depthTest:true,
+     polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
     });
-    const liner=buildGrid(label+'_EYELINER',28,3,(u,v)=>{
-     const p=sampleGrid(mesh,28,4,u,.018+v*(upper?.064:.056));
-     p.z+=Math.max(.00012,d.z*.004);
+    const liner=buildGrid(label+'_EYELINER',48,3,(u,v)=>{
+     const taper=eyelinerCoverage(u,0,{upper});
+     const p=sampleGrid(mesh,28,4,u,.017+v*(upper?.080:.049)*taper);
+     p.z+=Math.max(.000035,d.z*.0018);
      return p;
     },linerMat);
     liner.userData.colorRole='eyeliner';liner.userData.cosmetic=true;
+     liner.userData.v96TaperedEyeContour=true;
+     liner.userData.v96StrokeSegments=48;
     liner.userData.conformsTo='real-eyelid-mesh';
     liner.renderOrder=9;
     mesh.add(liner);
@@ -1004,10 +1011,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // actual liner meshes AFTER generation, then adjust the three optical
    // surfaces together; lids and liner are stationary reference geometry.
    const upperLinerPoint=female?
-    sampleGrid(upperEyeliner,28,3,.5,.33):
+    sampleGrid(upperEyeliner,48,3,.5,.33):
     sampleGrid(root.getObjectByName(eyeLabel+'_UPPER_ANATOMICAL_EYELID'),28,4,.5,.03);
    const lowerLinerPoint=female?
-    sampleGrid(lowerEyeliner,28,3,.5,.33):
+    sampleGrid(lowerEyeliner,48,3,.5,.33):
     sampleGrid(root.getObjectByName(eyeLabel+'_LOWER_ANATOMICAL_EYELID'),28,4,.5,.03);
    const fit=v71EyeDepthFromEyeliner({
     upperZ:upperLinerPoint.z,lowerZ:lowerLinerPoint.z,
@@ -1477,8 +1484,8 @@ function refitEyelinerToLids(partsRoot){
   if(attr.count>=124){
    let cursor=116;
    for(const u of [0,1]){
-    const a=sampleGrid(upper,28,3,u,0);
-    const b=sampleGrid(lower,28,3,u,0);
+    const a=sampleGrid(upper,48,3,u,0);
+    const b=sampleGrid(lower,48,3,u,0);
     const dx=(u===0?-1:1)*depth*.0025;
     for(const p of [a,b]){
      attr.setXYZ(cursor++,p.x,p.y,p.z+depth*.00024);
