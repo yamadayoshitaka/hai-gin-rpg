@@ -14,7 +14,7 @@ const zero=()=>({dx:0,dy:0,dz:0,cheek:0,alar:0,ridge:0});
  * dx/dy/dz returned in matching normalized dimension units.
  * The cheek is a wide plateau with ridge *removal*, not a narrow Z bump.
  */
-export function v99FacialSurfaceDelta({xn=0,yn=0,zn=0,ageWrinkles=0,cheekContourMode='v101'}={}){
+export function v99FacialSurfaceDelta({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  const youth=1-smooth(.15,.68,ageWrinkles);
  const ax=Math.abs(xn);
  if(youth<.001||yn<.40||yn>.715||zn<.50||ax>.845)return zero();
@@ -28,12 +28,7 @@ export function v99FacialSurfaceDelta({xn=0,yn=0,zn=0,ageWrinkles=0,cheekContour
  // Undo the high, pointed malar hill left by stacked v93-v98 passes.
  // This is a negative relief cap, NOT another local cheek protrusion.
  const ridge=cheek*bell(ax,.48,.17)*bell(yn,.570,.066);
- // v101: soften the corrective peak now that the v93 base has stopped
- // creating a strong local upper-cheek protrusion; support the lower pad.
- // The v100 field remains available only for controlled A/B tests.
- const cheekDz=cheekContourMode==='v100'?
-  youth*(.0060*cheek+.0135*below-.0260*ridge):
-  youth*(.0040*cheek+.0185*below-.0145*ridge);
+ const cheekDz=youth*(.0060*cheek+.0135*below-.0260*ridge);
  const cheekDx=xn*.0034*cheek*youth;
  // Nose field is disjoint from cheek field. Front-facing tip and the
  // two alar lower edges travel DOWN together, hiding nostril sky-view.
@@ -68,7 +63,7 @@ const normal=(a,i,j,k)=>{
  * A triangle-safety line search rejects foldovers, retaining source indices.
  */
 export function refineV99FemaleProfile(geometry,{
- gender='female',ageWrinkles=0,cheekContourMode='v101'
+ gender='female',ageWrinkles=0
 }={}){
  const fail=reason=>({applied:false,reason});
  if(gender!=='female')return fail('male-head-unchanged');
@@ -88,7 +83,7 @@ export function refineV99FemaleProfile(geometry,{
   const at=i*3,x=source[at],y=source[at+1],z=source[at+2];
   const field=v99FacialSurfaceDelta({
    xn:(x-cx)/(width*.5),yn:(y-box.min.y)/height,
-   zn:(z-box.min.z)/depth,ageWrinkles,cheekContourMode
+   zn:(z-box.min.z)/depth,ageWrinkles
   });
   const dx=field.dx*width*.5,dy=field.dy*height,dz=field.dz*depth;
   initial[at]+=dx;initial[at+1]+=dy;initial[at+2]+=dz;
@@ -200,8 +195,7 @@ export function refineV99FemaleProfile(geometry,{
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();
  geometry.computeBoundingSphere();
- const report={applied:true,version:101,cheekContourMode,
-  verticesAffected:moved,
+ const report={applied:true,version:99,verticesAffected:moved,
   cheekVertices,alarVertices,blend,
   maxNoseDown:maxNoseDown*blend,
   fairingIterations:4,unsafeCandidates,guardPasses,guardedVertices:guarded,
