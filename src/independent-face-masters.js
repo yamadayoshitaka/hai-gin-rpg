@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v91-shared-face-geometry';
 import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
+import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=93-portrait-surface';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -283,7 +284,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     *bell(yn,.315,.067)*front;
   const pointX=smooth(.08,.17,Math.abs(xn))*
     (1-smooth(.36,.53,Math.abs(xn)));
-  const pointGain=controls.jawSharpness;
+  // Keep the preset numeric slider but avoid a skull-shaped 5/10
+  // default for the 20s female hero.
+  const pointGain=controls.jawSharpness*(gender==='female'&&demo.age.wrinkles<.20?.42:1);
   const pointDx=-(x-cx)*.065*pointGain*pointX*pointY;
   // Eye-distance edits must also reposition the ANATOMICAL orbital
   // socket in the source head. Previously only the synthetic eye assembly
@@ -324,7 +327,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    .009*controls.mouthSmile*smileMask+
    .015*(controls.mouthAngle*Math.PI/180)*xn*mouthMask);
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx+
+    +local.dx+surfaceFairing.dx*(gender==='female'&&demo.age.wrinkles<.20?.48:.9)+pointDx+eyeSocketDx+
     noseOffsetX+mouthOffsetX+faceMorphX;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
@@ -437,6 +440,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   cheekDelta+=Math.max(0,nz-z)*cheek;
   chinDelta+=Math.abs(ny-y)*chin;
  }
+ // An anatomical fairing pass on the owned 3D mesh, before eyes and oral
+ // triangulation. Keeps donor lip loop and eyes' original XY positions.
+ const portraitFairing=fairYoungPortraitSurface(geometry,{gender,
+  ageWrinkles:demo.age.wrinkles,bodyType:controls.bodyType});
  p.needsUpdate=true;
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();geometry.computeBoundingSphere();
@@ -468,6 +475,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  const report=Object.freeze({
   code:spec.code,gender,sourceVertices:most,
   v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
+   v93PortraitFairing:portraitFairing,
   v49AgeCreases:ageDetail,
   v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
    sourceCC0:!!photographicMicrodetail.sourceCC0,
