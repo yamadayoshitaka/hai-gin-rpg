@@ -5,7 +5,7 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
-import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=96-oval-lip-loop';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=97-rim-aligned';
 import {nativeVermilionMask,eyelinerCoverage} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 
 /**
@@ -959,13 +959,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     // Eyeliner shares the eye lid's actual surface and transformation.
     const linerMat=new THREE.MeshBasicMaterial({
      color:0x403039,side:THREE.DoubleSide,transparent:true,
-     opacity:upper?.82:.34,depthWrite:false,depthTest:true,
-     polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2
+     opacity:upper?.70:.23,depthWrite:false,depthTest:true,
+     polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1
     });
     const liner=buildGrid(label+'_EYELINER',48,3,(u,v)=>{
      const taper=eyelinerCoverage(u,0,{upper});
      const p=sampleGrid(mesh,28,4,u,.017+v*(upper?.080:.049)*taper);
-     p.z+=Math.max(.000035,d.z*.0018);
+     p.z+=Math.max(.000035,d.z*.0010);
      return p;
     },linerMat);
     liner.userData.colorRole='eyeliner';liner.userData.cosmetic=true;
@@ -1460,40 +1460,36 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  * vertices after an angle change. All coordinates live in the same 3D
  * eye-joint space. Corner bridges follow the updated upper/lower strips.
  */
+/** Reproject the COMPLETE 48-column eyeliner ribbon, with the same
+ * tapered eyelid parameters used by buildGrid. The previous 28-column
+ * refit overwrote only 116/196 vertices and its fake 'corner connector'
+ * overwrote eight unrelated vertices mid-mesh, causing the black shards.
+ * Eye tilt is handled by the linked joint, without extra bridge polygons.
+ */
 function refitEyelinerToLids(partsRoot){
  const depth=partsRoot.userData.faceDepthForLiner||.2;
  let count=0;
  for(const side of ['LEFT','RIGHT']){
-  const upper=partsRoot.getObjectByName(side+'_UPPER_EYELINER');
-  const lower=partsRoot.getObjectByName(side+'_LOWER_EYELINER');
-  if(!upper||!lower)continue;
-  for(const [liner,isUpper] of [[upper,true],[lower,false]]){
+  for(const suffix of ['_UPPER_EYELINER','_LOWER_EYELINER']){
+   const liner=partsRoot.getObjectByName(side+suffix);
+   if(!liner)continue;
+   const upper=suffix.startsWith('_UPPER');
    const eyelid=liner.parent;
    const attr=liner.geometry.getAttribute('position');
-   for(let j=0;j<=3;j++)for(let i=0;i<=28;i++){
-    const u=i/28,v=j/3;
-    const p=sampleGrid(eyelid,28,4,u,.018+v*(isUpper?.064:.056));
-    p.z+=Math.max(.00006,depth*.0018);
-    attr.setXYZ(j*29+i,p.x,p.y,p.z);
+   if(attr.count!==(48+1)*(3+1))continue;
+   for(let j=0;j<=3;j++)for(let i=0;i<=48;i++){
+    const u=i/48,v=j/3;
+    const taper=eyelinerCoverage(u,0,{upper});
+    const point=sampleGrid(eyelid,28,4,u,
+     .017+v*(upper?.080:.049)*taper);
+    point.z+=Math.max(.000035,depth*.0010);
+    attr.setXYZ(j*49+i,point.x,point.y,point.z);
    }
    attr.needsUpdate=true;
+   liner.geometry.computeVertexNormals();
    liner.geometry.computeBoundingSphere();
+   liner.userData.v97AllLinerVerticesRefitted=true;
    count++;
-  }
-  const attr=upper.geometry.getAttribute('position');
-  if(attr.count>=124){
-   let cursor=116;
-   for(const u of [0,1]){
-    const a=sampleGrid(upper,48,3,u,0);
-    const b=sampleGrid(lower,48,3,u,0);
-    const dx=(u===0?-1:1)*depth*.0025;
-    for(const p of [a,b]){
-     attr.setXYZ(cursor++,p.x,p.y,p.z+depth*.00024);
-     attr.setXYZ(cursor++,p.x+dx,p.y,p.z+depth*.00024);
-    }
-   }
-   attr.needsUpdate=true;
-   upper.geometry.computeBoundingSphere();
   }
  }
  partsRoot.userData.eyelinerSurfaceSyncCount=

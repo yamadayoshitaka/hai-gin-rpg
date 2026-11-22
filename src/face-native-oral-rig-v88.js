@@ -86,11 +86,15 @@ export function initializeNativeOralRig(face){
  g.computeBoundingBox();
  const box=g.boundingBox.clone(),size=box.getSize(new THREE.Vector3());
  const cx=(box.min.x+box.max.x)*.5;
- const cy=face.userData.actualMouthCreaseY??box.min.y+size.y*.509;
  const xs=boundary.map(i=>attr.getX(i)),ys=boundary.map(i=>attr.getY(i));
+ // v97: the native connected lip aperture defines the dental/oral origin.
+ // The former color-curvature guess could sit on the philtrum and push
+ // teeth into uncut face triangles in child/ultra-thin presets.
+ const cy=(Math.min(...ys)+Math.max(...ys))*.5;
+ const landmarkY=face.userData.actualMouthCreaseY??box.min.y+size.y*.509;
  const halfWidth=(Math.max(...xs)-Math.min(...xs))*.5;
  if(halfWidth<size.x*.025||halfWidth>size.x*.25||
-    Math.abs(ys.reduce((a,b)=>a+b,0)/ys.length-cy)>size.y*.11)
+    Math.abs(landmarkY-cy)>size.y*.11)
   return {ready:false,reason:'oral-rim-outside-landmark'};
  const closedIndices=Array.from(index.array),originalCount=seal.initialTriangleCount*3;
  if(originalCount<=0||originalCount>=closedIndices.length)
@@ -138,7 +142,7 @@ export function initializeNativeOralRig(face){
   weights[i]=oralTopology.valid?oralTopology.weights[i]:
    Math.pow(Math.max(0,1-smooth(.78,1.50,normalizedX)),1.3)*
    (1-smooth(.008,.035,ny))*smooth(.52,.78,normFront);
-  centerSign[i]=Math.tanh((y-cy)/(size.y*.0035));
+  centerSign[i]=Math.tanh((y-cy)/(size.y*.0045));
  }
  const rig={face,g,attr,boundary,closedIndices,openedIndices,
   oralTopology,
@@ -153,6 +157,9 @@ export function initializeNativeOralRig(face){
   v94HiddenDonorInteriorTriangles:filtered.removed,
   v95ThreeConnectedOralRings:true,
   v96EllipticalSmile:true,v96MaximumLipSpread:.085,
+  v97NativeOralLandmarkY:cy,
+  v97NativeMouthHalfWidth:halfWidth,
+  v97AnatomicalLandmarkAligned:true,
   v95OralEdgeFlowValid:oralTopology.valid,
   v95OralEdgeFlowReason:oralTopology.valid?null:oralTopology.reason,
   v95OralEdgeConnectedVertices:oralTopology.influencedVertices??0,
@@ -168,6 +175,7 @@ export function initializeNativeOralRig(face){
    return [...found];
   })()};
  face.userData.v88NativeOralRig=status;
+ face.userData.actualMouthCreaseY=cy;
  updateNativeOralPose(face,{open:0});
  return status;
 }

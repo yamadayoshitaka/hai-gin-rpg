@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {blinkEnvelope,speechEnvelope,createFaceExpressionAnimator} from '../src/face-expression-animation-v48.js';
+import {updateFaceFeatureAngles} from '../src/face-feature-meshes.js';
 import {applySkinnedBuildMorph} from '../src/body-build-morph-v48.js';
 import {resolveBodyType,resolveDemographicProfile} from '../src/character-demographics-v47.js';
 
@@ -143,5 +144,58 @@ test('v80 expressions ease across FACS muscle poses instead of snapping',()=>{
  for(let i=0;i<7;i++)animator.update(.06);
  assert.equal(animator.getState().mouthOpen,0);
  assert.equal(animator.getState().v80SmoothMuscleTransitions,true);
+ animator.dispose();
+});
+
+test('v97: all 196 eyeliner vertices refit and follow the 28-column eyelids without shearing',()=>{
+ const model=exampleFace();
+ const linerAttrs=[];
+ for(const side of ['LEFT','RIGHT']){
+  for(const upper of [true,false]){
+   const label=side+(upper?'_UPPER':'_LOWER');
+   const lid=model.parts.getObjectByName(label+'_ANATOMICAL_EYELID');
+   const original=lid.geometry.getAttribute('position');
+   const positions=[];
+   for(let j=0;j<=3;j++)for(let i=0;i<=48;i++){
+    const source=Math.round(i/48*28)*3;
+    positions.push(original.array[source],original.array[source+1],
+     original.array[source+2]+.0004);
+   }
+   const geometry=new THREE.BufferGeometry();
+   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+   const liner=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+   liner.name=label+'_EYELINER';
+   lid.add(liner);
+   linerAttrs.push(liner);
+  }
+ }
+ const rebuilt=updateFaceFeatureAngles(model.parts,{eyeAngle:2});
+ assert.equal(rebuilt.eyelinerMeshesRefitted,4);
+ for(const liner of linerAttrs){
+  assert.equal(liner.userData.v97AllLinerVerticesRefitted,true);
+  assert.equal(liner.geometry.getAttribute('position').count,196);
+  const attr=liner.geometry.getAttribute('position');
+  assert.ok(Number.isFinite(attr.getX(195))&&Number.isFinite(attr.getY(195)));
+ }
+ const animator=createFaceExpressionAnimator(model,{autoBlink:false});
+ animator.setExpression('laugh');
+ const upper=model.parts.getObjectByName('LEFT_UPPER_EYELINER');
+ const rest=upper.geometry.getAttribute('position').array.slice();
+ const cover=model.parts.getObjectByName('LEFT_ANIMATED_BLINK_CLOSURE');
+ assert.equal(cover.visible,false,
+  'laugh squint must not show an opaque detached eye-cover ribbon');
+ animator.setBlinkProgress(.70);
+ assert.equal(cover.visible,false);
+ const opened=upper.geometry.getAttribute('position');
+ for(const col of [8,24,40,48]){
+  const k=(2*49+col)*3+1;
+  if(col===48)assert.ok(Number.isFinite(opened.array[k]));
+  else assert.ok(Math.abs(opened.array[k]-rest[k])>.001,
+   'Every eyeliner column, including after column 28, must track its eyelid');
+ }
+ animator.setBlinkProgress(1);
+ assert.equal(cover.visible,true);
+ animator.setBlinkProgress(0);
+ assert.deepEqual(upper.geometry.getAttribute('position').array,rest);
  animator.dispose();
 });

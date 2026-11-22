@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v96-lipstick-eyeliner';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v97-eyeliner-lid-sync';
 import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
-import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=93-portrait-surface';
+import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=97-continuous-malar';
 import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
@@ -437,7 +437,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // An anatomical fairing pass on the owned 3D mesh, before eyes and oral
  // triangulation. Keeps donor lip loop and eyes' original XY positions.
  const portraitFairing=fairYoungPortraitSurface(geometry,{gender,
-  ageWrinkles:demo.age.wrinkles,bodyType:controls.bodyType});
+  ageWrinkles:demo.age.wrinkles,ageBand:demo.ageBand,
+   bodyType:controls.bodyType});
  // Side-profile fit uses the original connected donor triangle edge graph.
  const nasalEdgeFlow=fitTopologyNasalSideProfile(geometry,{gender,
   ageWrinkles:demo.age.wrinkles,strength:1});
