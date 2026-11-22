@@ -168,7 +168,10 @@ export function createRealtimeBattleCommands({
      <span id="realtimeMapPlanningClock" hidden>作戦選択中</span>
      <button type="button" id="realtimeMapClose" hidden>✕ 戻る</button></header>
     <div class="realtimeMapHelp" id="realtimeMapHelp">味方の隊を選び、味方陣地の地図をタップして配置してください。</div>
-    <div class="realtimeDeploymentLegend" id="realtimeDeploymentLegend" role="status">
+    <div class="realtimeMapLegend" id="realtimeMapLegend" hidden role="group" aria-label="戦場マップの色分け">
+      <span class="ally">● 味方（青）</span><span class="enemy">● 敵（赤）</span><span class="building">▣ 建物（緑）</span><span class="objective">⚑ 目標（黄）</span>
+     </div>
+     <div class="realtimeDeploymentLegend" id="realtimeDeploymentLegend" role="status">
      <span>🟩 水色のマス：配置可能</span><span>🟥 赤いマス：配置不可</span>
      <button type="button" id="realtimePrebattleMusic">♪ 配置中のBGMを再生</button>
     </div>
@@ -247,7 +250,8 @@ export function createRealtimeBattleCommands({
  root.append(orderNotice);
  let lastOrderSignature='';
  function refreshOrderNotice(){
-  if(!started||!selectedId){orderNotice.hidden=true;return;}
+  // Hide obsolete per-job order banner in three-command-team fights.
+   if(requirePrebattleChoices||!started||!selectedId){orderNotice.hidden=true;return;}
   orderNotice.hidden=false;
   const live=getOrderState(String(selectedId))||{};
   const index=squads().findIndex(s=>String(s.id)===String(selectedId));
@@ -477,7 +481,9 @@ export function createRealtimeBattleCommands({
   ctx.clearRect(0,0,w,h);
   const background=getMapBackground();
   if(background)try{
-   ctx.save?.();ctx.globalAlpha=started?.37:.72;ctx.drawImage(background,0,0,w,h);ctx.restore?.();ctx.globalAlpha=1;
+   ctx.save?.();ctx.globalAlpha=started?.76:.88;
+   ctx.filter='saturate(1.45) contrast(1.18) brightness(.90)';
+   ctx.drawImage(background,0,0,w,h);ctx.restore?.();ctx.globalAlpha=1;
   }catch{}
   ctx.fillStyle=started?'rgba(7,27,45,.04)':'rgba(7,27,45,.13)';ctx.fillRect(0,0,w,h);
   ctx.strokeStyle='rgba(194,222,239,.17)';ctx.lineWidth=1;
@@ -619,12 +625,19 @@ export function createRealtimeBattleCommands({
   const minX=clamp(centerX-span/2,0,worldSize-span);
   const minZ=clamp(centerZ-span/2,0,worldSize-span);
   centerX=minX+span/2;centerZ=minZ+span/2;
-  ctx.clearRect(0,0,w,h);
+  // Paint a tactical surface instead of washing out terrain against live 3D.
+  ctx.fillStyle='#122e38';ctx.fillRect(0,0,w,h);
   const background=getMapBackground();
-  if(background){ctx.save?.();ctx.globalAlpha=mode==='inspect'?.38:1;
-   ctx.drawImage(background,minX,minZ,span,span,0,0,w,h);ctx.restore?.();ctx.globalAlpha=1;}
-  else{ctx.fillStyle=mode==='inspect'?'rgba(36,67,62,.18)':'#24433e';ctx.fillRect(0,0,w,h);}
-  ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
+  if(background){
+   ctx.save?.();ctx.globalAlpha=mode==='inspect'?.94:1;
+   ctx.filter=mode==='inspect'?'saturate(1.7) contrast(1.35) brightness(.88)':'none';
+   ctx.drawImage(background,minX,minZ,span,span,0,0,w,h);
+   ctx.restore?.();ctx.globalAlpha=1;
+  }
+  if(mode==='inspect'){
+   ctx.fillStyle='rgba(5,27,39,.16)';ctx.fillRect(0,0,w,h);
+  }
+  ctx.strokeStyle='rgba(193,237,247,.30)';ctx.lineWidth=1;
   for(let i=0;i<=8;i++){const v=i*w/8;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,h);ctx.stroke();}
   // Expanded radar uses the same real friendly and opposing team anchors
   // as the compact radar; no second independent 12-slot map representation.
@@ -679,11 +692,11 @@ export function createRealtimeBattleCommands({
     if(bx<0||bx>w||bz<0||bz>h)continue;
     mapInspectionBuildings.push({id:String(building.id),px:bx,py:bz});
     const focused=String(inspectedBuilding?.id)===String(building.id);
-    ctx.fillStyle=focused?'#ffe2a0':'#75dbbe';
-    ctx.fillRect(bx-7,bz-7,14,14);
-    ctx.strokeStyle=focused?'#fff2c7':'#193b47';ctx.lineWidth=focused?3:1.5;
-    ctx.strokeRect?.(bx-7,bz-7,14,14);
-    ctx.fillStyle='#0b2734';ctx.font='bold 13px system-ui';
+    ctx.fillStyle=focused?'#fff2b0':'#52f7a4';
+    ctx.fillRect(bx-10,bz-10,20,20);
+    ctx.strokeStyle=focused?'#402e10':'#083c2a';ctx.lineWidth=3;
+    ctx.strokeRect?.(bx-10,bz-10,20,20);
+    ctx.fillStyle='#0b2734';ctx.font='bold 16px system-ui';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('⌂',bx,bz+1);
    }
@@ -692,19 +705,28 @@ export function createRealtimeBattleCommands({
    if(!Number.isFinite(s.x)||!Number.isFinite(s.z))continue;
    const x=(s.x-minX)/span*w,z=(s.z-minZ)/span*h;
    if(x<0||x>w||z<0||z>h)continue;
-   const own=s.team!==1,number=(own?allies:enemies)
+   const own=s.team!==1,teamIndex=(own?allies:enemies)
     .findIndex(pin=>String(pin.id)===String(s.id))+1;
+   const groupNumber=Number(s.groupId);
+   const number=Number.isInteger(groupNumber)&&groupNumber>=1&&groupNumber<=3?
+    groupNumber:teamIndex;
    if(mode==='inspect')mapInspectionPins.push({id:String(s.id),team:own?0:1,
     groupId:s.groupId??null,px:x,py:z});
    const highlighted=mode==='inspect'?
     inspectedMapPin?.team===(own?0:1)&&String(inspectedMapPin.id)===String(s.id):
     own&&String(s.id)===String(selectedId);
-   // One numbered dot per squad. Never render individual soldier positions.
-   ctx.beginPath();ctx.arc(x,z,number>=10?10:9,0,Math.PI*2);
-   ctx.fillStyle=own?'#5bc8ef':'#ff858a';ctx.fill();
-   ctx.strokeStyle=highlighted?'#ffe39d':'#183647';
-   ctx.lineWidth=highlighted?3:1.5;ctx.stroke();
-   ctx.fillStyle='#0c2a3b';ctx.font='bold 10px system-ui';
+   // One command-team marker with a dark halo above busy terrain textures.
+   ctx.beginPath();ctx.arc(x,z,16,0,Math.PI*2);
+   ctx.fillStyle='rgba(4,18,30,.86)';ctx.fill();
+   ctx.beginPath();ctx.arc(x,z,12,0,Math.PI*2);
+   ctx.fillStyle=own?BATTLE_TEAM_COLORS.ally:BATTLE_TEAM_COLORS.enemy;ctx.fill();
+   ctx.strokeStyle=highlighted?'#ffe68f':'#f6fcff';
+   ctx.lineWidth=highlighted?3.6:2.6;ctx.stroke();
+   if(s.inContact){
+    ctx.beginPath();ctx.arc(x,z,18.5,0,Math.PI*2);
+    ctx.strokeStyle=BATTLE_TEAM_COLORS.engaged;ctx.lineWidth=2.4;ctx.stroke();
+   }
+   ctx.fillStyle='#061b2b';ctx.font='900 13px system-ui';
    ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.fillText(String(number),x,z);
   }
@@ -1343,6 +1365,7 @@ export function createRealtimeBattleCommands({
  }
  function openMap(next='move'){
   hideActionSheet();mode=next;
+  $('realtimeMapLegend').hidden=next!=='inspect'||!started;
   if(next==='deploy')deployStep='placement';
   refreshOptions();
   if(next==='inspect'&&started){
@@ -1390,6 +1413,7 @@ export function createRealtimeBattleCommands({
   drawMap();
  }
  function closeMap(){
+  $('realtimeMapLegend').hidden=true;
   if(mode==='deploy'&&!started){
    $('realtimeBattleMapOverlay').hidden=true;drawRadar(true);return;
   }
