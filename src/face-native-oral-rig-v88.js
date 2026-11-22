@@ -88,6 +88,14 @@ export function initializeNativeOralRig(face){
  return status;
 }
 
+/** Read the full neutral index order even while the jaw is open. Scalp
+ * clipping must build from this owned source, never from the opened cap-less
+ * index. Only the original donor mesh is queried. */
+export function getNativeOralClosedIndices(face){
+ const rig=rigs.get(face);
+ return rig?rig.closedIndices.slice():null;
+}
+
 export function captureNativeOralSkinPose(face){
  const r=rigs.get(face);
  if(!r)return false;
@@ -141,6 +149,23 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
  r.lastOpen=o;
  r.g.computeVertexNormals();
  r.g.computeBoundingSphere();
+ // V53 hair scalp clipping creates a NONINDEXED render clone. Native FACS
+ // and donor oral articulation use the ORIGINAL indexed head. Mirror the
+ // changed skin vertices into that render clone, preserving UV/RGB attributes,
+ // and hide the original v86 seal cap triangles when the jaw opens.
+ const render=face.geometry,mapping=render?._v88SourceIndex;
+ if(render!==r.g&&mapping&&mapping.length===render.getAttribute('position')?.count){
+  const visible=render.getAttribute('position'),original=r.attr;
+  for(let i=0;i<mapping.length;i++){
+   const j=mapping[i];
+   if(j<0)continue; // scalp intersection vertices are outside the face
+   visible.setXYZ(i,original.getX(j),original.getY(j),original.getZ(j));
+  }
+  visible.needsUpdate=true;
+  const capStart=render._v88CapStart??mapping.length;
+  render.setDrawRange(0,active?capStart:mapping.length);
+  render.computeBoundingSphere();
+ }
  face.userData.v88CurrentMouthOpening=o;
  return true;
 }
