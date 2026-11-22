@@ -193,6 +193,8 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  lash.userData.v115AnchorXYZ=anchorXYZ;
  lash.userData.v115RestPositions=new Float32Array(vertices);
  lash.userData.v115RootOnMovingEyeliner=true;
+ lash.userData.v115BuiltTiltRadians=lashTilt;
+ lash.userData.v115DesiredTiltRadians=lashTilt;
  lash.userData.v115ShortCurledFilaments=true;
  return lash;
 }
@@ -217,10 +219,15 @@ export function syncV115LashesToLiveEyeliner(lash,liner){
   const now=sampleGrid(liner,48,3,us[i],V115_LASH_ROOT_ROW);
   const dx=now.x-anchors[i*3],dy=now.y-anchors[i*3+1],
    dz=now.z-anchors[i*3+2];
+  const tilt=(data.v115DesiredTiltRadians||0)-
+   (data.v115BuiltTiltRadians||0);
+  const ct=Math.cos(tilt),st=Math.sin(tilt);
   for(let j=0;j<stations*2;j++){
    const k=(i*stations*2+j)*3;
-   pos.array[k]=rest[k]+dx;
-   pos.array[k+1]=rest[k+1]+dy;
+   // Rotate each strand ABOUT ITS OWN live root, not the eye joint.
+   const ox=rest[k]-anchors[i*3],oy=rest[k+1]-anchors[i*3+1];
+   pos.array[k]=now.x+ox*ct-oy*st;
+   pos.array[k+1]=now.y+ox*st+oy*ct;
    pos.array[k+2]=rest[k+2]+dz;
   }
   // Check true filament base/eyeliner alignment after re-projection.
@@ -1701,6 +1708,8 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
  for(const side of ['LEFT','RIGHT'])for(const kind of ['UPPER','LOWER']){
   const lash=partsRoot.getObjectByName(side+'_'+kind+'_LASH_MESH');
   const liner=partsRoot.getObjectByName(side+'_'+kind+'_EYELINER');
+  if(lash)lash.userData.v115DesiredTiltRadians=
+   THREE.MathUtils.degToRad((side==='LEFT'?-1:1)*v.lashAngle);
   const fit=syncV115LashesToLiveEyeliner(lash,liner);
   if(fit.maximumRootError!==null)v115RootMaxError=
    Math.max(v115RootMaxError,fit.maximumRootError);
