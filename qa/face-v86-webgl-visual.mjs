@@ -259,6 +259,43 @@ try{
   writeFileSync(file,Buffer.from(data.slice(data.indexOf(',')+1),'base64'));
   console.log('FACE_V95_UNOBSCURED_PROFILE',JSON.stringify({view,file}));
  }
+ // 18-frame appearance evidence: neutral / subtle smile / laugh,
+ // front / 45 degrees / profile, with and without hair. These are real
+ // rendered frames. Saving them does not constitute aesthetic approval.
+ let evidenceCount=0;
+ for(const hairVisible of [true,false]){
+  const currentHair=await page.evaluate(()=>window.__faceMasterQA?.()?.wigVisible);
+  if(currentHair!==hairVisible){
+   await page.locator('#wig').click();
+   await page.waitForFunction(w=>
+    window.__faceMasterQA?.()?.wigVisible===w,hairVisible,{timeout:30000});
+  }
+  for(const expression of ['neutral','softSmile','laugh']){
+   await page.evaluate(id=>window.__faceExpressionQA.forceExpression(id),expression);
+   for(const view of ['front','threeQuarter','side']){
+    await page.locator('#'+view).click();
+    await page.waitForTimeout(75);
+    const result=await page.evaluate(()=>({
+     png:window.__faceExpressionQA.captureWebGLFrame(),
+     pose:window.__faceExpressionQA.nativePoseProbe()
+    }));
+    assert.ok(result.png?.startsWith('data:image/png;base64,'),
+     '18-condition WebGL evidence cannot be an empty frame');
+    assert.ok(result.pose.v96LipstickVertices>0,
+     'Lipstick must survive all expression and camera conditions');
+    const png=Buffer.from(result.png.slice(result.png.indexOf(',')+1),'base64');
+    const file=out+'/v96-matrix-'+expression+'-'+view+'-'+
+      (hairVisible?'hair':'no-hair')+'.png';
+    writeFileSync(file,png);
+    const info=PNG.sync.read(png);
+    assert.ok(info.width>=350&&info.height>=350);
+    evidenceCount++;
+    console.log('FACE_V96_18_MATRIX',JSON.stringify({file,
+     expression,view,hairVisible,opening:result.pose.mouthOpen}));
+   }
+  }
+ }
+ assert.equal(evidenceCount,18,'All 18 orthographic composition cases must be saved');
  await page.locator('#front').click();
  assert.deepEqual(failures,[],
   'Face editor cannot throw JavaScript/WebGL errors during visual QA');
