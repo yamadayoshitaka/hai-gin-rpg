@@ -196,7 +196,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v105'}={}){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v105',enableV106LocalRetopo=false}={}){
  const spec=FACE_MASTER_SPEC[gender];
  const controls=gender==='male'?normalizeMaleFaceControls(maleControls):
   normalizeFemaleFaceControls(femaleControls);
@@ -504,6 +504,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // Photographic pore/roughness upgrade is a browser-only, asynchronous
  // *material* change to this owned clone. Male and female share this path.
  const photographicMicrodetail=applyRealSkinPhotoToFace(face);
+ face.userData.enableV106LocalRetopo=gender==='female'&&enableV106LocalRetopo===true;
  if(partSelection)face.userData.v32SelectedPartIds={...partSelection};
  // Anatomical parts are child meshes of the cloned face. Their vertices
  // follow its original local coordinate frame; there is no face-photo plane.
@@ -521,6 +522,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    v95NasalSideProfile:nasalEdgeFlow,
    v99FeminineMalarAlar:feminineProfile,
    v102CheekContour:cheekContour,
+  v106LocalRetopo:parts.report.v106LocalRetopo,
    v105CheekGeometry:cheekContour?.version===105?cheekContour:
     {applied:false,reason:'legacy-comparison'},
    v103NormalCheekRepair:normalCheekRepair,
