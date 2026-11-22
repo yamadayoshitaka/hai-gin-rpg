@@ -427,6 +427,7 @@ test('v102 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
  assert.equal(after.report.v102CheekContour.maxNoseChange,0);
  let crest=0,lower=0,nose=0,crestSum=0,lowerSum=0;
  let noseMaxY=0,noseMaxZ=0,noseTipMaxZ=0,tipSamples=0,crestRetreated=0;
+ let noseWorst=null;
  for(let i=0;i<sourcePos.count;i++){
   const x=Math.abs((sourcePos.getX(i)-center.x)/(size.x*.5));
   const y=(sourcePos.getY(i)-bound.min.y)/size.y;
@@ -442,7 +443,7 @@ test('v102 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
   if(z>.58&&x<.18&&y>.54&&y<.67){
    nose++;
    noseMaxY=Math.max(noseMaxY,Math.abs(a.getY(i)-b.getY(i)));
-   noseMaxZ=Math.max(noseMaxZ,Math.abs(deltaZ));
+   if(Math.abs(deltaZ)>noseMaxZ){noseMaxZ=Math.abs(deltaZ);noseWorst={index:i,x,y,z,deltaZ,donorX:sourcePos.getX(i),bZ:b.getZ(i),aZ:a.getZ(i)};}
    if(y<.605){tipSamples++;
     noseTipMaxZ=Math.max(noseTipMaxZ,Math.abs(deltaZ));}
   }
@@ -450,7 +451,7 @@ test('v102 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
  const measured={crest,lower,nose,crestMean:crestSum/Math.max(1,crest),
   lowerMean:lowerSum/Math.max(1,lower),crestRetreated,noseMaxY,noseMaxZ,
   noseTipMaxZ,tipSamples};
- console.log('V102_REAL_GLb_CHEEK_NOSE_AB',JSON.stringify(measured),JSON.stringify(after.report.v102CheekContour));
+ console.log('V102_REAL_GLb_CHEEK_NOSE_AB',JSON.stringify({...measured,noseWorst}),JSON.stringify(after.report.v102CheekContour));
  assert.ok(crest>8&&lower>8&&nose>8,
   'Audit must cover real CC0 malar/lower-cheek and nasal vertices');
  assert.ok(crestRetreated>8,
