@@ -73,5 +73,5 @@ test('compact phone rows and radar show contact independently from the hidden st
  assert.match(commands,/if\(pin.inContact\)/);
  assert.match(game,/battleThreeTeamRadarSquads\(own,armyGroupBySquad,liveRadarEngagementPoints\(0\)\)/);
  assert.match(game,/enemyGroupBySquad,liveRadarEngagementPoints\(1\)/);
- assert.match(game,/battle-rpg-squad-hud\.css\?v=20261122-contact-badge3/);
+ assert.match(game,/battle-rpg-squad-hud\.css\?v=20261122-three-team-events1/);
 });
