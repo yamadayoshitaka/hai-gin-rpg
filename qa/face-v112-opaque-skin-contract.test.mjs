@@ -24,5 +24,5 @@ test('v112 wire overlay tracks clipping and both gender/build rebuilds',()=>{
  assert.equal((html.match(/syncWireOverlay\(next\.face\);/g)||[]).length,2);
  assert.match(html,/faceMode='color'/);
  assert.match(html,/wired=initialFaceV110\.defaultWireframe/);
- assert.match(html,/<h1>顔・髪の編集｜顔品質 v112・髪造形 v72<\/h1>/);
+ assert.match(html,/<h1>顔・髪の編集｜顔品質 v113・髪造形 v72<\/h1>/);
 });
