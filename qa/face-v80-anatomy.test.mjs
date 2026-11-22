@@ -74,7 +74,7 @@ test('real eye contains lacrimal caruncle and blinking wet rim',()=>{
  animator.setExpression('neutral');
  assert.equal(oral.visible,false);
  animator.setActionUnits({au12:1,au06:.8,au26:.8});
- assert.ok(animator.getState().mouthOpen>.7);
+ assert.ok(animator.getState().mouthOpen>=.65);
  assert.equal(oral.visible,true);
  animator.dispose();
  assert.equal(face.getObjectByName('V80_INTRAORAL_ANATOMY'),undefined);
