@@ -1971,7 +1971,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
    if(style.rebuiltBase==='sadako'&&style.catalogFront==='bangs'){
     if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i,
-     tipLevel:style.himeFringe?.752:.786});
+     tipLevel:portraitPreview?(style.himeFringe?.735:.748):
+      (style.himeFringe?.752:.786)});
     else if(style.catalogShape?.himeSide&&zone.startsWith('temple'))
      shapeHimeSideGuide(shape,{box,side:partSide,rootIndex:i});
     else if(faceFrame&&zone==='crown')
