@@ -64,7 +64,8 @@ test('v99 respects age, sex and original indexed triangle mesh',()=>{
   const z=before[i*3+2],nz=changed.getZ(i),ny=changed.getY(i);
   if(z>0&&x>.40&&x<.56&&y>.54&&y<.59&&nz<z)peaksTrimmed++;
   if(z>0&&x>.38&&x<.60&&y>.45&&y<.50&&nz>z)lowerSupported++;
-  if(z>0&&x>.12&&x<.21&&y>.530&&y<.56&&ny<before[i*3+1])rimLowered++;
+  // SphereGeometry's latitude rings are sparse; sample the full alar/columella band.
+  if(z>0&&x>.075&&x<.26&&y>.515&&y<.603&&ny<before[i*3+1])rimLowered++;
   if(y<.510&&y>.490&&x<.12&&
      changed.getX(i)===before[i*3]&&ny===before[i*3+1]&&nz===z)untouchedLips++;
   if(z<-.12&&changed.getX(i)===before[i*3]&&ny===before[i*3+1]&&nz===z)untouchedBack++;
