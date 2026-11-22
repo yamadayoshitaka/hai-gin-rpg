@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v94-open-oral-region';
 import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
 import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=93-portrait-surface';
+import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -437,6 +438,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // triangulation. Keeps donor lip loop and eyes' original XY positions.
  const portraitFairing=fairYoungPortraitSurface(geometry,{gender,
   ageWrinkles:demo.age.wrinkles,bodyType:controls.bodyType});
+ // Side-profile fit uses the original connected donor triangle edge graph.
+ const nasalEdgeFlow=fitTopologyNasalSideProfile(geometry,{gender,
+  ageWrinkles:demo.age.wrinkles,strength:1});
  // Finish with the source-indexed original lip-loop width morph. No
  // neighboring cheek smoothing may consume this slider-adjusted geometry.
  for(let i=0;i<p.count;i++){
@@ -484,6 +488,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   code:spec.code,gender,sourceVertices:most,
   v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
    v93PortraitFairing:portraitFairing,
+   v95NasalSideProfile:nasalEdgeFlow,
   v49AgeCreases:ageDetail,
   v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
    sourceCC0:!!photographicMicrodetail.sourceCC0,
