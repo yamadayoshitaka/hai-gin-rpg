@@ -520,6 +520,45 @@ function updateFacePoseDiagnostics(){
 if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
+  // Read the ACTUAL visible 3D eyelid and optic mesh, not the preset label.
+  // V114 regression probes iris radius, lash-line shape and unaffected male.
+  eyeQualityProbe(){
+   const m=models.get(gender);
+   if(!m?.parts)return null;
+   const eye=(side)=>{
+    const get=suffix=>m.parts.getObjectByName(side+'_'+suffix);
+    const upper=get('UPPER_ANATOMICAL_EYELID'),
+     lower=get('LOWER_ANATOMICAL_EYELID'),
+     iris=get('CURVED_IRIS'),pupil=get('CURVED_PUPIL'),
+     sclera=get('ORBITAL_EYEBALL'),fold=get('DOUBLE_EYELID_FOLD');
+    const at=mesh=>mesh?.geometry?.getAttribute('position');
+    const a=at(upper),b=at(lower), center=14;
+    if(!a||!b||!iris||!pupil||!sclera)return null;
+    return {
+     upperCenterY:a.getY(center),lowerCenterY:b.getY(center),
+     lidCenterGap:a.getY(center)-b.getY(center),
+     leftCanthusGap:a.getY(0)-b.getY(0),
+     rightCanthusGap:a.getY(28)-b.getY(28),
+     irisRadius:iris.userData.circularProjectedRadius,
+     pupilRadius:pupil.userData.circularProjectedRadius,
+     pupilToIris:pupil.userData.circularProjectedRadius/iris.userData.circularProjectedRadius,
+     irisOpening:iris.userData.v114AnatomicalIrisRatio,
+     v114SharedRim:upper.userData.v114SharedAlmondRim,
+     upperFoldPresent:!!fold,
+     scleraSegments:at(sclera)?.count,
+     irisSegments:at(iris)?.count,
+     eyelidSegments:a.count
+    };
+   };
+   return {gender,style:v32Parts[gender].eye,
+    ageBand:v32Parts[gender].ageBand,bodyType:v32Parts[gender].bodyType,
+    irisColor:contactColor,
+    originalGLBVertices:m.report.sourceVertices,
+    indexCount:m.face.userData.originalHairScalpGeometry?.getIndex()?.count||
+     m.face.geometry.getIndex()?.count,
+    geometryReport:m.report.detailedParts,
+    left:eye('LEFT'),right:eye('RIGHT')};
+  },
   // V113: fingerprint the actual rendered head, not a cached control/preset
   // label. This distinguishes the smooth 3490-vertex original from the
   // malformed 8029-vertex v106 retopologized first frame.
