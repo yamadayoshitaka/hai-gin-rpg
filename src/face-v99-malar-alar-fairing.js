@@ -33,7 +33,10 @@ export function v99FacialSurfaceDelta({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  // Nose field is disjoint from cheek field. Front-facing tip and the
  // two alar lower edges travel DOWN together, hiding nostril sky-view.
  // Only donor-native vertices move, so the slit remains the same topology.
- const nasal=smooth(.511,.540,yn)*(1-smooth(.676,.714,yn))*
+ // v100 oral boundary protection: real donor vermilion/lip vertices extend
+ // up to y=.537. Lower the TIP and ALAR cartilages ABOVE that ring rather
+ // than dragging the upper lip or philtrum downward with the nose.
+ const nasal=smooth(.535,.551,yn)*(1-smooth(.676,.714,yn))*
   (1-smooth(.255,.320,ax))*front*youth;
  const tip=bell(ax,.055,.090)*bell(yn,.567,.046)*nasal;
  const alar=bell(ax,.160,.052)*bell(yn,.545,.035)*nasal;
@@ -130,27 +133,62 @@ export function refineV99FemaleProfile(geometry,{
   }
   current=next;
  }
- // Do not invert triangles, collapse lip/eye edge triangles, or replace
- // source topology. Halve the WHOLE edit if necessary.
- let accepted=null,blend=1,unsafeCandidates=0;
- for(let attempt=0;attempt<8;attempt++,blend*=.5){
-  const candidate=source.slice();
-  for(let i=0;i<source.length;i++)
-   candidate[i]=source[i]+(current[i]-source[i])*blend;
-  let unsafe=false,violations=0;
-  for(let t=0;t<index.count;t+=3){
-   const a=index.getX(t),b=index.getX(t+1),c=index.getX(t+2);
-   const m0=normal(source,a,b,c),m1=normal(candidate,a,b,c);
-   const area0=Math.hypot(...m0),area1=Math.hypot(...m1);
-   if(area0<1e-10)continue;
-   const cos=(m0[0]*m1[0]+m0[1]*m1[1]+m0[2]*m1[2])/
-    Math.max(1e-12,area0*area1);
-   if(area1<area0*.24||cos<.38){unsafe=true;violations++;if(violations>5)break;}
-  }
-  unsafeCandidates+=violations;
-  if(!unsafe){accepted=candidate;break;}
+ // v100: on the genuine GLB, an existing near-degenerate / steep
+ // triangle could reject ALL 8 global blend factors in v99. Instead of
+ // aborting every cheek and nose vertex, attenuate only displacement in
+ // the triangle's local one-ring. Preserve the valid regions at full power.
+ // These tests compare the source and candidate normals of ORIGINAL indexed
+ // triangles; original donor coordinates and triangle connectivity never move.
+ const displacement=new Float32Array(source.length);
+ for(let i=0;i<source.length;i++)displacement[i]=current[i]-source[i];
+ const localBlend=new Float32Array(n).fill(1);
+ const triangles=[];
+ for(let t=0;t<index.count;t+=3){
+  const a=index.getX(t),b=index.getX(t+1),c=index.getX(t+2);
+  const faceNormal=normal(source,a,b,c),area=Math.hypot(...faceNormal);
+  if(area>1e-10)triangles.push({a,b,c,area,faceNormal});
  }
- if(!accepted)return fail('triangle-foldover-prevented');
+ let accepted=null,guardPasses=0,guardedVertices=new Set(),unsafeCandidates=0;
+ for(let attempt=0;attempt<24;attempt++){
+  const candidate=source.slice();
+  for(let i=0;i<n;i++)for(let axis=0;axis<3;axis++){
+   const at=i*3+axis;
+   candidate[at]=source[at]+displacement[at]*localBlend[i];
+  }
+  const unsafe=new Set();
+  for(const tri of triangles){
+   const {a,b,c,area,faceNormal}=tri;
+   const m=normal(candidate,a,b,c),area1=Math.hypot(...m);
+   const dot=faceNormal[0]*m[0]+faceNormal[1]*m[1]+faceNormal[2]*m[2];
+   const cos=area1>1e-14?dot/(area*area1):0;
+   if(area1<area*.24||cos<.38){
+    // Only the moved vertices may be attenuated; unchanged ear/oral
+    // vertices must stay precisely in their donor positions.
+    for(const v of [a,b,c])if(localBlend[v]>0&&
+     (Math.abs(displacement[v*3])+Math.abs(displacement[v*3+1])+
+      Math.abs(displacement[v*3+2])>1e-10))unsafe.add(v);
+   }
+  }
+  if(unsafe.size===0){accepted=candidate;guardPasses=attempt;break;}
+  unsafeCandidates+=unsafe.size;
+  for(const v of unsafe){
+   guardedVertices.add(v);
+   // Converge locally. After enough halvings snap to the exact donor
+   // surface to eliminate tiny-face float precision failures.
+   localBlend[v]=attempt>=18?0:localBlend[v]*.5;
+  }
+ }
+ if(!accepted)return fail('local-triangle-guard-exhausted');
+ let kept=0,guarded=0;
+ for(let i=0;i<n;i++){
+  const delta=Math.abs(accepted[i*3]-source[i*3])+
+   Math.abs(accepted[i*3+1]-source[i*3+1])+
+   Math.abs(accepted[i*3+2]-source[i*3+2]);
+  if(delta>1e-8)kept++;
+  if(localBlend[i]<.999)guarded++;
+ }
+ if(kept<15)return fail('all-corrections-muted-by-topology');
+ const blend=1;
  for(let i=0;i<n;i++)p.setXYZ(i,
   accepted[i*3],accepted[i*3+1],accepted[i*3+2]);
  p.needsUpdate=true;
@@ -160,7 +198,8 @@ export function refineV99FemaleProfile(geometry,{
  const report={applied:true,version:99,verticesAffected:moved,
   cheekVertices,alarVertices,blend,
   maxNoseDown:maxNoseDown*blend,
-  fairingIterations:4,unsafeCandidates,sourceDonorPreserved:true,
+  fairingIterations:4,unsafeCandidates,guardPasses,guardedVertices:guarded,
+  effectiveVertices:kept,sourceDonorPreserved:true,
   sourceTriangleCount:index.count/3,joinedOralRimUntouched:true,
   frontNostrilRimLowered:true,malarsSmoothed:true};
  geometry.userData.v99SurfaceReport=report;
