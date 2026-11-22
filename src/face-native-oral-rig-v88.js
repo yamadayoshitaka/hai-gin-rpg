@@ -214,7 +214,38 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
   }
   visible.needsUpdate=true;
   const capStart=render._v88CapStart??mapping.length;
-  render.setDrawRange(0,active?capStart:mapping.length);
+  // V94: scalp clipping creates a *nonindexed* visible face clone. Hiding
+  // original inner-mouth triangles in the source index buffer alone does
+  // not hide them in that render clone. Rebuild the draw indices once and
+  // switch back reversibly when the lips close.
+  if(r.removedOriginalTriKeys.size){
+   if(!render._v94OpenDrawIndex){
+    const out=[];let removed=0;
+    for(let k=0;k+2<capStart;k+=3){
+     const ids=[mapping[k],mapping[k+1],mapping[k+2]];
+     const key=ids.every(id=>id>=0)?
+      ids.slice().sort((u,v)=>u-v).join('/'):null;
+     if(key&&r.removedOriginalTriKeys.has(key)){removed++;continue;}
+     out.push(k,k+1,k+2);
+    }
+    render._v94OpenDrawIndex=out;
+    render._v94SavedGroups=render.groups.map(v=>({...v}));
+    render._v94RemovedDrawTriangles=removed;
+    face.userData.v94HiddenRenderTriangles=removed;
+   }
+   if(active&&!render._v94RenderOpen){
+    render.setIndex(render._v94OpenDrawIndex);
+    render.clearGroups();render.addGroup(0,render._v94OpenDrawIndex.length,0);
+    render._v94RenderOpen=true;
+   }else if(!active&&render._v94RenderOpen){
+    render.setIndex(null);
+    render.clearGroups();
+    for(const group of render._v94SavedGroups)
+     render.addGroup(group.start,group.count,group.materialIndex);
+    render._v94RenderOpen=false;
+   }
+   render.setDrawRange(0,active?render._v94OpenDrawIndex.length:mapping.length);
+  }else render.setDrawRange(0,active?capStart:mapping.length);
   render.computeBoundingSphere();
  }
  face.userData.v88CurrentMouthOpening=o;
