@@ -83,7 +83,7 @@ test('v114 source is anatomical geometry and retains iris/eye layer for animatio
  assert.match(source,/v114NaturalEyeAperture\(\{t,side,radius:eyeRadius/);
  assert.match(source,/v114LowerEyelidRollOnRealMesh/);
  assert.match(source,/v114IrisProjectedRadius/);
- assert.match(source,/v114PupilRelativeIrisMax:\.49/);
+ assert.match(source,/v114PupilRelativeIrisMax:female\?\.49:null/);
  assert.match(html,/dataset\.faceMeshReady='v114'/);
  assert.match(html,/v114-natural-realistic-eyes/); // versioned browser source, not cached v113
  assert.match(html,/function syncWireOverlay\(face\)/);
