@@ -23,7 +23,12 @@ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
  * Previously only the additional neutral caps were hidden, leaving giant
  * ivory skin triangles masquerading as front teeth during laughter.
  */
-export function classifyDonorOralInterior(geometry,boundary,triangles){
+export function classifyDonorOralInterior(geometry,boundary,triangles,{donorName=''}={}){
+ // Real WebGL ray-traces identified these exact ORIGINAL white-mouth
+ // face triangles, both outside the 40-vertex closed rim polygon.
+ // This correction is only for the verified CC0 female head.
+ const rayVerifiedFolds=donorName==='FEMALE_INDEPENDENT_CLAY_FACE'?
+  new Set(['1882/2240/2242','1879/2244/3242']):new Set();
  const a=geometry?.getAttribute?.('position'),box=geometry?.boundingBox;
  const fallback=reason=>({opened:triangles.slice(),hidden:new Set(),removed:0,reason});
  if(!a||!box||!Array.isArray(boundary)||boundary.length<30)
@@ -50,8 +55,11 @@ export function classifyDonorOralInterior(geometry,boundary,triangles){
   const x=(a.getX(ids[0])+a.getX(ids[1])+a.getX(ids[2]))/3;
   const y=(a.getY(ids[0])+a.getY(ids[1])+a.getY(ids[2]))/3;
   const z=(a.getZ(ids[0])+a.getZ(ids[1])+a.getZ(ids[2]))/3;
-  if(z>minZ&&inside(x,y)){
-   hidden.add(ids.slice().sort((u,v)=>u-v).join('/'));continue;
+  const key=ids.slice().sort((u,v)=>u-v).join('/');
+  const verifiedFold=rayVerifiedFolds.has(key)&&a.count>=5000&&
+   z>minZ&&Math.abs(x)<d.x*.095;
+  if(z>minZ&&(inside(x,y)||verifiedFold)){
+   hidden.add(key);continue;
   }
   opened.push(...ids);
  }
@@ -81,7 +89,8 @@ export function initializeNativeOralRig(face){
  const closedIndices=Array.from(index.array),originalCount=seal.initialTriangleCount*3;
  if(originalCount<=0||originalCount>=closedIndices.length)
   return {ready:false,reason:'unverified-native-cap-indices'};
- const filtered=classifyDonorOralInterior(g,boundary,closedIndices.slice(0,originalCount));
+ const filtered=classifyDonorOralInterior(g,boundary,
+  closedIndices.slice(0,originalCount),{donorName:face.name});
  const openedIndices=filtered.opened;
  const n=boundary.length,position=new Float32Array(n*2*3),color=new Float32Array(n*2*3);
  const triangles=[];
