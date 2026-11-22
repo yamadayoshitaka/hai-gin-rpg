@@ -330,7 +330,7 @@ def main() -> None:
     # Stamp the exact deployed source revision on both model-management UIs
     # as well as tactical combat. A successful Pages action alone cannot prove
     # the browser received the same HTML revision (mobile CDN/cache regressions).
-    for page_name in ("tactics-wireframe.html", "batch-monitor.html", "batch-pr-preview.html"):
+    for page_name in ("tactics-wireframe.html", "batch-monitor.html", "batch-pr-preview.html", "face-mesh-studio.html"):
         public_page = out / page_name
         if not public_page.is_file():
             raise RuntimeError("Required public page absent: " + page_name)
