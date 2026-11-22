@@ -24,7 +24,7 @@ export function stableBattleMapPins(livePins=[],cache=new Map(),{
  for(const pin of livePins){
   if(!pin)continue;
   const key=String(pin.team)+':'+String(pin.groupId??pin.id);
-  if(aliveByGroup.get(key)===0){cache.delete(key);continue;}
+  // Fresh live position wins over a slightly older status-row snapshot.
   if(!Number.isFinite(pin.x)||!Number.isFinite(pin.z))continue;
   present.add(key);
   cache.set(key,{pin:{...pin},updatedAt:now});
