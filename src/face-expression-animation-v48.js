@@ -6,7 +6,7 @@
  * Demo talking is SILENT, syllable-paced motion; not phoneme/audio sync.
  */
 import * as THREE from 'three';
-import {syncV115LashesToLiveEyeliner} from './face-feature-meshes.js?v=20261123-v114-natural-realistic-eyes';
+import {syncV115LashesToLiveEyeliner} from './face-feature-meshes.js?v=20261123-v115-eye-liner-lashes';
 import {naturalSmileCheekDelta} from './face-v96-smile-cosmetics.js?v=107-natural-expression-ref';
 import {v107SmileSkinDelta,v107LaughPulse} from './face-v107-natural-smile.js?v=107-coordinated-facs';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
