@@ -23,7 +23,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?qa=expression'+suffix,
    {waitUntil:'domcontentloaded',timeout:90000});
-  await page.waitForFunction(()=>document.documentElement.dataset.faceMeshReady==='v114'&&
+  await page.waitForFunction(()=>document.documentElement.dataset.faceMeshReady==='v115'&&
    window.__faceMasterQA?.()?.loaded===true&&
    typeof window.__faceExpressionQA?.geometrySignature==='function',
    null,{timeout:90000});

@@ -117,56 +117,69 @@ export function v71EyeDepthFromEyeliner({upperZ,lowerZ,corneaZ,eyeRadius,eyeDept
   requestedInsetRatio:targetInsetRatio,
   residualRatio:(targetCorneaZ-cornea-correctionZ)/radius};
 }
-/** Fine tapered eyelashes rooted on the ACTUAL cosmetic eyeliner contour.
- * Keep the legacy upper/lower mesh identities, so eye-angle joints and GLB
- * export still contain just four lash meshes rather than floating cards. */
+/**
+ * V115 lashes are a set of short tapered 3D strands whose individual roots
+ * are sampled from the same MOVING eyeliner geometry as the upper/lower lids.
+ * No floating ribbon cards or whole-group translation on blink. The root
+ * positions are kept in eye-joint local coordinates after reparenting.
+ * The lash-angle control changes strand tangent, not a separate lash group's
+ * rotation (which previously separated all lashes from the lid).
+ */
+export const V115_LASH_ROOT_ROW=.12;
 function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
- const count=Math.max(12,Math.round((upper?84:42)*settings.lashDensity)),
-  vertices=[],indices=[];
- const reference=(u)=>sampleGrid(liner,48,3,u,.24);
+ const count=Math.max(12,Math.round((upper?66:24)*settings.lashDensity));
+ const vertices=[],indices=[],anchorU=[],anchorXYZ=[];
+ const reference=u=>sampleGrid(liner,48,3,u,V115_LASH_ROOT_ROW);
+ const stations=6;
+ const lashTilt=THREE.MathUtils.degToRad(side*(Number(settings.lashAngle)||0));
+ const makeTaper=(v)=>Math.max(.000018,Math.pow(1-v,1.65));
  for(let i=0;i<count;i++){
-  const u=.055+.89*(i+.5)/count;
-  const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.58);
-  const step=.89/count*.16*settings.lashThickness;
-  const left=reference(Math.max(0,u-step));
-  const right=reference(Math.min(1,u+step));
-  const a=new THREE.Vector3().lerpVectors(p,left,.62);
-  const b=new THREE.Vector3().lerpVectors(p,right,.62);
+  const u=.07+.86*(i+.5)/count;
+  const p=reference(u),edge=Math.pow(Math.sin(Math.PI*u),.62);
+  anchorU.push(u);
+  anchorXYZ.push(p.x-x,p.y-y,p.z-z);
+  const step=.86/count*.22*Math.max(.35,settings.lashThickness);
+  const tangent=reference(Math.min(.999,u+step)).sub(
+   reference(Math.max(.001,u-step))).normalize();
   const spread=Math.abs(u-.5)*2;
-  const length=eyeRadius*(upper?.40:.095)*settings.lashLength*(.54+.46*edge)*
-   (upper?(.96+.20*spread):1)*(.92+.08*Math.sin((i+1)*2.39996323));
-  const baseWidth=Math.max(.000010,a.distanceTo(b)*.34);
-  const baseCentre=new THREE.Vector3().addVectors(a,b).multiplyScalar(.5);
-  const across=new THREE.Vector3().subVectors(b,a).normalize();
-  const start=vertices.length/3,stations=5;
+  const length=eyeRadius*(upper?.225:.064)*settings.lashLength*
+   (.64+.36*edge)*(upper?(1+.22*spread):1)*
+   (.93+.07*Math.sin((i+1)*2.39996323));
+  // All strands curve gradually up/outward; do not bend the entire
+  // lash mesh around the global eye pivot or create giant triangular fans.
+  const forwardGain=eyeRadius*(upper?.044:.018);
+  const swingGain=side*spread*length*(upper?.23:.12);
+  const width=eyeRadius*(upper?.013:.008)*Math.max(.5,settings.lashThickness);
+  const beginVertex=vertices.length/3;
   for(let j=0;j<stations;j++){
-   const t=j/(stations-1),curl=Math.max(0,settings.lashCurl);
-   const lift=(upper?1:-1)*length*(.43*t+.57*t*t);
-   const forward=eyeRadius*(upper?.09:.035)*t+
-    eyeRadius*.23*curl*Math.pow(t,2.25);
-   const swing=side*spread*eyeRadius*.052*Math.pow(t,1.3);
-   const center=baseCentre.clone().add(new THREE.Vector3(
-    swing,lift,forward+eyeRadius*.018));
-   const width=baseWidth*Math.pow(1-t,1.45)+eyeRadius*.00022;
+   const t=j/(stations-1),curl=clamp(Number(settings.lashCurl)||0,0,2);
+   const rise=(upper?1:-1)*length*(.63*t+.37*t*t);
+   const swing=swingGain*t*t;
+   const tiltX=-Math.sin(lashTilt)*rise+Math.cos(lashTilt)*swing;
+   const tiltY=Math.cos(lashTilt)*rise+Math.sin(lashTilt)*swing;
+   const center=p.clone().add(new THREE.Vector3(
+    tiltX,tiltY,eyeRadius*.012+
+     forwardGain*t+eyeRadius*.083*curl*Math.pow(t,2.1)));
+   const halfWidth=width*makeTaper(t);
    for(const dir of [-1,1]){
-    const point=center.clone().addScaledVector(across,dir*width);
+    const point=center.clone().addScaledVector(tangent,dir*halfWidth);
     vertices.push(point.x-x,point.y-y,point.z-z);
    }
   }
   for(let j=0;j<stations-1;j++){
-   const base=start+j*2,next=base+2;
+   const base=beginVertex+j*2,next=base+2;
    indices.push(base,base+1,next,next,base+1,next+1);
   }
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
- const material=new THREE.MeshBasicMaterial({
-  color:FACE_V7_PALETTE.lashes,side:THREE.DoubleSide,
-  transparent:true,opacity:upper?.95:.64,depthWrite:false
+ const material=new THREE.MeshStandardMaterial({
+  color:0x393034,roughness:.84,metalness:0,side:THREE.DoubleSide,
+  transparent:true,opacity:upper?.88:.58,depthTest:true,depthWrite:false
  });
  const lash=new THREE.Mesh(geo,material);
- lash.name=name;lash.renderOrder=7;
+ lash.name=name;lash.renderOrder=10;lash.frustumCulled=false;
  lash.userData.colorRole='lashes';
  lash.userData.filamentCount=count;
  lash.userData.lashLength=settings.lashLength;
@@ -174,9 +187,62 @@ function makeFineEyelashMesh(name,liner,x,y,z,eyeRadius,side,upper,settings){
  lash.userData.lashCurl=settings.lashCurl;
  lash.userData.rootedOnEyeliner=true;
  lash.userData.taperedGeometry=true;
- lash.userData.curvedRibbonStations=5;
- lash.userData.tipCurlsUpFromEyeliner=true;
+ lash.userData.curvedRibbonStations=stations;
+ lash.userData.tipCurlsUpFromEyeliner=upper;
+ lash.userData.v115AnchorU=anchorU;
+ lash.userData.v115AnchorXYZ=anchorXYZ;
+ lash.userData.v115RestPositions=new Float32Array(vertices);
+ lash.userData.v115RootOnMovingEyeliner=true;
+ lash.userData.v115BuiltTiltRadians=lashTilt;
+ lash.userData.v115DesiredTiltRadians=lashTilt;
+ lash.userData.v115ShortCurledFilaments=true;
  return lash;
+}
+/**
+ * Rebind EVERY strand to its own live eyeliner sample. This method receives
+ * the actual mesh in local coordinates AFTER the orbital-joint transform.
+ * Computing a single group Y offset was wrong: upper/lower eyelid vertices
+ * move by different amounts, and the ends must stay closed at each canthus.
+ *
+ * Exported for blink/expressions and quick eyelid/liner refits. Each rebuild
+ * is deterministic from a stored rest pose, never accumulates offsets.
+ */
+export function syncV115LashesToLiveEyeliner(lash,liner){
+ if(!lash?.isMesh||!liner?.isMesh)return {updated:0,maximumRootError:null};
+ const data=lash.userData,anchors=data.v115AnchorXYZ,us=data.v115AnchorU;
+ const rest=data.v115RestPositions,pos=lash.geometry.getAttribute('position');
+ const stations=data.curvedRibbonStations;
+ if(!anchors||!us||!rest||!pos||pos.count!==us.length*stations*2)
+  return {updated:0,maximumRootError:null};
+ let maximumRootError=0;
+ for(let i=0;i<us.length;i++){
+  const now=sampleGrid(liner,48,3,us[i],V115_LASH_ROOT_ROW);
+  const dx=now.x-anchors[i*3],dy=now.y-anchors[i*3+1],
+   dz=now.z-anchors[i*3+2];
+  const tilt=(data.v115DesiredTiltRadians||0)-
+   (data.v115BuiltTiltRadians||0);
+  const ct=Math.cos(tilt),st=Math.sin(tilt);
+  for(let j=0;j<stations*2;j++){
+   const k=(i*stations*2+j)*3;
+   // Rotate each strand ABOUT ITS OWN live root, not the eye joint.
+   const ox=rest[k]-anchors[i*3],oy=rest[k+1]-anchors[i*3+1];
+   pos.array[k]=now.x+ox*ct-oy*st;
+   pos.array[k+1]=now.y+ox*st+oy*ct;
+   pos.array[k+2]=rest[k+2]+dz;
+  }
+  // Check true filament base/eyeliner alignment after re-projection.
+  const a=i*stations*2*3,b=a+3;
+  const middleX=(pos.array[a]+pos.array[b])*.5;
+  const middleY=(pos.array[a+1]+pos.array[b+1])*.5;
+  const middleZ=(pos.array[a+2]+pos.array[b+2])*.5;
+  maximumRootError=Math.max(maximumRootError,
+   Math.hypot(middleX-now.x,middleY-now.y,middleZ-now.z));
+ }
+ pos.needsUpdate=true;
+ lash.geometry.computeBoundingSphere();
+ data.v115LiveLashRootMaxError=maximumRootError;
+ data.v115LiveSyncCount=(data.v115LiveSyncCount||0)+1;
+ return {updated:us.length,maximumRootError};
 }
 function sampleGrid(mesh,columns,rows,u,v){
  const su=clamp(u,0,1)*columns,sv=clamp(v,0,1)*rows;
@@ -1066,6 +1132,63 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
     optic.geometry.computeBoundingSphere();
     optic.userData.eyelinerMeasuredDepthCorrection=fit.correctionZ;
    }
+   // V115: a centre-Z fit alone did not protect the optical perimeter.
+   // The sclera could poke IN FRONT OF the eyeliner near the upper outer
+   // lid, leaving the photographed white wedge above a floating liner.
+   // Preserve the curved corneal centre and pull ONLY boundary positions
+   // behind the paired 3D eyeliner rim. No additional subdivision.
+   let v115ClampedOpticalVertices=0,v115MaxBeforeRimOvershoot=0;
+   if(female){
+    const limitAt=(u,upper)=>{
+     const liner=upper?upperEyeliner:lowerEyeliner;
+     return sampleGrid(liner,48,3,u,.25).z-eyeRadius*.018;
+    };
+    const skin=eyePatch.geometry.getAttribute('position');
+    for(let j=0;j<=28;j++)for(let i=0;i<=64;i++){
+     const u=i/64,v=j/28,k=j*65+i;
+     const near=Math.max(0,(Math.abs(v-.5)*2-.70)/.30);
+     if(near<=0)continue;
+     const target=limitAt(u,v>.5),zBefore=skin.getZ(k);
+     const excess=Math.max(0,zBefore-target);
+     v115MaxBeforeRimOvershoot=Math.max(v115MaxBeforeRimOvershoot,excess);
+     if(excess>1e-9){
+      const gain=near*near*(3-2*near);
+      skin.setZ(k,zBefore-excess*gain);
+      v115ClampedOpticalVertices++;
+     }
+    }
+    skin.needsUpdate=true;
+    eyePatch.geometry.computeVertexNormals();
+    eyePatch.geometry.computeBoundingSphere();
+    // The round iris and pupil remain genuine curved circles. Tuck only
+    // the thin outer lip beneath the closest liner when near an eyelid;
+    // do not vertically clip the iris into a flat polygon stripe.
+    for(const optic of [iris,pupil]){
+     const attr=optic.geometry.getAttribute('position');
+     for(let k=0;k<attr.count;k++){
+      const px=attr.getX(k),py=attr.getY(k);
+      const u=clamp((px-(x-width))/(2*width),0,1);
+      const fitted=v114NaturalEyeAperture({t:2*u-1,side,radius:eyeRadius,
+       halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
+      const topDistance=y+fitted.top-py,lowDistance=py-(y+fitted.bottom);
+      const towardUpper=topDistance<lowDistance;
+      const clearance=Math.min(topDistance,lowDistance);
+      const gain=clamp(1-clearance/(eyeRadius*.11),0,1);
+      if(gain<=0)continue;
+      const target=limitAt(u,towardUpper)-eyeRadius*.004;
+      const current=attr.getZ(k),excess=Math.max(0,current-target);
+      if(excess>1e-9){
+       attr.setZ(k,current-excess*gain*gain*(3-2*gain));
+       v115ClampedOpticalVertices++;
+      }
+     }
+     attr.needsUpdate=true;optic.geometry.computeVertexNormals();
+     optic.geometry.computeBoundingSphere();
+    }
+   }
+   eyePatch.userData.v115ClampedOpticalVertices=v115ClampedOpticalVertices;
+   eyePatch.userData.v115LidRimOverflowBefore=v115MaxBeforeRimOvershoot;
+   eyePatch.userData.v115OpticalPerimeterSeatedInsideLiners=female;
    eyeAnteriorClearances[eyeAnteriorClearances.length-1]+=
     fit.correctionZ/eyeRadius;
    irisUpperLidRecessRatios[irisUpperLidRecessRatios.length-1]-=
@@ -1439,6 +1562,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   v114IrisOpeningFraction:female?.928:.815,
   v114PupilRelativeIrisMax:female?.49:null,
   v114ReferenceEyes:'natural-partially-lidded-brown-iris',
+  v115OpticalRimSeatedToEyeliner:female,
+  v115EyelashesFollowEachMovingLiner:female,
+  v115IndividualCurledLashFilaments:female,
   v114LowerEyelidRollOnRealMesh:female,
   v114EyeSocketCarveAlignedToLids:female,
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
@@ -1569,13 +1695,26 @@ export function updateFaceFeatureAngles(partsRoot,settings={}){
   const lashes=partsRoot.getObjectByName(lbl+'_LASH_ANGLE_CONTROL');
   if(joint)joint.rotation.z=side*THREE.MathUtils.degToRad(v.eyeAngle);
   if(brow)brow.rotation.z=side*THREE.MathUtils.degToRad(v.browAngle);
-  if(lashes)lashes.rotation.z=side*THREE.MathUtils.degToRad(v.lashAngle);
+  if(lashes)lashes.rotation.z=0; // V115: angle is authored per filament at its root
  }
  values.eyeAngle=v.eyeAngle;
  values.browAngle=v.browAngle;
  values.lashAngle=v.lashAngle;
  values.linkedEyeBrowLashUnderEye=true;
  values.eyelinerMeshesRefitted=refitEyelinerToLids(partsRoot);
+ // Re-anchor all filaments AFTER the eyeliner grid was refitted, not using
+ // yesterday's mesh or a global lash-group offset.
+ let v115RootMaxError=0;
+ for(const side of ['LEFT','RIGHT'])for(const kind of ['UPPER','LOWER']){
+  const lash=partsRoot.getObjectByName(side+'_'+kind+'_LASH_MESH');
+  const liner=partsRoot.getObjectByName(side+'_'+kind+'_EYELINER');
+  if(lash)lash.userData.v115DesiredTiltRadians=
+   THREE.MathUtils.degToRad((side==='LEFT'?-1:1)*v.lashAngle);
+  const fit=syncV115LashesToLiveEyeliner(lash,liner);
+  if(fit.maximumRootError!==null)v115RootMaxError=
+   Math.max(v115RootMaxError,fit.maximumRootError);
+ }
+ values.v115LashRootError=v115RootMaxError;
  partsRoot.userData.featureAngles=values;
  partsRoot.reprojectBrows?.();
  return values;

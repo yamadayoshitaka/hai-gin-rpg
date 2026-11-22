@@ -6,6 +6,7 @@
  * Demo talking is SILENT, syllable-paced motion; not phoneme/audio sync.
  */
 import * as THREE from 'three';
+import {syncV115LashesToLiveEyeliner} from './face-feature-meshes.js?v=20261123-v115-eye-liner-lashes';
 import {naturalSmileCheekDelta} from './face-v96-smile-cosmetics.js?v=107-natural-expression-ref';
 import {v107SmileSkinDelta,v107LaughPulse} from './face-v107-natural-smile.js?v=107-coordinated-facs';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
@@ -112,11 +113,11 @@ function buildSide(parts,side,headSize){
  const browRest=brow?{y:brow.position.y,z:brow.rotation.z}:null;
  const upperLash=parts.getObjectByName(side+'_UPPER_LASH_MESH');
  const lowerLash=parts.getObjectByName(side+'_LOWER_LASH_MESH');
- const lashRestY=upperLash?.position.y??0;
- const lowerLashRestY=lowerLash?.position.y??0;
+ const upperLiner=parts.getObjectByName(side+'_UPPER_EYELINER');
+ const lowerLiner=parts.getObjectByName(side+'_LOWER_EYELINER');
  const cover=makeClosure(upper,lower,side,headSize);
- return {a,b,cover,eye,iris,pupil,decorations,upperLash,lashRestY,
-  lowerLash,lowerLashRestY,brow,browRest,side};
+ return {a,b,cover,eye,iris,pupil,decorations,upperLash,upperLiner,
+  lowerLash,lowerLiner,brow,browRest,side};
 }
 function moveGrid({attr,rest},otherRest,openness,upper){
  const cols=28,rows=4;
@@ -166,15 +167,11 @@ function moveDecorations(side,blink){
   attr.needsUpdate=true;
   decoration.mesh.geometry.computeBoundingSphere();
  }
- if(side.upperLash){
-  const center=14*3;
-  const gap=b.rest[center+1]-a.rest[center+1];
-  side.upperLash.position.y=side.lashRestY+gap*.89*blink;
- }
- if(side.lowerLash){
-  const center=14*3,gap=a.rest[center+1]-b.rest[center+1];
-  side.lowerLash.position.y=side.lowerLashRestY+gap*.11*blink;
- }
+ // Each root follows the exact animated liner at its own u coordinate.
+ // The previous whole-group Y displacement caused lashes to float away
+ // from both eye corners and to form an unnatural comb during squint.
+ syncV115LashesToLiveEyeliner(side.upperLash,side.upperLiner);
+ syncV115LashesToLiveEyeliner(side.lowerLash,side.lowerLiner);
 }
 function coverEye(side,blink,headSize){
  const {a,b,cover}=side;
