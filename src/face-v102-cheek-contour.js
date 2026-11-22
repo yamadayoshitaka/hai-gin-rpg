@@ -76,7 +76,7 @@ export function fairV102CheekContour(geometry,{
   if(!nasalLocked&&donorPositions?.length===src.length&&a.crest>.001){
    const donorZ=donorPositions[I+2];
    const lowerAllowance=bell(ny,.455,.095);
-   const donorCeiling=donorZ+depth*(.030+.015*lowerAllowance);
+   const donorCeiling=donorZ+depth*(.022+.012*lowerAllowance);
    const excess=Math.max(0,corrected-donorCeiling);
    const capWeight=Math.min(1,a.crest*1.35);
    const trim=excess*capWeight;
