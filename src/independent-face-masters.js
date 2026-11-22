@@ -196,7 +196,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v102'}={}){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v105'}={}){
  const spec=FACE_MASTER_SPEC[gender];
  const controls=gender==='male'?normalizeMaleFaceControls(maleControls):
   normalizeFemaleFaceControls(femaleControls);
@@ -450,12 +450,16 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // and the tip rotate gently down to hide nostrils from the front.
  const feminineProfile=refineV99FemaleProfile(geometry,{gender,
   ageWrinkles:demo.age.wrinkles});
- // The nasal silhouette is frozen at v100. v102 trims the stacked cheek
- // crest relative to immutable donor vertices without touching the nose.
+ // v105 replaces v102's over-deep cheek subtraction on young thin and
+ // normal bodies. The approved v100 nasal tip/rim and donor lip remain
+ // locked by their immutable original GLB vertex positions.
+ // v102 legacy remains selectable ONLY for reproducible QA comparisons.
  const cheekContour=gender==='female'&&
-  (cheekContourMode==='v102'||cheekContourMode==='v102-only')?
+  (cheekContourMode==='v102'||cheekContourMode==='v102-only'||
+   cheekContourMode==='v105')?
   fairV102CheekContour(geometry,{gender,
-   ageWrinkles:demo.age.wrinkles,
+   ageWrinkles:demo.age.wrinkles,bodyType:controls.bodyType,
+   mode:cheekContourMode==='v105'?'v105':'v102',
    donorPositions:originalPoints,donorCenterX:cx,donorHalfWidth:d.x*.5
   }):{applied:false,reason:'v100-reference'};
  // v103 is deliberately ROLLED BACK: it visibly produced sharp dents.
@@ -517,6 +521,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    v95NasalSideProfile:nasalEdgeFlow,
    v99FeminineMalarAlar:feminineProfile,
    v102CheekContour:cheekContour,
+   v105CheekGeometry:cheekContour?.version===105?cheekContour:
+    {applied:false,reason:'legacy-comparison'},
    v103NormalCheekRepair:normalCheekRepair,
    v104CheekMicrofair:cheekMicrofair,
   v49AgeCreases:ageDetail,
