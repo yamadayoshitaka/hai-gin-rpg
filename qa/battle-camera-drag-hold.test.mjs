@@ -47,8 +47,13 @@ test('a stationary tap does not cancel squad tracking; a real drag does',()=>{
  assert.match(down,/Math\.hypot\(e\.clientX-origin\.x,e\.clientY-origin\.y\)>=8/);
  assert.match(down,/takeManualBattleCameraControl\(\)/);
  const pointerDownOnly=down.slice(0,down.indexOf("renderer.domElement.addEventListener('pointermove'"));
- assert.doesNotMatch(pointerDownOnly,/takeManualBattleCameraControl\(\)/,
-  'a simple pointerdown must not detach the camera');
+ const secondFingerGate=pointerDownOnly.indexOf('if(activeTouchPointers.size>1)');
+ assert.ok(secondFingerGate>=0,'only the second finger initiates early manual camera control');
+ assert.doesNotMatch(pointerDownOnly.slice(0,secondFingerGate),/takeManualBattleCameraControl\(\)/,
+  'the first stationary finger must not detach the camera');
+ assert.match(pointerDownOnly.slice(secondFingerGate),
+  /touchGestureEngaged=true;[\s\S]*?takeManualBattleCameraControl\(\)/,
+  'a second finger must detach automatic follow before panning');
  const loop=source.slice(source.indexOf('if(followCamera){',source.indexOf('function animate')),
   source.indexOf('updateCommanderCinematic();'));
  assert.match(loop,/if\(followCamera\)\{/);
