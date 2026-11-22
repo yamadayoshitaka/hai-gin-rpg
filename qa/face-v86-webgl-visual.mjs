@@ -16,11 +16,19 @@ try{
  const failures=[];
  page.on('pageerror',e=>failures.push(e.message));
  await page.goto(url,{waitUntil:'domcontentloaded',timeout:100000});
+ await page.waitForTimeout(500);
+ console.log('FACE_VIEWER_BOOT',JSON.stringify(await page.evaluate(()=>({
+  title:document.title,ready:!!window.__faceExpressionQA,
+  badge:document.querySelector('#facePoseDiagnostics')?.textContent,
+  quality:document.querySelector('#hairBuildBadge')?.textContent,
+  status:document.querySelector('#status')?.textContent
+ }))));
+ console.log('FACE_VIEWER_PAGE_ERRORS',JSON.stringify(failures));
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
    ?.includes('実行JS：v88確認済');
- },{timeout:120000});
+ },null,{timeout:90000});
  let native=await page.evaluate(()=>window.__faceExpressionQA.nativeLipProbe());
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have a native lip rest-state cap: '+JSON.stringify(native));
