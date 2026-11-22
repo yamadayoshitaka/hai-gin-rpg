@@ -77,7 +77,8 @@ test('v64 supports 22 rigged expressions while retaining original laugh, shout, 
  assert.equal(Object.keys(FACE_EXPRESSIONS).length,22);
  assert.ok(FACE_EXPRESSIONS.shout.open>.9);
  assert.ok(FACE_EXPRESSIONS.laugh.smile>=.75);
- assert.ok(FACE_EXPRESSIONS.laugh.open<.8,'Laugh must not overextend the jaw');
+ assert.ok(FACE_EXPRESSIONS.laugh.open>.80&&FACE_EXPRESSIONS.laugh.open<.95,
+  'Native oral rig can laugh broadly without hitting full jaw extension');
  assert.ok(FACE_EXPRESSIONS.laugh.cheek>.6,'Laughter still raises the cheeks');
  assert.ok(FACE_EXPRESSIONS.angry.brow<0);
  assert.ok(FACE_EXPRESSIONS.sad.smile<0);
