@@ -1354,6 +1354,18 @@ export function v109EaseEyeLevelCrossings(points,{box,side=1}={}){
   if(outward>d.x*.035&&outward>drop*1.5)
    prior.x+=direction*(outward-maxStep);
  }
+ // Root index 0 is immutable. Five late v109 WebGL eye-band reports
+ // came exclusively from index 1, where root-to-first-station was too
+ // horizontal. Clamp ONLY that first station's lateral movement, not
+ // the follicle, and retain its local vertical and depth clearance.
+ const first=points[1],follicle=points[0];
+ const firstH=(first.y-box.min.y)/Math.max(d.y,1e-6);
+ if(firstH>.67&&firstH<.82&&first.z>c.z+d.z*.025){
+  const dx=first.x-follicle.x,dy=first.y-follicle.y;
+  const allowed=Math.min(maxStep,Math.abs(dy)*1.42);
+  if(Math.abs(dx)>d.x*.035&&Math.abs(dx)>Math.abs(dy)*1.5)
+   first.x=follicle.x+Math.sign(dx)*allowed;
+ }
  return points;
 }
 /** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
