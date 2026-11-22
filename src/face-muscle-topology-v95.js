@@ -171,3 +171,184 @@ export function createThreeRingVestibuleIndices(count){
  }
  return indices;
 }
+
+
+/** A smooth sagittal reference based on cheek-side vertices at each height.
+ * The nose cannot grow independently of the cheeks in the side view. */
+const interpolateProfile=(nodes,y)=>{
+ if(y<=nodes[0][0])return nodes[0][1];
+ for(let i=0;i<nodes.length-1;i++){
+  const [a,va]=nodes[i],[b,vb]=nodes[i+1];
+  if(y<=b)return va+(vb-va)*smooth(a,b,y);
+ }
+ return nodes[nodes.length-1][1];
+};
+function percentile(values,t=.75){
+ if(!values.length)return null;
+ const sorted=values.slice().sort((a,b)=>a-b);
+ const at=(sorted.length-1)*t,lo=Math.floor(at),hi=Math.ceil(at);
+ return sorted[lo]+(sorted[hi]-sorted[lo])*(at-lo);
+}
+
+/**
+ * Anatomical side-profile control through TRUE skin-edge connectivity:
+ * 1. Use the triangle-edge graph and start on the native nasal dorsum.
+ * 2. Measure cheek support in 3D at matched horizontal slices.
+ * 3. Bound the dorsum and tip relative to cheek depth (not global nose Z).
+ * 4. Blend displacement over connected vertex paths with C1 ramps.
+ * 5. Reject any triangle inversion or large normal/area loss.
+ *
+ * This is a non-destructive topology-guided re-sculpt on the donor clone,
+ * not a counterfeit nose placed in front of the existing face. The original
+ * indexed connectivity, UVs, vertex count and mouth/eye apertures remain.
+ */
+export function fitTopologyNasalSideProfile(geometry,{
+ gender='female',ageWrinkles=0,strength=1
+}={}){
+ const p=geometry?.getAttribute?.('position'),index=geometry?.getIndex?.();
+ const fail=reason=>({applied:false,reason,topologyDriven:false});
+ if(gender!=='female')return fail('male-profile-preserved');
+ if(!p||!index)return fail('no-indexed-face');
+ const audit=auditFacialTopology(geometry);
+ if(!audit.valid)return fail('invalid-topology');
+ geometry.computeBoundingBox();
+ const box=geometry.boundingBox.clone(),d=box.getSize(new THREE.Vector3());
+ if(Math.min(d.x,d.y,d.z)<1e-7)return fail('zero-volume-bounds');
+ const cx=(box.min.x+box.max.x)*.5;
+ const src=p.array.slice(),n=p.count;
+ const nx=i=>Math.abs((src[i*3]-cx)/(d.x*.5));
+ const ny=i=>(src[i*3+1]-box.min.y)/d.y;
+ const nz=i=>(src[i*3+2]-box.min.z)/d.z;
+ const positionsAt=(i)=>new THREE.Vector3(
+  src[i*3],src[i*3+1],src[i*3+2]);
+ // Seed on the actual original dorsal midline. Do not guess a 2D nose
+ // pixel or let rear skull/ears seed the sculpt island.
+ const seeds=[];
+ for(let i=0;i<n;i++){
+  if(nx(i)<.12&&ny(i)>.550&&ny(i)<.610&&nz(i)>.72)seeds.push(i);
+ }
+ if(!seeds.length)return fail('no-connected-dorsum-seeds');
+ seeds.sort((a,b)=>src[b*3+2]-src[a*3+2]);
+ const distance=new Float64Array(n).fill(Infinity),heap=new MinHeap();
+ for(const i of seeds.slice(0,Math.min(6,seeds.length))){
+  distance[i]=0;heap.push(i,0);
+ }
+ const radius=d.x*.39,maxEdge=d.x*.15;
+ let visited=0;
+ while(heap.length){
+  const top=heap.pop();
+  if(top.d>distance[top.v]+1e-9||top.d>radius)continue;
+  visited++;
+  for(const [j,len] of audit.adjacency[top.v]){
+   if(len>maxEdge)continue;
+   const next=top.d+len;
+   if(next<distance[j]&&next<=radius){
+    distance[j]=next;heap.push(j,next);
+   }
+  }
+ }
+ const cheekRows=[];
+ for(let k=0;k<=24;k++){
+  const y=.495+k*.010;
+  const samples=[];
+  for(let i=0;i<n;i++){
+   if(Math.abs(ny(i)-y)>.029)continue;
+   if(nx(i)<.35||nx(i)>.62||nz(i)<.47)continue;
+   samples.push(src[i*3+2]);
+  }
+  cheekRows.push([y,percentile(samples,.72)]);
+ }
+ const validRows=cheekRows.filter(row=>row[1]!==null);
+ if(validRows.length<8)return fail('unmeasurable-cheek-side-profile');
+ for(const row of cheekRows){
+  if(row[1]!==null)continue;
+  const near=validRows.slice().sort((a,b)=>Math.abs(a[0]-row[0])-
+   Math.abs(b[0]-row[0]))[0];
+  row[1]=near[1];
+ }
+ // A smooth nasal root→bridge→tip→alar→philtrum cap in units of head Z.
+ // The tip can lead the cheeks, but must not form a separate beak/spike.
+ const maxProjection=[[.495,.055],[.535,.087],[.570,.131],
+  [.605,.117],[.645,.091],[.690,.061],[.735,.040]];
+ const profileAt=y=>interpolateProfile(cheekRows,y)+
+  d.z*interpolateProfile(maxProjection,y);
+ const originalProfiles=[];
+ const proposal=new Float32Array(n),weights=new Float32Array(n);
+ const youth=.70+.30*(1-clamp01((Number(ageWrinkles)||0)*1.25));
+ const scalar=clamp01(strength)*youth;
+ let affected=0,largestReduction=0;
+ for(let i=0;i<n;i++){
+  if(!Number.isFinite(distance[i])||distance[i]>radius)continue;
+  const x=nx(i),y=ny(i),z=src[i*3+2];
+  if(y<.49||y>.745||nz(i)<.55)continue;
+  const width=1-smooth(.115,.305,x);
+  const height=smooth(.505,.552,y)*(1-smooth(.685,.735,y));
+  const geodesic=1-smooth(radius*.38,radius,distance[i]);
+  const weight=width*height*geodesic*scalar;
+  if(weight<.0001)continue;
+  const cap=profileAt(y);
+  const excess=Math.max(0,z-cap);
+  const dz=Math.min(d.z*.17,excess*.97)*weight;
+  if(dz<=d.z*.00004)continue;
+  proposal[i]=-dz;weights[i]=weight;affected++;
+  largestReduction=Math.max(largestReduction,dz);
+ }
+ if(affected<3)return fail('already-within-reference-profile');
+ // Relax along one-ring neighbors; the native mesh graph prevents skips
+ // across the eye, nostril slit, oral gap or disconnected UV islands.
+ const relaxed=proposal.slice();
+ for(let pass=0;pass<2;pass++){
+  for(let i=0;i<n;i++){
+   if(weights[i]<.015)continue;
+   let sum=0,denom=0;
+   for(const [j,len] of audit.adjacency[i]){
+    if(len>maxEdge||weights[j]<.015)continue;
+    const w=1/(len+d.x*.003);
+    sum+=proposal[j]*w;denom+=w;
+   }
+   relaxed[i]=denom?proposal[i]*.82+(sum/denom)*.18:proposal[i];
+  }
+  proposal.set(relaxed);
+ }
+ const normal=(arr,a,b,c)=>{
+  const ax=arr[a*3],ay=arr[a*3+1],az=arr[a*3+2];
+  const ux=arr[b*3]-ax,uy=arr[b*3+1]-ay,uz=arr[b*3+2]-az;
+  const vx=arr[c*3]-ax,vy=arr[c*3+1]-ay,vz=arr[c*3+2]-az;
+  return [uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx];
+ };
+ const triangles=Array.from(index.array);
+ let scale=1,rejected=0;
+ let final=null;
+ for(let attempt=0;attempt<5;attempt++){
+  const next=src.slice();
+  for(let i=0;i<n;i++)next[i*3+2]=src[i*3+2]+proposal[i]*scale;
+  let fold=0,sharp=0;
+  for(let t=0;t<triangles.length;t+=3){
+   const a=triangles[t],b=triangles[t+1],c=triangles[t+2];
+   if(!proposal[a]&&!proposal[b]&&!proposal[c])continue;
+   const old=normal(src,a,b,c),now=normal(next,a,b,c);
+   const oldArea=Math.hypot(...old),newArea=Math.hypot(...now);
+   if(oldArea<1e-10||newArea<1e-10)continue;
+   const cos=old.reduce((sum,v,k)=>sum+v*now[k],0)/(oldArea*newArea);
+   if(cos<.35)fold++;
+   if(newArea<oldArea*.28)sharp++;
+  }
+  if(!fold&&!sharp){final=next;break;}
+  rejected=fold+sharp;scale*=.5;
+ }
+ if(!final)return fail('topological-triangle-inversion-protection');
+ for(let i=0;i<n;i++)if(proposal[i])p.setZ(i,final[i*3+2]);
+ p.needsUpdate=true;
+ geometry.computeVertexNormals();
+ geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ const report={applied:true,topologyDriven:true,
+  originalVertexCount:n,originalTriangleCount:triangles.length/3,
+  verticesAffected:affected,connectedVisited:visited,
+  connectedNoseSeeds:Math.min(6,seeds.length),
+  cheekReferenceRows:validRows.length,blend:scale,
+  maxReduction:largestReduction*scale,normalInversionRejected:rejected,
+  sourceIndexPreserved:true,onlyDepthAdjusted:true,
+  originalDonorUnchanged:true,profileExcessBounded:true};
+ geometry.userData.v95NasalProfileTopology=report;
+ return report;
+}
