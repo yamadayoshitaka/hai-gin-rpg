@@ -422,15 +422,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    nz=z+(nz-z)*(1-mouthProtected);
    if(mouthProtected>.97)v85OralSourceRestored++;
   }
-  // V87: expand native lip corners after v85 source-mouth restoration.
-  // The v86 lip seals reuse these SAME original displaced skin vertices.
-  nx+=v87AnatomicalMouthWidthDelta({
-   xn,yn,zn,faceWidth:d.x,mouthWidth:controls.mouthWidth
-  });
-  const v88Lip=v88AnatomicalLipDelta({
-   xn,yn,zn,faceWidth:d.x,faceDepth:d.z,mouthWidth:controls.mouthWidth
-  });
-  nx+=v88Lip.dx;nz+=v88Lip.dz;
+  // Mouth width is applied only AFTER cheek/nose fairing. Otherwise
+  // neighboring face triangles indirectly react to the mouth-width slider.
   // Mouth accessories follow the anatomically deformed lower midface.
   const oralWeight=bell(xn,0,.22)*bell(yn,.48,.047)*front;
   oralMotionSum+=(ny-y)*oralWeight;
@@ -444,6 +437,21 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // triangulation. Keeps donor lip loop and eyes' original XY positions.
  const portraitFairing=fairYoungPortraitSurface(geometry,{gender,
   ageWrinkles:demo.age.wrinkles,bodyType:controls.bodyType});
+ // Finish with the source-indexed original lip-loop width morph. No
+ // neighboring cheek smoothing may consume this slider-adjusted geometry.
+ for(let i=0;i<p.count;i++){
+  const x=originalPoints[i*3],y=originalPoints[i*3+1],z=originalPoints[i*3+2];
+  const xn=(x-cx)/(d.x*.5),yn=(y-b.min.y)/d.y,zn=(z-b.min.z)/d.z;
+  const widthDelta=v87AnatomicalMouthWidthDelta({
+   xn,yn,zn,faceWidth:d.x,mouthWidth:controls.mouthWidth
+  });
+  const lipDelta=v88AnatomicalLipDelta({
+   xn,yn,zn,faceWidth:d.x,faceDepth:d.z,mouthWidth:controls.mouthWidth
+  });
+  if(widthDelta||lipDelta.dx||lipDelta.dz)
+   p.setXYZ(i,p.getX(i)+widthDelta+lipDelta.dx,
+    p.getY(i),p.getZ(i)+lipDelta.dz);
+ }
  p.needsUpdate=true;
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();geometry.computeBoundingSphere();
