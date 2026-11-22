@@ -190,24 +190,15 @@ function sampleGrid(mesh,columns,rows,u,v){
 /** Stitch the two cosmetic eyelid bands at both eye corners in the
  * exact same mesh coordinate space, without detached makeup cards. */
 function stitchLinerCorners(upper,lower,faceWidth,depth){
- const g=upper.geometry,vertices=Array.from(g.getAttribute('position').array);
- const uv=Array.from(g.getAttribute('uv').array);
- const index=Array.from(g.getIndex().array);
- for(const u of [0,1]){
-  const a=sampleGrid(upper,48,3,u,0),b=sampleGrid(lower,48,3,u,0);
-  const dx=(u===0?-1:1)*faceWidth*.0025;
-  const dz=depth*.00024;
-  const begin=vertices.length/3;
-  for(const p of [a,b]){
-   vertices.push(p.x,p.y,p.z+dz,p.x+dx,p.y,p.z+dz);
-   uv.push(u,0,u,1);
-  }
-  index.push(begin,begin+1,begin+2,begin+2,begin+1,begin+3);
+ // A black connector quad between upper/lower canthi is not skin anatomy.
+ // Both 48-segment eyelid-conforming lines end at zero width already.
+ for(const liner of [upper,lower]){
+  if(!liner)continue;
+  liner.geometry.computeVertexNormals();
+  liner.geometry.computeBoundingSphere();
+  liner.userData.eyelinerCornersClosed=true;
+  liner.userData.v96NoFloatingCanthusBridge=true;
  }
- g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
- g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
- g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
- upper.userData.eyelinerCornersClosed=true;
 }
 /**
  * Fast cosmetic-only redraw on ORIGINAL sculpted face triangles.
