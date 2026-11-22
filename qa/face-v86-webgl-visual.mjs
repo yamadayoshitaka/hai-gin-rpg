@@ -27,7 +27,7 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v92確認済');
+   ?.includes('実行JS：v94確認済');
  },null,{timeout:90000});
  // Reproduce the reported Android appearance: female / 20s / ultra-thin.
  // The former QA only exercised the default body profile.
@@ -105,6 +105,8 @@ try{
   }else{
    assert.ok(capture.pose.mouthOpen>.5,'Laugh/surprise must open the actual jaw');
    assert.equal(capture.pose.nativeWallVisible,true,'Native oral vestibule must be visible');
+   assert.ok(capture.pose.hiddenDonorInterior>0&&capture.pose.hiddenRenderInterior>0,
+    'Actual 3D mouth must hide donor skin triangles in BOTH source and visible scalp-clipped render');
    assert.equal(capture.pose.teethVisible,true,'Teeth and tongue must animate with jaw');
   }
   const {x,y,width,height}=native.rect;
