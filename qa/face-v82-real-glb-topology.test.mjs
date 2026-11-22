@@ -421,8 +421,10 @@ test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
   Array.from(after.face.geometry.index.array),
   'New midface field never replaces or cuts triangles');
  assert.equal(after.report.v99FeminineMalarAlar.applied,true);
- assert.equal(after.report.v99FeminineMalarAlar.version,101);
- assert.equal(after.report.v93PortraitFairing.cheekContourMode,'v101');
+ assert.equal(after.report.v99FeminineMalarAlar.version,99);
+ assert.equal(after.report.v101CheekContour?.applied,true,
+  JSON.stringify(after.report.v101CheekContour));
+ assert.equal(after.report.v101CheekContour.maxNoseChange,0);
  let crest=0,lower=0,nose=0,crestSum=0,lowerSum=0;
  let noseMaxY=0,noseMaxZ=0,crestRetreated=0;
  for(let i=0;i<sourcePos.count;i++){
@@ -434,7 +436,7 @@ test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
    crest++;crestSum+=deltaZ;
    if(deltaZ<-size.z*.001)crestRetreated++;
   }
-  if(z>.57&&x>.39&&x<.64&&y>.455&&y<.51){
+  if(z>.50&&x>.32&&x<.70&&y>.42&&y<.54){
    lower++;lowerSum+=deltaZ;
   }
   if(z>.58&&x<.18&&y>.54&&y<.67){
@@ -454,10 +456,10 @@ test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
   'v101 should flatten, not increase the malar protrusion');
  assert.ok(lowerSum/lower>crestSum/crest,
   'The lower cheek must transition without the former steep trough');
- assert.ok(noseMaxY<size.y*.002,
-  'Nose-tip downward profile from v100 must remain in place');
- assert.ok(noseMaxZ<size.z*.01,
-  'Rebalancing the cheek must not change the nasal dorsum silhouette');
+ assert.equal(noseMaxY,0,
+  'Nose-tip 3D Y remains bitwise identical to the approved v100 profile');
+ assert.equal(noseMaxZ,0,
+  'Nasal surface must be bitwise identical after cheek-only v101 smoothing');
  for(const model of [before,after])model.root.traverse(o=>{
   if(!o.isMesh)return;
   o.geometry?.dispose();
