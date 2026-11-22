@@ -45,7 +45,8 @@ test('a stationary tap does not cancel squad tracking; a real drag does',()=>{
  assert.match(down,/battleCameraPointerStarts\.set\(e\.pointerId/);
  assert.match(down,/Math\.hypot\(e\.clientX-origin\.x,e\.clientY-origin\.y\)>=8/);
  assert.match(down,/takeManualBattleCameraControl\(\)/);
- assert.doesNotMatch(down,/addEventListener\('pointerdown'[^]*?takeManualBattleCameraControl\(\)/,
+ const pointerDownOnly=down.slice(0,down.indexOf("renderer.domElement.addEventListener('pointermove'"));
+ assert.doesNotMatch(pointerDownOnly,/takeManualBattleCameraControl\(\)/,
   'a simple pointerdown must not detach the camera');
  const loop=source.slice(source.indexOf('if(followCamera){',source.indexOf('function animate')),
   source.indexOf('updateCommanderCinematic();'));
