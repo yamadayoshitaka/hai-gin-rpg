@@ -918,7 +918,7 @@ import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261122-map-contrast-cleanhud1';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261122-pinch-prebattle1';
 import {parseExplorationDestination,explorationDestination,buildingFloorChoices} from './src/battle-exploration-floor.js?v=20261121-floor1';
 import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads,createBattleThreeTeamEventTracker} from './src/battle-center-radar.js?v=20261122-three-team-events1';
@@ -935,7 +935,7 @@ import {createGamePageAudio} from './src/game-page-audio.js';
 import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout-layout.js?v=2';
 import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from './src/battle-overview-squad-pins.js?v=20261117-map-pins2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
-import {updateDefensivePosture,resolveDefensiveGuardIntent} from './src/battle-defensive-doctrine.js?v=20261122-guard-intent1';
+import {updateDefensivePosture,resolveDefensiveGuardIntent,shouldCounterNearbyThreat} from './src/battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=20261122-cell-pingpong2';
 import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
@@ -5984,6 +5984,15 @@ function tickAI(dt){
     Math.max(.6,a._pendingCast.until-(skirmishActions?.time||0)):.60);
    continue;
   }
+  // A nearby hostile triggers only a bounded defense/hold counter-approach;
+  // the user's chosen order and formation remain unchanged.
+  const defensePost=squadDirective?.signatureAnchor
+   ?cellPosition(squadDirective.signatureAnchor.x,squadDirective.signatureAnchor.z):a.home;
+  const nearbyCounter=enemy&&shouldCounterNearbyThreat({
+   order,enemyDistance:p.distanceTo(enemy.root.position)/CELL,
+   attackRange:a.job.range/CELL,postDistance:p.distanceTo(defensePost)/CELL,
+   maxPostDistance:order==='hold'?3.2:6
+  });
   if(order==='defend'){
    const post=squadDirective?.signatureAnchor
     ?cellPosition(squadDirective.signatureAnchor.x,squadDirective.signatureAnchor.z):a.home;
@@ -5998,10 +6007,10 @@ function tickAI(dt){
    a._defendReturning=guard.returnToPost;
    // Re-form inside the post before pursuing again. Never ping-pong
    // between the same guard boundary and a distant opponent.
-   if(guard.returnToPost&&(!opponent||p.distanceTo(opponent)>a.job.range)){
+   if(guard.returnToPost&&!nearbyCounter&&(!opponent||p.distanceTo(opponent)>a.job.range)){
     moveActor(a,post,.18,CELL*2.8);continue;
    }
-   if(opponent&&!guard.allowPursuit&&p.distanceTo(opponent)>a.job.range)continue;
+   if(opponent&&!guard.allowPursuit&&!nearbyCounter&&p.distanceTo(opponent)>a.job.range)continue;
   }else a._defendReturning=false;
   if(!enemy&&squadDirective?.mode!=='move'){
    // If all opponents went upstairs, the ground army still approaches their
@@ -6059,11 +6068,12 @@ function tickAI(dt){
   const post=squadDirective?.signatureAnchor
    ?cellPosition(squadDirective.signatureAnchor.x,squadDirective.signatureAnchor.z):a.home;
   // Sticky targets and support actions cannot bypass the defended perimeter.
-  if(p.distanceTo(goal)>range&&
+  if(!nearbyCounter&&p.distanceTo(goal)>range&&
      (post.distanceTo(goal)>CELL*5||p.distanceTo(post)>=CELL*4.5))continue;
  }
  if(order==='retreat'){const home=a.home.clone();home.x+=(a.team===0?-9:9)*CELL;moveActor(a,home,.18,.6);continue}
- if(order==='hold'){if(p.distanceTo(goal)>range)continue}
+ if(nearbyCounter&&enemy)goal=enemy.root.position;
+ if(order==='hold'&&!nearbyCounter){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
  if(d>range||((hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143))&&!hutShotClear(p,goal))){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
   if(a.attackTimer>0)continue;
