@@ -461,13 +461,17 @@ export function createRealtimeBattleCommands({
   const enemies=Array.isArray(plannedEnemies)?plannedEnemies:getEnemies();
   const visibleAllies=typeof getRadarSquads==='function'?getRadarSquads(own):own;
   radarPins=squadRadarPins(visibleAllies,enemies,worldSize,currentRows);
-  if(typeof getRadarSquads==='function'){
-   const byId=new Map(visibleAllies.map(row=>[String(row.id),row]));
-   for(const pin of radarPins)if(pin.team===0){
-    const group=Number(byId.get(String(pin.id))?.groupId);
-    if(Number.isInteger(group)&&group>=1&&group<=3){
-     pin.number=group;pin.groupId=group;
-    }
+  // Display the actual 1-3 team number on BOTH sides. Otherwise a
+  // defeated enemy team makes the remaining red radar dots renumber while
+  // the right-side HUD still shows their original team numbers.
+  const radarGroups=new Map([
+   ...visibleAllies.map(row=>['0:'+String(row.id),row]),
+   ...enemies.map(row=>['1:'+String(row.id),row])
+  ]);
+  for(const pin of radarPins){
+   const group=Number(radarGroups.get(pin.team+':'+String(pin.id))?.groupId);
+   if(Number.isInteger(group)&&group>=1&&group<=3){
+    pin.number=group;pin.groupId=group;
    }
   }
   ctx.clearRect(0,0,w,h);
