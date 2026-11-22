@@ -59,7 +59,10 @@ export function classifyDonorOralInterior(geometry,boundary,triangles,{donorName
   const y=(a.getY(ids[0])+a.getY(ids[1])+a.getY(ids[2]))/3;
   const z=(a.getZ(ids[0])+a.getZ(ids[1])+a.getZ(ids[2]))/3;
   const key=ids.slice().sort((u,v)=>u-v).join('/');
-  const verifiedFold=rayVerifiedFolds.has(key)&&a.count===3490&&
+  // v106 retains original GLB vertex IDs while appending refined skin
+  // vertices, so use the verified pre-retopology donor vertex count.
+  const donorCount=geometry?.userData?.v106LocalRetopo?.originalVertices??a.count;
+  const verifiedFold=rayVerifiedFolds.has(key)&&donorCount===3490&&
    z>minZ&&Math.abs(x)<d.x*.095;
   // Earlier polygon-only removal selected far too much of the face.
   // On the verified donor, only the 2 ray-confirmed folds are removed.

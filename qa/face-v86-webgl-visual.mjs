@@ -29,6 +29,16 @@ try{
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
    ?.includes('実行JS：v97確認済');
  },null,{timeout:90000});
+ // V106 must actually load on the real CC0 GLB and survive mouth/eyes
+ // setup. A synthetic test or a version label alone cannot prove this.
+ const v106=await page.evaluate(()=>window.__faceMasterQA?.()?.female?.v106LocalRetopo);
+ console.log('FACE_V106_ACTUAL_DONOR_TESSELLATION',JSON.stringify(v106));
+ assert.equal(v106?.applied,true,
+  'v106 is not active on the real visible head: '+JSON.stringify(v106));
+ assert.ok(v106.addedVertices>20&&v106.visibleVertices>v106.originalVertices,
+  'The real female cheek/oral head must gain actual vertices, not cosmetic tint');
+ assert.equal(v106.lipRingIndicesPreserved,true);
+
  // Reproduce the reported Android appearance: female / 20s / ultra-thin.
  // The former QA only exercised the default body profile.
  await page.locator('#v47AgeBand').selectOption('twenties');

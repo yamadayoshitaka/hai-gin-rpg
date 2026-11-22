@@ -13,6 +13,8 @@ on:
       - 'src/face-v99-malar-alar-fairing.js'
       - 'src/face-v101-cheek-contour.js'
       - 'src/face-v102-cheek-contour.js'
+      - 'src/face-v106-local-retopo.js'
+      - 'qa/face-v106-local-retopo.test.mjs'
       - 'src/face-v104-cheek-microfair.js'
       - 'qa/face-v102-cheek-contour.test.mjs'
       - 'qa/face-v105-cheek-geometry.test.mjs'
@@ -64,6 +66,8 @@ on:
       - 'src/face-v99-malar-alar-fairing.js'
       - 'src/face-v101-cheek-contour.js'
       - 'src/face-v102-cheek-contour.js'
+      - 'src/face-v106-local-retopo.js'
+      - 'qa/face-v106-local-retopo.test.mjs'
       - 'src/face-v104-cheek-microfair.js'
       - 'qa/face-v102-cheek-contour.test.mjs'
       - 'qa/face-v105-cheek-geometry.test.mjs'
@@ -127,8 +131,10 @@ jobs:
           node --check src/face-v99-malar-alar-fairing.js
           node --check src/face-v101-cheek-contour.js
           node --check src/face-v102-cheek-contour.js
+          node --check src/face-v106-local-retopo.js
+          node --check qa/face-v106-local-retopo.test.mjs
           node --check src/face-v104-cheek-microfair.js
-          node --check qa/face-v102-cheek-contour.test.mjs
+          node --check qa/face-v102-cheek-contour.test.mjs qa/face-v106-local-retopo.test.mjs
           node --check qa/face-v105-cheek-geometry.test.mjs
           node --check qa/face-v104-cheek-microfair.test.mjs
           node --check qa/face-v96-smile-cosmetics.test.mjs
