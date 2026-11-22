@@ -38,3 +38,19 @@ export function stableBattleMapPins(livePins=[],cache=new Map(),{
  }
  return result;
 }
+
+/** Keep static building icons steady through brief scene-visibility transitions. */
+export function stableBattleMapBuildings(buildings=[],cache=new Map(),now=0,ttlMs=2200){
+ const output=[],present=new Set();
+ for(const building of buildings){
+  if(building?.id==null||!Number.isFinite(building.x)||!Number.isFinite(building.z))continue;
+  const key=String(building.id);
+  cache.set(key,{building:{...building},updatedAt:now});
+  present.add(key);output.push(building);
+ }
+ for(const [key,entry] of cache){
+  if(now-entry.updatedAt>ttlMs){cache.delete(key);continue;}
+  if(!present.has(key))output.push({...entry.building});
+ }
+ return output;
+}
