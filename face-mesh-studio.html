@@ -298,10 +298,10 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color('#203348');
 // Beauty-study lighting: a softer, less flat key/fill balance keeps the
 // real skin microrelief, cosmetic shading and enamel visible on Android.
-scene.add(new THREE.HemisphereLight(0xf4f6fa,0x657c8e,.94));
-const mainLight=new THREE.DirectionalLight(0xfff5ee,2.30);
+scene.add(new THREE.HemisphereLight(0xf4f6fa,0x9c9fac,1.25));
+const mainLight=new THREE.DirectionalLight(0xfff5ee,1.75);
 mainLight.position.set(2,3,4);scene.add(mainLight);
-const fill=new THREE.DirectionalLight(0xc4d9ed,.95);
+const fill=new THREE.DirectionalLight(0xe6e4f1,1.20);
 fill.position.set(-3,1,-1);scene.add(fill);
 const edgeLight=new THREE.DirectionalLight(0xffe9da,.78);
 edgeLight.position.set(-2.5,2,-3);scene.add(edgeLight);
