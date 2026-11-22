@@ -117,6 +117,7 @@ function subdivideOnce(geometry,protectedSet,{mouthOnly=false}={}){
  const b=geometry.boundingBox,dx=b.max.x-b.min.x,
   dy=b.max.y-b.min.y,dz=b.max.z-b.min.z,cx=(b.min.x+b.max.x)/2;
  const attributes=Object.entries(geometry.attributes);
+ const morphs=Object.entries(geometry.morphAttributes||{});
  const rawIndices=Array.from(index.array);
  const sealCount=geometry.userData?.v106OriginalTriCount??rawIndices.length/3;
  const sourceIndices=rawIndices.slice(0,sealCount*3),
@@ -168,8 +169,22 @@ function subdivideOnce(geometry,protectedSet,{mouthOnly=false}={}){
   }
   geometry.setAttribute(name,new THREE.BufferAttribute(out,attr.itemSize,attr.normalized));
  }
- if(Object.keys(geometry.morphAttributes||{}).some(k=>geometry.morphAttributes[k]?.length))
-  throw Error('v106-morph-target-attributes-must-be-empty');
+ // Morph targets also require matching vertex counts after tessellation.
+ // Interpolate each original donor morph value on the same stable edges.
+ for(const [name,targets] of morphs){
+  geometry.morphAttributes[name]=targets.map(attr=>{
+   if(!attr.isBufferAttribute||attr.count!==position.count)
+    throw Error('v106-unsupported-morph-attribute:'+name);
+   const out=new attr.array.constructor((attr.count+midpoints.length)*attr.itemSize);
+   out.set(attr.array);
+   for(let i=0;i<midpoints.length;i++){
+    const [a,b0]=midpoints[i],base=(attr.count+i)*attr.itemSize;
+    for(let k=0;k<attr.itemSize;k++)
+     out[base+k]=(attr.getComponent(a,k)+attr.getComponent(b0,k))*.5;
+   }
+   return new THREE.BufferAttribute(out,attr.itemSize,attr.normalized);
+  });
+ }
  geometry.setIndex(rebuilt.concat(capIndices));
  geometry.userData.v106OriginalTriCount=rebuilt.length/3;
  geometry.computeVertexNormals();
@@ -196,8 +211,7 @@ export function refineV106CheekMouthTopology(face,{gender='female'}={}){
  if(gender!=='female')return fail('male-reference-preserved');
  if(!seal?.sealed||!idx||!p||p.count<1000)return fail('native-oral-seal-required');
  if(geometry.userData.v106LocalRetopo?.applied)return fail('already-densified');
- if(Object.keys(geometry.morphAttributes||{}).some(k=>geometry.morphAttributes[k]?.length))
-  return fail('unhandled-active-morph-targets');
+ // Base donor morph attributes are interpolated with each split edge.
  // Native outer lip boundary and inner fissure stay EXACT donor topology.
  const rings=[...(seal.lipRing||[]),...(seal.outerSelectedRing||[])];
  const protectedSet=new Set(rings);
