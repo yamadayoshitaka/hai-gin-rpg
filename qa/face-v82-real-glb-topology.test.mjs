@@ -397,3 +397,72 @@ test('v100 actual real donor must receive cheek and nasal geometry correction, n
    mat?.dispose?.();
  });
 });
+
+test('v101 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and original topology',()=>{
+ const {geo}=sourceGeometry();
+ geo.computeBoundingBox();
+ const bound=geo.boundingBox.clone(),size=bound.getSize(new THREE.Vector3());
+ const center=bound.getCenter(new THREE.Vector3()),source=new THREE.Group();
+ const head=new THREE.Mesh(geo,new THREE.MeshStandardMaterial());
+ head.name='CC0_SOURCE_GEO-head_animation_realistic';
+ source.add(head);
+ const options={femaleControls:{ageBand:'twenties',bodyType:'normal'}};
+ const before=makeIndependentFaceMaster(source,'female',{
+  ...options,cheekContourMode:'v100'
+ });
+ const after=makeIndependentFaceMaster(source,'female',{
+  ...options,cheekContourMode:'v101'
+ });
+ const b=before.face.geometry.getAttribute('position');
+ const a=after.face.geometry.getAttribute('position');
+ const sourcePos=geo.getAttribute('position');
+ assert.equal(a.count,b.count);
+ assert.deepEqual(Array.from(before.face.geometry.index.array),
+  Array.from(after.face.geometry.index.array),
+  'New midface field never replaces or cuts triangles');
+ assert.equal(after.report.v99FeminineMalarAlar.applied,true);
+ assert.equal(after.report.v99FeminineMalarAlar.version,101);
+ assert.equal(after.report.v93PortraitFairing.cheekContourMode,'v101');
+ let crest=0,lower=0,nose=0,crestSum=0,lowerSum=0;
+ let noseMaxY=0,noseMaxZ=0,crestRetreated=0;
+ for(let i=0;i<sourcePos.count;i++){
+  const x=Math.abs((sourcePos.getX(i)-center.x)/(size.x*.5));
+  const y=(sourcePos.getY(i)-bound.min.y)/size.y;
+  const z=(sourcePos.getZ(i)-bound.min.z)/size.z;
+  const deltaZ=a.getZ(i)-b.getZ(i);
+  if(z>.57&&x>.39&&x<.64&&y>.54&&y<.615){
+   crest++;crestSum+=deltaZ;
+   if(deltaZ<-size.z*.001)crestRetreated++;
+  }
+  if(z>.57&&x>.39&&x<.64&&y>.455&&y<.51){
+   lower++;lowerSum+=deltaZ;
+  }
+  if(z>.58&&x<.18&&y>.54&&y<.67){
+   nose++;
+   noseMaxY=Math.max(noseMaxY,Math.abs(a.getY(i)-b.getY(i)));
+   noseMaxZ=Math.max(noseMaxZ,Math.abs(deltaZ));
+  }
+ }
+ const measured={crest,lower,nose,crestMean:crestSum/Math.max(1,crest),
+  lowerMean:lowerSum/Math.max(1,lower),crestRetreated,noseMaxY,noseMaxZ};
+ console.log('V101_REAL_GLb_CHEEK_NOSE_AB',JSON.stringify(measured));
+ assert.ok(crest>8&&lower>8&&nose>8,
+  'Audit must cover real CC0 malar/lower-cheek and nasal vertices');
+ assert.ok(crestRetreated>8,
+  'The upper cheek high point must retreat on the actual female mesh');
+ assert.ok(crestSum/crest<0,
+  'v101 should flatten, not increase the malar protrusion');
+ assert.ok(lowerSum/lower>crestSum/crest,
+  'The lower cheek must transition without the former steep trough');
+ assert.ok(noseMaxY<size.y*.002,
+  'Nose-tip downward profile from v100 must remain in place');
+ assert.ok(noseMaxZ<size.z*.01,
+  'Rebalancing the cheek must not change the nasal dorsum silhouette');
+ for(const model of [before,after])model.root.traverse(o=>{
+  if(!o.isMesh)return;
+  o.geometry?.dispose();
+  for(const mat of Array.isArray(o.material)?o.material:[o.material])
+   mat?.dispose?.();
+ });
+ geo.dispose();
+});
