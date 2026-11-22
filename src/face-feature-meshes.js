@@ -5,6 +5,7 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
+import {refineV106CheekMouthTopology} from './face-v106-local-retopo.js?v=106-conforming-face-edges';
 import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=97-rim-aligned';
 import {nativeVermilionMask,eyelinerCoverage} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 
@@ -1211,6 +1212,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const originalOralSeal=face.userData.enableExperimentalOralSurgery===true?
   {sealed:false,reason:'experimental-v82-path'}:
   sealOriginalOralAperture(face);
+ // V106 refines the REAL visible skin (not the hidden vermilion strips).
+ // The sealed native lip-ring edges stay intact; indexing/UV/skin pigments
+ // are extended before creating the oral muscle rig and face animator.
+ const localRetopo=face.userData.enableV106LocalRetopo===true?
+  refineV106CheekMouthTopology(face,{gender}):
+  {applied:false,reason:'v105-reference'};
  face.userData.v86OralSealSummary={
   sealed:!!originalOralSeal.sealed,
   addedTriangles:originalOralSeal.addedTriangles||0,
@@ -1341,6 +1348,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   (m.geometry.index?m.geometry.index.count/3:
    m.geometry.getAttribute('position').count/3),0);
  const report=Object.freeze({
+  v106LocalRetopo:localRetopo,
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,surfaceSampler:'xy-triangle-spatial-index',
   samplerCells:sampler.cellCount,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
