@@ -16,12 +16,12 @@ test('v92 long face-framing 3D hair is clear of BOTH pupils across the whole eye
   assert.deepEqual(hair[0].toArray(),root.toArray(),'Do not move the scalp follicle');
   assert.ok(side*hair[1].x>=.325-1e-6,
    'A hair ribbon must have full-width clearance beyond the eye and lashes');
-  assert.deepEqual(hair[2].toArray(),cheek.toArray(),
-   'Loose side hair below the eye band must preserve its natural shape');
+  assert.ok(side*hair[2].x>=.325-1e-6,
+   'Long front locks must continue down the temple rather than snapping back across the cheek');
  }
 });
 
-test('v92 rear/low forehead guide is not moved as if it were across pupils',()=>{
+test('v92 rear and side-back guides keep their original path',()=>{
  const hair=[
   new THREE.Vector3(-.2,.95,-.30),
   new THREE.Vector3(-.1,.77,-.32),
