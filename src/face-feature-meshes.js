@@ -820,8 +820,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const arch=Math.pow(Math.max(0,1-tx*tx),.70);
    const natural=v114NaturalEyeAperture({t:tx,side,radius:eyeRadius,
     halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
-   const apertureY=(natural.top-natural.bottom)*.5;
-   const centerY=y+(natural.top+natural.bottom)*.5;
+   const apertureY=female?(natural.top-natural.bottom)*.5:
+    eyeRadius*eyeApertureRatio*eyeHeight*arch;
+   const centerY=female?y+(natural.top+natural.bottom)*.5:y;
    const ty=apertureY>.000001?
     clamp((py-centerY)/apertureY,-1,1):1;
    // Anatomically smooth sclera/cornea: the central eye MUST NOT inherit
@@ -854,7 +855,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const xx=x+t*width;
    const fitted=v114NaturalEyeAperture({t,side,radius:eyeRadius,
     halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
-   const yy=y+fitted.bottom+(fitted.top-fitted.bottom)*v;
+   const yy=female?y+fitted.bottom+(fitted.top-fitted.bottom)*v:
+    y+(v*2-1)*eyeRadius*eyeApertureRatio*eyeHeight*arch;
    return new THREE.Vector3(xx,yy,insetZ(xx,yy));
   },eyeMat);
   eyePatch.renderOrder=4;
@@ -911,7 +913,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    // than half the iris radius; this leaves visible dark-brown stroma.
    const physicalRadius=isIris?
     Math.min(requested,opening*(female?.928:.815)):
-    Math.min(requested,opening*.58,(v114IrisProjectedRadius||opening)*.49);
+    female?Math.min(requested,opening*.58,(v114IrisProjectedRadius||opening)*.49):
+    Math.min(requested,opening*.72);
    if(isIris)v114IrisProjectedRadius=physicalRadius;
    // The pupil and colored iris share one gentle nasal gaze shift, not
    // independent offsets that could create strabismus in oblique views.
@@ -1434,7 +1437,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   v114UpperLidOpeningFactor:female?.875:1,
   v114LowerLidOpeningFactor:female?.945:1,
   v114IrisOpeningFraction:female?.928:.815,
-  v114PupilRelativeIrisMax:.49,
+  v114PupilRelativeIrisMax:female?.49:null,
   v114ReferenceEyes:'natural-partially-lidded-brown-iris',
   v114LowerEyelidRollOnRealMesh:female,
   v114EyeSocketCarveAlignedToLids:female,

@@ -64,6 +64,16 @@ test('v114 default feminine eye profile is narrower, longer and has a larger bro
  assert.equal(changed.irisDiameter,.98);
 });
 
+test('v114 male sclera and pupil retain legacy profile without female hooded geometry',async()=>{
+ const source=(await import('node:fs')).readFileSync(
+  new URL('../src/face-feature-meshes.js',import.meta.url),'utf8');
+ assert.match(source,/const apertureY=female\?\(natural\.top-natural\.bottom\)\*\.5/);
+ assert.match(source,/const centerY=female\?y\+\(natural\.top\+natural\.bottom\)\*\.5:y/);
+ assert.match(source,/const yy=female\?y\+fitted\.bottom/);
+ assert.match(source,/female\?Math\.min\(requested,opening\*\.58,\(v114IrisProjectedRadius\|\|opening\)\*\.49\):/);
+ assert.match(source,/Math\.min\(requested,opening\*\.72\)/);
+});
+
 test('v114 source is anatomical geometry and retains iris/eye layer for animation',async()=>{
  const source=(await import('node:fs')).readFileSync(
   new URL('../src/face-feature-meshes.js',import.meta.url),'utf8');
@@ -73,7 +83,7 @@ test('v114 source is anatomical geometry and retains iris/eye layer for animatio
  assert.match(source,/v114NaturalEyeAperture\(\{t,side,radius:eyeRadius/);
  assert.match(source,/v114LowerEyelidRollOnRealMesh/);
  assert.match(source,/v114IrisProjectedRadius/);
- assert.match(source,/v114PupilRelativeIrisMax:\.49/);
+ assert.match(source,/v114PupilRelativeIrisMax:female\?\.49:null/);
  assert.match(html,/dataset\.faceMeshReady='v114'/);
  assert.match(html,/v114-natural-realistic-eyes/); // versioned browser source, not cached v113
  assert.match(html,/function syncWireOverlay\(face\)/);
