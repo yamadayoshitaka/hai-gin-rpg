@@ -182,7 +182,7 @@ test('V84 actual GLB skin avoids mouth-triangle reversal for ALL 22 expressions'
  animator.dispose();geo.dispose();face.material.dispose();
 });
 
-test('V85 donor protection remains exact at V87 neutral mouthWidth=1; expressions remain stable',()=>{
+test('V88 retains bounded donor lip relief and stable native jaw expression',()=>{
  const {geo}=sourceGeometry();
  const positions=geo.getAttribute('position').array.slice();
  geo.computeBoundingBox();
@@ -211,8 +211,8 @@ test('V85 donor protection remains exact at V87 neutral mouthWidth=1; expression
   if(Math.abs(xn)<.17&&Math.abs(yn-.509)<.028&&zn>.84){
    examined++;
    for(let axis=0;axis<3;axis++)
-    assert.ok(Math.abs(rest.array[i*3+axis]-positions[i*3+axis])<2e-7,
-     'Production oral donor vertex must not inherit unstable cosmetic sculpt');
+    assert.ok(Math.abs(rest.array[i*3+axis]-positions[i*3+axis])<size.z*.012,
+     'V80-inspired native lip relief must stay localized to the original skin');
   }
  }
  assert.ok(examined>=8,'Must exercise genuine face oral donor vertices');
@@ -225,15 +225,16 @@ test('V85 donor protection remains exact at V87 neutral mouthWidth=1; expression
   const state=animator.getState();
   assert.equal(state.v85BuildSignature,'face-v85-source-mouth-restored-closed-20261122');
   assert.equal(state.v85SourceOralGeometryProtected,true);
-  assert.equal(state.mouthOpen,0);
+  assert.ok(state.v88OralAnatomy?.ready,'Verified CC0 head needs functioning structural aperture');
+  assert.ok(state.mouthOpen>=0);
   const posed=face.geometry.getAttribute('position').array;
   for(let i=0;i<originalCount;i++){
    const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2];
    const xn=(x-(box.min.x+box.max.x)/2)/(size.x*.5);
    const yn=(y-box.min.y)/size.y,zn=(z-box.min.z)/size.z;
    if(Math.abs(xn)<.14&&Math.abs(yn-.509)<.015&&zn>.84)
-    assert.ok(Math.abs(posed[i*3+1]-neutral[i*3+1])<.00012,
-     id+' cannot tear the protected inner mouth skin');
+    assert.ok(Math.abs(posed[i*3+1]-neutral[i*3+1])<size.y*.058,
+     id+' native jaw movement must stay within mouth structural envelope');
   }
  }
  animator.dispose();
@@ -293,12 +294,16 @@ test('V86: actual independent male/female head has no exposed original lip hole'
    gender+' should seal native lip opening: '+JSON.stringify(summary));
   assert.ok(summary.addedTriangles>=60,
    gender+' must seal both nested oral loops: '+JSON.stringify(summary));
-  assert.equal(model.face.userData.v83SafeOriginalMouthTopology,true);
+  assert.equal(model.face.userData.v88NativeOralRig?.ready,true,
+   gender+' must have a validated native donor mouth rim');
+  assert.equal(model.face.userData.v83SafeOriginalMouthTopology,false);
   const animator=createFaceExpressionAnimator({face:model.face,parts:model.parts},
     {autoBlink:false});
   for(const id of ['neutral','laugh','shout','surprised']){
    animator.setExpression(id);
-   assert.equal(animator.getState().mouthOpen,0);
+   assert.equal(animator.getState().v88OralAnatomy?.ready,true);
+   if(['laugh','shout','surprised'].includes(id))
+    assert.ok(animator.getState().mouthOpen>.5);
    assert.ok(model.face.geometry.getAttribute('position').array.every(Number.isFinite));
   }
   animator.dispose();
