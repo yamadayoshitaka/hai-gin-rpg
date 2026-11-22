@@ -14,7 +14,8 @@ const bell=(x,c,r)=>Math.exp(-.5*((x-c)/r)**2);
  * Measurable forward-only geometry displacement with C1 feathering.
  *
  * The nasal unit (|x| <= .33), lips, ears and eyelids are left untouched.
- * Max relief <= 0.029 head depth; no negative carving or sharp shelf.
+ * V111 reduces this final rest-state support to prevent cumulative v93/v99/
+ * v105 relief becoming a jagged raised island. No negative carving.
  */
 export function v107NeutralCheekDepth({
  xn=0,yn=0,zn=0,depth=1,ageStrength=0
@@ -27,7 +28,7 @@ export function v107NeutralCheekDepth({
  const anterior=smooth(.55,.80,zn);
  const central=bell(ax,.495,.18)*bell(yn,.525,.102);
  const lower=bell(ax,.515,.19)*bell(yn,.458,.093);
- const rounded=(.018*central+.011*lower);
+ const rounded=(.011*central+.006*lower);
  const youngWeight=1-.48*age;
  return depth*youngWeight*lateral*vertical*anterior*rounded;
 }
