@@ -125,8 +125,11 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
   const arch=Math.pow(Math.max(0,1-Math.min(1,t*t)),.52);
   // Gently raise the real commissure without pinching the donor lip boundary.
    const smileLift=(Math.abs(t)**1.8)*(size.y*.0075*s+size.y*.002*c);
-  const opening=arch*size.y*.030*o*(sx>=0?.24:.76);
-  attr.array[k]=x+Math.sign(t)*size.x*.0018*s*w;
+  // A laugh must reveal the native inside of the mouth, not a pursed slit.
+   // Keep the lower lip moving farther than the upper; the donor stays watertight.
+   const opening=arch*size.y*.042*o*(sx>=0?.24:.76);
+  // Real commissures widen gently during laughter but never cross each other.
+   attr.array[k]=x+(x-cx)*.15*s*w;
   attr.array[k+1]=y+w*(smileLift+(sx>=0?opening:-opening));
   attr.array[k+2]=z-size.z*.0017*o*w;
  }
