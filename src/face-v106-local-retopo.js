@@ -13,7 +13,6 @@ const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,Number(x)||0));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const key=(a,b)=>a<b?a+'|'+b:b+'|'+a;
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
-const invariant=geometry=>geometry.getAttribute('position')?.count;
 
 export function v106FaceZone({xn=0,yn=0,zn=0,ageStrength=0}={}){
  const x=Math.abs(xn);
@@ -57,64 +56,124 @@ function restoreV107NeutralCheeks(geometry,protectedSet,ageStrength=0){
  return {vertices,maxDelta,addedDepth,geometryOnly:true};
 }
 
-/** Slight Z fairing of original low-poly cheek, NEVER a new cheek mound.
- * Preserve the nose, lip rings and every X/Y silhouette coordinate.
+/**
+ * V111: remove actual high-frequency Z ridges on the ORIGINAL connected
+ * cheek surface (after v93/v99/v105 and gentle v107 volume support).
+ * The mask excludes nasal/ocular skin, lip commissures, chin and silhouette.
+ * This is geometry fairing, not a shader, texture, extra subdivision or
+ * detached overlay. Only the cheek's donor-derived Z coordinates are moved.
  */
-function regularizeCheeks(geometry,protectedSet){
- const pos=geometry.getAttribute('position'),index=geometry.getIndex();
+export function fairV111CheekResiduals(geometry,protectedSet=new Set(),ageStrength=0){
+ const pos=geometry?.getAttribute?.('position'),index=geometry?.getIndex?.();
+ if(!pos||!index)return {changed:0,maxDisplacement:0,reason:'indexed-head-required'};
  geometry.computeBoundingBox();
  const box=geometry.boundingBox,dx=box.max.x-box.min.x,
-  dy=box.max.y-box.min.y,dz=box.max.z-box.min.z,cx=(box.min.x+box.max.x)/2;
- const neighbors=Array.from({length:pos.count},()=>new Set());
+  dy=box.max.y-box.min.y,dz=box.max.z-box.min.z,cx=(box.min.x+box.max.x)*.5;
+ if(Math.min(dx,dy,dz)<1e-8)return {changed:0,maxDisplacement:0,reason:'invalid-bounds'};
+ const original=pos.array.slice(),n=pos.count;
+ const adjacency=Array.from({length:n},()=>new Map());
+ const triangles=[];
+ const normal=(a,i,j,k)=>{
+  const I=i*3,J=j*3,K=k*3,
+   ux=a[J]-a[I],uy=a[J+1]-a[I+1],uz=a[J+2]-a[I+2],
+   vx=a[K]-a[I],vy=a[K+1]-a[I+1],vz=a[K+2]-a[I+2];
+  return [uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx];
+ };
  for(let t=0;t<index.count;t+=3){
   const a=index.getX(t),b=index.getX(t+1),c=index.getX(t+2);
-  for(const [u,v] of [[a,b],[b,c],[c,a]]){
-   if(u===v)continue;neighbors[u].add(v);neighbors[v].add(u);
-  }
- }
- const original=pos.array.slice(),z=new Float32Array(pos.count),
-  mask=new Float32Array(pos.count);
- for(let i=0;i<pos.count;i++){
-  const I=i*3,x=original[I],y=original[I+1],depth=original[I+2];
-  const nx=Math.abs((x-cx)/(dx*.5)),ny=(y-box.min.y)/dy,
-   nz=(depth-box.min.z)/dz;
-  const center=bell(nx,.49,.22)*bell(ny,.525,.115);
-  const safe=smooth(.31,.385,nx)*(1-smooth(.655,.77,nx))*
-   smooth(.425,.475,ny)*(1-smooth(.605,.655,ny))*smooth(.55,.80,nz);
-  mask[i]=protectedSet.has(i)?0:center*safe;
-  z[i]=depth;
- }
- let changed=0,maxDisplacement=0;
- // Edge-weighted 1-ring fairing; small per-iteration movement avoids
- // overshooting the malar crest or hollowing the lower cheeks.
- for(let pass=0;pass<3;pass++){
-  const next=z.slice();
-  for(let i=0;i<pos.count;i++){
-   if(mask[i]<.02||neighbors[i].size<3)continue;
-   const I=i*3,base=z[i];let sum=0,weight=0;
-   for(const j of neighbors[i]){
-    if(!mask[j]||protectedSet.has(j))continue;
-    const J=j*3,dist=Math.hypot(original[I]-original[J],
-     original[I+1]-original[J+1],original[I+2]-original[J+2]);
-    if(dist<1e-8||dist>dx*.115)continue;
-    const w=1/(dist+dx*.003);
-    sum+=z[j]*w;weight+=w;
-   }
-   if(weight){
-    const target=base+.28*mask[i]*(sum/weight-base);
-    const lower=original[I+2]-dz*.006,upper=original[I+2]+dz*.006;
-    next[i]=clamp(target,lower,upper);
+  if(a>=n||b>=n||c>=n||a===b||b===c||c===a)continue;
+  const q=normal(original,a,b,c),area=Math.hypot(...q);
+  if(area>1e-12)triangles.push({a,b,c,q,area});
+  for(const [i,j] of [[a,b],[b,c],[c,a]]){
+   const I=i*3,J=j*3;
+   const length=Math.hypot(original[I]-original[J],
+    original[I+1]-original[J+1],original[I+2]-original[J+2]);
+   // No topologically unrelated smoothing across nasal/oral folds.
+   if(length>1e-8&&length<dx*.115){
+    adjacency[i].set(j,length);adjacency[j].set(i,length);
    }
   }
-  z.set(next);
  }
- for(let i=0;i<pos.count;i++){
-  const delta=z[i]-original[i*3+2];
-  if(Math.abs(delta)>1e-9){pos.setZ(i,z[i]);changed++;
-   maxDisplacement=Math.max(maxDisplacement,Math.abs(delta));}
+ const mask=new Float32Array(n);
+ const youth=1-.58*clamp(ageStrength);
+ for(let i=0;i<n;i++){
+  if(protectedSet.has(i))continue;
+  const I=i*3,x=Math.abs((original[I]-cx)/(dx*.5)),
+   y=(original[I+1]-box.min.y)/dy,z=(original[I+2]-box.min.z)/dz;
+  // Smoothstep feathering at the border avoids an artificial contour shelf.
+  const side=smooth(.315,.405,x)*(1-smooth(.660,.765,x));
+  const vertical=smooth(.425,.485,y)*(1-smooth(.605,.650,y));
+  const front=smooth(.55,.77,z);
+  const center=bell(x,.49,.23)*bell(y,.525,.13);
+  mask[i]=youth*side*vertical*front*center;
+ }
+ // Jacobi (double-buffered) bilateral one-ring fairing on SOURCE topology.
+ // No running edits in place; no material-dependent normals. Reject edges
+ // whose 3D depth suggests a mouth fold or an occluded back-face.
+ let current=new Float32Array(n);
+ for(let i=0;i<n;i++)current[i]=original[i*3+2];
+ for(let pass=0;pass<8;pass++){
+  const next=current.slice();
+  for(let i=0;i<n;i++){
+   if(mask[i]<.025||adjacency[i].size<3)continue;
+   const z=current[i];let sum=0,total=0;
+   for(const [j,length] of adjacency[i]){
+    if(mask[j]<.015||protectedSet.has(j))continue;
+    const depthGap=Math.abs(current[j]-z);
+    if(depthGap>dz*.085)continue;
+    const bilateral=Math.exp(-.5*(depthGap/(dz*.090))**2);
+    const weight=bilateral/(length+dx*.003);
+    sum+=current[j]*weight;total+=weight;
+   }
+   if(total){
+    const target=z+.47*mask[i]*(sum/total-z);
+    // Move source vertices rather than refining a corrugated surface.
+    // A small asymmetric range maintains the malar pad's positive volume.
+    next[i]=clamp(target,original[i*3+2]-dz*.010,
+     original[i*3+2]+dz*.014);
+   }
+  }
+  current=next;
+ }
+ // Check ORIGINAL triangle winding/area after the proposed sculpt.
+ // Attenuate unsafe vertices locally rather than rolling back all cheeks.
+ const displacement=new Float32Array(n),blend=new Float32Array(n).fill(1);
+ for(let i=0;i<n;i++)displacement[i]=current[i]-original[i*3+2];
+ let accepted=null,guarded=0;
+ for(let attempt=0;attempt<18;attempt++){
+  const candidate=original.slice();
+  for(let i=0;i<n;i++)candidate[i*3+2]+=displacement[i]*blend[i];
+  const unsafe=new Set();
+  for(const tri of triangles){
+   const {a,b,c,q,area}=tri;
+   if(!displacement[a]&&!displacement[b]&&!displacement[c])continue;
+   const q1=normal(candidate,a,b,c),area1=Math.hypot(...q1);
+   const cosine=area1>1e-12?
+    (q[0]*q1[0]+q[1]*q1[1]+q[2]*q1[2])/(area*area1):0;
+   if(area1<area*.28||cosine<.42)
+    for(const id of [a,b,c])if(displacement[id]&&blend[id])unsafe.add(id);
+  }
+  if(!unsafe.size){accepted=candidate;break;}
+  guarded+=unsafe.size;
+  for(const id of unsafe)blend[id]=attempt>=14?0:blend[id]*.5;
+ }
+ if(!accepted)return {changed:0,maxDisplacement:0,reason:'triangle-safety-rollback',guarded};
+ let changed=0,maxDisplacement=0,netDelta=0;
+ for(let i=0;i<n;i++){
+  const before=original[i*3+2],after=accepted[i*3+2],delta=after-before;
+  if(Math.abs(delta)>1e-9){
+   pos.setZ(i,after);changed++;
+   maxDisplacement=Math.max(maxDisplacement,Math.abs(delta));
+   netDelta+=delta;
+  }
  }
  pos.needsUpdate=true;
- return {changed,maxDisplacement};
+ geometry.computeVertexNormals();
+ geometry.computeBoundingBox();
+ geometry.computeBoundingSphere();
+ return {changed,maxDisplacement,netDelta,guarded,
+  iterations:8,cheekOnly:true,sourceVertexPositionsChanged:true,
+  lipsEyesNoseJawSilhouetteProtected:true,windingChecked:true};
 }
 
 // All 0/1/2/3-edge templates preserve source winding for arbitrary
@@ -258,7 +317,7 @@ export function refineV106CheekMouthTopology(face,{gender='female',ageStrength=0
  const geometryBackup=geometry.clone();
  try{
   const restCheek=restoreV107NeutralCheeks(geometry,protectedSet,ageStrength);
-  const fairing=regularizeCheeks(geometry,protectedSet);
+  const fairing=fairV111CheekResiduals(geometry,protectedSet,ageStrength);
   geometry.userData.v106OriginalTriCount=seal.initialTriangleCount;
   const broad=subdivideOnce(geometry,protectedSet);
   const oral=subdivideOnce(geometry,protectedSet,{mouthOnly:true});
@@ -279,6 +338,8 @@ export function refineV106CheekMouthTopology(face,{gender='female',ageStrength=0
    visibleTriangles:geometry.getIndex().count/3,
    addedVertices:totalAdded,addedTriangles:broad.addedTriangles+oral.addedTriangles,
    cheekRelaxedVertices:fairing.changed,
+   v111CheekSurface:fairing,
+   v111GeometryRevision:'original-indexed-cheek-residual-fairing',
    maxCheekRelaxation:fairing.maxDisplacement,
    v107RestCheekVertices:restCheek.vertices,
    v107MaxForwardCheekDepth:restCheek.maxDelta,
