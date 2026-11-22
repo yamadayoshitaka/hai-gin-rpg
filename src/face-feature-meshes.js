@@ -187,8 +187,8 @@ function sampleGrid(mesh,columns,rows,u,v){
   .addScaledVector(vertex(i,j+1),(1-a)*b)
   .addScaledVector(vertex(i+1,j+1),a*b);
 }
-/** Stitch the two cosmetic eyelid bands at both eye corners in the
- * exact same mesh coordinate space, without detached makeup cards. */
+/** End both real eyelid eyeliner strips at their own tapered canthi.
+ * Do not bridge the upper and lower lid with an opaque cosmetic quad. */
 function stitchLinerCorners(upper,lower,faceWidth,depth){
  // A black connector quad between upper/lower canthi is not skin anatomy.
  // Both 48-segment eyelid-conforming lines end at zero width already.
