@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createTopologyOralMuscleField,createThreeRingVestibuleIndices} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 
 /**
  * V88 native oral articulation. This operates ONLY on the owned donor-head
@@ -96,14 +97,17 @@ export function initializeNativeOralRig(face){
  const filtered=classifyDonorOralInterior(g,boundary,
   closedIndices.slice(0,originalCount),{donorName:face.name});
  const openedIndices=filtered.opened;
- const n=boundary.length,position=new Float32Array(n*2*3),color=new Float32Array(n*2*3);
- const triangles=[];
+ // Three linked closed loops: lip boundary, mucosal transition and inner
+ // vestibule. Every quad is welded to the donor's original lip edge.
+ const oralTopology=createTopologyOralMuscleField(g,boundary,{
+  sourceTriangleCount:seal.initialTriangleCount,centerY:cy});
+ const n=boundary.length,position=new Float32Array(n*3*3),
+  color=new Float32Array(n*3*3);
+ const triangles=createThreeRingVestibuleIndices(n);
  for(let i=0;i<n;i++){
-  const j=(i+1)%n;
-  triangles.push(i,j,n+j,i,n+j,n+i);
-  const t=i*3,u=(n+i)*3;
-  color.set([.68,.29,.32],t);
-  color.set([.24,.085,.10],u);
+  color.set([.67,.27,.31],i*3);
+  color.set([.41,.14,.18],(n+i)*3);
+  color.set([.20,.065,.09],(2*n+i)*3);
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.BufferAttribute(position,3));
@@ -127,11 +131,16 @@ export function initializeNativeOralRig(face){
   const normalizedX=Math.abs(x-cx)/Math.max(1e-8,halfWidth);
   const ny=Math.abs(y-cy)/size.y;
   // A strict oral envelope avoids the alar nose, cheekbones and lower lids.
-  weights[i]=Math.pow(Math.max(0,1-smooth(.78,1.50,normalizedX)),1.3)*
+  // The old XY Gaussian gave the actual lip seam ZERO influence at
+  // y == centerY, resulting in a puckered smile. A topological shortest
+  // path instead makes all donor lip-loop vertices fully active.
+  weights[i]=oralTopology.valid?oralTopology.weights[i]:
+   Math.pow(Math.max(0,1-smooth(.78,1.50,normalizedX)),1.3)*
    (1-smooth(.008,.035,ny))*smooth(.52,.78,normFront);
   centerSign[i]=Math.tanh((y-cy)/(size.y*.0035));
  }
  const rig={face,g,attr,boundary,closedIndices,openedIndices,
+  oralTopology,
   removedOriginalTriKeys:filtered.hidden,removedOriginalTriangles:filtered.removed,
   size,cx,cy,halfWidth,wall,skinBase:original.slice(),
   weights,centerSign,isOpen:false,lastOpen:-1};
@@ -141,6 +150,10 @@ export function initializeNativeOralRig(face){
   neutralTriangleCount:closedIndices.length/3,
   donorOwned:true,reversible:true,oralMeshOverlays:false,
   v94HiddenDonorInteriorTriangles:filtered.removed,
+  v95ThreeConnectedOralRings:true,
+  v95OralEdgeFlowValid:oralTopology.valid,
+  v95OralEdgeFlowReason:oralTopology.valid?null:oralTopology.reason,
+  v95OralEdgeConnectedVertices:oralTopology.influencedVertices??0,
   v94ClassifierReason:filtered.reason||null,
   v94ClassifierDonorName:face.name,
   v94SourceVertexCount:attr.count,
@@ -208,13 +221,19 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
  if(active){
   const wallAttr=wall.geometry.getAttribute('position');
   for(let j=0;j<boundary.length;j++){
-   const i=boundary[j],k=i*3,p=j*3,q=(j+boundary.length)*3;
+   const i=boundary[j],k=i*3,p=j*3,q=(j+boundary.length)*3,
+    inner=(j+boundary.length*2)*3;
    const x=attr.array[k],y=attr.array[k+1],z=attr.array[k+2];
-   const t=clamp((x-cx)/Math.max(halfWidth,1e-7),-1,1);
    wallAttr.array[p]=x;wallAttr.array[p+1]=y;wallAttr.array[p+2]=z;
-   wallAttr.array[q]=cx+(x-cx)*.73;
-   wallAttr.array[q+1]=cy+(y-cy)*.78;
-   wallAttr.array[q+2]=z-size.z*.070;
+   // Outer -> transitional mucosal ring (same ordered index cycle).
+   wallAttr.array[q]=cx+(x-cx)*.88;
+   wallAttr.array[q+1]=cy+(y-cy)*.92;
+   wallAttr.array[q+2]=z-size.z*.033;
+   // Transition -> darker inner oral wall: C1-tapered rather than
+   // an opaque floating disc in front of the teeth.
+   wallAttr.array[inner]=cx+(x-cx)*.69;
+   wallAttr.array[inner+1]=cy+(y-cy)*.72;
+   wallAttr.array[inner+2]=z-size.z*.081;
   }
   wallAttr.needsUpdate=true;
   wall.geometry.computeVertexNormals();
