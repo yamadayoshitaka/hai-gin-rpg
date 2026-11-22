@@ -9645,7 +9645,7 @@ function resolveCameraSquadId(team,id){
  // The representative pin can belong to a defeated job subdivision.
  // Pick any surviving member of its actual 1-3 command team instead.
  return ids.find(sid=>groupOf(sid)===group&&Boolean(squadCommandFocus(sid,team)))||
-  ids.find(sid=>groupOf(sid)===group)??null;
+  ids.find(sid=>groupOf(sid)===group)||null;
 }
 function focusCommandTeam(team,id){
  const squadId=resolveCameraSquadId(team,id);
