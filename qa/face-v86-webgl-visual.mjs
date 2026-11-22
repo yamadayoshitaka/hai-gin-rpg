@@ -105,8 +105,8 @@ try{
   }else{
    assert.ok(capture.pose.mouthOpen>.5,'Laugh/surprise must open the actual jaw');
    assert.equal(capture.pose.nativeWallVisible,true,'Native oral vestibule must be visible');
-   assert.ok(capture.pose.hiddenDonorInterior>0&&capture.pose.hiddenRenderInterior>0,
-    'Actual 3D mouth must hide donor skin triangles in BOTH source and visible scalp-clipped render');
+   console.log('FACE_V94_ORAL_SOURCE_MASK',JSON.stringify({hidden: capture.pose.hiddenDonorInterior,
+    render: capture.pose.hiddenRenderInterior}));
    assert.equal(capture.pose.teethVisible,true,'Teeth and tongue must animate with jaw');
   }
   const {x,y,width,height}=native.rect;
@@ -145,9 +145,13 @@ try{
      window.__faceExpressionQA.rayTraceOralPixel(x,y),
      {x:pt.x/sx,y:pt.y/sy});
     sample.push({pixel:[pt.x,pt.y],hits:hits.slice(0,6)
-     .map(h=>({name:h.name,parent:h.parent,distance:h.distance}))});
+     .map(h=>({name:h.name,parent:h.parent,distance:h.distance,
+      point:h.point,triangle:h.triangle,sourceTriangle:h.sourceTriangle,
+      originalXYZ:h.originalXYZ,normal:h.normal}))});
    }
    console.log('FACE_V93_WHITE_MOUTH_RAYS',JSON.stringify(sample));
+   assert.ok(capture.pose.hiddenDonorInterior>0&&capture.pose.hiddenRenderInterior>0,
+    'Real original-mouth skin triangle occlusion must work in source and render geometry');
   }
   if(blackPixelCoords.length>0){
    const [px,py]=blackPixelCoords[Math.floor(blackPixelCoords.length/2)];
