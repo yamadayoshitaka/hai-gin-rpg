@@ -318,7 +318,7 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  const lipstick=new THREE.Color(gender==='female'?makeup[0]:FACE_V7_PALETTE.lipstick);
  const softEyeshadow=new THREE.Color(gender==='female'?makeup[1]:0xa48087);
  const age=resolveAgeBand(settings.ageBand);
- const positions=geometry.getAttribute('position'),colors=[];
+ const positions=geometry.getAttribute('position'),colors=[],lipGlossWeights=[];
  // Never pass NaN makeup multipliers to Three.js: undefined vertex-color
  // channels render jet black and formerly mimicked an open mouth.
  let repairedPigmentVertices=0;
@@ -409,9 +409,13 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
   // The uncut head's own lip-region vertices carry pigment. Its
   // position/makeup moves together under FACS deformation, so there
   // is no stationary lipstick patch or separate lip plane.
+  // v88 native jaw uses the same original lip vertices as safe closed faces.
+  // The previous fallback accidentally omitted lipstick on ALL valid native mouths.
   const lipWeight=mouthTopology?.integrated?
    (mouthTopology.lipTintWeights.get(i)||0):
-   (face.userData.v83SafeOriginalMouthTopology?lipMask:0);
+   ((face.userData.v83SafeOriginalMouthTopology||
+     face.userData.v88NativeOralRig?.ready===true)?lipMask:0);
+  lipGlossWeights.push(mode==='color'&&gender==='female'?clamp(lipWeight,0,1):0);
   if(lipWeight>0){
    const painted=lipNatural.clone().lerp(lipstick,
     gender==='male'?0:clamp(cosmeticOpacity(.16)*lipWeight,0,1));
@@ -433,6 +437,13 @@ export function updateRealFacePigment(face,controls={},mode='color',gender='fema
  if(colors.length!==positions.count*3)
   throw Error('Face makeup attribute size differs from head positions');
  setVertexMakeup(face,colors);
+ // Lower-roughness vermilion stays on the actual donor lip triangles.
+ // This PBR channel follows all 3D FACS and age changes without decals.
+ geometry.setAttribute('v90LipWetness',
+  new THREE.Float32BufferAttribute(lipGlossWeights,1));
+ face.userData.v90NativeOralLipstickReady=
+  !!face.userData.v88NativeOralRig?.ready&&actualLipTintVertices>0;
+ face.userData.v90LipRoughnessWeightCount=lipGlossWeights.filter(v=>v>.1).length;
  face.userData.v87RepairedNonFinitePigment=repairedPigmentVertices;
  face.userData.v87PigmentVerticesValidated=positions.count;
  colorizedMakeup(face,mode==='color');
