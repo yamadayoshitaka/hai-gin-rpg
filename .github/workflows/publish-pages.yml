@@ -425,6 +425,7 @@ jobs:
                grep -Fq 'v97BuildSignature' /tmp/public-face-expression.js &&
                grep -Fq 'fitTopologyNasalSideProfile' /tmp/public-face-topology.js &&
                grep -Fq 'refineV106CheekMouthTopology' /tmp/public-face-v106-retopo.js &&
+               grep -Fq 'root-contact-v109' /tmp/public-face-studio.html &&
                grep -Fq 'id="studioTechnicalDetails"' /tmp/public-face-studio.html &&
                grep -Fq 'id="faceViewerStatus"' /tmp/public-face-studio.html &&
                grep -Fq '品質・生成ログを表示' /tmp/public-face-studio.html &&
