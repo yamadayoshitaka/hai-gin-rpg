@@ -39,6 +39,10 @@ test('v106 real 3D triangles are split conformingly while donor, mouth boundary,
  assert.equal(result.applied,true,JSON.stringify(result));
  assert.ok(result.addedVertices>20,JSON.stringify(result));
  assert.ok(result.cheekRelaxedVertices>0);
+ assert.ok(result.v107RestCheekVertices>0,
+  'Real neutral cheek geometry must be filled BEFORE subdivision');
+ assert.ok(result.v107MaxForwardCheekDepth>0,
+  'v107 must actually update positions, not vertex colors or normals');
  assert.ok(result.visibleTriangles>result.originalTriangles);
  assert.ok(result.originalVertices===beforeVertices);
  assert.equal(face.geometry,geom,'Visible skin is still the same indexed mesh');
