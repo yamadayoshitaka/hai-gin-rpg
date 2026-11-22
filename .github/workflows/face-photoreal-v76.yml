@@ -11,6 +11,7 @@ on:
       - 'src/face-v96-smile-cosmetics.js'
       - 'src/face-v98-feminine-profile.js'
       - 'src/face-v99-malar-alar-fairing.js'
+      - 'src/face-v101-cheek-contour.js'
       - 'qa/face-v96-smile-cosmetics.test.mjs'
       - 'qa/face-v98-feminine-profile.test.mjs'
       - 'qa/face-v99-malar-alar-fairing.test.mjs'
@@ -56,6 +57,7 @@ on:
       - 'src/face-v96-smile-cosmetics.js'
       - 'src/face-v98-feminine-profile.js'
       - 'src/face-v99-malar-alar-fairing.js'
+      - 'src/face-v101-cheek-contour.js'
       - 'qa/face-v96-smile-cosmetics.test.mjs'
       - 'qa/face-v98-feminine-profile.test.mjs'
       - 'qa/face-v99-malar-alar-fairing.test.mjs'
@@ -113,6 +115,7 @@ jobs:
           node --check src/face-v96-smile-cosmetics.js
           node --check src/face-v98-feminine-profile.js
           node --check src/face-v99-malar-alar-fairing.js
+          node --check src/face-v101-cheek-contour.js
           node --check qa/face-v96-smile-cosmetics.test.mjs
           node --check qa/face-v98-feminine-profile.test.mjs
           node --check qa/face-v99-malar-alar-fairing.test.mjs
