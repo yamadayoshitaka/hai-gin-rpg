@@ -603,6 +603,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v91BuildSignature:'face-v91-responsive-natural-laugh-visual-sculpt-20261122',
    v92BuildSignature:'face-v92-dental-oral-hair-visual-regression-20261122',
    v94BuildSignature:'face-v94-native-mouth-internal-skin-occlusion-20261122',
+   v95BuildSignature:'face-v95-nasal-side-profile-topological-edge-flow-20261122',
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
