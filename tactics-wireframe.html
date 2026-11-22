@@ -2543,8 +2543,15 @@ function reportAfterBattleCutin(text,{team=0,squadId=null,priority=86}={}){
   squadId:team===0?squadId:null,focus:false,text});
 }
 function queueBattleResultCutin(title,text,details={}){
- // Never lose first contact behind unrelated item/healing notices.
- if(resultCutinQueue.length>=8)return;
+ // Combat milestones outrank loot/healing notifications even when the queue
+ // is full. Never silently drop first contact or a full command-team defeat.
+ const milestone=details.kind==='engagement'||/撃破|壊滅|全滅/.test(title);
+ if(resultCutinQueue.length>=8){
+  if(!milestone)return;
+  const routine=resultCutinQueue.findIndex(entry=>
+   entry.kind!=='engagement'&&!/撃破|壊滅|全滅/.test(entry.title));
+  resultCutinQueue.splice(routine>=0?routine:0,1);
+ }
  resultCutinQueue.push({title,text,...details});
 }
 function updateBattleResultCutins(){
