@@ -96,7 +96,8 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
  dorsum.userData.colorRole='tongue';
  dorsum.userData.anatomicalShape='low-flattened-tongue-body';
  // A horizontal dorsum inside the mandibular arch, NOT a pink floating ball.
- dorsum.scale.set(width*.235,height*.0053,depth*.064);
+ // The tongue narrows and flattens with the real oral aperture.
+ dorsum.scale.set(width*.235,Math.min(height*.0053,width*.069),depth*.064);
  dorsum.position.set(0,-height*.016,-depth*.033);
  tongue.add(dorsum);
  const sulcus=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),midlineMat);
