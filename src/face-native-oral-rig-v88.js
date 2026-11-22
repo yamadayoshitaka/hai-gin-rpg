@@ -129,7 +129,9 @@ export function updateNativeOralPose(face,{open=0,smile=0,cheek=0}={}){
    // Keep the lower lip moving farther than the upper; the donor stays watertight.
    const opening=arch*size.y*.042*o*(sx>=0?.24:.76);
   // Real commissures widen gently during laughter but never cross each other.
-   attr.array[k]=x+(x-cx)*.15*s*w;
+   // Widen the real oral commissures on a laugh; previous 0.15 only
+  // exposed a small pinched slit under an otherwise broad smile.
+  attr.array[k]=x+(x-cx)*.51*s*w;
   attr.array[k+1]=y+w*(smileLift+(sx>=0?opening:-opening));
   attr.array[k+2]=z-size.z*.0017*o*w;
  }
