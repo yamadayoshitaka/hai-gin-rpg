@@ -1304,11 +1304,15 @@ export function shapeRebuiltEyeBand(points,{box,side=1}={}){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  for(let j=1;j<points.length;j++){
   const p=points[j],h=(p.y-box.min.y)/Math.max(d.y,1e-6);
-  // For long face-framing locks, leave a whole hair-card-width margin
-  // outside the eyes rather than merely clearing the guide centreline.
-  if(h>.665&&h<.855&&p.z>c.z+d.z*.045&&
-     side*(p.x-c.x)<d.x*.325)
-   p.x=c.x+side*d.x*.325;
+  // Route a long front lock from crown to temple BEFORE it reaches the eye.
+  // Hard-clamping only stations in an eye-height band caused horizontal
+  // 'goggle' hair cards and a sharp reversal at the cheek.
+  if(p.z<=c.z+d.z*.025)continue;
+  const descent=1-h;
+  const sweep=THREE.MathUtils.smoothstep(descent,.035,.185);
+  const targetX=c.x+side*d.x*.325;
+  if(side*(p.x-targetX)<0)
+   p.x=THREE.MathUtils.lerp(p.x,targetX,sweep);
  }
  return points;
 }
@@ -2818,6 +2822,15 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
   v92EyeClearanceApplied:style.rebuiltBase==='sadako'&&style.gender==='female',
+  v92EyeHairBandSegments:style.rebuiltBase==='sadako'?
+   strands.reduce((sum,lock)=>sum+lock.rest.filter((p,j)=>{
+    if(j===0)return false;
+    const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+    const last=lock.rest[j-1];
+    return h>.67&&h<.82&&p.z>center.z+d.z*.025&&
+     Math.abs(p.x-last.x)>d.x*.035&&
+     Math.abs(p.x-last.x)>Math.abs(p.y-last.y)*1.5;
+   }).length,0):null,
   v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
    strands.filter(lock=>
     (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&
