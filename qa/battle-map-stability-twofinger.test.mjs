@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import {stableBattleMapPins} from '../src/battle-map-inspection.js';
+import {stableBattleMapPins,stableBattleMapBuildings} from '../src/battle-map-inspection.js';
 
 test('battle map holds a live squad's pin across missing worker positions',()=>{
  const cache=new Map(),aliveByGroup=new Map([['0:1',5],['1:2',4]]);
@@ -22,6 +22,14 @@ test('battle map holds a live squad's pin across missing worker positions',()=>{
  assert.equal(defeated[0].team,0);
  const timedOut=stableBattleMapPins([],cache,{now:5000,aliveByGroup});
  assert.equal(timedOut.length,0,'lost coordinates never leave permanent ghost markers');
+});
+
+test('building markers remain visible through a short scene-LOD gap',()=>{
+ const cache=new Map(),building={id:'house-7',x:140,z:90,floors:2};
+ assert.equal(stableBattleMapBuildings([building],cache,100).length,1);
+ assert.deepEqual(stableBattleMapBuildings([],cache,500),[building]);
+ assert.equal(stableBattleMapBuildings([],cache,3000).length,0,
+  'a removed building cannot remain on the map indefinitely');
 });
 
 test('actual live coordinates override one stale zero-count status sample',()=>{
