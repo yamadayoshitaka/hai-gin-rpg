@@ -40,16 +40,23 @@ test('selected floor controls real building exploration and staircase route',()=
  assert.match(world,/instanceId:task\.buildingId,floor:task\.floor\|\|1/);
 });
 
-test('battle inspector fades the 3D backdrop and exposes building floor controls',()=>{
+test('battle inspector restores tactical colors, stable three-team pins and floor controls',()=>{
  const style=readFileSync(new URL('../src/battle-realtime-commands.css',import.meta.url),'utf8');
  const source=ui(),world=battle();
  assert.match(style,/#battleRealtimeControls #realtimeBattleMapOverlay:has\(#realtimeMapDetail:not\(\[hidden\]\)\)/);
- assert.match(style,/background:rgba\(3,13,23,\.19\)/);
- assert.match(source,/globalAlpha=mode==='inspect'\?\.38:1/);
+ assert.match(style,/background:rgba\(3,13,23,\.66\)/);
+ assert.match(source,/globalAlpha=mode==='inspect'\?\.94:1/);
+ assert.match(source,/saturate\(1\.7\) contrast\(1\.35\)/);
+ assert.match(source,/id="realtimeMapLegend"/);
+ assert.match(source,/BATTLE_TEAM_COLORS\.ally:BATTLE_TEAM_COLORS\.enemy/);
+ assert.match(source,/const groupNumber=Number\(s\.groupId\)/);
  assert.match(source,/getMapBuildings=\(\)=>\[\]/);
  assert.match(source,/inspectedBuilding\.floor=Number\(selection\.value\)/);
  assert.ok(source.includes('detail.dataset?.inspectorKey===detailKey'));
  assert.match(world,/getMapBuildings:\(\)=>availableExplorationBuildings\(\{all:true\}\)/);
+ assert.match(world,/if\(THREE_TEAM_BATTLE\)\{overviewInspector\.hidden=true;return;\}/);
+ assert.match(style,/body\.battle-realtime-clean #overviewSquadInspector\{display:none!important\}/);
+ assert.match(source,/if\(requirePrebattleChoices\|\|!started\|\|!selectedId\)\{orderNotice\.hidden=true;return;\}/);
 });
 
 test('mobile map accepts click without pointerup and does not double-deploy on both events',async()=>{
