@@ -16,9 +16,9 @@ assert.match(html,/if\(!battleReady\|\|finished\|\|battleCeremony\.locked\|\|pen
  'Enemy squad inspection is blocked during current command target selection');
 assert.match(html,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,team\);return;\}/,
  'the actual circular squad markers must support two-step target selection');
-assert.ok(html.includes('selectOverviewSquad(team,id);')&&
- html.includes("applyOverviewCamera('squad');"),
- 'a squad circle selects the battle camera and group-only strategy chooser');
+assert.ok(html.includes('focusCommandTeam(team,id);')&&
+ html.includes("return applyOverviewCamera('squad');"),
+ 'a single tap focuses the whole command-team camera');
 assert.ok(html.includes('const row=lastRibbonSums.get(squadKey(1,id)),alive=ribbonCommanderAlive(1,id);'),
  'enemy squad information is read-only in the current overview');
 assert.ok(html.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
@@ -33,7 +33,7 @@ assert.match(html,/\$\('strategy'\)\.disabled=true/,'Strategy display stays read
 assert.doesNotMatch(html,/const remaining=secondsUntilNextOrder\(lastGlobalOrderAt,elapsed\)/,'Global strategy hot-swap was removed');
 assert.match(html,/button\.userDataCooldown\.textContent='⏳'\+remaining\+'秒'/);
 assert.match(html,/width:clamp\(48px,12\.5vw,62px\)/);
-assert.match(html,/const anchor=tracked\?\.alive&&\(tracked\._visualMotion\?/,
+assert.match(html,/const anchor=groupAnchor\|\|\(tracked\?\.alive&&\(tracked\._visualMotion\?/,
  'Follow camera anchor is computed from a living tracked soldier at animated position');
 assert.match(html,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
 assert.match(html,/focusedHumanUnitId=null;\s*followCamera=false;/,

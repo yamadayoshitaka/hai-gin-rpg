@@ -50,7 +50,7 @@ export function createRealtimeBattleCommands({
  getLegalPoint=(x,z)=>({x,z}),canDeploy=()=>true,previewDeploy=()=>true,
  onDeploy=()=>false,onStart=()=>{},onPrebattleMusic=()=>false,onMove=()=>false,onOrder=()=>false,
   onTargetOrder=()=>false,
- onSelect=()=>{},onFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},onManageItems=()=>{},
+ onSelect=()=>{},onFocus=()=>{},onRadarFocus=()=>{},onEnemySelect=()=>{},onRoster=()=>{},onMenu=()=>{},onManageItems=()=>{},
  onPause=()=>{},getPaused=()=>false,
  getSpecialTargets=()=>[],onSpecial=()=>false,getAvailableItems=()=>[],onUseItem=()=>false,
  getMoveTargets=()=>[],getSharedItems=()=>[],onSharedItem=()=>false,
@@ -1468,16 +1468,21 @@ export function createRealtimeBattleCommands({
    const pin=findBattleMapPin(mapInspectionPins,ix,iy,{radius:26});
    if(pin){
     inspectedMapPin={...pin};inspectedBuilding=null;
-    $('realtimeMapMessage').textContent='';drawMap();return;
+    // One tap on a command-team pin switches the live 3D camera.
+    closeMap();
+    onRadarFocus(pin.team,pin.id);
+    return;
    }
+   // Retain the separate building-floor picker for exploration missions.
+   // A building selection inspects a floor but never moves the 3D camera.
    const building=mapInspectionBuildings.map(b=>({...b,
-     distance:Math.hypot(b.px-ix,b.py-iy)})).sort((a,b)=>a.distance-b.distance)[0];
+    distance:Math.hypot(b.px-ix,b.py-iy)})).sort((a,b)=>a.distance-b.distance)[0];
    if(building&&building.distance<=23){
     inspectedBuilding={id:building.id,floor:1};inspectedMapPin=null;
     $('realtimeMapMessage').textContent='建物を選択しました。表示する階を選んでください。';
     drawMap();return;
    }
-   $('realtimeMapMessage').textContent='隊番号、または緑の建物マークをタップしてください。';
+   $('realtimeMapMessage').textContent='青・赤の部隊番号または建物をタップしてください。';
    return;
   }
   if(mode==='deploy'){
@@ -1513,11 +1518,10 @@ export function createRealtimeBattleCommands({
   }else onEnemySelect(pin.id);
   return;
  }
- // Single tap => live 3D overhead camera; double tap => squad strategy.
- if(pin?.team===0)setSelected(pin.id);
- const point=pin||{x:px,y:py};
- onMapOverview({x:Math.round(clamp(point.x*worldSize,0,worldSize-1)),
-  z:Math.round(clamp(point.y,0,1)*(worldSize-1))});
+ // One tap selects a real command team; empty tiles never move the view.
+ if(!pin)return;
+ if(pin.team===0)setSelected(pin.id);
+ onRadarFocus(pin.team,pin.id);
 }
 $('realtimeRadarTitle').onclick=()=>{
  if(!started){openMap('deploy');return;}

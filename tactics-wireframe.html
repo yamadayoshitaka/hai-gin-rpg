@@ -1432,7 +1432,13 @@ function setCameraGesture(){
  controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;
 }
 setCameraGesture();
-controls.addEventListener('start',()=>{followCamera=false;targetViewFollowing=false;});
+controls.addEventListener('start',()=>{
+ // Keep the selected squad anchored while pinching/rotating.
+ if(!TOWN_MODE&&battleViewMode==='commander'){
+  targetViewFollowing=false;
+  commanderCinematic=null;cinematicFocusQueue.length=0;
+ }else{followCamera=false;targetViewFollowing=false;}
+});
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE||TOWN_MODE?1024:2048,MASS_SIZE||TOWN_MODE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-145:-65;sun.shadow.camera.right=TOWN_MODE?145:65;sun.shadow.camera.top=TOWN_MODE?145:65;sun.shadow.camera.bottom=TOWN_MODE?-145:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;if(TOWN_MODE){sun.position.set(65,180,165);sun.target.position.set(110,1,110);sun.target.updateMatrixWorld();}sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
@@ -2574,9 +2580,11 @@ function updateBattleResultCutins(){
  if(next.kind==='engagement')battleCeremony.showEngagement(next.text);
  else if(/撃破|壊滅|全滅/.test(next.title))battleCeremony.showAnnihilation(next.title,next.text);
  else battleCeremony.showResult(next.title);
- if(next.squadId!=null&&
-   (next.title.includes('撃破')||next.title.includes('壊滅')||next.title.includes('回復')))
-  beginSquadFocusCinematic(next.squadId,next.cameraTeam??0,'result');
+ // Only annihilation/collapse or item acquisition may automatically focus.
+ const autoShotKind=next.kind==='loot'?'loot':
+  /撃破|壊滅|全滅/.test(next.title)?'annihilation':null;
+ if(autoShotKind&&next.squadId!=null)
+  beginSquadFocusCinematic(next.squadId,next.cameraTeam??next.team??0,autoShotKind);
  if(next.kind!=='engagement')reportAfterBattleCutin(next.text,next);
 }
 // Suppress *all* camera, command and menu gestures while the battle title
@@ -4950,13 +4958,7 @@ function moveActor(a,goal,dt,stop){
    if(e.type==='objectHit'&&creature)creatureAudio.play(creature.type,'hit',{
     objectId:e.objectId,position:{x:p.x,z:p.z},listener:camera.position,volume:.24});
    if(e.type==='skill'){
-    // Chant-start markers are excluded; only the executed UR-grade action
-    // zooms to its CASTING character, not to the target of the attack.
-    if(e.skillId&&!String(e.skillId).startsWith('chant:')&&
-       availableCombatSkills(e.jobId,'UR').some(skill=>skill.rank==='UR'&&skill.id===e.skillId)){
-     queueBattleFocusCinematic((e.x-6)*CELL,(e.z-6)*CELL,
-      {kind:'ultimate',priority:130,team:e.team,detail:e.skillId});
-    }
+    // UR skills play normally without taking over the camera.
     const a=massSim?actors.find(actor=>actor.massUnitId===e.sourceId):actors.find(actor=>actor.id===e.sourceId);
     if(a?.character){a.attackPoseUntil=elapsed+.60;requestMotion(a,e.animation==='cast'?'skill':e.animation==='ranged'?'attack':e.animation||'attack');}
     if(a)battleAudio.cue(['heal','nature'].includes(e.effect)?'heal':magic==='arcane'?'attack':'magic',a);
@@ -5303,7 +5305,7 @@ function updateUnitFloorTravel(a,dt){
     announceBattleLoot(a,loot);
     queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
      (a.team===0?'味方':'敵')+squadName(a.squadId,a.team)+'が'+loot.item+
-     'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId)});
+     'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId),kind:'loot'});
     if(!itemPanel.hidden)renderBattleItemManagement();
     updateUI();
    }
@@ -5702,7 +5704,7 @@ function collectMassRoomItems(){
   queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
     (unit.team===0?'味方':'敵')+squadName(unit.squadId,unit.team)+'が'+
     building.data.kind+'で'+loot.item+'を入手。所持品に反映しました。',
-    {team:unit.team,squadId:String(unit.squadId),priority:86});
+    {team:unit.team,squadId:String(unit.squadId),priority:86,kind:'loot'});
  }
  checkCompletedExplorations();
  if(!itemPanel.hidden)renderBattleItemManagement();
@@ -5749,7 +5751,7 @@ function collectNearbyRoomItems(){
    announceBattleLoot(a,loot);
    queueBattleResultCutin('🎁 '+(ROOM_ITEM_TYPES[loot.itemId]?.name||loot.item)+' ×'+(loot.quantity||1),
     (a.team===0?'味方':'敵')+squadName(a.squadId,a.team)+'が'+loot.item+
-    'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId)});
+    'を入手。所持品に反映しました。',{team:a.team,squadId:String(a.squadId),kind:'loot'});
    pickedUp++;
   }
  }
@@ -7409,10 +7411,8 @@ const battleDialogue=createBattleStrategistDialogue({
     roster.find(u=>u.team===0&&u.id===report.unitId&&u.alive!==false&&u.hp>0&&!u.isStrategist);
   // Never zoom to a dead general or a ground position surrounded by trees.
   if(!unit)return;
-  if(!report.fromMessageTap){
-   beginSquadFocusCinematic(String(unit.squadId),0,'result');
-   return;
-  }
+  // Only an explicit report tap may focus a character.
+  if(!report.fromMessageTap)return;
   const focus=cinematicHumanWorldPoint(unit);
   if(!focus)return;
   const nearbyTrees=cameraTreeCandidates.filter(t=>{
@@ -7555,21 +7555,17 @@ function squadCommandFocus(id,team=0){
  * Keep the 1000v1000 presentation stable by throttling automatic highlights.
  */
 function queueBattleFocusCinematic(x,z,{kind='order',priority=90,team=0,detail='',focusUnitId=null,focusY=null}={}){
+ // Auto shots: team wipeout/collapse and real loot pickup only.
+ if(kind!=='annihilation'&&kind!=='loot')return false;
  if(!battleReady||finished||TOWN_MODE||commandOverviewLocked||!Number.isFinite(x)||!Number.isFinite(z))return false;
  if(battleCeremony.state==='intro'||battleCeremony.state==='outro')return false;
- const stamp=performance.now(),automatic=kind==='ultimate'||kind==='result';
- // Maximum skills have their own cooldown; normal result reports never
- // steal priority from a real UR-rank action.
- if(kind==='ultimate'){
-  if(stamp-lastUltimateFocusAt<6500)return false;
-  lastUltimateFocusAt=stamp;
- }else if(kind==='result'){
-  if(stamp-lastAutomaticFocusAt<1200)return false;
-  lastAutomaticFocusAt=stamp;
- }
+ const stamp=performance.now(),automatic=true;
+ // Keep mass-casualty bursts from cutting to a new team each frame.
+ if(stamp-lastAutomaticFocusAt<1400)return false;
+ lastAutomaticFocusAt=stamp;
  const entry={x,z,kind,priority,team,detail,focusUnitId,focusY};
  if(commanderCinematic){
-  if((kind==='result'||kind==='failure')&&priority>commanderCinematic.priority){
+  if((kind==='annihilation'||kind==='loot')&&priority>commanderCinematic.priority){
    commanderCinematic=null;cinematicFocusQueue.length=0;
    return startBattleFocusCinematic(entry);
   }
@@ -7596,14 +7592,14 @@ function startBattleFocusCinematic({x,z,priority=90,kind='order',team=0,focusUni
  const roster=massSim?.units??actors;
  let focusUnit=focusUnitId==null?null:roster.find(u=>u.id===focusUnitId&&u.team===team&&
   u.hp>0&&u.alive!==false&&(kind==='order'||!u.isStrategist));
- if(!focusUnit&&kind!=='explore'&&kind!=='result'&&kind!=='failure'){
+ if(!focusUnit&&kind!=='annihilation'&&kind!=='loot'){
   const nearby=closestAliveBattleFocus(roster,x,z,{
    team,gridOffset:massSim?6:0,cellSize:massSim?CELL:1,maxDistance:20*CELL
   });
   focusUnit=nearby?.unit??null;
  }
  const actual=focusUnit?cinematicHumanWorldPoint(focusUnit):null;
- if(kind!=='explore'&&kind!=='result'&&kind!=='failure'&&!actual)return false;
+ if(kind!=='annihilation'&&kind!=='loot'&&!actual)return false;
  const closeTarget=actual||new THREE.Vector3(x,Number.isFinite(focusY)?focusY:terrainY(x,z)+1.4,z);
  const center=(WORLD_SIZE/2-6)*CELL;
  const overTarget=new THREE.Vector3(center,terrainY(center,center)+1,center);
@@ -7633,12 +7629,12 @@ function beginSquadFocusCinematic(squadId,team=0,kind='order'){
  const unit=target?.unit||detailed||members[0];
  if(!unit){
   const location=squadMarkers?.get(squadKey(team,String(squadId)))?.userData?.visualTarget;
-  return (kind==='result'||kind==='failure')&&location?
+  return (kind==='annihilation'||kind==='loot')&&location?
    queueBattleFocusCinematic(location.x,location.z,{kind,team,focusY:location.y,priority:160}):false;
  }
  const point=target?.point||cinematicHumanWorldPoint(unit);
  return point?queueBattleFocusCinematic(point.x,point.z,{
-  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='order'?110:(kind==='result'||kind==='failure')?160:100
+  kind,team,focusUnitId:unit.id,focusY:point.y,priority:kind==='annihilation'?160:110
  }):false;
 }
 function beginCommanderCinematic(squadId){
@@ -7674,7 +7670,8 @@ function updateCommanderCinematic(){
  }else{
   camera.position.copy(shot.overPosition);controls.target.copy(shot.overTarget);
   commanderCinematic=null;
-  if(battleViewMode==='commander')followSelectedCommander();
+  if(manualCameraSquad)applyOverviewCamera(manualCameraSquad.mode);
+  else if(battleViewMode==='commander')followSelectedCommander();
   else{setBattleCamera(shot.overTarget,cameraOverviewOffset);setCameraActive('camOverview');}
  }
 }
@@ -7769,7 +7766,7 @@ const battleTacticalUi=installBattleTacticalUI({
  onSituationChange:(id,event)=>{
   if(event.severity==='info')return false;
   const accepted=battleSituationPause.trigger(id,event);
-  if(accepted)beginSquadFocusCinematic(id,0,'result');
+  // Tactical status reports never steal the user's camera.
   return accepted;
  },
  isReady:()=>battleReady&&!finished
@@ -8188,7 +8185,10 @@ function closeSquadTactics(returnToOverview=false){
  selectedSquadId=null;
  drawSquadMiniMap();
  if(returnToOverview&&battleViewMode==='overview')returnToWholeBattlefield();
- else if(battleViewMode==='commander'&&battleReady&&!finished&&!commanderCinematic)followSelectedCommander();
+ else if(battleViewMode==='commander'&&battleReady&&!finished&&!commanderCinematic){
+  if(manualCameraSquad)applyOverviewCamera(manualCameraSquad.mode);
+  else followSelectedCommander();
+ }
 }
 $('battleCancelCircleTarget').onclick=()=>{if(pendingCircleTarget)closeSquadTactics();};
 function finishSquadDestination(accepted){pendingTargetedMap=null;closeSquadTactics(Boolean(accepted));if(!accepted)log('目的地・命令の指定を取り消しました');}
@@ -8839,8 +8839,7 @@ const objectiveCheckpoints=createBattleObjectiveCheckpoints({
     normalizeArmyGroup(armyGroupBySquad[x])===Number(row.groupId));
    if(id==null)continue;
    const failed=row.status==='失敗';
-   // Mission outcomes win the camera queue, not mere order confirmations.
-   beginSquadFocusCinematic(String(id),0,failed?'failure':'result');
+   // Mission checkpoints are reported without forced camera movement.
    if(failed)battleTacticalUi.reportStrategicEvent(String(id),{
     severity:'critical',title:row.label+'：作戦失敗',
     reason:'作戦目標に失敗。生存部隊の再配置・守備を検討',ratio:0
@@ -9303,21 +9302,14 @@ miniCanvas.addEventListener('pointerup',event=>{
   return;
  }
  if(pickingSquadDestination||pickingSquadMission||pickingStrategistWarp){handleTacticalMapTap(point);drawSquadMiniMap();return;}
- const nearest=squadIds.map(id=>({id,center:squadCenter(id)})).filter(o=>o.center)
-  .sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
- // A tap of the radar always selects the distant, near-vertical battlefield
- // view. It never preserves the close camera that previously made the radar
- // appear broken. Squad command menus must never open from radar taps.
- // Radar is navigation only. Squad commands are accessed from left-side
- // labels and the explicit squad-select control, never from radar taps.
- const focusPoint=nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<15?
-  nearest.center:point;
- const x=(focusPoint.x-6)*CELL,z=(focusPoint.z-6)*CELL;
- focusedHumanUnitId=null;followCamera=false;
- manualCameraSquad=null;manualCameraFocusUntil=0;
- battleViewMode='overview';commanderCinematic=null;cinematicFocusQueue.length=0;
- setBattleCamera(new THREE.Vector3(x,terrainY(x,z),z),cameraOverviewOffset);
- setCameraActive('camOverview');
+ // Only actual numbered command-team pins move the camera.
+ const px=(event.clientX-rect.left)/rect.width;
+ const pz=(event.clientY-rect.top)/rect.height;
+ const pins=realtimeCommandUI?.radarPins??[];
+ const nearest=pins.map(pin=>({...pin,distance:Math.hypot(pin.x-px,pin.y-pz)}))
+  .sort((a,b)=>a.distance-b.distance)[0];
+ if(!nearest||nearest.distance>.085)return;
+ focusCommandTeam(nearest.team,nearest.id);
  drawSquadMiniMap();
 });
 drawSquadMiniMap();
@@ -9396,7 +9388,10 @@ function syncSquadCloseupLabels(){
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const distance=camera.position.distanceTo(controls.target);
  const massCloseup=MASS_SIZE>=1000&&distance<(squadCloseupLabelsHidden?56:48);
-  const hide=followCamera||pageZoomed||massCloseup||
+  // Following a command team is not a character close-up: keep all three
+  // command-team controls visible while allowing manual pinch zoom.
+  const teamFollow=manualCameraSquad?.mode==='squad';
+  const hide=(!teamFollow&&(followCamera||massCloseup))||pageZoomed||
     shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
  // Keep CSS authoritative every frame: opening/closing other menus can
  // re-enable overlays without changing the camera's zoom distance.
@@ -9492,39 +9487,18 @@ function zoomToSquadMember(id,team){
  return true;
 }
 function activateSquadLabel(id,team,x=0,y=0){
- battleRpgHud?.select(team,team===0&&THREE_TEAM_BATTLE?
-  'team:'+normalizeArmyGroup(armyGroupBySquad[String(id)]):id);
- // Show the inspection strip only after the double-tap window expires.
- // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished||squadCloseupLabelsHidden||
    performance.now()-lastCircleTargetResolvedAt<1500)return;
  if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
  lastSquadCircleTap=tap.pending;
- // One tap of the ACTUAL circular squad badge reveals the camera chooser.
- // Keep the existing double-tap close-up and delay camera movement only,
- // never the inspector: Android shows immediate visual feedback.
  cancelPendingSquadCircleInfo();
- if(tap.doubleTap){
-  zoomToSquadMember(id,team);
-  return;
- }
- selectOverviewSquad(team,id);
+ if(tap.doubleTap){zoomToSquadMember(id,team);return;}
  closeSquadCircleInfo();
  if(!$('squadTactics').hidden)closeSquadTactics();
  if(!$('enemySquadIntel').hidden){$('enemySquadIntel').hidden=true;selectedEnemySquadId=null;}
- pendingSquadCircleInfoTimer=setTimeout(()=>{
-  pendingSquadCircleInfoTimer=null;
-  if(!battleReady||finished||squadCloseupLabelsHidden||!lastSquadCircleTap||
-     lastSquadCircleTap.key!==key||lastSquadCircleTap.at!==now)return;
-  // One tap selects a perspective and opens the shared view chooser;
-  // double-tap still has its original character zoom behaviour.
-  if(selectOverviewSquad(team,id)){
-   lastTeamCameraSquad.set(team,String(id));
-   applyOverviewCamera('squad');
-  }
- },SQUAD_CIRCLE_DOUBLE_TAP_MS);
+ focusCommandTeam(team,id);
 }
 function makeSquadLabel(id,team){
  // Keep an invisible world-space hit target, but show squad names as HTML:
@@ -9623,7 +9597,7 @@ for(const team of [0,1]){
   pin.append(title,count);
   pin.dataset.squadKey=key;
   pin.setAttribute('aria-label',(team?'敵':'味方')+squadName(id,team)+'の位置と作戦を表示');
-  pin.onclick=()=>selectOverviewSquad(team,id);
+  pin.onclick=()=>focusCommandTeam(team,id);
   overviewPins.append(pin);
   const line=document.createElementNS(overviewSvgNS,'path');
   line.setAttribute('stroke',team?'#ffadbb':'#a2e4ff');
@@ -9656,6 +9630,27 @@ function selectOverviewSquad(team,id){
  syncOverviewSelectionHighlight();
  if(team===0)trackedAllySquadId=String(id);
  return true;
+}
+// Group-level camera selection is the only default path from map/HUD taps.
+function resolveCameraSquadId(team,id){
+ const raw=String(id);
+ if(!THREE_TEAM_BATTLE)return raw;
+ const ids=team===0?squadIds:enemySquadIds;
+ const groupOf=sid=>team===0?
+  normalizeArmyGroup(armyGroupBySquad[String(sid)]):
+  Number(enemyGroupBySquad?.[String(sid)]);
+ const prefix=team===0?'team:':'enemy-team:';
+ const group=raw.startsWith(prefix)?Number(raw.slice(prefix.length)):groupOf(raw);
+ if(!Number.isInteger(group)||group<1)return raw;
+ // The representative pin can belong to a defeated job subdivision.
+ // Pick any surviving member of its actual 1-3 command team instead.
+ return ids.find(sid=>groupOf(sid)===group&&Boolean(squadCommandFocus(sid,team)))||
+  ids.find(sid=>groupOf(sid)===group)||null;
+}
+function focusCommandTeam(team,id){
+ const squadId=resolveCameraSquadId(team,id);
+ if(squadId==null||!selectOverviewSquad(team,squadId))return false;
+ return applyOverviewCamera('squad');
 }
 function renderOverviewSquadInspector(force=false){
  const node=overviewPinNodes.get(overviewSelectedKey);
@@ -9921,23 +9916,11 @@ battleRpgHud=!TOWN_MODE?createBattleRpgSquadHud({
  },
  onFocus:(team,id)=>{
   if(!battleReady||finished||battleCeremony.locked)return;
-  if(team===1&&THREE_TEAM_BATTLE&&String(id).startsWith('enemy-team:')){
-   const group=Number(String(id).slice('enemy-team:'.length));
-   id=enemySquadIds.find(sid=>Number(enemyGroupBySquad?.[sid])===group&&
-    squadRoster.some(u=>u.team===1&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
-   if(!id)return;
-  }
-  if(team===0&&THREE_TEAM_BATTLE&&String(id).startsWith('team:')){
-   const group=Number(String(id).slice(5));
-   id=squadIds.find(sid=>normalizeArmyGroup(armyGroupBySquad[sid])===group&&
-    squadRoster.some(u=>u.team===0&&String(u.squadId)===sid&&u.hp>0&&u.alive!==false));
-   if(!id)return;
-  }
-  if(team===0){trackedAllySquadId=String(id);realtimeCommandUI?.selectSquad(id);}
-  else selectedEnemySquadId=String(id);
+  if(!focusCommandTeam(Number(team),id))return;
+  const resolved=resolveCameraSquadId(Number(team),id);
   for(const [key,marker] of squadMarkers)
-   marker.userData.screenLabel.classList.toggle('rpgHudFocus',key===squadKey(team,id));
-  zoomToSquadMember(String(id),team);
+   marker.userData.screenLabel.classList.toggle('rpgHudFocus',
+    key===squadKey(Number(team),String(resolved)));
  }
 }):null;
 if(battleRpgHud&&trackedAllySquadId!=null)battleRpgHud.select(0,
@@ -11496,13 +11479,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
  },
  onSelect:id=>{trackedAllySquadId=String(id);battleRpgHud?.select(0,
   THREE_TEAM_BATTLE?'team:'+normalizeArmyGroup(armyGroupBySquad[String(id)]):id);},
- onFocus:id=>{
-  const center=squadCenter(id,0);if(!center)return;
-  const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
-  followCamera=false;battleViewMode='commander';focusedHumanUnitId=null;
-  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.2,z),new THREE.Vector3(-12,13,18));
-  manualCameraFocusUntil=performance.now()+4500;setCameraActive(null);
- },
+ onFocus:id=>{focusCommandTeam(0,id);},
+ onRadarFocus:(team,id)=>{focusCommandTeam(Number(team),String(id));},
  onMapOverview:point=>{
   if(TOWN_MODE||!battleReady||finished||!point)return false;
   const x=(point.x-6)*CELL,z=(point.z-6)*CELL;
@@ -11856,6 +11834,22 @@ function followSelectedCommander(id=trackedAllySquadId??squadIds[0],team=0){
  return true;
 }
 // Selected perspective remains anchored to its team until the user changes it.
+// The live radar and the 3D camera must follow one identical command-team
+// position, including each command team's soldiers across multiple jobs.
+function commandTeamCameraPoint(team,id){
+ const current=String(id);
+ const group=team===0?normalizeArmyGroup(armyGroupBySquad[current]):
+  Number(enemyGroupBySquad?.[current]);
+ const pins=realtimeCommandUI?.radarPins??[];
+ const pin=pins.find(p=>Number(p.team)===team&&(
+  String(p.id)===current||
+  THREE_TEAM_BATTLE&&Number(p.groupId)===group));
+ const gridPoint=pin?{x:pin.x*(WORLD_SIZE-1),z:pin.y*(WORLD_SIZE-1)}:
+  squadCenter(current,team);
+ if(!gridPoint||!Number.isFinite(gridPoint.x)||!Number.isFinite(gridPoint.z))return null;
+ const x=(gridPoint.x-6)*CELL,z=(gridPoint.z-6)*CELL;
+ return new THREE.Vector3(x,terrainY(x,z)+1.2,z);
+}
 function applyOverviewCamera(mode){
  const node=overviewPinNodes.get(overviewSelectedKey);
  if(!node||TOWN_MODE||!battleReady||finished||commandOverviewLocked)return false;
@@ -11865,7 +11859,8 @@ function applyOverviewCamera(mode){
   return true;
  }
  const focus=squadCommandFocus(node.id,node.team);
- if(!focus)return false;
+ const groupPoint=mode==='squad'?commandTeamCameraPoint(node.team,node.id):null;
+ if(mode==='person'&&!focus||mode==='squad'&&!focus&&!groupPoint)return false;
  battleViewMode='commander';commanderCinematic=null;cinematicFocusQueue.length=0;
  manualCameraSquad={key:overviewSelectedKey,id:String(node.id),team:node.team,mode};
  lastTeamCameraSquad.set(node.team,String(node.id));
@@ -11875,10 +11870,11 @@ function applyOverviewCamera(mode){
  if(mode==='person'){
   followSelectedCommander(node.id,node.team);
  }else if(mode==='squad'){
-  focusedHumanUnitId=massSim?focus.unit.id:null;
-  if(!massSim)selected=focus.unit;
+  // Camera tracks the entire active command team, not its general/one job.
+  focusedHumanUnitId=null;
   followCamera=true;targetViewFollowing=false;
-  setBattleCamera(focus.point,new THREE.Vector3(-20,16,23));
+  setBattleCamera(groupPoint||focus.point,
+   new THREE.Vector3(-20,16,23));
   setCameraActive(null);
  }else return false;
  syncOverviewCameraChoices();
@@ -11892,28 +11888,14 @@ window.getBattlePerspectiveQA=()=>({
  controlsVisible:!$('battleTeamCameraSwitches').hidden,
  chooserVisible:!overviewInspector.hidden
 });
-// Ordinary battle camera follows an ACTIVE allied engagement rather than
-// a stationary rear commander. Spatial contacts are scanned at ~1Hz.
+// The previous automatic engagement camera is intentionally retired.
+// Only confirmed command-team annihilation and loot milestones may cut views.
 let automaticContactActorId=null,contactSquadId=null,contactSwitchAt=-Infinity;
 let contactScanAt=-Infinity,manualCameraFocusUntil=0;
 function updateActiveCombatCamera(){
- if(TOWN_MODE||!battleReady||finished||paused||battleViewMode!=='commander'||
-  !followCamera||commandOverviewLocked||commanderCinematic||battleCeremony.locked||
-  performance.now()<manualCameraFocusUntil)return;
- const now=performance.now();
- if(now-contactScanAt<1100)return;
- contactScanAt=now;
- const contact=selectActiveBattleEngagement(massSim?.units??actors,{
-  mass:Boolean(massSim),range:massSim?8:12,preferSquadId:contactSquadId
- });
- if(!contact)return;
- if(contactSquadId!==contact.squadId&&now-contactSwitchAt<3900)return;
- if(contactSquadId!==contact.squadId)contactSwitchAt=now;
- contactSquadId=contact.squadId;
- trackedAllySquadId=contactSquadId;
- if(massSim){focusedHumanUnitId=contact.unitId;automaticContactActorId=null;}
- else automaticContactActorId=contact.unitId;
+ // No automatic target switching during ordinary fighting.
 }
+
 window.getActiveBattleCameraQA=()=>({
  focusSquadId:contactSquadId,actorId:massSim?focusedHumanUnitId:automaticContactActorId,
  mode:battleViewMode,cinematic:commanderCinematic?.kind??null
@@ -12798,9 +12780,11 @@ function animate(){
    // discrete root caused a 20Hz rooftop/background judder even at stable FPS.
    const skirmishFollow=followed&&(massSim?followed.root.position:
      interpolatedSkirmishCameraAnchor(followed,skirmishCameraAnchor));
-   const anchor=tracked?.alive&&(tracked._visualMotion?
+   const groupAnchor=manualCameraSquad?.mode==='squad'?
+     commandTeamCameraPoint(manualCameraSquad.team,manualCameraSquad.id):null;
+   const anchor=groupAnchor||(tracked?.alive&&(tracked._visualMotion?
      new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
-     new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
+     new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL)))||
      skirmishFollow;
    if(anchor){
     if(targetViewFollowing&&!TOWN_MODE&&!commanderCinematic&&!commandOverviewLocked){
@@ -12818,6 +12802,7 @@ function animate(){
      controls.target.lerp(personPovLook,ease);
     }else{
      cameraFollowShift.copy(anchor).sub(controls.target);
+     if(groupAnchor)cameraFollowShift.multiplyScalar(Math.min(1,Math.max(0,dt)*7));
      controls.target.add(cameraFollowShift);camera.position.add(cameraFollowShift);
     }
    }

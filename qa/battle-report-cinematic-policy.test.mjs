@@ -16,23 +16,21 @@ assert.doesNotMatch(html,/elapsed-\(marker\.userData\.lastHealReportAt\?\?-Infin
 assert.match(html,/if\(mode!=='charge'\)battleDialogue\.push/);
 assert.match(html,/if\(mode!=='charge'\)battleCeremony\.showOrder/);
 assert.match(html,/queueBattleResultCutin\(defeatedEnemy\?'⚔ 敵部隊撃破':'☠ 味方部隊壊滅'/);
-// Strategic highlights preserve the explicitly selected commander/overview mode.
+// Only full command-team defeat/collapse and confirmed item acquisition can
+// automatically reframe the camera; ordinary orders, UR skills and reports cannot.
 assert.match(html,/function queueBattleFocusCinematic\(x,z/);
-assert.match(html,/kind==='ultimate'\|\|kind==='result'/);
-assert.match(html,/stamp-lastAutomaticFocusAt<1200/);
+assert.match(html,/if\(kind!=='annihilation'&&kind!=='loot'\)return false/);
+assert.match(html,/stamp-lastAutomaticFocusAt<1400/);
 assert.match(html,/priority>commanderCinematic.priority/);
 assert.match(html,/cinematicFocusQueue\.push\(entry\)/);
-assert.match(html,/overPosition:battleViewMode==='overview'\?overTarget\.clone\(\)\.add\(cameraOverviewOffset\):camera\.position\.clone\(\)/);
-assert.match(html,/if\(battleViewMode==='commander'\)followSelectedCommander\(\)/,
- 'Cinematic must return to the selected squad commander in the default mode');
-assert.match(html,/if\(next\.squadId!=null&&/);
-assert.match(html,/beginSquadFocusCinematic\(next\.squadId,next\.cameraTeam\?\?0,'result'\)/);
-assert.match(html,/queueBattleFocusCinematic\(\(target\.x-6\)\*CELL,\(target\.z-6\)\*CELL/);
+assert.match(html,/const autoShotKind=next\.kind==='loot'\?'loot'/);
+assert.match(html,/beginSquadFocusCinematic\(next\.squadId,next\.cameraTeam\?\?next\.team\?\?0,autoShotKind\)/);
 assert.match(html,/const nextTarget=activeBuildingExplorations\.get\(key\)/);
 assert.match(html,/queueBattleFocusCinematic\(\(task\.x-6\)\*CELL,\(task\.z-6\)\*CELL/);
-assert.match(html,/availableCombatSkills\(e\.jobId,'UR'\)\.some\(skill=>skill\.rank==='UR'/);
-assert.match(html,/!String\(e\.skillId\)\.startsWith\('chant:'\)/);
-assert.match(html,/queueBattleFocusCinematic\(\(e\.x-6\)\*CELL,\(e\.z-6\)\*CELL/);
+assert.doesNotMatch(html,/kind:'ultimate'/,
+ 'UR attack effects must not autonomously alter the battlefield camera');
+assert.match(html,/if\(manualCameraSquad\)applyOverviewCamera\(manualCameraSquad\.mode\)/,
+ 'An automatic milestone must restore the last explicitly selected team camera');
 const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script);
 const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{

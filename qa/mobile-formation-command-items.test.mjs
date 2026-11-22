@@ -48,7 +48,7 @@ const css=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url
 const radar=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
 for(const marker of ['data-inn-wizard-item','items:\'leader\'','setInnTeamItem'])
  assert.ok(town.includes(marker),'town item control '+marker);
-for(const marker of ['zoomToSquadMember(String(id),team)','onMoveExecute:','getFormationId:','townItemsSpent:spentInnItems'])
+for(const marker of ['focusCommandTeam(team,id)','onMoveExecute:','getFormationId:','townItemsSpent:spentInnItems'])
  assert.ok(battle.includes(marker),'real battle link '+marker);
 for(const marker of ['moveTarget','moveConfirm','data-strategy-start','tacticUnlocked'])
  assert.ok(center.includes(marker),'separate command flow '+marker);

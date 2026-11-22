@@ -4,7 +4,7 @@ import {parseHTML} from 'linkedom';
 import {createBattleRpgSquadHud} from '../src/battle-rpg-squad-hud.js';
 import {aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from '../src/battle-rpg-squad-source.js';
 
-test('visible mobile ally roster has 3 top-level teams; tap expands jobs; double tap issues group command',()=>{
+test('mobile roster has 3 command teams; first tap focuses team; double tap issues orders',()=>{
  const ids=Array.from({length:8},(_,i)=>String(i+1));
  const jobs=['騎士','僧侶','魔法使い','僧侶','魔法使い','騎士','剣士','剣士'];
  const mapped=resolveBattleThreeTeamGroups(ids,id=>jobs[Number(id)-1]);
@@ -31,10 +31,12 @@ test('visible mobile ally roster has 3 top-level teams; tap expands jobs; double
  const first=allies.querySelector('.rpgTeamSummary');
  first.click();
  assert.equal(allies.querySelectorAll('.rpgTeamSummary').length,3);
- assert.ok(allies.querySelectorAll('.rpgJobDivision').length>=1);
- assert.equal(allies.querySelector('.rpgSquadHead small').textContent,'3/3隊','expansion is not another team');
+ assert.equal(allies.querySelectorAll('.rpgJobDivision').length,0,
+  'single tap must not expand individual job rows');
+ assert.deepEqual(lastFocus,{side:0,id:rows[0].id},
+  'first tap immediately focuses the whole command team');
+ assert.equal(allies.querySelector('.rpgSquadHead small').textContent,'3/3隊');
  first.click();
  assert.deepEqual(lastCommand,{side:0,id:rows[0].id});
- assert.equal(lastFocus,null,'double tap takes precedence over delayed camera focus');
  hud.dispose();
 });

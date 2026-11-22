@@ -37,7 +37,7 @@ const radarEnd=html.indexOf('drawSquadMiniMap();\n});',radarStart);
 assert.ok(radarStart>0&&radarEnd>radarStart);
 const radarHandler=html.slice(radarStart,radarEnd);
 assert.doesNotMatch(radarHandler,/openSquadTactics\(/,'Radar may move the camera, but must never open orders');
-assert.match(radarHandler,/setBattleCamera\(/);
+assert.match(radarHandler,/focusCommandTeam\(nearest\.team,nearest\.id\)/);
 assert.match(html,/function recoverBlockedActor\(/);
 assert.match(html,/recoverBlockedActor\(a,goal\)/);
 assert.match(html,/if\(!enemy&&squadDirective\?\.mode!=='move'\)/);
