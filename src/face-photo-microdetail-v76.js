@@ -123,9 +123,10 @@ export function applyRealSkinPhotoToFace(face){
    face.material:[face.material])){
    if(!material||!('bumpMap' in material))continue;
    material.bumpMap=maps.bump;
-   material.bumpScale=.000078;
+   material.bumpScale=.000091;
    material.roughnessMap=maps.roughness;
-   material.roughness=Math.max(.67,Math.min(.81,material.roughness??.74));
+   // Keep facial skin diffuse; gloss is now local to the real lip vertices.
+   material.roughness=Math.max(.72,Math.min(.84,material.roughness??.79));
    material.needsUpdate=true;
   }
   face.userData.v76RealSkinPhoto='CC0-real-photo-microrelief';
