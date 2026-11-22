@@ -285,6 +285,22 @@ export function v70FaceReliefShadow({nx,ny,front,lidY=.684}={}){
  const cheek=bell(nx,.286,.120)*bell(ny,.519,.097);
  return visibility*(.046*orbital+.016*alar+.009*cheek);
 }
+/**
+ * V114: shared ANATOMICAL eyelid aperture for sclera and moving lid rims.
+ * A shallow hood and a pointed outer canthus replace permanently startled
+ * round eyes, while leaving the underlying donor and male profile intact.
+ */
+export function v114NaturalEyeAperture({t=0,side=1,radius=1,halfHeight=.375,eyeWidth=1,female=true}={}){
+ const u=THREE.MathUtils.clamp(Number(t)||0,-1,1);
+ const arch=Math.pow(Math.max(0,1-u*u),female?.80:.73);
+ const outer=(1+side*u)*.5,inner=1-outer;
+ const canthus=outer*radius*(female?.048:.078)*eyeWidth-
+  radius*.012*Math.pow(inner,10);
+ const top=halfHeight*arch*(female?.875:1)+canthus;
+ const bottom=-halfHeight*arch*(female?.945:1)+canthus;
+ return {top,bottom,arch,canthus};
+}
+
 export function v65ScleralShading(u,v){
  const top=Math.pow(THREE.MathUtils.smoothstep(v,.67,1),2);
  const corners=Math.pow(Math.abs(u-.5)*2,5);
@@ -715,6 +731,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // Restore a natural, expressive eye opening without artificial bulging.
  // Anatomically wider than tall: the old huge open oval read as doll eyes.
  const eyeApertureRatio=female?.375:.394;
+ const v114FittedAperture=female;
  // A low, lid-seated corneal dome: the former 0.58R projection looked like
  // detached snail eyes in the mobile side view. Preserve slight curvature.
  const anteriorGlobeRatio=female?(settings.irisDiameter>=1.30?.087:.094):.130;
@@ -798,9 +815,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   const insetZ=(px,py)=>{
    const tx=clamp((px-x)/width,-1,1);
    const arch=Math.pow(Math.max(0,1-tx*tx),.70);
-   const apertureY=eyeRadius*eyeApertureRatio*eyeHeight*arch;
+   const natural=v114NaturalEyeAperture({t:tx,side,radius:eyeRadius,
+    halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
+   const apertureY=(natural.top-natural.bottom)*.5;
+   const centerY=y+(natural.top+natural.bottom)*.5;
    const ty=apertureY>.000001?
-    clamp((py-y)/apertureY,-1,1):1;
+    clamp((py-centerY)/apertureY,-1,1):1;
    // Anatomically smooth sclera/cornea: the central eye MUST NOT inherit
    // triangulation noise from the original closed skin surface. The former
    // skin-projected patch caused broken reflective bands across the iris.
@@ -829,7 +849,9 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  const eyePatch=buildGrid(eyeLabel+'_ORBITAL_EYEBALL',64,28,(u,v)=>{
    const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.70);
    const xx=x+t*width;
-   const yy=y+(v*2-1)*eyeRadius*eyeApertureRatio*eyeHeight*arch;
+   const fitted=v114NaturalEyeAperture({t,side,radius:eyeRadius,
+    halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
+   const yy=y+fitted.bottom+(fitted.top-fitted.bottom)*v;
    return new THREE.Vector3(xx,yy,insetZ(xx,yy));
   },eyeMat);
   eyePatch.renderOrder=4;
@@ -870,6 +892,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   root.add(eyePatch);
   // Both pupils and colored contacts are sections of the same real skin-
   // fitting eye opening. Their radius and colors remain slider-controlled.
+  let v114IrisProjectedRadius=0;
   const makeCap=(label,angularRadius,material,raise)=>{
    // Earlier v26/v27 irises were BIGGER than the almond opening.
    // Clamping every circular iris vertex to the eyelid produced doubled
@@ -878,10 +901,15 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const isIris=label==='CURVED_IRIS';
    const irisDisplayScale=isIris?(female?(settings.irisDiameter>=1.30?.90:.83):.67):.82;
    const requested=eyeRadius*irisDisplayScale*Math.sin(angularRadius);
-   const opening=eyeRadius*eyeApertureRatio*eyeHeight;
-   // Keep a real circle and a thin white sclera ring; never clip the
-   // actual iris geometry into an ugly horizontal stripe.
-   const physicalRadius=Math.min(requested,opening*(isIris?(female?.840:.815):.72));
+   const fitted=v114NaturalEyeAperture({t:0,side,radius:eyeRadius,
+    halfHeight:eyeRadius*eyeApertureRatio*eyeHeight,eyeWidth,female});
+   const opening=(fitted.top-fitted.bottom)*.5;
+   // Keep the iris truly round and nearly lid-sized. The pupil is less
+   // than half the iris radius; this leaves visible dark-brown stroma.
+   const physicalRadius=isIris?
+    Math.min(requested,opening*(female?.928:.815)):
+    Math.min(requested,opening*.58,(v114IrisProjectedRadius||opening)*.49);
+   if(isIris)v114IrisProjectedRadius=physicalRadius;
    // The pupil and colored iris share one gentle nasal gaze shift, not
    // independent offsets that could create strabismus in oblique views.
    const gazeX=x-side*eyeRadius*.055*eyeWidth;
@@ -896,6 +924,8 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    cap.userData.nasalGazeCentered=true;
    cap.userData.v33IrisScale=isIris?irisDisplayScale:undefined;
    cap.userData.v33IrisOpeningFraction=physicalRadius/opening;
+   cap.userData.v114TrueCircularAperture=true;
+   cap.userData.v114AnatomicalIrisRatio=physicalRadius/opening;
    cap.userData.unclippedTrueCircle=true;
    cap.userData.apertureFitted=true;
    cap.userData.roundVertexCount=(65*21);
@@ -915,7 +945,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   irisMat.vertexColors=true;
   iris.userData.circularProjected=true;
   iris.userData.radialFibers=true;
-  iris.userData.opticalDetailVersion='v76-polar-crypt-stroma-limbal-photoreal';
+  iris.userData.opticalDetailVersion='v114-polar-crypt-stroma-natural-limbus';
    iris.userData.v76PolarIrisMap=true;
    iris.userData.v76CorneaMaterialsPreserved=true;
    iris.userData.v65MultiscaleIrisFibers=true;
@@ -936,14 +966,13 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const label=(side===-1?'LEFT':'RIGHT')+(upper?'_UPPER':'_LOWER');
    const height=eyeRadius*eyeApertureRatio*eyeHeight;
    const mesh=buildGrid(label+'_ANATOMICAL_EYELID',28,4,(u,v)=>{
-    const t=u*2-1,arch=Math.pow(Math.max(0,1-t*t),.73);
-    // v75: mirrored inner tear-duct and outer canthus contours.
+    const t=u*2-1;
+    const fitted=v114NaturalEyeAperture({t,side,radius:eyeRadius,
+     halfHeight:height,eyeWidth,female});
     const outer=(1+side*t)*.5,inner=1-outer;
     const tearDuct=Math.pow(inner,10),lateralNotch=Math.pow(outer,9);
-    const cornerTilt=outer*eyeRadius*.078*eyeWidth;
-    const nearY=y+(upper?1:-1)*height*arch+cornerTilt-
-      eyeRadius*.012*tearDuct;
-    const rimTaper=.27+.73*Math.pow(arch,.46);
+    const nearY=y+(upper?fitted.top:fitted.bottom);
+    const rimTaper=.27+.73*Math.pow(fitted.arch,.46);
     const farY=nearY+(upper?1:-1)*eyeRadius*(upper?.28:.19)*rimTaper*v;
     const eyeZ=insetZ(x+t*width,nearY)+
       eyeRadius*(.075-.022*tearDuct-.010*lateralNotch);
@@ -954,6 +983,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    mesh.userData.attachedToFace=true;
    mesh.userData.v76SubtleSkinLidTransition=true;
    mesh.userData.v75MirroredAnatomicalCanthi=true;
+   mesh.userData.v114SharedAlmondRim=female;
    mesh.userData.colorRole='eyelid';
    root.add(mesh);
    if(female){
@@ -1056,9 +1086,10 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    const upperFold=buildGrid(
     (side===-1?'LEFT':'RIGHT')+'_DOUBLE_EYELID_FOLD',28,4,(u,v)=>{
      const t=2*u-1,soft=Math.pow(Math.max(0,1-t*t),.72);
-     const yy=y+eyeRadius*(.58+.14*soft+.11*v)*eyeHeight;
+     // Crease close to the upper lash root, without a detached high fold.
+     const yy=y+eyeRadius*(.45+.075*soft+.072*v)*eyeHeight;
      const xx=x+t*eyeRadius*1.15*eyeWidth;
-     const z=surfaceAt(xx,yy)+d.z*(.004+.0035*Math.sin(Math.PI*v)*soft);
+     const z=surfaceAt(xx,yy)+d.z*(.0035+.0026*Math.sin(Math.PI*v)*soft);
      return new THREE.Vector3(xx,yy,z);
     },lidMat);
    upperFold.userData.anatomical='upper-lid-crease';
@@ -1392,6 +1423,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
   smoothCornealCore:true,
   eyeCoreSkinBlendPower:4,
   eyeApertureHeightFraction:eyeApertureRatio,
+  v114NaturalAlmondAperture:v114FittedAperture,
+  v114UpperLidOpeningFactor:female?.875:1,
+  v114LowerLidOpeningFactor:female?.945:1,
+  v114IrisOpeningFraction:female?.928:.815,
+  v114PupilRelativeIrisMax:.49,
+  v114ReferenceEyes:'natural-partially-lidded-brown-iris',
   eyeAnteriorClearanceRatios:eyeAnteriorClearances.map(n=>Number(n.toFixed(3))),
   eyeSocketGeometry:'original-head-socket-with-open-almond-apertures',
   eyeOpeningsCutFromHeadTriangles:opening.removed,
