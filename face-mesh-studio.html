@@ -253,6 +253,7 @@ import {chooseHeroFacePreset,polishHeroFaceControls,mountHeroFacePresetPicker,ma
 import {characterAppearance,mountCharacterCastSelect,CHARACTER_CAST_BY_ID} from './src/character-cast-v46.js?v=64-v72';
 import {AGE_PROFILES,BODY_PROFILES,applyDemographicFaceControls} from './src/character-demographics-v47.js?v=80-nine-age-bands';
 import {resolveEditedFaceControls,recordFaceManualEdit} from './src/face-state-v49.js?v=49';
+import {v110InitialFemaleFaceState} from './src/face-initial-preview-v110.js?v=110-approved-normal-mesh';
 import {loadHeroineFacePreset,saveHeroineFacePreset} from './src/heroine-face-preset-store.js?v=60';
 import {heroineBeautyControlsV43,heroineBeautyControlsV47,HEROINE_BEAUTY_PART_SELECTION_V43,upgradeUneditedHeroineV42ToV43} from './src/heroine-beauty-preset-v42.js?v=20261118-art-lash-v2';
 import {loadMaleFacePreset,saveMaleFacePreset} from './src/male-face-preset-store.js?v=60';
@@ -393,6 +394,24 @@ if(v32PartMode){
   savedMalePreset?.controls||
    resolvePartSelection('male',v32Parts.male,MALE_REFERENCE_DEFAULT).controls,
   v32Parts.male.ageBand,manualFaceOverrides.male));
+}
+// v110 FIRST FRAME: an automatically saved ultra-thin state or stale
+// demographic controls must not differ from clicking 普通 manually.
+// Normalize BEFORE GLB mesh construction and BEFORE the hair generator.
+const initialFaceV110=v110InitialFemaleFaceState({
+ savedPreset:savedHeroinePreset,parts:v32Parts.female,controls:modelChanges
+});
+let femaleBodySelectionExplicit=initialFaceV110.explicitBodySelection;
+if(v32PartMode){
+ Object.assign(v32Parts.female,initialFaceV110.parts);
+ if(initialFaceV110.shouldRecompose){
+  const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
+  modelChanges=resolveEditedFaceControls('female',selected.controls,
+   v32Parts.female.ageBand,v32Parts.female.bodyType,
+   manualFaceOverrides.female,false);
+ }
+ wired=initialFaceV110.defaultWireframe;
+ faceMode=initialFaceV110.defaultView;
 }
 // V107: migrate the old unedited .65/.85 female neutral mouth to .78.
  // Keep custom mouth-width overrides and all male settings unchanged.
@@ -655,7 +674,8 @@ function persistHeroineFace(){
   hairStyleId:wigStyleId,hairColor:wigColor,hairDensity:wigDensity,
   makeupType:v32Makeup.female,contactColor,
   manualOverrides:{...manualFaceOverrides.female},
-  faceMode:facePolishMode.female?'polished':'custom'});
+  faceMode:facePolishMode.female?'polished':'custom',
+  bodySelectionExplicit:femaleBodySelectionExplicit});
 }
 function persistMaleFace(){
  if(!ready||!v32PartMode||new URLSearchParams(location.search).get('preview')==='1')return;
@@ -837,7 +857,7 @@ function facePhotoRuntimeStatus(){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const quick=document.getElementById('faceViewerStatus');
- if(quick)quick.textContent='顔 v107・髪 v72｜肌：'+faceStatus;
+ if(quick)quick.textContent='顔 v107・メッシュv110｜髪 v72｜肌：'+faceStatus;
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const normalCheekReport=models.get('female')?.report?.v105CheekGeometry;
  const retopoReport=models.get('female')?.report?.v106LocalRetopo;
@@ -1653,6 +1673,8 @@ if(v32PartMode){
  }
  for(const name of ['v47AgeBand','v47BodyType']){
   $(name).addEventListener('change',()=>{
+   if(gender==='female'&&name==='v47BodyType')
+    femaleBodySelectionExplicit=true;
    const picked={...v32Parts[gender],
     ageBand:$('v47AgeBand').value,bodyType:$('v47BodyType').value};
    partSelectionHandlers[gender](picked,false);
