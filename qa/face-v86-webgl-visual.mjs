@@ -93,6 +93,12 @@ try{
   });
   assert.equal(capture.pose.renderClipped,true,
    'Scalp clipping and native oral lip animation must share one ESM WeakMap');
+  assert.ok(capture.pose.v96LipstickVertices>0,
+   'Native moving lips must retain nonzero lipstick PBR pigment');
+  assert.equal(capture.pose.v96LipShaderPreserved,true,
+   'Real skin PBR lip wetness shader must survive hair and studio skin');
+  assert.equal(capture.pose.v96EyelinerSegments,48,
+   'Real eyeliner surface must be 48-segment tapered geometry');
   assert.ok(capture.frame?.startsWith('data:image/png;base64,'),
    'Real WebGL framebuffer must be exported as an actual PNG');
   const buffer=Buffer.from(capture.frame.slice(capture.frame.indexOf(',')+1),'base64');
@@ -200,6 +206,18 @@ try{
    'Mouth still contains the large pure-black polygonal defect');
  }
  // v95: prior QA rendered frontal only; large unflattering nose and
+ // v96: Verify the actual soft-smile preset and attached makeup, not just jaw-open.
+ await page.locator('#faceExpression').selectOption('softSmile');
+ await page.evaluate(()=>window.__faceExpressionQA.forceExpression('softSmile'));
+ const soft=await page.evaluate(()=>({
+  frame:window.__faceExpressionQA.captureWebGLFrame(),
+  pose:window.__faceExpressionQA.nativePoseProbe()
+ }));
+ assert.equal(soft.pose.expression,'softSmile');
+ assert.ok(soft.pose.v96LipstickVertices>0);
+ assert.equal(soft.pose.v96EyelinerSegments,48);
+ writeFileSync(out+'/softSmile.png',
+  Buffer.from(soft.frame.slice(soft.frame.indexOf(',')+1),'base64'));
  // cheek discontinuity were invisible until viewing the face from its side.
  await page.locator('#faceExpression').selectOption('neutral');
  await page.evaluate(()=>window.__faceExpressionQA.forceExpression('neutral'));
