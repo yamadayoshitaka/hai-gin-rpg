@@ -453,7 +453,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // ONLY, after the proven v100 nasal rim/tip and malar topology passes.
  const cheekContour=gender==='female'&&cheekContourMode==='v101'?
   fairV101CheekContour(geometry,{gender,
-   ageWrinkles:demo.age.wrinkles}):{applied:false,reason:'v100-reference'};
+   ageWrinkles:demo.age.wrinkles,
+   donorPositions:originalPoints,donorCenterX:cx,donorHalfWidth:d.x*.5
+  }):{applied:false,reason:'v100-reference'};
  // Finish with the source-indexed original lip-loop width morph. No
  // neighboring cheek smoothing may consume this slider-adjusted geometry.
  for(let i=0;i<p.count;i++){
