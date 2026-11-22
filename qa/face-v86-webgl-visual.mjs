@@ -82,9 +82,13 @@ try{
  await page.waitForFunction(()=>
   window.__faceExpressionQA?.nativePoseProbe?.()?.mouthOpen>.55,
   null,{timeout:30000});
- assert.match(await page.locator('#facePoseDiagnostics').innerText(),
+ // The detailed pose diagnostic is intentionally inside the closed
+ // technical panel. The compact summary stays visible beside the model.
+ assert.match(await page.locator('#facePoseQuick').innerText(),/表情：大笑い/,
+  'Compact visible expression status must match the actual dropdown');
+ assert.match((await page.locator('#facePoseDiagnostics').textContent())||'',
   /表情：大笑い.*開口強度：(8[0-9]|9[0-9])%/,
-  'Actual UI selection must reflect an open 3D laughing mouth');
+  'The expanded diagnostic data remains available without obscuring the face');
  await page.locator('#faceExpression').selectOption('neutral');
  // Read the actual WebGL canvas immediately after an explicit render.
  // Playwright page/element screenshots intermittently time out while this
