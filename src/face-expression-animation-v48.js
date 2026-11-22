@@ -8,9 +8,9 @@
 import * as THREE from 'three';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
-import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=89-enamel-quality';
+import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=92-separated-natural-arches';
 import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
-import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=91-shared-oral-geometry';
+import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=92-verified-oral-geometry';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
  from './face-anatomy-rig-v80.js?v=89-live-nasolabial';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
@@ -601,6 +601,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v89BuildSignature:'face-v89-natural-laugh-cosmetics-nasolabial-20261122',
    v90BuildSignature:'face-v90-native-skin-lip-reference-quality-20261122',
    v91BuildSignature:'face-v91-responsive-natural-laugh-visual-sculpt-20261122',
+   v92BuildSignature:'face-v92-dental-oral-hair-visual-regression-20261122',
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
