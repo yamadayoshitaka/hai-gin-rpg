@@ -401,7 +401,7 @@ jobs:
           echo '::error::Deployed Pages did not serve the current maintenance center/PR preview for this SHA.'
           exit 1
 
-      - name: Confirm public face studio v96 and topology-controlled oral runtime are deployed
+      - name: Confirm public face studio v97 and topology-controlled oral runtime are deployed
         if: steps.latest.outputs.publish == 'true'
         shell: bash
         run: |
@@ -415,14 +415,14 @@ jobs:
             topology_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-topology.js -w '%{http_code}' "${topology}" || true)
             if [[ "${html_code}" == 200 && "${js_code}" == 200 && "${topology_code}" == 200 ]] &&
                grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/public-face-studio.html &&
-               grep -Fq '顔品質 v96' /tmp/public-face-studio.html &&
-               grep -Fq 'v=96-topology-smile-cosmetics-20261122' /tmp/public-face-studio.html &&
-               grep -Fq 'v96BuildSignature' /tmp/public-face-expression.js &&
+               grep -Fq '顔品質 v97' /tmp/public-face-studio.html &&
+               grep -Fq 'v=97-connected-eye-mouth-cheek-20261122' /tmp/public-face-studio.html &&
+               grep -Fq 'v97BuildSignature' /tmp/public-face-expression.js &&
                grep -Fq 'fitTopologyNasalSideProfile' /tmp/public-face-topology.js; then
-              echo "PASS: public face studio, FACS and nose/oral topology modules are current v96 (${GITHUB_SHA})"
+              echo "PASS: public face studio, FACS and nose/oral topology modules are current v97 (${GITHUB_SHA})"
               exit 0
             fi
-            echo "::warning::Face v96 not public: HTML ${html_code} JS ${js_code} topology ${topology_code} (attempt ${attempt}/18)"
+            echo "::warning::Face v97 not public: HTML ${html_code} JS ${js_code} topology ${topology_code} (attempt ${attempt}/18)"
             sleep 5
           done
           echo '::error::Pages still serves stale face HTML or facial animation JS; PR merge alone is not a successful release'
