@@ -8,11 +8,11 @@
 import * as THREE from 'three';
 import {smoothStudioFaceNormals} from './studio-face-quality-v56.js?v=76-expression-smooth';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80';
-import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=88-native-dental-cache';
+import {createFaceOralAnatomy} from './face-oral-anatomy-v80.js?v=89-enamel-quality';
 import {poseIntegratedMouth} from './face-integrated-mouth-v82.js?v=82';
-import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=88';
+import {captureNativeOralSkinPose,updateNativeOralPose,getNativeOralRigReport} from './face-native-oral-rig-v88.js?v=89-natural-jaw';
 import {FACS_CHANNELS_V80,deriveFacialActionUnits,v80FaceMuscleDelta}
- from './face-anatomy-rig-v80.js?v=80';
+ from './face-anatomy-rig-v80.js?v=89-live-nasolabial';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number(v)||0));
 const smooth=t=>{const x=clamp(t);return x*x*(3-2*x);};
 /** Signed intensities are blended with ongoing blink and speech.
