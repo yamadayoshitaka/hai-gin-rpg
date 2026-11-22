@@ -425,6 +425,9 @@ jobs:
                grep -Fq 'v97BuildSignature' /tmp/public-face-expression.js &&
                grep -Fq 'fitTopologyNasalSideProfile' /tmp/public-face-topology.js &&
                grep -Fq 'refineV106CheekMouthTopology' /tmp/public-face-v106-retopo.js &&
+               grep -Fq 'id="studioTechnicalDetails"' /tmp/public-face-studio.html &&
+               grep -Fq 'id="faceViewerStatus"' /tmp/public-face-studio.html &&
+               grep -Fq '品質・生成ログを表示' /tmp/public-face-studio.html &&
                grep -Fq 'v107NeutralCheekDepth' /tmp/public-face-v107.js &&
                grep -Fq 'v107BuildSignature' /tmp/public-face-expression.js; then
               echo "PASS: public face studio, FACS and nose/oral topology modules are current v107 (${GITHUB_SHA})"
