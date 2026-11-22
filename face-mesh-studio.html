@@ -227,7 +227,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v93-portrait-fairing';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=92-verified-laugh-20261122';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v93-portrait-fairing';
-import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=92-verified-oral-geometry';
+import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=94-filter-original-mouth-triangles';
 import {createScalpAnchoredWig,FACE_HAIR_RUNTIME_BUILD,buzzHairlineFractionAtPoint} from './src/face-scalp-wig.js?v=20261121-two-donor-unisex-catalog-v67-tip-flare-v68-natural-v69-faceclear-v70-salon-v71-pins-v72-eye-clearance-v92-portrait-v93';
 import {createPartSelectorUI} from './src/face-part-selector-ui-v32.js?v=54';
 import {defaultPartSelection,resolvePartSelection,PART_CATALOG,HAIR_COLORS} from './src/face-part-catalog-v32.js?v=67-v72';
@@ -476,6 +476,8 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
     const current=expressions.get(gender)?.getState();
     return {expression:current?.expression,mouthOpen:current?.mouthOpen,
      oral:current?.v88OralAnatomy,
+     hiddenDonorInterior:face?.userData?.v88NativeOralRig?.v94HiddenDonorInteriorTriangles??0,
+     hiddenRenderInterior:face?.userData?.v94HiddenRenderTriangles??0,
      renderClipped:!!geometry?._v88SourceIndex,
      renderVertexCount:geometry?.getAttribute('position')?.count,
      drawCount:geometry?.drawRange?.count,
