@@ -5,6 +5,7 @@
  */
 import {setBattleJobPortrait} from './battle-job-portraits.js';
 import {battleSquadPortraitChoice} from './battle-portrait-identity.js';
+import {BATTLE_TEAM_COLORS} from './battle-center-radar.js?v=20261122-three-team-events1';
 export const RPG_HUD_JOB_ICON=Object.freeze({
  '剣士':'⚔','魔法使い':'✦','僧侶':'✚','弓使い':'🏹','弓兵':'🏹','盾騎士':'🛡',
  '騎士':'♞','忍者':'◆','シーフ':'◇','格闘家':'✊','召喚士':'◈'
@@ -84,6 +85,9 @@ export function createBattleRpgSquadHud({documentRef=globalThis.document,onFocus
  const doc=documentRef;
  if(!doc?.body?.appendChild)return null;
  const root=doc.createElement('section');root.id='battleRpgSquadHud';
+ root.style.setProperty('--battle-ally-color',BATTLE_TEAM_COLORS.ally);
+ root.style.setProperty('--battle-enemy-color',BATTLE_TEAM_COLORS.enemy);
+ root.style.setProperty('--battle-engaged-color',BATTLE_TEAM_COLORS.engaged);
  root.setAttribute('aria-label','戦場の味方隊と敵隊のRPGステータス');
  root.hidden=true;
  const panels=[];
