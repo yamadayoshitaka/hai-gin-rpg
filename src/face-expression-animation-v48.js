@@ -22,7 +22,7 @@ export const FACE_EXPRESSIONS=Object.freeze({
  neutral:Object.freeze({label:'通常',brow:0,tilt:0,squint:0,smile:0,open:0,cheek:0}),
  softSmile:Object.freeze({label:'微笑み',brow:.07,tilt:0,squint:.26,smile:.40,open:0,cheek:.33}),
  smile:Object.freeze({label:'笑顔',brow:.09,tilt:0,squint:.44,smile:.83,open:.12,cheek:.70}),
- laugh:Object.freeze({label:'大笑い',brow:.08,tilt:0,squint:.42,smile:.80,open:.70,cheek:.70}),
+ laugh:Object.freeze({label:'大笑い',brow:.08,tilt:0,squint:.42,smile:.80,open:.88,cheek:.70}),
  angry:Object.freeze({label:'怒り',brow:-.18,tilt:-.27,squint:.28,smile:-.28,open:0,cheek:-.12}),
  shout:Object.freeze({label:'怒鳴る',brow:-.21,tilt:-.33,squint:.23,smile:-.2,open:.96,cheek:-.09}),
  sad:Object.freeze({label:'悲しい',brow:-.06,tilt:.20,squint:.19,smile:-.45,open:.05,cheek:-.13}),
