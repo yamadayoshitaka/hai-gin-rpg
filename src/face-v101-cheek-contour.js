@@ -37,7 +37,10 @@ export function v101CheekContourField({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  return {dz,mask:region,crest,lower};
 }
 /** Preserve donor triangle connectivity with local safety attenuation. */
-export function fairV101CheekContour(geometry,{gender='female',ageWrinkles=0}={}){
+export function fairV101CheekContour(geometry,{
+ gender='female',ageWrinkles=0,
+ donorPositions=null,donorCenterX=null,donorHalfWidth=null
+}={}){
  const fail=reason=>({applied:false,reason});
  if(gender!=='female')return fail('male-preserved');
  if(ageWrinkles>=.68)return fail('age-relief-preserved');
@@ -56,12 +59,19 @@ export function fairV101CheekContour(geometry,{gender='female',ageWrinkles=0}={}
   const I=i*3,x=src[I],y=src[I+1],z=src[I+2];
   const nx=(x-cx)/(dx*.5),ny=(y-box.min.y)/dy,
    nz=(z-box.min.z)/depth;
-  const a=v101CheekContourField({xn:nx,yn:ny,zn:nz,ageWrinkles});
+  const donorX=donorPositions?.[I]??x;
+  const donorAx=Math.abs((donorX-(donorCenterX??cx))/
+   (donorHalfWidth??dx*.5));
+  // A donor nose vertex can drift laterally during the v100 sculpt.
+  // Always classify and guard it by the IMMUTABLE original GLB index.
+  const nasalLocked=donorAx<=.285;
+  const a=nasalLocked?{dz:0,mask:0,crest:0,lower:0}:
+   v101CheekContourField({xn:nx,yn:ny,zn:nz,ageWrinkles});
   initial[I+2]+=depth*a.dz;
   mask[i]=a.mask;
   if(a.crest>.08)crestVertices++;
   if(a.lower>.08)lowerVertices++;
-  if(Math.abs(nx)<=.285)nasalProtectedVertices++;
+  if(nasalLocked)nasalProtectedVertices++;
  }
  if(crestVertices<5||lowerVertices<3)return fail('no-native-cheek-coverage');
  const maxEdge=dx*.115;
@@ -135,8 +145,10 @@ export function fairV101CheekContour(geometry,{gender='female',ageWrinkles=0}={}
   if(Math.abs(zDelta)>1e-9)altered++;
   if(zDelta<0&&mask[i]>.15)crestBack++;
   if(zDelta>0&&mask[i]>.15)lowerFill++;
-  const nx=Math.abs((src[i*3]-cx)/(dx*.5));
-  if(nx<=.285)maxNoseChange=Math.max(maxNoseChange,Math.abs(zDelta));
+  const donorX=donorPositions?.[i*3]??src[i*3];
+  const ax=Math.abs((donorX-(donorCenterX??cx))/
+   (donorHalfWidth??dx*.5));
+  if(ax<=.285)maxNoseChange=Math.max(maxNoseChange,Math.abs(zDelta));
  }
  if(altered<8||!crestBack||!lowerFill)return fail('no-balanced-cheek-remesh');
  if(maxNoseChange!==0)return fail('nose-protection-violated');
