@@ -225,6 +225,22 @@ try{
   assert.ok(image.width>350&&image.height>350);
   console.log('FACE_V95_SIDE_IMAGE',JSON.stringify({view,file}));
  }
+ // The hair-covered profile is NOT a valid visual proof of nasal form:
+ // long side locks obscure the bridge, alar wing and lip projection.
+ await page.locator('#wig').click();
+ await page.waitForFunction(()=>
+  window.__faceMasterQA?.()?.wigVisible===false,
+  null,{timeout:30000});
+ for(const view of ['threeQuarter','side']){
+  await page.locator('#'+view).click();
+  await page.waitForTimeout(75);
+  const data=await page.evaluate(()=>window.__faceExpressionQA.captureWebGLFrame());
+  assert.ok(data?.startsWith('data:image/png;base64,'),
+   'Bare sculpt profile must be a real Three.js render');
+  const file=out+'/neutral-'+view+'-no-hair.png';
+  writeFileSync(file,Buffer.from(data.slice(data.indexOf(',')+1),'base64'));
+  console.log('FACE_V95_UNOBSCURED_PROFILE',JSON.stringify({view,file}));
+ }
  await page.locator('#front').click();
  assert.deepEqual(failures,[],
   'Face editor cannot throw JavaScript/WebGL errors during visual QA');
