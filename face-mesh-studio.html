@@ -66,14 +66,19 @@ main{padding:8px}
 .adjustGrid label{min-height:85px}
 button{padding:9px 11px}
 }
+#faceViewerStatus{display:block;max-width:100%;padding:6px 9px;border-radius:8px;background:#173952;color:#e1f9ee;font-size:12px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:2px 0 8px}
+#facePoseQuick{display:block;font-size:12px;color:#c4dce9;margin:4px 0 7px;min-height:18px}
+.studioTechDetails{margin:10px 0;padding:9px 12px;background:#142a3f;border:1px solid #425e77;border-radius:10px}
+.studioTechDetails summary{font-weight:650;cursor:pointer;min-height:30px}
+.studioTechDetails[open]>*:not(summary){margin:8px 0}
+#hairBuildBadge{position:static;max-width:100%;padding:8px;border-radius:8px;background:#0c2030;color:#d2eee6;font-size:12px;border:1px solid #567d76;overflow-wrap:anywhere;white-space:normal}
+#hairRuntimeDiagnostics,#faceQualityRelease,#facePoseDiagnostics{overflow-wrap:anywhere;white-space:normal;line-height:1.5}
+@media(max-width:670px){.previewStage{position:relative;top:auto;z-index:auto}#faceCanvas{height:40dvh;min-height:255px}.studioTechDetails{margin-top:8px;padding:8px}}
 </style><style>.v64-manager-link{display:inline-flex;margin:8px 0;padding:9px 12px;border-radius:8px;background:#246b59;color:white;text-decoration:none;border:1px solid #9bd8be}</style></head>
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
-<section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
 <header>
 <h1>顔・髪の編集｜顔品質 v107・髪造形 v72</h1>
-<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v107：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
 <a class="studioNav" href="./face-body-studio.html?v=76" id="returnToCostume">衣装確認画面に戻る</a>
-<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
 <main><section class="panel">
 <div id="status" role="status">男女のCC0頭部メッシュを読み込み中…</div>
@@ -87,8 +92,9 @@ button{padding:9px 11px}
 <select id="wigVolume" aria-label="髪を頭に密着させるか横に広げるか"></select></label>
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
-<div class="previewStage" id="previewStage"><button type="button" id="hairForceReload" style="display:block;margin:8px 0;padding:9px 12px;border:1px solid #78bdb1;border-radius:8px;background:#196354;color:#fff;font-weight:700" onclick="location.replace(location.pathname+'?hair_reload='+Date.now())">最新版を再読込（キャッシュ回避）</button>
-<div id="hairBuildBadge" style="position:absolute;z-index:3;top:8px;left:8px;max-width:calc(100% - 16px);padding:5px 9px;border-radius:7px;background:rgba(8,22,34,.88);color:#e1f9ee;border:1px solid #6eaa9c;font-size:12px;pointer-events:none" aria-live="polite">顔品質 v107／髪造形 v72：読込中…</div><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<div class="previewStage" id="previewStage">
+<div id="faceViewerStatus" role="status" aria-live="polite">顔 v107・髪 v72｜3Dモデルを読込中…</div>
+<canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
 <button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
@@ -110,10 +116,20 @@ button{padding:9px 11px}
  <label for="faceExpression">表情
  <select id="faceExpression" aria-label="表情を22種類から選択"></select></label>
  </div>
+ <output id="facePoseQuick" role="status" aria-live="polite">表情を読込中…</output>
  <details id="faceExpressionRig" style="margin:8px 0"><summary>表情の筋肉スライダー（目・眉・頬・口角・開口）</summary><div id="faceExpressionRigSliders" class="adjustGrid"></div><button type="button" id="resetExpressionRig">表情の個別調整を解除</button></details>
- <output id="facePoseDiagnostics" role="status" aria-live="polite"
-  style="display:block;font-size:13px;color:#dcece8;padding:6px 4px">顔の年代・表情を確認中…</output>
 </div>
+<details id="studioTechnicalDetails" class="studioTechDetails">
+<summary>品質・生成ログを表示</summary>
+<div id="hairBuildBadge" class="studioBadgeDetails" aria-live="polite">顔品質 v107／髪造形 v72：読込中…</div>
+<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v107：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
+
+<section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
+<output id="facePoseDiagnostics" role="status" aria-live="polite"
+  style="display:block;font-size:13px;color:#dcece8;padding:6px 4px">顔の年代・表情を確認中…</output>
+<button type="button" id="hairForceReload" style="display:block;margin:8px 0;padding:9px 12px;border:1px solid #78bdb1;border-radius:8px;background:#196354;color:#fff;font-weight:700" onclick="location.replace(location.pathname+'?hair_reload='+Date.now())">最新版を再読込（キャッシュ回避）</button>
+<p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
+</details>
 <section id="v32PartsStudio"><h2>完成顔を選ぶ（男女それぞれ16種類）</h2>
 <p class="v45Hint">顔型・目・鼻・口・メイクをまとめて切り替えます。髪型と髪色はそのまま保存されます。</p>
 <div class="controls" aria-label="年代と顔の体型">
@@ -462,6 +478,9 @@ function updateFacePoseDiagnostics(){
  const build=m?.report?.v47Demographics?.bodyType||v32Parts[gender].bodyType;
  const wrinkle=m?.report?.v47Demographics?.wrinkleStrength??0;
  const label=FACE_EXPRESSIONS[pose?.expression||expressionPrefs.expression]?.label||'通常';
+ const compact=$('facePoseQuick');
+ if(compact)compact.textContent=(AGE_PROFILES[age]?.label||age)+'・'+
+  (BODY_PROFILES[build]?.label||build)+'｜表情：'+label;
  const output=$('facePoseDiagnostics');
  if(output)output.textContent='3D反映：'+(AGE_PROFILES[age]?.label||age)+
   '・'+(BODY_PROFILES[build]?.label||build)+
@@ -730,7 +749,7 @@ function setView(view){
  angle=view;
  const box=faceBox(),size=box.getSize(new THREE.Vector3());
  const c=box.getCenter(new THREE.Vector3());
- const distance=Math.max(size.x,size.y,size.z)*2.30;
+ const distance=Math.max(size.x,size.y,size.z)*2.05;
  const dir=view==='underside'?new THREE.Vector3(0,-1,0):
   view==='crown'?new THREE.Vector3(0,1,0):
   view==='side'?new THREE.Vector3(1,0,0):
@@ -817,6 +836,8 @@ function facePhotoRuntimeStatus(){
 }
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
+ const quick=document.getElementById('faceViewerStatus');
+ if(quick)quick.textContent='顔 v107・髪 v72｜肌：'+faceStatus;
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const normalCheekReport=models.get('female')?.report?.v105CheekGeometry;
  const retopoReport=models.get('female')?.report?.v106LocalRetopo;
