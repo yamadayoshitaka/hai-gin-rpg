@@ -250,6 +250,7 @@ export function sealOriginalOralAperture(face,{strict=false}={}){
   area:projectedArea,
   originalBoundaryLoops:loops.length,
   lipRing: ring.slice(),
+  outerSelectedRing:outerCandidates[0]?.candidate.slice()||[],
   preservedMorphTargets:
    (geometry.morphAttributes?.position||[]).length
  };
