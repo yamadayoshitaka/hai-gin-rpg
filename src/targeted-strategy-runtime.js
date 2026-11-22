@@ -252,7 +252,7 @@ export function createTargetedStrategyUi({
    const isItem=Boolean(chosenItem),typeName=isItem?'ally':kind;
    html='<div class="centerStep">⑤ '+(typeName==='enemy'?'敵部隊を選択（複数可）':
     typeName==='map'?'大型レーダーで地点を選択':
-    typeName==='object'?'対象オブジェクトを選択（複数可）':'アイテムを使う味方隊を選択（最大3隊）')+'</div>'+
+    typeName==='object'?'対象オブジェクトを選択（複数可）':'アイテムを使う味方隊を選択（全3隊）')+'</div>'+
     radarMarkup(typeName==='enemy'?'🔴 敵部隊の赤いマーカーをタップ（複数可）':
       typeName==='ally'?'🔵 アイテムを届ける味方の隊（3隊）をタップ':
       typeName==='object'?'🟡 オブジェクトをレーダーから選択':
@@ -262,7 +262,7 @@ export function createTargetedStrategyUi({
        selectedTargets.has(String(x.id)))).join('')+'</div>')+
     '<small class="centerHelp">'+(typeName==='enemy'?'複数の敵を選ぶと分隊を割り当てて攻撃します。':
     typeName==='map'?'青＝味方・赤＝敵。タップした地点は確定するまで移動先になりません。':
-    typeName==='ally'?'1回につき1隊を選び、隊内の適切な分隊に自動支給します。':'探索・破壊できる対象のみ選択します。')+'</small>'+
+    typeName==='ally'?'1回に1隊を選択。隊内の対象へ自動支給します。':'探索・破壊できる対象のみ選択します。')+'</small>'+
     controls('◀ 方法へ戻る','次へ','内容を確認',typeName==='map'?!mapPoint:!selectedTargets.size);
   }else if(step==='confirm'){
    const isItem=Boolean(chosenItem),kindName=isItem?'味方部隊':kind==='enemy'?'敵部隊':
@@ -278,7 +278,8 @@ export function createTargetedStrategyUi({
     '<small class="centerHelp">確定後に指示を発行し、戦闘を再開します。</small>'+
     controls('◀ 対象を選び直す','作戦を実行','✓ 確定して再開',false);
   }
-  panel.innerHTML='<div id="targetedStrategyCard"><header><b>⚔ 作戦指示</b>'+
+  const compactTarget=step==='target'||step==='scope'||step==='moveTarget';
+ panel.innerHTML='<div id="targetedStrategyCard"'+(compactTarget?' class="centerTargetStage'+(chosenItem?' centerItemTargetStage':'')+'"':'')+'><header><b>⚔ 作戦指示</b>'+
    b('data-strategy-close','✕ 中止')+'</header>'+
    '<div class="centerPauseRibbon">⏸ 戦闘停止中 · 指示を確定するまで兵士と敵は停止します</div>'+
    '<div class="centerTopRow"><span>第'+esc(groupId)+'班</span><span>'+
@@ -291,11 +292,10 @@ export function createTargetedStrategyUi({
    'aria-label="拡大戦場レーダー・赤が敵、青が味方、タップで対象選択" role="img"></canvas>'+
    '<small class="centerMapCoords">'+esc(hint)+'</small>'+
    (mapPoint&&type()==='map'?'<small class="centerMapCoords">📍 指定地点 ('+mapPoint.x+', '+mapPoint.z+')</small>':'')+
-   '<small class="centerMapLegend"><span class="g1">● 第1班（水色）</span><span class="g2">● 第2班（紫）</span><span class="g3">● 第3班（緑）</span> 🔴 敵　🟡 物　◎ 選択</small>'+
-    '<small class="centerMapCoords">'+(step==='target'&&!chosenItem&&type()==='map'?
-     '🟢 選択可能な地面　🔴 選択不可（水・崖・建物・障害物）':
-     '金色の二重輪＝今回の作戦で選択可能な対象')+'</small>'+
-    '<small class="centerMapCoords">数字：班番号-分隊番号（例 2-3＝第2班の第3分隊）</small></div>';
+   '<small class="centerMapLegend"><span class="g1">● 第1隊</span><span class="g2">● 第2隊</span><span class="g3">● 第3隊</span> 🔴 敵　◎ 選択</small>'+
+    (chosenItem?'':'<small class="centerMapCoords">'+(step==='target'&&type()==='map'?
+     '🟢 通行可能　🔴 障害物・水辺':
+     '金色の二重輪＝選択可能な対象。数字＝隊-分隊')+'</small>')+'</div>';
  }
  function drawLargeRadar(){
   const canvas=panel.querySelector('#centralCommandMap'),radar=getRadarCanvas();
