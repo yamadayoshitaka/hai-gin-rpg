@@ -25,7 +25,7 @@ test('v92 rear and side-back guides keep their original path',()=>{
  const hair=[
   new THREE.Vector3(-.2,.95,-.30),
   new THREE.Vector3(-.1,.77,-.32),
-  new THREE.Vector3(-.12,.58,.39)
+  new THREE.Vector3(-.12,.58,-.29)
  ];
  const original=hair.map(v=>v.clone());
  shapeRebuiltEyeBand(hair,{box,side:-1});
