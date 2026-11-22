@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#14263a">
 <!-- Pages publication retry: scalp v29 c937964d; requested visual verification 2026-11-21 -->
 <!-- FaceHair Pages redeploy checkpoint: 2026-11-21 v23 publication retry; verify runtime build badge -->
-<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v103</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v104</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -70,8 +70,8 @@ button{padding:9px 11px}
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
 <section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
 <header>
-<h1>顔・髪の編集｜顔品質 v103・髪造形 v72</h1>
-<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v103：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
+<h1>顔・髪の編集｜顔品質 v104・髪造形 v72</h1>
+<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v104：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
 <a class="studioNav" href="./face-body-studio.html?v=76" id="returnToCostume">衣装確認画面に戻る</a>
 <p>ライブラリに保存された実GLBの顔設定（顎先5倍・鼻穴隠し2・鼻筋2.5）を男女の実メッシュ標準に固定。口紅とチークを実メッシュの頂点に着色。上下アイライン・眉・眼球を調整し、女性用の高密度ロング（後頭部・両側頭部・襟足まで髪束生成・顔と肩への衝突対応）を追加。保存値とズームを維持します。</p>
 </header>
@@ -88,7 +88,7 @@ button{padding:9px 11px}
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
 <div class="previewStage" id="previewStage"><button type="button" id="hairForceReload" style="display:block;margin:8px 0;padding:9px 12px;border:1px solid #78bdb1;border-radius:8px;background:#196354;color:#fff;font-weight:700" onclick="location.replace(location.pathname+'?hair_reload='+Date.now())">最新版を再読込（キャッシュ回避）</button>
-<div id="hairBuildBadge" style="position:absolute;z-index:3;top:8px;left:8px;max-width:calc(100% - 16px);padding:5px 9px;border-radius:7px;background:rgba(8,22,34,.88);color:#e1f9ee;border:1px solid #6eaa9c;font-size:12px;pointer-events:none" aria-live="polite">顔品質 v103／髪造形 v72：読込中…</div><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<div id="hairBuildBadge" style="position:absolute;z-index:3;top:8px;left:8px;max-width:calc(100% - 16px);padding:5px 9px;border-radius:7px;background:rgba(8,22,34,.88);color:#e1f9ee;border:1px solid #6eaa9c;font-size:12px;pointer-events:none" aria-live="polite">顔品質 v104／髪造形 v72：読込中…</div><canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
 <button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
@@ -218,13 +218,13 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v103-normal-cheek-reference","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v97-eyeliner-lid-sync","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=95-topology-nasal-side-view-20261122","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261122-v104-v102-rollback-safe-microfair","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261122-v97-eyeliner-lid-sync","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=95-topology-nasal-side-view-20261122","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v103-normal-cheek-reference';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261122-v104-v102-rollback-safe-microfair';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=97-connected-eye-mouth-cheek-20261122';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261122-v97-eyeliner-lid-sync';
 import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=97-rim-aligned';
@@ -813,10 +813,10 @@ function facePhotoRuntimeStatus(){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
- const normalCheekReport=models.get('female')?.report?.v103NormalCheekRepair;
+ const normalCheekReport=models.get('female')?.report?.v104CheekMicrofair;
  const normalCheekStatus=normalCheekReport?.applied===true?
-  'v103実メッシュ補正済（'+normalCheekReport.changedVertices+'頂点）':
-  normalCheekReport?.reason==='other-build-unmodified'?'普通以外：従来形状維持':
+  'v103撤回／v102復旧＋v104微細平滑（'+normalCheekReport.changedVertices+'頂点）':
+  normalCheekReport?.reason==='not-young-female-normal-build'?'対象外：v102原型維持':
   normalCheekReport?.reason?'未適用：'+normalCheekReport.reason:'読込中';
  const cheekNoseApplied=cheekNoseReport?.applied===true;
  const cheekContourReport=models.get('female')?.report?.v102CheekContour;
@@ -826,17 +826,17 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const cheekNoseStatus=cheekNoseApplied?'適用済（'+(cheekNoseReport.effectiveVertices||cheekNoseReport.verticesAffected)+'頂点）':
   cheekNoseReport?.reason?'未適用：'+cheekNoseReport.reason:'読込中';
  const release=document.getElementById('faceQualityRelease');
- if(release)release.textContent='顔品質 v103｜実写肌PBR：'+faceStatus+
-  '｜頬曲面：'+cheekContourVersion+'｜普通体型の頬：'+normalCheekStatus+'｜鼻孔・顔メッシュ：'+cheekNoseStatus+'｜髪造形 v72';
+ if(release)release.textContent='顔品質 v104｜実写肌PBR：'+faceStatus+
+  '｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔・顔メッシュ：'+cheekNoseStatus+'｜髪造形 v72';
  const face=models.get('female')?.face;
  const mask=face?.userData;
  const mode=mask?.hairScalpMaskMode||'未実行';
  const count=mask?.hairScalpMaskedTriangles??0;
  const active=Boolean(mask?.hairScalpMaskActive);
  const reloadButton=document.getElementById('hairForceReload');
- if(reloadButton)reloadButton.title='現在の顔品質 v103／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
+ if(reloadButton)reloadButton.title='現在の顔品質 v104／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
  const badge=document.getElementById('hairBuildBadge');
- if(badge)badge.textContent='顔品質 v103（実写肌：'+faceStatus+'）｜頬曲面：'+cheekContourVersion+'｜普通体型の頬：'+normalCheekStatus+'｜鼻孔補正：'+cheekNoseStatus+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
+ if(badge)badge.textContent='顔品質 v104（実写肌：'+faceStatus+'）｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔補正：'+cheekNoseStatus+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
   '｜頭皮補正：'+(active?'ON':mode==='long-pigment-underlay'?'ロング被覆':'OFF')+'（'+mode+'）';
  const el=document.getElementById('hairRuntimeDiagnostics');
