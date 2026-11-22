@@ -263,7 +263,7 @@ export function sadakoCrownSurfaceLayerOffset(zone,y,t,box){
  const upper=THREE.MathUtils.smoothstep(yn,.64,.83);
  const rooted=THREE.MathUtils.smoothstep(t,0,.085);
  const returnToShape=1-THREE.MathUtils.smoothstep(t,.52,.76);
- return d.x*.016*upper*rooted*returnToShape;
+ return d.x*.010*upper*rooted*returnToShape;
 }
 
 /** True top-over-side overlay. Crown-grown guides sweep across the
@@ -277,7 +277,7 @@ export function sadakoCrownSideOverlayOffset(zone,y,t,box,overlay=false){
  const across=THREE.MathUtils.smoothstep(t,.02,.15);
  const down=1-THREE.MathUtils.smoothstep(t,.49,.75);
  const headBand=THREE.MathUtils.smoothstep(yn,.46,.59);
- return d.x*.021*across*down*headBand;
+ return d.x*.015*across*down*headBand;
 }
 
 /** A real hair-card width/overlap profile, NOT another side panel.
@@ -361,6 +361,25 @@ function hairCutY(zone,box,lengthScale,seed,normalizedX=0,minLengthScale=.55){
 }
 // Signed outward displacement is strongest across the crown and is
 // smoothly tapered around the hairline. Never lift naked facial skin.
+/**
+ * v109 single-scalp hair contact controls, as a fraction of source head width.
+ * Keep all long-hair roots independent of the volume dropdown. Only the
+ * free mid-shaft/tips receive the selected hairstyle's volume spread.
+ */
+export function v109RootGapFraction({shortCutKind=null}={}){
+ if(shortCutKind==='buzz')return .013; // separate native buzz stubble
+ if(shortCutKind)return .0080;
+ return .0055;
+}
+export function v109VolumeFreeLengthWeight(t){
+ return THREE.MathUtils.smoothstep(THREE.MathUtils.clamp(t,0,1),.12,.62);
+}
+export function v109ScalpContactFraction(t=0){
+ // Close roots and the first crown stations hug the actual GLB scalp.
+ // Clearance grows gently only after the root-to-gravity transition.
+ return .0045+.0050*THREE.MathUtils.smoothstep(
+  THREE.MathUtils.clamp(t,0,1),.08,.42);
+}
 export function wigVolumeLiftAt(point,box,profileId='natural'){
  const profile=WIG_BASE_VOLUME_PROFILES[profileId];
  if(!profile)throw Error('Unknown wig volume profile: '+profileId);
@@ -684,7 +703,7 @@ function scalpShell(geo,box,color,{fullBody=false,shortHair=false,volumeProfile=
      (v.y-(box.min.y+d.y*.48))/Math.max(d.y*.52,1e-6),
      (v.z-center.z)/Math.max(d.z*.5,1e-6)).normalize();
     const outward=n.dot(radial)<.35?radial:n.clone().add(radial).normalize();
-    v.addScaledVector(outward,d.x*.0035);
+    v.addScaledVector(outward,d.x*.0028);
     smoothNormals.push(outward.x,outward.y,outward.z);
    }else{
     v.addScaledVector(n,d.x*.0012);
@@ -1472,7 +1491,9 @@ export function createScalpFirstLongGuide({
   (zone.startsWith('fringe')||zone==='crown');
  const smooth=(t,a,b)=>THREE.MathUtils.smoothstep(t,a,b);
  const sweptPart=t=>centerCurtain?smooth(t,.018,.32)*d.x*.135*partSweepScale:0;
- const spreadCurve=t=>smooth(t,.025,.40)*d.x*.075*volumeSpread;
+ // Volume must never yank or flare the first ~12% of the hair fibre.
+ // The broad ease also avoids a sudden 1st/2nd station outward bend.
+ const spreadCurve=t=>v109VolumeFreeLengthWeight(t)*d.x*.075*volumeSpread;
  const workNormal=new THREE.Vector3(),tan=new THREE.Vector3(),
   direction=new THREE.Vector3(),fall=new THREE.Vector3();
  for(let j=1;j<=segments;j++){
@@ -1538,7 +1559,7 @@ export function createScalpFirstLongGuide({
     next.x-=side*(lateral-maxLateral);
   }
   if(projectOutside)projectOutside(next,j===1,front,
-   next.y>box.min.y+d.y*.59);
+   next.y>box.min.y+d.y*.59,t);
   result.push(next);
   last=next;
  }
@@ -1688,18 +1709,18 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
  // offset plus four thick stacked ribbons looked like a raised helmet.
  // Short crops should sit against the scalp; four lifted ribbon layers
  // created bead-like follicle spikes around the ears and crown.
- const rootLift=d.x*(style.shortCutKind==='buzz'?.013:style.shortCutKind?.010:.0125);
+ const rootLift=d.x*v109RootGapFraction({shortCutKind:style.shortCutKind});
  const sadakoHeadDirection=new THREE.Vector3(),sadakoRenderCorner=new THREE.Vector3();
  let sadakoGuideScalpPushes=0,sadakoRibbonScalpPushes=0;
  let sadakoRearBustGuideContacts=0,sadakoRearBustRibbonContacts=0;
  /** True exterior projection for the guide AND rendered ribbon corners.
   * A finite 0.035-width nudge left long-hair points inside the donor skull,
   * especially visible from underneath, so this projects all the way out. */
- function projectSadakoOutside(point,nearRoot=false,front=false,followScalp=false){
+ function projectSadakoOutside(point,nearRoot=false,front=false,followScalp=false,t=.6){
   if(!sadakoMaster)return false;
   const yn=(point.y-box.min.y)/Math.max(d.y,1e-6);
   if(yn<.40||yn>1.004)return false;
-  const clearance=d.x*(nearRoot?.007:.014);
+  const clearance=d.x*v109ScalpContactFraction(nearRoot?Math.min(t,.055):t);
   let changed=false;
   if(yn>.535){
    const origin=radialScalp.radialCenter;
@@ -1720,8 +1741,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     // scalp. A fully radial guide without this attraction floats like a
     // hard helmet above the rounded crown.
     const excess=radius-safe;
-    if(excess>d.x*.012){
-     const pull=Math.min(excess-d.x*.012,d.x*.20)*.85;
+    if(excess>d.x*.006){
+     const pull=Math.min(excess-d.x*.006,d.x*.20)*.90;
      point.x-=dx/radius*pull;
      point.z-=dz/radius*pull;
      changed=true;
@@ -1962,8 +1983,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     targetX,targetZ,segments,crownOverSide,
     partSweepScale:style.rebuiltBase==='sadako'?.19:1,
     volumeSpread:WIG_BASE_VOLUME_PROFILES[volumeProfile].spread||0,
-    projectOutside:(point,nearRoot,front,followScalp)=>{
-     if(projectSadakoOutside(point,nearRoot,front,followScalp))
+    projectOutside:(point,nearRoot,front,followScalp,t)=>{
+     if(projectSadakoOutside(point,nearRoot,front,followScalp,t))
       sadakoGuideScalpPushes++;
     }
    });
@@ -2401,7 +2422,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      if(sadakoMaster){
       sadakoRenderCorner.set(vx,vy,vz);
       if(projectSadakoOutside(sadakoRenderCorner,j===0,
-       strand.fringe||strand.overFace||strand.zone.startsWith('temple')))
+       strand.fringe||strand.overFace||strand.zone.startsWith('temple'),false,t))
        sadakoRibbonScalpPushes++;
       vx=sadakoRenderCorner.x;vy=sadakoRenderCorner.y;
       vz=sadakoRenderCorner.z;
@@ -2957,6 +2978,11 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    'four-stacked-thick-ribbon-layers-with-real-depth',
   v33ShortCutKind:style.shortCutKind||'long',
   v33WigVolumeProfile:volumeProfile,
+  v109DonorRootContact:true,
+  v109RootGapFraction:v109RootGapFraction({shortCutKind:style.shortCutKind}),
+  v109CrownRootClearanceFraction:v109ScalpContactFraction(0),
+  v109MaxVolumeRootWeight:v109VolumeFreeLengthWeight(.10),
+  v109VolumeOnlyOnLooseLength:true,
   v33RaisedBaseMaxLiftFraction:WIG_BASE_VOLUME_PROFILES[volumeProfile].crown,
   v33RaisedBaseMesh:cap.name,
   v33ScalpHuggingBuzz:style.shortCutKind==='buzz',
