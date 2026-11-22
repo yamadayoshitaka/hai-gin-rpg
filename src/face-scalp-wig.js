@@ -3033,7 +3033,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   normalLayerCount:staticGroom&&normalLayeredSingleMesh?
    (sadakoMaster?1:clamp(Math.trunc(normalLayerCount),1,3)):1,
   consolidatedHairMesh:staticGroom?consolidatedHair?.name:null,
-  rootScalpLiftFraction:.0125,
+  rootScalpLiftFraction:v109RootGapFraction({shortCutKind:style.shortCutKind}),
   trueScalpRibbonVertexCollision:true,
   fullBodyTriangleContactBeforeProxy:true,neckAndShoulderDrape:true,
   fullBodyShoulderExtension:!!bodyCollisionResolver,
