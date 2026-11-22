@@ -98,9 +98,14 @@ function buildSide(parts,side,headSize){
   ['_UPPER_EYESHADOW',true],['_LOWER_TEAR_MENISCUS',false]
  ]){
   const element=parts.getObjectByName(side+suffix);
-  if(element?.geometry?.getAttribute('position'))
+  if(element?.geometry?.getAttribute('position')){
+   const isLiner=suffix.endsWith('EYELINER');
+   const isShadow=suffix.endsWith('EYESHADOW');
    decorations.push({...remember(element),isUpper,
-    rows:suffix.endsWith('EYESHADOW')?6:suffix.endsWith('MENISCUS')?2:3});
+    columns:isLiner?48:28,rows:isShadow?6:isLiner?3:2,
+    lidStart:isLiner?.017:isShadow?.12:.012,
+    lidSpan:isLiner?(isUpper?.080:.049):isShadow?.78:.075});
+  }
  }
  const brow=parts.getObjectByName(side+'_BROW_ANGLE_CONTROL');
  const browRest=brow?{y:brow.position.y,z:brow.rotation.z}:null;
@@ -124,20 +129,38 @@ function moveGrid({attr,rest},otherRest,openness,upper){
  }
  attr.needsUpdate=true;
 }
+/** Sample the identical moving lid at the decoration's own tessellation.
+ * Eyeliner has 48 columns; the real lid, eyeshadow and tear meniscus have 28.
+ * Assuming 28 for all previously moved only 116 of the 196 eyeliner vertices
+ * and produced the torn, triangular black polygons on Android.
+ */
+function lidVerticalDelta(lid,u,v){
+ const cols=28,rows=4;
+ const su=Math.min(cols,Math.max(0,u*cols));
+ const sv=Math.min(rows,Math.max(0,v*rows));
+ const x0=Math.min(cols-1,Math.floor(su)),x1=x0+1;
+ const y0=Math.min(rows-1,Math.floor(sv)),y1=y0+1;
+ const fx=su-x0,fy=sv-y0;
+ const at=(x,y)=>{
+  const k=(y*(cols+1)+x)*3+1;
+  return lid.attr.array[k]-lid.rest[k];
+ };
+ return (at(x0,y0)*(1-fx)+at(x1,y0)*fx)*(1-fy)+
+  (at(x0,y1)*(1-fx)+at(x1,y1)*fx)*fy;
+}
 function moveDecorations(side,blink){
  const {a,b}=side;
- const cols=28;
  for(const decoration of side.decorations){
-  const {attr,rest,isUpper,rows}=decoration;
-  const count=Math.min(attr.count,(rows+1)*(cols+1));
+  const {attr,rest,isUpper,rows,columns,lidStart,lidSpan}=decoration;
+  const lid=isUpper?a:b;
+  const count=Math.min(attr.count,(rows+1)*(columns+1));
   for(let i=0;i<count;i++){
-   const col=i%(cols+1),row=Math.floor(i/(cols+1));
-   const start=col*3;
-   const gap=b.rest[start+1]-a.rest[start+1];
-   const arch=Math.pow(Math.max(0,Math.sin(Math.PI*col/cols)),.8);
-   const direction=isUpper?.89:.11;
-   const fade=rows===6?Math.max(.16,1-row/rows*.84):1;
-   attr.array[i*3+1]=rest[i*3+1]+(isUpper?gap:-gap)*blink*arch*direction*fade;
+   const col=i%(columns+1),row=Math.floor(i/(columns+1));
+   const u=col/columns,v=lidStart+row/rows*lidSpan;
+   const k=i*3;
+   attr.array[k]=rest[k];
+   attr.array[k+1]=rest[k+1]+lidVerticalDelta(lid,u,v);
+   attr.array[k+2]=rest[k+2];
   }
   attr.needsUpdate=true;
   decoration.mesh.geometry.computeBoundingSphere();
@@ -163,7 +186,7 @@ function coverEye(side,blink,headSize){
   const shut=blink*.995*arch;
   // Two rows share the top at the natural upper lash line; the lower
   // row tracks the lid as it closes, suppressing the sunken-iris look.
-  const z=Math.max(a.rest[k+2],b.rest[k+2])+headSize.z*.018;
+  const z=Math.max(a.rest[k+2],b.rest[k+2])+headSize.z*.003;
   for(let j=0;j<2;j++){
    const idx=(j*(cols+1)+i)*3;
    pos.array[idx]=a.rest[k];
@@ -172,7 +195,8 @@ function coverEye(side,blink,headSize){
   }
  }
  pos.needsUpdate=true;
- cover.visible=blink>.012;
+ // Partial squints must not paint a free-standing skin ribbon over the iris.
+ cover.visible=blink>.92;
 }
 function buildMouth(face,parts,headSize){
  // V83 public safety mode: a closed original face must never render a
@@ -448,7 +472,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    moveGrid(side.a,side.b.rest,eyelidTravel,true);
    moveGrid(side.b,side.a.rest,eyelidTravel,false);
    moveDecorations(side,eyelidTravel);
-   coverEye(side,closure,size);
+   coverEye(side,blink,size);
    // Eyeliner belongs to the eyelid and follows the moved lid,
    // iris and pupil retain their individual natural geometry.
    for(const mesh of [side.a.mesh,side.b.mesh]){
