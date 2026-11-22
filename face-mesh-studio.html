@@ -404,7 +404,8 @@ const initialFaceV110=v110InitialFemaleFaceState({
 let femaleBodySelectionExplicit=initialFaceV110.explicitBodySelection;
 if(v32PartMode){
  Object.assign(v32Parts.female,initialFaceV110.parts);
- if(initialFaceV110.shouldRecompose){
+ if(initialFaceV110.shouldRecompose&&
+    !(new URLSearchParams(location.search).get('hero')==='1'&&!savedHeroinePreset)){
   const selected=resolvePartSelection('female',v32Parts.female,FEMALE_V7_DEFAULTS);
   modelChanges=resolveEditedFaceControls('female',selected.controls,
    v32Parts.female.ageBand,v32Parts.female.bodyType,
