@@ -251,7 +251,8 @@ export function refineV106CheekMouthTopology(face,{gender='female'}={}){
  }catch(error){
   // Caller has already cloned the GLB. Preserve topology if an unsupported
   // attribute or degenerate edge prevents a safe local refinement.
-  face.geometry=geometryBackup;
+  geometry.copy(geometryBackup);
+  geometryBackup.dispose();
   seal.initialTriangleCount=beforeIndices.length/3-(seal.addedTriangles||0);
   return fail('safe-rollback:'+String(error?.message||error));
  }
