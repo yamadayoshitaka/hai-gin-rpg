@@ -27,7 +27,7 @@ try{
  await page.waitForFunction(()=>{
   const q=window.__faceExpressionQA?.nativeLipProbe?.();
   return q?.seal&&document.querySelector('#facePoseDiagnostics')?.textContent
-   ?.includes('実行JS：v96確認済');
+   ?.includes('実行JS：v97確認済');
  },null,{timeout:90000});
  // Reproduce the reported Android appearance: female / 20s / ultra-thin.
  // The former QA only exercised the default body profile.
@@ -296,6 +296,34 @@ try{
   }
  }
  assert.equal(evidenceCount,18,'All 18 orthographic composition cases must be saved');
+
+ // v97: reproduce the exact reported Android preset (10歳以下・超痩せ型).
+ // Unit tests on synthetic spheres cannot reveal collapsed mouth polygons,
+ // cheek gouges or floating eyeliner in this specific real GLB preset.
+ await page.locator('#v47AgeBand').selectOption('under10');
+ await page.locator('#v47BodyType').selectOption('ultraThin');
+ await page.waitForFunction(()=>document.querySelector('#facePoseDiagnostics')
+  ?.textContent?.includes('10歳以下'),null,{timeout:60000});
+ await page.evaluate(()=>window.__faceExpressionQA.forceExpression('laugh'));
+ for(const view of ['front','threeQuarter','side']){
+  await page.locator('#'+view).click();
+  await page.waitForTimeout(80);
+  const actual=await page.evaluate(()=>({
+   image:window.__faceExpressionQA.captureWebGLFrame(),
+   pose:window.__faceExpressionQA.nativePoseProbe()
+  }));
+  assert.ok(actual.pose?.v97OralLandmarkAligned,
+   'Native mouth, upper dental arch and jaw must share the real lip-rim centre');
+  assert.ok(actual.pose.mouthOpen>.55,
+   'Child ultrathin laugh must still open the actual oral structure');
+  assert.equal(actual.pose.v96EyelinerSegments,48);
+  const file=out+'/v97-under10-ultrathin-laugh-'+view+'.png';
+  writeFileSync(file,
+   Buffer.from(actual.image.slice(actual.image.indexOf(',')+1),'base64'));
+  console.log('FACE_V97_ANDROID_REPRO',JSON.stringify({view,file,
+   expression:actual.pose.expression,landmark:actual.pose.v97OralLandmarkAligned}));
+ }
+
  await page.locator('#front').click();
  assert.deepEqual(failures,[],
   'Face editor cannot throw JavaScript/WebGL errors during visual QA');
