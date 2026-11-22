@@ -33,7 +33,10 @@ export function v99FacialSurfaceDelta({xn=0,yn=0,zn=0,ageWrinkles=0}={}){
  // Nose field is disjoint from cheek field. Front-facing tip and the
  // two alar lower edges travel DOWN together, hiding nostril sky-view.
  // Only donor-native vertices move, so the slit remains the same topology.
- const nasal=smooth(.511,.540,yn)*(1-smooth(.676,.714,yn))*
+ // v100 oral boundary protection: real donor vermilion/lip vertices extend
+ // up to y=.537. Lower the TIP and ALAR cartilages ABOVE that ring rather
+ // than dragging the upper lip or philtrum downward with the nose.
+ const nasal=smooth(.535,.551,yn)*(1-smooth(.676,.714,yn))*
   (1-smooth(.255,.320,ax))*front*youth;
  const tip=bell(ax,.055,.090)*bell(yn,.567,.046)*nasal;
  const alar=bell(ax,.160,.052)*bell(yn,.545,.035)*nasal;
