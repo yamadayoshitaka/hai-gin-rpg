@@ -1549,7 +1549,7 @@ export function createScalpFirstLongGuide({
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,garmentCollisionResolver=null,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,garmentCollisionResolver=null,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false,portraitPreview=false}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -1907,7 +1907,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // nape. Existing one-mesh layered cards follow these individual cuts.
   const floorRatio=back?catalogGroom.backFloor:
    zone.startsWith('temple')?catalogGroom.templeFloor:0;
-  const trimY=Number.isFinite(salonCutY)?baseTrimY:
+  // The head-only editor cannot show rear hair extending below its bust.
+  // Clip the preview tips without shortening game or full-body hairstyles.
+  const previewFloor=box.min.y+d.y*.038;
+  const trimY=portraitPreview&&gender==='female'&&!cutKind?
+   Math.max(previewFloor,baseTrimY):
+   Number.isFinite(salonCutY)?baseTrimY:
    sadakoGravity?baseTrimY:floorRatio?Math.max(baseTrimY,
    Math.min(wigRoot.y-d.y*.014,box.min.y+d.y*floorRatio)):baseTrimY;
   // Salon-guided locks: the real scalp root stays fixed. After a brief
@@ -1997,7 +2002,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     });
    if(style.rebuiltBase==='sadako')shapeRebuiltNaturalContour(shape,{box});
    if(Number.isFinite(salonCutY))
-    shapeCatalogLengthGuide(shape,{box,tipY:salonCutY,rootIndex:i});
+    shapeCatalogLengthGuide(shape,{box,tipY:portraitPreview?
+     Math.max(salonCutY,box.min.y+d.y*.038):salonCutY,rootIndex:i});
    // v72: update eye clearance AFTER length/curl reshaping, not before.
    // Only the fringe/face-frame guides are affected; loose side/back
    // sections retain their natural forward volume and fall.
@@ -2821,6 +2827,7 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v93HeadOnlyPortraitTrim:!!portraitPreview,
   v92EyeClearanceApplied:style.rebuiltBase==='sadako'&&style.gender==='female',
   v92EyeHairBandSegments:style.rebuiltBase==='sadako'?
    strands.reduce((sum,lock)=>sum+lock.rest.filter((p,j)=>{
