@@ -32,7 +32,7 @@ export function v103NormalCheekField({xn=0,yn=0,zn=0,ageWrinkles=0,bodyType='nor
  // surface ABOVE the mouth but BELOW the zygomatic crest.
  const trough=bell(ax,.483,.239)*bell(yn,.491,.091)*mask;
  const crest=bell(ax,.49,.205)*bell(yn,.576,.050)*mask;
- const dz=.032*trough-.008*crest;
+ const dz=.032*trough-.023*crest;
  return {dz,mask,trough,crest};
 }
 export function repairV103NormalCheek(geometry,{
