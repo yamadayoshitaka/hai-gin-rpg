@@ -5,7 +5,7 @@ import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MA
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
-import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=96-oval-lip-loop';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=97-rim-aligned';
 import {nativeVermilionMask,eyelinerCoverage} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 
 /**
