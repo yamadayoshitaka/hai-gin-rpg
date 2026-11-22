@@ -29,8 +29,8 @@ test('training formation animation follows template list and precedes quote, wit
   'the separate quote page must show the animation before the hire quote');
  assert.match(quoteMarkup,/data-training-auto-formation=/);
  const css=file('src/three-team-sortie-ui.css');
- assert.match(css,/\.innWizardRosterPreview\) \.innWizardBody\{[\s\S]*?overflow-y:auto!important/);
- assert.match(css,/\.innWizardRosterPreview\) \.innWizardRosterPreview\{[\s\S]*?overflow:visible!important/);
+ assert.match(css,/\.innWizardRosterPreview\) \.innWizardBody\{[\s\S]*?overflow:hidden!important/);
+ assert.match(css,/\.innWizardRosterPreview\) \.innWizardRosterPreview\{[\s\S]*?overflow:hidden!important/);
  assert.match(css,/\.trainingFormationAnimation \.signaturePreview svg\{/);
  assert.match(css,/\.trainingFormationQuote>small\{[\s\S]*?overflow:visible/);
 });
