@@ -33,11 +33,11 @@ try{
  console.log('FACE_V88_NATIVE_LIP_SPAN',JSON.stringify({width:native.mouthWidth,donor:native.donorLipWidth,current:native.currentLipWidth,ratio:native.currentLipWidth/native.donorLipWidth,seal:native.seal}));
  assert.equal(native.seal.sealed,true,
   'Actual browser GLB must have a native lip rest-state cap: '+JSON.stringify(native));
- assert.ok(native.mouthWidth>=.42&&native.mouthWidth<=.43,
+ assert.ok(native.mouthWidth>=.64&&native.mouthWidth<=.66,
   'The V88 half-width native-mouth preset must reach the actual donor geometry');
  assert.ok(native.donorLipWidth>0&&
-  native.currentLipWidth/native.donorLipWidth<.88&&
-  native.currentLipWidth/native.donorLipWidth>.32,
+  native.currentLipWidth/native.donorLipWidth<.70&&
+  native.currentLipWidth/native.donorLipWidth>.60,
   'Real WebGL source-mouth lip span must visibly shrink, not lipstick only');
  assert.ok(await page.locator('#mouthWidth').count()===1,
   'Real female mouth-width adjustment slider must be present');
