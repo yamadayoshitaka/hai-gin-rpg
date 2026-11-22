@@ -24,7 +24,9 @@ export function feminineMidfaceNoseDelta({
  const youth=1-smooth(.18,.67,age);
  if(youth<=0||zn<.49||yn<.455||yn>.712)
   return {dx:0,dy:0,dz:0,cheek:0,alar:0};
- const ax=Math.abs(xn),front=smooth(.51,.76,zn);
+ const ax=Math.abs(xn);
+ if(ax>=.84)return {dx:0,dy:0,dz:0,cheek:0,alar:0};
+ const front=smooth(.51,.76,zn);
  // Restored malar fat pad: beneath the lower lid and beside the smile.
  // The upper and lower fields blend over the same native triangles, not
  // two disconnected circles or a sharply carved nasolabial crease.
