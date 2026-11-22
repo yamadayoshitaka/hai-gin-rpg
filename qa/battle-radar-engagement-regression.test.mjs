@@ -35,6 +35,31 @@ test('small-battle contact uses actual grid cells, not stale actor x/z',()=>{
  ]);
 });
 
+test('ranged attacks show engagement on both side radars at their own locations',()=>{
+ const units=[
+  {team:0,squadId:'1',cell:{x:20,z:30},hp:100,maxHp:100,
+   alive:true,action:'attack',currentTargetSquadId:2},
+  {team:1,squadId:'2',cell:{x:140,z:160},hp:100,maxHp:100,
+   alive:true,action:'hold'}
+ ];
+ const sums=new Map([
+  ['0:1',{n:1,total:1,hp:100,x:20,z:30}],
+  ['1:2',{n:1,total:1,hp:100,x:140,z:160}]
+ ]);
+ const rows=makeBattleRpgStatusRows({
+  units,sums,allyIds:['1'],enemyIds:['2'],mass:false
+ });
+ assert.deepEqual(rows.map(row=>row.inContact),[true,true]);
+ assert.deepEqual(rows.map(row=>row.engagementPoint),[
+  {x:20,z:30},{x:140,z:160}
+ ]);
+ const grouped=aggregateBattleRpgTeams(rows,{'1':1},{'2':2});
+ assert.equal(grouped.filter(row=>row.inContact).length,2);
+ assert.deepEqual(grouped.map(row=>row.engagementPoint),[
+  {x:20,z:30},{x:140,z:160}
+ ]);
+});
+
 test('three-team radar follows frontline only while actually engaged',()=>{
  const physical=[
   {id:'11',alive:2,total:2,x:12,z:20},
