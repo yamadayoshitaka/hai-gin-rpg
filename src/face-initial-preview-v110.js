@@ -13,9 +13,12 @@ import {resolveBodyType,resolveAgeBand} from './character-demographics-v47.js';
 export function v110InitialFemaleFaceState({
  savedPreset=null,parts={},controls={}
 }={}){
- const hasLegacyPreset=Boolean(savedPreset)&&
-  savedPreset.bodySelectionExplicit!==true;
- const selectedBody=hasLegacyPreset?'normal':
+ const legacyAutoSavedBody=Boolean(savedPreset)&&
+  savedPreset.bodySelectionExplicit!==true&&
+  ['ultraThin','thin','slim','child'].includes(parts.bodyType);
+ // Preserve intentional older fat/normal models; only migrate the
+ // known destructive old thin -> ultraThin autosave path.
+ const selectedBody=legacyAutoSavedBody?'normal':
   resolveBodyType(parts.bodyType).id;
  const selectedAge=resolveAgeBand(parts.ageBand).id;
  const selectedParts={...parts,bodyType:selectedBody,ageBand:selectedAge};
@@ -25,8 +28,8 @@ export function v110InitialFemaleFaceState({
   parts:selectedParts,
   // A brand-new studio must also run the SAME demographic sculpt as
   // selecting 普通; the raw part defaults lack that age/build transform.
-  shouldRecompose:!savedPreset||hasLegacyPreset||controlsStale,
-  migratedLegacyBody:hasLegacyPreset&&parts.bodyType!==selectedBody,
+  shouldRecompose:!savedPreset||savedPreset.bodySelectionExplicit!==true||controlsStale,
+  migratedLegacyBody:legacyAutoSavedBody&&parts.bodyType!==selectedBody,
   explicitBodySelection: savedPreset?.bodySelectionExplicit===true,
   defaultView:'color',defaultWireframe:false
  };
