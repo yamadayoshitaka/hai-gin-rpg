@@ -1304,9 +1304,15 @@ export function shapeRebuiltEyeBand(points,{box,side=1}={}){
  const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
  for(let j=1;j<points.length;j++){
   const p=points[j],h=(p.y-box.min.y)/Math.max(d.y,1e-6);
-  if(h>.685&&h<.84&&p.z>c.z+d.z*.08&&
-     side*(p.x-c.x)<d.x*.255)
-   p.x=c.x+side*d.x*.255;
+  // Route a long front lock from crown to temple BEFORE it reaches the eye.
+  // Hard-clamping only stations in an eye-height band caused horizontal
+  // 'goggle' hair cards and a sharp reversal at the cheek.
+  if(p.z<=c.z+d.z*.025)continue;
+  const descent=1-h;
+  const sweep=THREE.MathUtils.smoothstep(descent,.035,.185);
+  const targetX=c.x+side*d.x*.325;
+  if(side*(p.x-targetX)<0)
+   p.x=THREE.MathUtils.lerp(p.x,targetX,sweep);
  }
  return points;
 }
@@ -1543,7 +1549,7 @@ export function createScalpFirstLongGuide({
  * @param {THREE.Mesh} head  owned sculpted female head
  * @param {{count?:number,color?:number,externalColliders?:Array}} options
  */
-export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,garmentCollisionResolver=null,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false}={}){
+export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalColliders=[],bodyCollisionResolver=null,lengthScale=1,styleId=DEFAULT_WIG_STYLE_ID,fineFringeMultiplier=1,visualFiberMultiplier=1,staticGroom=true,garmentCollisionResolver=null,volumeProfile='natural',normalLayeredSingleMesh=false,normalLayerCount=3,gender='female',battleStableCoverage=false,portraitPreview=false}={}){
  if(!WIG_BASE_VOLUME_PROFILES[volumeProfile])
   throw Error('Unknown wig volume profile: '+volumeProfile);
  const style=getWigStyle(styleId);
@@ -1901,7 +1907,12 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   // nape. Existing one-mesh layered cards follow these individual cuts.
   const floorRatio=back?catalogGroom.backFloor:
    zone.startsWith('temple')?catalogGroom.templeFloor:0;
-  const trimY=Number.isFinite(salonCutY)?baseTrimY:
+  // The head-only editor cannot show rear hair extending below its bust.
+  // Clip the preview tips without shortening game or full-body hairstyles.
+  const previewFloor=box.min.y+d.y*.038;
+  const trimY=portraitPreview&&gender==='female'&&!cutKind?
+   Math.max(previewFloor,baseTrimY):
+   Number.isFinite(salonCutY)?baseTrimY:
    sadakoGravity?baseTrimY:floorRatio?Math.max(baseTrimY,
    Math.min(wigRoot.y-d.y*.014,box.min.y+d.y*floorRatio)):baseTrimY;
   // Salon-guided locks: the real scalp root stays fixed. After a brief
@@ -1960,7 +1971,8 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    // BEFORE the existing smoothing, face/shoulder/mantle collision passes.
    if(style.rebuiltBase==='sadako'&&style.catalogFront==='bangs'){
     if(bangsCut)shapeRebuiltStraightBangs(shape,{box,rootIndex:i,
-     tipLevel:style.himeFringe?.752:.786});
+     tipLevel:portraitPreview?(style.himeFringe?.735:.748):
+      (style.himeFringe?.752:.786)});
     else if(style.catalogShape?.himeSide&&zone.startsWith('temple'))
      shapeHimeSideGuide(shape,{box,side:partSide,rootIndex:i});
     else if(faceFrame&&zone==='crown')
@@ -1991,13 +2003,16 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
     });
    if(style.rebuiltBase==='sadako')shapeRebuiltNaturalContour(shape,{box});
    if(Number.isFinite(salonCutY))
-    shapeCatalogLengthGuide(shape,{box,tipY:salonCutY,rootIndex:i});
+    shapeCatalogLengthGuide(shape,{box,tipY:portraitPreview?
+     Math.max(salonCutY,box.min.y+d.y*.038):salonCutY,rootIndex:i});
    // v72: update eye clearance AFTER length/curl reshaping, not before.
    // Only the fringe/face-frame guides are affected; loose side/back
    // sections retain their natural forward volume and fall.
+   // Apply pupil clearance to ALL rebuilt long cuts, not just tucked styles.
+   // Short eyebrow bangs are cut above the eyelids, so keep them intact.
    if(style.rebuiltBase==='sadako'&&style.gender==='female'&&
-      style.catalogFront==='tucked'&&
-      (fringe||faceFrame||zone.startsWith('temple')))
+      !bangsCut&&(fringe||faceFrame||zone.startsWith('temple')||
+       (zone==='crown'&&frontRoot)))
     shapeRebuiltEyeBand(shape,{box,side:partSide});
    for(const p of shape){
     rest.push(p);points.push(p.clone());vel.push(new THREE.Vector3());
@@ -2813,6 +2828,17 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
   v64TiedRootSource:tiedRoot?.userData.v64AnchorSource||null,
   v64TiedRootAttachmentDistance:tiedRoot?.userData.v64AnchorDistance??null,
   v49StyledHairTriangles:styled.triangleCount,
+  v93HeadOnlyPortraitTrim:!!portraitPreview,
+  v92EyeClearanceApplied:style.rebuiltBase==='sadako'&&style.gender==='female',
+  v92EyeHairBandSegments:style.rebuiltBase==='sadako'?
+   strands.reduce((sum,lock)=>sum+lock.rest.filter((p,j)=>{
+    if(j===0)return false;
+    const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+    const last=lock.rest[j-1];
+    return h>.67&&h<.82&&p.z>center.z+d.z*.025&&
+     Math.abs(p.x-last.x)>d.x*.035&&
+     Math.abs(p.x-last.x)>Math.abs(p.y-last.y)*1.5;
+   }).length,0):null,
   v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
    strands.filter(lock=>
     (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&

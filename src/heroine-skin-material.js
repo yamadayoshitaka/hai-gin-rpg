@@ -44,6 +44,23 @@ export function applyHeroineSkinMaterial(face){
  if(face.userData.studioHeroineFaceSurface)return {applied:true,reused:true};
  const source=Array.isArray(face.material)?face.material[0]:face.material;
  if(!source)return {applied:false};
+ // v90 had a real donor-vertex wet-lip shader, but this UI replacement
+ // discarded onBeforeCompile and made lipstick gloss invisible on Android.
+ // Keep that physical skin shader INSTANCE and only attach pore relief.
+ if(source.userData?.v90LipGlossFollowsHeadVertices){
+  if(!source.bumpMap&&face.geometry?.getAttribute('uv')){
+   source.bumpMap=getHeroineMicroSkinTexture();
+   source.bumpScale=.000085;
+  }
+  source.name='heroine-native-skin-with-moving-vermilion-v91';
+  source.needsUpdate=true;
+  face.userData.studioHeroineFaceSurface=true;
+  face.userData.v91NativeLipShaderPreserved=true;
+  return {applied:true,nativeLipShaderPreserved:true,
+   roughness:source.roughness,clearcoat:source.clearcoat,
+   skinMicroRelief:!!source.bumpMap,
+   originalFaceGeometryPreserved:true};
+ }
  const material=new THREE.MeshPhysicalMaterial({
   color:source.color?.clone()||new THREE.Color(0xf0d9cb),
   map:source.map||null,normalMap:source.normalMap||null,

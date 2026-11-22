@@ -95,10 +95,14 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
      canine?'rounded-canine':'rounded-molar';
    crown.userData.archParameter=t;
    // The flat, wide maxillary incisors must not look like needles.
-   const horizontal=width*(incisor?.053:canine?.046:.050);
+   // Keep central teeth separated: the former crowns overlapped by ~30%,
+   // making the enamel look like two large deformed blocks.
+   const horizontal=width*(incisor?.037:canine?.034:.038);
    // A narrower mouth also needs narrower, SHORT dental crowns;
    // retaining old crown height creates fang-like teeth in V88.
-   const vertical=Math.min(height*(incisor?.0057:canine?.0052:.0042),horizontal*.83);
+   // Scale crown height to the real aperture; long vertical enamel blocks
+   // previously protruded beyond the native rim as rabbit-like teeth.
+   const vertical=Math.min(height*(incisor?.0038:canine?.0036:.0032),horizontal*.67);
    crown.scale.set(horizontal,vertical,depth*.0050);
    crown.position.set(t*spread,
     (isUpper?-1:1)*height*.0014,
@@ -145,7 +149,9 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
   tongue.position.z=-depth*.008*jaw;
   tongue.rotation.x=jaw*.09;
   const teethVisible=open>.16;
-  upper.visible=teethVisible;lower.visible=teethVisible;
+  upper.visible=teethVisible;
+  // Large laughs expose the upper arch, not two dangling rows of fangs.
+  lower.visible=teethVisible&&open<.43;
   tongue.visible=open>.31;
   throat.visible=open>.08;
   // Lateral molars are inside the cheek, not visible through the lips.
@@ -171,6 +177,7 @@ export function createFaceOralAnatomy(face,{x=0,y=0,z=0,width=.12,height=.30,dep
    upperTeeth:12,lowerTeeth:12,tongueMeshCount:2,gingivae:2,
    mandibleFollowsJaw:true,geometryIndependentOfLipMakeup:true,
    v81ShortBluntCrowns:true,v81RecessedDentalArcade:true,
+   v92SeparatedIncisorCrowns:true,v92LaughLowerTeethOccluded:true,
    v81FlattenedTongue:true,v82CavityBehindFace:true
   })};
 }

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v90-native-vermilion';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v95-topological-mouth';
 import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
+import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=93-portrait-surface';
+import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -111,14 +113,15 @@ export function femaleInnerFeatureDelta({xn,yn,zn,offsetX,depth,height=0,control
  const nasalSidePlane=bell(ax,.108,.032)*bell(yn,.625,.074)*front;
  const cartilage=v65NasalCartilageDelta({xn,yn,zn,depth,height,controls});
  return {
-  dx:-offsetX*(.35*noseSupport+.29*mouthSupport),
-  dy:height*(.020*controls.noseTipLift*tipLift
-    -.012*central*bell(yn,.572,.018)
-    -.009*controls.nostrilCover*rimMask)+cartilage.dy,
-  dz:depth*(.025*bridgeSupport+.015*tipSupport-.016*mouthSupport
-   +.031*controls.noseBridgeSharpness*bridgeRidge
-   +.004*controls.nostrilCover*rimMask+.004*tipLift
-   +.0070*dorsalPlane-.0028*nasalSidePlane)+cartilage.dz,
+  // V91: preserve donor nasal/philtrum cartilage instead of pinching it.
+  dx:-offsetX*(.09*noseSupport+.07*mouthSupport),
+  dy:height*(.012*controls.noseTipLift*tipLift
+    -.0035*central*bell(yn,.572,.018)
+    -.0018*controls.nostrilCover*rimMask)+cartilage.dy,
+  dz:depth*(.012*bridgeSupport+.010*tipSupport-.005*mouthSupport
+   +.011*controls.noseBridgeSharpness*bridgeRidge
+   +.003*controls.nostrilCover*rimMask+.003*tipLift
+   +.0055*dorsalPlane-.0025*nasalSidePlane)+cartilage.dz,
   noseSupport,mouthSupport
  };
 }
@@ -282,7 +285,9 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
     *bell(yn,.315,.067)*front;
   const pointX=smooth(.08,.17,Math.abs(xn))*
     (1-smooth(.36,.53,Math.abs(xn)));
-  const pointGain=controls.jawSharpness;
+  // Keep the preset numeric slider but avoid a skull-shaped 5/10
+  // default for the 20s female hero.
+  const pointGain=controls.jawSharpness*(gender==='female'&&demo.age.wrinkles<.20?.42:1);
   const pointDx=-(x-cx)*.065*pointGain*pointX*pointY;
   // Eye-distance edits must also reposition the ANATOMICAL orbital
   // socket in the source head. Previously only the synthetic eye assembly
@@ -323,7 +328,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    .009*controls.mouthSmile*smileMask+
    .015*(controls.mouthAngle*Math.PI/180)*xn*mouthMask);
   let nx=x+(x-cx)*(cheekSupport-spec.jawNarrow*ovalTransition)
-    +local.dx+surfaceFairing.dx*.9+pointDx+eyeSocketDx+
+    +local.dx+surfaceFairing.dx*(gender==='female'&&demo.age.wrinkles<.20?.48:.9)+pointDx+eyeSocketDx+
     noseOffsetX+mouthOffsetX+faceMorphX;
   // Store the source X exactly at the preserved outer silhouette:
   // float math around zero support can otherwise drift by ~1e-9.
@@ -341,7 +346,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   // older-age sag are unchanged.
   const rawFullness=demo.body.faceFullness;
   const fullness=gender==='female'&&demo.age.wrinkles<.20&&rawFullness<0?
-   rawFullness*.56:rawFullness;
+   rawFullness*.42:rawFullness;
   const demographicWidthDelta=(x-cx)*fullness*
    (.075*cheek+.052*lowerCheek+.022*chin)*contourGuard-
    (x-cx)*demo.age.sag*(.014*lowerCheek+.010*jaw)*contourGuard;
@@ -376,7 +381,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
      .005*controls.mouthPositionZ*mouthMask)+
     d.z*fullness*(.065*cheek+.040*lowerCheek+.022*chin)+
     d.z*demo.age.cheekRound*.014*cheek-
-    d.z*demo.age.sag*(.038*lowerCheek+.016*chin)+ageLines;
+    d.z*demo.age.sag*(.038*lowerCheek+.016*chin)+ageLines+
+    // Only the young female thin preset gets soft mid/low cheek volume.
+    (gender==='female'?d.z*Math.max(0,-rawFullness)*
+      (1-demo.age.wrinkles)*(.034*cheek+.042*lowerCheek):0);
   if(gender==='female'){
    if(Math.abs(xn)>=.86){
     outerContourSamples++;
@@ -415,15 +423,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    nz=z+(nz-z)*(1-mouthProtected);
    if(mouthProtected>.97)v85OralSourceRestored++;
   }
-  // V87: expand native lip corners after v85 source-mouth restoration.
-  // The v86 lip seals reuse these SAME original displaced skin vertices.
-  nx+=v87AnatomicalMouthWidthDelta({
-   xn,yn,zn,faceWidth:d.x,mouthWidth:controls.mouthWidth
-  });
-  const v88Lip=v88AnatomicalLipDelta({
-   xn,yn,zn,faceWidth:d.x,faceDepth:d.z,mouthWidth:controls.mouthWidth
-  });
-  nx+=v88Lip.dx;nz+=v88Lip.dz;
+  // Mouth width is applied only AFTER cheek/nose fairing. Otherwise
+  // neighboring face triangles indirectly react to the mouth-width slider.
   // Mouth accessories follow the anatomically deformed lower midface.
   const oralWeight=bell(xn,0,.22)*bell(yn,.48,.047)*front;
   oralMotionSum+=(ny-y)*oralWeight;
@@ -432,6 +433,28 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   if(Math.abs(nx-x)+Math.abs(ny-y)+Math.abs(nz-z)>1e-6)changed++;
   cheekDelta+=Math.max(0,nz-z)*cheek;
   chinDelta+=Math.abs(ny-y)*chin;
+ }
+ // An anatomical fairing pass on the owned 3D mesh, before eyes and oral
+ // triangulation. Keeps donor lip loop and eyes' original XY positions.
+ const portraitFairing=fairYoungPortraitSurface(geometry,{gender,
+  ageWrinkles:demo.age.wrinkles,bodyType:controls.bodyType});
+ // Side-profile fit uses the original connected donor triangle edge graph.
+ const nasalEdgeFlow=fitTopologyNasalSideProfile(geometry,{gender,
+  ageWrinkles:demo.age.wrinkles,strength:1});
+ // Finish with the source-indexed original lip-loop width morph. No
+ // neighboring cheek smoothing may consume this slider-adjusted geometry.
+ for(let i=0;i<p.count;i++){
+  const x=originalPoints[i*3],y=originalPoints[i*3+1],z=originalPoints[i*3+2];
+  const xn=(x-cx)/(d.x*.5),yn=(y-b.min.y)/d.y,zn=(z-b.min.z)/d.z;
+  const widthDelta=v87AnatomicalMouthWidthDelta({
+   xn,yn,zn,faceWidth:d.x,mouthWidth:controls.mouthWidth
+  });
+  const lipDelta=v88AnatomicalLipDelta({
+   xn,yn,zn,faceWidth:d.x,faceDepth:d.z,mouthWidth:controls.mouthWidth
+  });
+  if(widthDelta||lipDelta.dx||lipDelta.dz)
+   p.setXYZ(i,p.getX(i)+widthDelta+lipDelta.dx,
+    p.getY(i),p.getZ(i)+lipDelta.dz);
  }
  p.needsUpdate=true;
  geometry.computeVertexNormals();
@@ -464,6 +487,8 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  const report=Object.freeze({
   code:spec.code,gender,sourceVertices:most,
   v47Demographics:{ageBand:demo.ageBand,bodyType:demo.bodyType,wrinkleStrength:demo.age.wrinkles,faceFullness:demo.faceFullness},
+   v93PortraitFairing:portraitFairing,
+   v95NasalSideProfile:nasalEdgeFlow,
   v49AgeCreases:ageDetail,
   v76PhotographicSkinDetail:{requested:!!photographicMicrodetail.photoRequested,
    sourceCC0:!!photographicMicrodetail.sourceCC0,

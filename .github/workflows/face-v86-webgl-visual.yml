@@ -5,6 +5,8 @@ on:
       - 'src/face-feature-meshes.js'
       - 'src/face-mouth-seal-v86.js'
       - 'src/face-native-oral-rig-v88.js'
+      - 'src/face-oral-anatomy-v80.js'
+      - 'src/face-scalp-wig.js'
       - 'src/face-expression-animation-v48.js'
       - 'src/independent-face-masters.js'
       - 'face-mesh-studio.html'
