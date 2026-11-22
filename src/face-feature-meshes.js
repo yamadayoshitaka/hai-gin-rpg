@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture,getFaceBrowFiberTexture} from './face-optics-v76.js?v=81-eye-vascular';
+import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture,getFaceBrowFiberTexture} from './face-optics-v76.js?v=88-brow-material-cache';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
-import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js?v=87-mouth-width';
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js?v=88-native-facs-cache-20261122';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
-import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=86';
+import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
 import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=88';
 
 /**
