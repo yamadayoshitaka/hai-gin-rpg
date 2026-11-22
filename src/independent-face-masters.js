@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v89-natural-makeup-folds';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v90-native-vermilion';
+import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=77-photo-timeout';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -437,10 +438,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  face.userData.v85RestoredOralVertices=v85OralSourceRestored;
  face.userData.v87AnatomicalMouthWidth=controls.mouthWidth;
  face.userData.v87MouthWidthOnOriginalSkin=true;
- face.material=new THREE.MeshStandardMaterial({
-  color:0xbfc3cb,roughness:.70,metalness:0,
-  side:THREE.FrontSide,flatShading:false
- });
+ face.material=createReferenceFaceSkinMaterial();
  face.visible=true;
  face.name=gender.toUpperCase()+'_INDEPENDENT_CLAY_FACE';
  face.userData.colorRole='skin';
