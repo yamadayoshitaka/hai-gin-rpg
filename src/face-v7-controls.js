@@ -145,7 +145,7 @@ export const MALE_REFERENCE_DEFAULT=Object.freeze({
  */
 export function normalizeMaleFaceControls(settings={}){
  const core=normalizeFemaleFaceControls({
-  ...MALE_REFERENCE_DEFAULT,...settings
+  ...MALE_REFERENCE_DEFAULT,mouthWidth:.65,...settings
  });
  const beardValue=(key,range)=>{
   const raw=Number(settings[key]??MALE_REFERENCE_DEFAULT[key]);
