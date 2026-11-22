@@ -27,7 +27,8 @@ export function classifyDonorOralInterior(geometry,boundary,triangles,{donorName
  // Real WebGL ray-traces identified these exact ORIGINAL white-mouth
  // face triangles, both outside the 40-vertex closed rim polygon.
  // This correction is only for the verified CC0 female head.
- const rayVerifiedFolds=donorName==='FEMALE_INDEPENDENT_CLAY_FACE'?
+ const verifiedHead=donorName==='FEMALE_INDEPENDENT_CLAY_FACE';
+ const rayVerifiedFolds=verifiedHead?
   new Set(['1882/2240/2242','1879/2244/3242']):new Set();
  const a=geometry?.getAttribute?.('position'),box=geometry?.boundingBox;
  const fallback=reason=>({opened:triangles.slice(),hidden:new Set(),removed:0,reason});
@@ -56,9 +57,12 @@ export function classifyDonorOralInterior(geometry,boundary,triangles,{donorName
   const y=(a.getY(ids[0])+a.getY(ids[1])+a.getY(ids[2]))/3;
   const z=(a.getZ(ids[0])+a.getZ(ids[1])+a.getZ(ids[2]))/3;
   const key=ids.slice().sort((u,v)=>u-v).join('/');
-  const verifiedFold=rayVerifiedFolds.has(key)&&a.count>=5000&&
+  const verifiedFold=rayVerifiedFolds.has(key)&&a.count===3490&&
    z>minZ&&Math.abs(x)<d.x*.095;
-  if(z>minZ&&(inside(x,y)||verifiedFold)){
+  // Earlier polygon-only removal selected far too much of the face.
+  // On the verified donor, only the 2 ray-confirmed folds are removed.
+  // All other heads retain conservative, protected classification.
+  if(verifiedHead?verifiedFold:(z>minZ&&inside(x,y))){
    hidden.add(key);continue;
   }
   opened.push(...ids);
