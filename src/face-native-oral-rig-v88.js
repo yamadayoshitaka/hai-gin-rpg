@@ -152,7 +152,7 @@ export function initializeNativeOralRig(face){
   donorOwned:true,reversible:true,oralMeshOverlays:false,
   v94HiddenDonorInteriorTriangles:filtered.removed,
   v95ThreeConnectedOralRings:true,
-  v96EllipticalSmile:true,v96MaximumLipSpread:.125,
+  v96EllipticalSmile:true,v96MaximumLipSpread:.085,
   v95OralEdgeFlowValid:oralTopology.valid,
   v95OralEdgeFlowReason:oralTopology.valid?null:oralTopology.reason,
   v95OralEdgeConnectedVertices:oralTopology.influencedVertices??0,
