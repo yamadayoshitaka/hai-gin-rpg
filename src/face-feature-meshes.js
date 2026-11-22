@@ -1216,8 +1216,12 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
  // The sealed native lip-ring edges stay intact; indexing/UV/skin pigments
  // are extended before creating the oral muscle rig and face animator.
  const localRetopo=face.userData.enableV106LocalRetopo===true?
-  refineV106CheekMouthTopology(face,{gender}):
+  refineV106CheekMouthTopology(face,{gender,
+   ageStrength:resolveAgeBand(settings.ageBand).wrinkles}):
   {applied:false,reason:'v105-reference'};
+ // v107 native cheek+commissure smile runs only on successfully
+ // retopologized female geometry; reference/male/failed meshes unchanged.
+ face.userData.v107NaturalCheekExpression=gender==='female'&&localRetopo.applied===true;
  face.userData.v86OralSealSummary={
   sealed:!!originalOralSeal.sealed,
   addedTriangles:originalOralSeal.addedTriangles||0,
@@ -1349,6 +1353,7 @@ export function createAnatomicalFaceParts(face,{gender='female',controls={}}={})
    m.geometry.getAttribute('position').count/3),0);
  const report=Object.freeze({
   v106LocalRetopo:localRetopo,
+  v107NaturalCheekExpression:face.userData.v107NaturalCheekExpression,
   gender,partMeshCount:meshList.length,realSurfaceProjectionCount:projected,
   projectionFallbacks,surfaceSampler:'xy-triangle-spatial-index',
   samplerCells:sampler.cellCount,eyeMeshCount:2,irisMeshCount:2,pupilMeshCount:2,
