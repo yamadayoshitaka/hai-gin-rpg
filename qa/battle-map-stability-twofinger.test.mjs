@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import {stableBattleMapPins,stableBattleMapBuildings} from '../src/battle-map-inspection.js';
 
-test('battle map holds a live squad's pin across missing worker positions',()=>{
+test('battle map holds a live squad pin across missing worker positions',()=>{
  const cache=new Map(),aliveByGroup=new Map([['0:1',5],['1:2',4]]);
  const blue={team:0,groupId:1,id:'ally',x:42,z:80,alive:5};
  const red={team:1,groupId:2,id:'enemy',x:184,z:109,alive:4};
