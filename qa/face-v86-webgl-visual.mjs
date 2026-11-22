@@ -54,6 +54,7 @@ try{
   const w=window.__faceMasterQA().wigReport;
   return {style:w.hairstyleId,eyeCurtainLocks:w.v70EyeCurtainLocks,
    horizontalEyeSegments:w.v92EyeHairBandSegments,
+   eyeBandDebug:w.v109EyeBandDebug,
    clearance:w.v92EyeClearanceApplied};
  });
  console.log('FACE_V92_HAIR_EYE_CLEARANCE',JSON.stringify(hairEvidence));

@@ -1335,6 +1335,39 @@ export function shapeRebuiltEyeBand(points,{box,side=1}={}){
  }
  return points;
 }
+/**
+ * v109: soften abrupt eye-height lateral jumps on front locks after
+ * the donor-root and volume corrections. Move the earlier station out
+ * toward the safe temple station; never move the true root or any
+ * pupil-cleared station inward toward the eyes.
+ */
+export function v109EaseEyeLevelCrossings(points,{box,side=1}={}){
+ if(!Array.isArray(points)||points.length<3||!box?.isBox3)return points;
+ const d=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());
+ const direction=side<0?-1:1,maxStep=d.x*.032;
+ for(let j=points.length-1;j>=2;j--){
+  const p=points[j],prior=points[j-1];
+  const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+  if(h<=.67||h>=.82||p.z<=c.z+d.z*.025)continue;
+  const outward=direction*(p.x-prior.x);
+  const drop=Math.abs(p.y-prior.y);
+  if(outward>d.x*.035&&outward>drop*1.5)
+   prior.x+=direction*(outward-maxStep);
+ }
+ // Root index 0 is immutable. Five late v109 WebGL eye-band reports
+ // came exclusively from index 1, where root-to-first-station was too
+ // horizontal. Clamp ONLY that first station's lateral movement, not
+ // the follicle, and retain its local vertical and depth clearance.
+ const first=points[1],follicle=points[0];
+ const firstH=(first.y-box.min.y)/Math.max(d.y,1e-6);
+ if(firstH>.67&&firstH<.82&&first.z>c.z+d.z*.025){
+  const dx=first.x-follicle.x,dy=first.y-follicle.y;
+  const allowed=Math.min(maxStep,Math.abs(dy)*1.42);
+  if(Math.abs(dx)>d.x*.035&&Math.abs(dx)>Math.abs(dy)*1.5)
+   first.x=follicle.x+Math.sign(dx)*allowed;
+ }
+ return points;
+}
 /** Bespoke male top, close sideburn and shorter nape. Masculine hairstyles
  * reuse a measured head donor for follicles, but NOT a female bob guide. */
 export function shapeRebuiltMaleGuide(points,{
@@ -2118,9 +2151,18 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
    }
    for(let j=1;j<segments;j++)rest[j].copy(filtered[j]);
   }
+  // Shift sharp lateral transitions to earlier safe scalp stations.
+  if(sadakoGravity&&style.gender==='female'&&
+     (fringe||faceFrame||zone.startsWith('temple')||zone==='crown'))
+   v109EaseEyeLevelCrossings(rest,{box,side:partSide});
   if(sadakoGravity)for(let j=1;j<=segments;j++)
    if(projectSadakoOutside(rest[j],j===1,fringe||overFace||
      zone.startsWith('temple')))sadakoGuideScalpPushes++;
+  // The real scalp projection can itself move a front-facing hair
+  // station sideways. Run the same non-root tangent guard LAST on all
+  // female long zones, including forehead/fringe and crown overlays.
+  if(sadakoGravity&&style.gender==='female')
+   v109EaseEyeLevelCrossings(rest,{box,side:partSide});
   for(let j=1;j<=segments;j++)points[j].copy(rest[j]);
   strands.push({root:wigRoot,rest,points,vel,fringe,side,crownOverSide,rearFacing,
    zone,seedIndex:seed.index,trimY,overFace,partSide,faceFrame,bangsCut,
@@ -2860,6 +2902,19 @@ export function createScalpAnchoredWig(head,{count=196,color=0xc8a36a,externalCo
      Math.abs(p.x-last.x)>d.x*.035&&
      Math.abs(p.x-last.x)>Math.abs(p.y-last.y)*1.5;
    }).length,0):null,
+  v109EyeBandDebug:style.rebuiltBase==='sadako'?
+   strands.flatMap(lock=>lock.rest.flatMap((p,j)=>{
+    if(!j)return [];
+    const h=(p.y-box.min.y)/Math.max(d.y,1e-6);
+    const prev=lock.rest[j-1];
+    const dx=p.x-prev.x,dy=p.y-prev.y;
+    return h>.67&&h<.82&&p.z>center.z+d.z*.025&&
+     Math.abs(dx)>d.x*.035&&Math.abs(dx)>Math.abs(dy)*1.5?
+     [{zone:lock.zone,index:j,h:+h.toFixed(3),x:+p.x.toFixed(3),
+       prevX:+prev.x.toFixed(3),dx:+dx.toFixed(3),
+       dy:+dy.toFixed(3),frontZ:+p.z.toFixed(3),
+       partSide:lock.partSide,bangsCut:lock.bangsCut}]:[];
+   })).slice(0,15):null,
   v70EyeCurtainLocks:style.rebuiltBase==='sadako'?
    strands.filter(lock=>
     (lock.fringe||lock.faceFrame||lock.zone.startsWith('temple'))&&

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {
  createScalpAnchoredWig,createScalpFirstLongGuide,
  v109RootGapFraction,v109ScalpContactFraction,v109VolumeFreeLengthWeight,
+ v109EaseEyeLevelCrossings,
  sadakoCrownSurfaceLayerOffset,sadakoCrownSideOverlayOffset
 } from '../src/face-scalp-wig.js';
 import {WIG_BASE_VOLUME_PROFILES} from '../src/face-wig-styles.js';
@@ -74,4 +75,48 @@ test('v109 actual 3D long hair has a compact root clearance for all volume choic
  assert.equal(full.report.v109MaxVolumeRootWeight,0);
  assert.equal(full.report.v109VolumeOnlyOnLooseLength,true);
  head.geometry.dispose();head.material.dispose();
+});
+
+test('v109 eye-height fringe avoids sharp horizontal strips after scalp contact',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ const guide=Array.from({length:19},(_,j)=>new THREE.Vector3(
+  j<5?.085:j<9?.085+(j-4)*.063:.337,
+  .98-j*.03,.28));
+ const originalRoot=guide[0].clone();
+ const flagged=items=>items.reduce((n,p,j)=>{
+  if(!j)return n;
+  const h=p.y;
+  const prev=items[j-1];
+  return n+(h>.67&&h<.82&&p.z>.025&&
+   Math.abs(p.x-prev.x)>.035&&
+   Math.abs(p.x-prev.x)>1.5*Math.abs(p.y-prev.y)?1:0);
+ },0);
+ assert.ok(flagged(guide)>0);
+ v109EaseEyeLevelCrossings(guide,{box,side:1});
+ assert.deepEqual(guide[0].toArray(),originalRoot.toArray(),
+  'Never move donor follicle');
+ assert.equal(flagged(guide),0,'Move each sharp sideways bend to an earlier safe station');
+ assert.ok(guide[8].x>=.30,'Keep the eye-cleared point outside the iris');
+});
+
+test('v109 first crown station bends without a horizontal goggle strip or moving its root',()=>{
+ const box=new THREE.Box3(new THREE.Vector3(-.5,0,-.5),
+  new THREE.Vector3(.5,1,.5));
+ for(const sign of [-1,1]){
+  const guide=[
+   new THREE.Vector3(sign*.07,.828,.26),
+   new THREE.Vector3(sign*.116,.814,.27),
+   new THREE.Vector3(sign*.118,.66,.28),
+   new THREE.Vector3(sign*.12,.57,.29)
+  ];
+  const root=guide[0].clone();
+  v109EaseEyeLevelCrossings(guide,{box,side:sign});
+  assert.deepEqual(guide[0].toArray(),root.toArray());
+  assert.ok(Math.abs(guide[1].x-guide[0].x)<=
+   Math.abs(guide[1].y-guide[0].y)*1.49,
+   'The first forehead station cannot jump almost horizontally at eye height');
+  assert.ok(sign*guide[1].x>sign*guide[0].x,
+   'The first station still turns outward toward the temple');
+ }
 });
