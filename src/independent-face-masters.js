@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v97-eyeliner-lid-sync';
+import {createAnatomicalFaceParts} from './face-feature-meshes.js?v=20261122-v106-visible-face-density';
 import {createReferenceFaceSkinMaterial} from './face-reference-skin-pbr-v90.js?v=90';
 import {fairYoungPortraitSurface} from './face-portrait-fairing-v93.js?v=97-continuous-malar';
 import {fitTopologyNasalSideProfile} from './face-muscle-topology-v95.js?v=95-nasal-side-edgeflow';

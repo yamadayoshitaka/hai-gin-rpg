@@ -15,7 +15,7 @@ test('v82 actual facial aperture is clearly labelled separately from v72 hair an
  assert.match(html,/v76RealSkinPhoto/);
  assert.match(html,/state==='CC0-real-photo-microrelief'\?'反映済'/);
  assert.match(html,/実写肌PBR：/);
- assert.match(html,/face-expression-animation-v48\.js\?v=97-connected-eye-mouth-cheek-20261122/);
+ assert.match(html,/face-expression-animation-v48\.js\?v=20261122-v106-natural-cheek-smile/);
  assert.doesNotMatch(html,/<h1>顔・髪の編集 v75/);
 });
 test('16 complete face choices per sex are not cosmetic-only, retain existing hair',()=>{
