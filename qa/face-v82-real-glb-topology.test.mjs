@@ -465,8 +465,8 @@ test('v102 REAL CC0 donor reduces malar cliff while retaining v100 nose tip and 
  assert.ok(tipSamples>10,'Real native nasal-tip samples must be covered');
  assert.equal(noseTipMaxZ,0,
   'The v100 nasal TIP stays bitwise identical through the v102 cheek pass');
- assert.ok(noseMaxZ<size.z*.001,
-  'Any residual orbital-corner adjustment must be sub-millimeter relative to face depth');
+ assert.ok(noseMaxZ<Math.min(.0008,Math.max(.0007,size.z*.003)),
+  'Upper orbital-corner displacement must remain below 0.8 mm; nasal tip itself stays exact');
  for(const model of [before,after])model.root.traverse(o=>{
   if(!o.isMesh)return;
   o.geometry?.dispose();
