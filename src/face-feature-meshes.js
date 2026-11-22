@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {getFaceIrisStromaTexture,getLipVermilionNormalTexture,getScleraMicrovascularTexture,getFaceBrowFiberTexture} from './face-optics-v76.js?v=88-brow-material-cache';
 import {EVOLUTION_PROFILE} from './character-system/quality-evolution-profile.js';
-import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js?v=88-native-facs-cache-20261122';
+import {normalizeFemaleFaceControls,normalizeMaleFaceControls,FACE_V7_PALETTE,MALE_REFERENCE_DEFAULT,safeContactColor} from './face-v7-controls.js?v=20261122-v107-mouth-default';
 import {resolveAgeBand} from './character-demographics-v47.js?v=80-nine-age-bands';
 import {integrateMouthIntoFace} from './face-integrated-mouth-v82.js?v=82';
 import {sealOriginalOralAperture} from './face-mouth-seal-v86.js?v=88-native-rim-cache';
-import {refineV106CheekMouthTopology} from './face-v106-local-retopo.js?v=106-conforming-face-edges';
-import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=20261122-v106-native-rim-singleton';
+import {refineV106CheekMouthTopology} from './face-v106-local-retopo.js?v=20261122-v107-neutral-fullness';
+import {initializeNativeOralRig} from './face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
 import {nativeVermilionMask,eyelinerCoverage} from './face-v96-smile-cosmetics.js?v=96-anatomical-expression';
 
 /**
