@@ -815,7 +815,7 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const cheekNoseApplied=models.get('female')?.report?.v98FeminineMidfaceNose?.applied===true;
  const release=document.getElementById('faceQualityRelease');
  if(release)release.textContent='顔品質 v98｜実写肌PBR：'+faceStatus+
-  '｜虹彩・まつ毛・鼻・唇・表情 v76｜髪造形 v72';
+  '｜女性3D頬・鼻：'+(cheekNoseApplied?'補正済':'未適用')+'｜髪造形 v72';
  const face=models.get('female')?.face;
  const mask=face?.userData;
  const mode=mask?.hairScalpMaskMode||'未実行';
