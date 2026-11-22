@@ -600,6 +600,7 @@ export function createFaceExpressionAnimator(model,{autoBlink=true,speaking=fals
    v88BuildSignature:'face-v88-native-oral-structural-facs-20261122',
    v89BuildSignature:'face-v89-natural-laugh-cosmetics-nasolabial-20261122',
    v90BuildSignature:'face-v90-native-skin-lip-reference-quality-20261122',
+   v91BuildSignature:'face-v91-responsive-natural-laugh-visual-sculpt-20261122',
    v88OralAnatomy:getNativeOralRigReport(face),
    v88NativeLipVolume:!!face.userData.v88V80InspiredLipVolume,
    v86OralSealed:face.userData.v86OralSealSummary?.sealed===true,
