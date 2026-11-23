@@ -240,6 +240,14 @@ def rebuild(path):
     olduv=[uv[i] for i in ring]
     oldcolors=[old_color[i] for i in ring]
     thetas=[math.atan2(xyz[i][2],xyz[i][0]) for i in ring]
+    angular_edges=[((thetas[(i+1)%n]-thetas[i]+math.pi)%math.tau)-math.pi for i in range(n)]
+    print('V121_LOWERFACE_RING_GEOMETRY',json.dumps({
+        'samples':n,'positiveAngleEdges':sum(t>.0001 for t in angular_edges),
+        'negativeAngleEdges':sum(t<-.0001 for t in angular_edges),
+        'largestAngularEdge':max(abs(t) for t in angular_edges),
+        'largestOuterEdge':max(math.dist(top[i],top[(i+1)%n]) for i in range(n)),
+        'frontY':sorted(top[i][1] for i in range(n) if top[i][2]>.10)[-5:],
+        'minZ':min(v[2] for v in top),'maxZ':max(v[2] for v in top)}))
     # Keep nose bridge at retained top ring, then generate independent cutaneous
     # mouth, cheeks, chin, submental, neck, clavicle and bust by fixed sections.
     ys=[.243,.240,.237,.234,.231,.228,.225,.222,.219,.216,
