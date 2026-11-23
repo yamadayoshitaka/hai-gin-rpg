@@ -41,7 +41,7 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 </header>
 <main>
 <section class="panel">
-<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">実際の3DウィッグGLBを読み込みます。顔・眉毛・身体は表示しません。骨格変形は適用しません。</div><div id="badge">CC0 / MakeHuman</div></div>
+<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">実際の3DウィッグGLBを読み込みます。通常は頭部を非表示にし、チェック時のみv121ワイヤーを重ねます。骨格変形は適用しません。</div><div id="badge">CC0 / MakeHuman</div></div>
 <div class="actions">
 <button type="button" data-view="front">正面</button>
 <button type="button" data-view="side">側面</button>
@@ -68,7 +68,19 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 <input type="range" id="forward" min="-25" max="35" step="1" value="0"></label>
 <label>上下位置 <output id="verticalValue">0 mm</output>
 <input type="range" id="vertical" min="-20" max="20" step="1" value="0"></label>
-<label class="check"><input id="bangs" type="checkbox">眉上でそろえた前髪を追加（試作）</label>
+<label>前髪デザイン
+<select id="bangStyle">
+<option value="none">なし</option>
+<option value="blunt">ぱっつん</option>
+<option value="center">センターパート</option>
+</select></label>
+<label>前髪の長さ <output id="bangLengthValue">75 mm</output>
+<input type="range" id="bangLength" min="30" max="115" value="75" step="1"></label>
+<label>前髪の幅 <output id="bangWidthValue">95%</output>
+<input type="range" id="bangWidth" min="45" max="125" value="95" step="1"></label>
+<label>前髪の前後位置 <output id="bangForwardValue">8 mm</output>
+<input type="range" id="bangForward" min="-20" max="35" value="8" step="1"></label>
+<label class="check"><input id="headWire" type="checkbox">v121実頭部ワイヤーを表示（水色）</label>
 <label class="check"><input id="spin" type="checkbox">自動で回転</label>
 <button type="button" id="export" disabled>ウィッグだけをGLBで保存</button>
 <button type="button" id="reset">装着位置を初期化</button>
@@ -81,7 +93,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=2';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=3';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -105,13 +117,29 @@ const loader=new GLTFLoader();
 const exporter=new GLTFExporter();
 const STYLES=new Map(PUBLIC_WIG_SOURCES.map(s=>[s.id,s]));
 const ORIGIN='https://raw.githubusercontent.com/kblood/CharacterCreator/master/output/';
-let head=null,wig=null,wigContent=null,rawBox=null,fringe=null,activeId='long01',token=0;
+let head=null,wig=null,wigContent=null,rawBox=null,fringe=null,headWire=null,activeId='long01',token=0;
 let nativeMats=[],viewCenter=new THREE.Vector3(),viewRadius=.6,rawMode='',geometryAudit=null;
 function setStatus(message,error=false){
  $('status').textContent=message;
  $('status').style.color=error?'#ffd0c8':'#dbeeea';
 }
+function removeFringe(){
+ if(!fringe)return;
+ wig?.remove(fringe);
+ fringe.userData?.dispose?.();
+ fringe=null;
+}
+function updateHeadWire(){
+ if(!head)return;
+ if($('headWire').checked&&!headWire){
+  headWire=createRealHeadWireframe(THREE,head);
+  // Preview only: scene sibling, never part of exported wig.
+  scene.add(headWire);
+ }
+ if(headWire)headWire.visible=$('headWire').checked;
+}
 function clearWig(){
+ removeFringe();
  if(!wig)return;
  scene.remove(wig);
  wig.traverse(node=>{
@@ -123,7 +151,6 @@ function clearWig(){
    if(material?.userData?.wigOwned)material.dispose();
   }
  });
- fringe?.userData?.dispose?.();
  wig=null;wigContent=null;rawBox=null;fringe=null;nativeMats=[];
  $('export').disabled=true;
 }
@@ -172,11 +199,19 @@ function updateFit(){
   const value=$(id).value;
   $(id+'Value').textContent=id==='width'?value+'%':value+' mm';
  }
- if(fringe){wig.remove(fringe);fringe.userData?.dispose?.();fringe=null;}
- if($('bangs').checked){
-  fringe=buildReferenceFringe(THREE,head,{color:$('color').value});
-  fringe.name='optional-bangs-only';
+ removeFringe();
+ if($('bangStyle').value!=='none'){
+  fringe=buildReferenceFringe(THREE,head,{
+   color:$('color').value,
+   style:$('bangStyle').value,
+   lengthMm:Number($('bangLength').value),
+   widthPct:Number($('bangWidth').value),
+   forwardMm:Number($('bangForward').value)
+  });
   wig.add(fringe);
+ }
+ for(const id of ['bangLength','bangWidth','bangForward']){
+  $(id+'Value').textContent=$(id).value+(id==='bangWidth'?'%':' mm');
  }
  const placed=new THREE.Box3().setFromObject(wig);
  const center=placed.getCenter(new THREE.Vector3());
@@ -189,7 +224,9 @@ function updateFit(){
   '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m'+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
   '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
-  '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目';
+  '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目'+
+  '\n前髪：'+($('bangStyle').selectedOptions[0]?.textContent||'なし')+
+  '\n頭部ワイヤー：'+($('headWire').checked?'表示（GLBには含めない）':'非表示');
 }
 function frameView(view='front'){
  if(!wig)return;
@@ -252,19 +289,26 @@ async function loadWig(style,sourceFile){
  colorWig();
  frameView('front');
  $('export').disabled=false;
- setStatus(descriptor.label+'：骨格変形を除外した独立した髪メッシュだけを読み込みました。頭部ワイヤーと全身骨格は表示しません。');
+ setStatus(descriptor.label+'：骨格変形を除外した独立した髪メッシュだけを読み込みました。ワイヤーはチェック時のみ表示します。全身骨格は表示しません。');
 }
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
  frameView(button.dataset.view==='reset'?'front':button.dataset.view);
 }));
 $('source').addEventListener('change',()=>{activeId=$('source').value;loadWig(activeId).catch(e=>setStatus(e.message,true));});
-for(const id of ['width','forward','vertical','bangs']){
+for(const id of ['width','forward','vertical','bangStyle','bangLength','bangWidth','bangForward']){
  $(id).addEventListener('input',()=>{if(wig)updateFit()});
 }
+$('headWire').addEventListener('change',()=>{
+ try{updateHeadWire();if(wig)updateFit();}
+ catch(error){setStatus('頭部ワイヤー表示に失敗：'+error.message,true);}
+});
 $('color').addEventListener('input',colorWig);
 $('reset').addEventListener('click',()=>{
  $('width').value='111';$('forward').value='0';$('vertical').value='0';
- $('bangs').checked=false;$('spin').checked=false;
+ $('bangStyle').value='none';$('bangLength').value='75';
+ $('bangWidth').value='95';$('bangForward').value='8';
+ $('headWire').checked=false;$('spin').checked=false;
+ updateHeadWire();
  updateFit();frameView('front');
 });
 $('export').addEventListener('click',()=>{
@@ -297,6 +341,7 @@ function render(ts){
  requestAnimationFrame(render);
  const dt=Math.min(.05,Math.max(0,(ts-prev)/1000||0));prev=ts;
  if($('spin').checked&&wig)wig.rotation.y+=dt*.34;
+ if(headWire&&wig)headWire.rotation.y=wig.rotation.y;
  controls.update();renderer.render(scene,camera);
 }
 requestAnimationFrame(render);

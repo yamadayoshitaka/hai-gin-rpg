@@ -71,62 +71,112 @@ export function calculateWigFit(source,head,{widthRatio=1.11,vertical=0,forward=
   sourceHeight:height,
  };
 }
-/** Geometry-only, independent of any face morph/eyes, for a sculpted fringe. */
-export function buildReferenceFringe(THREE,head,{color='#d2b17a',blunt=true}={}){
+
+/** Deterministic fine-strand texture; exported with the standalone bang meshes. */
+function fringeTexture(THREE){
+ if(typeof document==='undefined')return null;
+ const canvas=document.createElement('canvas');
+ canvas.width=256;canvas.height=512;
+ const ctx=canvas.getContext('2d');
+ if(!ctx)return null;
+ ctx.fillStyle='#e5e5e5';ctx.fillRect(0,0,256,512);
+ for(let i=0;i<192;i++){
+  const x=(i+.5)*256/192,d=Math.sin(i*1.618)*3.5;
+  ctx.beginPath();ctx.moveTo(x,0);
+  ctx.bezierCurveTo(x+d*.24,150,x-d*.15,330,x+d,512);
+  ctx.strokeStyle=i%7===0?'rgba(255,255,255,.62)':'rgba(70,63,58,.23)';
+  ctx.lineWidth=i%7===0?.7:.45+(i%3)*.2;
+  ctx.stroke();
+ }
+ const tex=new THREE.CanvasTexture(canvas);
+ tex.colorSpace=THREE.SRGBColorSpace;
+ tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.ClampToEdgeWrapping;
+ tex.anisotropy=8;
+ return tex;
+}
+
+/** Separate UV-mapped solid strands. The imported CC0 wig is never edited. */
+export function buildReferenceFringe(THREE,head,{
+ color='#d2b17a',style='blunt',lengthMm=75,widthPct=95,forwardMm=8
+}={}){
  const group=new THREE.Group();
- group.name='optional-reference-fringe';
- const strandCount=32,steps=10,sides=8;
- const countPerPiece=(steps*sides+2);
- const p=[],uv=[],idx=[];
- for(let i=0;i<strandCount;i++){
-  const u=(i+.5)/strandCount*2-1,rootX=head.cx+u*head.rx*.90;
-  const xspan=(head.rx*1.81/strandCount)*.70;
-  const rootY=head.top-.044;
-  const tipY=blunt?head.hairlineY+.006:head.hairlineY+.016+.008*Math.abs(u);
-  const front=Math.max(head.frontZ,head.cz+head.rz*.90)+.008;
-  const startZ=front-.016;
-  const startIndex=p.length/3;
+ group.name='detachable-3d-bangs-'+style;
+ if(style==='none')return group;
+ if(!['blunt','center'].includes(style))throw Error('不正な前髪スタイルです');
+ const count=72,steps=12,sides=8,p=[],uv=[],idx=[];
+ const length=clamp(Number(lengthMm),30,115)/1000;
+ const width=clamp(Number(widthPct),45,125)/100;
+ const forward=clamp(Number(forwardMm),-20,35)/1000;
+ const rootY=head.top-.023,span=head.rx*.87*width;
+ for(let i=0;i<count;i++){
+  const u=(i+.5)/count*2-1;
+  if(style==='center'&&Math.abs(u)<.055)continue;
+  const rootX=head.cx+u*span;
+  const sweep=style==='center'?Math.sign(u)*(.012+.016*(1-Math.min(1,Math.abs(u)))):0;
+  const tipY=rootY-length*(style==='center'?.93+.10*Math.abs(u):1)
+   +(style==='blunt'?.0015*Math.sin(i*2.17):0);
+  const scalpZ=head.cz+head.rz*Math.sqrt(Math.max(.06,1-(u*.91)**2));
+  const baseZ=Math.max(scalpZ,head.frontZ-.009)+.004+forward;
+  const start=p.length/3,half0=Math.max(.00075,span*1.93/count*.56);
   for(let j=0;j<steps;j++){
    const t=j/(steps-1),ease=t*t*(3-2*t);
-   const x=rootX+.0006*Math.sin(i*.73)*ease;
-   const y=lerp(rootY,tipY,ease);
-   const z=lerp(startZ,front,ease)+.002*Math.sin(Math.PI*t);
-   const taper=1-.12*t;
-   const half=xspan*taper;
+   const x=rootX+sweep*ease+.0006*Math.sin(i*1.37+t*3)*t;
+   const y=lerp(rootY,tipY,t)+.0032*Math.sin(Math.PI*t);
+   const z=baseZ+.008*ease+.003*Math.sin(Math.PI*t);
+   const half=half0*(1-.2*t);
    for(let k=0;k<sides;k++){
-    const theta=k*Math.PI*2/sides;
-    p.push(x+half*Math.cos(theta),y,
-      z+.0013*Math.sin(theta));
-    uv.push(k/sides,t*2);
+    const th=2*Math.PI*k/sides;
+    p.push(x+half*Math.cos(th),y,z+.00165*Math.sin(th));
+    uv.push(k/sides,t);
    }
   }
-  const bottom=p.length/3;
-  p.push(rootX,rootY,startZ,rootX,tipY,front);uv.push(.5,0,.5,2);
+  const caps=p.length/3;
+  p.push(rootX,rootY,baseZ,rootX+sweep,tipY,baseZ+.008);
+  uv.push(.5,0,.5,1);
   for(let j=0;j<steps-1;j++)for(let k=0;k<sides;k++){
-   const next=(k+1)%sides;
-   const a=startIndex+j*sides+k,b=startIndex+j*sides+next;
-   const c=a+sides,d=b+sides;
-   idx.push(a,b,c,b,d,c);
+   const next=(k+1)%sides,a=start+j*sides+k,b=start+j*sides+next;
+   idx.push(a,b,a+sides,b,b+sides,a+sides);
   }
   for(let k=0;k<sides;k++){
    const next=(k+1)%sides;
-   idx.push(bottom,startIndex+next,startIndex+k);
-   idx.push(bottom+1,startIndex+(steps-1)*sides+k,
-    startIndex+(steps-1)*sides+next);
+   idx.push(caps,start+next,start+k);
+   idx.push(caps+1,start+(steps-1)*sides+k,start+(steps-1)*sides+next);
   }
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geo.setIndex(idx);geo.computeVertexNormals();
- const material=new THREE.MeshStandardMaterial({
-  color,roughness:.73,metalness:0,side:THREE.DoubleSide
+ const tex=fringeTexture(THREE);
+ const mat=new THREE.MeshStandardMaterial({
+  color,roughness:.74,metalness:0,side:THREE.DoubleSide,
+  ...(tex?{map:tex}:{})
  });
- const mesh=new THREE.Mesh(geo,material);
+ const mesh=new THREE.Mesh(geo,mat);
+ mesh.name='bangs-physical-strands';mesh.castShadow=true;
  group.add(mesh);
- group.userData.dispose=()=>{geo.dispose();material.dispose()};
+ group.userData.dispose=()=>{geo.dispose();mat.dispose();tex?.dispose();};
  return group;
 }
+
+/** Real v121 head geometry; preview-only and never part of the export root. */
+export function createRealHeadWireframe(THREE,head){
+ if(!head?.mesh?.geometry)throw Error('ワイヤー用v121頭部がありません');
+ head.mesh.updateWorldMatrix(true,false);
+ const tmp=head.mesh.geometry.clone();
+ tmp.applyMatrix4(head.mesh.matrixWorld);
+ const geo=new THREE.WireframeGeometry(tmp);
+ tmp.dispose();
+ const mat=new THREE.LineBasicMaterial({
+  color:0x80dcff,transparent:true,opacity:.28,depthWrite:false,depthTest:true
+ });
+ const wire=new THREE.LineSegments(geo,mat);
+ wire.name='preview-v121-head-wire-not-exported';
+ wire.frustumCulled=false;
+ wire.userData.dispose=()=>{geo.dispose();mat.dispose();};
+ return wire;
+}
+
 export const PUBLIC_WIG_SOURCES=Object.freeze([
  Object.freeze({id:'long01',label:'ロング',file:'hair_long01.glb',license:'CC0'}),
  Object.freeze({id:'bob01',label:'ロングボブ',file:'hair_bob01.glb',license:'CC0'}),
