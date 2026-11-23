@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {parseHTML} from 'linkedom';
 import {createNewGame} from '../src/game-core-flow.js';
 import {ensureSortiePlan,sortieTeams,SORTIE_FORMATIONS} from '../src/three-team-sortie.js';
 import {INN_CONSUMABLES,teamItemStock,setInnTeamItem,innTeamItemsSummary} from '../src/inn-team-items.js';
@@ -33,6 +34,22 @@ assert.equal((formationHtml.match(/data-inn-wizard-formation="attack"/g)||[]).le
 assert.equal((formationHtml.match(/data-inn-wizard-formation="free"/g)||[]).length,1,
  'free formation is an always-available escape hatch, not a second named card');
 assert.equal((formationHtml.match(/data-inn-wizard-formation-page=/g)||[]).length,2);
+const {document:formationDocument}=parseHTML(formationHtml);
+const card=formationDocument.querySelector('.innWizardFormationCard');
+assert.ok(card,'formation card must have an isolated height-constrained layout');
+assert.ok(card.querySelector('.innWizardFormationDiagram'),'animated diagram has a separate region');
+assert.ok(card.querySelector('button[data-inn-wizard-formation="attack"]'));
+assert.ok(!card.querySelector('button .signaturePreview'),
+ 'never put SVG or animated text inside the clipped selection button');
+assert.ok(formationDocument.querySelector('.innWizardFormationPager'),
+ 'paging controls are outside the formation card');
+const finalPage=renderInnFormationWizard({game,view:'formation',teamId:1,
+ formationPage:Object.keys(SORTIE_FORMATIONS).length-1});
+assert.match(finalPage,/data-inn-wizard-return-teams="1"/,
+ 'last formation page must return to team selection');
+assert.doesNotMatch(finalPage,/data-inn-wizard-formation-page="1"/,
+ 'last page must not advance to an invalid page');
+
 assert.match(formationHtml,/追加作戦/);
 assert.ok(Object.keys(SORTIE_FORMATIONS).length>8);
 assert.equal(formationAllowsTactic('balanced','melee_split'),false);
@@ -59,6 +76,17 @@ for(const marker of ['deployStep=\'placement\'','syncPrebattleScreen()','realtim
 }
 assert.match(css,/\.innWizardFormations/);
 assert.match(css,/overflow:hidden!important/);
+assert.match(css,/\.innWizardFormationCard/);
+assert.match(css,/\.innWizardFormationDiagram/);
+assert.match(css,/#townPurchaseConfirm/);
+assert.match(town,/function townTransactionSummary\(button\)/);
+assert.match(town,/function showTownTransactionConfirm\(button,summary\)/);
+assert.match(town,/event\.stopImmediatePropagation\(\)/);
+assert.match(town,/data-inn-wizard-return-teams/);
+const townAudioSource=readFileSync(new URL('../src/town-audio-director.js',import.meta.url),'utf8');
+assert.match(townAudioSource,/coin:\[\[/,'payment has its own metallic sound');
+assert.match(town,/townAudio\.effect\('coin'\)/);
+
 
 const strategy=readFileSync(new URL('../src/targeted-strategy-runtime.js',import.meta.url),'utf8');
 const strategyCss=readFileSync(new URL('../src/central-battle-orders.css',import.meta.url),'utf8');
