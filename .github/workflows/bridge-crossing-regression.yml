@@ -1,0 +1,28 @@
+name: Battle bridge crossing and anti-oscillation regression
+on:
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/battle-bridge-crossing-lock.js'
+      - 'src/battle-stable-grid-route.js'
+      - 'src/battle-movement-recovery.js'
+      - 'qa/battle-bridge-oneway-traffic.test.mjs'
+      - '.github/workflows/publish-pages.yml'
+      - '.github/workflows/bridge-crossing-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bridge-no-pingpong:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check and both-bank bridge movement regression
+        run: |
+          node --check src/battle-bridge-crossing-lock.js
+          node --test qa/battle-bridge-oneway-traffic.test.mjs qa/battle-wide-bridge-clearance.test.mjs
+          node --test qa/battle-ai-wandering-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs
