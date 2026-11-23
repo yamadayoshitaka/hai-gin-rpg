@@ -19,15 +19,15 @@ const zeros=()=>Object.fromEntries(CONTROLS.map(([key])=>[
 // (front, 45 degrees, side and rear). These are manually calibrated,
 // reversible morphological approximations, not an extracted 3D scan.
 export const V121_REFERENCE_PRESET=Object.freeze({
-  eyes:{x:-2,y:1,size:110},
-  nose:{x:0,y:1,size:91},
-  mouth:{x:0,y:1,size:114},
-  brows:{x:-1,y:-6,size:105},
-  cheeks:{x:-4,y:1,size:98},
-  chin:{x:-2,y:2,size:92},
+  eyes:{x:-2,y:1,size:105},
+  nose:{x:0,y:1,size:93},
+  mouth:{x:0,y:1,size:108},
+  brows:{x:-1,y:-5,size:104},
+  cheeks:{x:1,y:0,size:102},
+  chin:{x:0,y:1,size:100},
   philtrum:3
 });
-export const V121_REFERENCE_IMAGE='3089-skinhead-front-45-side-rear-20261123';
+export const V121_REFERENCE_IMAGE='generated-natural-front-profile-reference-20261123';
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const fade=(x,lo,hi)=>{let t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t)};
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
