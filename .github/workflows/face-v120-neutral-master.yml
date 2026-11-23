@@ -6,6 +6,7 @@ on:
       - 'face-neutral-v120.html'
       - 'face-mesh-studio.html'
       - 'qa/face-v120-neutral-head.test.mjs'
+      - 'qa/face-v120-neutral-browser.test.mjs'
       - '.github/workflows/face-v120-neutral-master.yml'
   push:
     branches: [feature/neutral-face-v120-independent-base]
@@ -34,3 +35,28 @@ jobs:
           Path('/tmp/neutral-v120-page.mjs').write_text(script)
           PY
           node --check /tmp/neutral-v120-page.mjs
+  mobile-webgl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real browser and Three.js dependencies
+        run: |
+          npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Serve the neutral model viewer
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v120-server.log 2>&1 &
+          sleep 2
+      - name: Android WebGL neutral face, profile and GLB exporter smoke
+        run: node --test qa/face-v120-neutral-browser.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: face-v120-front-side
+          path: qa/screenshots/face-v120/*.png
+          if-no-files-found: ignore
+          retention-days: 7
