@@ -31,7 +31,10 @@ export function v121MakeupMasks(x,y,z){
   // nonzero tails on the chin and jaw. Do not let any preset cross them.
   const vermilion=(y>=.216&&y<=.248&&ax<=.052&&z>.119);
   const lipBands=(.82*gauss(y,.240,.0068)+gauss(y,.223,.0077));
-  const lipSurface=vermilion?fade(z,.119,.143):0;
+  // Feather both pigmentation boundaries so no second horizontal lip line
+  // is drawn by the COLOR_0 cutoff below the lower vermilion.
+  const lipSurface=vermilion?
+    fade(z,.119,.143)*fade(y,.216,.224)*(1-fade(y,.246,.249)):0;
   return {
     blush:y>=.215?(gauss(x,-.076,.031)+gauss(x,.076,.031))*
       gauss(y,.257,.028)*front:0,
