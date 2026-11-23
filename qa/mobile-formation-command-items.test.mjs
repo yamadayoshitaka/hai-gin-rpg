@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseHTML} from 'linkedom';
 import {createNewGame} from '../src/game-core-flow.js';
 import {ensureSortiePlan,sortieTeams,SORTIE_FORMATIONS} from '../src/three-team-sortie.js';
 import {INN_CONSUMABLES,teamItemStock,setInnTeamItem,innTeamItemsSummary} from '../src/inn-team-items.js';
@@ -34,14 +33,17 @@ assert.equal((formationHtml.match(/data-inn-wizard-formation="attack"/g)||[]).le
 assert.equal((formationHtml.match(/data-inn-wizard-formation="free"/g)||[]).length,1,
  'free formation is an always-available escape hatch, not a second named card');
 assert.equal((formationHtml.match(/data-inn-wizard-formation-page=/g)||[]).length,2);
-const {document:formationDocument}=parseHTML(formationHtml);
-const card=formationDocument.querySelector('.innWizardFormationCard');
+// Pages deployment runs its smoke tests without npm install; keep this
+// structural assertion dependency-free instead of importing a DOM package.
+const card=formationHtml.match(/<article class="innWizardFormationCard">([\\s\\S]*?)<\\/article>/)?.[1]||'';
 assert.ok(card,'formation card must have an isolated height-constrained layout');
-assert.ok(card.querySelector('.innWizardFormationDiagram'),'animated diagram has a separate region');
-assert.ok(card.querySelector('button[data-inn-wizard-formation="attack"]'));
-assert.ok(!card.querySelector('button .signaturePreview'),
+const diagram=card.indexOf('class="innWizardFormationDiagram"');
+const select=card.indexOf('data-inn-wizard-formation="attack"');
+assert.ok(diagram>=0,'animated diagram has a separate region');
+assert.ok(select>diagram,'the selectable button follows the independent animation');
+assert.ok(!card.slice(select).includes('signaturePreview'),
  'never put SVG or animated text inside the clipped selection button');
-assert.ok(formationDocument.querySelector('.innWizardFormationPager'),
+assert.match(formationHtml,/<div class="sortieWizardPager innWizardFormationPager">/,
  'paging controls are outside the formation card');
 const finalPage=renderInnFormationWizard({game,view:'formation',teamId:1,
  formationPage:Object.keys(SORTIE_FORMATIONS).length-1});
