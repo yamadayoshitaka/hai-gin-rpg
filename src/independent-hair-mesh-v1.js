@@ -164,7 +164,8 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
    if(buckets[id].length<36)continue;
    const part=geometry.clone();part.setIndex(buckets[id]);part.clearGroups();
    part.computeBoundingSphere();
-   const material=cloneMaterials(THREE,source.material,COLORS[id]);
+   const material=cloneMaterials(THREE,
+    Array.isArray(source.material)?source.material[0]:source.material,COLORS[id]);
    const mesh=new THREE.Mesh(part,material);
    mesh.name='inspection-'+id;mesh.frustumCulled=false;
    zones.get(id).add(mesh);owned.push(mesh);
