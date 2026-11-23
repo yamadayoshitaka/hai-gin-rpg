@@ -24,22 +24,31 @@ function validBox(box){
 }
 const asBox=box=>({min:{x:box.min.x,y:box.min.y,z:box.min.z},
  max:{x:box.max.x,y:box.max.y,z:box.max.z}});
-function rootBandBounds(THREE,geometries){
- const xs=[],ys=[],zs=[],all=new THREE.Box3();
- for(const geometry of geometries)all.union(new THREE.Box3().setFromBufferAttribute(
-  geometry.getAttribute('position')));
- if(!validBox(all))throw Error('髪の境界を計測できません');
- // Only the 8.5 cm crown attachment band defines the wig fit.
- // The former 16 cm band included bangs/side locks and dragged their
- // asymmetric outline into the scalp width, depth and horizontal centre.
- const floor=all.max.y-Math.min(.085,(all.max.y-all.min.y)*.70);
+/**
+ * Compute bounds using ONLY triangles left after detached-island cleanup.
+ * The old code scanned the complete POSITION buffer: deleted fragments still
+ * contributed their orphaned vertices to the hair box, scale and centre.
+ */
+export function rootBandBounds(THREE,geometries){
+ const xs=[],ys=[],zs=[],live=[],all=new THREE.Box3(),v=new THREE.Vector3();
  for(const geometry of geometries){
-  const pos=geometry.getAttribute('position');
-  const stride=Math.max(1,Math.floor(pos.count/40000));
-  for(let i=0;i<pos.count;i+=stride){
-   if(pos.getY(i)<floor)continue;
-   xs.push(pos.getX(i));ys.push(pos.getY(i));zs.push(pos.getZ(i));
+  const p=geometry.getAttribute('position'),index=geometry.getIndex();
+  if(!p)continue;
+  const seen=new Uint8Array(p.count),count=index?.count??p.count;
+  for(let k=0;k<count;k++){
+   const i=index?index.getX(k):k;
+   if(i<0||i>=p.count||seen[i])continue;
+   seen[i]=1;
+   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+   if(!Number.isFinite(x+y+z))continue;
+   v.set(x,y,z);all.expandByPoint(v);live.push([x,y,z]);
   }
+ }
+ if(!validBox(all))throw Error('表示対象の髪メッシュを計測できません');
+ const floor=all.max.y-Math.min(.085,(all.max.y-all.min.y)*.70);
+ for(const [x,y,z] of live){
+  if(y<floor)continue;
+  xs.push(x);ys.push(y);zs.push(z);
  }
  if(xs.length<30)throw Error('髪の頭頂／根元帯を計測できません');
  const box=new THREE.Box3(
@@ -47,8 +56,10 @@ function rootBandBounds(THREE,geometries){
   new THREE.Vector3(percentile(xs,.94),all.max.y,percentile(zs,.94))
  );
  if(!validBox(box))throw Error('髪の根元帯が空です');
- return {rootBox:asBox(box),hairBox:asBox(all)};
+ return {rootBox:asBox(box),hairBox:asBox(all),
+  liveVertices:live.length};
 }
+
 function triangleArea(p,a,b,c){
  const ax=p.getX(a),ay=p.getY(a),az=p.getZ(a);
  const ux=p.getX(b)-ax,uy=p.getY(b)-ay,uz=p.getZ(b)-az;
