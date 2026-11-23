@@ -258,7 +258,8 @@ def correct_chin_profile(points):
         # Smoothly support only the *front* midline; lips Y>=.21 and neck
         # Y<=.155 retain their original position.
         bridge=(.0200*fade(y,.155,.180)*(1.-fade(y,.181,.201))*
-                (1.-fade(ax,.034,.068))*fade(z,.040,.095))
+                (1.-fade(ax,.034,.068))*fade(z,.040,.065)*
+                (1.-fade(z,.083,.112)))
         result.append((rounded_x,y+lift,z-displacement*w+bridge))
         if displacement*w>.00005 or lift>.00005 or bridge>.00005:changed+=1
     chin_after=max(z for x,y,z in result
