@@ -64,6 +64,8 @@ test('battle runtime uses lane-indexed forward reservations and never rear-goal 
  assert.match(battle,/if\(activeBridge&&!activeBridge\.destroyed&&a\.cell\.z===laneZ\)/);
  assert.match(battle,/progress>=-12&&progress<16/);
  assert.match(battle,/if\(crossing\.waiting\)\{a\.poseMoving=false;return;\}/);
+ assert.match(battle,/\(current\.x-center\)\*actor\.crossing\.fromSide>14/,
+  'a target switch must not cancel an active crossing on the far bank');
  assert.match(battle,/const reversing=onBridge&&\(path\.x-a\.cell\.x\)\*direction<0/);
  assert.doesNotMatch(battle,/if\(activeBridge&&!activeBridge\.destroyed&&a\.cell\.z===activeBridge\.row\)/);
 });
