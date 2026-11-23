@@ -18,8 +18,8 @@ export function attachV121Expressions({neutral,faceTune,onChange=()=>{}}){
       eyeballs.push({mesh,baseScale:mesh.scale.clone()});
     }
   });
-  if(meshes.length!==6||eyeballs.length!==2)
-    throw Error('v121 expressive GLB must have 6 morphed meshes and 2 intact globes');
+  if(meshes.length!==9||eyeballs.length!==2)
+    throw Error('v121 expressive GLB must have 9 morphed meshes (skin, eye details, oral cavity) and 2 intact globes');
   const current=Object.fromEntries(V121_EXPRESSIONS.map(n=>[n,0]));
   let mode='neutral',modeSince=performance.now(),last=performance.now();
   const segment=[
@@ -31,7 +31,7 @@ export function attachV121Expressions({neutral,faceTune,onChange=()=>{}}){
   const total=segment.reduce((sum,x)=>sum+x[1],0);
   function setMode(next){
     if(!['neutral','blink','smile','laugh','angry','sad',
-          'mouthOpen','talk','loop'].includes(next))throw Error(next);
+          'mouthOpen','talk','loop','vowelA','vowelI','vowelU','vowelE','vowelO'].includes(next))throw Error(next);
     mode=next;modeSince=performance.now();
     document.documentElement.dataset.v121ExpressionMode=mode;
     onChange(mode);

@@ -68,57 +68,135 @@ def add_float(g,b,rows,shape='VEC3'):
 
 
 def deformation(name,x,y,z,part):
-    """Natural muscle-inspired, neutral-relative shape deformation.
+    """Facial action units with separate lips, corners, brows and cheeks.
 
-    Volumes fade out from each facial region. Hair, brow, liner and eyelash
-    morph with the skin, preventing obvious detached expression parts.
+    Original v121 phonemes pulled the entire mandibular region downward
+    because lower lip was gated by a broad gaussian. The mouth now uses
+    narrow vermilion bands and independent lateral/vertical movements.
+    Chin and neck vertices below y=.160 must remain practically stationary.
+    The oral cavity preview is handled as separate geometry by WebGL.
     """
     ax=abs(x)
     sign=1. if x>=0 else -1.
-    front=fade(z,.055,.121)
-    if part!='skin':
-        front=1.
+    front=fade(z,.055,.121) if part=='skin' else 1.
+    mouth_front=fade(z,.105,.136) if part=='skin' else 1.
     eye=bell(ax,.043,.027)*bell(y,.308,.028)*front
-    outer=bell(ax,.048,.022)*bell(y,.308,.026)*front
     brow=bell(ax,.039,.032)*bell(y,.342,.022)*front
     inner_brow=bell(ax,.025,.015)*bell(y,.342,.020)*front
-    cheek=bell(ax,.067,.038)*bell(y,.260,.040)*front
-    corner=bell(ax,.042,.015)*bell(y,.196,.021)*front
-    lip=bell(x,0,.044)*bell(y,.195,.029)*front
-    upper=bell(y,.211,.013)*lip
-    lower=bell(y,.184,.013)*lip
+    cheek=bell(ax,.066,.039)*bell(y,.260,.035)*front
+    # Actual lip bands rather than a whole-jaw deformation.
+    lip_span=bell(x,0,.035)*mouth_front
+    upper=bell(y,.2085,.008)*lip_span
+    lower=bell(y,.1870,.009)*lip_span
+    corner=bell(ax,.043,.013)*bell(y,.197,.014)*mouth_front
     top_lid=bell(y,.320,.008)*eye
     lower_lid=bell(y,.296,.008)*eye
     if name=='blink':
-        # Eyelids/lashes close together; true geometry, not opacity flash.
-        return (0.,-.0140*top_lid+.0070*lower_lid, .0016*top_lid)
+        return (0.,-.0140*top_lid+.0070*lower_lid,.0016*top_lid)
     if name=='smile':
-        return (sign*.0028*corner, .0072*corner+.0011*cheek,
-                .0019*cheek+.0006*corner)
+        return (sign*.0066*corner,
+                .0122*corner+.0037*cheek+.0015*upper,
+                .0025*cheek+.0009*corner)
     if name=='laugh':
-        return (sign*.0035*corner,
-                .0090*corner+.0020*cheek+.0033*upper-.007*lower,
-                .0027*cheek+.0012*corner)
+        return (sign*.0074*corner,
+                .0090*corner+.0032*cheek+.0044*upper-.0105*lower,
+                .0032*cheek+.0010*corner)
     if name=='angry':
         return (0.,-.0080*inner_brow+.0012*(brow-inner_brow)-.0010*eye,
                 .0006*inner_brow)
     if name=='sad':
-        return (-sign*.0017*corner,
-                .0082*inner_brow-.0012*brow-.0055*corner,
+        return (-sign*.0025*corner,
+                .0082*inner_brow-.0012*brow-.0062*corner,
                 -.0007*corner)
     if name=='mouthOpen':
-        return (0.,.0037*upper-.0120*lower,-.0020*lip)
+        return (0.,.0050*upper-.0106*lower,-.0007*lower)
     if name=='vowelA':
-        return (0.,.0038*upper-.0160*lower,-.0020*lip)
+        return (sign*.0008*corner,.0065*upper-.0140*lower,-.0008*lower)
     if name=='vowelI':
-        return (sign*.0045*corner,.0015*upper-.0030*lower,-.0008*lip)
+        return (sign*.0065*corner,.0017*upper-.0027*lower,.0004*corner)
     if name=='vowelU':
-        return (-sign*.0060*corner,.0017*upper-.0065*lower,.0020*lip)
+        return (-sign*.0053*corner,.0032*upper-.0068*lower,.0022*(upper+lower))
     if name=='vowelE':
-        return (sign*.0038*corner,.0028*upper-.0070*lower,-.0010*lip)
+        return (sign*.0052*corner,.0038*upper-.0072*lower,-.0005*lower)
     if name=='vowelO':
-        return (-sign*.0050*corner,.0032*upper-.0110*lower,.0019*lip)
+        return (-sign*.0048*corner,.0047*upper-.0112*lower,.0015*(upper+lower))
     raise ValueError(name)
+
+
+def append_oral_parts(g,b,head_xyz):
+    """Real PBR 3D oral cavity, teeth, tongue: neutral hidden; visemes visible."""
+    front=[p for p in head_xyz if abs(p[0])<.056 and .170<p[1]<.224 and p[2]>.09]
+    if len(front)<50:raise ValueError('Cannot locate lip surface for mouth cavity')
+    def surface(x,y):
+        nearest=sorted(front,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)[:6]
+        return max(p[2] for p in nearest)
+    styles={'smile':(.036,.0055),'laugh':(.039,.014),
+       'mouthOpen':(.030,.015),'vowelA':(.030,.019),'vowelI':(.040,.005),
+       'vowelU':(.016,.010),'vowelE':(.037,.010),'vowelO':(.021,.016)}
+    def pack_indices(seq):
+        raw=b''.join(struct.pack('<I',v) for v in seq)
+        while len(b)%4:b.append(0)
+        off=len(b);b.extend(raw)
+        v=len(g['bufferViews'])
+        g['bufferViews'].append({'buffer':0,'byteOffset':off,
+                                 'byteLength':len(raw),'target':34963})
+        a=len(g['accessors'])
+        g['accessors'].append({'bufferView':v,'componentType':5125,
+          'count':len(seq),'type':'SCALAR','min':[min(seq)],'max':[max(seq)]})
+        return a
+    nodes=[]
+    for kind,color in (
+      ('V121_ORAL_CAVITY',[.115,.03,.044,1.]),
+      ('V121_ORAL_UPPER_TEETH',[.90,.85,.76,1.]),
+      ('V121_ORAL_TONGUE',[.56,.19,.23,1.])):
+        if kind.endswith('CAVITY'):
+            poly=[(math.cos(j*math.tau/24),math.sin(j*math.tau/24))
+                  for j in range(24)]
+            inds=[q for j in range(1,23) for q in (0,j,j+1)]
+        else:
+            poly=[(-1.,-1.),(1.,-1.),(1.,1.),(-1.,1.)]
+            inds=[0,1,2,0,2,3]
+        rest=[(xx*.0002,.197+yy*.00008,surface(0,.197)-.014)
+              for xx,yy in poly]
+        mat=len(g['materials'])
+        g['materials'].append({'name':kind+'_PBR','doubleSided':True,
+          'pbrMetallicRoughness':{'baseColorFactor':color,'metallicFactor':0.,
+          'roughnessFactor':.76}})
+        targets=[]
+        for name in NAMES:
+            wh=styles.get(name)
+            if wh is None:
+                targets.append({'POSITION':add_float(g,b,[(0.,0.,0.)]*len(poly))})
+                continue
+            width,height=wh
+            dst=[]
+            for xx,yy in poly:
+                if kind.endswith('CAVITY'):
+                    x=xx*width;y=.197+yy*height
+                    dz=.006
+                elif kind.endswith('TEETH'):
+                    x=xx*width*.69;y=.197+height*(.51+.12*yy)
+                    dz=.0072
+                else:
+                    x=xx*width*.55;y=.197-height*(.53-.13*yy)
+                    dz=.0075
+                z=surface(x,y)+dz
+                dst.append((x,y,z))
+            targets.append({'POSITION':add_float(g,b,[
+                tuple(dst[j][k]-rest[j][k] for k in range(3))
+                for j in range(len(rest))])})
+        mesh_id=len(g['meshes'])
+        g['meshes'].append({'name':kind,
+            'primitives':[{'attributes':{'POSITION':add_float(g,b,rest),
+             'NORMAL':add_float(g,b,[(0.,0.,1.)]*len(rest))},
+             'indices':pack_indices(inds),'material':mat,'targets':targets}],
+            'weights':[0.]*len(NAMES),
+            'extras':{'targetNames':list(NAMES),'v121OralPart':True}})
+        node_id=len(g['nodes'])
+        g['nodes'].append({'name':kind,'mesh':mesh_id})
+        nodes.append(node_id)
+    g['scenes'][g.get('scene',0)].setdefault('nodes',[]).extend(nodes)
+    return nodes
 
 
 def animation(g,b,name,times,frames,nodes):
@@ -164,6 +242,7 @@ def build(path):
         count[mesh.get('name','mesh-'+str(i))]=len(xyz)
         nodes.extend(j for j,node in enumerate(g['nodes']) if node.get('mesh')==i)
     if len(nodes)!=6:raise ValueError('Expected skin and five cosmetic morph nodes')
+    nodes.extend(append_oral_parts(g,b,vertices(g,b,head['primitives'][0]['attributes']['POSITION'])))
     base={}
     blink=[
         (0.00,{}),(.12,{'blink':.3}),(.20,{'blink':1.}),
@@ -187,7 +266,11 @@ def build(path):
         'animatedMeshes':len(nodes),
         'animationNames':[clip['name'] for clip in g['animations']],
         'preservesSkinVertexIDs':13455,
-        'eyeGlobesRemainIndependent':True}
+        'eyeGlobesRemainIndependent':True,
+        'oralCavityMeshNames':['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE'],
+        'mouthShapeVersion':'independent_vermilion_corner_visemes_v2',
+        'jawNeckStationary':True,
+        'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue'}
     if 'referenceFeatureSculpt' in meta:
         meta['referenceFeatureSculpt']['facialExpressionAnimations']=True
     if 'naturalFoldCleanup' in meta:
