@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Build a NEW contiguous cervical, clavicle and upper-bust surface for female v121.
+"""REPLACE old lower-face lips, chin, jaw, neck and shoulder geometry in female v121.
 
-The old donor neck/shoulder faces are removed from the visible head primitive,
-not covered by a second surface. The existing UV-split cut is welded in XYZ,
-and new circumferential anatomical rings are generated from fresh parametric
-sections; no source torso triangles or depth values are reused below the cut.
-Only v121 receives this treatment; mouth, morphs and eyes remain untouched.
+The entire donor surface from the mouth/nose-base section downward is removed.
+The new visible surface has independently generated 3D vertices, triangles,
+normals and facial-expression morphs from a single contiguous parametric body.
+Only the boundary ring at the retained upper face is reused, strictly as a
+weld seam. No old chin/neck/shoulder triangles are rendered. No overlay shell.
 """
 import collections
 import json
@@ -15,238 +15,295 @@ import runpy
 import struct
 import sys
 
-H = runpy.run_path(str(pathlib.Path(__file__).with_name('rebuild-v121-mouth-chin.py')))
-read_glb, accessor, add_vec3 = H['read_glb'], H['accessor'], H['add_vec3']
-write_indices, normals = H['write_indices'], H['normals']
-CUT_Y = .145
+H=runpy.run_path(str(pathlib.Path(__file__).with_name('rebuild-v121-mouth-chin.py')))
+R=runpy.run_path(str(pathlib.Path(__file__).with_name('add-v121-face-expressions.py')))
+read_glb,accessor,add_vec3=H['read_glb'],H['accessor'],H['add_vec3']
+write_indices,normals=H['write_indices'],H['normals']
+add_float=R['add_float']
+deformation=R['deformation']
+NAMES=R['NAMES']
+CUTS=(.247,.245,.250,.242,.240,.253,.238)
 
-def add_uv(g, b, values):
-    while len(b) % 4:
-        b.append(0)
-    start = len(b)
-    for u,v in values:
-        b.extend(struct.pack('<ff', u, v))
-    view = len(g['bufferViews'])
-    g['bufferViews'].append({'buffer': 0, 'byteOffset': start,
-                             'byteLength': len(values)*8, 'target': 34962})
-    acc = len(g['accessors'])
-    g['accessors'].append({'bufferView': view, 'componentType': 5126,
-                           'count': len(values), 'type': 'VEC2'})
-    return acc
+def fade(x,a,b):
+    t=max(0.,min(1.,(x-a)/(b-a)))
+    return t*t*(3.-2.*t)
 
-def close_rim(xyz, removed, kept):
-    def edges(faces):
-        output = collections.defaultdict(list)
-        for a,b,c in faces:
-            if len({a,b,c}) != 3:
-                continue
-            for u,v in ((a,b),(b,c),(c,a)):
-                output[tuple(sorted((u,v)))].append((u,v))
-        return output
-    outer = edges(kept)
-    inner = edges(removed)
-    border = set(outer).intersection(inner)
-    if not 55 <= len(border) <= 250:
-        raise ValueError('Unexpected cervical border: '+str(len(border)))
-    # Original anatomical donor has split UV seams; both IDs share the same XYZ.
-    # The two open border arcs therefore become one continuous geometric ring.
-    canon = {}
-    representatives = {}
-    for i in {i for e in border for i in e}:
-        key = tuple(round(v,5) for v in xyz[i])
-        representatives.setdefault(key,i)
-        canon[i] = key
-    adjacency = collections.defaultdict(set)
-    for a,b in border:
-        ka,kb = canon[a],canon[b]
-        if ka == kb:
-            continue
-        adjacency[ka].add(kb)
-        adjacency[kb].add(ka)
-    degrees = collections.Counter(len(v) for v in adjacency.values())
-    if set(degrees) != {2}:
-        raise ValueError('Neck seam cannot be safely welded: '+str(degrees))
-    first = min(adjacency)
-    ring = [first]
-    previous = None
-    while True:
-        options = sorted(adjacency[ring[-1]] - ({previous} if previous else set()))
-        if not options:
-            raise ValueError('Open neck boundary')
-        nxt = options[0]
-        if nxt == first:
-            break
-        if nxt in ring or len(ring)>len(adjacency):
-            raise ValueError('Self-intersecting cervical border')
-        previous, ring = ring[-1], ring+[nxt]
-    if len(ring) != len(adjacency):
-        raise ValueError('Multiple disconnected cervical seams')
-    ids = [representatives[k] for k in ring]
-    # The ring must contain the forward neck AND the rear/side neck.
-    if min(xyz[i][2] for i in ids)>-.045 or max(xyz[i][2] for i in ids)<.065:
-        raise ValueError('Neck rim does not encircle cervical anatomy')
-    return ids, len(border)
+def gauss(x,center,width):
+    return math.exp(-.5*((x-center)/width)**2)
 
-def surface(theta, y):
-    # [Y, half-width, frontal depth, dorsal depth] in metres.
-    # Neck: slender and gently backward inclined; shoulders and upper chest
-    # fan out below clavicles instead of converging into the old pointed bib.
-    stations = [
-      (.130,.061,.079,-.064),
-      (.117,.061,.074,-.067),
-      (.102,.063,.073,-.069),
-      (.088,.073,.077,-.072),
-      (.073,.100,.081,-.079),
-      (.057,.143,.094,-.087),
-      (.040,.181,.107,-.094),
-      (.018,.196,.124,-.104),
-      (-.021,.195,.151,-.114),
-      (-.075,.192,.153,-.121)]
-    for i in range(len(stations)-1):
-        high,low=stations[i],stations[i+1]
-        if high[0]>=y>=low[0]:
-            t=(high[0]-y)/(high[0]-low[0])
-            t=t*t*(3.-2.*t)
-            w=high[1]+(low[1]-high[1])*t
-            front=high[2]+(low[2]-high[2])*t
-            back=high[3]+(low[3]-high[3])*t
-            break
-    else:
-        w,front,back=stations[-1][1:]
+def append_uv(g,b,values):
+    while len(b)%4: b.append(0)
+    start=len(b)
+    for u,v in values:b.extend(struct.pack('<ff',u,v))
+    vi=len(g['bufferViews'])
+    g['bufferViews'].append({'buffer':0,'byteOffset':start,
+                            'byteLength':8*len(values),'target':34962})
+    ai=len(g['accessors'])
+    g['accessors'].append({'bufferView':vi,'componentType':5126,
+                           'count':len(values),'type':'VEC2'})
+    return ai
+
+def rim_from_cut(xyz,faces,cut):
+    kept=[];removed=[]
+    for f in faces:
+        if len(set(f))<3:continue
+        if min(xyz[i][1] for i in f)<cut:
+            removed.append(f)
+        else:kept.append(f)
+    def edges(fs):
+        return collections.Counter(tuple(sorted((a,b)))
+               for x,y,z in fs for a,b in ((x,y),(y,z),(z,x)))
+    outer=edges(kept)
+    inner=edges(removed)
+    edge_ids={e for e in outer if inner[e]>0}
+    # The donor's UV split around the nape must be merged geometrically.
+    canonical={}
+    members=collections.defaultdict(list)
+    for i in {v for e in edge_ids for v in e}:
+        key=tuple(round(t,5) for t in xyz[i])
+        canonical[i]=key
+        members[key].append(i)
+    adjacency=collections.defaultdict(set)
+    for a,b in edge_ids:
+        aa,bb=canonical[a],canonical[b]
+        if aa==bb: continue
+        adjacency[aa].add(bb);adjacency[bb].add(aa)
+    deg=collections.Counter(len(n) for n in adjacency.values())
+    if not adjacency or set(deg)!={2}:
+        raise ValueError('Cut %f does not have a single closed rim: %s'%(cut,deg))
+    start=min(adjacency)
+    ring=[start]
+    before=None
+    for _ in range(len(adjacency)+1):
+        options=sorted(adjacency[ring[-1]]-({before} if before is not None else set()))
+        if not options:raise ValueError('Open cut '+str(cut))
+        nxt=options[0]
+        if nxt==start:break
+        if nxt in ring:raise ValueError('Cut ring self-repeats')
+        before=ring[-1]
+        ring.append(nxt)
+    if len(ring)!=len(adjacency):raise ValueError('Disconnected cut ring')
+    ids=[min(members[k]) for k in ring]
+    if len(ids)<55 or len(ids)>300:
+        raise ValueError('Wrong rim size: '+str(len(ids)))
+    if max(xyz[i][2] for i in ids)<.085 or min(xyz[i][2] for i in ids)>-.04:
+        raise ValueError('Cut rim does not span the full cranial skin')
+    return ids,removed,len(edge_ids)
+
+# Measured 3D profile, not adjustments to the previous jaw or body mesh.
+# Axial Y increases upwards; front side is +Z, all dimensions in metres.
+# The curves deliberately contain one anatomically rounded menton, without
+# a forward lower-jaw shelf or an extra protrusion under the chin.
+STATIONS=[
+ (.238,.072,.138,-.058),  # vermilion and nose-side continuity
+ (.234,.070,.134,-.058),  # neutral lip closure
+ (.230,.071,.138,-.058),
+ (.226,.073,.145,-.059),  # full lower vermilion
+ (.222,.074,.145,-.059),
+ (.218,.075,.140,-.060),
+ (.213,.077,.132,-.061),  # lower lip skin border
+ (.208,.077,.126,-.062),
+ (.201,.077,.119,-.062),  # shallow labiomental sulcus
+ (.194,.076,.123,-.063),  # chin rounds out once
+ (.188,.075,.125,-.063),
+ (.181,.074,.121,-.064),
+ (.173,.071,.111,-.065),
+ (.165,.067,.099,-.066),
+ (.157,.065,.086,-.067),
+ (.149,.063,.076,-.068),
+ (.140,.061,.069,-.069),
+ (.128,.060,.067,-.071),  # neck below menton
+ (.114,.061,.066,-.074),
+ (.100,.064,.068,-.075),
+ (.086,.072,.071,-.077),
+ (.071,.100,.077,-.083),
+ (.054,.146,.090,-.090),  # clavicle / deltoid
+ (.035,.187,.104,-.101),
+ (.012,.197,.123,-.110),
+ (-.021,.196,.143,-.118),
+ (-.075,.195,.144,-.124)
+]
+
+def section(y):
+    if y>=STATIONS[0][0]:return STATIONS[0][1:]
+    for hi,lo in zip(STATIONS,STATIONS[1:]):
+        if hi[0]>=y>=lo[0]:
+            t=fade(hi[0]-y,0.,hi[0]-lo[0])
+            return tuple(hi[i]+(lo[i]-hi[i])*t for i in (1,2,3))
+    return STATIONS[-1][1:]
+
+def generate(theta,y):
+    w,f,b=section(y)
     c,s=math.cos(theta),math.sin(theta)
     x=w*c
-    z=(front if s>=0 else -back)*s
-    # Fine sternocleidomastoid, clavicle and upper-chest relief, all bounded.
-    front_factor=max(0.,s)
-    collar=math.exp(-((y-.058)/.019)**2)
-    clavicle=math.exp(-((abs(x)-.085)/.042)**2)*collar*.0035
-    chest=math.exp(-((y+.016)/.044)**2)*math.exp(-((abs(x)-.087)/.046)**2)*.0075
-    z+=(clavicle+chest)*front_factor
+    z= (f*s if s>=0 else -b*s)
+    front=max(0.,s)
+    # Upper/lower vermilion are 3D volume within the same actual skin mesh.
+    # Corners taper into cheek skin, never a rectangular disconnected strip.
+    mouth=gauss(x,0.,.033)*front*(1.-fade(abs(x),.037,.060))
+    if .211<y<.249:
+        z+=mouth*(.0030*gauss(y,.240,.0048)+
+                  .0038*gauss(y,.225,.0052)-
+                  .0018*gauss(y,.233,.0019))
+        z+=.0008*front*(gauss(x,-.044,.010)+gauss(x,.044,.010))*gauss(y,.232,.011)
+    if y<.09:
+        z+=front*(.0033*gauss(y,.057,.015)*gauss(abs(x),.086,.042)
+                 +.006*gauss(y,-.010,.036)*gauss(abs(x),.087,.047))
     return (x,y,z)
+
+def skin_color(x,y,z):
+    col=[.986,.969,.960]
+    front=fade(z,.055,.115)
+    if .210<=y<=.249 and abs(x)<.059:
+        xfade=gauss(x,0.,.038)*(1.-fade(abs(x),.045,.059))
+        v=(.80*gauss(y,.241,.0050)+gauss(y,.224,.0056))*xfade*front
+        col[1]-=.18*v;col[2]-=.20*v
+    return tuple(max(0.,min(1.,q)) for q in col)
 
 def rebuild(path):
     g,b=read_glb(path)
     head=g['meshes'][0]
-    if head.get('extras',{}).get('version')!=121:
-        raise ValueError('Refuse non-v121 torso replacement')
-    if len(g['meshes'])!=11 or len(g['nodes'])!=11:
-        raise ValueError('Unexpected pre-torso facial rig')
-    if 'neckBustRebuild' in head.get('extras',{}):
-        raise ValueError('New bust already generated')
-    p=head['primitives'][0]
-    xyz=[tuple(v) for v in accessor(g,b,p['attributes']['POSITION'])]
-    uv=[tuple(v) for v in accessor(g,b,p['attributes']['TEXCOORD_0'])]
-    color=[tuple(v) for v in accessor(g,b,p['attributes']['COLOR_0'])]
-    old_normals=[tuple(v) for v in accessor(g,b,p['attributes']['NORMAL'])]
-    flat=[int(row[0]) for row in accessor(g,b,p['indices'])]
-    if len(xyz)!=13455 or len(flat)!=25920*3:
-        raise ValueError('Unexpected original female head topology')
-    removed, kept = [],[]
-    new_flat=list(flat)
-    for k in range(0,len(flat),3):
-        face=tuple(flat[k:k+3])
-        if len(set(face))<3:
-            continue  # The existing native mouth aperture stays untouched.
-        if min(xyz[i][1] for i in face)<CUT_Y:
-            removed.append(face)
-            new_flat[k:k+3]=[face[0]]*3
-        else:
-            kept.append(face)
-    if not 1500 <= len(removed) <= 2300:
-        raise ValueError('Cannot isolate the old donor neck and shoulders')
-    ring, border_edges = close_rim(xyz,removed,kept)
-    area=sum(xyz[ring[i]][0]*xyz[ring[(i+1)%len(ring)]][2]-
-             xyz[ring[(i+1)%len(ring)]][0]*xyz[ring[i]][2]
-             for i in range(len(ring)))/2
-    if abs(area)<.001:
-        raise ValueError('Cervical ring collapsed in side plane')
-    rcount=len(ring)
-    # New top ring exactly fits every retained head XYZ seam vertex.
-    positions=[xyz[i] for i in ring]
-    tex=[uv[i] for i in ring]
-    colors=[color[i] for i in ring]
-    angles=[math.atan2(xyz[i][2],xyz[i][0]) for i in ring]
-    for station in (.130,.117,.102,.088,.073,.057,.040,.018,-.021,-.075):
-        for i,theta in enumerate(angles):
-            positions.append(surface(theta,station))
-            u=(theta/(2*math.pi)+1)%1
-            t=max(0.,min(1.,(.130-station)/.17))
-            tex.append((uv[ring[i]][0]*(1-t)+(.75+.10*u)*t,
-                        uv[ring[i]][1]*(1-t)+(.85-.07*t)*t))
-            col=color[ring[i]]
-            colors.append(tuple(col[k]*(1-t)+(.98,.96,.945)[k]*t for k in range(3)))
+    if head.get('extras',{}).get('version')!=121 or len(g['meshes'])!=11:
+        raise ValueError('Expected pre-rebuild female bald v121 skin')
+    skin=head['primitives'][0]
+    xyz=[tuple(v) for v in accessor(g,b,skin['attributes']['POSITION'])]
+    uv=[tuple(v) for v in accessor(g,b,skin['attributes']['TEXCOORD_0'])]
+    old_norm=[tuple(v) for v in accessor(g,b,skin['attributes']['NORMAL'])]
+    old_color=[tuple(v) for v in accessor(g,b,skin['attributes']['COLOR_0'])]
+    ix=[int(v[0]) for v in accessor(g,b,skin['indices'])]
+    if len(xyz)!=13455 or len(ix)!=25920*3 or len(skin.get('targets',[]))!=11:
+        raise ValueError('Unexpected source mesh and expression topology')
+    tri=[tuple(ix[i:i+3]) for i in range(0,len(ix),3)]
+    matches=[]
+    for cut in CUTS:
+        try:
+            ids,removed,count=rim_from_cut(xyz,tri,cut)
+            matches.append((cut,ids,removed,count))
+            print('CANDIDATE LOWER FACE CUT',cut,'rim',len(ids),'triangles',len(removed))
+        except ValueError as e:
+            print('REJECT LOWER FACE CUT',str(e))
+    if not matches:
+        raise ValueError('No safe complete cut above mouth: full replacement unsafe')
+    cut,ring,removed,border_edges=matches[0]
+    if len(removed)<4000:raise ValueError('Old lower-face surface is still present')
+    # Select old faces to discard; preserve upper forehead, eye and nose polygons.
+    discard=set(removed)
+    retired=0;new_ix=list(ix)
+    for j,t in enumerate(tri):
+        if t in discard:
+            new_ix[j*3:j*3+3]=[t[0]]*3
+            retired+=1
+    if retired!=len(discard):raise ValueError('Old triangles were not fully retired')
+    skin['indices']=write_indices(g,b,new_ix)
+    n=len(ring)
+    # Genuine geometric weld to upper face, not duplicated imported chin mesh.
+    top=[xyz[i] for i in ring]
+    olduv=[uv[i] for i in ring]
+    oldcolors=[old_color[i] for i in ring]
+    thetas=[math.atan2(xyz[i][2],xyz[i][0]) for i in ring]
+    # Keep nose bridge at retained top ring, then generate independent cutaneous
+    # mouth, cheeks, chin, submental, neck, clavicle and bust by fixed sections.
+    ys=[.231,.225,.218,.212,.206,.201,.194,.188,.181,.173,.165,
+        .157,.149,.140,.128,.114,.100,.086,.071,.054,.035,.012,-.021,-.075]
+    if cut<=.242:ys=[y for y in ys if y<cut-.005]
+    pos=list(top); tex=list(olduv); colors=list(oldcolors)
+    for row,y in enumerate(ys):
+        weight=fade(row,0.,3.)
+        for j,theta in enumerate(thetas):
+            v=generate(theta,y)
+            # Smooth joining only, without using source body geometry in
+            # any independent ring after the lip region begins.
+            if row==0:
+                # Natural lower-nasal transition: upper ring stays at cut y.
+                v=(v[0],v[1],v[2])
+            pos.append(v)
+            t=fade(row,0.,5.)
+            tex.append(tuple(olduv[j][k]*(1-t)+(.78+(theta/math.tau)*.10,.84-y*.10)[k]*t for k in (0,1)))
+            color=skin_color(*v)
+            colors.append(tuple(oldcolors[j][k]*(1-t)+color[k]*t for k in range(3)))
+    # Upper face and new surface have identical seam coordinates; no
+    # old jaw/neck shoulder triangles survive the cut.
+    orientation=sum(pos[j][0]*pos[(j+1)%n][2]-
+                    pos[(j+1)%n][0]*pos[j][2] for j in range(n))
+    if abs(orientation)<.0004:raise ValueError('Degenerate head cut')
     faces=[]
-    for row in range(10):
-        top=row*rcount
-        lower=(row+1)*rcount
-        for j in range(rcount):
-            n=(j+1)%rcount
-            if area>0:
-                faces.extend(((top+j,top+n,lower+j),
-                              (top+n,lower+n,lower+j)))
+    for row in range(len(ys)):
+        a,b0=row*n,(row+1)*n
+        for j in range(n):
+            nxt=(j+1)%n
+            # Orientation depends on outer radial angle ordering.
+            if orientation>0:
+                faces.extend(((a+j,a+nxt,b0+j),(a+nxt,b0+nxt,b0+j)))
             else:
-                faces.extend(((top+n,top+j,lower+j),
-                              (lower+n,top+n,lower+j)))
-    # Close bottom below the viewport to avoid the source's triangular open bib.
-    bottom=len(positions)
-    positions.append((0.,-.076,0.))
-    tex.append((.80,.79))
-    colors.append((.98,.96,.945))
-    last=10*rcount
-    for j in range(rcount):
-        n=(j+1)%rcount
-        faces.append((last+n,last+j,bottom) if area>0
-                     else (last+j,last+n,bottom))
-    result_normals=normals(positions,faces)
-    # Average duplicate seam normals on the original head ring.
-    for j,i in enumerate(ring):
-        result_normals[j]=old_normals[i]
-    if any(not math.isfinite(v) for row in positions for v in row):
-        raise ValueError('Non-finite anatomical bust coordinates')
-    p['indices']=write_indices(g,b,new_flat)
-    body={
-        'name':'V121_NEW_ANATOMICAL_CERVICAL_SHOULDERS_BUST',
-        'primitives':[{
-          'attributes':{'POSITION':add_vec3(g,b,positions),
-                        'NORMAL':add_vec3(g,b,result_normals),
-                        'COLOR_0':add_vec3(g,b,colors),
-                        'TEXCOORD_0':add_uv(g,b,tex)},
-          'indices':write_indices(g,b,[i for f in faces for i in f]),
-          'material':p['material']
-        }]
+                faces.extend(((a+nxt,a+j,b0+j),(b0+nxt,a+nxt,b0+j)))
+    # Bottom cap is far below visible cervical anatomy.
+    c=len(pos);pos.append((0.,-.076,0.))
+    tex.append((.79,.88));colors.append((.986,.969,.960))
+    row=len(ys)*n
+    for j in range(n):
+        nx=(j+1)%n
+        faces.append((row+nx,row+j,c) if orientation>0 else (row+j,row+nx,c))
+    ns=normals(pos,faces)
+    for j,src in enumerate(ring):
+        ns[j]=old_norm[src]
+    for v in pos:
+        if not all(math.isfinite(q) for q in v):raise ValueError('Non-finite new geometry')
+    if len(pos)<=1000 or len(faces)<=1800:
+        raise ValueError('Fresh parametric lower face has insufficient topology')
+    # Construct expression deltas on the new face and lips, so mouthOpen,
+    # five vowels, smiles, etc move the generated lips rather than dead source.
+    targets=[]
+    for name in NAMES:
+        offsets=[deformation(name,*p,'skin') for p in pos]
+        targets.append({'POSITION':add_float(g,b,offsets)})
+    new_mesh={
+      'name':'V121_NEW_CONTIGUOUS_LOWER_FACE_LIPS_CHIN_NECK_BUST',
+      'primitives':[{
+        'attributes':{
+          'POSITION':add_vec3(g,b,pos),
+          'NORMAL':add_vec3(g,b,ns),
+          'COLOR_0':add_vec3(g,b,colors),
+          'TEXCOORD_0':append_uv(g,b,tex)},
+        'indices':write_indices(g,b,[k for f in faces for k in f]),
+        'material':skin['material'],
+        'targets':targets}],
+      'weights':[0.]*len(NAMES),
+      'extras':{'targetNames':list(NAMES)}
     }
-    mesh_index=len(g['meshes'])
-    g['meshes'].append(body)
-    old_node=next(n for n in g['nodes'] if n.get('mesh')==0)
-    node={'name':'V121_NEW_ANATOMICAL_CERVICAL_BUST_NODE','mesh':mesh_index}
+    meshid=len(g['meshes']);g['meshes'].append(new_mesh)
+    oldnode=next(nd for nd in g['nodes'] if nd.get('mesh')==0)
+    node={'name':'V121_NEW_LOWER_FACE_NECK_MORPH_NODE','mesh':meshid}
     for key in ('matrix','translation','rotation','scale'):
-        if key in old_node:
-            node[key]=list(old_node[key])
-    node_id=len(g['nodes'])
-    g['nodes'].append(node)
+        if key in oldnode:node[key]=list(oldnode[key])
+    node_id=len(g['nodes']);g['nodes'].append(node)
     g['scenes'][0]['nodes'].append(node_id)
-    head.setdefault('extras',{})['neckBustRebuild']={
-        'version':'female-v121-anatomical-neck-bust-rebuilt-v1',
-        'removedLegacyNeckShoulderTriangles':len(removed),
-        'weldedUVSplitCervicalRimVertices':rcount,
-        'originalBorderEdges':border_edges,
-        'generatedAnatomicalBustVertices':len(positions),
-        'generatedAnatomicalBustTriangles':len(faces),
-        'newBodyIsRealMesh':True,'oldBodyFacesHiddenByRemoval':True,
-        'topRimMatchesOriginalHeadExactly':True,
-        'independentNeckShoulderClavicleProfiles':True,
-        'facialMorphsPreserved':11}
+    for a in g.get('animations',[]):
+        a['channels'].append({'sampler':0,'target':{'node':node_id,'path':'weights'}})
+    m=head.setdefault('extras',{})
+    m['neckBustRebuild']={
+      'version':'female-v121-true-single-new-lower-face-and-bust-v2',
+      'replacedFromY':cut,
+      'entireOldLowerFaceRemoved':True,
+      'oldLowerFaceChinNeckBustTrianglesRetired':retired,
+      'freshVisibleSurfaceVertices':len(pos),
+      'freshVisibleSurfaceTriangles':len(faces),
+      'oldBodyTrianglesUsedInNewMesh':0,
+      'upperFaceWeldBoundaryVertices':n,
+      'upperFaceWeldBoundaryEdges':border_edges,
+      'newSkinMeshMorphChannels':list(NAMES),
+      'newMorphedNodesAddedToAnimation':len(g['animations']),
+      'oneContiguousGeneratedMouthChinNeckShoulderBust':True,
+      'oldV120AndMaleModelsUntouched':True}
+    m['facialExpressionRig']['animatedMeshes']+=1
     g['buffers'][0]['byteLength']=len(b)
     raw=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode('utf8')
-    raw+=bytes([32])*((-len(raw))%4)
-    b+=bytes([0])*((-len(b))%4)
+    raw+=b' '*((-len(raw))%4)
+    b+=bytes((-len(b))%4)
     with path.open('wb') as f:
         f.write(struct.pack('<4sII',b'glTF',2,12+8+len(raw)+8+len(b)))
-        f.write(struct.pack('<I4s',len(raw),b'JSON'))
-        f.write(raw)
-        f.write(struct.pack('<I4s',len(b),b'BIN'+bytes([0])))
-        f.write(b)
-    print('V121 NEW NECK BUST',json.dumps(head['extras']['neckBustRebuild']))
+        f.write(struct.pack('<I4s',len(raw),b'JSON'));f.write(raw)
+        f.write(struct.pack('<I4s',len(b),b'BIN'+bytes([0])));f.write(b)
+    print('V121 TRULY REBUILT ENTIRE LOWER FACE',json.dumps(m['neckBustRebuild']))
 
-if __name__ == '__main__':
+if __name__=='__main__':
     rebuild(pathlib.Path(sys.argv[1]))
