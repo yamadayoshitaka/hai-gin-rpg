@@ -28,6 +28,15 @@ button:disabled{opacity:.45}
 dl{display:grid;grid-template-columns:1fr auto;gap:6px;margin:5px 0;font-size:13px}
 dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 .notice{border-left:3px solid #8dbab8;padding:6px 9px;margin-top:8px;background:#17344b}
+#v121-tuning summary{cursor:pointer;font-weight:700;font-size:16px;min-height:40px}
+#v121-tune-sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:10px 0}
+.v121-tune-group{border:1px solid #52687a;border-radius:9px;padding:7px 10px;min-width:0}
+.v121-tune-group legend{font-weight:700;color:#def9ee;padding:0 6px}
+.v121-slider-row{display:grid;grid-template-columns:48px 1fr 47px;gap:7px;align-items:center;font-size:13px;min-height:39px}
+.v121-slider-row input{width:100%;accent-color:#64d3b9;touch-action:pan-y;min-height:28px}
+.v121-slider-row output{text-align:right;font-variant-numeric:tabular-nums;color:#b9f4de;font-size:12px}
+#v121-tune-note{min-height:22px}
+
 </style>
 <script type="importmap">
 {"imports":{
@@ -54,11 +63,20 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <button id="eyes" type="button" aria-pressed="true">眼球パーツを表示</button>
 </div>
 <div class="controls">
-<button id="export" class="primary" type="button" disabled>中立顔をGLB保存</button>
+<button id="export" class="primary" type="button" disabled>現在の顔をGLB保存</button>
 <button id="exportStructure" type="button" disabled>表情追加用の構造JSON保存</button>
 </div>
 <p>操作：一本指＝回転／二本指＝移動・ピンチ。GLBはスキンヘッド・中立表情のみ。顔の頂点・UV・将来の目口変形用領域はv120から保持します。</p>
 </div>
+<details class="panel" id="v121-tuning" open>
+<summary>顔パーツを調整（目・鼻・口・眉）</summary>
+<p>左右位置・上下位置・大きさを動かすと、3Dモデルへ即時反映されます。「目・眉」の左右は左右の間隔です。人中の深さも調整できます。</p>
+<div id="v121-tune-sliders" aria-label="顔v121の形状調整スライダー"></div>
+<div class="controls">
+<button type="button" id="resetTune" disabled>調整を初期値に戻す</button>
+</div>
+<p id="v121-tune-note" role="status">初期値ではオリジナルv121の造形を表示します。</p>
+</details>
 <div class="panel">
 <h2>新メッシュの構造</h2>
 <dl>
@@ -78,9 +96,11 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-visible-lashes-central-philtrum-20261123';
-let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={};
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-adjustable-face-parts-philtrum-20261123';
+let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
  const positions={
@@ -109,14 +129,31 @@ function saveBlob(blob,name){
 }
 async function exportGLB(){
  const button=$('export');button.disabled=true;
- update('status','v121眼球UV・高品質スキンヘッドGLBを保存中…');
  try{
-  const response=await fetch(sourceURL,{cache:'no-store'});
-  if(!response.ok)throw Error('GLB HTTP '+response.status);
-  const bytes=await response.blob();
-  if(bytes.size<350000)throw Error('GLB is unexpectedly small');
-  saveBlob(bytes,'hai-gin-face-v121-bald-skin-pbr.glb');
-  update('status','中立顔GLBの保存を開始しました（表情・髪なし）');
+  if(!faceTune||!faceTune.isChanged()){
+   const response=await fetch(sourceURL,{cache:'no-store'});
+   if(!response.ok)throw Error('GLB HTTP '+response.status);
+   const bytes=await response.blob();
+   if(bytes.size<350000)throw Error('GLB is unexpectedly small');
+   saveBlob(bytes,'hai-gin-face-v121-bald-skin-pbr.glb');
+   update('status','初期造形のv121 GLBを保存しました');
+   return;
+  }
+  // Export the *edited* geometry, not the original unmodified source bytes.
+  // GLTFExporter preserves the per-mesh PBR textures, topology, and faces.
+  const visibility=[];
+  neutral.traverse(o=>{if(o.isMesh){visibility.push([o,o.visible]);o.visible=true;}});
+  neutral.userData.v121FaceSliderValues=faceTune.values();
+  try{
+   const binary=await new Promise((resolve,reject)=>
+    new GLTFExporter().parse(neutral,resolve,reject,
+      {binary:true,onlyVisible:true,maxTextureSize:2048}));
+   if(!(binary instanceof ArrayBuffer)||binary.byteLength<350000)
+    throw Error('調整後GLBが正しく生成されませんでした');
+   saveBlob(new Blob([binary],{type:'model/gltf-binary'}),
+     'hai-gin-face-v121-adjusted.glb');
+   update('status','調整した位置・大きさを実際のGLBに保存しました');
+  }finally{visibility.forEach(([o,visible])=>o.visible=visible);}
  }catch(e){update('status','GLB保存失敗：'+e.message);console.error(e);}
  finally{button.disabled=false;}
 }
@@ -129,6 +166,7 @@ function exportJSON(){
   futureExpressionsImplemented:false,
   skinPbr:rigMap.pbr,
   hairIncluded:false,
+  sliderValues:faceTune?.values()||null,
   instructions:'Preserve the v121 rest mesh and vertex order for future expression morph targets.'
  };
  saveBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),
@@ -170,6 +208,13 @@ async function init(){
   mouthRegionVertices:rigMap.futureRigZones?.mouth?.length||0
  };
  scene.add(neutral);
+ faceTune=attachV121FaceSliders({neutral,face,three:THREE,onChange:changed=>{
+  $('v121-tune-note').textContent=changed?
+   '現在の位置・大きさをGLBへ反映できます。「現在の顔をGLB保存」で書き出してください。':
+   '初期値のv121です。元のGLBは変更されていません。';
+ }});
+ $('resetTune').disabled=false;
+ $('resetTune').addEventListener('click',()=>faceTune.reset());
  wire=new THREE.LineSegments(new THREE.EdgesGeometry(face.geometry,38),
   new THREE.LineBasicMaterial({color:0x67d6bb,transparent:true,opacity:.35}));
  wire.name='V121_CONNECTED_FACE_WIRE';wire.visible=false;face.add(wire);
@@ -194,7 +239,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：正面から見える上まつ毛のCカール、眼球の前に出る下まつ毛、鼻の真下から上唇中央へ続く人中の溝を造形。口角のえくぼ状の不自然なくぼみを補正（スキンヘッド・中立）');
+ update('status','顔 v121：人中の溝を強調。目・鼻・口・眉の位置と大きさをスライダーで調整できます（スキンヘッド・中立）');
  document.documentElement.dataset.neutralFaceReady='v121';
  const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
  draw();
