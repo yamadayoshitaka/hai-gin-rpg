@@ -33,5 +33,7 @@ jobs:
           node --check src/three-team-core-bridge.js
           node --check src/three-team-sortie.js
           node --check src/formation-signature-strategies.js
-      - name: Test symmetric enemy/ally doctrine, room exits and high-ground formation
-        run: node --test qa/formation-driven-battle-ai.test.mjs
+      - name: Test symmetric enemy/ally doctrine, indoor exits and production movement gates
+        run: |
+          node --test qa/formation-driven-battle-ai.test.mjs
+          node --test qa/battle-ai-wandering-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs
