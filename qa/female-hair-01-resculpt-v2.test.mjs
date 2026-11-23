@@ -106,10 +106,10 @@ test('female 01 is built from real head triangles, full crown and independently 
 test('viewer uses the fully rebuilt hair 01 before attempting to load a legacy GLB',()=>{
  const studio=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  const code=readFileSync(new URL('../src/female-hair-01-resculpt-v2.js',import.meta.url),'utf8');
- assert.match(studio,/const rebuilt=item\.id==='female-hair-01'/);
- assert.match(studio,/const gltf=rebuilt\?null:await loader\.loadAsync\(item\.path\)/);
- assert.match(studio,/buildHeadDerivedHair01\(THREE,scalpSource\.skinMesh/);
- assert.match(studio,/\$\('capToggle'\)\.disabled=rebuilt/);
+ assert.match(studio,/findSculptHairStyle\(item\.id\)/);
+ assert.doesNotMatch(studio,/loader\.loadAsync\(item\.path\)/);
+ assert.match(studio,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
+ assert.match(studio,/\$\('capToggle'\)\.disabled=true/);
  assert.match(code,/skin\.geometry\.clone\(\)/);
  assert.match(code,/geometry\.setIndex\(kept\)/);
  assert.doesNotMatch(code,/SphereGeometry|new GLTFLoader|female_hair_01_lod0/);
@@ -129,7 +129,7 @@ test('female 01 eye and eyebrow clearance uses safe forehead cut and short tips'
  const studio=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  assert.match(studio,/id="hairVersion"/);
  assert.match(studio,/配信コミット/);
- assert.match(studio,/buildHeadDerivedHair01/);
- assert.match(studio,/female-hair-01-solid-v5\.js\?v=5/);
+ assert.match(studio,/sculptHairFromHead/);
+ assert.match(studio,/head-derived-hair-sculpt-v6\.js\?v=6/);
  assert.doesNotMatch(studio,/通常表示は元GLBの連続した髪/);
 });
