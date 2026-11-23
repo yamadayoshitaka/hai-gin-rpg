@@ -117,11 +117,28 @@ export function measureWigCrown(THREE,wigRoot,sourceBounds){
 }
 
 /**
- * Fit using both crown width and crown depth, not the full long-hair bounds.
- * A single uniform scale preserves the original CC0 wig shape.
+ * Fit policies based on the three verified independent CC0 source silhouettes.
+ *
+ * Bob is the already approved reference, so its old full-coverage scale is
+ * retained exactly. The long and ponytail assets have disproportionately
+ * large hair-tip / narrow-ponytail dimensions, so forcing BOTH outer axes to
+ * cover the full skull greatly exaggerates them. Their actual skull covering
+ * geometry is complemented by the independently fitted v121 hair under-cap.
+ */
+export const WIG_FIT_PROFILES=Object.freeze({
+ long01:Object.freeze({mode:'balanced-crown',silhouette:0.87}),
+ bob01:Object.freeze({mode:'full-coverage',silhouette:1}),
+ ponytail01:Object.freeze({mode:'balanced-crown',silhouette:0.99})
+});
+
+/**
+ * All three styles share the same v121 centroid and crown coordinates.
+ * Fit the CC0 crown, not the length of its tips. Use a uniform XYZ scale to
+ * avoid distorting the original strand meshes, and reserve the v121 hair
+ * under-cap for gaps rather than inflating the entire source geometry.
  */
 export function calculateWigFit(source,head,{
- widthRatio=1.11,vertical=0,forward=0,crown=null
+ widthRatio=1.11,vertical=0,forward=0,crown=null,style='bob01'
 }={}){
  if(!source?.min||!source?.max)throw Error('GLBの描画可能な境界がありません');
  const width=source.max.x-source.min.x;
@@ -132,14 +149,16 @@ export function calculateWigFit(source,head,{
  const capWidth=crown?.width||width;
  const capDepth=crown?.depth||(source.max.z-source.min.z);
  if(!(capWidth>.005&&capDepth>.005))throw Error('ウィッグ頂部の寸法が不正です');
- // Without crown data preserve the legacy scale contract for other callers.
- // With crown data, fully cover BOTH axes of the real v121 head. The previous
- // min(depthScale,widthScale*1.18) deliberately left the scalp exposed.
- const baseWidthScale=head.rx*2*1.035/capWidth;
- const baseDepthScale=head.rz*2*1.035/capDepth;
- const fittedScale=crown?Math.max(baseWidthScale,baseDepthScale):targetWidth/width;
- // Slider remains monotonic even when depth, not width, determines the fit.
- const scale=crown?fittedScale*ratio:fittedScale;
+ const widthScale=head.rx*2*1.035/capWidth;
+ const depthScale=head.rz*2*1.035/capDepth;
+ const profile=WIG_FIT_PROFILES[style]||WIG_FIT_PROFILES.bob01;
+ // Bob is a regression anchor. Long and ponytail no longer use the larger
+ // X/Z scale alone; instead they retain their silhouette via a balanced fit.
+ const baseScale=profile.mode==='balanced-crown'?
+  Math.sqrt(widthScale*depthScale)*profile.silhouette:
+  Math.max(widthScale,depthScale);
+ // Without measured crown, keep the original bounds-only contract.
+ const scale=crown?baseScale*ratio:targetWidth/width;
  if(!Number.isFinite(scale)||scale<.002||scale>2000)throw Error('ウィッグの縮尺が異常です');
  const centerX=crown?.cx??(source.max.x+source.min.x)/2;
  const centerZ=crown?.cz??(source.max.z+source.min.z)/2;
@@ -152,7 +171,13 @@ export function calculateWigFit(source,head,{
   headWidth:head.rx*2,headDepth:head.rz*2,
   coverageX:capWidth*scale/(head.rx*2),
   coverageZ:capDepth*scale/(head.rz*2),
-  fitBasis:crown?'actual-v121-head-vs-cc0-crown':'legacy-bounds'
+  // A coverage value below 100% is intentional for styles whose original
+  // strands are narrow: the real-v121 tinted under-cap covers those regions.
+  fitBasis:crown?'actual-v121-head-vs-cc0-crown':'legacy-bounds',
+  fitMode:profile.mode,
+  fitStyle:style in WIG_FIT_PROFILES?style:'bob01',
+  uniformSize:true,
+  fullCoverageScale:Math.max(widthScale,depthScale)*ratio
  };
 }
 
