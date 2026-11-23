@@ -53,20 +53,25 @@ class V121SkinClean(unittest.TestCase):
         self.assertTrue(meta['naturalFoldCleanup']['surfaceDeformationOnly'])
         self.assertTrue(meta['naturalFoldCleanup']['removedLegacyBrowLidBand'])
         self.assertTrue(meta['naturalFoldCleanup']['removedChinTintLeakage'])
-        left=meta['naturalFoldCleanup']['nasolabialLeftVertexIds']
-        right=meta['naturalFoldCleanup']['nasolabialRightVertexIds']
-        self.assertGreater(len(left),10)
-        self.assertGreater(len(right),10)
-        for ix in left:
+        # The requested groove is the central philtrum, NOT lateral smile lines.
+        self.assertEqual(meta['naturalFoldCleanup']['nasolabialLeftVertexIds'],[])
+        self.assertEqual(meta['naturalFoldCleanup']['nasolabialRightVertexIds'],[])
+        center=meta['naturalFoldCleanup']['philtrumVertexIds']
+        corrected=meta['naturalFoldCleanup']['dimpleCorrectionVertexIds']
+        self.assertGreater(len(center),12)
+        self.assertGreater(len(corrected),12)
+        for ix in center:
             x,y,z=self.xyz[ix]
-            self.assertLess(x,0)
-            self.assertGreater(y,.190)
-            self.assertLess(y,.251)
-        for ix in right:
+            self.assertLess(abs(x),.011)
+            self.assertGreater(y,.208)
+            self.assertLess(y,.242)
+        for ix in corrected:
             x,y,z=self.xyz[ix]
-            self.assertGreater(x,0)
-            self.assertGreater(y,.190)
-            self.assertLess(y,.251)
+            self.assertGreater(abs(x),.025)
+            self.assertLess(abs(x),.067)
+            self.assertGreater(y,.179)
+            self.assertLess(y,.215)
+        self.assertTrue(meta['referenceFeatureSculpt']['lateralNasolabialPitRemoved'])
         self.assertEqual(len(accessor(self.g,self.buffer,self.p['indices'])),25920*3)
         self.assertEqual(len(accessor(self.g,self.buffer,self.p['attributes']['NORMAL'])),13455)
 
