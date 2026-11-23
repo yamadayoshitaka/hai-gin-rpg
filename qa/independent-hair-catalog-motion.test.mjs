@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import {
  INDEPENDENT_HAIR_CATALOG,ALL_INDEPENDENT_HAIR,HAIR_SECTIONS,
  normalizeHeadSize,independentHairFit,independentHairFitFromRoot,
@@ -94,4 +95,13 @@ test('catalog uses the v121 real hairless head with eyebrows left intact',()=>{
  assert.match(html,/createHairSpring/);
  assert.match(html,/face-neutral-v121\.html/);
  assert.match(mesh,/eyebrow\|brow\|lash\|eye/);
+});
+
+test('3D studio inline module compiles (prevents blank mobile canvas)',()=>{
+ const html=read('hair-asset-studio.html');
+ const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
+ assert.ok(match,'studio has a JavaScript module');
+ const result=spawnSync(process.execPath,['--input-type=module','--check'],
+  {encoding:'utf8',input:match[1]});
+ assert.equal(result.status,0,result.stderr);
 });
