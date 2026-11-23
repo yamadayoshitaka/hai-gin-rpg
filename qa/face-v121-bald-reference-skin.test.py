@@ -83,7 +83,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-realspace-neutral-lower-face-v13')
+                         'female-v121-realspace-neutral-lower-face-v14')
         self.assertTrue(rebuild['oldPatchFacesDiscarded'])
         self.assertTrue(rebuild['entireJawPatchRetringulatedFromUV'])
         self.assertTrue(rebuild['singleContinuousBoundary'])

@@ -128,7 +128,7 @@ def new_lower_face_geometry(points,uv):
     chin_depth=forward_depth(.142,.194)
     neck_depth=forward_depth(.075,.118)
     return result,{
-        'version':'female-v121-realspace-neutral-lower-face-v13',
+        'version':'female-v121-realspace-neutral-lower-face-v14',
         'method':'actual-XYZ-sagittal-C1-lip-sulcus-short-chin-and-boundary-welded-remesh',
         'mouthFrontZ':round(lip_front,6),
         'mentonAfterZ':round(chin_depth,6) if chin_depth is not None else None,
@@ -324,13 +324,13 @@ def relax_labiomental_shading(points,faces):
         adjacent[c].update((a,b))
     xyz=list(points)
     moved=set()
-    for _ in range(4):
+    for _ in range(9):
         next_xyz=list(xyz)
         for i,(x,y,z) in enumerate(xyz):
-            if not (.174<y<.218 and abs(x)<.075 and z>.099):
+            if not (.173<y<.220 and abs(x)<.078 and z>.097):
                 continue
-            blend=(.24*fade(y,.175,.190)*(1.-fade(y,.204,.217))*
-                   fade(z,.100,.124)*(1.-fade(abs(x),.049,.074)))
+            blend=(.36*fade(y,.173,.185)*(1.-fade(y,.211,.220))*
+                   fade(z,.097,.125)*(1.-fade(abs(x),.049,.077)))
             if blend<.001:
                 continue
             near=[xyz[j] for j in adjacent[i]

@@ -58,7 +58,7 @@ test('Android v121 neutral GLB front/quarter/side, makeup and disabled expressio
   assert.equal(json.meshes[0].extras.version,121);
   assert.equal(json.meshes[0].extras.hairIncluded,false);
   assert.equal(json.meshes[0].extras.mouthChinRebuild.version,
-   'female-v121-realspace-neutral-lower-face-v13');
+   'female-v121-realspace-neutral-lower-face-v14');
   assert.equal(json.meshes[0].extras.mouthChinRebuild.noseAndUpperFaceHardLocked,true);
   assert.ok(json.accessors.some(a=>a.count===13455));
   assert.equal(json.images.length,4);
