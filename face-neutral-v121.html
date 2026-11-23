@@ -310,7 +310,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：化粧を5パターンで切替可能。口の開閉・5母音を口腔・歯・舌を含む実3Dメッシュで再生できます。');
+ update('status','顔 v121：実メッシュの顎輪郭と開口部を刷新。口腔・歯・舌は顔と同一座標で表示し、5母音と発話に対応します。');
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
  const draw=(now=0)=>{
