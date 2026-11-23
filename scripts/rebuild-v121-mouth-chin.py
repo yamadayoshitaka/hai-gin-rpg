@@ -20,7 +20,13 @@ accessor=helpers['accessor']
 add_vec3=helpers['add_vec3']
 normals=helpers['normals']
 
-UV_BOUNDS=(.335,.665,.285,.595)
+# The original chin UV region is a single disk with one perimeter loop.
+# A larger UV selection crosses mouth/nose islands and cannot be ear-clipped
+# by the single-boundary triangulator (multiple rim loops).
+# Keep the *topology deletion* on the proven disk while still generating a
+# fully new anatomical nose-to-throat surface over the larger sculpt region.
+UV_BOUNDS=(.360,.640,.385,.585)
+SCULPT_BOUNDS=(.335,.665,.285,.595)
 
 def fade(v,a,b):
     t=max(0.,min(1.,(v-a)/(b-a)))
@@ -77,7 +83,7 @@ def new_lower_face_geometry(points,uv):
     result=[]
     changed=0
     max_move=0.
-    xmin,xmax,vmin,vmax=UV_BOUNDS
+    xmin,xmax,vmin,vmax=SCULPT_BOUNDS
     for (x,y,z),(u,v) in zip(points,uv):
         if not (xmin<u<xmax and vmin<v<vmax):
             result.append((x,y,z));continue
@@ -110,8 +116,8 @@ def new_lower_face_geometry(points,uv):
     if not (menton>sulcus+.004 and menton>throat+.035):
         raise ValueError('Natural mentolabial/chin/neck transition missing')
     return result,{
-        'version':'female-v121-neutral-nasal-base-to-neck-retopo-v9',
-        'method':'delete-and-retriangulate-original-lower-face',
+        'version':'female-v121-neutral-nasal-base-to-neck-retopo-v10',
+        'method':'new-nasal-base-to-neck-surface-with-single-disk-chin-retriangulation',
         'mouthFrontZ':round(lip,6),
         'mentonAfterZ':round(menton,6),
         'labiomentalSulcusZ':round(sulcus,6),
@@ -124,6 +130,7 @@ def new_lower_face_geometry(points,uv):
         'faceUVAndVertexIDsRetained':True,
         'neutralLowerFaceFromNasalBase':True,
         'noLegacyJawOffsets':True,
+        'singleDiskRetopologyBoundary':True,
     }
 
 
