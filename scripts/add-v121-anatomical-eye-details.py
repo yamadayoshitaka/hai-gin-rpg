@@ -68,6 +68,27 @@ def main(path):
         raise ValueError('Unexpected base (must be one skin plus two eye globes)')
     base=skin['primitives'][0]
     points=unpack(g,b,base['attributes']['POSITION'])
+    # Sample the true lower eyelid rim from the head's open eye-socket
+    # triangle boundary. Previous hard-coded y=.2986 left detached dots
+    # visibly below the eye in the user's Android close-up.
+    head_index=[i[0] for i in unpack(g,b,base['indices'])]
+    edge_uses={}
+    for i in range(0,len(head_index),3):
+        a,bb,c=head_index[i:i+3]
+        for e in ((a,bb),(bb,c),(c,a)):
+            key=tuple(sorted(e))
+            edge_uses[key]=edge_uses.get(key,0)+1
+    rim_ids=set()
+    for (a,bb),uses in edge_uses.items():
+        if uses==1:
+            rim_ids.update((a,bb))
+    rim_candidates={}
+    for side in (-1,1):
+        rim_candidates[side]=[(x,y,z) for j,(x,y,z) in enumerate(points)
+                              if j in rim_ids and x*side>.022 and x*side<.053
+                              and .298<y<.312 and z>.105 and z<.145]
+        if len(rim_candidates[side])<12:
+            raise ValueError('Could not identify actual lower eyelid boundary')
     # Only the anatomically exposed front surface participates. The eye hole
     # has deep rear-wall vertices which must NEVER define eyeliner depth.
     surface=[(x,y,z) for x,y,z in points if z>.102 and
@@ -86,8 +107,21 @@ def main(path):
         y=.3054+.0109*arch+.0014*clamp((t-.70)/.30)
         return x,y
     def lower_lid(s,t):
-        x=s*(.0365+.0214*t)
-        return x,.3026-.0040*math.sqrt(max(0.,1-t*t))
+        # Interpolate rim position and depth directly from real skin geometry:
+        # do not infer the root from a painted eyelid or an arbitrary offset.
+        x=s*(.0365+.0124*t)
+        expected_y=.3019+.0057*t*t
+        neighbors=sorted(
+            rim_candidates[s],
+            key=lambda p:((p[0]-x)/.005)**2+
+                         ((p[1]-expected_y)/.007)**2
+        )[:5]
+        weights=[1/(.0000002+(p[0]-x)**2+
+                    .65*(p[1]-expected_y)**2) for p in neighbors]
+        total=sum(weights)
+        y=sum(w*p[1] for w,p in zip(weights,neighbors))/total
+        z=sum(w*p[2] for w,p in zip(weights,neighbors))/total
+        return x,y-.00020,z+.00042
     # Mesh builders: triangles with real volume/silhouette in the close-up,
     # not flat vertex-colored eyebrows or fake pupil discs.
     def new_part(name,color,rough=.80):
@@ -164,12 +198,16 @@ def main(path):
             fiber(upper,pts,.00010+.00006*rng.random())
         for j in range(22):
             t=-.86+1.70*j/21
-            x,y=lower_lid(side,t)
-            z=skin_z(x,y)+.00066
-            length=(.0017+.0015*(1-abs(t)))*(.80+.32*rng.random())
-            pts=[(x+side*.0010*u,y-length*u,z+.0017*u+.0002*u*u)
-                 for u in (0,.36,.7,1.)]
-            fiber(lower,pts,.000063+.000023*rng.random())
+            x,y,z=lower_lid(side,t)
+            # Root on the lower waterline, tips sweep DOWN and slightly OUT.
+            # The reference has fine sparse lower lashes, not floating dots.
+            length=(.00235+.00145*(1-abs(t)))*(.90+.25*rng.random())
+            sideways=side*(.00035+.00155*max(0,t))
+            pts=[(x+sideways*u,
+                  y-length*(.76*u+.24*u*u),
+                  z+.00055*u+.00045*u*u)
+                 for u in (0,.34,.70,1.)]
+            fiber(lower,pts,.000075+.000020*rng.random())
         # 136 subtle blonde-taupe eyebrow hairs per eye with follicle roots
         # attached to the actual head surface. Gradual inner-to-outer slope.
         for j in range(136):
@@ -238,7 +276,9 @@ def main(path):
         'method':'native indexed tapered triangle strips using skin surface depth',
         'features':metrics,
         'neutralOnly':True,
-        'futureBlinkTargetsReady':True}
+        'futureBlinkTargetsReady':True,
+        'lowerLashAttachment':'true_eyelid_rim_boundary_interpolation',
+        'lowerLashPlacementVersion':'v121-anatomical-rim-20261123'}
     if meta.get('hairIncluded') is not False:
         raise ValueError('Unexpected head hair state')
     g['buffers'][0]['byteLength']=len(b)
