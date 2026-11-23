@@ -107,13 +107,19 @@ def sculpt(p):
     corners=gauss(y,.197,.012)*gauss(ax,.042,.014)*lips_f
     nx=x*(1-.029*temple-.026*frontal+.008*lower_cheek
           -.055*jaw-.025*chin_corners-.055*ala-.028*bridge)
-    # Raise, round and gently broaden the former pointed long chin.
-    ny=y+.0037*chin+.0006*jaw-.00045*frontal+.0006*under_eye
+    # Retract the frontmost menton and shorten its lower outline together.
+    # A feathered jaw-to-submental bridge prevents a shelf above the neck;
+    # the masks are absent at the vermilion and at the cervical base.
+    chin_profile=gauss(y,.132,.030)*gauss(ax,.035,.047)*front
+    submental=(gauss(y,.108,.032)*gauss(ax,.065,.057)*side*
+                smooth(y,.065,.101))
+    ny=y+.0065*chin+.0010*submental+.0006*jaw-.00045*frontal+.0006*under_eye
     nz=(z-.0031*malar+.0018*under_eye
         +.0014*lower_cheek+.0013*jaw
+        -.0110*chin_profile-.0020*submental
         -.0036*tip-.0013*ala-.0009*bridge
         +.0037*upper+.0045*lower+.0010*cupid
-        -.0007*corners+.0003*chin)
+        -.0007*corners)
     return (nx,ny,nz),{
       'temple':temple,'malar':malar,'jaw':jaw,'tip':tip,
       'upperLip':upper,'lowerLip':lower,'underEye':under_eye}
@@ -160,6 +166,8 @@ def run(path):
       'referenceImageIsNot3DScan':True,
       'frontProfileContourPass':'soft-oval-jaw-supported-lower-cheek-and-natural-lip-profile',
       'chinShortenedAndRounded':True,
+      'chinRetractedInProfile':True,
+      'neckTransitionFeathered':True,
       'protectedVersions':['v119','v120','male','combat'],
       'skinheadPreserved':True,
       'uvAndTriangleIndicesPreserved':True}

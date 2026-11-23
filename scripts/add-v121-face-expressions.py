@@ -108,18 +108,27 @@ def deformation(name,x,y,z,part):
         return (-sign*.0025*corner,
                 .0082*inner_brow-.0012*brow-.0062*corner,
                 -.0007*corner)
+    # Recess the central mouth surface while the upper and lower lip rings
+    # separate. Chin and cervical tissue remain motionless.
+    center=bell(x,0,.027)*bell(y,.197,.008)*mouth_front if part=='skin' else 0.
     if name=='mouthOpen':
-        return (0.,.0050*upper-.0106*lower,-.0007*lower)
+        return (sign*.0027*corner,.0052*upper-.0108*lower,
+                -.0145*center-.0007*lower)
     if name=='vowelA':
-        return (sign*.0008*corner,.0065*upper-.0140*lower,-.0008*lower)
+        return (sign*.0032*corner,.0065*upper-.0140*lower,
+                -.0170*center-.0008*lower)
     if name=='vowelI':
-        return (sign*.0065*corner,.0017*upper-.0027*lower,.0004*corner)
+        return (sign*.0065*corner,.0017*upper-.0027*lower,
+                -.0040*center+.0004*corner)
     if name=='vowelU':
-        return (-sign*.0053*corner,.0032*upper-.0068*lower,.0022*(upper+lower))
+        return (-sign*.0053*corner,.0032*upper-.0068*lower,
+                -.0090*center+.0022*(upper+lower))
     if name=='vowelE':
-        return (sign*.0052*corner,.0038*upper-.0072*lower,-.0005*lower)
+        return (sign*.0052*corner,.0038*upper-.0072*lower,
+                -.0080*center-.0005*lower)
     if name=='vowelO':
-        return (-sign*.0048*corner,.0047*upper-.0112*lower,.0015*(upper+lower))
+        return (-sign*.0048*corner,.0047*upper-.0112*lower,
+                -.0130*center+.0015*(upper+lower))
     raise ValueError(name)
 
 
@@ -173,13 +182,14 @@ def append_oral_parts(g,b,head_xyz):
             for xx,yy in poly:
                 if kind.endswith('CAVITY'):
                     x=xx*width;y=.197+yy*height
-                    dz=.006
+                    # Dark cavity recessed behind separated lip edges.
+                    dz=-.0035-.0025*abs(yy)
                 elif kind.endswith('TEETH'):
                     x=xx*width*.69;y=.197+height*(.51+.12*yy)
-                    dz=.0072
+                    dz=.0008
                 else:
                     x=xx*width*.55;y=.197-height*(.53-.13*yy)
-                    dz=.0075
+                    dz=.0012
                 z=surface(x,y)+dz
                 dst.append((x,y,z))
             targets.append({'POSITION':add_float(g,b,[
@@ -268,7 +278,8 @@ def build(path):
         'preservesSkinVertexIDs':13455,
         'eyeGlobesRemainIndependent':True,
         'oralCavityMeshNames':['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE'],
-        'mouthShapeVersion':'independent_vermilion_corner_visemes_v2',
+        'mouthShapeVersion':'independent_vermilion_recessed_oral_well_v3',
+         'skinMouthCenterInwardOnOpening':True,
         'jawNeckStationary':True,
         'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue'}
     if 'referenceFeatureSculpt' in meta:

@@ -19,6 +19,24 @@ test('v121 pigments stay on real upper and lower vermilion, not chin or jaw',()=
     'lip pigment must not seep through underlying back-facing skin');
 });
 
+test('all four lipsticks have an absolute exclusion mask at chin, jaw and neck',()=>{
+  const excluded=[
+    [0,.130,.156], [.026,.160,.154], [.075,.154,.128],
+    [.043,.045,.060], [0,.170,.150], [.054,.190,.155],
+    [0,.197,.110], [0,.224,.153]
+  ];
+  for(const [x,y,z] of excluded){
+    const mask=v121MakeupMasks(x,y,z);
+    assert.equal(mask.lip,0,'lipstick leaked at '+[x,y,z].join(','));
+    for(const id of ['natural','pink','brown','glamorous']){
+      assert.equal(mask.lip*V121_MAKEUP_PRESETS[id].lip,0,
+        id+' lipstick must not tint chin/jaw/neck');
+    }
+  }
+  assert.equal(v121MakeupMasks(0,.130,.155).blush,0);
+  assert.equal(v121MakeupMasks(.076,.160,.135).blush,0);
+});
+
 test('v121 blush is cheek-localized and all preset lipstick stays natural',()=>{
   const cheek=v121MakeupMasks(.076,.257,.135);
   const chin=v121MakeupMasks(0,.130,.147);
