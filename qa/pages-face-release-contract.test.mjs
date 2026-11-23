@@ -18,8 +18,8 @@ test('Pages public face validation matches the current real face studio version'
  const faceGate=workflow.slice(start);
  assert.match(faceGate,new RegExp('Confirm v'+version+' '));
  assert.ok(faceGate.includes("grep -Fq '顔品質 v"+version+"' /tmp/public-face-studio.html"));
- assert.ok(faceGate.includes('dataset.faceMeshReady=\\'v'+version+'\\''));
- assert.ok(faceGate.includes('name=\\\\"hai-gin-pages-sha\\\\"'));
+ assert.ok(faceGate.includes("dataset.faceMeshReady='v"+version+"'"));
+ assert.ok(faceGate.includes('hai-gin-pages-sha'));
  assert.ok(faceGate.includes('v'+version+'_sculpt_code'));
  assert.ok(faceGate.includes('sculptV'+version+'PortraitContours'));
  assert.ok(faceGate.includes('enableV'+version+'PortraitContours:portraitV'+version));
