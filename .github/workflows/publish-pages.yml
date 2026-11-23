@@ -169,6 +169,10 @@ jobs:
           node qa/story-art-coverage.test.mjs
       - name: Bake original anatomical v120 neutral face GLB (no expressions or hair)
         run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
+      - name: Bake v121 reference-guided bald face and 1024px embedded PBR skin
+        run: python3 scripts/build-neutral-face-v121.py --out assets/generated/neutral-face-v121.glb
+      - name: Validate v121 geometry, retained future morph topology and skin material
+        run: python3 qa/face-v121-bald-reference-skin.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
       - name: Require baked neutral v120 GLB and preview in published Pages artifact
@@ -186,6 +190,22 @@ jobs:
           assert info['topology']['vertices']==13455
           assert info['futureExpressionsImplemented'] is False
           print('PASS baked v120 neutral face:',len(blob),'bytes')
+          PY
+      - name: Require v121 skinhead PBR face and its preview in the Pages artifact
+        run: |
+          test -s pages-dist/face-neutral-v121.html
+          test -s pages-dist/assets/generated/neutral-face-v121.glb
+          python3 - <<'PY'
+          import json,struct,pathlib
+          blob=pathlib.Path('pages-dist/assets/generated/neutral-face-v121.glb').read_bytes()
+          assert blob[:4]==b'glTF' and len(blob)>800000
+          size=struct.unpack_from('<I',blob,12)[0]
+          obj=json.loads(blob[20:20+size])
+          x=obj['meshes'][0]['extras']
+          assert x['version']==121 and x['topology']['vertices']==13455
+          assert x['futureExpressionsImplemented'] is False and x['hairIncluded'] is False
+          assert len(obj['images'])==3 and 'normalTexture' in obj['materials'][0]
+          print('PASS baked v121 bald PBR skin:',len(blob),'bytes')
           PY
       - name: Validate batch center and PR preview are shipped in the same Pages artifact
         id: qa_13
