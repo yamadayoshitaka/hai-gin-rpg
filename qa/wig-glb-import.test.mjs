@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {join} from 'node:path';
-import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from '../src/wig-glb-fit-v1.js';
+import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig,buildReferenceFringe,createRealHeadWireframe} from '../src/wig-glb-fit-v1.js';
 
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const html=read('wig-studio.html');
@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=2/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=3/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
@@ -116,5 +116,60 @@ test('the wig-only viewer drops the old face wireframe and inspects real static 
  assert.doesNotMatch(html,/function scalpWire\(/);
  assert.doesNotMatch(html,/headGuide/);
  assert.doesNotMatch(html,/id="guide"/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=2/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=3/);
+});
+
+test('separate bangs retain physical thickness, UVs, slider effects and optional middle part',async()=>{
+ const THREE=await import('three');
+ const mesh=new THREE.Mesh(new THREE.SphereGeometry(.095,32,24),
+  new THREE.MeshBasicMaterial());
+ const head={cx:0,cz:0,rx:.095,rz:.1,top:.18,frontZ:.094,mesh};
+ const none=buildReferenceFringe(THREE,head,{style:'none'});
+ assert.equal(none.children.length,0);
+ const blunt=buildReferenceFringe(THREE,head,{style:'blunt',
+  lengthMm:65,widthPct:95,forwardMm:8});
+ const center=buildReferenceFringe(THREE,head,{style:'center',
+  lengthMm:105,widthPct:120,forwardMm:23});
+ for(const group of [blunt,center]){
+  assert.equal(group.children.length,1);
+  const geo=group.children[0].geometry;
+  assert.ok(geo.getAttribute('position').count>5000);
+  assert.equal(geo.getAttribute('uv').count,geo.getAttribute('position').count);
+  assert.ok(geo.index.count>10000);
+  const positions=geo.getAttribute('position').array;
+  for(let i=0;i<positions.length;i++)assert.ok(Number.isFinite(positions[i]));
+  assert.ok(group.userData.dispose,'independent bang resources');
+ }
+ assert.ok(center.children[0].geometry.getAttribute('position').count<
+  blunt.children[0].geometry.getAttribute('position').count,'parting makes a gap');
+ const b=new THREE.Box3().setFromObject(blunt);
+ const c=new THREE.Box3().setFromObject(center);
+ assert.ok(c.min.y<b.min.y,'longer slider produces longer strands');
+ assert.ok(c.max.x>b.max.x,'width slider extends fringe');
+ assert.ok(c.max.z>b.max.z,'forward slider moves strands ahead');
+ blunt.userData.dispose();center.userData.dispose();
+ mesh.geometry.dispose();mesh.material.dispose();
+});
+test('v121 preview wire is real head topology and never included in wig GLB',async()=>{
+ const THREE=await import('three');
+ const headMesh=new THREE.Mesh(new THREE.SphereGeometry(.10,16,12),
+  new THREE.MeshBasicMaterial());
+ headMesh.position.set(0,.12,0);
+ headMesh.updateMatrixWorld(true);
+ const wire=createRealHeadWireframe(THREE,{mesh:headMesh});
+ assert.equal(wire.isLineSegments,true);
+ assert.equal(wire.material.transparent,true);
+ assert.ok(wire.material.opacity>0&&wire.material.opacity<.5);
+ assert.match(wire.name,/not-exported/);
+ assert.ok(wire.geometry.getAttribute('position').count>500);
+ assert.match(html,/scene\.add\(headWire\)/);
+ assert.doesNotMatch(html,/wig\.add\(headWire\)/);
+ assert.match(html,/exporter\.parse\(wig,/);
+ assert.match(html,/<input id="headWire" type="checkbox">/);
+ assert.match(html,/<option value="blunt">/);
+ assert.match(html,/<option value="center">/);
+ for(const id of ['bangLength','bangWidth','bangForward'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ wire.userData.dispose();
+ headMesh.geometry.dispose();headMesh.material.dispose();
 });
