@@ -10,6 +10,7 @@ on:
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
       - 'scripts/rebuild-v121-mouth-chin.py'
+      - 'scripts/rebuild-v121-anatomical-neck-bust.py'
       - 'qa/inspect-v121-neck-bust.py'
       - 'qa/face-v121-natural-folds-cleanup.test.py'
       - 'qa/face-v121-lower-lashes-nose-lips.test.py'
