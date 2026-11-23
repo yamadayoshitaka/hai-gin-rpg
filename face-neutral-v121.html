@@ -70,12 +70,13 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 </div>
 <details class="panel" id="v121-tuning" open>
 <summary>顔パーツを調整（目・鼻・口・眉）</summary>
-<p>左右位置・上下位置・大きさを動かすと、3Dモデルへ即時反映されます。「目・眉」の左右は左右の間隔です。人中の深さも調整できます。</p>
+<p>見本の正面・横顔に合わせて、目は少し大きく、鼻は控えめに、口元はふっくら、眉はやや下げた参考値を初期適用します。目・眉の「左右」は左右の間隔です。人中は鼻の真下から上唇中央へ連続する浅い溝に修正しました。</p>
 <div id="v121-tune-sliders" aria-label="顔v121の形状調整スライダー"></div>
 <div class="controls">
-<button type="button" id="resetTune" disabled>調整を初期値に戻す</button>
+<button type="button" id="applyReferenceTune" class="primary" disabled>参考画像に近づける</button>
+<button type="button" id="resetTune" disabled>全スライダーを0に戻す</button>
 </div>
-<p id="v121-tune-note" role="status">初期値ではオリジナルv121の造形を表示します。</p>
+<p id="v121-tune-note" role="status">参考画像寄せのスライダー値を読み込んでいます…</p>
 </details>
 <div class="panel">
 <h2>新メッシュの構造</h2>
@@ -99,7 +100,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-adjustable-face-parts-philtrum-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-philtrum-channel-reference-preset-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -210,11 +211,13 @@ async function init(){
  scene.add(neutral);
  faceTune=attachV121FaceSliders({neutral,face,three:THREE,onChange:changed=>{
   $('v121-tune-note').textContent=changed?
-   '現在の位置・大きさをGLBへ反映できます。「現在の顔をGLB保存」で書き出してください。':
+   '参考値または調整した形状を表示しています。「現在の顔をGLB保存」で実GLBに書き出せます。':
    '初期値のv121です。元のGLBは変更されていません。';
  }});
  $('resetTune').disabled=false;
  $('resetTune').addEventListener('click',()=>faceTune.reset());
+ $('applyReferenceTune').disabled=false;
+ $('applyReferenceTune').addEventListener('click',()=>faceTune.applyReferencePreset());
  wire=new THREE.LineSegments(new THREE.EdgesGeometry(face.geometry,38),
   new THREE.LineBasicMaterial({color:0x67d6bb,transparent:true,opacity:.35}));
  wire.name='V121_CONNECTED_FACE_WIRE';wire.visible=false;face.add(wire);
@@ -239,7 +242,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：人中の溝を強調。目・鼻・口・眉の位置と大きさをスライダーで調整できます（スキンヘッド・中立）');
+ update('status','顔 v121：人中の丸い穴状のくぼみを修正し、鼻の付け根から上唇へ続く細い溝に変更。見本寄せのスライダー値を初期適用中（スキンヘッド・中立）');
  document.documentElement.dataset.neutralFaceReady='v121';
  const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
  draw();
