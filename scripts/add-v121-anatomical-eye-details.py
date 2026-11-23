@@ -153,9 +153,55 @@ def main(path):
             part['faces'].extend(((a,a+1,a+2),(a+1,a+3,a+2)))
         part['strands']+=1
 
+    def curved_lash(part,pts,root_radius):
+        """Seven elliptical rings: actual C-curled, tapering 3D hair geometry.
+
+        Root emerges at the upper/lower waterline; curved tangent starts
+        projecting forward before its tip turns up/down. Rounded geometry
+        has real vertex normals and survives mobile antialiasing better than
+        the previous hairline-width, camera-facing planar triangles.
+        """
+        sides=6
+        at=len(part['xyz'])
+        assert len(pts)==7
+        for k,p in enumerate(pts):
+            prev=pts[max(0,k-1)]
+            next_p=pts[min(len(pts)-1,k+1)]
+            tangent=unit(tuple(next_p[d]-prev[d] for d in range(3)))
+            # Cross world z with tangent to obtain stable sideways axis.
+            bx=unit((-tangent[1],tangent[0],0.))
+            bz=unit((tangent[1]*bx[2]-tangent[2]*bx[1],
+                     tangent[2]*bx[0]-tangent[0]*bx[2],
+                     tangent[0]*bx[1]-tangent[1]*bx[0]))
+            u=k/6
+            taper=(1-u)**.75
+            radius=root_radius*max(.035,taper)
+            if k==0: radius*=.73
+            for segment in range(sides):
+                theta=math.tau*segment/sides
+                c=math.cos(theta)
+                d=math.sin(theta)
+                radial=unit(tuple(bx[q]*c+bz[q]*d for q in range(3)))
+                # Elliptical cross section: thicker across x, thinner in z.
+                part['xyz'].append(tuple(p[q]+radius*(bx[q]*c+.66*bz[q]*d)
+                                         for q in range(3)))
+                part.setdefault('normals',[]).append(radial)
+        for k in range(len(pts)-1):
+            for segment in range(sides):
+                a=at+k*sides+segment
+                b=at+k*sides+(segment+1)%sides
+                c=at+(k+1)*sides+segment
+                d=at+(k+1)*sides+(segment+1)%sides
+                part['faces'].extend(((a,b,c),(b,d,c)))
+        part['strands']+=1
+
+    def unit(v):
+        length=math.sqrt(sum(t*t for t in v))
+        return tuple(t/length for t in v) if length>1e-9 else (1.,0.,0.)
+
     def fiber(part,pts,width):
-        # Each real hair is 3 curved, tapered segments from socket to tip,
-        # continuing OUT of the skin in positive z so profile shows it.
+        # Fine brow hairs remain individual planar tapered fibers; lashes
+        # above and below the eye use real 3D curved tube geometry.
         at=len(part['xyz'])
         for j,(x,y,z) in enumerate(pts):
             ww=max(width*(1-j/(len(pts)-1))**.85,.000006)
@@ -188,26 +234,40 @@ def main(path):
             t=-.91+1.85*j/40
             x,y=lid(side,t)
             z=skin_z(x,y)+.0010
-            length=(.0040+.0044*max(0.,1.-abs(t))+
-                    .0020*clamp((t-.45)/.55))*(.84+.30*rng.random())
-            fan=side*(.0017+.0038*clamp((t+.25)/1.25))
-            pts=[(x+fan*u*.63,
-                  y+length*(u*.78+.22*u*u),
-                  z+.0035*u+.0008*u*u)
-                 for u in (0,.34,.70,1.)]
-            fiber(upper,pts,.00010+.00006*rng.random())
+            length=(.0066+.0032*max(0.,1.-abs(t))+
+                    .0020*clamp((t-.25)/.75))*(.88+.18*rng.random())
+            fan=side*(.0018+.0040*clamp((t+.20)/1.20))
+            # Root first projects toward the viewer; later segments lift
+            # and curl upward in the reference's natural C-shaped silhouette.
+            pts=[(x+fan*u*(.65+.35*u),
+                  y+length*(.12*u+.88*u*u),
+                  z+.0060*math.sin(1.72*u)+.0001*u)
+                 for u in (0,.16,.33,.50,.67,.84,1.)]
+            curved_lash(upper,pts,.000185+.000050*rng.random())
         for j in range(22):
             t=-.86+1.70*j/21
             x,y,z=lower_lid(side,t)
             # Root on the lower waterline, tips sweep DOWN and slightly OUT.
             # The reference has fine sparse lower lashes, not floating dots.
-            length=(.00235+.00145*(1-abs(t)))*(.90+.25*rng.random())
-            sideways=side*(.00035+.00155*max(0,t))
-            pts=[(x+sideways*u,
-                  y-length*(.76*u+.24*u*u),
-                  z+.00055*u+.00045*u*u)
-                 for u in (0,.34,.70,1.)]
-            fiber(lower,pts,.000075+.000020*rng.random())
+            length=(.0036+.00165*(1-abs(t)))*(.88+.20*rng.random())
+            sideways=side*(.00050+.0017*max(0.,t))
+            # Lower lashes curve DOWN while first growing away from skin,
+            # so their tips are not hidden by the lower eyelid surface.
+            pts=[(x+sideways*u*(.8+.2*u),
+                  y-length*(.12*u+.88*u*u),
+                  z+.00295*math.sin(1.65*u)+.00035*u)
+                 for u in (0,.16,.33,.50,.67,.84,1.)]
+            curved_lash(lower,pts,.000155+.000038*rng.random())
+        # A soft, unobtrusive waterline connects the actual lower-lid rim,
+        # making the roots visible even when the face fills ~280 mobile px.
+        lower_edge=[]
+        for j in range(33):
+            t=-.86+1.72*j/32
+            x,y,z=lower_lid(side,t)
+            lower_edge.append((x,y-.00016,z+.00072))
+        ribbon(lower,lower_edge,[.00007+.00035*math.sin(math.pi*j/32)**.8
+                                for j in range(33)])
+        lower['strands']-=1  # Continuous lid edge is not an eyelash strand.
         # 136 subtle blonde-taupe eyebrow hairs per eye with follicle roots
         # attached to the actual head surface. Gradual inner-to-outer slope.
         for j in range(136):
@@ -241,9 +301,18 @@ def main(path):
     for part in (liner,crease,upper,lower,brow):
         if not part['faces']:
             raise ValueError('Face detail has no triangles: '+part['name'])
+        all_normals=part.get('normals',[])
+        if all_normals:
+            if len(all_normals)>len(part['xyz']):
+                raise ValueError('Curved lash normals exceed geometry count')
+            # The single lower lid edge appended after lower lashes uses
+            # front-facing normals; lashes use real radial tube normals.
+            all_normals=all_normals+[(0.,0.,1.)]*(len(part['xyz'])-len(all_normals))
+        else:
+            all_normals=[(0.,0.,1.)]*len(part['xyz'])
         attrs={
             'POSITION':pack(g,b,part['xyz'],'f','VEC3'),
-            'NORMAL':pack(g,b,[(0.,0.,1.)]*len(part['xyz']),'f','VEC3')}
+            'NORMAL':pack(g,b,all_normals,'f','VEC3')}
         faces=pack(g,b,[(i,) for f in part['faces'] for i in f],'I','SCALAR')
         mesh_i=len(g['meshes'])
         g['meshes'].append({
@@ -278,7 +347,10 @@ def main(path):
         'neutralOnly':True,
         'futureBlinkTargetsReady':True,
         'lowerLashAttachment':'true_eyelid_rim_boundary_interpolation',
-        'lowerLashPlacementVersion':'v121-anatomical-rim-20261123'}
+        'lowerLashPlacementVersion':'v121-anatomical-rim-20261123',
+        'curvedLashGeometry':'seven_segment_elliptical_3d_tapered_C_curl',
+        'upperLashCcurl':True,'lowerLashDownwardCurl':True,
+        'lowerLidWaterline':True}
     if meta.get('hairIncluded') is not False:
         raise ValueError('Unexpected head hair state')
     g['buffers'][0]['byteLength']=len(b)
