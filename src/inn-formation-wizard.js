@@ -23,6 +23,20 @@ const gearName=id=>TOWN_SHOP.find(x=>x.id===id)?.name||'装備なし';
 const names=['隊の選択','隊員と人数','装備','持参アイテム','リーダー','陣形','編成確認'];
 const stageByStep={hire:0,teamPick:0,roster:1,rosterQuote:1,rosterPick:1,equipment:2,equipmentPick:2,items:3,leader:4,formation:5,review:6};
 const purpose=id=>FORMATION_BATTLE_PURPOSES[id]||{purpose:'汎用隊列',movement:'隊列を維持'};
+// The preview represents this team's occupied job slots, not a fictional
+// three-job template. The manoeuvre may still have three chronological phases.
+const renderTeamFormationPreview=(id,game,team)=>{
+ const slots=Array.from({length:3},(_,i)=>{
+  const source=game.campaign.squads.find(s=>String(s.id)===String(team.slots[i]));
+  const count=source?Number(team.counts[String(source.id)]||0):0;
+  return count>0?{label:source.job+' '+count+'人'}:null;
+ });
+ return renderFormationSignaturePreview(id,{
+  activeSlots:slots.flatMap((slot,i)=>slot?[i]:[]),
+  labels:slots.map((slot,i)=>slot?.label||'第'+(i+1)+'枠（空き）')
+ });
+};
+
 const requirement=id=>{
  const r=FORMATION_ENTRY_REQUIREMENTS[id];
  if(!r)return '';
@@ -169,7 +183,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
      '<div class="trainingFormationDemo" aria-label="選択した陣形の動作と補充見積り">'+
       '<b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+
       '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
-       renderFormationSignaturePreview(previewId,{labels:FORMATION_ROLES[previewId].slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
+       renderTeamFormationPreview(previewId,game,team)+
       '</div>'+
       '<small class="trainingFormationPurpose">'+esc(plan?.summary||purpose(previewId).movement)+'</small>'+
       '<small class="trainingFormationRequirements">'+
@@ -192,7 +206,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   body='<div class="trainingFormationDetail">'+
    '<strong>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</strong>'+
    '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
-     renderFormationSignaturePreview(id,{labels:(FORMATION_ROLES[id]||[]).slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
+     renderTeamFormationPreview(id,game,team)+
    '</div>'+
    '<small>'+esc(plan?.summary||purpose(id).movement)+'</small>'+
    '<div class="trainingFormationQuote" aria-live="polite">'+
@@ -299,7 +313,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    return button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
     '<span class="sortieWizardFormationTitle"><b>'+esc(f.name)+'</b></span>'+
     '<small>目的：'+esc(brief.purpose)+'</small>'+
-    renderFormationSignaturePreview(id,{labels:roles.slice(0,3).map(role=>ROLE_NAMES[role]||'分隊')})+
+    renderTeamFormationPreview(id,game,team)+
     '<small>動き：'+esc(brief.movement)+'</small>'+ 
     '<strong class="signatureName">★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
     '<small class="signatureSummary">'+esc(signature?.summary||'')+'</small>'+ 
