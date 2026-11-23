@@ -71,42 +71,39 @@ def rim_from_cut(xyz,faces,cut):
     deg=collections.Counter(len(n) for n in adjacency.values())
     if not adjacency or set(deg)!={2}:
         raise ValueError('Cut %f does not have a single closed rim: %s'%(cut,deg))
-    start=min(adjacency)
-    ring=[start]
-    before=None
-    for _ in range(len(adjacency)+1):
-        options=sorted(adjacency[ring[-1]]-({before} if before is not None else set()))
-        if not options:raise ValueError('Open cut '+str(cut))
-        nxt=options[0]
-        if nxt==start:break
-        if nxt in ring:raise ValueError('Cut ring self-repeats')
-        before=ring[-1]
-        ring.append(nxt)
-    if len(ring)!=len(adjacency):
-        seen=set()
-        cycles=[]
-        for startnode in adjacency:
-            if startnode in seen:continue
-            queue=[startnode]
-            component=set()
-            while queue:
-                q=queue.pop()
-                if q in component:continue
-                component.add(q)
-                queue.extend(adjacency[q]-component)
-            seen|=component
-            cycles.append({'n':len(component),
-                 'x':(round(min(t[0] for t in component),4),round(max(t[0] for t in component),4)),
-                 'y':(round(min(t[1] for t in component),4),round(max(t[1] for t in component),4)),
-                 'z':(round(min(t[2] for t in component),4),round(max(t[2] for t in component),4))})
-        print('LOWER_FACE_CUT_COMPONENTS',cut,json.dumps(sorted(cycles,key=lambda x:-x['n'])))
-        raise ValueError('Disconnected cut ring')
-    ids=[min(members[k]) for k in ring]
-    if len(ids)<55 or len(ids)>300:
-        raise ValueError('Wrong rim size: '+str(len(ids)))
+    # The primary outer skin section and a smaller inner nasal-cavity section
+    # are two distinct closed loops. The donor skin creates BOTH at nose-base
+    # cut height. Retopologize each rather than leaving the hidden nasal hole.
+    remaining=set(adjacency)
+    all_rings=[]
+    while remaining:
+        start=min(remaining)
+        cycle=[start]
+        before=None
+        while True:
+            options=sorted(adjacency[cycle[-1]]-({before} if before is not None else set()))
+            if not options:raise ValueError('Open loop at '+str(cut))
+            nxt=options[0]
+            if nxt==start:break
+            if nxt in cycle:raise ValueError('Cut seam repeats itself')
+            before=cycle[-1]
+            cycle.append(nxt)
+            if len(cycle)>len(adjacency):raise ValueError('Loop overflow')
+        if len(cycle)<12:raise ValueError('Unusable small boundary cycle')
+        remaining-=set(cycle)
+        all_rings.append([min(members[v]) for v in cycle])
+    all_rings.sort(key=len,reverse=True)
+    ids=all_rings[0]
+    if len(ids)<80 or len(ids)>300:
+        raise ValueError('Wrong outer rim size: '+str(len(ids)))
     if max(xyz[i][2] for i in ids)<.085 or min(xyz[i][2] for i in ids)>-.04:
-        raise ValueError('Cut rim does not span the full cranial skin')
-    return ids,removed,len(edge_ids)
+        raise ValueError('Cut rim does not span entire cranial skin')
+    if len(all_rings)>3 or sum(len(r) for r in all_rings[1:])>130:
+        raise ValueError('Too many hidden nasal boundary holes')
+    print('LOWER_FACE_DISCARD_BOUNDARIES',json.dumps({
+       'cut':cut,'loops':[len(r) for r in all_rings],
+       'outerSkinTriangles':len(removed)}))
+    return ids,removed,len(edge_ids),all_rings[1:]
 
 # Measured 3D profile, not adjustments to the previous jaw or body mesh.
 # Axial Y increases upwards; front side is +Z, all dimensions in metres.
@@ -195,14 +192,14 @@ def rebuild(path):
     matches=[]
     for cut in CUTS:
         try:
-            ids,removed,count=rim_from_cut(xyz,tri,cut)
-            matches.append((cut,ids,removed,count))
+            ids,removed,count,inner_rings=rim_from_cut(xyz,tri,cut)
+            matches.append((cut,ids,removed,count,inner_rings))
             print('CANDIDATE LOWER FACE CUT',cut,'rim',len(ids),'triangles',len(removed))
         except ValueError as e:
             print('REJECT LOWER FACE CUT',str(e))
     if not matches:
         raise ValueError('No safe complete cut above mouth: full replacement unsafe')
-    cut,ring,removed,border_edges=matches[0]
+    cut,ring,removed,border_edges,nose_rings=matches[0]
     if len(removed)<4000:raise ValueError('Old lower-face surface is still present')
     # Select old faces to discard; preserve upper forehead, eye and nose polygons.
     discard=set(removed)
@@ -261,6 +258,34 @@ def rebuild(path):
     for j in range(n):
         nx=(j+1)%n
         faces.append((row+nx,row+j,c) if orientation>0 else (row+j,row+nx,c))
+    # Independently regenerate the inner nasal underside surface as a small
+    # recessed cap. This closes the donor's second cut boundary while keeping
+    # the original nostril rims above the cut. None of its old triangles survive.
+    new_nasal_caps=0
+    for original_ring in nose_rings:
+        first=len(pos)
+        nose_xyz=[xyz[i] for i in original_ring]
+        centre=(sum(p[0] for p in nose_xyz)/len(nose_xyz),
+                sum(p[1] for p in nose_xyz)/len(nose_xyz),
+                sum(p[2] for p in nose_xyz)/len(nose_xyz))
+        for i in original_ring:
+            pos.append(xyz[i]);tex.append(uv[i]);colors.append(old_color[i])
+        ring2=len(pos)
+        for i in original_ring:
+            x,y,z=xyz[i]
+            pos.append((centre[0]+.60*(x-centre[0]),
+                        centre[1]-.010+.50*(y-centre[1]),
+                        centre[2]-.010+.60*(z-centre[2])))
+            tex.append(uv[i]);colors.append(old_color[i])
+        end=len(pos)
+        pos.append((centre[0],centre[1]-.016,centre[2]-.018))
+        tex.append((.50,.48));colors.append((.986,.969,.960))
+        for j in range(len(original_ring)):
+            k=(j+1)%len(original_ring)
+            faces.extend(((first+j,first+k,ring2+j),
+                          (first+k,ring2+k,ring2+j),
+                          (ring2+j,ring2+k,end)))
+        new_nasal_caps+=len(original_ring)*3
     ns=normals(pos,faces)
     for j,src in enumerate(ring):
         ns[j]=old_norm[src]
@@ -307,6 +332,7 @@ def rebuild(path):
       'freshVisibleSurfaceTriangles':len(faces),
       'oldBodyTrianglesUsedInNewMesh':0,
       'upperFaceWeldBoundaryVertices':n,
+      'rebuiltInnerNoseCutTriangles':new_nasal_caps,
       'upperFaceWeldBoundaryEdges':border_edges,
       'newSkinMeshMorphChannels':list(NAMES),
       'newMorphedNodesAddedToAnimation':len(g['animations']),
