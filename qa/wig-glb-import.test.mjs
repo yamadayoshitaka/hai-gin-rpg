@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {join} from 'node:path';
-import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig,buildReferenceFringe,createRealHeadWireframe,measureRealHead,measureWigCrown} from '../src/wig-glb-fit-v1.js';
+import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig,buildReferenceFringe,createRealHeadWireframe,buildFittedScalpCap,measureRealHead,measureWigCrown} from '../src/wig-glb-fit-v1.js';
 
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const html=read('wig-studio.html');
@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=4/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=6/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
@@ -116,7 +116,7 @@ test('the wig-only viewer drops the old face wireframe and inspects real static 
  assert.doesNotMatch(html,/function scalpWire\(/);
  assert.doesNotMatch(html,/headGuide/);
  assert.doesNotMatch(html,/id="guide"/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=4/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=6/);
 });
 
 test('separate bangs retain physical thickness, UVs, slider effects and optional middle part',async()=>{
@@ -222,8 +222,72 @@ test('CC0 crown uses both lateral and depth measurements without deforming impor
   'original CC0 geometry must not be modified by fitting');
  assert.match(html,/crown:rawCrown/);
  assert.match(html,/measureWigCrown\(THREE,wigContent,rawBox\)/);
- assert.match(html,/id="bangLength"[^>]+value="55"/);
+ assert.match(html,/id="bangLength"[^>]+value="70"/);
  assert.match(html,/id="bangForward"[^>]+value="0"/);
  assert.match(html,/wip'\)\.hidden=true/);
  mesh.geometry.dispose();mesh.material.dispose();
+});
+
+test('three real CC0 source size profiles fit the same v121 scalp X/Z coordinates',()=>{
+ const head={cx:.004,cz:-.005,rx:.092,rz:.103,top:.202};
+ const profiles=[
+  ['long01',.261249,.728558,.246588],
+  ['bob01',.212840,.239823,.257404],
+  ['ponytail01',.150202,.366004,.260254]
+ ];
+ for(const [name,w,h,d] of profiles){
+  const box={min:{x:-w/2,y:0,z:-d/2},max:{x:w/2,y:h,z:d/2}};
+  const crown={width:w,depth:d,cx:0,cz:0};
+  const fit=calculateWigFit(box,head,{widthRatio:1.20,crown});
+  assert.ok(fit.coverageX>=1.20,'insufficient scalp width: '+name);
+  assert.ok(fit.coverageZ>=1.20,'insufficient scalp depth: '+name);
+  assert.ok(Math.abs(fit.x-head.cx)<1e-10,'misaligned X '+name);
+  assert.ok(Math.abs(fit.z-head.cz)<1e-10,'misaligned Z '+name);
+  assert.ok(calculateWigFit(box,head,{widthRatio:1.35,crown}).scale>fit.scale,
+   'slider must enlarge consistently '+name);
+ }
+});
+test('v121-derived tinted hair cap covers crown independently of source wig and wire',async()=>{
+ const THREE=await import('three');
+ const geometry=new THREE.SphereGeometry(.1,64,48);
+ geometry.translate(0,.11,0);
+ const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+ const root=new THREE.Group();root.add(face);
+ const head=measureRealHead(THREE,root);
+ const cap=buildFittedScalpCap(THREE,head,{color:'#cbaa72'});
+ assert.ok(cap.userData.triangleCount>100);
+ assert.equal(cap.children.length,1);
+ const material=cap.children[0].material;
+ assert.equal(material.color.getHexString(),'cbaa72');
+ const mesh=cap.children[0],p=mesh.geometry.getAttribute('position');
+ assert.equal(mesh.geometry.getAttribute('uv').count,p.count);
+ assert.equal(mesh.geometry.getAttribute('color').count,p.count);
+ for(let i=0;i<p.count;i++)
+  assert.ok(Number.isFinite(p.getX(i))&&Number.isFinite(p.getY(i))&&Number.isFinite(p.getZ(i)));
+ assert.match(html,/buildFittedScalpCap\(THREE,head/);
+ assert.match(html,/wig\.add\(scalpCap\)/);
+ assert.match(html,/wig\.add\(wigContent\)/);
+ assert.doesNotMatch(html,/wig\.add\(headWire\)/);
+ assert.match(html,/exporter\.parse\(wig,/);
+ cap.userData.dispose();geometry.dispose();face.material.dispose();
+});
+test('layered high-quality bangs produce many thin textured locks on v121 forehead',async()=>{
+ const THREE=await import('three');
+ const geometry=new THREE.SphereGeometry(.095,72,50);
+ geometry.translate(0,.11,0);
+ const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+ const root=new THREE.Group();root.add(face);
+ const head=measureRealHead(THREE,root);
+ const blunt=buildReferenceFringe(THREE,head,{style:'blunt',lengthMm:70});
+ const center=buildReferenceFringe(THREE,head,{style:'center',lengthMm:70});
+ const mesh=blunt.children[0];
+ assert.ok(mesh.geometry.getAttribute('position').count>15000);
+ assert.ok(center.children[0].geometry.getAttribute('position').count>12000);
+ assert.ok(center.children[0].geometry.getAttribute('position').count<
+  mesh.geometry.getAttribute('position').count);
+ assert.equal(mesh.geometry.getAttribute('color').count,
+  mesh.geometry.getAttribute('position').count);
+ assert.match(html,/scalpCap\.traverse/);
+ blunt.userData.dispose();center.userData.dispose();
+ geometry.dispose();face.material.dispose();
 });
