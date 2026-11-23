@@ -83,11 +83,15 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-side.png'});
   await page.locator('[data-camera="front"]').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-preset'),'reference');
+  assert.equal(await page.locator('html').getAttribute('data-v121-reference'),
+    '3089-skinhead-front-45-side-rear-20261123');
+  assert.equal(await page.locator('input[data-part="cheeks"][data-axis="x"]').inputValue(),'-4');
+  assert.equal(await page.locator('input[data-part="chin"][data-axis="size"]').inputValue(),'92');
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
-  assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'108');
-  assert.equal(await page.locator('input[data-part="nose"][data-axis="size"]').inputValue(),'93');
-  assert.equal(await page.locator('input[data-part="mouth"][data-axis="size"]').inputValue(),'112');
-  assert.equal(await page.locator('input[data-part="brows"][data-axis="y"]').inputValue(),'-3');
+  assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'110');
+  assert.equal(await page.locator('input[data-part="nose"][data-axis="size"]').inputValue(),'91');
+  assert.equal(await page.locator('input[data-part="mouth"][data-axis="size"]').inputValue(),'114');
+  assert.equal(await page.locator('input[data-part="brows"][data-axis="y"]').inputValue(),'-6');
   // Mode/camera validated below; omit redundant screenshot neutral-face-reference-preset on software WebGL.
   // Reset makeup and slider state before downloading the byte-identical master.
   await page.locator('[data-makeup="bare"]').click();
@@ -110,6 +114,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
    gltf.accessors[p.attributes.POSITION]?.count>13000)),
    'The exported GLB must retain the high-resolution anatomical head skin');
   assert.equal(gltf.meshes[0].extras.topology.vertices,13455);
+  assert.equal(gltf.meshes[0].extras.referenceMeshResculpt.sourceReferenceViews.length,4);
+  assert.ok(gltf.meshes[0].extras.referenceMeshResculpt.changedVerticesAbove045mm>900);
+  assert.equal(gltf.meshes[0].extras.referenceMeshResculpt.uvAndTriangleIndicesPreserved,true);
   assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,true);
   for(const part of ['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE']){
     assert.ok(gltf.meshes.some(m=>m.name===part),part+' must exist as native GLB mesh');
@@ -150,9 +157,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('[data-makeup="pink"]').click();
   await page.locator('#applyReferenceTune').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
-  assert.equal(await page.locator('input[data-part="philtrum"][data-axis="depth"]').inputValue(),'8');
+  assert.equal(await page.locator('input[data-part="philtrum"][data-axis="depth"]').inputValue(),'3');
   // Test the real on-device editor, not just the presence of decorative controls.
-  for(const part of ['eyes','nose','mouth','brows']){
+  for(const part of ['eyes','nose','mouth','brows','cheeks','chin']){
    assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="size"]').count(),1);
    assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="x"]').count(),1);
    assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="y"]').count(),1);
