@@ -6,7 +6,7 @@ import {
  ensureSortiePlan,sortieTeams,sortieTeamCount,sortiePlanningLimit,sortieLevel,
  SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS
 } from './three-team-sortie.js';
-import {FORMATION_ROLES,ROLE_NAMES} from './sortie-formation-logic.js';
+import {FORMATION_ROLES,ROLE_NAMES,ROLE_JOBS} from './sortie-formation-logic.js';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
 import {inspectInnFormation} from './inn-formation-rules.js';
 import {trainingSoldierStock,inspectTrainingFormationPurchase} from './training-formation-purchase.js';
@@ -23,6 +23,8 @@ const gearName=id=>TOWN_SHOP.find(x=>x.id===id)?.name||'装備なし';
 const names=['隊の選択','隊員と人数','装備','持参アイテム','リーダー','陣形','編成確認'];
 const stageByStep={hire:0,teamPick:0,roster:1,rosterQuote:1,rosterPick:1,equipment:2,equipmentPick:2,items:3,leader:4,formation:5,review:6};
 const purpose=id=>FORMATION_BATTLE_PURPOSES[id]||{purpose:'汎用隊列',movement:'隊列を維持'};
+const formationTargetJobs=id=>(FORMATION_ROLES[id]||[]).slice(0,SORTIE_FORMATIONS[id]?.slots||0)
+ .map(role=>(ROLE_NAMES[role]||role)+'：'+(ROLE_JOBS[role]||[]).join('・')).join(' ／ ');
 // The preview represents this team's occupied job slots, not a fictional
 // three-job template. The manoeuvre may still have three chronological phases.
 const renderTeamFormationPreview=(id,game,team)=>{
@@ -187,7 +189,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
      '</div>':'')+
     (preview?
      '<div class="trainingFormationDemo" aria-label="選択した陣形の動作と補充見積り">'+
-      '<b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+
+      '<b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+ 
+      '<small>対象ジョブ：'+esc(formationTargetJobs(previewId))+'</small>'+ 
       '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
        renderTeamFormationPreview(previewId,game,team)+
       '</div>'+
@@ -210,7 +213,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const purchase=inspectTrainingFormationPurchase(game,team.id,id);
   const stock=trainingSoldierStock(game,team.id);
   body='<div class="trainingFormationDetail">'+
-   '<strong>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</strong>'+
+   '<strong>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</strong>'+ 
+   '<small>対象ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
    '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
      renderTeamFormationPreview(id,game,team)+
    '</div>'+
@@ -318,7 +322,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    }).join('');
    return button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
     '<span class="sortieWizardFormationTitle"><b>'+esc(f.name)+'</b></span>'+
-    '<small>目的：'+esc(brief.purpose)+'</small>'+
+    '<small>目的：'+esc(brief.purpose)+'</small>'+ 
+    '<small>対象ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
     renderTeamFormationPreview(id,game,team)+
     '<small>動き：'+esc(brief.movement)+'</small>'+ 
     '<strong class="signatureName">★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
