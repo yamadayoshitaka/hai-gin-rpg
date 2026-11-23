@@ -60,7 +60,8 @@ chooseThreeTeamFormation(game,'attack',1,'attack');
 chooseThreeTeamFormation(game,'attack',2,'balanced');
 chooseThreeTeamFormation(game,'attack',3,'support');
 const before=sortieTeams(game).map(t=>t.formation);
-assert.deepEqual(before,['attack','balanced','support']);
+assert.deepEqual(before,['free','free','free'],
+ 'incompatible presets must fall back to free instead of rewriting job rosters');
 assert.ok(countSquads()<=people,'formation never creates nonexistent soldiers');
 const saved=saveThreeTeamStrategy(game,'attack');
 assert.equal(saved.teams.length,3);
