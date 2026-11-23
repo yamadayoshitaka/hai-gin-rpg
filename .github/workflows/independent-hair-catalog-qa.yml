@@ -19,6 +19,8 @@ on:
       - 'src/female-hair-01-solid-v5.js'
       - 'src/head-derived-hair-sculpt-v6.js'
       - 'src/head-derived-hair-sculpt-v7.js'
+      - 'src/head-derived-hair-sculpt-v8.js'
+      - 'qa/head-derived-hair-sculpt-v8.test.mjs'
       - 'qa/head-derived-hair-sculpt-v7.test.mjs'
       - 'qa/head-derived-hair-sculpt-v6.test.mjs'
       - 'qa/female-hair-01-solid-v5.test.mjs'
@@ -42,6 +44,8 @@ on:
       - 'src/female-hair-01-solid-v5.js'
       - 'src/head-derived-hair-sculpt-v6.js'
       - 'src/head-derived-hair-sculpt-v7.js'
+      - 'src/head-derived-hair-sculpt-v8.js'
+      - 'qa/head-derived-hair-sculpt-v8.test.mjs'
       - 'qa/head-derived-hair-sculpt-v7.test.mjs'
       - 'qa/head-derived-hair-sculpt-v6.test.mjs'
       - 'qa/female-hair-01-solid-v5.test.mjs'
@@ -76,5 +80,7 @@ jobs:
           node --test qa/head-derived-hair-sculpt-v6.test.mjs
           node --check src/head-derived-hair-sculpt-v7.js
           node --test qa/head-derived-hair-sculpt-v7.test.mjs
+          node --check src/head-derived-hair-sculpt-v8.js
+          node --test qa/head-derived-hair-sculpt-v8.test.mjs
           node --test qa/independent-hair-catalog-motion.test.mjs
           node --test qa/hair-cache-reset.test.mjs
