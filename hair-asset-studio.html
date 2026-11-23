@@ -45,10 +45,10 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <p class="muted">女性12種・男性14種。名前は新規造形プロファイルの仮名です。ヘアカタログの見本との一致は引き続き確認対象です。</p>
 <div class="catalog" id="catalog" aria-label="3D髪型一覧"></div></section>
 <section class="panel">
-<div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">全26髪型：薄い頭皮フィット・毛流れ造形v7｜配信コミット確認中</div>
+<div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">全26髪型：ベース内側・髪の造形外側 v8｜配信コミット確認中</div>
 <div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
 <div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：顔v121実スキンヘッド（読込中）<br>髪メッシュ：読込中</div></div>
-<p class="muted">ドラッグで360度回転、ピンチで拡大。全26種類は実v121の頭メッシュを薄い髪ベースとして用い、前面へのひさし状突出を抑えながら毛流れと毛先を造形します。眉毛・目・顔には変更を加えません。</p>
+<p class="muted">ドラッグで360度回転、ピンチで拡大。全26種類とも、実v121頭メッシュに密着するベースを内側へ収め、外側に接続された立体毛束を造形します。ベースが髪より前面へ出ない構成です。眉毛・目・顔は変更しません。</p>
 <div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="capToggle" aria-pressed="false" disabled>旧頭皮カバー無効</button><button id="source">造形情報</button></div>
 <div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
 <div id="parts" aria-label="髪メッシュのパーツ表示"></div>
@@ -79,16 +79,16 @@ import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
  from './src/independent-hair-library-v1.js?v=3';
 import {measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=4';
 import {attachV121FaceSliders,V121_REFERENCE_PRESET} from './face-v121-parametric-sliders.js';
-import {sculptHairFromHead,findSculptHairStyle} from './src/head-derived-hair-sculpt-v7.js?v=7';
+import {sculptHairFromHead,findSculptHairStyle} from './src/head-derived-hair-sculpt-v8.js?v=8';
 const $=id=>document.getElementById(id);
-fetch('./release.json?hair26v7_check='+Date.now(),{cache:'no-store'})
+fetch('./release.json?hair26v8_check='+Date.now(),{cache:'no-store'})
  .then(r=>{if(!r.ok)throw Error('release.json HTTP '+r.status);return r.json();})
  .then(release=>{
   const sha=String(release.sha||'unknown');
-  $('hairVersion').textContent='全26髪型：帽子状の膨らみ除去・前髪修正v7｜配信コミット '+sha.slice(0,12);
+  $('hairVersion').textContent='全26髪型：ベース内側・髪造形外側v8｜配信コミット '+sha.slice(0,12);
  })
  .catch(()=>{
-  $('hairVersion').textContent='全26髪型：帽子状の膨らみ除去・前髪修正v7｜配信コミット未取得';
+  $('hairVersion').textContent='全26髪型：ベース内側・髪造形外側v8｜配信コミット未取得';
  });
 const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
 const pivot=new THREE.Group();scene.add(pivot);
@@ -204,7 +204,7 @@ function updateStats(){
  const model=current;
  if(!model)return;
  const f=model.root.userData.fit,scale=f.scale;
- $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（頭部フィット→毛束彫刻v7）\n':'（頭部押し出し→彫刻v6）\n')+
+ $('viewerInfo').textContent='髪: '+selected.name+('（頭皮ベース内側→毛束外側v8）\n')+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
@@ -250,7 +250,7 @@ async function select(item){
   spring.reset();makePartControls();updateStats();
   $('source').textContent='造形情報';
   $('source').onclick=()=>{details.open=true;details.scrollIntoView({behavior:'smooth',block:'nearest'});};
-  $('status').textContent=item.name+'・'+profile.label+'：v121頭部メッシュから厚み、長さ、輪郭の削り込みを新規生成（v7）。旧GLB不使用。';
+  $('status').textContent=item.name+'・'+profile.label+'：v121頭部メッシュから厚み、長さ、輪郭の削り込みを新規生成（v8）。旧GLB不使用。';
 
  }catch(error){if(request===selection)$('status').textContent='GLB読込エラー：'+error.message;}
 }
@@ -296,7 +296,7 @@ document.querySelectorAll('[data-motion]').forEach(b=>b.onclick=()=>{
 });
 $('wind').oninput=()=>$('windVal').textContent=$('wind').value;
 $('save').onclick=()=>{
- const data={schema:'hai-gin-head-sculpt-v6',sex,asset:selected.id,
+ const data={schema:'hai-gin-head-sculpt-v8',sex,asset:selected.id,
    sculptName:findSculptHairStyle(selected.id)?.label,source:'v121-head-mesh',
    head:headSize(),color:$('color').value,motion,wind:+$('wind').value};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
