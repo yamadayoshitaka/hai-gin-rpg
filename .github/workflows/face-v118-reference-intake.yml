@@ -1,0 +1,44 @@
+name: Face v118 reference intake regression
+on:
+  pull_request:
+    paths:
+      - 'src/face-v118-alina-reference-transfer.js'
+      - 'src/face-v118-alina-scene-intake.js'
+      - 'src/independent-face-masters.js'
+      - 'face-mesh-studio.html'
+      - 'qa/face-v118-alina-reference-transfer.test.mjs'
+      - '.github/workflows/face-v118-reference-intake.yml'
+  push:
+    branches:
+      - 'feature/alina-ip-face-intake-v118'
+jobs:
+  reference-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source and pure 3D reference tests
+        run: |
+          node --check src/face-v118-alina-reference-transfer.js
+          node --check src/face-v118-alina-scene-intake.js
+          node --check src/independent-face-masters.js
+          node --test qa/face-v118-alina-reference-transfer.test.mjs
+      - name: Check embedded face editor module syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('face-mesh-studio.html').read_text()
+          marker='<script type="module">'
+          assert html.count(marker)==1
+          script=html.split(marker,1)[1].split('</script>',1)[0]
+          Path('/tmp/face-v118-browser.mjs').write_text(script)
+          PY
+          node --check /tmp/face-v118-browser.mjs
+      - name: Verify opt-in and both genders
+        run: |
+          grep -q 'alinaReference=null' face-mesh-studio.html
+          grep -q 'alinaReferenceReport' face-mesh-studio.html
+          grep -q 'v118DualGenderReference' src/independent-face-masters.js

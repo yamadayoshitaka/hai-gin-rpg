@@ -217,7 +217,7 @@ button{padding:9px 11px}
 <button id="exportWig" disabled>ヅラ単体をGLB保存</button>
 <a href="./face-body-studio.html">女性主人公・全身3D確認</a>　<a href="./male-body-studio.html">男性主人公・全身3D確認</a>　<a href="./master-swordsman-prototype.html">従来の全身モデル</a>
 </div>
-<p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
+<details class="studioTechDetails" id="alinaReferencePanel"><summary>Alina IpのGLBを解析して男女の顔へ反映</summary><p>元GLBの頭部頂点から鼻・頬・顎を分析し、男女別の既存メッシュに比率を転写します。既存v117へ戻せます。元モデルは保存しません。</p><label for="alinaReferenceFile">GLBファイルを選択</label><input id="alinaReferenceFile" type="file" accept=".glb,model/gltf-binary"><button type="button" id="alinaReferenceReset">外部参照を解除</button><div id="alinaReferenceStatus" role="status">未読込：v117</div><pre id="alinaReferenceReport" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px"></pre><p><a href="https://sketchfab.com/3d-models/alina-ip-realistic-asian-woman-animated-600d4d4aa71c4181b2567a3605ce8c57">Alina Ip</a> by Jungle Jim (CC BY 4.0)。</p></details><p>指で360°回転・ピンチで拡大。女性の口紅は上唇・下唇の実3D形状に接続。上下アイラインの目尻を接続。暗いクマを自然にフェードさせ、眉の間隔を維持。頭皮からの金髪ロングは顔・首・肩・胸への簡易衝突を計算。男性は顎・鼻・目の角度と3Dヒゲの濃さ・長さを調整できます。</p>
 <p>これは美形を目標にした<b>初回の造形試作</b>です。実写品質・原画一致・美術承認・ゲーム実装は未達です。顔の凹凸や横顔が自然かを先に評価してください。</p>
 <details><summary>実メッシュ数値と原本保護の確認</summary><div id="metrics"></div></details>
 </section></main><style>
@@ -240,6 +240,7 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {analyzeAlinaScene} from './src/face-v118-alina-scene-intake.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261123-v117-portrait-mesh';
@@ -343,6 +344,7 @@ const hairPalette=Object.fromEntries(Object.entries(HAIR_COLORS).map(([key,item]
  [key,parseInt(item.hex.slice(1),16)]));
 const faceClock=new THREE.Clock();
 let gender='female',angle='front',wired=false,partsOn=true,ready=false;
+let alinaReference=null;
 // V113: previously selecting thin then normal skipped the malformed
 // v106 cheek retopology and displayed the more natural original GLB face.
 // V111 mistakenly enforced the rough retopologized face every time.
@@ -1384,6 +1386,7 @@ function rebuildFemale(){
   femaleControls:modelChanges,
   enableV106LocalRetopo:experimentalCheekRetopo,
   enableV117ReferencePortrait:referencePortraitV117,
+  alinaReference,
   partSelection:v32PartMode?resolvePartSelection('female',v32Parts.female).ids:null
  });
  applyHeroineSkinMaterial(next.face);
@@ -1432,6 +1435,7 @@ function rebuildMale(){
  const prev=models.get('male');
  const next=makeIndependentFaceMaster(femaleSource.scene,'male',{
   maleControls:maleChanges,
+  alinaReference,
   partSelection:v32PartMode?resolvePartSelection('male',v32Parts.male).ids:null
  });
  next.root.visible=gender==='male';
@@ -1725,6 +1729,34 @@ $('exportWig').addEventListener('click',async()=>{
  }catch(e){$('status').textContent='ヅラGLB出力失敗: '+String(e);}
  finally{$('exportWig').disabled=false;}
 });
+// V118 opt-in: real local GLB geometry only, never a Sketchfab image.
+$('alinaReferenceFile').addEventListener('change',async ev=>{
+ const file=ev.target.files?.[0];if(!file)return;
+ const status=$('alinaReferenceStatus');
+ if(!/\.glb$/i.test(file.name)){status.textContent='GLBファイルを選択してください';return;}
+ const previous=alinaReference;
+ status.textContent='実GLBの顔トポロジーを解析中…';
+ try{
+  const gltf=await new GLTFLoader().parseAsync(await file.arrayBuffer(),'');
+  const analyzed=analyzeAlinaScene(gltf.scene);
+  alinaReference=analyzed;
+  if(ready){rebuildFemale();rebuildMale();rebuildWig();rebuildMaleHair();selectGender(gender);repaint();}
+  $('alinaReferenceReport').textContent=JSON.stringify({
+   vertices:analyzed.vertexCount,meshes:analyzed.sceneReport.selectedMeshes,
+   noseRelief:analyzed.noseRelief,cheek:analyzed.cheekFront,
+   jawRatio:analyzed.jawToCheek,confidence:analyzed.confidence,
+   female:models.get('female')?.report.v118DualGenderReference,
+   male:models.get('male')?.report.v118DualGenderReference
+  },null,2);
+  status.textContent='GLBを解析し、女性と男性の顔へ個別に反映';
+ }catch(e){alinaReference=previous;status.textContent='GLB解析失敗：'+String(e);console.error(e);}
+});
+$('alinaReferenceReset').addEventListener('click',()=>{
+ alinaReference=null;$('alinaReferenceFile').value='';
+ $('alinaReferenceReport').textContent='';
+ if(ready){rebuildFemale();rebuildMale();rebuildWig();rebuildMaleHair();selectGender(gender);repaint();}
+ $('alinaReferenceStatus').textContent='外部参照解除：v117へ復帰';
+});
 $('heroineBeautyV43').addEventListener('click',()=>{
  if(!ready||!v32PartMode)return;
  if(gender!=='female')selectGender('female');
@@ -1948,6 +1980,7 @@ async function init(){
     maleControls:g==='male'?maleChanges:{},
     enableV106LocalRetopo:g==='female'&&experimentalCheekRetopo,
      enableV117ReferencePortrait:referencePortraitV117,
+    alinaReference,
     partSelection:v32PartMode?resolvePartSelection(g,v32Parts[g]).ids:null
    });
    model.root.visible=false;
