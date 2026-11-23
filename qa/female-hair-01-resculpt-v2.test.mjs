@@ -108,7 +108,7 @@ test('viewer uses the fully rebuilt hair 01 before attempting to load a legacy G
  const code=readFileSync(new URL('../src/female-hair-01-resculpt-v2.js',import.meta.url),'utf8');
  assert.match(studio,/const rebuilt=item\.id==='female-hair-01'/);
  assert.match(studio,/const gltf=rebuilt\?null:await loader\.loadAsync\(item\.path\)/);
- assert.match(studio,/buildHair01FromScratch\(THREE,scalpSource\.skinMesh/);
+ assert.match(studio,/buildHeadDerivedHair01\(THREE,scalpSource\.skinMesh/);
  assert.match(studio,/\$\('capToggle'\)\.disabled=rebuilt/);
  assert.match(code,/skin\.geometry\.clone\(\)/);
  assert.match(code,/geometry\.setIndex\(kept\)/);
@@ -129,7 +129,7 @@ test('female 01 eye and eyebrow clearance uses safe forehead cut and short tips'
  const studio=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  assert.match(studio,/id="hairVersion"/);
  assert.match(studio,/配信コミット/);
- assert.match(studio,/buildHair01FromScratch/);
- assert.match(studio,/female-hair-01-native-v4\.js\?v=4/);
+ assert.match(studio,/buildHeadDerivedHair01/);
+ assert.match(studio,/female-hair-01-solid-v5\.js\?v=5/);
  assert.doesNotMatch(studio,/通常表示は元GLBの連続した髪/);
 });
