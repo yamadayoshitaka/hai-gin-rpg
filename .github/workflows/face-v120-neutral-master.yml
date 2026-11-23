@@ -25,6 +25,11 @@ jobs:
         run: |
           node --check src/neutral-face-v120.js
           node --test qa/face-v120-neutral-head.test.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: face-v120-original-cc0-donor-reference
+          path: assets/master-sources/blender/realistic-head-animation.glb
+          retention-days: 1
       - name: Validate browser entry module syntax
         run: |
           python3 - <<'PY'
