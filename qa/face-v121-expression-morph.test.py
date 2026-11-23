@@ -164,7 +164,7 @@ class TestRealExpressionGLB(unittest.TestCase):
         lip=[z for x,y,z in self.pos
              if abs(x)<.042 and .217<y<.249]
         chin=[z for x,y,z in self.pos
-              if abs(x)<.055 and .110<y<.163]
+              if abs(x)<.055 and .160<y<.204]
         self.assertGreater(len(lip),12)
         self.assertGreater(len(chin),12)
         self.assertGreater(max(lip)-max(chin),.0163)
