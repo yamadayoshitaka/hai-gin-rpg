@@ -5795,13 +5795,44 @@ function pursueEnemyOnAnotherFloor(a){
  if(routed){a._floorPursuitEnemyId=best.enemy.id;a._nextFloorPursuitScan=elapsed+3;}
  return routed;
 }
+// Route ranged members of the high-ground formation along the existing
+// collision-checked stairs. This is a team-neutral doctrine; unlike the old
+// wandering floor scouts it never steals fighters from other formations.
+let lastFormationHighGroundScan=-Infinity;
+function runFormationHighGroundAI(){
+ if(massSim||elapsed-lastFormationHighGroundScan<2.5)return;
+ lastFormationHighGroundScan=elapsed;
+ if(actors.filter(u=>u.hp>0&&u.floorTravel).length>=5)return;
+ const eligible=actors.filter(u=>u.hp>0&&!u.nextCell&&!u.floorTravel&&
+  (u.indoorFloor??1)===1&&u.formationType==='highground'&&
+  isHighGroundFiringJob(u.jobId)&&
+  !['hold','defend','retreat','move','mission','explore'].includes(
+   currentSkirmishDirective(u)?.mode)&&elapsed>=(u._formationHighGroundRetry??0))
+  .sort((a,b)=>a.team-b.team||a.id-b.id);
+ for(const actor of eligible){
+  const building=accessibleStairBuilding(actor);
+  if(!building)continue;
+  const entrance=staircaseEntranceWorld(building);
+  if(Math.hypot(actor.root.position.x-entrance.x,
+    actor.root.position.z-entrance.z)>32*CELL)continue;
+  if(actors.filter(other=>other.hp>0&&
+    other.floorTravel?.building===building).length>=2)continue;
+  if(requestUnitFloor(actor,1,building,{forceStairs:true})){
+   actor._formationHighGroundRetry=elapsed+14;
+   actor.floorTravel.formationHighGround=true;
+   actor.floorTravel.manualHighGroundAttack=true;
+   break;
+  }
+  actor._formationHighGroundRetry=elapsed+5;
+ }
+}
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;
  // A shared per-tick expansion budget preserves combat/animation updates
  // while the A* frontier of each waiting soldier is resumed next tick.
  skirmishGridRoutingBudget=createGridRoutingBudget(480);
  elapsed+=dt;updateBridgeFires();
- if(!massSim)updateSkirmishSquadStrategies();
+ if(!massSim){updateSkirmishSquadStrategies();runFormationHighGroundAI();}
  updateEnemyItemDecisions();
  updateAllyAutoItemDecisions();
  updateEnemyTacticalDecisions();
@@ -5894,7 +5925,16 @@ function tickAI(dt){
  }
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
   const squadDirective=currentSkirmishDirective(a);
-  const order=['charge','defend','hold','retreat'].includes(squadDirective?.mode)?squadDirective.mode:desiredOrder(a);
+  // Replace legacy balanced/idle defaults with the SAME formation doctrine
+  // for both teams. Manual hold/defend/retreat remain authoritative.
+  const combatIntent=formationCombatIntent({
+   formation:a.formationType||selectedSquadType(a.squadId,a.team),
+   jobId:a.jobId,command:squadDirective?.mode||desiredOrder(a),
+   hasEnemies:actors.some(other=>other.team!==a.team&&other.hp>0),
+   attackRange:a.job.range/CELL,healthRatio:a.hp/Math.max(1,a.maxHp),
+   indoors:(a.indoorFloor??1)>1
+  });
+  const order=combatIntent.order;
   let enemy=nearestEnemy(a);const p=a.root.position;
   const healingTargetId=a.team===0&&a.jobId==='priest'?skirmishHealingRequests.get(String(a.squadId)):null;
   if(healingTargetId!=null){
