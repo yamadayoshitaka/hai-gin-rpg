@@ -49,13 +49,22 @@ class V121SkinClean(unittest.TestCase):
         self.assertEqual(len(self.g['meshes']),11)
         self.assertIn('eyeConstruction',meta)
         self.assertIn('eyelidFiberUpgrade',meta)
-        self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-folds-20261123')
+        self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-inner-nasolabial-20261124-v17')
         self.assertTrue(meta['naturalFoldCleanup']['surfaceDeformationOnly'])
         self.assertTrue(meta['naturalFoldCleanup']['removedLegacyBrowLidBand'])
         self.assertTrue(meta['naturalFoldCleanup']['removedChinTintLeakage'])
-        # The requested groove is the central philtrum, NOT lateral smile lines.
-        self.assertEqual(meta['naturalFoldCleanup']['nasolabialLeftVertexIds'],[])
-        self.assertEqual(meta['naturalFoldCleanup']['nasolabialRightVertexIds'],[])
+        # Shallow smile lines now sit INSIDE the cheeks, from the nasal alae
+        # toward the commissures. The former outer-cheek trench stays removed.
+        for side,sign in (('nasolabialLeftVertexIds',-1),
+                          ('nasolabialRightVertexIds',1)):
+            ids=meta['naturalFoldCleanup'][side]
+            self.assertGreater(len(ids),8)
+            for ix in ids:
+                x,y,z=self.xyz[ix]
+                self.assertGreater(sign*x,.025)
+                self.assertLess(sign*x,.064)
+                self.assertGreater(y,.224)
+                self.assertLess(y,.276)
         center=meta['naturalFoldCleanup']['philtrumVertexIds']
         corrected=meta['naturalFoldCleanup']['dimpleCorrectionVertexIds']
         self.assertGreater(len(center),12)
