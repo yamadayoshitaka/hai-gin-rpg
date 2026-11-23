@@ -6,7 +6,7 @@ import {FORMATION_SIGNATURE_STRATEGIES,signatureStrategyFor,
 import {SORTIE_FORMATIONS} from '../src/three-team-sortie.js';
 
 const ids=Object.keys(SORTIE_FORMATIONS);
-assert.equal(ids.length,14,'Fourteen inn formations remain available');
+assert.equal(ids.length,15,'Fifteen inn formations include high-ground firing');
 assert.ok(ids.every(id=>SORTIE_FORMATIONS[id].slots===3),
  'all fourteen named formations must have exactly three job positions');
 assert.deepEqual(Object.keys(FORMATION_SIGNATURE_STRATEGIES).sort(),ids.sort(),
