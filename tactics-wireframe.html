@@ -1142,7 +1142,7 @@ import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
-import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,enemyContactResponse,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=enemy-counter-20261123';
+import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,enemyContactResponse,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=enemy-counter-contact-20261123';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
@@ -7157,7 +7157,8 @@ function updateEnemyTacticalDecisions(){
   const living=groupIds.flatMap(sid=>indexed.living(1,sid));
   if(!living.length)continue;
   if(massSim&&!groupIds.some(sid=>indexed.livingStrategists[1].has(sid)))continue;
-  const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
+  const previous=massSim?.enemySquadCommands?.get(String(id))||
+   startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
   // The ordinary command cooldown is preserved except for defending squads
   // whose whole army now decisively outnumbers the opponent.
   const casualties=own.filter(u=>!u.isStrategist).length-living.length;
