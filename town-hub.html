@@ -479,6 +479,73 @@ function renderInnPages(){
 }
 let sortieView='teamPick',sortieTeamId=1,sortieCellIndex=5,sortieJobPage=0,sortieTemplatePage=0,sortieStrategyFamily='attack',sortieStrategyIntent='melee';
 let innWizardStep='teamPick',innWizardSlot=0,innWizardRosterPage=0,innWizardFormationPage=0,innWizardGearSourceId='',innWizardGearCategory='武器',innWizardRosterPreviewId='',innWizardRosterFormationPage=0,trainingHireCount=1;
+/** Explicit, cancelable transaction review before any wallet mutation. */
+let confirmedTransactionButton=null;
+function townTransactionSummary(button){
+ const d=button.dataset,itemId=d.innWizardBuyEquip||d.buy;
+ const item=TOWN_SHOP.find(p=>p.id===itemId);
+ if(d.trainingHire){
+  const count=Math.max(1,Number(trainingHireCount)||1),cost=count*10;
+  return {title:'兵士の雇用確認',detail:d.trainingHire+' × '+count+'人\\n支払 '+cost+'G → 残高 '+(game.wallet-cost)+'G'};
+ }
+ if(d.trainingAutoFormation){
+  const quote=inspectTrainingFormationPurchase(game,sortieTeamId,d.trainingAutoFormation);
+  const formation=SORTIE_FORMATIONS[d.trainingAutoFormation];
+  return {title:'陣形の配置・雇用確認',detail:(formation?.name||'陣形')+'／合計'+(quote.total||0)+
+   '人\\n新規雇用 '+(quote.hireCount||0)+'人／支払 '+(quote.cost||0)+'G → 残高 '+(game.wallet-(quote.cost||0))+'G'};
+ }
+ if(item){
+  return {title:'購入確認',detail:item.name+' × 1\\n支払 '+item.price+'G → 残高 '+(game.wallet-item.price)+'G'+
+   (d.innWizardBuyEquip?'\\n購入後、選択中のジョブに装備します。':'')};
+ }
+ if(d.forgeWeapon){
+  const squad=game.campaign.squads.find(a=>String(a.id)===d.forgeWeapon);
+  const weapon=TOWN_SHOP.find(a=>a.id===squad?.equipment?.weapon);
+  const level=Math.max(0,Number(squad?.weaponForgeLevels?.[weapon?.id]||0));
+  const cost=(level+1)*100;
+  return {title:'武器鍛錬の確認',detail:(weapon?.name||'武器')+' ＋'+(level+1)+
+   '\\n支払 '+cost+'G → 残高 '+(game.wallet-cost)+'G'};
+ }
+ if(d.tavernGacha||d.gachaDraw){
+  return {title:'仲間ガチャの購入確認',detail:button.textContent.trim()+'\\n実行すると所持金を消費します。'};
+ }
+ return null;
+}
+function showTownTransactionConfirm(button,summary){
+ document.getElementById('townPurchaseConfirm')?.remove();
+ const root=document.createElement('div');
+ root.id='townPurchaseConfirm';
+ root.setAttribute('role','presentation');
+ root.innerHTML='<div class="purchaseConfirmCard" role="dialog" aria-modal="true" aria-labelledby="townConfirmTitle">'+
+  '<h3 id="townConfirmTitle"></h3><p id="townConfirmDetail"></p>'+
+  '<div class="purchaseConfirmActions"><button type="button" data-confirm-purchase-no>キャンセル</button>'+
+  '<button type="button" data-confirm-purchase-yes>確定して支払う</button></div></div>';
+ root.querySelector('h3').textContent=summary.title;
+ root.querySelector('p').textContent=summary.detail;
+ const cancel=()=>{root.remove();button.focus?.();};
+ root.querySelector('[data-confirm-purchase-no]').onclick=cancel;
+ root.addEventListener('click',event=>{if(event.target===root)cancel();});
+ root.querySelector('[data-confirm-purchase-yes]').onclick=()=>{
+  root.remove();confirmedTransactionButton=button;
+  try{button.click();}finally{confirmedTransactionButton=null;}
+ };
+ document.body.appendChild(root);
+ root.querySelector('[data-confirm-purchase-no]').focus();
+}
+document.addEventListener('click',event=>{
+ const button=event.target.closest?.('button');
+ if(!button||button.disabled||!button.closest('#panelContent')||button===confirmedTransactionButton)return;
+ const summary=townTransactionSummary(button);
+ if(!summary)return;
+ event.preventDefault();event.stopImmediatePropagation();
+ showTownTransactionConfirm(button,summary);
+},true);
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&document.getElementById('townPurchaseConfirm')){
+  event.preventDefault();document.querySelector('#townPurchaseConfirm [data-confirm-purchase-no]')?.click();
+ }
+});
+
 function renderPanel(){
  if(!panel)return;
  $('panel').classList.toggle('formation-command-ui',panel==='formation');
@@ -601,14 +668,14 @@ $('panelContent').onclick=event=>{
     if(target.hasAttribute('data-training-hire')){
      const hired=hireTownSoldiers(game,{job:data.trainingHire,rarity:'N',count:trainingHireCount,commanderId:'player'});
      trainingHireCount=Math.max(1,Math.min(trainingHireCount,hired.remaining.max||1));
-     saveAndDraw();
+     saveAndDraw();townAudio.effect('coin');
      notice(data.trainingHire+'を'+hired.count+'人補充しました（所持金 -'+hired.cost+'G／残り'+hired.wallet+'G）。');return;
     }
     if(target.hasAttribute('data-training-auto-formation')){
      const selected=data.trainingAutoFormation;
      const result=purchaseAndArrangeTrainingFormation(game,sortieTeamId,selected);
      innWizardRosterPreviewId=selected;
-     innWizardStep='roster';saveAndDraw();
+     innWizardStep='roster';saveAndDraw();if(result.cost>0)townAudio.effect('coin');
      notice('第'+sortieTeamId+'隊に'+result.total+'人を配置しました。補充 '+result.hireCount+'人／支払 '+result.cost+'G／所持金 '+game.wallet+'G。');
      return;
     }
@@ -648,7 +715,7 @@ $('panelContent').onclick=event=>{
    }
    if(target.hasAttribute('data-inn-wizard-buy-equip')){
     const result=buyAndEquipSquadItem(game,Number(innWizardGearSourceId),data.innWizardBuyEquip,innWizardGearCategory);
-    saveAndDraw();townAudio.effect('buy');
+    saveAndDraw();townAudio.effect('coin');
     notice(result.item.name+'を'+result.price+'Gで購入し、'+result.squad.job+'に装備しました。所持金 '+result.balance+'G。');
     return;
    }
@@ -673,6 +740,9 @@ $('panelContent').onclick=event=>{
    if(target.hasAttribute('data-inn-wizard-formation-page')){
     innWizardFormationPage=Math.max(0,innWizardFormationPage+Number(data.innWizardFormationPage));
     redraw();return;
+   }
+   if(target.hasAttribute('data-inn-wizard-return-teams')){
+    innWizardStep='teamPick';innWizardFormationPage=0;redraw();return;
    }
    if(target.hasAttribute('data-inn-wizard-formation')){
     chooseInnFormation(game,sortieTeamId,data.innWizardFormation);
@@ -979,19 +1049,19 @@ $('panelContent').onclick=event=>{
   }
   if(target.hasAttribute('data-gacha-draw')){
    const draw=drawRecruitGacha(game);
-   persist();renderPanel();townAudio.effect('buy');
+   persist();renderPanel();townAudio.effect('coin');
    notice('✦ '+draw.rarity+' '+draw.job+'が仲間になりました！予備隊に登録しました。');return;
   }
   if(target.hasAttribute('data-page')){page+=Number(target.dataset.page);renderPanel();return;}
   if(target.hasAttribute('data-shop-category')){shopCategory=target.dataset.shopCategory;page=0;renderPanel();return;}
   if(target.hasAttribute('data-forge-weapon')){
     const crafted=forgeSquadWeapon(game,Number(target.dataset.forgeWeapon));
-    persist();renderPanel();townAudio.effect('buy');
+    persist();renderPanel();townAudio.effect('coin');
     notice(crafted.item.name+'を＋'+crafted.level+'まで鍛錬しました（-'+crafted.cost+'G）。');return;
    }
    if(target.hasAttribute('data-buy')){
    const purchase=buyTownItem(game,target.dataset.buy,1);
-   persist();renderPanel();townAudio.effect('buy');notice(purchase.item.name+'を購入しました（-'+purchase.price+'G）。');return;
+   persist();renderPanel();townAudio.effect('coin');notice(purchase.item.name+'を購入しました（-'+purchase.price+'G）。');return;
   }
   if(target.hasAttribute('data-equip-squad')){selectedSquadId=Number(target.dataset.equipSquad);renderPanel();return;}
   if(target.hasAttribute('data-equip')){
@@ -999,7 +1069,7 @@ $('panelContent').onclick=event=>{
    persist();renderPanel();notice('隊列 #'+gear.squad.id+' に'+gear.item.name+'を装備。常時バフ：攻撃+'+Math.round(gear.bonus.attack*100)+'%、HP+'+Math.round(gear.bonus.defense*100)+'%');return;
   }
   if(target.hasAttribute('data-event-accept')){const quest=acceptTownEvent(game,target.dataset.eventAccept);persist();renderPanel();townAudio.effect('quest');notice('「'+quest.title+'」を受注しました。');return;}
-  if(target.hasAttribute('data-event-claim')){const quest=claimTownEvent(game,target.dataset.eventClaim);persist();renderPanel();townAudio.effect('buy');notice('報酬 '+quest.rewardGold+'G を受け取りました。');return;}
+  if(target.hasAttribute('data-event-claim')){const quest=claimTownEvent(game,target.dataset.eventClaim);persist();renderPanel();townAudio.effect('coin');notice('報酬 '+quest.rewardGold+'G を受け取りました。');return;}
   if(target.hasAttribute('data-recruit')){
    recruit(game.campaign,{job:target.dataset.recruit,rarity:'N',count:10,purpose:'前線',commanderId:'reserve',faceId:0});
    persist();renderPanel();notice('予備兵に10人追加しました。');return;
