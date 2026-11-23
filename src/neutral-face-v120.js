@@ -116,7 +116,7 @@ function buildSkin(){
   for(let col=0;col<N;col++){
    const a=row*N+col,b=row*N+(col+1)%N,c=(row+1)*N+col,d=(row+1)*N+(col+1)%N;
    // Winding: +Z outward on the front; both sides use same quad ordering.
-   index.push(a,c,b,b,c,d);
+   index.push(a,b,c,b,d,c);
   }
  }
  // Cap skull poles, do not leave holes in the neutral skin.
@@ -128,8 +128,8 @@ function buildSkin(){
  color.push(.83,.66,.61);
  for(let c=0;c<N;c++){
   const next=(c+1)%N;
-  index.push(bottom,c,next);
-  index.push(top,M*N+next,M*N+c);
+  index.push(bottom,next,c);
+  index.push(top,M*N+c,M*N+next);
  }
  const g=new THREE.BufferGeometry();
  g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
