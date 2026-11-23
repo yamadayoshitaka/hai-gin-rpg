@@ -56,6 +56,9 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <label>頭の高さ <span id="heightVal"></span><input id="height" type="range" min=".17" max=".32" step=".005" value=".235"></label>
 <label>頭の奥行き <span id="depthVal"></span><input id="depth" type="range" min=".14" max=".28" step=".005" value=".205"></label>
 <label>髪色<input id="color" type="color" value="#c5a36f"></label>
+<label>調整済みスキンヘッドGLBを直接読み込む
+<input type="file" id="v121FaceFile" accept=".glb,model/gltf-binary,application/octet-stream"></label>
+<p class="muted">通常は公開v121に保存済みの調整値を適用します。手元のGLBを選ぶと、その実メッシュを装着台に置き換えます。読み込んだ顔は書き換えません。</p>
 <h2>頭部・身体の動き</h2>
 <div class="controls"><button data-motion="idle" aria-pressed="true">静止</button><button data-motion="walk" aria-pressed="false">歩行</button><button data-motion="run" aria-pressed="false">走行</button><button data-motion="turn" aria-pressed="false">旋回</button></div>
 <label>風・揺れの強さ <span id="windVal">0</span><input id="wind" type="range" min="0" max="3" step=".1" value="0"></label>
@@ -63,14 +66,17 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <button id="save" style="width:100%">現在の組み合わせをJSON保存</button>
 <p class="muted">出力は髪型ID・髪色・頭サイズ・動作設定です。元の3Dメッシュはライセンス表記付きGLBとして別管理します。</p></section>
 </main>
+<div id="v121-tune-sliders" hidden aria-hidden="true"></div>
 <footer>素材：Vincent Freelance ／ CC BY 4.0。<a href="./assets/characters/hair-fitted-v1/ATTRIBUTION.md">著作者・出典・改変履歴</a>を確認してください。髪型資料の写真はゲームへ取り込みません。</footer>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
- from './src/independent-hair-library-v1.js?v=2';
-import {buildIndependentHairMesh,measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=2';
+ from './src/independent-hair-library-v1.js?v=3';
+import {buildIndependentHairMesh,measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=3';
+import {attachV121FaceSliders,V121_REFERENCE_PRESET} from './face-v121-parametric-sliders.js';
+import {createV121AnatomicalHairCap} from './src/v121-anatomical-hair-cap.js?v=1';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
 const pivot=new THREE.Group();scene.add(pivot);
@@ -95,7 +101,8 @@ const headModel=new THREE.Group();headModel.name='unchanged-v121-face-and-brows'
 pivot.add(headModel);
 const bodyView=new THREE.Group();bodyView.name='mobile-proxy-body-preview';
 pivot.add(bodyView);
-let scalpSource=null,faceLoaded=false;
+bodyView.visible=false; // proximity colliders affect simulation only, never portrait
+let scalpSource=null,faceLoaded=false,headFileName='公開v121＋保存済み調整値';
 const previewCollider=(name,x,y,z,rx,ry,rz,material)=>{
  const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),material);
  mesh.name='body-collider-'+name;
@@ -134,15 +141,38 @@ function updateHead(){
  current?.deformTips(0,0);
  updateStats();
 }
-async function loadRealBaldHead(){
- const url='./assets/generated/neutral-face-v121.glb';
- const gltf=await loader.loadAsync(url);
+async function loadRealBaldHead(file=null){
+ const url=file?URL.createObjectURL(file):'./assets/generated/neutral-face-v121.glb';
+ let gltf;
+ try{gltf=await loader.loadAsync(url);}
+ finally{if(file)URL.revokeObjectURL(url);}
+ // An actual 13455-vertex neutral face is required, with the brow/lash
+ // meshes left untouched and never used as scalp-fitting geometry.
+ let sourceSkin=null,hasBrows=false;
+ gltf.scene.traverse(n=>{
+  if(n.isMesh&&n.geometry?.getAttribute('position')?.count===13455)sourceSkin=n;
+  if(n.isMesh&&/EYEBROW/i.test(n.name))hasBrows=true;
+ });
+ if(!sourceSkin||!hasBrows)throw Error('v121の実顔メッシュまたは眉毛が見つかりません');
+ // The user's adjusted GLB contains precisely V121_REFERENCE_PRESET in the
+ // saved scene extras. Apply that SAME reference preset to the Pages source.
+ // Uploaded GLBs already contain their edits and must NOT be tuned twice.
+ if(!file)attachV121FaceSliders({neutral:gltf.scene,face:sourceSkin,three:THREE});
  const data=measureBaldHeadSurface(THREE,gltf.scene);
- // Face and brows are a single unchanged imported asset, not an ellipsoid.
+ current?.cap?.dispose();
+ headModel.clear();
  scalpSource=data;
- gltf.scene.name='original-bald-face-v121-eyebrows-preserved';
+ headFileName=file?file.name:'公開v121＋保存済み調整値';
+ gltf.scene.name='actual-v121-face-with-original-eyebrows';
  headModel.add(gltf.scene);
- faceLoaded=true;updateHead();
+ // The original GLB (not a sphere and not a body-bounding-box proxy) sets
+ // the preview baseline. All size sliders start from its measured anatomy.
+ for(const key of ['width','height','depth']){
+  const input=$(key);
+  input.value=String(Math.max(Number(input.min),Math.min(Number(input.max),data[key])));
+ }
+ faceLoaded=true;
+ updateHead();
  return data;
 }
 let sex='female',current=null,selection=0,selected=INDEPENDENT_HAIR_CATALOG.female[0];
@@ -160,7 +190,8 @@ function updateStats(){
  $('viewerInfo').textContent='髪: '+selected.name+'（実GLB）\n'+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
-  '\n衝突：首・肩・胸・背中（近似）';
+  '\n頭部GLB：'+headFileName+
+  '\n頭皮下地：'+(current?.cap?.triangles||0)+'面（実メッシュ由来）';
 }
 function makePartControls(){
  const root=$('parts');root.replaceChildren();if(!current)return;
@@ -184,7 +215,10 @@ async function select(item){
   if(!faceLoaded)throw Error('実スキンヘッドv121がまだ読み込まれていません');
   const next=buildIndependentHairMesh(THREE,gltf.scene,
    {headSize:headSize(),headScalp:targetScalp(headSize()),color:$('color').value});
-  const old=current;current=next;pivot.add(next.root);old?.dispose();
+  const old=current;
+  next.cap=createV121AnatomicalHairCap(THREE,scalpSource.skinMesh,{color:$('color').value});
+  current=next;pivot.add(next.root);
+  old?.cap?.dispose();old?.dispose();
   // A new selection must always open in the intact GLB mode.
   for(const id of ['breakdown','explode'])$(id).setAttribute('aria-pressed','false');
   next.setExploded(false);next.setSectionColors(false);next.deformTips(0,0);
@@ -209,7 +243,9 @@ for(const g of ['female','male'])$(g).onclick=()=>{
  selected=INDEPENDENT_HAIR_CATALOG[sex][0];list();select(selected);
 };
 for(const key of ['width','height','depth'])$(key).oninput=updateHead;
-$('color').oninput=()=>current?.setColor($('color').value);
+$('color').oninput=()=>{
+ current?.setColor($('color').value);current?.cap?.setColor($('color').value);
+};
 for(const key of ['breakdown','explode'])$(key).onclick=()=>{
  const pressed=$(key).getAttribute('aria-pressed')!=='true';
  $(key).setAttribute('aria-pressed',String(pressed));
@@ -266,11 +302,19 @@ function frame(now){
  controls.update();renderer.render(scene,camera);
 }
 updateHead();list();requestAnimationFrame(frame);
-loadRealBaldHead().then(data=>{
- $('status').textContent='v121のスキンヘッドを読込みました（'+data.vertexCount+'頂点／眉毛付き）。髪を装着中…';
- select(selected);
-}).catch(error=>{
- $('status').textContent='実スキンヘッド読込失敗：'+error.message+'。球体ダミーには戻しません。';
- console.error('hair studio v121 source head',error);
-});
+async function mountHead(file){
+ try{
+  const data=await loadRealBaldHead(file);
+  $('status').textContent='頭部 '+headFileName+'（'+data.vertexCount+'頂点・眉毛保持）へ髪を装着中…';
+  await select(selected);
+ }catch(error){
+  $('status').textContent='頭部GLB読込エラー：'+error.message;
+  console.error('v121 adjustable GLB input',error);
+ }
+}
+$('v121FaceFile').onchange=()=>{
+ const file=$('v121FaceFile').files?.[0];
+ if(file)mountHead(file);
+};
+mountHead(null);
 </script></body></html>
