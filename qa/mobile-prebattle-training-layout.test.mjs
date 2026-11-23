@@ -35,6 +35,28 @@ test('training formation animation follows template list and precedes quote, wit
  assert.match(css,/\.trainingFormationQuote>small\{[\s\S]*?overflow:visible/);
 });
 
+test('training preview matches assigned job slots rather than always showing three',()=>{
+ const game=createNewGame('陣形の人数整合');
+ renderInnFormationWizard({game,view:'roster',teamId:1,rosterPreviewId:'attack'});
+ const team=game.sortiePlan.teams[0];
+ const assigned=team.slots.filter(id=>id!=null&&Number(team.counts[String(id)]||0)>0);
+ assert.ok(assigned.length>=2,'fixture includes at least two assigned jobs');
+ team.slots=[assigned[0],assigned[1],null];
+ const render=view=>renderInnFormationWizard({game,view,teamId:1,
+  rosterPreviewId:'attack'});
+ for(const view of ['roster','rosterQuote','formation']){
+  const html=render(view);
+  assert.equal((html.match(/<animateTransform /g)||[]).length,2,view+' only animates two jobs');
+  assert.match(html,/味方 2ジョブ/);
+ }
+ team.slots=[assigned[0],null,null];
+ delete team.counts[String(assigned[1])];
+ assert.equal((render('roster').match(/<animateTransform /g)||[]).length,1);
+ team.slots=[null,null,null];
+ delete team.counts[String(assigned[0])];
+ assert.equal((render('roster').match(/<animateTransform /g)||[]).length,0);
+});
+
 test('Android uses paged touch buttons rather than the system-wide dropdown',()=>{
  const js=file('src/battle-realtime-commands.js'),css=file('src/battle-realtime-commands.css');
  assert.match(js,/<select id="realtimeInitialStrategy" hidden tabindex="-1"/);
