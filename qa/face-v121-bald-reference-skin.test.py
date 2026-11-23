@@ -84,6 +84,15 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(remeshed,3)
         self.assertTrue(rebuild['sideProfileMeasured'])
         self.assertTrue(rebuild['outerBoundaryUntouched'])
+        self.assertTrue(rebuild['monotoneNoDoubleChin'])
+        self.assertTrue(rebuild['legacyChinBridgeDisabled'])
+        z=rebuild['profileControlZ']
+        self.assertGreaterEqual(len(z),8)
+        self.assertTrue(all(z[j+1]>z[j] for j in range(len(z)-1)),
+                        'one continuous lip-to-neck profile, no double crest')
+        self.assertTrue(self.b['meshes'][0]['extras']
+                        ['sagittalChinProfile']['legacyBridgeDisabled'])
+
         self.assertLessEqual(rebuild['mentonAfterZ'],
                              rebuild['mouthFrontZ']-.016)
         self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
