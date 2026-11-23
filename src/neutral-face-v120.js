@@ -32,12 +32,12 @@ const sample=(arr,u)=>{
  return arr[arr.length-1][1];
 };
 const faceWidth=[
- [0,.011],[.045,.024],[.12,.040],[.20,.053],[.32,.064],[.42,.074],
- [.51,.079],[.62,.076],[.73,.077],[.86,.080],[.92,.064],[.97,.034],[1,.002]
+ [0,.009],[.14,.018],[.19,.026],[.26,.042],[.34,.059],[.42,.073],
+ [.51,.081],[.62,.078],[.73,.078],[.85,.079],[.92,.068],[.975,.025],[1,.002]
 ];
 const skullDepth=[
- [0,.027],[.05,.046],[.16,.063],[.28,.071],[.42,.081],[.59,.082],
- [.76,.081],[.89,.074],[.965,.040],[1,.002]
+ [0,.025],[.14,.051],[.22,.059],[.34,.072],[.48,.076],[.61,.081],
+ [.76,.082],[.89,.073],[.970,.036],[1,.002]
 ];
 function headBase(u,theta){
  const rX=sample(faceWidth,u),rZ=sample(skullDepth,u);
@@ -48,22 +48,22 @@ function headBase(u,theta){
 }
 const depthField=(x,u)=>{
  const ax=Math.abs(x);
- const cheek=.0085*(gaussian(x,u,-.044,.46,.025,.091)+gaussian(x,u,.044,.46,.025,.091));
- const malar=.0035*(gaussian(x,u,-.040,.56,.027,.07)+gaussian(x,u,.040,.56,.027,.07));
- const subcheek=.0045*(gaussian(x,u,-.044,.345,.029,.085)+gaussian(x,u,.044,.345,.029,.085));
- const noseBridge=.011*gaussian(x,u,0,.603,.013,.099);
- const noseTip=.021*gaussian(x,u,0,.464,.014,.038);
- const noseAlar=.008*(gaussian(x,u,-.016,.445,.009,.026)+gaussian(x,u,.016,.445,.009,.026));
- const columella=.006*gaussian(x,u,0,.417,.010,.027);
- const eyeSockets=-.0085*(gaussian(x,u,-.034,.682,.021,.028)+gaussian(x,u,.034,.682,.021,.028));
- const lowerLids=.0025*(gaussian(x,u,-.034,.645,.023,.011)+gaussian(x,u,.034,.645,.023,.011));
- const upperLids=.003*(gaussian(x,u,-.034,.710,.020,.010)+gaussian(x,u,.034,.710,.020,.010));
- const upperLip=.0060*gaussian(x,u,0,.323,.024,.013);
- const lowerLip=.0072*gaussian(x,u,0,.288,.025,.018);
- const mouthCrease=-.0030*gaussian(x,u,0,.305,.024,.006);
- const filtrum=.0025*(gaussian(x,u,-.008,.365,.004,.018)+gaussian(x,u,.008,.365,.004,.018));
- const chin=.0050*gaussian(x,u,0,.174,.031,.055);
- const jaw=.0025*(gaussian(x,u,-.045,.24,.024,.070)+gaussian(x,u,.045,.24,.024,.070));
+ const cheek=.0105*(gaussian(x,u,-.044,.49,.029,.090)+gaussian(x,u,.044,.49,.029,.090));
+ const malar=.0047*(gaussian(x,u,-.040,.58,.029,.07)+gaussian(x,u,.040,.58,.029,.07));
+ const subcheek=.0060*(gaussian(x,u,-.044,.405,.031,.071)+gaussian(x,u,.044,.405,.031,.071));
+ const noseBridge=.014*gaussian(x,u,0,.605,.0105,.078);
+ const noseTip=.0168*gaussian(x,u,0,.515,.0120,.031);
+ const noseAlar=.010*(gaussian(x,u,-.014,.493,.008,.023)+gaussian(x,u,.014,.493,.008,.023));
+ const columella=.006*gaussian(x,u,0,.463,.009,.024);
+ const eyeSockets=-.0057*(gaussian(x,u,-.034,.682,.020,.024)+gaussian(x,u,.034,.682,.020,.024));
+ const lowerLids=.0025*(gaussian(x,u,-.034,.652,.020,.009)+gaussian(x,u,.034,.652,.020,.009));
+ const upperLids=.0023*(gaussian(x,u,-.034,.709,.019,.008)+gaussian(x,u,.034,.709,.019,.008));
+ const upperLip=.0084*gaussian(x,u,0,.413,.024,.012);
+ const lowerLip=.0093*gaussian(x,u,0,.380,.025,.016);
+ const mouthCrease=-.0024*gaussian(x,u,0,.397,.024,.0045);
+ const filtrum=.0027*(gaussian(x,u,-.008,.448,.004,.017)+gaussian(x,u,.008,.448,.004,.017));
+ const chin=.0065*gaussian(x,u,0,.25,.031,.050);
+ const jaw=.0032*(gaussian(x,u,-.041,.306,.024,.063)+gaussian(x,u,.041,.306,.024,.063));
  return {depth:cheek+malar+subcheek+noseBridge+noseTip+noseAlar+columella+
   eyeSockets+lowerLids+upperLids+upperLip+lowerLip+mouthCrease+filtrum+chin+jaw,
   cheek,mouth:upperLip+lowerLip,eyes:eyeSockets,nose:noseBridge+noseTip};
@@ -77,7 +77,7 @@ function surface(x,u){
 function colorFor(x,u,frontal){
  // Subtle vertex-color blush and lip tone. No detached lipstick cards.
  const cheek=(gaussian(x,u,.046,.49,.024,.045)+gaussian(x,u,-.046,.49,.024,.045))*frontal;
- const lip=gaussian(x,u,0,.308,.024,.023)*frontal;
+ const lip=gaussian(x,u,0,.395,.024,.028)*frontal;
  const baseline=new THREE.Color(0xd9ab9d);
  const pink=new THREE.Color(0xc77f82);
  const blush=new THREE.Color(0xd99b97);
@@ -90,7 +90,7 @@ function buildSkin(){
  const xyz=[],uv=[],color=[],index=[],zones={leftEye:[],rightEye:[],mouth:[],nose:[],leftCheek:[],rightCheek:[]};
  const landmarks=[];
  for(let row=0;row<=M;row++){
-  const u=.005+.99*row/M;
+  const u=.150+.845*row/M;
   for(let c=0;c<N;c++){
    const theta=(c/N)*2*PI-PI;
    const p=headBase(u,theta),front=Math.cos(theta);
@@ -105,7 +105,7 @@ function buildSkin(){
    if(front>.26){
     if(gaussian(p.x,u,-.034,.684,.029,.051)>.24)zones.leftEye.push(k);
     if(gaussian(p.x,u,.034,.684,.029,.051)>.24)zones.rightEye.push(k);
-    if(gaussian(p.x,u,0,.307,.034,.061)>.17)zones.mouth.push(k);
+    if(gaussian(p.x,u,0,.395,.034,.061)>.17)zones.mouth.push(k);
     if(gaussian(p.x,u,0,.50,.022,.13)>.18)zones.nose.push(k);
     if(gaussian(p.x,u,-.047,.45,.026,.12)>.15)zones.leftCheek.push(k);
     if(gaussian(p.x,u,.047,.45,.026,.12)>.15)zones.rightCheek.push(k);
@@ -121,7 +121,7 @@ function buildSkin(){
  }
  // Cap skull poles, do not leave holes in the neutral skin.
  const bottom=xyz.length/3;
- xyz.push(0,.276*(.005-.49),-.003);uv.push(.5,0);
+ xyz.push(0,.276*(.150-.49),-.003);uv.push(.5,0);
  color.push(.83,.66,.61);
  const top=xyz.length/3;
  xyz.push(0,.276*(.995-.49),-.003);uv.push(.5,1);
@@ -148,7 +148,7 @@ function buildSkin(){
 }
 function eyeDisk(side){
  const x0=side*.034,u0=.681;
- const w=.0201,h=.0105;
+ const w=.0171,h=.0079;
  const positions=[],indices=[],normals=[],uvs=[];
  // Elliptical almond is parametric, and shares coordinates with cheek surface.
  const rows=8,columns=50;
@@ -208,7 +208,7 @@ function curvedStrip(name,points,radius,color){
  return mesh;
 }
 function eyeLids(side){
- const x0=side*.034,u=.681,w=.020,h=.0106;
+ const x0=side*.034,u=.681,w=.0171,h=.0080;
  const group=new THREE.Group();group.name=side<0?'EYELID_L_NEUTRAL':'EYELID_R_NEUTRAL';
  const upper=[],lower=[],brow=[];
  for(let i=0;i<=16;i++){
@@ -218,11 +218,11 @@ function eyeLids(side){
   const lowerY=u-(h/.276)*shape*(.76+.08*t);
   upper.push([x,.276*(upperY-.49),surface(x,upperY)+.006]);
   lower.push([x,.276*(lowerY-.49),surface(x,lowerY)+.004]);
-  const bx=x0+w*t*1.04,by=u+.103+.011*shape+.002*t;
+  const bx=x0+w*t*1.10,by=u+.065+.007*shape+.002*t;
   brow.push([bx,.276*(by-.49),surface(bx,by)+.0023]);
  }
- group.add(curvedStrip('UPPER_LID_'+(side<0?'L':'R'),upper,.0010,0x694e4a));
- group.add(curvedStrip('LOWER_LID_'+(side<0?'L':'R'),lower,.00054,0x966d67));
+ group.add(curvedStrip('UPPER_LID_'+(side<0?'L':'R'),upper,.00076,0x694e4a));
+ group.add(curvedStrip('LOWER_LID_'+(side<0?'L':'R'),lower,.00038,0x966d67));
  group.add(curvedStrip('BROW_'+(side<0?'L':'R'),brow,.00113,0x8a7065));
  return group;
 }
@@ -230,15 +230,15 @@ function ears(side){
  const group=new THREE.Group();group.name=side<0?'EAR_L':'EAR_R';
  const ear=new THREE.Mesh(new THREE.SphereGeometry(1,28,20),
   new THREE.MeshStandardMaterial({color:0xd5a398,roughness:.78}));
- ear.scale.set(.011,.022,.009);
- ear.position.set(side*.083,.276*(.565-.49),-.009);
+ ear.scale.set(.0078,.0155,.0068);
+ ear.position.set(side*.083,.276*(.585-.49),-.009);
  ear.rotation.z=-side*.12;
  ear.name='EAR_SURFACE_'+side;
  group.add(ear);
  const concha=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),
   new THREE.MeshStandardMaterial({color:0xb88680,roughness:.9}));
- concha.scale.set(.0018,.0105,.0050);
- concha.position.set(side*.092,.276*(.570-.49),-.005);
+ concha.scale.set(.0013,.0075,.0036);
+ concha.position.set(side*.089,.276*(.590-.49),-.006);
  group.add(concha);
  return group;
 }
@@ -249,7 +249,7 @@ function lipsContour(){
  for(let i=0;i<=corners;i++){
   const t=-1+2*i/corners;
   const x=t*.028;
-  const u=.305+.004*(1-t*t)*Math.cos(t*PI);
+  const u=.397+.004*(1-t*t)*Math.cos(t*PI);
   line.push([x,.276*(u-.49),surface(x,u)+.0009]);
  }
  group.add(curvedStrip('MOUTH_SEAL_REST',line,.0005,0x986464));
@@ -296,9 +296,9 @@ export function createNeutralFaceV120({showEyes=true}={}){
    leftEye:[-.034,.276*(.681-.49),surface(-.034,.681)],
    rightEye:[.034,.276*(.681-.49),surface(.034,.681)],
    noseTip:[0,.276*(.464-.49),surface(0,.464)],
-   upperLip:[0,.276*(.323-.49),surface(0,.323)],
-   lowerLip:[0,.276*(.288-.49),surface(0,.288)],
-   chin:[0,.276*(.045-.49),surface(0,.045)]
+   upperLip:[0,.276*(.413-.49),surface(0,.413)],
+   lowerLip:[0,.276*(.380-.49),surface(0,.380)],
+   chin:[0,.276*(.150-.49),surface(0,.150)]
   }};
  return {root,skin,parts,metrics};
 }
