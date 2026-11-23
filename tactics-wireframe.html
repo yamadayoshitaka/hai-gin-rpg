@@ -6099,6 +6099,28 @@ function tickAI(dt){
   // the user's chosen order and formation remain unchanged.
   const defensePost=squadDirective?.signatureAnchor
    ?cellPosition(squadDirective.signatureAnchor.x,squadDirective.signatureAnchor.z):a.home;
+  // A guarding squad supports teammates who are actively trading attacks
+  // within its defensive radius. This never converts a manual HOLD to CHARGE.
+  let allyRelief=false;
+  if(order==='defend'&&p.distanceTo(defensePost)<=CELL*6){
+   let relief=null,reliefDistance=Infinity;
+   for(const friend of actors){
+    if(friend===a||friend.team!==a.team||friend.hp<=0||friend.defeated||
+       friend.attackPoseUntil<elapsed-.8||
+       Math.hypot(friend.cell.x-a.cell.x,friend.cell.z-a.cell.z)>10)continue;
+    for(const hostile of actors){
+     if(hostile.team===a.team||hostile.hp<=0||hostile.defeated||
+        Math.hypot(hostile.cell.x-friend.cell.x,hostile.cell.z-friend.cell.z)>5)continue;
+     const distance=hostile.root.position.distanceToSquared(p);
+     if(distance<reliefDistance){relief=hostile;reliefDistance=distance;}
+    }
+   }
+   if(relief){
+    allyRelief=true;
+    if(!enemy||enemy.root.position.distanceToSquared(p)>reliefDistance)
+     enemy=relief;
+   }
+  }
   const nearbyCounter=enemy&&shouldCounterNearbyThreat({
    order,enemyDistance:p.distanceTo(enemy.root.position)/CELL,
    attackRange:a.job.range/CELL,postDistance:p.distanceTo(defensePost)/CELL,
@@ -6118,10 +6140,10 @@ function tickAI(dt){
    a._defendReturning=guard.returnToPost;
    // Re-form inside the post before pursuing again. Never ping-pong
    // between the same guard boundary and a distant opponent.
-   if(guard.returnToPost&&!nearbyCounter&&(!opponent||p.distanceTo(opponent)>a.job.range)){
+   if(guard.returnToPost&&!nearbyCounter&&!allyRelief&&(!opponent||p.distanceTo(opponent)>a.job.range)){
     moveActor(a,post,.18,CELL*2.8);continue;
    }
-   if(opponent&&!guard.allowPursuit&&!nearbyCounter&&p.distanceTo(opponent)>a.job.range)continue;
+   if(opponent&&!guard.allowPursuit&&!nearbyCounter&&!allyRelief&&p.distanceTo(opponent)>a.job.range)continue;
   }else a._defendReturning=false;
   if(!enemy&&squadDirective?.mode!=='move'){
    // If all opponents went upstairs, the ground army still approaches their
@@ -6179,7 +6201,7 @@ function tickAI(dt){
   const post=squadDirective?.signatureAnchor
    ?cellPosition(squadDirective.signatureAnchor.x,squadDirective.signatureAnchor.z):a.home;
   // Sticky targets and support actions cannot bypass the defended perimeter.
-  if(!nearbyCounter&&p.distanceTo(goal)>range&&
+  if(!nearbyCounter&&!allyRelief&&p.distanceTo(goal)>range&&
      (post.distanceTo(goal)>CELL*5||p.distanceTo(post)>=CELL*4.5))continue;
  }
  if(order==='retreat'){const home=a.home.clone();home.x+=(a.team===0?-9:9)*CELL;moveActor(a,home,.18,.6);continue}
