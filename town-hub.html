@@ -486,17 +486,17 @@ function townTransactionSummary(button){
  const item=TOWN_SHOP.find(p=>p.id===itemId);
  if(d.trainingHire){
   const count=Math.max(1,Number(trainingHireCount)||1),cost=count*10;
-  return {title:'兵士の雇用確認',detail:d.trainingHire+' × '+count+'人\\n支払 '+cost+'G → 残高 '+(game.wallet-cost)+'G'};
+  return {title:'兵士の雇用確認',detail:d.trainingHire+' × '+count+'人\n支払 '+cost+'G → 残高 '+(game.wallet-cost)+'G'};
  }
  if(d.trainingAutoFormation){
   const quote=inspectTrainingFormationPurchase(game,sortieTeamId,d.trainingAutoFormation);
   const formation=SORTIE_FORMATIONS[d.trainingAutoFormation];
   return {title:'陣形の配置・雇用確認',detail:(formation?.name||'陣形')+'／合計'+(quote.total||0)+
-   '人\\n新規雇用 '+(quote.hireCount||0)+'人／支払 '+(quote.cost||0)+'G → 残高 '+(game.wallet-(quote.cost||0))+'G'};
+   '人\n新規雇用 '+(quote.hireCount||0)+'人／支払 '+(quote.cost||0)+'G → 残高 '+(game.wallet-(quote.cost||0))+'G'};
  }
  if(item){
-  return {title:'購入確認',detail:item.name+' × 1\\n支払 '+item.price+'G → 残高 '+(game.wallet-item.price)+'G'+
-   (d.innWizardBuyEquip?'\\n購入後、選択中のジョブに装備します。':'')};
+  return {title:'購入確認',detail:item.name+' × 1\n支払 '+item.price+'G → 残高 '+(game.wallet-item.price)+'G'+
+   (d.innWizardBuyEquip?'\n購入後、選択中のジョブに装備します。':'')};
  }
  if(d.forgeWeapon){
   const squad=game.campaign.squads.find(a=>String(a.id)===d.forgeWeapon);
@@ -504,10 +504,10 @@ function townTransactionSummary(button){
   const level=Math.max(0,Number(squad?.weaponForgeLevels?.[weapon?.id]||0));
   const cost=(level+1)*100;
   return {title:'武器鍛錬の確認',detail:(weapon?.name||'武器')+' ＋'+(level+1)+
-   '\\n支払 '+cost+'G → 残高 '+(game.wallet-cost)+'G'};
+   '\n支払 '+cost+'G → 残高 '+(game.wallet-cost)+'G'};
  }
  if(d.tavernGacha||d.gachaDraw){
-  return {title:'仲間ガチャの購入確認',detail:button.textContent.trim()+'\\n実行すると所持金を消費します。'};
+  return {title:'仲間ガチャの購入確認',detail:button.textContent.trim()+'\n実行すると所持金を消費します。'};
  }
  return null;
 }
