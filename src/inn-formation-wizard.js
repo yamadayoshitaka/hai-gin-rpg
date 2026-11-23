@@ -5,10 +5,10 @@
 import {
  ensureSortiePlan,sortieTeams,sortieTeamCount,sortiePlanningLimit,sortieLevel,
  SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS
-} from './three-team-sortie.js';
-import {FORMATION_ROLES,ROLE_NAMES,ROLE_JOBS} from './sortie-formation-logic.js';
+} from './three-team-sortie.js?v=formation-job-20261123';
+import {FORMATION_ROLES,ROLE_NAMES,ROLE_JOBS} from './sortie-formation-logic.js?v=formation-job-20261123';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
-import {inspectInnFormation} from './inn-formation-rules.js';
+import {inspectInnFormation} from './inn-formation-rules.js?v=formation-job-20261123';
 import {trainingSoldierStock,inspectTrainingFormationPurchase} from './training-formation-purchase.js';
 import {TOWN_SHOP,squadEquipmentBonus,trainingHireCapacity,squadEquipmentUsers} from './game-core-flow.js';
 import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
