@@ -59,6 +59,8 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
    'The exported GLB must retain the high-resolution anatomical head skin');
   assert.equal(gltf.meshes[0].extras.topology.vertices,13455);
   assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,false);
+  assert.equal(gltf.meshes[0].extras.referenceFeatureSculpt.parametricDepthControlSupported,true);
+  assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth>=.009);
   assert.equal(gltf.meshes[0].extras.version,121);
   assert.equal(gltf.meshes[0].extras.hairIncluded,false);
   assert.equal(gltf.images.length,4,'PBR skin and eye atlas must be embedded');
@@ -82,6 +84,43 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
   assert.equal(gltf.materials[0].name,'V121_ANATOMICAL_SKIN_PBR_2048');
   assert.ok(gltf.meshes[0].extras.futureRigZones.mouth.length>10);
+  // Test the real on-device editor, not just the presence of decorative controls.
+  for(const part of ['eyes','nose','mouth','brows']){
+   assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="size"]').count(),1);
+   assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="x"]').count(),1);
+   assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="y"]').count(),1);
+  }
+  assert.equal(await page.locator('input[data-part="philtrum"][data-axis="depth"]').count(),1);
+  await page.locator('input[data-part="eyes"][data-axis="size"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.locator('input[data-part="nose"][data-axis="x"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.locator('input[data-part="mouth"][data-axis="y"]').focus();
+  await page.keyboard.press('ArrowUp');
+  await page.locator('input[data-part="brows"][data-axis="size"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.locator('input[data-part="philtrum"][data-axis="depth"]').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-sliders-edited.png'});
+  const tunedDownload=page.waitForEvent('download',{timeout:60000});
+  await page.locator('#export').click();
+  const tuned=await tunedDownload;
+  assert.equal(tuned.suggestedFilename(),'hai-gin-face-v121-adjusted.glb');
+  const tunedBuffer=readFileSync(await tuned.path());
+  assert.equal(tunedBuffer.toString('ascii',0,4),'glTF');
+  assert.ok(tunedBuffer.length>800_000,'Adjusted export must have real 3D mesh + textures');
+  const adjustedJson=JSON.parse(tunedBuffer.toString('utf8',20,20+tunedBuffer.readUInt32LE(12)).trim());
+  assert.ok(adjustedJson.meshes?.some(m=>m.primitives?.some(p=>
+    adjustedJson.accessors[p.attributes.POSITION]?.count>=13000)),
+    'Edited GLB must contain the full anatomical face, not a slider settings file');
+  copyFileSync(await tuned.path(),'qa/screenshots/face-v121/neutral-face-v121-adjusted.glb');
+  await page.locator('#resetTune').click();
+  assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'false');
+  assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'100');
+  assert.equal(await page.locator('input[data-part="philtrum"][data-axis="depth"]').inputValue(),'0');
+  assert.deepEqual(errors,[],'Slider adjustment and GLTFExporter must not throw');
+  console.log('PASS editable v121 face with 13 real range inputs and binary GLB export',tunedBuffer.length);
   console.log('PASS v121 WebGL and export',JSON.stringify({
    vertexText:await page.locator('#vertexCount').textContent(),
    binaryBytes:buf.length,accessors:gltf.accessors.length,meshes:gltf.meshes.length
