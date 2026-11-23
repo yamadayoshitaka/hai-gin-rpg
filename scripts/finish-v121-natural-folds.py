@@ -146,8 +146,8 @@ def nose_and_lips(x,y,z):
     lower=bell(y,.2235,.0086)*horizontal*lip_front
     cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
     seam=bell(y,.232,.0028)*horizontal*lip_front
-    nz+=(.0028*upper+.0043*lower+.0012*cupids
-         -.0008*seam)
+    nz+=(.0010*upper+.0016*lower+.0006*cupids
+         -.0003*seam)
     nz+=philtrum_relief(nx,y,nz)
     return (nx,y,nz)
 
