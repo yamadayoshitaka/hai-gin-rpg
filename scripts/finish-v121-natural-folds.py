@@ -36,19 +36,18 @@ def vermilion_outline(x,y,z):
     ax=abs(x)
     if ax>=.054 or z<=.119 or y<.210 or y>.258:
         return 0.,0.,0.
-    corner=fade(ax,.029,.051)
-    # IMPORTANT: v17 lifted the real upper-lip vertices by about 4 mm but
-    # still capped the colour/relief at the UNLIFTED 248 mm coordinate.
-    # Those displaced upper-lip surfaces rendered as bare skin. Match the
-    # real displaced crest, including the two Cupid peaks.
-    upper=.2514+.0031*bell(ax,.0115,.006)-.0011*bell(ax,0.,.0042)-.0175*corner
-    lower=.2152+.0149*corner
+    corner=fade(ax,.018,.045)
+    # The upper border must taper IMMEDIATELY after the Cupid peaks.
+    # The previous flat central plateau painted the philtrum and cheek
+    # like a moustache. Narrow the footprint to the true convex lip patch.
+    upper=.2495+.0028*bell(ax,.011,.0055)-.00075*bell(ax,0.,.004)-.0178*corner
+    lower=.2175+.0120*corner
     if upper-lower<=.001:
         return 0.,upper,lower
     inside=(fade(y,lower-.0008,lower+.0024)*
             (1.-fade(y,upper-.0024,upper+.0008)))
-    width=(1.-fade(ax,.037,.054))*bell(x,0.,.048)
-    return clamp(inside*width*fade(z,.119,.144)),upper,lower
+    width=(1.-fade(ax,.032,.051))*bell(x,0.,.036)
+    return clamp(inside*width*fade(z,.127,.144)),upper,lower
 
 
 def nasolabial_relief(x,y,z):
@@ -273,15 +272,15 @@ def neutral_color(x,y,z):
     # The very same M-bow and inward-tapering lip border gates pigment.
     # Outside the actual vermilion no lipstick can extend onto cheek/chin.
     lip_surface,_,_=vermilion_outline(x,y,z)
-    vermilion=1.12*bell(y,.244,.0090)+.86*bell(y,.2235,.0084)
+    vermilion=1.02*bell(y,.241,.0085)+.86*bell(y,.2235,.0084)
     lips=clamp(vermilion*lip_surface)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
     lower_liner=(bell(x,-.044,.023)+bell(x,.044,.023))*bell(y,.295,.004)*front
     # R channel near 1, G/B reductions create soft pink and taupe accents.
     return (clamp(.995-.007*lips-.024*shadow-.009*lower_liner),
-            clamp(.994-.075*cheek-.022*nose_tip-.265*lips-.037*shadow-.015*lower_liner),
-            clamp(.992-.094*cheek-.027*nose_tip-.288*lips-.049*shadow-.021*lower_liner))
+            clamp(.994-.075*cheek-.022*nose_tip-.205*lips-.037*shadow-.015*lower_liner),
+            clamp(.992-.094*cheek-.027*nose_tip-.232*lips-.049*shadow-.021*lower_liner))
 
 
 def smooth_chin(points,faces):
