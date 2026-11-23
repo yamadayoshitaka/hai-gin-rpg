@@ -49,6 +49,10 @@ test('training preview matches assigned job slots rather than always showing thr
   assert.equal((html.match(/<animateTransform /g)||[]).length,2,view+' only animates two jobs');
   assert.match(html,/味方 2ジョブ/);
  }
+ // The named preset automatically refills required roles when a team is
+ // normalized. Use the editable free layout to test a genuinely vacant slot.
+ team.formation='free';
+ team.grid.fill(null);
  team.slots=[assigned[0],null,null];
  delete team.counts[String(assigned[1])];
  assert.equal((render('roster').match(/<animateTransform /g)||[]).length,1);
