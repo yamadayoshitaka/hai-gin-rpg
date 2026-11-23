@@ -85,7 +85,6 @@ export function transferFaceReference(geometry,{gender,reference,donorPositions}
   throw Error('An owned CC0 mesh and immutable original vertices are required');
  if(!reference||!Number.isFinite(reference.cheekFront)||!Number.isFinite(reference.noseRelief))
   return {applied:false,reason:'no-verified-3d-reference'};
- const original=pos.array.slice();
  // The original CC0 has +Z forward; the source orientation is normalized
  // by analyzeFaceReference before entering this pass.
  let target;
@@ -119,6 +118,5 @@ export function transferFaceReference(geometry,{gender,reference,donorPositions}
  return {applied:true,referenceVertexCount:reference.vertexCount,gender,
   targetNoseRelief:target.noseRelief,targetCheekFront:target.cheekFront,
   cheekDelta,noseDelta,jawDelta,modifiedVertices:changed,maxOffset,
-  donorStillUnmodified:donorPositions.every((n,i)=>n===original[i]||
-   Number.isFinite(n)),sourceReferenceRetained:false};
+  sourceReferenceRetained:false};
 }
