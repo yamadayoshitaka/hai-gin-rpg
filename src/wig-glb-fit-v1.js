@@ -166,13 +166,28 @@ export function extractUnskinnedWig(THREE,gltfRoot){
     .reduce((acc,x)=>acc+x.length,0);
   geometry.morphAttributes={};
   geometry.morphTargetsRelative=false;
-  geometry.applyMatrix4(node.matrixWorld);
+  // Native MakeHuman Hair_* POSITION is already in model/world units.
+  // Never bake inherited full-body armature transforms into the wig.
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   const box=geometry.boundingBox,size=box.getSize(new THREE.Vector3());
-  if(![size.x,size.y,size.z].every(Number.isFinite)||size.x<.03||size.x>3||
-      size.y<.025||size.y>3)
+  if(![size.x,size.y,size.z].every(Number.isFinite)||size.x<.03||size.x>.65||
+      size.y<.025||size.y>1.4)
    throw Error('元GLBの頂点座標が異常です（髪幅・高さ）');
+  const positions=geometry.getAttribute('position');
+  const indices=geometry.getIndex();
+  let maxEdge=0;
+  const triCount=indices?Math.floor(indices.count/3):Math.floor(positions.count/3);
+  const at=i=>indices?indices.getX(i):i;
+  const v0=new THREE.Vector3(),v1=new THREE.Vector3(),v2=new THREE.Vector3();
+  for(let t=0;t<triCount;t++){
+   v0.fromBufferAttribute(positions,at(t*3));
+   v1.fromBufferAttribute(positions,at(t*3+1));
+   v2.fromBufferAttribute(positions,at(t*3+2));
+   maxEdge=Math.max(maxEdge,v0.distanceTo(v1),v1.distanceTo(v2),v2.distanceTo(v0));
+  }
+  if(maxEdge>.075)throw Error('髪の三角形が異常に伸びています（最大辺 '+maxEdge.toFixed(3)+'m）');
+  audit.maxTriangleEdge=Math.max(audit.maxTriangleEdge||0,maxEdge);
   const sourceMaterials=Array.isArray(node.material)?node.material:[node.material];
   const mesh=new THREE.Mesh(geometry,sourceMaterials.length===1?
     sourceMaterials[0]:sourceMaterials);
