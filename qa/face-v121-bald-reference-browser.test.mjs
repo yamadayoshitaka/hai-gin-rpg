@@ -140,7 +140,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
     'native_glb_morphed_oral_cavity_teeth_tongue');
   assert.equal(gltf.meshes[0].primitives[0].targets.length,11);
   assert.equal(gltf.animations.length,2);
-  assert.equal(gltf.meshes[0].extras.facialExpressionRig.animatedMeshes,9);
+  assert.equal(gltf.meshes[0].extras.facialExpressionRig.animatedMeshes,10);
   assert.ok(gltf.meshes[0].extras.referenceMakeup.skinPBR);
   assert.equal(gltf.meshes[0].extras.referenceFeatureSculpt.parametricDepthControlSupported,true);
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth>=.0037);
@@ -149,7 +149,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(gltf.meshes[0].extras.version,121);
   assert.equal(gltf.meshes[0].extras.hairIncluded,false);
   assert.equal(gltf.images.length,4,'PBR skin and eye atlas must be embedded');
-  assert.equal(gltf.meshes.length,12,'Skin, 2 globes, 5 cosmetic meshes, 3 oral meshes and rebuilt cervical bust');
+  assert.equal(gltf.meshes.length,12,'Skin, 2 globes, 5 cosmetic meshes, 3 oral meshes and a fully generated lower face');
   for(const part of ['V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS']){
    assert.ok(gltf.meshes.some(m=>m.name===part),part+' must be actual GLB mesh');
   }
