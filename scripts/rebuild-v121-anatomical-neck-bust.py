@@ -191,7 +191,7 @@ def generate(theta,y):
     return (x,y,z)
 
 def skin_color(x,y,z):
-    col=[.986,.969,.960]
+    col=[.995,.994,.993]
     front=fade(z,.055,.115)
     if .210<=y<=.249 and abs(x)<.059:
         xfade=gauss(x,0.,.038)*(1.-fade(abs(x),.045,.059))
@@ -308,7 +308,7 @@ def rebuild(path):
                 faces.extend(((a+nxt,a+j,b0+j),(b0+nxt,a+nxt,b0+j)))
     # Bottom cap is far below visible cervical anatomy.
     c=len(pos);pos.append((0.,-.076,0.))
-    tex.append((.79,.88));colors.append((.986,.969,.960))
+    tex.append((.79,.88));colors.append((.995,.994,.993))
     row=len(ys)*n
     for j in range(n):
         nx=(j+1)%n
@@ -336,7 +336,7 @@ def rebuild(path):
             tex.append(uv[i]);colors.append(old_color[i])
         end=len(pos)
         pos.append((centre[0],centre[1]-.016,centre[2]-.018))
-        tex.append((.50,.48));colors.append((.986,.969,.960))
+        tex.append((.50,.48));colors.append((.995,.994,.993))
         for j in range(len(original_ring)):
             k=(j+1)%len(original_ring)
             faces.extend(((first+j,first+k,ring2+j),
