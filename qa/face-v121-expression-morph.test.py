@@ -53,7 +53,9 @@ class TestRealExpressionGLB(unittest.TestCase):
         self.assertTrue(self.skin['extras']['futureExpressionsImplemented'])
         self.assertFalse(self.skin['extras']['hairIncluded'])
         for i,mesh in enumerate(g['meshes']):
-            if i in (1,2):
+            if i in (1,2,11):
+                # The generated cervical/shoulder surface is anatomically
+                # static; only native lips, jaw and eyelids have face morphs.
                 self.assertNotIn('targets',mesh['primitives'][0])
                 continue
             self.assertEqual(mesh['extras']['targetNames'],NAMES)
