@@ -137,7 +137,7 @@ def main(path):
     crease=new_part('V121_NATURAL_UPPER_LID_CREASE',(.48,.30,.28),.90)
     upper=new_part('V121_TAPERED_UPPER_EYELASHES',(.115,.077,.061),.62)
     lower=new_part('V121_FINE_LOWER_EYELASHES',(.19,.115,.095),.69)
-    brow=new_part('V121_INDIVIDUAL_EYEBROW_FIBERS',(.36,.27,.23),.89)
+    brow=new_part('V121_INDIVIDUAL_EYEBROW_FIBERS',(.31,.225,.185),.89)
     rng=random.Random(121236)
 
     def ribbon(part,control,widths):
@@ -282,7 +282,7 @@ def main(path):
             t=(j+.36*rng.random())/136
             x=side*(.0185+.0460*t+.00034*(rng.random()-.5))
             arch=.0058*math.sin(math.pi*t)
-            y=.3475+arch+.0019*(rng.random()-.5)
+            y=.3392+.75*arch+.0014*(rng.random()-.5)
             z=skin_z(x,y)+.00048
             span=(.0024+.0023*math.sin(math.pi*t)**.75)*(.85+.27*rng.random())
             lateral=side*(.0012+.0025*t)
@@ -359,7 +359,9 @@ def main(path):
         'frontVisibleCurlVersion':'v121-front-hook-eyelashes-20261123',
         'lowerLashProjectionOutward':.0112,
         'upperLashProjectedOuterHook':True,
-        'lowerLashVisibility':'exposed_in_front_of_occluding_sclera'}
+        'lowerLashVisibility':'exposed_in_front_of_occluding_sclera',
+        'eyebrowRootY':.3392,
+        'eyebrowToUpperLidGapReduced':True}
     if meta.get('hairIncluded') is not False:
         raise ValueError('Unexpected head hair state')
     g['buffers'][0]['byteLength']=len(b)
