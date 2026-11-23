@@ -148,3 +148,39 @@ test('uploaded v121 eyebrow fibers are kept outside the derived scalp cap',async
  assert.equal(scalpHairlineIncludesLocal(0,.420,.04,faceBox),true);
  assert.equal(scalpHairlineIncludesLocal(.02,.315,-.04,faceBox),true);
 });
+
+test('real skull samples lift only crown roots without pulling bangs or long tails',async()=>{
+ const {conformCrownAboveHeadSurface}=await import('../src/independent-hair-mesh-v1.js');
+ const raw=new Float32Array([0,-.01,-.04,0,-.01,.11,0,-.16,-.04]);
+ const original=new Float32Array(raw);
+ const fit={scale:[1,1,1],position:[0,.08,0],headSize:{
+  width:.205,height:.235,depth:.205},crownY:.124,foreheadZ:.08};
+ const scalp=[[0,.46,-.195],[.01,.45,-.19],[-.01,.45,-.2]];
+ const changed=conformCrownAboveHeadSurface([{raw,original}],fit,scalp,.023);
+ assert.ok(changed>=1);
+ assert.ok(original[1]>raw[1],'buried crown vertex must be raised');
+ assert.equal(original[4],raw[4],'bangs must retain authored geometry');
+ assert.equal(original[7],raw[7],'long free ends must retain authored geometry');
+});
+test('no visible body proxies or static vertex-collider shredding',()=>{
+ const viewer=read('hair-asset-studio.html');
+ const mesh=read('src/independent-hair-mesh-v1.js');
+ assert.match(viewer,/bodyView\.visible=false/);
+ assert.match(viewer,/collision:motion!=='idle'/);
+ assert.match(viewer,/deformTips\(0,0,\{collision:false\}\)/);
+ assert.match(viewer,/const details=document\.createElement\('details'\)/);
+ assert.match(viewer,/capToggle/);
+ assert.match(viewer,/cleanupStats\.removedTriangles/);
+ assert.match(mesh,/cleanDetachedHairGeometry/);
+ assert.match(mesh,/limit=\.004\+\.005\*w/);
+ assert.match(mesh,/conformCrownAboveHeadSurface/);
+});
+test('real-head cap adds skin-following fibers without modifying face topology',()=>{
+ const cap=read('src/v121-anatomical-hair-cap.js');
+ assert.match(cap,/buildCrownFiberRibbons/);
+ assert.match(cap,/v121-anatomical-flowing-scalp-fibers/);
+ assert.match(cap,/scalpGeometry\.getAttribute\('normal'\)/);
+ assert.match(cap,/const geom=source\.clone\(\)/);
+ assert.match(cap,/skinFace\.add\(fibers\)/);
+ assert.match(cap,/fibers\.geometry\.dispose\(\)/);
+});
