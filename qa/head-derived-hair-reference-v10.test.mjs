@@ -149,7 +149,7 @@ test('studio uses the five-part v10 renderer and fine-strand texture workflow, n
  const code=readFileSync(new URL('../src/head-derived-hair-reference-v10.js',import.meta.url),'utf8');
  assert.match(html,/head-derived-hair-modular-v11\.js\?v=11/);
  assert.match(html,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
- assert.match(html,/5パーツの高密度ヘア造形 v10/);
+ assert.match(html,/頭型から製作する分割組立ヘア v11/);
  assert.doesNotMatch(html,/loader\.loadAsync\(item\.path\)/);
  assert.match(code,/makeFiberTextures\(THREE\)/);
  assert.match(code,/bumpMap:fibers\.bump/);
