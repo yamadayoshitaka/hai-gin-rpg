@@ -77,7 +77,7 @@ test('published source assets are verifiably valid glTF binaries when import dir
 
 test('loaded MakeHuman SkinnedMesh becomes real static hair geometry only',async()=>{
  const THREE=await import('three');
- const geometry=new THREE.SphereGeometry(.10,16,12);
+ const geometry=new THREE.SphereGeometry(.10,32,24);
  geometry.scale(1,1.25,.6);
  geometry.translate(0,1.53,0);
  geometry.setAttribute('skinIndex',
