@@ -167,8 +167,26 @@ jobs:
         run: |
           node scripts/build-story-art-coverage.mjs
           node qa/story-art-coverage.test.mjs
+      - name: Bake original anatomical v120 neutral face GLB (no expressions or hair)
+        run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Require baked neutral v120 GLB and preview in published Pages artifact
+        run: |
+          test -s pages-dist/face-neutral-v120.html
+          test -s pages-dist/assets/generated/neutral-face-v120.glb
+          python3 - <<'PY'
+          import json,struct,pathlib
+          path=pathlib.Path('pages-dist/assets/generated/neutral-face-v120.glb')
+          blob=path.read_bytes()
+          assert blob[:4]==b'glTF' and len(blob)>400000
+          size=struct.unpack_from('<I',blob,12)[0]
+          obj=json.loads(blob[20:20+size])
+          info=obj['meshes'][0]['extras']
+          assert info['topology']['vertices']==13455
+          assert info['futureExpressionsImplemented'] is False
+          print('PASS baked v120 neutral face:',len(blob),'bytes')
+          PY
       - name: Validate batch center and PR preview are shipped in the same Pages artifact
         id: qa_13
         # Owner permits deployment despite QA failure; leave the outcome visible.

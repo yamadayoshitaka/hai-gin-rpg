@@ -68,6 +68,10 @@ ASSET_RELAY_NAME = "pages-asset-relay-sw.js"
 
 
 def is_large_runtime_binary(rel: Path, src: Path) -> bool:
+    # v120 model is generated during publication and has no GitHub raw backing.
+    # Always ship this verified neutral-head GLB inside the Pages artifact.
+    if rel.as_posix() == "assets/generated/neutral-face-v120.glb":
+        return False
     return rel.suffix.lower() in OFFLOAD_BINARY_SUFFIXES and src.stat().st_size > OFFLOAD_MIN_BYTES
 
 

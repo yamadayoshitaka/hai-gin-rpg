@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#15243a">
+<title>灰銀のレゾナンス｜新しい顔ベース v120</title>
+<style>
+:root{font:15px/1.55 system-ui,"Noto Sans JP",sans-serif;color:#eaf4ff;background:#101b2d}
+*{box-sizing:border-box}
+body{margin:0}
+main{max-width:780px;margin:0 auto;padding:10px 12px 22px}
+h1{font-size:20px;margin:8px 0}
+h2{font-size:16px;margin:10px 0}
+p{margin:6px 0;color:#bed3e5;font-size:13px}
+a{color:#c6f6eb}
+nav{margin:5px 0 10px}
+.panel{border:1px solid #49647b;border-radius:12px;padding:12px;background:#1b2f48;margin:10px 0}
+#viewport{height:min(66dvh,560px);min-height:300px;width:100%;display:block;border-radius:10px;
+ background:radial-gradient(circle at 45% 38%,#334d65,#19293c);touch-action:none}
+.controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+button{cursor:pointer;color:#eefbf9;font:inherit;min-height:42px;background:#284c65;border:1px solid #668ba0;
+ padding:8px 12px;border-radius:9px}
+button[aria-pressed=true]{background:#236e5f;border-color:#9fdec9}
+button.primary{background:#16816d;border-color:#b5e6d6;font-weight:700}
+button:disabled{opacity:.45}
+#status{padding:7px 0;color:#b9f4de;overflow-wrap:anywhere}
+dl{display:grid;grid-template-columns:1fr auto;gap:6px;margin:5px 0;font-size:13px}
+dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
+.notice{border-left:3px solid #8dbab8;padding:6px 9px;margin-top:8px;background:#17344b}
+</style>
+<script type="importmap">
+{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<main>
+<nav><a href="./face-mesh-studio.html">顔・髪エディター v119へ戻る</a></nav>
+<h1>新・中立顔メッシュ v120</h1>
+<p>参考画像を基準に、既存CC0頭部の鼻・まぶた・唇を残し、頬・輪郭を再造形した独立の高密度中立顔。髪・表情・口パクは未実装です。</p>
+<div class="panel">
+<div id="status" role="status">独立した新顔メッシュを生成しています…</div>
+<canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
+<div class="controls">
+<button type="button" data-camera="front" aria-pressed="true">正面</button>
+<button type="button" data-camera="threeQuarter" aria-pressed="false">斜め45°</button>
+<button type="button" data-camera="side" aria-pressed="false">横顔</button>
+<button type="button" data-camera="back" aria-pressed="false">後頭部</button>
+<button id="wire" type="button" aria-pressed="false">輪郭・ワイヤー表示</button>
+<button id="eyes" type="button" aria-pressed="true">眼球パーツを表示</button>
+</div>
+<div class="controls">
+<button id="export" class="primary" type="button" disabled>中立顔をGLB保存</button>
+<button id="exportStructure" type="button" disabled>表情追加用の構造JSON保存</button>
+</div>
+<p>操作：一本指＝回転／二本指＝移動・ピンチ。GLBは髪・表情無し。鼻孔・唇・まぶたは実メッシュの造形です。</p>
+</div>
+<div class="panel">
+<h2>新メッシュの構造</h2>
+<dl>
+<dt>顔（スキン）の頂点数</dt><dd id="vertexCount">—</dd>
+<dt>顔の三角形数</dt><dd id="triangleCount">—</dd>
+<dt>左右の目周りの制御領域</dt><dd id="eyeCount">—</dd>
+<dt>口周りの制御領域</dt><dd id="mouthCount">—</dd>
+<dt>表情・ブレンドシェイプ</dt><dd>未設定（後から追加）</dd>
+<dt>髪・衣装</dt><dd>無し</dd>
+</dl>
+<div class="notice">
+<strong>基礎造形の確認用</strong>：この段階ではv119のゲーム用顔には置換せず、別ファイルで安全に保存します。輪郭を承認したあと、目・口周りのリトポロジーと表情リグを追加できるよう、基準頂点と名称を固定しています。
+</div>
+</div>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const $=id=>document.getElementById(id);
+const sourceURL='./assets/generated/neutral-face-v120.glb?v=120';
+let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={};
+const update=(id,val)=>$(id).textContent=String(val);
+function view(kind='front'){
+ const positions={
+  front:[0,0,.66],threeQuarter:[.40,0,.52],
+  side:[.66,0,0],back:[0,0,-.66]
+ };
+ if(!positions[kind])return;
+ camera.position.set(...positions[kind]);
+ orbit.target.set(0,0,0);orbit.update();
+ document.querySelectorAll('[data-camera]').forEach(btn=>
+  btn.setAttribute('aria-pressed',String(btn.dataset.camera===kind)));
+}
+function resize(){
+ const el=$('viewport'),w=el.clientWidth,h=el.clientHeight;
+ if(!w||!h)return;
+ renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+function saveBlob(blob,name){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),3500);
+}
+async function exportGLB(){
+ const button=$('export');button.disabled=true;
+ update('status','検証済み中立顔GLBを保存中…');
+ try{
+  const response=await fetch(sourceURL,{cache:'no-store'});
+  if(!response.ok)throw Error('GLB HTTP '+response.status);
+  const bytes=await response.blob();
+  if(bytes.size<350000)throw Error('GLB is unexpectedly small');
+  saveBlob(bytes,'hai-gin-neutral-face-v120.glb');
+  update('status','中立顔GLBの保存を開始しました（表情・髪なし）');
+ }catch(e){update('status','GLB保存失敗：'+e.message);console.error(e);}
+ finally{button.disabled=false;}
+}
+function exportJSON(){
+ const payload={
+  version:120,source:'CC0 anatomical head independently re-sculpted',
+  skinMesh:face.name,regions:rigMap.futureRigZones,
+  topology:rigMap.topology,
+  futureExpressionChannels:rigMap.futureExpressions,
+  futureExpressionsImplemented:false,
+  instructions:'Preserve the v120 rest mesh and vertex order for future expression morph targets.'
+ };
+ saveBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),
+  'hai-gin-neutral-face-v120-rig-map.json');
+}
+async function init(){
+ scene=new THREE.Scene();
+ camera=new THREE.PerspectiveCamera(36,1,.01,20);
+ renderer=new THREE.WebGLRenderer({canvas:$('viewport'),antialias:true,alpha:true});
+ renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.2;
+ orbit=new OrbitControls(camera,$('viewport'));
+ orbit.enableDamping=true;orbit.dampingFactor=.11;
+ orbit.enablePan=true;orbit.minDistance=.33;orbit.maxDistance=1.3;
+ orbit.touches.ONE=THREE.TOUCH.ROTATE;orbit.touches.TWO=THREE.TOUCH.DOLLY_PAN;
+ scene.add(new THREE.HemisphereLight(0xfaf2e7,0x839aad,2.1));
+ const key=new THREE.DirectionalLight(0xffe7d6,2.2);
+ key.position.set(-.38,.47,.75);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xecf5ff,.65);
+ fill.position.set(.45,.05,.48);scene.add(fill);
+ const gltf=await new GLTFLoader().loadAsync(sourceURL);
+ neutral=gltf.scene;neutral.name='V120_CC0_BASED_NEUTRAL_MASTER';
+ neutral.traverse(o=>{
+  if(!o.isMesh)return;
+  if(o.geometry?.getAttribute('position')?.count>13000)face=o;
+  else eyeNodes.push(o);
+ });
+ if(!face||eyeNodes.length<2)throw Error('正規の頭部・眼球メッシュを取得できません');
+ rigMap=gltf.parser.json.meshes?.[0]?.extras||{};
+ if(!rigMap.topology?.stableIndexedGeometry||rigMap.topology.vertices<13000)
+  throw Error('中立形状の構造検証に失敗');
+ metrics={
+  vertices:face.geometry.getAttribute('position').count,
+  triangles:face.geometry.getIndex().count/3,
+  eyeRegionVertices:(rigMap.futureRigZones?.leftEye?.length||0)+
+                   (rigMap.futureRigZones?.rightEye?.length||0),
+  mouthRegionVertices:rigMap.futureRigZones?.mouth?.length||0
+ };
+ scene.add(neutral);
+ wire=new THREE.LineSegments(new THREE.EdgesGeometry(face.geometry,38),
+  new THREE.LineBasicMaterial({color:0x67d6bb,transparent:true,opacity:.35}));
+ wire.name='V120_CONNECTED_FACE_WIRE';wire.visible=false;face.add(wire);
+ view('front');resize();new ResizeObserver(resize).observe($('viewport'));
+ document.querySelectorAll('[data-camera]').forEach(btn=>
+  btn.addEventListener('click',()=>view(btn.dataset.camera)));
+ $('wire').addEventListener('click',()=>{
+  wire.visible=!wire.visible;
+  $('wire').setAttribute('aria-pressed',String(wire.visible));
+ });
+ $('eyes').addEventListener('click',()=>{
+  const next=!eyeNodes[0].visible;
+  eyeNodes.forEach(eye=>eye.visible=next);
+  $('eyes').setAttribute('aria-pressed',String(next));
+ });
+ $('export').addEventListener('click',exportGLB);
+ $('exportStructure').addEventListener('click',exportJSON);
+ for(const [id,value]of Object.entries({
+  vertexCount:metrics.vertices.toLocaleString('ja-JP'),
+  triangleCount:metrics.triangles.toLocaleString('ja-JP'),
+  eyeCount:metrics.eyeRegionVertices.toLocaleString('ja-JP'),
+  mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
+ }))update(id,value);
+ $('export').disabled=false;$('exportStructure').disabled=false;
+ update('status','顔 v120：解剖学的な中立GLB読込完了（表情・髪なし）');
+ document.documentElement.dataset.neutralFaceReady='v120';
+ const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
+ draw();
+}
+init().catch(e=>{update('status','顔メッシュ読込エラー：'+e.message);console.error('V120 GLB',e)});
+</script>
+</body>
+</html>

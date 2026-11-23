@@ -1,0 +1,68 @@
+name: Face v120 independent neutral master
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-neutral-face-v120.py'
+      - 'scripts/prepare-pages-site.py'
+      - '.github/workflows/publish-pages.yml'
+      - 'face-neutral-v120.html'
+      - 'face-mesh-studio.html'
+      - 'qa/face-v120-neutral-head.test.mjs'
+      - 'qa/face-v120-neutral-browser.test.mjs'
+      - '.github/workflows/face-v120-neutral-master.yml'
+  push:
+    branches: [feature/neutral-face-v120-independent-base]
+jobs:
+  neutral-mesh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the same Three.js major used by Pages
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Bake anatomy-derived v120 neutral face
+        run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
+      - name: Validate baked neutral GLB geometry and future expression zones
+        run: node --test qa/face-v120-neutral-head.test.mjs
+      - name: Validate browser entry module syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('face-neutral-v120.html').read_text()
+          assert html.count('<script type="module">')==1
+          script=html.split('<script type="module">',1)[1].split('</script>',1)[0]
+          Path('/tmp/neutral-v120-page.mjs').write_text(script)
+          PY
+          node --check /tmp/neutral-v120-page.mjs
+  mobile-webgl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real browser and Three.js dependencies
+        run: |
+          npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Bake anatomy-derived v120 neutral face for browser testing
+        run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
+      - name: Serve the neutral model viewer
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v120-server.log 2>&1 &
+          sleep 2
+      - name: Android WebGL baked neutral face, profile and real GLB download smoke
+        run: node --test qa/face-v120-neutral-browser.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: face-v120-front-side
+          path: |
+            qa/screenshots/face-v120/*.png
+            qa/screenshots/face-v120/*.glb
+          if-no-files-found: ignore
+          retention-days: 7
