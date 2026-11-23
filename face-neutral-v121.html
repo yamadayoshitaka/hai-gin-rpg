@@ -53,7 +53,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <main>
 <nav><a href="./face-neutral-v120.html?v=120">従来の中立顔 v120</a>　｜　<a href="./face-mesh-studio.html">顔・髪エディターへ戻る</a>　｜　<a href="./hair-asset-studio.html?v=1">独立ヘアカタログ（男女・自動フィット・髪の揺れ）</a></nav>
 <h1>4方向の見本基準・女性スキンヘッド v121</h1>
-<p>提示された肌・目元・唇の参考画像を目標に、顔輪郭と頬・鼻・顎を造形し直した女性の中立顔です。髪は付けず、2048pxの肌PBRに加え、実3Dメッシュのアイライン・上下まつ毛・眉毛、鼻の中央から上唇中央へ続く人中の縦溝と正面から見えるCカールの立体まつ毛をGLBに内蔵。表情はまばたき・笑顔・怒り・困り・発話をブレンドシェイプとアニメーションで再生できます。</p>
+<p>正面・横顔の参考画像を基準に、頬のくぼみ・顎先・鼻の横顔・唇の立体感をメッシュから再調整した女性の中立顔です。髪は付けず、2048pxの肌PBRに加え、実3Dメッシュのアイライン・上下まつ毛・眉毛、鼻の中央から上唇中央へ続く人中の縦溝と正面から見えるCカールの立体まつ毛をGLBに内蔵。表情はまばたき・笑顔・怒り・困り・発話をブレンドシェイプとアニメーションで再生できます。</p>
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
 <canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
@@ -61,12 +61,12 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <strong>化粧を変更（実3D／GLB保存対応）</strong>
 <div class="makeup-presets">
 <button type="button" data-makeup="bare" aria-pressed="false" disabled><span class="makeup-dot" style="background:#dfb6aa"></span>すっぴん</button>
-<button type="button" data-makeup="natural" aria-pressed="false" disabled><span class="makeup-dot" style="background:#cd938e"></span>ナチュラル</button>
-<button type="button" data-makeup="pink" aria-pressed="true" disabled><span class="makeup-dot" style="background:#e58ea0"></span>血色ピンク</button>
+<button type="button" data-makeup="natural" aria-pressed="true" disabled><span class="makeup-dot" style="background:#cd938e"></span>ナチュラル</button>
+<button type="button" data-makeup="pink" aria-pressed="false" disabled><span class="makeup-dot" style="background:#e58ea0"></span>血色ピンク</button>
 <button type="button" data-makeup="brown" aria-pressed="false" disabled><span class="makeup-dot" style="background:#ab6f64"></span>ブラウン</button>
 <button type="button" data-makeup="glamorous" aria-pressed="false" disabled><span class="makeup-dot" style="background:#b95772"></span>華やか</button>
 </div>
-<p id="v121-makeup-status" role="status">化粧の実3Dデータを読み込み中…</p>
+<p id="v121-makeup-status" role="status">化粧の唇からはみ出さない自然なメイクを読み込み中…</p>
 </div>
 <div class="controls">
 <button type="button" data-camera="front" aria-pressed="true">正面</button>
@@ -85,8 +85,8 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 </div>
 <details class="panel" id="v121-tuning" open>
 <summary>顔パーツを調整（目・鼻・口・眉・頬・顎）</summary>
-<p>今回のスキンヘッド見本（正面・斜め45度・横顔・後頭部）を女性v121の標準値に採用しました。大きめの自然な目、細い鼻筋、立体的な唇、目元に近い眉、滑らかな頬と繊細な顎を初期適用します。頬・顎もスライダーで調整できます。※見本画像の座標を自動復元したものではなく、参考特徴に合わせた初期値です。</p>
-<p><strong>現在の標準：</strong>4方向スキンヘッド見本。目110％・鼻91％・口114％・眉105％、眉を目に近づけ、頬の厚みと顎の輪郭も調整済み。</p>
+<p>今回のスキンヘッド見本（正面・斜め45度・横顔・後頭部）を女性v121の標準値に採用しました。自然な大きさの目、細い鼻筋、唇の立体感、目元に近い眉、ふっくら滑らかな頬と丸みのある顎を初期適用します。頬・顎もスライダーで調整できます。※見本画像の座標を自動復元したものではなく、参考特徴に合わせた初期値です。</p>
+<p><strong>現在の標準：</strong>正面・横顔スキンヘッド見本。目105％・鼻93％・口108％・眉104％、頬のくぼみを抑え、顎先を短く自然な丸みへ調整済み。</p>
 <div id="v121-tune-sliders" aria-label="顔v121の形状調整スライダー"></div>
 <div class="controls">
 <button type="button" id="applyReferenceTune" class="primary" disabled>新しい見本の標準値に戻す</button>
@@ -138,7 +138,7 @@ import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 import {attachV121Expressions,V121_EXPRESSIONS} from './face-v121-expression-player.js';
 import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-4view-skinhead-reference-mouth-makeup-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-soft-contour-natural-lip-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null,expressionPlayer=null,expressionClips=[],faceMakeup=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){

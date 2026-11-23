@@ -73,44 +73,47 @@ def new_normals(xyz,tri):
     return [vertex_normal(v) for v in accum]
 
 def sculpt(p):
+    """Refine front silhouette and the continuous side-profile in the GLB skin.
+
+    Keep the mouth and eyelid loops, UVs and all vertex identities untouched.
+    In particular the lower cheek must NOT recede into a hollow under the
+    zygomatic region, and chin height must not lengthen the frontal silhouette.
+    """
     x,y,z=p
     ax=abs(x)
     front=smooth(z,.004,.118)
     side=smooth(z,-.045,.065)
-    # Forehead and temporal contour narrower / softer toward brows without
-    # flattening the bald cranial dome or narrowing the ears.
     temple=gauss(y,.345,.066)*gauss(ax,.107,.028)*side
     frontal=gauss(y,.392,.064)*gauss(ax,.095,.045)*side
-    # Reference has fuller under-eyes but smooth cheeks in side view,
-    # *not* the old prominent cheekbone shelf.
+    # Cheekbone is subdued; the lower cheek and mandibular transition are
+    # volumetric rather than the previously scooped / sunken face.
     malar=gauss(y,.267,.038)*gauss(ax,.078,.034)*front
     under_eye=gauss(y,.285,.017)*gauss(ax,.053,.028)*front
-    # Narrow lower cheeks flowing seamlessly into a petite ovoid jaw.
     lower_cheek=gauss(y,.217,.057)*gauss(ax,.088,.040)*side
     jaw=gauss(y,.157,.049)*gauss(ax,.084,.053)*side
     chin=gauss(y,.135,.033)*gauss(ax,.030,.038)*front
     chin_corners=gauss(y,.152,.032)*gauss(ax,.057,.027)*front
-    # Narrow nasal bridge + alar footprint and soften an oversized tip
-    # for both 45deg and profile. Avoid modifying nostril openings globally.
+    # A gentler nose dorsum-to-tip contour in strict profile, with a
+    # restrained alar width and protected real nostril rim.
     bridge=gauss(y,.285,.038)*gauss(ax,.022,.015)*front
     ala=gauss(y,.248,.018)*gauss(ax,.031,.013)*front
     tip=gauss(y,.251,.015)*gauss(x,0,.021)*smooth(z,.118,.158)
-    # Shape true upper/lower vermilion in the mesh, preserving the existing
-    # closed seam. Each lip occupies its own narrow topology band.
-    lips_f=smooth(z,.090,.141)
-    lip_width=gauss(x,0,.039)
-    upper=gauss(y,.209,.008)*lip_width*lips_f
-    lower=gauss(y,.183,.010)*lip_width*lips_f
-    cupid=gauss(y,.218,.006)*gauss(ax,.011,.007)*lips_f
+    # Upper and lower vermilion must remain separate from the chin surface.
+    lips_f=smooth(z,.095,.143)
+    lip_width=gauss(x,0,.037)
+    upper=gauss(y,.209,.0075)*lip_width*lips_f
+    lower=gauss(y,.184,.0090)*lip_width*lips_f
+    cupid=gauss(y,.217,.006)*gauss(ax,.011,.007)*lips_f
     corners=gauss(y,.197,.012)*gauss(ax,.042,.014)*lips_f
-    nx=(x*(1-.023*temple-.022*frontal-.035*lower_cheek
-             -.085*jaw-.065*chin_corners-.055*ala-.028*bridge))
-    ny=y+.0017*chin-.00045*frontal+.0006*under_eye
-    nz=(z-.0042*malar+.0015*under_eye
-        -.0025*lower_cheek+.0004*jaw
-        -.0024*tip-.0012*ala-.0008*bridge
-        +.0031*upper+.0044*lower+.0009*cupid
-        -.0009*corners+.00065*chin)
+    nx=x*(1-.029*temple-.026*frontal+.008*lower_cheek
+          -.055*jaw-.025*chin_corners-.055*ala-.028*bridge)
+    # Raise, round and gently broaden the former pointed long chin.
+    ny=y+.0037*chin+.0006*jaw-.00045*frontal+.0006*under_eye
+    nz=(z-.0031*malar+.0018*under_eye
+        +.0014*lower_cheek+.0013*jaw
+        -.0036*tip-.0013*ala-.0009*bridge
+        +.0037*upper+.0045*lower+.0010*cupid
+        -.0007*corners+.0003*chin)
     return (nx,ny,nz),{
       'temple':temple,'malar':malar,'jaw':jaw,'tip':tip,
       'upperLip':upper,'lowerLip':lower,'underEye':under_eye}
@@ -155,6 +158,8 @@ def run(path):
       'largestWorldSpaceDisplacement':round(max(shifts),7),
       'resculptedRegionVertexCounts':counters,
       'referenceImageIsNot3DScan':True,
+      'frontProfileContourPass':'soft-oval-jaw-supported-lower-cheek-and-natural-lip-profile',
+      'chinShortenedAndRounded':True,
       'protectedVersions':['v119','v120','male','combat'],
       'skinheadPreserved':True,
       'uvAndTriangleIndicesPreserved':True}

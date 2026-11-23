@@ -38,9 +38,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('#wire').click();
   mkdirSync('qa/screenshots/face-v121',{recursive:true});
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-front.png'});
-  // The default is intentionally visible lipstick and blush, not the
-  // almost invisible previous material. Each swatch changes actual GLB data.
-  assert.equal(await page.locator('html').getAttribute('data-v121-makeup'),'pink');
+  // The default is a softly pigmented natural look; each swatch changes
+  // actual GLB vertex colours without tinting the chin.
+  assert.equal(await page.locator('html').getAttribute('data-v121-makeup'),'natural');
   for(const option of ['brown','glamorous','natural','bare','pink']){
     await page.locator('[data-makeup="'+option+'"]').click();
     assert.equal(await page.locator('html').getAttribute('data-v121-makeup'),option);
@@ -84,14 +84,14 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('[data-camera="front"]').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-preset'),'reference');
   assert.equal(await page.locator('html').getAttribute('data-v121-reference'),
-    '3089-skinhead-front-45-side-rear-20261123');
-  assert.equal(await page.locator('input[data-part="cheeks"][data-axis="x"]').inputValue(),'-4');
-  assert.equal(await page.locator('input[data-part="chin"][data-axis="size"]').inputValue(),'92');
+    'generated-natural-front-profile-reference-20261123');
+  assert.equal(await page.locator('input[data-part="cheeks"][data-axis="x"]').inputValue(),'1');
+  assert.equal(await page.locator('input[data-part="chin"][data-axis="size"]').inputValue(),'100');
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
-  assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'110');
-  assert.equal(await page.locator('input[data-part="nose"][data-axis="size"]').inputValue(),'91');
-  assert.equal(await page.locator('input[data-part="mouth"][data-axis="size"]').inputValue(),'114');
-  assert.equal(await page.locator('input[data-part="brows"][data-axis="y"]').inputValue(),'-6');
+  assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'105');
+  assert.equal(await page.locator('input[data-part="nose"][data-axis="size"]').inputValue(),'93');
+  assert.equal(await page.locator('input[data-part="mouth"][data-axis="size"]').inputValue(),'108');
+  assert.equal(await page.locator('input[data-part="brows"][data-axis="y"]').inputValue(),'-5');
   // Mode/camera validated below; omit redundant screenshot neutral-face-reference-preset on software WebGL.
   // Reset makeup and slider state before downloading the byte-identical master.
   await page.locator('[data-makeup="bare"]').click();
