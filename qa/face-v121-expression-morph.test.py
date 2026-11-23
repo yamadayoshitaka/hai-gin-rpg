@@ -202,8 +202,8 @@ class TestRealExpressionGLB(unittest.TestCase):
                   if m['name']=='V121_INDIVIDUAL_EYEBROW_FIBERS')
         pts=vector(self.g,self.b,brow['primitives'][0]['attributes']['POSITION'])
         self.assertGreater(len(pts),1200)
-        self.assertGreater(min(p[1] for p in pts),.336)
-        self.assertLess(min(p[1] for p in pts),.342)
+        self.assertGreater(min(p[1] for p in pts),.328)
+        self.assertLess(min(p[1] for p in pts),.334)
         self.assertTrue(self.skin['extras']['eyelidFiberUpgrade']['eyebrowToUpperLidGapReduced'])
 
     def test_skin_and_makeup_without_detached_decals(self):
