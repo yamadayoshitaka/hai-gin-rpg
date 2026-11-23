@@ -95,6 +95,8 @@ class TestFaceV121(unittest.TestCase):
         self.assertEqual(rebuild['removedOldPatchTriangles'],
                          rebuild['generatedNewPatchTriangles'])
         self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
+        self.assertGreater(rebuild['newXYZEdgeOptimizingFlips'],100)
+        self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.023)
         self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
         self.assertGreater(rebuild['affectedVertices'],700)
         self.assertGreater(retopo,1000)
