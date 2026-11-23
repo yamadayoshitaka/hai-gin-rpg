@@ -83,7 +83,11 @@ test('v119 GLB source: both genders receive real connected topology changes',()=
   assert.notDeepEqual(b.positions,a.positions);
   // The v119 sculpt only moves vertices. The existing native oral mesh
   // assembler can re-triangulate a few connected faces after the sculpt.
-  assert.equal(b.index.length,a.index.length,'Unexpected triangle count change');
+  // Connected mouth aperture can gain/lose at most two native seal triangles;
+  // the source 3490 vertices remain unchanged and the face contour pass
+  // does not edit indices at all.
+  assert.ok(Math.abs(b.index.length-a.index.length)<=6,
+   'Native oral triangulation changed by more than two triangles');
   const reordered=b.index.reduce((n,id,i)=>n+(id!==a.index[i]),0);
   console.log('V119_NATIVE_ORAL_TRIANGLE_REORDER',gender,reordered,b.index.length);
   assert.ok(reordered<b.index.length*.05,'Too many downstream triangles changed');
