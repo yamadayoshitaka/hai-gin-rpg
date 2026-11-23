@@ -27,7 +27,7 @@ class LowerFaceProfileQA(unittest.TestCase):
         def delta_y(y):
             i=original(y)
             return result[i][1]-points[i][1]
-        self.assertEqual(meta['version'],'female-v121-realspace-neutral-lower-face-v14')
+        self.assertEqual(meta['version'],'female-v121-realspace-neutral-lower-face-v15')
         self.assertTrue(meta['noseAndUpperFaceHardLocked'])
         self.assertTrue(meta['lowerLipDepthRetracted'])
         self.assertTrue(meta['shallowLabiomentalSulcus'])
@@ -40,6 +40,18 @@ class LowerFaceProfileQA(unittest.TestCase):
         self.assertGreater(delta_y(.216),0.)
         self.assertLess(delta_y(.216),.0015)
         self.assertTrue(meta['secondaryUnderlipRidgeRemoved'])
+        # Sharpen both mandibular edges, never create a projected or
+        # elongated chin tip, and never distort the lip or neck geometry.
+        self.assertTrue(meta['shortSharperVLineChin'])
+        self.assertTrue(meta['lipAndNeckExcludedFromJawTaper'])
+        idx=points.index((.056,.152,.15))
+        self.assertLess(result[idx][0],points[idx][0]-.0025)
+        self.assertLess(result[idx][2],points[idx][2])
+        lip_edge=points.index((.056,.232,.15))
+        self.assertEqual(result[lip_edge][0],points[lip_edge][0])
+        neck_edge=points.index((.056,.080,.15))
+        self.assertAlmostEqual(result[neck_edge][0],points[neck_edge][0],delta=.0002)
+
         self.assertGreater(delta_y(.149),.001)
         self.assertEqual(result[original(.260)],points[original(.260)])
         self.assertEqual(result[original(.270)],points[original(.270)])
