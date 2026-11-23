@@ -84,7 +84,7 @@ assert.match(runtimeSource,/setStartingSquadOrder\(1,sid,'charge'\)/,
  'enemy squads receive a real combat start command');
 assert.match(runtimeSource,/pendingOpeningFormationGroups\.add/,
  'an eligible inn formation starts its own movement on battle opening');
-assert.match(runtimeSource,/issueFormationSignature\(\{groupId:group,squadIds:members\}\)/,
+assert.match(runtimeSource,/issueFormationSignature\(\{groupId:group,squadIds:members,automaticOpening:true\}\)/,
  'the inn-authored movement sequence executes rather than remaining a static preview');
 assert.match(runtimeSource,/const threatened=enemyContactResponse\(/,
  'nearby hostile contact bypasses the stale 120-second defensive order cooldown');
