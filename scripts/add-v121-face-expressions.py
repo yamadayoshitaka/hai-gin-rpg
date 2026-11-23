@@ -308,17 +308,40 @@ def split_native_mouth_seal(g,b,head):
     if not 8<=len(to_split)<=600:
         raise ValueError('Unsafe aperture topology: %d face triangles'%
                          len(to_split))
+    # Build a fresh, regularized subdivided surface for the closed-mouth
+    # bridge instead of reusing the donor's few long, jagged seam triangles.
+    # Edge points are shared across all 4-way subdivisions, so no detached
+    # edge, duplicate triangles or flickering lip shard can be generated.
     mouth_ids=sorted({k for i in to_split for k in triangles[i]})
     local={k:i for i,k in enumerate(mouth_ids)}
     skin_indices=list(indices)
+    base=[xyz[k] for k in mouth_ids]
+    seal_normals=seal_normals
+    seal_uv=seal_uv
+    seal_color=seal_color
+    mids={}
+    def midpoint(a,c):
+        key=(min(a,c),max(a,c))
+        if key in mids:return mids[key]
+        i=len(base)
+        base.append(tuple((base[a][q]+base[c][q])*.5 for q in range(3)))
+        v=tuple((seal_normals[a][q]+seal_normals[c][q])*.5 for q in range(3))
+        mag=math.sqrt(sum(x*x for x in v)) or 1.
+        seal_normals.append(tuple(x/mag for x in v))
+        seal_uv.append(tuple((seal_uv[a][q]+seal_uv[c][q])*.5 for q in range(2)))
+        seal_color.append(tuple((seal_color[a][q]+seal_color[c][q])*.5 for q in range(3)))
+        mids[key]=i
+        return i
     seal_indices=[]
     for i in to_split:
         tri=triangles[i]
-        seal_indices.extend(local[k] for k in tri)
-        # Preserve index-buffer length and all original vertex identifiers.
+        a,c,d=(local[k] for k in tri)
+        ac,cd,da=midpoint(a,c),midpoint(c,d),midpoint(d,a)
+        # Four new triangles replace each original lip-bridge triangle,
+        # preserving the exact outer boundary and the neutral-pose surface.
+        seal_indices.extend((a,ac,da,c,cd,ac,d,da,cd,ac,cd,da))
         skin_indices[3*i:3*i+3]=[tri[0]]*3
     p['indices']=store_indices(g,b,skin_indices)
-    base=[xyz[k] for k in mouth_ids]
     targets=[]
     for name in NAMES:
         result=[]
@@ -350,9 +373,12 @@ def split_native_mouth_seal(g,b,head):
     cavity=next(m for m in g['meshes'] if m['name']=='V121_ORAL_CAVITY')
     cavity['primitives'].append(seal_prim)
     return {
-        'version':'female-v121-split-lip-seal-v4',
+        'version':'female-v121-split-lip-seal-v5',
         'detachedSkinTriangles':len(to_split),
-        'sealVertices':len(mouth_ids),
+        'sealVertices':len(base),
+        'sealOriginalVertices':len(mouth_ids),
+        'sealRemeshedTriangles':len(seal_indices)//3,
+        'realSubdividedSeal':True,
         'sealAttachedTo':'V121_ORAL_CAVITY',
         'neutralAppearanceIdentical':True,
         'skinVertexIdsPreserved':13455,
@@ -432,7 +458,7 @@ def build(path):
         'preservesSkinVertexIDs':13455,
         'eyeGlobesRemainIndependent':True,
         'oralCavityMeshNames':['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE'],
-        'mouthShapeVersion':'independent_vermilion_real_aperture_v4',
+        'mouthShapeVersion':'independent_vermilion_real_aperture_v5',
          'skinMouthCenterInwardOnOpening':True,
         'jawNeckStationary':True,
         'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue',
