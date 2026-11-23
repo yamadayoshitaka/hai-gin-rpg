@@ -104,7 +104,10 @@ function frontLocks(h,roof){
  const {width:w,depth:d,height:y}=h,top=y*.5,ribbons=[];
  for(let i=0;i<38;i++){
   const lateral=(i+.5)/38*2-1,x0=lateral*w*.42;
-  const endY=top-y*(.37+.042*rand(i*23+3)); // above eyebrows, not the eyes
+  // Brow ridge on the v121 portrait sits much lower than the nominal top.
+  // Previous .37-.412 of head height placed the fringe below the eyelashes.
+  // Finish well above the brow/eyelid plane, with small irregular tips.
+  const endY=top-y*(.19+.02*rand(i*23+3));
   const p=path(13,t=>{
    const x=x0+.0036*Math.sin(i*.9)*t,z=d*(.28+.30*ease(t));
    const startY=Math.max(endY+.035,roof(x,d*.28)+.009);
@@ -158,7 +161,11 @@ function crownShell(THREE,skin,referenceRoot,h){
  const covered=i=>{
   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
   const front=clamp(z/(h.depth*.5),0,1),back=clamp(-z/(h.depth*.5),0,1);
-  const cut=top-h.height*(.55-.18*front+.22*back);
+  // The old frontal shell extended to the eyelids: it looked like a helmet,
+  // and even a short fringe could not reveal the eyes behind the solid cap.
+  // Frontal hairline now stops above the brows; temples/rear retain coverage.
+  const temple=clamp(Math.abs(x)/(h.width*.5),0,1);
+  const cut=top-h.height*(.36-.16*front+.17*back+.035*temple*(1-front));
   return y>=cut&&Math.abs(x)<h.width*.67&&Math.abs(z)<h.depth*.65;
  };
  const originalIndex=geometry.getIndex(),n=Math.floor((originalIndex?.count||p.count)/3),kept=[];
@@ -182,9 +189,9 @@ function crownShell(THREE,skin,referenceRoot,h){
 export function buildHair01FromScratch(THREE,skin,{referenceRoot,headSize,headScalp,color='#c5a36f'}={}){
  if(!skin?.isMesh||!referenceRoot)throw Error('顔v121実メッシュが必要です');
  const size={width:headSize.width,height:headSize.height,depth:headSize.depth};
- const root=new THREE.Group();root.name='female-hair-01-fully-resculpted-v2';
+ const root=new THREE.Group();root.name='female-hair-01-forehead-clear-resculpt-v3';
  const crown=crownShell(THREE,skin,referenceRoot,size);
- const scalpMaterial=new THREE.MeshStandardMaterial({color,roughness:.8,metalness:0,side:THREE.DoubleSide});
+ const scalpMaterial=new THREE.MeshStandardMaterial({color,roughness:.92,metalness:0,side:THREE.DoubleSide});
  const shell=new THREE.Mesh(crown.geometry,scalpMaterial);
  shell.name='actual-v121-head-conformal-continuous-hair-crown';
  shell.castShadow=true;shell.receiveShadow=true;root.add(shell);
