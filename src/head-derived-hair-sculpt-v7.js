@@ -278,7 +278,7 @@ function generateSculpt(THREE,base,h,style,color){
   const length=sculptedForeheadLength(x,z,h,style);
   const dx=x-h.cx,dz=z-h.cz,dir=Math.hypot(dx,dz)||1;
   const ux=dx/dir,uz=dz/dir;
-  const outer=sculptedOutwardFlow(angle,t,style);
+  const outwardDistance=sculptedOutwardFlow(angle,t,style);
   const isFringe=1-smooth((abs-.4)/.55);
   const group=Math.sin(angle*17+style.part*2.7);
   const groove=Math.pow((group+1)*.5,11);
@@ -288,10 +288,10 @@ function generateSculpt(THREE,base,h,style,color){
   const wave=style.wave*.22*Math.sin(angle*9+t*10+style.part*2)*k*k;
   const carve=clamp(length-layerCut,.006,.31);
   const tipWave=(.0026+style.wave*.15)*Math.sin(angle*18+style.part*3)*k*k;
-  const x1=rootX+ux*(outer+wave)+tipWave*ux+
+  const x1=rootX+ux*(outwardDistance+wave)+tipWave*ux+
     style.part*.0018*isFringe*k+(style.flip?.0065*k*k:0)*ux;
   const y1=rootY-carve*t+.0018*Math.sin(Math.PI*t);
-  const z1=rootZ+uz*(outer+wave)+tipWave*uz+
+  const z1=rootZ+uz*(outwardDistance+wave)+tipWave*uz+
     (style.angled?.004*k:0)*isFringe;
   const idx=place(x1,y1,z1,sectionOf(x,z,h),k*k);
   cache.set(key,idx);return idx;
