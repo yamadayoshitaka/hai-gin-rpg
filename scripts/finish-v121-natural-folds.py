@@ -169,7 +169,7 @@ def nose_and_lips(x,y,z):
     # The narrow mouth-seal Y band (~.232) is still hard-faded to zero;
     # changing that seam would break real 3D mouth aperture topology.
     lip_lift=(.00415*bell(y,.240,.010)*horizontal*lip_front*
-              fade(y,.233,.239)*(1.-fade(y,.250,.259)))
+              fade(y,.235,.240)*(1.-fade(y,.250,.259)))
     bottom_rim=.00165*bell(y,.216,.0055)*horizontal*lip_front
     # Two peaks and a central dip make an actual M-shaped Cupid's bow.
     peaks=(bell(x,-.011,.005)+bell(x,.011,.005))
