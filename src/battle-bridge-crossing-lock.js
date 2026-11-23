@@ -26,7 +26,7 @@ export function bridgeCrossingWaypoint(current,{
  // In particular never send a soldier who is halfway across, or already
  // on the far bank but off its nominal row, back to the near entrance.
  const staging=signed>nearOffset||
-   (signed>=nearOffset-1&&current.z!==laneZ);
+   (signed===nearOffset&&current.z!==laneZ);
  const landed=signed<=-landingOffset&&Math.abs(current.z-laneZ)<=2;
  return {x:staging?nearX:farX,z:laneZ,phase:landed?'landed':staging?'approach':'crossing',
   landed,forward:-fromSide};
@@ -34,8 +34,8 @@ export function bridgeCrossingWaypoint(current,{
 
 /**
  * Stabilize a target that changes sides as the nearest enemy changes.
- * Only prevent an AUTOMATIC immediate reverse crossing. An explicit new
- * player move/retreat can still clear the lock through the order handler.
+ * Prevent an immediate automatic reverse crossing. Explicit orders retain
+ * their existing route and can change direction after the lock expires.
  */
 export function bridgeReverseOnCooldown(currentSide,targetSide,fromSide,landingAt,now,
  seconds=BRIDGE_REVERSAL_LOCK_SECONDS){
