@@ -166,7 +166,14 @@ export function extractUnskinnedWig(THREE,gltfRoot){
     .reduce((acc,x)=>acc+x.length,0);
   geometry.morphAttributes={};
   geometry.morphTargetsRelative=false;
-  geometry.applyMatrix4(node.matrixWorld);
+  // MakeHuman GLBs store hair POSITION in model-space meters already.
+  // Their parent nodes may carry whole-character scale (often 10x+).
+  // Applying that parent matrix turns a 26cm wig into a multi-meter blob,
+  // then fitting it at 0.02x creates the observed spiky crushed object.
+  // Keep the native POSITION coordinate system for all imported hair meshes.
+  // The wig-only GLB sources contain exactly one hair mesh.
+  if (node.parent && node.parent !== gltfRoot && node.parent.isMesh)
+   throw Error('予期しない親メッシュ階層です');
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   const box=geometry.boundingBox,size=box.getSize(new THREE.Vector3());
@@ -189,6 +196,8 @@ export function extractUnskinnedWig(THREE,gltfRoot){
  const native=new THREE.Box3().setFromObject(root);
  if(native.isEmpty())throw Error('ウィッグの独立形状が空です');
  const bounds=native.getSize(new THREE.Vector3());
+ if(native.min.y<.5||native.max.y>2.5)
+  throw Error('MakeHuman髪の元座標が想定外です：モデル座標を確認してください');
  if(![bounds.x,bounds.y,bounds.z].every(Number.isFinite)||
    bounds.x<.03||bounds.x>.65||bounds.y<.04||bounds.y>1.4)
   throw Error('ウィッグGLBの元の大きさが不正です');
