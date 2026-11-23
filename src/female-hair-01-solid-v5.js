@@ -162,7 +162,7 @@ function createHairBody(THREE,head,anatomy,color){
   const f=smooth((p.y-anatomy.brow)/Math.max(.04,anatomy.top-anatomy.brow));
   // New sculpt, not a helmet-shaped parallel offset: the top gains a soft
   // swept volume and the real part line stays lower and closely rooted.
-  const nearPart=Math.exp(-((p.x-anatomy.cx)/.009)**2);
+  const nearPart=Math.exp(-Math.pow((p.x-anatomy.cx)/.009,2));
   const sweep=.0034*f*Math.sign(p.x-anatomy.cx||1);
   const brushed=.00085*Math.sin(p.x*170+p.z*42)+.00055*Math.sin(p.x*55-p.z*101);
   const offset=.0043+.0074*f-.0035*f*nearPart+brushed;
