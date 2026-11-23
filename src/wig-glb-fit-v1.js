@@ -160,100 +160,131 @@ export function calculateWigFit(source,head,{
 function fringeTexture(THREE){
  if(typeof document==='undefined')return null;
  const canvas=document.createElement('canvas');
- canvas.width=256;canvas.height=512;
+ canvas.width=512;canvas.height=1024;
  const ctx=canvas.getContext('2d');
  if(!ctx)return null;
- ctx.fillStyle='#e5e5e5';ctx.fillRect(0,0,256,512);
- for(let i=0;i<192;i++){
-  const x=(i+.5)*256/192,d=Math.sin(i*1.618)*3.5;
-  ctx.beginPath();ctx.moveTo(x,0);
-  ctx.bezierCurveTo(x+d*.24,150,x-d*.15,330,x+d,512);
-  ctx.strokeStyle=i%7===0?'rgba(255,255,255,.62)':'rgba(70,63,58,.23)';
-  ctx.lineWidth=i%7===0?.7:.45+(i%3)*.2;
+ // A mostly neutral fiber map: tint remains controlled by the hair-color input.
+ ctx.fillStyle='#efeeeb';ctx.fillRect(0,0,512,1024);
+ for(let i=0;i<420;i++){
+  const x=(i+.5)*512/420,phase=i*2.399963;
+  const wind=Math.sin(phase)*4.5;
+  ctx.beginPath();
+  ctx.moveTo(x,0);
+  ctx.bezierCurveTo(x+wind,260,x-wind*.5,680,x+wind*.65,1024);
+  const value=i%11===0?255:(i%7===0?188:110);
+  ctx.strokeStyle=value===255?'rgba(255,255,255,.65)':
+   value===188?'rgba(255,255,255,.28)':'rgba(64,60,56,.21)';
+  ctx.lineWidth=i%11===0?.85:.36+(i%4)*.15;
   ctx.stroke();
  }
  const tex=new THREE.CanvasTexture(canvas);
  tex.colorSpace=THREE.SRGBColorSpace;
- tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.ClampToEdgeWrapping;
+ tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.RepeatWrapping;
  tex.anisotropy=8;
  return tex;
 }
 
-
 /**
- * Independent solid strands following the actual v121 front skin samples.
- * Roots sit close to the scalp, INSIDE the existing CC0 cap; no broad flat
- * sheet outside the skull and no editing of the original long-hair mesh.
+ * Two interleaved layers of fine, tapered, solid 3D locks. Roots are hidden
+ * under the existing CC0 cap, while visible ends are 2–4 mm off the actual
+ * v121 forehead surface. Never alter the original imported wig geometry.
  */
 export function buildReferenceFringe(THREE,head,{
- color='#d2b17a',style='blunt',lengthMm=55,widthPct=95,forwardMm=0
+ color='#d2b17a',style='blunt',lengthMm=70,widthPct=100,forwardMm=0
 }={}){
  const group=new THREE.Group();
- group.name='detachable-3d-bangs-'+style;
+ group.name='detachable-layered-bangs-'+style;
  if(style==='none')return group;
  if(!['blunt','center'].includes(style))throw Error('不正な前髪スタイルです');
- const count=72,steps=16,sides=8,p=[],uv=[],idx=[];
+ const count=88,layers=2,steps=20,sides=6;
+ const pos=[],uv=[],idx=[],colors=[];
  const length=clamp(Number(lengthMm),30,115)/1000;
  const width=clamp(Number(widthPct),45,125)/100;
  const forward=clamp(Number(forwardMm),-20,35)/1000;
- const rootY=head.top-.037,span=head.rx*.76*width;
+ const span=head.rx*.84*width,baseY=head.top-.024;
  const front=(x,y)=>{
   if(typeof head.frontAt==='function')return head.frontAt(x,y);
-  return head.cz+head.rz*Math.sqrt(Math.max(.05,1-((x-head.cx)/head.rx)**2));
+  const ratio=(x-head.cx)/Math.max(head.rx,.01);
+  return head.cz+head.rz*Math.sqrt(Math.max(.05,1-ratio*ratio));
  };
- for(let i=0;i<count;i++){
-  const u=(i+.5)/count*2-1;
-  if(style==='center'&&Math.abs(u)<.055)continue;
-  const rootX=head.cx+u*span;
-  const sweep=style==='center'?Math.sign(u)*(.008+.009*(1-Math.min(1,Math.abs(u)))):0;
-  const tipY=rootY-length*(style==='center'?.90+.09*Math.abs(u):1)
-   +(style==='blunt'?.001*Math.sin(i*2.17):0);
-  const start=p.length/3,half0=Math.max(.00065,span*1.95/count*.54);
-  const surfaceX=t=>clamp(rootX+sweep*t,head.cx-head.rx*.94,head.cx+head.rx*.94);
-  const rootZ=front(rootX,rootY)+.0009; // hidden under the CC0 outer layer
-  for(let j=0;j<steps;j++){
-   const t=j/(steps-1),ease=t*t*(3-2*t);
-   const x=surfaceX(ease)+.00035*Math.sin(i*1.37+t*3)*t;
-   const y=lerp(rootY,tipY,t)+.0014*Math.sin(Math.PI*t);
-   // Individual forehead sampling keeps the locks tangential to real skin.
+ const lateral=t=>clamp(t,head.cx-head.rx*.97,head.cx+head.rx*.97);
+ for(let layer=0;layer<layers;layer++)for(let i=0;i<count;i++){
+  const u=(i+.5+(layer?.34:0))/count*2-1;
+  // Recess the part rather than forming a blunt center wall.
+  if(style==='center'&&Math.abs(u)<.075)continue;
+  const id=i+layer*count;
+  const jitter=Math.sin(id*2.399963);
+  const rootX=head.cx+u*span+layer*.00045;
+  const rootY=baseY+(layer?.004:0)+.0018*Math.sin(i*.53);
+  const part=Math.sign(u)*(style==='center'?
+    (.013+.014*(1-Math.min(1,Math.abs(u)))):0);
+  const side=style==='blunt'?Math.sign(u)*Math.pow(Math.abs(u),3)*.006:0;
+  const sweep=part+side;
+  const tipLength=length*(style==='center'?(.97+.08*Math.abs(u)):(.96+.045*Math.abs(u)));
+  const stagger=.0020*Math.sin(id*2.17)+.0012*Math.sin(i*.48);
+  const tipY=rootY-tipLength+(layer?.004:0)+stagger;
+  const xSpan=(2*span/count)*(.57+layer*.06);
+  const start=pos.length/3;
+  const current=(t)=>{
+   const e=t*t*(3-2*t);
+   const x=lateral(rootX+sweep*e+
+     (.0008*Math.sin(i*.71+t*3.7)+.0005*jitter)*t);
+   const y=lerp(rootY,tipY,t)+.0012*Math.sin(Math.PI*t);
    const skin=front(x,y);
-   const clearance=.0011+ .0034*ease;
-   const z=lerp(rootZ,skin+clearance,ease)+forward+
-    .0006*Math.sin(i*.73+t*3.1)*ease;
-   const half=half0*(1-.17*t);
+   // The negative root clearance hides the seam INSIDE the cap.
+   // The free tip stays close to actual forehead, not a planar curtain.
+   const clearance=lerp(-.0035,.0030,e)+(layer?.0013:0);
+   const z=skin+clearance+forward+
+    .00085*Math.sin(i*.57+1.4*t)*Math.sin(Math.PI*t);
+   return {x,y,z};
+  };
+  for(let j=0;j<steps;j++){
+   const t=j/(steps-1),p=current(t);
+   const taper=(.35+.65*Math.min(1,t/.18))*(1-.63*t*t);
+   const half=Math.max(.00018,xSpan*taper);
+   const thickness=(.00055+.00023*(1-t));
+   const fiberTone=Math.max(.72,Math.min(1.0,
+    .90+.065*Math.sin(i*1.93+layer*4)+.028*Math.sin(i*.49)));
    for(let k=0;k<sides;k++){
     const theta=2*Math.PI*k/sides;
-    p.push(x+half*Math.cos(theta),y,z+.0013*Math.sin(theta));
-    uv.push(k/sides,t);
+    pos.push(p.x+half*Math.cos(theta),p.y,p.z+thickness*Math.sin(theta));
+    uv.push((k/sides)*1.5+(i%7)*.04,t*2.6);
+    const highlight=Math.max(.67,Math.min(1,fiberTone+.04*Math.cos(theta)+.018*Math.sin(t*23+i)));
+    colors.push(highlight,highlight*.992,highlight*.978);
    }
   }
-  const caps=p.length/3;
-  const tipX=surfaceX(1),tipZ=front(tipX,tipY)+.0045+forward;
-  p.push(rootX,rootY,rootZ+forward,tipX,tipY,tipZ);
-  uv.push(.5,0,.5,1);
+  const cap0=pos.length/3,first=current(0),last=current(1);
+  pos.push(first.x,first.y,first.z,last.x,last.y,last.z);
+  uv.push(.5,0,.5,2.6);
+  colors.push(.9,.9,.9,.9,.9,.9);
   for(let j=0;j<steps-1;j++)for(let k=0;k<sides;k++){
-   const next=(k+1)%sides,a=start+j*sides+k,b=start+j*sides+next;
+   const next=(k+1)%sides;
+   const a=start+j*sides+k,b=start+j*sides+next;
    idx.push(a,b,a+sides,b,b+sides,a+sides);
   }
   for(let k=0;k<sides;k++){
    const next=(k+1)%sides;
-   idx.push(caps,start+next,start+k);
-   idx.push(caps+1,start+(steps-1)*sides+k,start+(steps-1)*sides+next);
+   idx.push(cap0,start+next,start+k);
+   idx.push(cap0+1,start+(steps-1)*sides+k,start+(steps-1)*sides+next);
   }
  }
  const geo=new THREE.BufferGeometry();
- geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ geo.setAttribute('normal',new THREE.Float32BufferAttribute(new Float32Array(pos.length),3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
- geo.setIndex(idx);geo.computeVertexNormals();
- const tex=fringeTexture(THREE);
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geo.setIndex(idx);
+ geo.computeVertexNormals();
+ const texture=fringeTexture(THREE);
  const mat=new THREE.MeshStandardMaterial({
-  color,roughness:.74,metalness:0,side:THREE.DoubleSide,
-  ...(tex?{map:tex}:{})
+  color,roughness:.77,metalness:0,side:THREE.DoubleSide,vertexColors:true,
+  ...(texture?{map:texture}:{})
  });
  const mesh=new THREE.Mesh(geo,mat);
- mesh.name='bangs-physical-strands';mesh.castShadow=true;
+ mesh.name='bangs-layered-tapered-fibers';
+ mesh.castShadow=true;
  group.add(mesh);
- group.userData.dispose=()=>{geo.dispose();mat.dispose();tex?.dispose();};
+ group.userData.dispose=()=>{geo.dispose();mat.dispose();texture?.dispose();};
  return group;
 }
 
