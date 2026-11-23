@@ -33,6 +33,10 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('#wire').click();
   mkdirSync('qa/screenshots/face-v121',{recursive:true});
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-front.png'});
+  await page.locator('[data-camera="eyeClose"]').click();
+  assert.equal(await page.locator('[data-camera="eyeClose"]').getAttribute('aria-pressed'),'true');
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-curved-lashes-closeup.png'});
+  await page.locator('[data-camera="front"]').click();
   await page.locator('[data-camera="threeQuarter"]').click();
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-three-quarter.png'});
   await page.locator('[data-camera="side"]').click();
@@ -67,6 +71,10 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialLeftVertexIds.length>10);
   assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialRightVertexIds.length>10);
   assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLashPlacementVersion,'v121-anatomical-rim-20261123');
+  assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.curvedLashGeometry,'seven_segment_elliptical_3d_tapered_C_curl');
+  assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.upperLashCcurl,true);
+  assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLashDownwardCurl,true);
+  assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLidWaterline,true);
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.nostrilWingVerticesAdjusted.length>20);
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.lipVermilionVerticesAdjusted.length>30);
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
