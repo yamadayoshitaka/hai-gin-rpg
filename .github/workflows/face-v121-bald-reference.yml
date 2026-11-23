@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/build-neutral-face-v121.py'
+      - 'scripts/refine-neutral-face-v121.py'
       - 'face-neutral-v121.html'
       - 'face-neutral-v120.html'
       - 'face-mesh-studio.html'
@@ -25,7 +26,14 @@ jobs:
       - run: python -m pip install --disable-pip-version-check Pillow==11.3.0
       - name: Bake v120 source neutral geometry
         run: python3 scripts/build-neutral-face-v120.py
-      - name: Build bald female reference PBR skin and fixed face topology
+      - name: Reconstruct original v121 GLB for backup
+        run: python3 scripts/backups/build-neutral-face-v121-pre-20261123.py --out assets/generated/backups/neutral-face-v121-before-refresh.glb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v121-before-eye-uv-refresh-backup
+          path: assets/generated/backups/neutral-face-v121-before-refresh.glb
+          retention-days: 10
+      - name: Build bald female UV-eye reference PBR skin and fixed face topology
         run: python3 scripts/build-neutral-face-v121.py
       - name: Verify actual v121 geometry, index order, PNG textures and no hair/animation
         run: python3 qa/face-v121-bald-reference-skin.test.py
@@ -64,7 +72,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v121-bald-front-side-webgl
+          name: v121-bald-front-quarter-side-webgl
           path: |
             qa/screenshots/face-v121/*.png
             qa/screenshots/face-v121/*.glb

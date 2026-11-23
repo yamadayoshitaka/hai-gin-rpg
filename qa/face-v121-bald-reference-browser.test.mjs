@@ -33,6 +33,8 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('#wire').click();
   mkdirSync('qa/screenshots/face-v121',{recursive:true});
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-front.png'});
+  await page.locator('[data-camera="threeQuarter"]').click();
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-three-quarter.png'});
   await page.locator('[data-camera="side"]').click();
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-side.png'});
   await page.locator('[data-camera="front"]').click();
@@ -55,9 +57,11 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,false);
   assert.equal(gltf.meshes[0].extras.version,121);
   assert.equal(gltf.meshes[0].extras.hairIncluded,false);
-  assert.equal(gltf.images.length,3,'PBR skin must embed albedo, roughness and micro-normal');
+  assert.equal(gltf.images.length,4,'PBR skin and eye atlas must be embedded');
+  assert.equal(gltf.meshes.length,3,'One skin and two UV-iris eye globes; no independent disks');
+  assert.equal(gltf.meshes[0].extras.eyeConstruction.irisAndPupilSeparateMeshes,false);
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
-  assert.equal(gltf.materials[0].name,'V121_PORCELAIN_SKIN_PBR');
+  assert.equal(gltf.materials[0].name,'V121_ANATOMICAL_SKIN_PBR_2048');
   assert.ok(gltf.meshes[0].extras.futureRigZones.mouth.length>10);
   console.log('PASS v121 WebGL and export',JSON.stringify({
    vertexText:await page.locator('#vertexCount').textContent(),

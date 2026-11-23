@@ -12,6 +12,8 @@ import json
 import math
 import pathlib
 import struct
+import subprocess
+import sys
 from PIL import Image, ImageFilter
 
 SOURCE=pathlib.Path('assets/generated/neutral-face-v120.glb')
@@ -280,3 +282,4 @@ if __name__=='__main__':
     parser.add_argument('--out',type=pathlib.Path,default=DEST)
     args=parser.parse_args()
     build(args.source,args.out)
+    subprocess.run([sys.executable,'scripts/refine-neutral-face-v121.py',str(args.out)],check=True)
