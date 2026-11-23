@@ -71,8 +71,10 @@ export function headDerivedHairline(x,z,h){
 export function headDerivedLength(x,z,h){
  const angle=Math.abs(Math.atan2(x-h.cx,z-h.cz));
  const side=smooth((angle-.49)/.80);
- const tipNoise=.005*(hash(Math.floor(angle*68)+Math.sign(x-h.cx)*71)-.5);
- return .025+.193*side+tipNoise;
+ // Smooth scissors-cut variation, rather than per-vertex random notches.
+ const tipNoise=.006*Math.sin(angle*11+Math.sign(x-h.cx)*1.8)+
+  .0035*Math.sin(angle*29+.6);
+ return .030+.193*side+tipNoise;
 }
 function buildClippedCranium(source,h){
  const positions=source.getAttribute('position');
@@ -158,9 +160,13 @@ function createHairBody(THREE,head,anatomy,color){
   const n=p.n,mag=Math.hypot(...n)||1;
   const d=[n[0]/mag,n[1]/mag,n[2]/mag];
   const f=smooth((p.y-anatomy.brow)/Math.max(.04,anatomy.top-anatomy.brow));
-  const groove=Math.sin(p.x*128+p.z*72)*.00055;
-  const offset=.0031+.0015*f+groove;
-  register([p.x+d[0]*offset,p.y+d[1]*offset,p.z+d[2]*offset],0,0);
+  // New sculpt, not a helmet-shaped parallel offset: the top gains a soft
+  // swept volume and the real part line stays lower and closely rooted.
+  const nearPart=Math.exp(-((p.x-anatomy.cx)/.009)**2);
+  const sweep=.0034*f*Math.sign(p.x-anatomy.cx||1);
+  const brushed=.00085*Math.sin(p.x*170+p.z*42)+.00055*Math.sin(p.x*55-p.z*101);
+  const offset=.0043+.0074*f-.0035*f*nearPart+brushed;
+  register([p.x+d[0]*offset+sweep,p.y+d[1]*offset,p.z+d[2]*offset],0,0);
  }
  for(const p of verts){
   const n=p.n,mag=Math.hypot(...n)||1;
@@ -185,9 +191,10 @@ function createHairBody(THREE,head,anatomy,color){
     angle=Math.atan2(p.x-anatomy.cx,p.z-anatomy.cz),abs=Math.abs(angle);
   const length=headDerivedLength(p.x,p.z,anatomy);
   const curve=smooth(t),front=1-smooth((abs-.36)/.72);
-  const x=p.x+ex*(.002+.014*curve)+Math.sin(angle*4)*.003*curve;
-  const y=p.y-length*t+.002*Math.sin(t*Math.PI);
-  const z=p.z+ez*(.002+.014*curve)+.003*front*curve;
+  const x=p.x+ex*(.003+.014*curve)+Math.sin(angle*5.5)*.004*curve;
+  const y=p.y-length*t+.003*Math.sin(t*Math.PI);
+  const z=p.z+ez*(.003+.015*curve)+.003*front*curve+
+   Math.sin(angle*4.7+1)*.003*curve;
   const offset=inside?.0008:.0035;
   const part=partOf(p.x,p.z);
   const v=[x+ex*offset,y,z+ez*offset],weight=t*t*(3-2*t);
@@ -267,7 +274,7 @@ export function buildHeadDerivedHair01(THREE,skin,{referenceRoot,headSize,color=
    size.depth/firstSize.depth);
   root.position.set(0,0,0);
   root.userData.fit={scale:root.scale.toArray(),position:[0,0,0],headSize:size,
-   fitMethod:'one-extruded-v121-skin-mesh',scalpGap:.0031};
+   fitMethod:'one-extruded-v121-skin-mesh',scalpGap:.0043};
   return root.userData.fit;
  };
  const paint=()=>{
