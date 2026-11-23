@@ -17,7 +17,7 @@ for y0,y1 in [(-.30,-.15),(-.15,-.08),(-.08,0),(0,.025),(.025,.050),(.050,.075),
  side=[(p,u) for p,u in rows if abs(p[0])>.04 and p[2]>.0]
  print('ANATOMY_BAND',json.dumps(dict(y=[y0,y1],n=len(rows),front=len(front),x=q([abs(p[0]) for p,u in rows],.95),zFront=q([p[2] for p,u in front],.9),zMedian=q([p[2] for p,u in rows],.5),zBack=q([p[2] for p,u in rows],.1),uvFront=[q([u[0] for p,u in front],.5),q([u[1] for p,u in front],.5)],side=len(side))))
 
-for cut in (.105,.115,.125,.135,.145,.155):
+for cut in (.145,.155,.170,.185,.195,.205,.210):
  removed=set(i for i in range(len(tri)//3) if min(pts[k][1] for k in tri[3*i:3*i+3])<cut and len(set(tri[3*i:3*i+3]))==3)
  keep=collections.defaultdict(list);drop=collections.defaultdict(list)
  for i in range(len(tri)//3):
