@@ -495,7 +495,7 @@ export function sculptHairFromHead(THREE,skin,{referenceRoot,headSize,color='#b6
     uniqueSculpt:true,oldHairGeometryUsed:false,oneSolid:true,antiHelmetSculpt:true,baseUnderOuterLocks:true,
     crownTriangles:groom.crownFaces,boundaryEdges:groom.boundaryEdges,
     totalTriangles:Object.values(groom.counts).reduce((a,b)=>a+b,0),
-    totalVertices:groom.vertices,browY:shape.brow,topY:shape.top,
+    totalVertices:groom.vertices,externalLocks:groom.externalLocks,browY:shape.brow,topY:shape.top,
     sway:'root-locked-damped-spring'})
  };
 }
