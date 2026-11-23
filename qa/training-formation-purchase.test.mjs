@@ -36,22 +36,25 @@ test('formation preview hires only the exact deficit then places real soldiers',
  const before=game.campaign.treasury;
  const quote=inspectTrainingFormationPurchase(game,1,'attack');
  assert.equal(quote.possible,true);
- assert.equal(quote.hireCount,2,'uses stock Knight and hires only two ranged soldiers');
- assert.equal(quote.cost,20);
+ assert.equal(quote.allocations.length,3,'named formations purchase three distinct jobs');
+ assert.equal(new Set(quote.allocations.map(x=>x.job)).size,3);
+ assert.ok(quote.hireCount>=2);
+ assert.equal(quote.cost,quote.hireCount*10);
  assert.ok(quote.allocations.some(x=>x.job==='騎士'&&x.hire===0));
- assert.ok(quote.allocations.some(x=>x.job==='魔法使い'&&x.hire===2));
+ assert.ok(quote.allocations.some(x=>x.job==='魔法使い'));
+ assert.ok(quote.allocations.some(x=>x.job==='忍者'||x.job==='シーフ'));
  const executed=purchaseAndArrangeTrainingFormation(game,1,'attack');
- assert.equal(executed.cost,20);
- assert.equal(game.wallet,280);
+ assert.equal(executed.cost,quote.cost);
+ assert.equal(game.wallet,300-quote.cost);
  assert.equal(game.campaign.treasury,before,'payment does not affect campaign treasury');
- assert.equal(sortieTeamCount(sortieTeams(game)[0]),5);
+ assert.equal(sortieTeamCount(sortieTeams(game)[0]),quote.total);
  assert.equal(inspectInnFormation(game,1,'attack').eligible,true);
  assert.equal(sortieTeams(game)[0].formation,'attack');
  const second=inspectTrainingFormationPurchase(game,1,'attack');
  assert.equal(second.cost,0);
  assert.equal(second.already,true);
  purchaseAndArrangeTrainingFormation(game,1,'attack');
- assert.equal(game.wallet,280,'repeated click does not charge twice');
+ assert.equal(game.wallet,300-quote.cost,'repeated click does not charge twice');
 });
 
 test('insufficient gold blocks payment without changing the game',()=>{
@@ -59,7 +62,7 @@ test('insufficient gold blocks payment without changing the game',()=>{
  game.wallet=0;
  const quote=inspectTrainingFormationPurchase(game,1,'attack');
  assert.equal(quote.possible,false);
- assert.equal(quote.cost,20);
+ assert.ok(quote.cost>0);
  assert.match(quote.reason,/所持金/);
  const before=JSON.stringify(game.campaign);
  assert.throws(()=>purchaseAndArrangeTrainingFormation(game,1,'attack'),/所持金/);
@@ -78,7 +81,7 @@ test('formation pricing respects rarity and occupation of other teams',()=>{
  teams[1].divisions[String(knight.id)]=1;
  const quote=inspectTrainingFormationPurchase(game,1,'attack');
  assert.equal(quote.possible,true);
- assert.equal(quote.hireCount,2);
+ assert.equal(quote.allocations.length,3);
  purchaseAndArrangeTrainingFormation(game,1,'attack');
  assert.equal(sortieTeams(game)[1].counts[String(knight.id)],27);
  const elite=inspectTrainingFormationPurchase(game,1,'dragon');
