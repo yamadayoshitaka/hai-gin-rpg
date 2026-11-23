@@ -61,8 +61,8 @@ class ReferenceFeatureTests(unittest.TestCase):
         for i in sculpt['lipVermilionVerticesAdjusted']:
             x,y,z=self.xyz[i]
             self.assertLess(abs(x),.058)
-            self.assertGreater(y,.172)
-            self.assertLess(y,.227)
+            self.assertGreater(y,.215)
+            self.assertLess(y,.253)
         self.assertEqual(len(get(self.g,self.b,self.p['attributes']['NORMAL'])),13455)
         self.assertTrue(all(math.isfinite(v) for xyz in self.xyz for v in xyz))
 
