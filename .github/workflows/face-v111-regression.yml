@@ -7,6 +7,8 @@ on:
       - 'src/face-v107-natural-smile.js'
       - 'src/face-feature-meshes.js'
       - 'src/independent-face-masters.js'
+      - 'src/face-v117-reference-portrait-mesh.js'
+      - 'qa/face-v117-reference-portrait.test.mjs'
       - 'qa/face-v111-initial-cheek-regression.test.mjs'
       - 'qa/face-v114-natural-eye.test.mjs'
       - 'qa/face-v115-liner-lash-geometry.test.mjs'
@@ -22,6 +24,8 @@ on:
       - 'src/face-v107-natural-smile.js'
       - 'src/face-feature-meshes.js'
       - 'src/independent-face-masters.js'
+      - 'src/face-v117-reference-portrait-mesh.js'
+      - 'qa/face-v117-reference-portrait.test.mjs'
       - 'qa/face-v111-initial-cheek-regression.test.mjs'
       - 'qa/face-v114-natural-eye.test.mjs'
       - 'qa/face-v115-liner-lash-geometry.test.mjs'
@@ -46,6 +50,8 @@ jobs:
           node --check src/face-v106-local-retopo.js
           node --check src/face-v107-natural-smile.js
           node --check src/independent-face-masters.js
+          node --check src/face-v117-reference-portrait-mesh.js
+          node --check qa/face-v117-reference-portrait.test.mjs
           node --check qa/face-v111-initial-cheek-regression.test.mjs
           node --check src/face-feature-meshes.js
           node --check qa/face-v114-natural-eye.test.mjs
@@ -54,6 +60,8 @@ jobs:
           node --check src/face-expression-animation-v48.js
           node --check src/face-v114-eye-migration.js
           node --check qa/face-v114-eye-migration.test.mjs
+      - name: Confirm v117 real donor-indexed reference face sculpt, normals and first-frame parity
+        run: node --test qa/face-v117-reference-portrait.test.mjs
       - name: Compare actual CC0 GLB normals and triangle indices after body reselect
         run: node --test qa/face-v111-initial-cheek-regression.test.mjs
       - name: Verify reference eye contours, real iris ratio and intact source preset

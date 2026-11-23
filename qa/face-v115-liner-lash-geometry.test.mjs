@@ -95,7 +95,7 @@ test('V115 visual generation keeps male optics and v113 original head intact',()
  assert.match(animation,/syncV115LashesToLiveEyeliner\(side\.lowerLash,side\.lowerLiner\)/);
  assert.doesNotMatch(animation,/side\.upperLash\.position\.y=side\.lashRestY/);
  assert.match(html,/v115OpticsFitToActualLids/);
- assert.match(html,/dataset\.faceMeshReady='v115'/);
+ assert.match(html,/dataset\.faceMeshReady='v117'/);
  assert.match(html,/experimentalCheekRetopo/);
  assert.match(html,/V112_SKIN_WIRE_OVERLAY/);
 });

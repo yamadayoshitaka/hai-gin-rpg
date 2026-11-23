@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#14263a">
 <!-- Pages publication retry: scalp v29 c937964d; requested visual verification 2026-11-21 -->
 <!-- FaceHair Pages redeploy checkpoint: 2026-11-21 v23 publication retry; verify runtime build badge -->
-<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v115</title>
+<title>灰銀のレゾナンス｜男女の顔・髪の編集｜顔品質 v117</title>
 <style>
 :root{font:15px/1.55 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -78,7 +78,7 @@ button{padding:9px 11px}
 </style><style>.v64-manager-link{display:inline-flex;margin:8px 0;padding:9px 12px;border-radius:8px;background:#246b59;color:white;text-decoration:none;border:1px solid #9bd8be}</style></head>
 <body><a class="v64-manager-link" href="character-face-catalog.html">顔・髪・キャラクター管理一覧 v64</a>
 <header>
-<h1>顔・髪の編集｜顔品質 v115・髪造形 v72</h1>
+<h1>顔・髪の編集｜顔品質 v117・髪造形 v72</h1>
 <a class="studioNav" href="./face-body-studio.html?v=76" id="returnToCostume">衣装確認画面に戻る</a>
 </header>
 <main><section class="panel">
@@ -94,7 +94,7 @@ button{padding:9px 11px}
 <output id="activeHairStyle" role="status">髪型を読み込み中…</output>
 </div>
 <div class="previewStage" id="previewStage">
-<div id="faceViewerStatus" role="status" aria-live="polite">顔 v115・髪 v72｜3Dモデルを読込中…</div>
+<div id="faceViewerStatus" role="status" aria-live="polite">顔 v117・髪 v72｜3Dモデルを読込中…</div>
 <canvas id="faceCanvas" aria-label="3D顔ビューアー。一本指で回転、二本指スライドで上下左右へ平行移動、二本指ピンチで拡大縮小"></canvas>
 <p id="faceTouchHint" role="note">操作：1本指＝回転 ／ 2本指スライド＝上下左右へ移動 ／ ピンチ＝拡大・縮小（操作 v116）</p>
 <div class="controls" aria-label="視点切替">
@@ -123,8 +123,8 @@ button{padding:9px 11px}
 </div>
 <details id="studioTechnicalDetails" class="studioTechDetails">
 <summary>品質・生成ログを表示</summary>
-<div id="hairBuildBadge" class="studioBadgeDetails" aria-live="polite">顔品質 v115／髪造形 v72：読込中…</div>
-<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v115：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
+<div id="hairBuildBadge" class="studioBadgeDetails" aria-live="polite">顔品質 v117／髪造形 v72：読込中…</div>
+<p id="faceQualityRelease" role="status" style="font-weight:600;color:#cef5e8;background:#132e3b;border:1px solid #6aa99c;border-radius:7px;padding:9px 12px" aria-live="polite">顔品質 v117：自然な笑顔・メイク・ほうれい線・口腔PBR調整中　｜　髪造形 v72</p>
 
 <section id="hairRuntimeDiagnostics" style="margin:10px 14px;padding:10px;border:1px solid #56718c;border-radius:8px;background:#172b43;font-size:13px" aria-live="polite">髪生成コードの読み込みを確認中…</section>
 <output id="facePoseDiagnostics" role="status" aria-live="polite"
@@ -236,13 +236,13 @@ body.v32-legacy #v32PartsStudio{display:none!important}
 .v32-part-group select{display:block;width:100%;min-height:41px;margin:5px 0;padding:7px;background:#213d55;color:#fff;border:1px solid #7893a5;border-radius:8px}
 .v32-pose-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .v32-tip{color:#b8d5e8;font-size:12px}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261123-v115-eye-liner-lashes","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261123-v115-eye-liner-lashes","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/","./src/independent-face-masters.js":"./src/independent-face-masters.js?v=20261123-v117-portrait-mesh","./src/face-feature-meshes.js":"./src/face-feature-meshes.js?v=20261123-v115-eye-liner-lashes","./src/face-v7-controls.js":"./src/face-v7-controls.js?v=20261122-v107-mouth-default","./src/face-body-assembly.js":"./src/face-body-assembly.js?v=42"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261123-v115-eye-liner-lashes';
+import {makeIndependentFaceMaster,FACE_MASTER_SPEC} from './src/independent-face-masters.js?v=20261123-v117-portrait-mesh';
 import {createFaceExpressionAnimator,FACE_EXPRESSIONS} from './src/face-expression-animation-v48.js?v=20261123-v115-eye-liner-lashes';
 import {updateFaceFeatureAngles,applyFaceColorMode,updateRealFacePigment} from './src/face-feature-meshes.js?v=20261123-v115-eye-liner-lashes';
 import {getNativeOralClosedIndices} from './src/face-native-oral-rig-v88.js?v=20261122-v107-native-rim-singleton';
@@ -349,6 +349,10 @@ let gender='female',angle='front',wired=false,partsOn=true,ready=false;
 // Restore that original indexed normal profile deterministically, without
 // depending on shared geometry flags. Retopo is diagnostic-only via ?retopo=1.
 const experimentalCheekRetopo=new URLSearchParams(location.search).get('retopo')==='1';
+// V117 rebuilds the 20s female facial geometry before the eyes and oral rig.
+// ?referencePortrait=legacy is for reversible before/after diagnostics only.
+const referencePortraitV117=new URLSearchParams(location.search)
+ .get('referencePortrait')!=='legacy';
 let faceMode='color',femaleSource=null,modelChanges=normalizeFemaleFaceControls({...FEMALE_V7_DEFAULTS,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 let maleChanges=normalizeMaleFaceControls({...MALE_REFERENCE_DEFAULT,eyeSpacing:FACE_EYE_SPACING_DEFAULT});
 // V114 neutral portraits default to warm dark brown iris; explicit saved
@@ -612,6 +616,16 @@ if(new URLSearchParams(location.search).get('qa')==='expression'){
   // V113: fingerprint the actual rendered head, not a cached control/preset
   // label. This distinguishes the smooth 3490-vertex original from the
   // malformed 8029-vertex v106 retopologized first frame.
+  referencePortraitProbe(){
+   const m=models.get('female');
+   return {enabled:referencePortraitV117,
+    report:m?.report?.v117ReferencePortrait||null,
+    ageBand:m?.report?.v47Demographics?.ageBand,
+    bodyType:m?.report?.v47Demographics?.bodyType,
+    faceGeometryVertices:(m?.face?.userData?.originalHairScalpGeometry||
+     m?.face?.geometry)?.getAttribute('position')?.count||null,
+    sourceUntouched:m?.report?.sourceUntouched||false};
+  },
   geometrySignature(){
    const face=models.get('female')?.face;
    const geometry=face?.userData?.originalHairScalpGeometry||face?.geometry;
@@ -1027,10 +1041,15 @@ function facePhotoRuntimeStatus(){
 function updateHairRuntimeDiagnostics(wig=null,error=null){
  const faceStatus=facePhotoRuntimeStatus();
  const quick=document.getElementById('faceViewerStatus');
- if(quick)quick.textContent='顔 v115・元GLB基準｜髪 v72｜肌：'+faceStatus;
+ if(quick)quick.textContent='顔 v117・元GLB基準｜髪 v72｜肌：'+faceStatus;
  const cheekNoseReport=models.get('female')?.report?.v99FeminineMalarAlar;
  const normalCheekReport=models.get('female')?.report?.v105CheekGeometry;
  const v111CheekReport=models.get('female')?.report?.v106LocalRetopo?.v111CheekSurface;
+ const v117Portrait=models.get('female')?.report?.v117ReferencePortrait;
+ const v117Status=v117Portrait?.applied?
+  ('再設計 '+v117Portrait.changedVertices+'頂点・頬'+v117Portrait.cheekCandidates+
+   '・鼻'+v117Portrait.noseCandidates+'・口'+v117Portrait.mouthCandidates):
+  (v117Portrait?.reason||'準備中');
  const retopoReport=models.get('female')?.report?.v106LocalRetopo;
  const retopoStatus=retopoReport?.applied===true?
   'v107頬復旧 '+(retopoReport.v107RestCheekVertices||0)+'頂点／局所細分化+'+retopoReport.addedVertices+'頂点／口輪郭保護'+retopoReport.protectedLipVertexCount+'点':
@@ -1050,17 +1069,17 @@ function updateHairRuntimeDiagnostics(wig=null,error=null){
  const cheekNoseStatus=cheekNoseApplied?'適用済（'+(cheekNoseReport.effectiveVertices||cheekNoseReport.verticesAffected)+'頂点）':
   cheekNoseReport?.reason?'未適用：'+cheekNoseReport.reason:'読込中';
  const release=document.getElementById('faceQualityRelease');
- if(release)release.textContent='顔品質 v115｜実写肌PBR：'+faceStatus+
-  '｜v111頬形状：'+v111CheekStatus+'｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔・顔メッシュ：'+cheekNoseStatus+'｜髪造形 v72';
+ if(release)release.textContent='顔品質 v117｜実写肌PBR：'+faceStatus+
+  '｜v117顔骨格：'+v117Status+'｜v111頬形状：'+v111CheekStatus+'｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔・顔メッシュ：'+cheekNoseStatus+'｜髪造形 v72';
  const face=models.get('female')?.face;
  const mask=face?.userData;
  const mode=mask?.hairScalpMaskMode||'未実行';
  const count=mask?.hairScalpMaskedTriangles??0;
  const active=Boolean(mask?.hairScalpMaskActive);
  const reloadButton=document.getElementById('hairForceReload');
- if(reloadButton)reloadButton.title='現在の顔品質 v115／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
+ if(reloadButton)reloadButton.title='現在の顔品質 v117／髪造形 v72｜髪モデル版: '+FACE_HAIR_RUNTIME_BUILD;
  const badge=document.getElementById('hairBuildBadge');
- if(badge)badge.textContent='顔品質 v115（実写肌：'+faceStatus+'）｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔補正：'+cheekNoseStatus+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
+ if(badge)badge.textContent='顔品質 v117（実写肌：'+faceStatus+'）｜局所リトポ：'+retopoStatus+'｜頬曲面：'+cheekContourVersion+'｜頬の復旧：'+normalCheekStatus+'｜鼻孔補正：'+cheekNoseStatus+'｜髪造形 v72｜髪モデル版：'+FACE_HAIR_RUNTIME_BUILD+
   '｜'+(error?'生成エラー':wig?'3D生成済み':'生成待ち')+
   '｜頭皮補正：'+(active?'ON':mode==='long-pigment-underlay'?'ロング被覆':'OFF')+'（'+mode+'）';
  const el=document.getElementById('hairRuntimeDiagnostics');
@@ -1364,6 +1383,7 @@ function rebuildFemale(){
  const next=makeIndependentFaceMaster(femaleSource.scene,'female',{
   femaleControls:modelChanges,
   enableV106LocalRetopo:experimentalCheekRetopo,
+  enableV117ReferencePortrait:referencePortraitV117,
   partSelection:v32PartMode?resolvePartSelection('female',v32Parts.female).ids:null
  });
  applyHeroineSkinMaterial(next.face);
@@ -1927,6 +1947,7 @@ async function init(){
     femaleControls:g==='female'?modelChanges:{},
     maleControls:g==='male'?maleChanges:{},
     enableV106LocalRetopo:g==='female'&&experimentalCheekRetopo,
+     enableV117ReferencePortrait:referencePortraitV117,
     partSelection:v32PartMode?resolvePartSelection(g,v32Parts[g]).ids:null
    });
    model.root.visible=false;
@@ -1948,9 +1969,9 @@ async function init(){
   try{rebuildWig();}catch(hairError){console.error('Initial female wig failed',hairError);}
   try{rebuildMaleHair();}catch(hairError){console.error('Initial male wig failed',hairError);}
   selectGender(initialGender);
-  document.documentElement.dataset.faceMeshReady='v115';
+  document.documentElement.dataset.faceMeshReady='v117';
   resize();orbit.update();renderer.render(scene,camera);
-  $('status').textContent='顔品質v115：完成メッシュ・法線・髪をまとめて表示しました';
+  $('status').textContent='顔品質v117：完成メッシュ・法線・髪をまとめて表示しました';
   for(const id of ['female','male','front','threeQuarter','side','back','crown','underside','wire','parts','wig','clay','color','resetPreset','resetMalePreset','export','exportWig','heroineBeautyV43','autoBlink','talkDemo'])
    $(id).disabled=false;
   const query=new URLSearchParams(location.search);
