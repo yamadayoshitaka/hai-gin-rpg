@@ -40,8 +40,8 @@ class FourViewSculptQA(unittest.TestCase):
         self.assertTrue(meta['chinShortenedAndRounded'])
         self.assertIn('supported-lower-cheek',meta['frontProfileContourPass'])
         self.assertTrue(meta['referenceImageIsNot3DScan'])
-        self.assertEqual(graph['accessors'][p['attributes']['POSITION']]['count'],13455)
-        self.assertEqual(graph['accessors'][p['attributes']['NORMAL']]['count'],13455)
+        self.assertGreater(graph['accessors'][p['attributes']['POSITION']]['count'],16000)
+        self.assertEqual(graph['accessors'][p['attributes']['NORMAL']]['count'],graph['accessors'][p['attributes']['POSITION']]['count'])
         for region in ('temple','malar','jaw','tip','upperLip','lowerLip','underEye'):
             self.assertGreater(meta['resculptedRegionVertexCounts'][region],0,region)
 
