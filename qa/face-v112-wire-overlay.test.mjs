@@ -22,7 +22,7 @@ try{
  await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?qa=expression',
   {waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>
-  document.documentElement.dataset.faceMeshReady==='v117'&&
+  ['v117','v119'].includes(document.documentElement.dataset.faceMeshReady)&&
   window.__faceMasterQA?.()?.loaded===true,null,{timeout:90000});
  const state=()=>page.evaluate(()=>window.__faceMasterQA());
  const check=async(wire,body)=>{
