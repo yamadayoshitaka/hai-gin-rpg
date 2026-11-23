@@ -1,0 +1,36 @@
+name: Face v120 independent neutral master
+on:
+  pull_request:
+    paths:
+      - 'src/neutral-face-v120.js'
+      - 'face-neutral-v120.html'
+      - 'face-mesh-studio.html'
+      - 'qa/face-v120-neutral-head.test.mjs'
+      - '.github/workflows/face-v120-neutral-master.yml'
+  push:
+    branches: [feature/neutral-face-v120-independent-base]
+jobs:
+  neutral-mesh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the same Three.js major used by Pages
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Validate high-resolution source geometry and manifold
+        run: |
+          node --check src/neutral-face-v120.js
+          node --test qa/face-v120-neutral-head.test.mjs
+      - name: Validate browser entry module syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('face-neutral-v120.html').read_text()
+          assert html.count('<script type="module">')==1
+          script=html.split('<script type="module">',1)[1].split('</script>',1)[0]
+          Path('/tmp/neutral-v120-page.mjs').write_text(script)
+          PY
+          node --check /tmp/neutral-v120-page.mjs
