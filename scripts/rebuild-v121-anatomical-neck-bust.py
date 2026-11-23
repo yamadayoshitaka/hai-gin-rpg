@@ -317,6 +317,7 @@ def rebuild(path):
     # recessed cap. This closes the donor's second cut boundary while keeping
     # the original nostril rims above the cut. None of its old triangles survive.
     new_nasal_caps=0
+    shared_anchors={j:source_id for j,source_id in enumerate(ring)}
     for original_ring in nose_rings:
         first=len(pos)
         nose_xyz=[xyz[i] for i in original_ring]
@@ -324,6 +325,7 @@ def rebuild(path):
                 sum(p[1] for p in nose_xyz)/len(nose_xyz),
                 sum(p[2] for p in nose_xyz)/len(nose_xyz))
         for i in original_ring:
+            shared_anchors[len(pos)]=i
             pos.append(xyz[i]);tex.append(uv[i]);colors.append(old_color[i])
         ring2=len(pos)
         for i in original_ring:
@@ -341,59 +343,71 @@ def rebuild(path):
                           (first+k,ring2+k,ring2+j),
                           (ring2+j,ring2+k,end)))
         new_nasal_caps+=len(original_ring)*3
-    ns=normals(pos,faces)
-    for j,src in enumerate(ring):
-        ns[j]=old_norm[src]
-    for v in pos:
-        if not all(math.isfinite(q) for q in v):raise ValueError('Non-finite new geometry')
+    # Real weld: all new triangles share the existing upper-face vertex
+    # indices. Never render an overlapping duplicate boundary mesh.
+    # Only interior lower-face vertices are freshly generated.
     if len(pos)<=2000 or len(faces)<=3500:
         raise ValueError('Fresh parametric lower face has insufficient topology')
-    # Construct expression deltas on the new face and lips, so mouthOpen,
-    # five vowels, smiles, etc move the generated lips rather than dead source.
-    targets=[]
-    for name in NAMES:
-        offsets=[deformation(name,*p,'skin') for p in pos]
-        targets.append({'POSITION':add_float(g,b,offsets)})
-    new_mesh={
-      'name':'V121_NEW_CONTIGUOUS_LOWER_FACE_LIPS_CHIN_NECK_BUST',
-      'primitives':[{
-        'attributes':{
-          'POSITION':add_vec3(g,b,pos),
-          'NORMAL':add_vec3(g,b,ns),
-          'COLOR_0':add_vec3(g,b,colors),
-          'TEXCOORD_0':append_uv(g,b,tex)},
-        'indices':write_indices(g,b,[k for f in faces for k in f]),
-        'material':skin['material'],
-        'targets':targets}],
-      'weights':[0.]*len(NAMES),
-      'extras':{'targetNames':list(NAMES)}
-    }
-    meshid=len(g['meshes']);g['meshes'].append(new_mesh)
-    oldnode=next(nd for nd in g['nodes'] if nd.get('mesh')==0)
-    node={'name':'V121_NEW_LOWER_FACE_NECK_MORPH_NODE','mesh':meshid}
-    for key in ('matrix','translation','rotation','scale'):
-        if key in oldnode:node[key]=list(oldnode[key])
-    node_id=len(g['nodes']);g['nodes'].append(node)
-    g['scenes'][0]['nodes'].append(node_id)
-    for a in g.get('animations',[]):
-        a['channels'].append({'sampler':0,'target':{'node':node_id,'path':'weights'}})
+    map_ids=[]
+    generated=[]
+    generated_uv=[]
+    generated_color=[]
+    for i,p0 in enumerate(pos):
+        if i in shared_anchors:
+            source=shared_anchors[i]
+            if math.dist(p0,xyz[source])>1e-6:
+                raise ValueError('Noncoincident weld boundary')
+            map_ids.append(source)
+        else:
+            map_ids.append(len(xyz)+len(generated))
+            generated.append(p0)
+            generated_uv.append(tex[i])
+            generated_color.append(colors[i])
+    new_faces=[tuple(map_ids[k] for k in face) for face in faces]
+    result_xyz=xyz+generated
+    result_uv=uv+generated_uv
+    result_color=old_color+generated_color
+    all_indices=new_ix+[k for f in new_faces for k in f]
+    live=[tuple(all_indices[k:k+3]) for k in range(0,len(all_indices),3)
+          if len(set(all_indices[k:k+3]))==3]
+    result_normals=normals(result_xyz,live)
+    if not all(math.isfinite(a) for p0 in result_xyz for a in p0):
+        raise ValueError('Nonfinite actual skin geometry')
+    skin['attributes']['POSITION']=add_vec3(g,b,result_xyz)
+    skin['attributes']['NORMAL']=add_vec3(g,b,result_normals)
+    skin['attributes']['TEXCOORD_0']=append_uv(g,b,result_uv)
+    skin['attributes']['COLOR_0']=add_vec3(g,b,result_color)
+    skin['indices']=write_indices(g,b,all_indices)
+    # Preserve the 13,455 existing face vertex IDs, all rig zone indices,
+    # and append newly computed morph deltas to this SAME skin primitive.
+    if len(skin['targets'])!=len(NAMES):
+        raise ValueError('Mismatched morph target count for original face')
+    for i,name in enumerate(NAMES):
+        target=skin['targets'][i]
+        existing=[tuple(v) for v in accessor(g,b,target['POSITION'])]
+        if len(existing)!=len(xyz):
+            raise ValueError('Original expression vertex IDs changed')
+        newly=[deformation(name,*p0,'skin') for p0 in generated]
+        target['POSITION']=add_vec3(g,b,existing+newly)
     m=head.setdefault('extras',{})
     m['neckBustRebuild']={
-      'version':'female-v121-true-single-new-lower-face-and-bust-v2',
+      'version':'female-v121-true-one-skin-topology-v3',
       'replacedFromY':cut,
       'entireOldLowerFaceRemoved':True,
       'oldLowerFaceChinNeckBustTrianglesRetired':retired,
-      'freshVisibleSurfaceVertices':len(pos),
-      'freshVisibleSurfaceTriangles':len(faces),
+      'sourceRetainedVertexIds':len(xyz),
+      'freshVisibleSurfaceVertices':len(generated),
+      'freshVisibleSurfaceTriangles':len(new_faces),
       'oldBodyTrianglesUsedInNewMesh':0,
       'upperFaceWeldBoundaryVertices':n,
       'rebuiltInnerNoseCutTriangles':new_nasal_caps,
       'upperFaceWeldBoundaryEdges':border_edges,
       'newSkinMeshMorphChannels':list(NAMES),
-      'newMorphedNodesAddedToAnimation':len(g['animations']),
+      'samePrimitiveRealIndexWeld':True,
+      'noDuplicatedOrOverlaidSkinSeam':True,
+      'newMorphedNodesAddedToAnimation':0,
       'oneContiguousGeneratedMouthChinNeckShoulderBust':True,
       'oldV120AndMaleModelsUntouched':True}
-    m['facialExpressionRig']['animatedMeshes']+=1
     g['buffers'][0]['byteLength']=len(b)
     raw=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode('utf8')
     raw+=b' '*((-len(raw))%4)
@@ -402,7 +416,7 @@ def rebuild(path):
         f.write(struct.pack('<4sII',b'glTF',2,12+8+len(raw)+8+len(b)))
         f.write(struct.pack('<I4s',len(raw),b'JSON'));f.write(raw)
         f.write(struct.pack('<I4s',len(b),b'BIN'+bytes([0])));f.write(b)
-    print('V121 TRULY REBUILT ENTIRE LOWER FACE',json.dumps(m['neckBustRebuild']))
+    print('V121 SINGLE-SKIN REBUILD',json.dumps(m['neckBustRebuild']))
 
 if __name__=='__main__':
     rebuild(pathlib.Path(sys.argv[1]))
