@@ -39,9 +39,9 @@ for(const [activeSlots,expected] of [[[],0],[[0],1],[[0,2],2],[[0,1,2],3]]){
  assert.match(preview,new RegExp('味方 '+expected+'ジョブ'));
 }
 const separated=renderFormationSignaturePreview('attack',{activeSlots:[0,2]});
-assert.match(separated,/>1<\\/text>/);
-assert.match(separated,/>3<\\/text>/);
-assert.doesNotMatch(separated,/>2<\\/text>/);
+assert.ok(separated.includes('>1</text>'));
+assert.ok(separated.includes('>3</text>'));
+assert.ok(!separated.includes('>2</text>'));
 
 const wedge=signatureStrategyFor('wedge');
 assert.ok(wedge.phases[1][0][0]>wedge.phases[1][1][0],
