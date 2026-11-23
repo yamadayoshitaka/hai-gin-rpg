@@ -16,6 +16,7 @@ main{max-width:1080px;margin:auto;padding:12px;display:grid;grid-template-column
 .panel{padding:12px;background:#182738;border:1px solid #3b566a;border-radius:12px;min-width:0}
 #viewport{position:relative;height:min(75vh,660px);min-height:340px;background:radial-gradient(ellipse at 52% 40%,#354350,#111a27 78%);border-radius:10px;overflow:hidden;touch-action:none}
 #viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#wip[hidden]{display:none}
 #wip{position:absolute;left:12px;top:12px;right:12px;pointer-events:none;font-size:11px;color:#c5d3dc;text-shadow:0 1px 3px #101824}
 #badge{position:absolute;right:12px;bottom:12px;pointer-events:none;font-size:11px;color:#d9cbaa;background:#101824ae;border-radius:6px;padding:5px 8px}
 button,select,input[type=color]{font:inherit;min-height:42px;color:#f4f9ff;background:#263f52;border:1px solid #638397;border-radius:8px;padding:8px}
@@ -37,11 +38,11 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 <body>
 <header>
 <h1>ウィッグ工房 <small style="font-size:12px;font-weight:400;color:#c5d0da">NEW / GLB</small></h1>
-<p>旧ヘアスタジオの生成コード・UIは使用しません。顔v121の実頭部メッシュで採寸し、ネットから取得した別体ウィッグGLBのみを表示・調整します。</p>
+<p>旧ヘアスタジオの生成コード・UIは使用しません。顔v121の頭皮形状でウィッグの頂部を採寸し、前髪を額に沿わせて調整します。</p>
 </header>
 <main>
 <section class="panel">
-<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">実際の3DウィッグGLBを読み込みます。通常は頭部を非表示にし、チェック時のみv121ワイヤーを重ねます。骨格変形は適用しません。</div><div id="badge">CC0 / MakeHuman</div></div>
+<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">GLB読み込み中。v121頭皮ワイヤーはチェック時のみ表示。</div><div id="badge">CC0 / MakeHuman</div></div>
 <div class="actions">
 <button type="button" data-view="front">正面</button>
 <button type="button" data-view="side">側面</button>
@@ -62,8 +63,8 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 </select></label>
 <label>髪色
 <input type="color" id="color" value="#d9b77e"></label>
-<label>頭型へのフィット幅 <output id="widthValue">111%</output>
-<input type="range" id="width" min="99" max="125" step="1" value="111"></label>
+<label>頭型へのフィット幅 <output id="widthValue">104%</output>
+<input type="range" id="width" min="99" max="125" step="1" value="104"></label>
 <label>前後位置 <output id="forwardValue">0 mm</output>
 <input type="range" id="forward" min="-25" max="35" step="1" value="0"></label>
 <label>上下位置 <output id="verticalValue">0 mm</output>
@@ -74,12 +75,12 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 <option value="blunt">ぱっつん</option>
 <option value="center">センターパート</option>
 </select></label>
-<label>前髪の長さ <output id="bangLengthValue">75 mm</output>
-<input type="range" id="bangLength" min="30" max="115" value="75" step="1"></label>
+<label>前髪の長さ <output id="bangLengthValue">55 mm</output>
+<input type="range" id="bangLength" min="30" max="115" value="55" step="1"></label>
 <label>前髪の幅 <output id="bangWidthValue">95%</output>
 <input type="range" id="bangWidth" min="45" max="125" value="95" step="1"></label>
-<label>前髪の前後位置 <output id="bangForwardValue">8 mm</output>
-<input type="range" id="bangForward" min="-20" max="35" value="8" step="1"></label>
+<label>前髪の前後位置 <output id="bangForwardValue">0 mm</output>
+<input type="range" id="bangForward" min="-20" max="35" value="0" step="1"></label>
 <label class="check"><input id="headWire" type="checkbox">v121実頭部ワイヤーを表示（水色）</label>
 <label class="check"><input id="spin" type="checkbox">自動で回転</label>
 <button type="button" id="export" disabled>ウィッグだけをGLBで保存</button>
@@ -93,7 +94,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=3';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=4';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -117,7 +118,7 @@ const loader=new GLTFLoader();
 const exporter=new GLTFExporter();
 const STYLES=new Map(PUBLIC_WIG_SOURCES.map(s=>[s.id,s]));
 const ORIGIN='https://raw.githubusercontent.com/kblood/CharacterCreator/master/output/';
-let head=null,wig=null,wigContent=null,rawBox=null,fringe=null,headWire=null,activeId='long01',token=0;
+let head=null,wig=null,wigContent=null,rawBox=null,rawCrown=null,fringe=null,headWire=null,activeId='long01',token=0;
 let nativeMats=[],viewCenter=new THREE.Vector3(),viewRadius=.6,rawMode='',geometryAudit=null;
 function setStatus(message,error=false){
  $('status').textContent=message;
@@ -151,7 +152,7 @@ function clearWig(){
    if(material?.userData?.wigOwned)material.dispose();
   }
  });
- wig=null;wigContent=null;rawBox=null;fringe=null;nativeMats=[];
+ wig=null;wigContent=null;rawBox=null;rawCrown=null;fringe=null;nativeMats=[];
  $('export').disabled=true;
 }
 function colorWig(){
@@ -189,7 +190,8 @@ function updateFit(){
  const opts={
   widthRatio:Number($('width').value)/100,
   forward:Number($('forward').value)/1000,
-  vertical:Number($('vertical').value)/1000
+  vertical:Number($('vertical').value)/1000,
+  crown:rawCrown
  };
  const fit=calculateWigFit(rawBox,head,opts);
  wigContent.scale.setScalar(fit.scale);
@@ -222,6 +224,8 @@ function updateFit(){
   '\n髪の元モデル：'+rawMode+
   '\n頭への拡大率：'+fit.scale.toFixed(3)+
   '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m'+
+  '\n頭皮の横幅・奥行：'+(fit.headWidth*1000).toFixed(1)+' / '+(fit.headDepth*1000).toFixed(1)+' mm'+
+  '\nウィッグ頂部の横幅・奥行：'+(fit.capWidth*1000).toFixed(1)+' / '+(fit.capDepth*1000).toFixed(1)+' mm'+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
   '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
   '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目'+
@@ -279,6 +283,7 @@ async function loadWig(style,sourceFile){
  wigContent=isolated.root;
  geometryAudit=isolated.audit;
  rawBox=isolated.bounds;
+  rawCrown=measureWigCrown(THREE,wigContent,rawBox);
  if(rawBox.isEmpty())throw Error('髪だけの独立メッシュがありません');
  wigContent.name='imported-CC0-'+descriptor.id;
  wig.add(wigContent);
@@ -289,6 +294,7 @@ async function loadWig(style,sourceFile){
  colorWig();
  frameView('front');
  $('export').disabled=false;
+ $('wip').hidden=true;
  setStatus(descriptor.label+'：骨格変形を除外した独立した髪メッシュだけを読み込みました。ワイヤーはチェック時のみ表示します。全身骨格は表示しません。');
 }
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
@@ -304,9 +310,9 @@ $('headWire').addEventListener('change',()=>{
 });
 $('color').addEventListener('input',colorWig);
 $('reset').addEventListener('click',()=>{
- $('width').value='111';$('forward').value='0';$('vertical').value='0';
- $('bangStyle').value='none';$('bangLength').value='75';
- $('bangWidth').value='95';$('bangForward').value='8';
+ $('width').value='104';$('forward').value='0';$('vertical').value='0';
+ $('bangStyle').value='none';$('bangLength').value='55';
+ $('bangWidth').value='95';$('bangForward').value='0';
  $('headWire').checked=false;$('spin').checked=false;
  updateHeadWire();
  updateFit();frameView('front');
