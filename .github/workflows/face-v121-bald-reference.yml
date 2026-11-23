@@ -4,6 +4,8 @@ on:
     paths:
       - 'scripts/build-neutral-face-v121.py'
       - 'scripts/refine-neutral-face-v121.py'
+      - 'scripts/reshape-v121-reference-head.py'
+      - 'qa/face-v121-four-view-mesh.test.py'
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
       - 'qa/face-v121-natural-folds-cleanup.test.py'
@@ -52,6 +54,7 @@ jobs:
           python3 qa/face-v121-natural-folds-cleanup.test.py
           python3 qa/face-v121-lower-lashes-nose-lips.test.py
           python3 qa/face-v121-expression-morph.test.py
+          python3 qa/face-v121-four-view-mesh.test.py
       - uses: actions/upload-artifact@v4
         if: success()
         with:
