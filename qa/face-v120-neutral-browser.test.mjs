@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-import {mkdirSync,readFileSync} from 'node:fs';
+import {mkdirSync,readFileSync,copyFileSync} from 'node:fs';
 
 test('Android-size v120 face renders and downloads an actual binary neutral GLB',async()=>{
  const browser=await chromium.launch({headless:true,args:[
@@ -40,7 +40,9 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
   await page.locator('#export').click();
   const item=await dl;
   assert.equal(item.suggestedFilename(),'hai-gin-neutral-face-v120.glb');
-  const buf=readFileSync(await item.path());
+  const localGLB=await item.path();
+  const buf=readFileSync(localGLB);
+  copyFileSync(localGLB,'qa/screenshots/face-v120/neutral-face-v120.glb');
   assert.equal(buf.toString('ascii',0,4),'glTF');
   assert.ok(buf.length>200_000,'GLB must contain real indexed 3D geometry');
   const jsonOffset=20,jsonSize=buf.readUInt32LE(12);
