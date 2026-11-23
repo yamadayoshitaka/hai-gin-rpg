@@ -42,7 +42,11 @@ export function createV121AnatomicalHairCap(THREE,skinFace,{color='#c5a36f'}={})
  const index=source.getIndex(),count=Math.floor((index?.count||pos.count)/3);
  const onScalp=i=>{
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
-  const front=clamp((z-centerZ)/(Math.max(.035,box.max.z-centerZ)),0,1);
+  // Reserve the actual brow/upper-lash boundary when the forehead slopes.
+  // The old linear front fraction was ~0.65 at the eyebrow and painted
+  // hair over the user's carefully authored v121 eyebrow strands.
+  const forwardDepth=Math.max(.035,box.max.z-centerZ);
+  const front=clamp((z-(centerZ+forwardDepth*.18))/(forwardDepth*.42),0,1);
   const side=clamp((Math.abs(x)/(xHalf||1)-.52)*2.7,0,1);
   // Hairline stays above brows: forward scalp ends higher than rear nape.
   const cut=crownY-spanY*(.39-.20*front-.075*side*(1-front));
