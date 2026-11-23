@@ -18,57 +18,135 @@ export function selectRealHeadMesh(root) {
   throw Error('顔v121の頭部実メッシュが見つかりません');
  return candidates[0].node;
 }
-export function measureRealHead(THREE,root) {
+
+/**
+ * A front-surface lookup built from the actual transformed v121 vertices.
+ * Each 5 mm XY cell stores its frontmost skin vertex; nearest cells are
+ * smoothly interpolated. No synthetic sphere or old hair topology is used.
+ */
+function frontSurfaceSampler(points,cell=.005){
+ const bins=new Map();
+ for(const q of points){
+  const ix=Math.round(q[0]/cell),iy=Math.round(q[1]/cell);
+  const key=ix+':'+iy,old=bins.get(key);
+  if(!old||old[2]<q[2])bins.set(key,q);
+ }
+ return (x,y)=>{
+  const ix=Math.round(x/cell),iy=Math.round(y/cell);
+  let sum=0,total=0;
+  for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
+   const v=bins.get((ix+dx)+':'+(iy+dy));
+   if(!v)continue;
+   const d2=(v[0]-x)**2+(v[1]-y)**2;
+   const weight=1/(d2+.000002);
+   sum+=v[2]*weight;total+=weight;
+  }
+  return total?sum/total:null;
+ };
+}
+function percentile(points,axis,t){
+ const sorted=points.map(p=>p[axis]).sort((a,b)=>a-b);
+ return sorted[Math.floor((sorted.length-1)*t)];
+}
+
+export function measureRealHead(THREE,root){
  root.updateMatrixWorld(true);
  const mesh=selectRealHeadMesh(root);
  mesh.updateWorldMatrix(true,false);
- const p=mesh.geometry.getAttribute('position');
- const bounds=new THREE.Box3();
- const points=[];
+ const position=mesh.geometry.getAttribute('position');
+ const bounds=new THREE.Box3(),points=[];
  const v=new THREE.Vector3();
- for(let i=0;i<p.count;i++){
-  v.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);
+ for(let i=0;i<position.count;i++){
+  v.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);
   if(![v.x,v.y,v.z].every(Number.isFinite))throw Error('頭部GLBの座標が不正です');
   bounds.expandByPoint(v);
   points.push([v.x,v.y,v.z]);
  }
- const upper=points.filter(q=>q[1]>bounds.max.y-.135);
- if(upper.length<300)throw Error('頭頂部の頂点数が不足しています');
- const xs=upper.map(v=>v[0]).sort((a,b)=>a-b);
- const zs=upper.map(v=>v[2]).sort((a,b)=>a-b);
- const q=(list,t)=>list[Math.floor((list.length-1)*t)];
- const cx=(q(xs,.025)+q(xs,.975))/2;
- const cz=(q(zs,.025)+q(zs,.975))/2;
- const rx=Math.max(.06,(q(xs,.98)-q(xs,.02))/2);
- const rz=Math.max(.067,(q(zs,.98)-q(zs,.02))/2);
+ const top=bounds.max.y;
+ // Sample only the skull band, not the nose, ears, lower jaw or neck.
+ const scalp=points.filter(p=>p[1]>=top-.075&&p[1]<=top-.022);
+ if(scalp.length<100)throw Error('v121の頭皮領域が不足しています');
+ const cx=(percentile(scalp,0,.025)+percentile(scalp,0,.975))/2;
+ const cz=(percentile(scalp,2,.05)+percentile(scalp,2,.95))/2;
+ const rx=Math.max(.035,(percentile(scalp,0,.975)-percentile(scalp,0,.025))/2);
+ const rz=Math.max(.035,(percentile(scalp,2,.95)-percentile(scalp,2,.05))/2);
+ const forehead=scalp.filter(p=>Math.abs(p[0]-cx)<rx*.45);
+ const frontZ=percentile(forehead.length>20?forehead:scalp,2,.95);
+ const backZ=percentile(scalp,2,.05);
+ const sampler=frontSurfaceSampler(points.filter(p=>p[1]>top-.17));
  return {
-  mesh,vertices:p.count,
-  cx,cz,rx,rz,top:bounds.max.y,
-  hairlineY:bounds.max.y-.075,
-  frontZ:q(zs,.96),
-  backZ:q(zs,.04),
-  bounds
+  mesh,vertices:position.count,cx,cz,rx,rz,top,
+  hairlineY:top-.075,frontZ,backZ,bounds,
+  scalpVertices:scalp.length,
+  // Measurements use real-world v121 skin vertices and preserve facial curvature.
+  frontAt(x,y){
+   const z=sampler(x,y);
+   return z===null?frontZ:z;
+  }
  };
 }
-/** Given native source-world bounds, put the wig around the measured v121 scalp. */
-export function calculateWigFit(source,head,{widthRatio=1.11,vertical=0,forward=0}={}){
+
+/** Crown measurements of the imported, static CC0 hair, not its long tips. */
+export function measureWigCrown(THREE,wigRoot,sourceBounds){
+ wigRoot.updateWorldMatrix(true,true);
+ const width=sourceBounds.max.x-sourceBounds.min.x;
+ const height=sourceBounds.max.y-sourceBounds.min.y;
+ const top=sourceBounds.max.y;
+ const lower=top-Math.max(width*.43,height*.12);
+ const upper=top-Math.max(width*.045,height*.012);
+ const samples=[],v=new THREE.Vector3();
+ wigRoot.traverse(node=>{
+  if(!node.isMesh)return;
+  const a=node.geometry?.getAttribute?.('position');
+  if(!a)return;
+  for(let i=0;i<a.count;i++){
+   v.fromBufferAttribute(a,i).applyMatrix4(node.matrixWorld);
+   if(v.y>=lower&&v.y<=upper&&[v.x,v.y,v.z].every(Number.isFinite))
+    samples.push([v.x,v.y,v.z]);
+  }
+ });
+ if(samples.length<100)return null;
+ const xl=percentile(samples,0,.04),xr=percentile(samples,0,.96);
+ const zb=percentile(samples,2,.04),zf=percentile(samples,2,.96);
+ if(xr-xl<width*.32||zf-zb<.015)return null;
+ return {
+  width:xr-xl,depth:zf-zb,
+  cx:(xl+xr)/2,cz:(zb+zf)/2,
+  frontAt:frontSurfaceSampler(samples)
+ };
+}
+
+/**
+ * Fit using both crown width and crown depth, not the full long-hair bounds.
+ * A single uniform scale preserves the original CC0 wig shape.
+ */
+export function calculateWigFit(source,head,{
+ widthRatio=1.11,vertical=0,forward=0,crown=null
+}={}){
  if(!source?.min||!source?.max)throw Error('GLBの描画可能な境界がありません');
  const width=source.max.x-source.min.x;
  const height=source.max.y-source.min.y;
  if(!(width>.005&&height>.015))throw Error('GLBに有効な髪の大きさがありません');
  const targetWidth=head.rx*2*clamp(widthRatio,.95,1.35);
- const scale=targetWidth/width;
+ const capWidth=crown?.width||width;
+ const widthScale=targetWidth/capWidth;
+ const depthScale=crown?.depth?(head.rz*2*1.035/crown.depth):widthScale;
+ // Keep uniform scale. A depth mismatch can enlarge the cap a little,
+ // but must not turn a narrow cap into an oversized floating helmet.
+ const scale=Math.max(widthScale,Math.min(depthScale,widthScale*1.18));
  if(!Number.isFinite(scale)||scale<.002||scale>2000)throw Error('ウィッグの縮尺が異常です');
- const centerX=(source.max.x+source.min.x)/2;
- const centerZ=(source.max.z+source.min.z)/2;
+ const centerX=crown?.cx??(source.max.x+source.min.x)/2;
+ const centerZ=crown?.cz??(source.max.z+source.min.z)/2;
  return {
   scale,
   x:head.cx-centerX*scale,
-  y:head.top+.010+clamp(vertical,-.035,.035)-source.max.y*scale,
+  y:head.top+(crown?.width?.003:.010)+clamp(vertical,-.035,.035)-source.max.y*scale,
   z:head.cz+clamp(forward,-.035,.045)-centerZ*scale,
-  nativeWidth:width,
-  expectedWidth:targetWidth,
-  sourceHeight:height,
+  nativeWidth:width,expectedWidth:targetWidth,sourceHeight:height,
+  capWidth:capWidth*scale,
+  capDepth:(crown?.depth||source.max.z-source.min.z)*scale,
+  headWidth:head.rx*2,
+  headDepth:head.rz*2
  };
 }
 
@@ -95,43 +173,57 @@ function fringeTexture(THREE){
  return tex;
 }
 
-/** Separate UV-mapped solid strands. The imported CC0 wig is never edited. */
+
+/**
+ * Independent solid strands following the actual v121 front skin samples.
+ * Roots sit close to the scalp, INSIDE the existing CC0 cap; no broad flat
+ * sheet outside the skull and no editing of the original long-hair mesh.
+ */
 export function buildReferenceFringe(THREE,head,{
- color='#d2b17a',style='blunt',lengthMm=75,widthPct=95,forwardMm=8
+ color='#d2b17a',style='blunt',lengthMm=55,widthPct=95,forwardMm=0
 }={}){
  const group=new THREE.Group();
  group.name='detachable-3d-bangs-'+style;
  if(style==='none')return group;
  if(!['blunt','center'].includes(style))throw Error('不正な前髪スタイルです');
- const count=72,steps=12,sides=8,p=[],uv=[],idx=[];
+ const count=72,steps=16,sides=8,p=[],uv=[],idx=[];
  const length=clamp(Number(lengthMm),30,115)/1000;
  const width=clamp(Number(widthPct),45,125)/100;
  const forward=clamp(Number(forwardMm),-20,35)/1000;
- const rootY=head.top-.023,span=head.rx*.87*width;
+ const rootY=head.top-.037,span=head.rx*.76*width;
+ const front=(x,y)=>{
+  if(typeof head.frontAt==='function')return head.frontAt(x,y);
+  return head.cz+head.rz*Math.sqrt(Math.max(.05,1-((x-head.cx)/head.rx)**2));
+ };
  for(let i=0;i<count;i++){
   const u=(i+.5)/count*2-1;
   if(style==='center'&&Math.abs(u)<.055)continue;
   const rootX=head.cx+u*span;
-  const sweep=style==='center'?Math.sign(u)*(.012+.016*(1-Math.min(1,Math.abs(u)))):0;
-  const tipY=rootY-length*(style==='center'?.93+.10*Math.abs(u):1)
-   +(style==='blunt'?.0015*Math.sin(i*2.17):0);
-  const scalpZ=head.cz+head.rz*Math.sqrt(Math.max(.06,1-(u*.91)**2));
-  const baseZ=Math.max(scalpZ,head.frontZ-.009)+.004+forward;
-  const start=p.length/3,half0=Math.max(.00075,span*1.93/count*.56);
+  const sweep=style==='center'?Math.sign(u)*(.008+.009*(1-Math.min(1,Math.abs(u)))):0;
+  const tipY=rootY-length*(style==='center'?.90+.09*Math.abs(u):1)
+   +(style==='blunt'?.001*Math.sin(i*2.17):0);
+  const start=p.length/3,half0=Math.max(.00065,span*1.95/count*.54);
+  const surfaceX=t=>clamp(rootX+sweep*t,head.cx-head.rx*.94,head.cx+head.rx*.94);
+  const rootZ=front(rootX,rootY)+.0009; // hidden under the CC0 outer layer
   for(let j=0;j<steps;j++){
    const t=j/(steps-1),ease=t*t*(3-2*t);
-   const x=rootX+sweep*ease+.0006*Math.sin(i*1.37+t*3)*t;
-   const y=lerp(rootY,tipY,t)+.0032*Math.sin(Math.PI*t);
-   const z=baseZ+.008*ease+.003*Math.sin(Math.PI*t);
-   const half=half0*(1-.2*t);
+   const x=surfaceX(ease)+.00035*Math.sin(i*1.37+t*3)*t;
+   const y=lerp(rootY,tipY,t)+.0014*Math.sin(Math.PI*t);
+   // Individual forehead sampling keeps the locks tangential to real skin.
+   const skin=front(x,y);
+   const clearance=.0011+ .0034*ease;
+   const z=lerp(rootZ,skin+clearance,ease)+forward+
+    .0006*Math.sin(i*.73+t*3.1)*ease;
+   const half=half0*(1-.17*t);
    for(let k=0;k<sides;k++){
-    const th=2*Math.PI*k/sides;
-    p.push(x+half*Math.cos(th),y,z+.00165*Math.sin(th));
+    const theta=2*Math.PI*k/sides;
+    p.push(x+half*Math.cos(theta),y,z+.0013*Math.sin(theta));
     uv.push(k/sides,t);
    }
   }
   const caps=p.length/3;
-  p.push(rootX,rootY,baseZ,rootX+sweep,tipY,baseZ+.008);
+  const tipX=surfaceX(1),tipZ=front(tipX,tipY)+.0045+forward;
+  p.push(rootX,rootY,rootZ+forward,tipX,tipY,tipZ);
   uv.push(.5,0,.5,1);
   for(let j=0;j<steps-1;j++)for(let k=0;k<sides;k++){
    const next=(k+1)%sides,a=start+j*sides+k,b=start+j*sides+next;
@@ -159,19 +251,41 @@ export function buildReferenceFringe(THREE,head,{
  return group;
 }
 
-/** Real v121 head geometry; preview-only and never part of the export root. */
+/**
+ * Display ONLY upper scalp triangles of the real v121 mesh, not the nose,
+ * ears, jaw or neck. Preview sibling, never exported into the wig GLB.
+ */
 export function createRealHeadWireframe(THREE,head){
  if(!head?.mesh?.geometry)throw Error('ワイヤー用v121頭部がありません');
  head.mesh.updateWorldMatrix(true,false);
- const tmp=head.mesh.geometry.clone();
- tmp.applyMatrix4(head.mesh.matrixWorld);
- const geo=new THREE.WireframeGeometry(tmp);
- tmp.dispose();
+ const original=head.mesh.geometry;
+ const position=original.getAttribute('position');
+ if(!position)throw Error('v121頭部に頂点がありません');
+ const worldPosition=new THREE.Vector3(),triangles=[];
+ const index=original.getIndex();
+ const getVertex=i=>new THREE.Vector3().fromBufferAttribute(position,i)
+  .applyMatrix4(head.mesh.matrixWorld);
+ // Crop via real mesh triangles; preserves exact scalp topology where shown.
+ const floor=Number.isFinite(head.top)?head.top-.110:-Infinity;
+ const triangleCount=Math.floor((index?index.count:position.count)/3);
+ for(let i=0;i<triangleCount;i++){
+  const ai=index?index.getX(i*3):i*3;
+  const bi=index?index.getX(i*3+1):i*3+1;
+  const ci=index?index.getX(i*3+2):i*3+2;
+  const a=getVertex(ai),b=getVertex(bi),c=getVertex(ci);
+  if(Math.min(a.y,b.y,c.y)<floor)continue;
+  triangles.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);
+ }
+ if(triangles.length<9)throw Error('v121頭部の頭皮ワイヤー用三角形が不足しています');
+ const cropped=new THREE.BufferGeometry();
+ cropped.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
+ const geo=new THREE.WireframeGeometry(cropped);
+ cropped.dispose();
  const mat=new THREE.LineBasicMaterial({
-  color:0x80dcff,transparent:true,opacity:.28,depthWrite:false,depthTest:true
+  color:0x80dcff,transparent:true,opacity:.23,depthWrite:false,depthTest:true
  });
  const wire=new THREE.LineSegments(geo,mat);
- wire.name='preview-v121-head-wire-not-exported';
+ wire.name='preview-v121-scalp-wire-not-exported';
  wire.frustumCulled=false;
  wire.userData.dispose=()=>{geo.dispose();mat.dispose();};
  return wire;
