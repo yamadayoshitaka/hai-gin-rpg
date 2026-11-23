@@ -17,6 +17,8 @@ const TONES={
  cancel:[[420,.10,0],[330,.12,.065]],
  enter:[[360,.09,0],[510,.13,.09]],
  buy:[[760,.11,0],[980,.18,.08],[1240,.16,.20]],
+ // A short metallic two-coin chime (no audio file or external asset).
+ coin:[[1450,.10,0],[2300,.11,.022],[1740,.14,.095],[2620,.17,.12]],
  save:[[420,.16,0],[630,.20,.14],[840,.31,.28]],
  quest:[[550,.10,0],[750,.17,.12]],
  open:[[510,.07,0],[690,.15,.08]],
@@ -79,11 +81,11 @@ export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
   const start=ctx.currentTime+.005;
   for(const [frequency,duration,delay] of notes){
    const oscillator=ctx.createOscillator(),gain=ctx.createGain();
-   oscillator.type=kind==='save'||kind==='buy'?'sine':'triangle';
+   oscillator.type=kind==='coin'?'triangle':kind==='save'||kind==='buy'?'sine':'triangle';
    oscillator.frequency.setValueAtTime(frequency,start+delay);
    oscillator.frequency.exponentialRampToValueAtTime(frequency*.89,start+delay+duration);
    gain.gain.setValueAtTime(.0001,start+delay);
-   gain.gain.exponentialRampToValueAtTime(kind==='save'?.074:.052,start+delay+.015);
+   gain.gain.exponentialRampToValueAtTime(kind==='save'?.074:kind==='coin'?.065:.052,start+delay+.015);
    gain.gain.exponentialRampToValueAtTime(.0001,start+delay+duration);
    oscillator.connect(gain);gain.connect(ctx.destination);
    oscillator.start(start+delay);oscillator.stop(start+delay+duration+.015);
