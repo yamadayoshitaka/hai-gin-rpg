@@ -118,7 +118,7 @@ def sculpt(p):
         +.0014*lower_cheek+.0013*jaw
         -.0110*chin_profile-.0020*submental
         -.0036*tip-.0013*ala-.0009*bridge
-        +.0037*upper+.0045*lower+.0010*cupid
+        +.0015*upper+.0018*lower+.0006*cupid
         -.0007*corners)
     return (nx,ny,nz),{
       'temple':temple,'malar':malar,'jaw':jaw,'tip':tip,
