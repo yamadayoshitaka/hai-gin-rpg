@@ -3,6 +3,7 @@
  * Normal render never uses per-triangle zone splitting. No face/eyebrow edits.
  * The optional breakdown is a separate inspection-only visualization.
  */
+import {cleanDetachedHairGeometry} from './hair-island-cleanup-v1.js';
 import {
  independentHairFitFromRoot,bodyCollisionProxies,resolveHairBodyContact,
  classifyHairTriangle
@@ -99,12 +100,70 @@ export function measureBaldHeadSurface(THREE,model){
  // height for the hair fitting volume: its anatomical cranium is ~24 cm.
  const w=right-left,d=front-back,h=Math.min(.245,(top-bottom)*.66);
  if(!(w>.05&&d>.05&&h>.13))throw Error('スキンヘッドの寸法が異常');
+ const centerX=(left+right)/2,centerY=top-h*.5,centerZ=(back+front)/2;
+ // Actual head vertices: normalized to cranium dimensions so the same
+ // scalp survives face-scale slider changes. Brows, eyes and lashes excluded.
+ const scalpRoofPoints=upper.filter((p,i)=>i%4===0&&p[1]>top-.125)
+  .map(p=>[(p[0]-centerX)/w,(p[1]-centerY)/h,(p[2]-centerZ)/d]);
  return Object.freeze({
   skinMesh:face,vertexCount:points.length,
-  width:w,depth:d,height:h,top,front,
-  centerX:(left+right)/2,centerY:top-h*.5,centerZ:(back+front)/2,
+  width:w,depth:d,height:h,top,front,scalpRoofPoints,
+  centerX,centerY,centerZ,
   skinBounds:{min:[left,top-h,back],max:[right,top,front]}
  });
+}
+/**
+ * Pull crown vertices out of the *actual* v121 skin roof, not a sphere.
+ * The correction only lifts intersecting root/upper-shell vertices: bangs
+ * and freely hanging locks retain their authored shape.
+ * Reads sampled anatomical vertices but never changes the head mesh.
+ */
+export function conformCrownAboveHeadSurface(deformers,fit,roofSamples,rootTop){
+ if(!Array.isArray(roofSamples)||!roofSamples.length)return 0;
+ const grid=new Map(),cell=.013;
+ for(const p of roofSamples){
+  const x=p[0]*fit.headSize.width,
+   y=p[1]*fit.headSize.height,z=p[2]*fit.headSize.depth;
+  const key=Math.floor(x/cell)+','+Math.floor(z/cell);
+  if(!grid.has(key))grid.set(key,[]);
+  grid.get(key).push([x,y,z]);
+ }
+ const crown=fit.crownY;
+ let adjusted=0;
+ for(const d of deformers){
+  const a=d.original,raw=d.raw;
+  a.set(raw);
+  for(let j=0;j<raw.length;j+=3){
+   // Do not project front bangs or long lengths onto the cranium.
+   const yRaw=raw[j+1],yWorld=yRaw*fit.scale[1]+fit.position[1];
+   if(yRaw<rootTop-.077||yWorld<crown-.095)continue;
+   const x=raw[j]*fit.scale[0]+fit.position[0],
+    z=raw[j+2]*fit.scale[2]+fit.position[2];
+   if(z>fit.foreheadZ-.014)continue;
+   const bx=Math.floor(x/cell),bz=Math.floor(z/cell);
+   let sum=0,weight=0;
+   for(let ix=-1;ix<=1;ix++)for(let iz=-1;iz<=1;iz++){
+    const near=grid.get((bx+ix)+','+(bz+iz));
+    if(!near)continue;
+    for(const p of near){
+     const distance=(p[0]-x)**2+(p[2]-z)**2;
+     if(distance>.00036)continue;
+     const w=1/(distance+.00003);
+     sum+=p[1]*w;weight+=w;
+    }
+   }
+   if(!weight)continue;
+   const roof=sum/weight;
+   const depth=Math.max(0,roof+.005-yWorld);
+   const fade=Math.min(1,Math.max(0,(yRaw-rootTop+.077)/.065));
+   const correction=Math.min(.014,depth)*fade;
+   if(correction>.00015){
+    a[j+1]+=correction/fit.scale[1];
+    adjusted++;
+   }
+  }
+ }
+ return adjusted;
 }
 export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null,
  color='#c5a36f'}={}){
@@ -119,12 +178,17 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   const group=new THREE.Group();group.name='inspection-'+id;
   breakdownRoot.add(group);zones.set(id,group);
  }
+ let removedTriangles=0,removedComponents=0;
  const originals=[];
  scene.traverse(source=>{
   if(!source.isMesh||!source.geometry?.getAttribute('position'))return;
   // Keep every original triangle and material group in normal rendering.
   const geometry=source.geometry.clone();
   geometry.applyMatrix4(source.matrixWorld);
+  const cleaned=cleanDetachedHairGeometry(geometry);
+  removedTriangles+=cleaned.removedTriangles;
+  removedComponents+=cleaned.removedComponents;
+  if(!cleaned.keptTriangles){geometry.dispose();return;}
   const material=cloneMaterials(THREE,source.material,color);
   const mesh=new THREE.Mesh(geometry,material);
   mesh.name='intact-hair-'+(source.name||'mesh');
@@ -140,7 +204,7 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   for(let i=0;i<weights.length;i++){
    weights[i]=Math.pow(clamp((flexStart-original[i*3+1])/flexLength,0,1),1.45);
   }
-  deformers.push({attr:pos,original,weights});
+  deformers.push({attr:pos,raw:new Float32Array(original),original,weights});
   originals.push({source,geometry});
  });
  if(!intactGeometries.length)throw Error('元GLBに髪メッシュがありません');
@@ -175,14 +239,16 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   }
  }
  let size=headSize,scalp=headScalp,colorValue=color,breakdown=false,exploded=false;
- let colliders=bodyCollisionProxies(size),lastX=NaN,lastZ=NaN,lastContacts=0;
+ let colliders=bodyCollisionProxies(size),lastX=NaN,lastZ=NaN,lastContacts=0,lastCollision=null;
  const fitToHead=(nextSize=size,nextScalp=scalp)=>{
   size=nextSize;scalp=nextScalp;
   const f=independentHairFitFromRoot(rootBox,hairBox,size,scalp);
   root.scale.set(...f.scale);root.position.set(...f.position);
   root.userData.fit=f;
   colliders=bodyCollisionProxies(size);
-  lastX=NaN;lastZ=NaN;
+  root.userData.crownVerticesAdjusted=conformCrownAboveHeadSurface(
+   deformers,f,scalp?.scalpRoofPoints,rootBox.max.y);
+  lastX=NaN;lastZ=NaN;lastCollision=null;
   return f;
  };
  const setSectionColors=value=>{
@@ -205,8 +271,9 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   if(zones.has(id))zones.get(id).visible=Boolean(visible);
  };
  const deformTips=(x=0,z=0,{collision=true}={})=>{
-  if(Math.abs(x-lastX)+Math.abs(z-lastZ)<.00005)return lastContacts;
-  lastX=x;lastZ=z;lastContacts=0;
+  if(Math.abs(x-lastX)+Math.abs(z-lastZ)<.00005&&lastCollision===collision)
+   return lastContacts;
+  lastX=x;lastZ=z;lastCollision=collision;lastContacts=0;
   const f=root.userData.fit;
   for(const d of deformers){
    const {attr,original,weights}=d,values=attr.array;
@@ -222,9 +289,16 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
      const result=resolveHairBodyContact(real,colliders,.004);
      if(result.hits){
       // Collisions affect only free lengths: never shift scalp roots.
-      vx+=(result.position[0]-real[0])/f.scale[0]*w;
-      vy+=(result.position[1]-real[1])/f.scale[1]*w;
-      vz+=(result.position[2]-real[2])/f.scale[2]*w;
+      // Hard independent vertex projections shredded lower hair strips.
+      // A bounded soft correction preserves neighbouring triangle continuity.
+      const dx=result.position[0]-real[0],
+       dy=result.position[1]-real[1],dz=result.position[2]-real[2];
+      const length=Math.hypot(dx,dy,dz)||1;
+      const limit=.004+.005*w; // <=9 mm per vertex (moving preview only)
+      const factor=Math.min(1,limit/length)*w*w;
+      vx+=dx*factor/f.scale[0];
+      vy+=dy*factor/f.scale[1];
+      vz+=dz*factor/f.scale[2];
       lastContacts+=result.hits;
      }
     }
@@ -233,6 +307,7 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
    attr.needsUpdate=true;
   }
   root.userData.contactVertices=lastContacts;
+ root.userData.detachedFragmentsRemoved=removedTriangles;
   return lastContacts;
  };
  const dispose=()=>{
@@ -246,9 +321,12 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
  fitToHead(size,scalp);
  return {
   root,assetBox:hairBox,rootBandBox:rootBox,sectionCounts:counts,
+  cleanupStats:{removedTriangles,removedComponents},
   fitToHead,setColor,setSectionColors,setExploded,setSectionVisible,
   deformTips,dispose,
   diagnostics:()=>({normalIntact:normalRoot.visible,contacts:lastContacts,
-   rootBand:rootBox,headFit:root.userData.fit,color:colorValue})
+   rootBand:rootBox,headFit:root.userData.fit,color:colorValue,
+   removedTriangles,removedComponents,
+   crownVerticesAdjusted:root.userData.crownVerticesAdjusted||0})
  };
 }
