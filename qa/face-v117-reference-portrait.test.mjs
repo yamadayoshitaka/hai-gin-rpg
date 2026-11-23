@@ -135,13 +135,13 @@ test('v117 actual GLB: cheek/nose/lower-face changes in connected indexed mesh, 
 test('v117 real GLB: first normal equals normal after thin -> normal, even with hair/skin/parts',()=>{
  const source=cc0Donor(),base=controls();
  const first=makeIndependentFaceMaster(source.root,'female',{
-  femaleControls:base
+  femaleControls:base,enableV117ReferencePortrait:true
  });
  const thin=makeIndependentFaceMaster(source.root,'female',{
-  femaleControls:controls('thin')
+  femaleControls:controls('thin'),enableV117ReferencePortrait:true
  });
  const again=makeIndependentFaceMaster(source.root,'female',{
-  femaleControls:base
+  femaleControls:base,enableV117ReferencePortrait:true
  });
  const A=sig(geometry(first)),B=sig(geometry(again));
  assert.deepEqual(A,B,'First paint and body reselect must be identical');
