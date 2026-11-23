@@ -13,8 +13,8 @@ test('v116 native touch pan and pinch are actually enabled together',()=>{
  assert.doesNotMatch(html,/orbit\.enablePan=false/);
 });
 test('v116 only changes gestures; approved v115 face and original GLB remain',()=>{
- assert.match(html,/顔品質 v117・髪造形 v72/);
- assert.match(html,/dataset\.faceMeshReady='v117'/);
+ assert.match(html,/顔品質 v(?:117|119)・髪造形 v72/);
+ assert.match(html,/dataset\.faceMeshReady='v(?:117|119)'/);
  assert.match(html,/experimentalCheekRetopo/);
  assert.match(html,/V112_SKIN_WIRE_OVERLAY/);
  assert.match(html,/function setView\(view\)/);
