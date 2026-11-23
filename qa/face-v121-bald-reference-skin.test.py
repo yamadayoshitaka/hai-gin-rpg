@@ -71,7 +71,7 @@ class TestFaceV121(unittest.TestCase):
                     self.assertLess(abs(x),.119)
                     self.assertGreater(y,.110)
                     self.assertLess(y,.267)
-                    self.assertGreater(z,.063)
+                    self.assertGreater(z,.026)
                 remeshed+=1
         rig=self.b['meshes'][0]['extras']['facialExpressionRig']
         self.assertEqual(detached,rig['splitMouthSeal']
@@ -79,35 +79,42 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-front-profile-jaw-neck-remodel-v3')
+                         'female-v121-independent-anatomical-jaw-surface-v4')
         self.assertGreater(rebuild['edgeFlips'],3)
         self.assertGreater(remeshed,3)
-        self.assertTrue(rebuild['sideProfileMeasured'])
-        self.assertTrue(rebuild['chinTipRoundness3D'])
-        self.assertTrue(rebuild['frontalJawWidthBlending'])
-        self.assertTrue(rebuild['submentalToNeckBlend'])
-        self.assertEqual(rebuild['chinVerticalShorteningMeters'],.006)
-        self.assertGreater(rebuild['remodeledAnteriorChinVertices'],11)
-        self.assertGreater(rebuild['blendedSubmentalNeckVertices'],7)
-        self.assertGreater(rebuild['affectedVertices'],60)
-        self.assertLess(rebuild['maximum3DDisplacement'],.045)
+        self.assertTrue(rebuild['sourceOldChinDepthNotReused'])
+        self.assertTrue(rebuild['actualMentonRelief3D'])
+        self.assertTrue(rebuild['hasLabiomentalSulcus'])
+        self.assertTrue(rebuild['frontalJawRoundnessByEllipse'])
+        self.assertTrue(rebuild['underchinSheetSeparated'])
+        self.assertTrue(rebuild['neckSeamPreserved'])
+        self.assertTrue(rebuild['vermilionBoundaryPreserved'])
+        self.assertGreater(rebuild['remodeledAnteriorChinVertices'],39)
+        self.assertGreater(rebuild['remodeledLateralJawVertices'],14)
+        self.assertGreater(rebuild['affectedVertices'],400)
+        self.assertLess(rebuild['maximum3DDisplacement'],.070)
         self.assertTrue(rebuild['outerBoundaryUntouched'])
-        self.assertTrue(rebuild['monotoneNoDoubleChin'])
-        self.assertTrue(rebuild['legacyChinBridgeDisabled'])
         z=rebuild['profileControlZ']
-        self.assertGreaterEqual(len(z),8)
-        self.assertTrue(all(z[j+1]>z[j] for j in range(len(z)-1)),
-                        'one continuous lip-to-neck profile, no double crest')
+        self.assertGreaterEqual(len(z),10)
+        # v3's monotone profile removed the actual chin.
+        self.assertGreater(z[6],z[8])
+        self.assertGreater(rebuild['mentonAfterZ']-rebuild['labiomentalSulcusZ'],.004)
+        self.assertGreater(rebuild['mentonAfterZ']-rebuild['upperNeckZ'],.025)
+        self.assertLess(rebuild['mentonAfterZ'],rebuild['mouthFrontZ']-.015)
         self.assertTrue(self.b['meshes'][0]['extras']
                         ['sagittalChinProfile']['legacyBridgeDisabled'])
-
-        self.assertLessEqual(rebuild['mentonAfterZ'],
-                             rebuild['mouthFrontZ']-.016)
+        def frontal_depth(yy):
+            candidates=[p[2] for p in newp if abs(p[0])<.009
+                        and abs(p[1]-yy)<.006 and p[2]>.020]
+            self.assertGreater(len(candidates),0)
+            return max(candidates)
+        self.assertGreater(frontal_depth(.184),frontal_depth(.205)+.004)
+        self.assertGreater(frontal_depth(.184),frontal_depth(.140)+.025)
         self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
                          accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0']))
         distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
         self.assertGreater(sum(x>0.00004 for x in distances),1000)
-        self.assertLess(max(distances),0.040)
+        self.assertLess(max(distances),0.090)
         self.assertTrue(all(math.isfinite(v) for p in newp for v in p))
         self.assertEqual(len(accessor(self.b,self.b_bin,dst['attributes']['NORMAL'])),13455)
         colors=accessor(self.b,self.b_bin,dst['attributes']['COLOR_0'])
