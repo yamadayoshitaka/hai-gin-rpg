@@ -23,7 +23,7 @@ def get_graph(path):
 
 def vector(g,bin_chunk,idx):
     a=g['accessors'][idx]
-    width={'SCALAR':1,'VEC3':3}[a['type']]
+    width={'SCALAR':1,'VEC2':2,'VEC3':3}[a['type']]
     assert a['componentType']==5126
     view=g['bufferViews'][a['bufferView']]
     offset=view.get('byteOffset',0)+a.get('byteOffset',0)
@@ -163,8 +163,12 @@ class TestRealExpressionGLB(unittest.TestCase):
         self.assertLessEqual(profile['chinAfterZ'],profile['chinBeforeZ'])
         lip=[z for x,y,z in self.pos
              if abs(x)<.042 and .217<y<.249]
-        chin=[z for x,y,z in self.pos
-              if abs(x)<.055 and .160<y<.204]
+        uv=vector(self.g,self.b,self.prim['attributes']['TEXCOORD_0'])
+        # Do not mistake the still-protruding lower vermilion at y≈.202
+        # for the anatomical menton. The newly rebuilt chin is the
+        # separate native UV band extending into the submental region.
+        chin=[z for (x,y,z),(u,v) in zip(self.pos,uv)
+              if abs(u-.5)<.09 and .418<v<.490]
         self.assertGreater(len(lip),12)
         self.assertGreater(len(chin),12)
         self.assertGreater(max(lip)-max(chin),.0163)
