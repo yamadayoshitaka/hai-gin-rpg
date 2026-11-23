@@ -190,7 +190,7 @@ test('actual v121 scalp measurement excludes ears/neck and projects strand paths
  assert.ok(Number.isFinite(before)&&Number.isFinite(below));
  const bangs=buildReferenceFringe(THREE,head,{style:'blunt',lengthMm:55,forwardMm:0});
  const coordinates=bangs.children[0].geometry.getAttribute('position');
- const first=coordinates.getZ(0),end=coordinates.getZ(15*8);
+ const first=coordinates.getZ(0),end=coordinates.getZ(19*6);
  assert.ok(Math.abs(first-end)>.002,'bangs curve around the actual forehead instead of a front-facing slab');
  const wire=createRealHeadWireframe(THREE,head);
  const vertices=wire.geometry.getAttribute('position');
@@ -249,7 +249,7 @@ test('three real CC0 source size profiles fit the same v121 scalp X/Z coordinate
 });
 test('v121-derived tinted hair cap covers crown independently of source wig and wire',async()=>{
  const THREE=await import('three');
- const geometry=new THREE.SphereGeometry(.1,64,48);
+ const geometry=new THREE.SphereGeometry(.1,96,64);
  geometry.translate(0,.11,0);
  const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
  const root=new THREE.Group();root.add(face);
@@ -273,7 +273,7 @@ test('v121-derived tinted hair cap covers crown independently of source wig and 
 });
 test('layered high-quality bangs produce many thin textured locks on v121 forehead',async()=>{
  const THREE=await import('three');
- const geometry=new THREE.SphereGeometry(.095,72,50);
+ const geometry=new THREE.SphereGeometry(.095,96,64);
  geometry.translate(0,.11,0);
  const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
  const root=new THREE.Group();root.add(face);
