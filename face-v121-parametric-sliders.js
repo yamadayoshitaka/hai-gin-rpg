@@ -76,7 +76,10 @@ export function attachV121FaceSliders({neutral,face,three,onChange=()=>{}}){
     const geometry=mesh.geometry;
     const attribute=geometry?.getAttribute('position');
     if(!attribute)return;
-    if(/GLOBE_UV/.test(mesh.name)){
+    // Donor GLB node names may replace mesh names during GLTFLoader import.
+    // The eye material is a reliable semantic identifier for both globes.
+    if(/GLOBE_UV/.test(mesh.name)||
+       /GLOBE_IRIS_PUPIL_UV/.test(mesh.material?.name||'')){
       eyeGlobes.push({mesh,position:mesh.position.clone(),scale:mesh.scale.clone()});
       return;
     }
