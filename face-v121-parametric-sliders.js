@@ -97,6 +97,7 @@ export function attachV121FaceSliders({neutral,face,three,onChange=()=>{}}){
     const name=mesh.name;
     const kind=mesh===face?'skin':
        /EYEBROW/.test(name)?'brows':
+       /V121_ORAL_/.test(name)?'mouth':
        /EYELINER|LID_CREASE|EYELASHES/.test(name)?'eyes':null;
     if(!kind)return;
     parts.push({mesh,geometry,kind,base:new Float32Array(attribute.array)});
