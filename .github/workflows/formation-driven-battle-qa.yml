@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'src/formation-driven-ai.js'
+      - 'src/battle-skirmish-assault-flow.js'
+      - 'qa/battle-skirmish-assault-fence-regression.test.mjs'
       - 'src/formation-ai-indoor-route.js'
       - 'src/mass-battle-grid-sim.js'
       - 'src/three-team-core-bridge.js'
@@ -30,6 +32,7 @@ jobs:
       - name: Check route, doctrine and simulation syntax
         run: |
           node --check src/formation-driven-ai.js
+          node --check src/battle-skirmish-assault-flow.js
           node --check src/formation-ai-indoor-route.js
           node --check src/mass-battle-grid-sim.js
           node --check src/three-team-core-bridge.js
@@ -38,4 +41,4 @@ jobs:
       - name: Test symmetric enemy/ally doctrine, indoor exits and production movement gates
         run: |
           node --test qa/formation-driven-battle-ai.test.mjs qa/castle-formation-relief-regression.test.mjs qa/battle-formation-autonomy-regression.test.mjs
-          node --test qa/battle-ai-wandering-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs
+          node --test qa/battle-ai-wandering-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs qa/battle-skirmish-assault-fence-regression.test.mjs
