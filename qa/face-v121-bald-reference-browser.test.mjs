@@ -17,8 +17,13 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   page.on('console',m=>{if(m.type()==='error')errors.push('console '+m.text())});
   await page.goto('http://127.0.0.1:8765/face-neutral-v121.html?v=120',{
    waitUntil:'domcontentloaded',timeout:25000});
-  await page.waitForFunction(()=>document.documentElement.dataset.neutralFaceReady==='v121',
-   null,{timeout:50000});
+  try{
+   await page.waitForFunction(()=>document.documentElement.dataset.neutralFaceReady==='v121',
+     null,{timeout:50000});
+  }catch(e){
+   const status=await page.locator('#status').textContent().catch(()=>'?');
+   throw new Error('v121 init failed: '+e.message+'; status='+status+'; errors='+errors.join(' | '));
+  }
   assert.deepEqual(errors,[],'No runtime errors in new model preview');
   assert.match(await page.locator('#status').textContent(),/顔 v121/);
   assert.ok(Number((await page.locator('#vertexCount').textContent()).replace(/,/g,''))>13000);
