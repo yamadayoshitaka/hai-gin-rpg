@@ -57,6 +57,7 @@ const LEADS=Object.freeze({
  wall:['guard','support','ranged'],
  spear:['guard','front','front','ranged'],
  arrow:['ranged','scout','ranged','guard'],
+ highground:['guard','ranged','ranged'],
  wedge:['front','front','front','support'],
  pincer:['scout','front','scout','ranged'],
  circle:['guard','support','ranged','scout'],

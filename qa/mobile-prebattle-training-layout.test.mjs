@@ -82,7 +82,8 @@ test('named previews require three distinct jobs; free allows one to three',()=>
 test('training formation page separates all controls and returns to team selection at the end',()=>{
  const game=attackTrainingGame('訓練所全画面ページ');
  const first=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:0});
- const last=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:13});
+ const last=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:999});
+// Check the actual last page even when new formations are registered.
  const parsed=parseHTML(first).document;
  const article=parsed.querySelector('.innWizardFormationCard');
  assert.ok(article,'one complete formation must live in a separate card');

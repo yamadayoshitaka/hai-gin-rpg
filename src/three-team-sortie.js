@@ -26,6 +26,7 @@ export const SORTIE_FORMATION_CELLS=Object.freeze({
  wall:permutation([4,5,6,7]),
  spear:permutation([0,4,8,12]),
  arrow:permutation([2,5,6,10]),
+ highground:permutation([1,9,10]),
  wedge:permutation([1,5,6,9]),
  pincer:permutation([4,7,8,11]),
  circle:permutation([1,4,7,13]),
@@ -43,6 +44,7 @@ const FORMATION_BASE=Object.freeze({
  wall:Object.freeze({name:'防壁陣形',level:5,attack:0,defense:.12,mobility:-.05}),
  spear:Object.freeze({name:'槍衾陣形',level:7,attack:.1,defense:.08,mobility:-.04}),
  arrow:Object.freeze({name:'弓月陣形',level:15,attack:.1,defense:.04,mobility:.04}),
+ highground:Object.freeze({name:'高所射撃陣形',level:10,attack:.08,defense:.06,mobility:-.02}),
  wedge:Object.freeze({name:'楔形陣形',level:20,attack:.16,defense:-.04,mobility:.08}),
  pincer:Object.freeze({name:'包囲陣形',level:30,attack:.12,defense:0,mobility:.12}),
  circle:Object.freeze({name:'円環陣形',level:40,attack:0,defense:.19,mobility:0,healing:.1}),
@@ -52,7 +54,7 @@ const FORMATION_BASE=Object.freeze({
  dragon:Object.freeze({name:'龍牙陣形',level:85,attack:.23,defense:.12,mobility:.09}),
  constellation:Object.freeze({name:'星鐘陣形',level:99,attack:.25,defense:.22,mobility:.14,healing:.12})
 });
-const MAGIC_FORMATION_BONUS=Object.freeze({attack:.04,balanced:.08,support:.20,wall:.04,spear:.02,arrow:.14,wedge:.04,pincer:.09,circle:.13,ambush:.08,cross:.11,fortress:.05,dragon:.18,constellation:.24});
+const MAGIC_FORMATION_BONUS=Object.freeze({attack:.04,balanced:.08,support:.20,wall:.04,spear:.02,arrow:.14,highground:.14,wedge:.04,pincer:.09,circle:.13,ambush:.08,cross:.11,fortress:.05,dragon:.18,constellation:.24});
 export const SORTIE_FORMATIONS=Object.freeze(Object.fromEntries(
  Object.entries(FORMATION_BASE).map(([id,base])=>[id,Object.freeze({...base,magic:MAGIC_FORMATION_BONUS[id]||0,...formationTemplate(id)})])
 ));

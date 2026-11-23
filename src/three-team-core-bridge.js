@@ -73,9 +73,12 @@ export function makeThreeTeamBattleRequest(game,stage,battleId){
    // independently; all its parts still inherit the parent's group buffs.
    const squadId=teamId*1000+Math.max(0,formationCell)*4+part+1;
    const key=String(squadId);
-   // The initial order selection screen is retired: every team starts
-   // automatically, and only the central battle panel issues tactics.
-   orders[key]='hold';
+   // Begin the formation's battle doctrine immediately. The retired
+   // opening-order UI must not silently leave all non-wait squads idle.
+   // Preserve an explicit hold/defend/retreat saved by the commander.
+   const requestedOrder=teams.find(t=>t.id===teamId)?.initialOrder;
+   orders[key]=['charge','defend','hold','retreat'].includes(requestedOrder)?
+    requestedOrder:'charge';
    // Incomplete formations lose their buffs and special orders, but basic battle
    // tactics must stay selectable; otherwise the command screen is a dead end.
    allowed[key]=formationIntegrity[String(teamId)].active?availableSortieOrders(game,teamId):['charge','defend','hold','retreat'];
