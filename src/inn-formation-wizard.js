@@ -325,16 +325,16 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    const signature=signatureStrategyFor(id);
    return '<article class="innWizardFormationCard">'+
     '<div class="innWizardFormationHeading"><b>'+esc(f.name)+'</b>'+
-    '<small>'+esc(brief.purpose)+'</small></div>'+
+    '<small>目的：'+esc(brief.purpose)+'</small></div>'+ 
     '<div class="innWizardFormationRoles" title="'+esc(formationTargetJobs(id))+'">対象3ジョブ：'+
      esc(formationTargetJobs(id))+'</div>'+
     '<div class="innWizardFormationDiagram">'+renderTeamFormationPreview(id,game,team)+'</div>'+
     '<div class="innWizardFormationDetail">'+
      '<strong>★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
-     '<small>'+esc(signature?.summary||brief.movement)+'</small>'+
+     '<small>動き：'+esc(signature?.summary||brief.movement)+'</small>'+ 
      '<small>追加作戦：'+esc(formationUnlockLabels(id).join('・')||'基本作戦のみ')+'</small>'+
      '<small>成立時バフ：'+esc(formationBuffLabel(id))+'</small>'+
-     '<small>Lv.'+f.level+'／'+esc(requirement(id))+'</small>'+
+     '<small>条件：Lv.'+f.level+'／'+esc(requirement(id))+'</small>'+ 
      '<small class="innWizardEligibility">'+(elig.eligible?'✓ 使用可能':'🔒 '+esc(elig.reason))+'</small>'+
     '</div>'+
     button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
