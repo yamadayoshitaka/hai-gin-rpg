@@ -64,12 +64,12 @@ export function measureRealHead(THREE,root){
  }
  const top=bounds.max.y;
  // Sample only the skull band, not the nose, ears, lower jaw or neck.
- const scalp=points.filter(p=>p[1]>=top-.075&&p[1]<=top-.022);
+ const scalp=points.filter(p=>p[1]>=top-.105&&p[1]<=top-.032);
  if(scalp.length<100)throw Error('v121の頭皮領域が不足しています');
- const cx=(percentile(scalp,0,.025)+percentile(scalp,0,.975))/2;
- const cz=(percentile(scalp,2,.05)+percentile(scalp,2,.95))/2;
- const rx=Math.max(.035,(percentile(scalp,0,.975)-percentile(scalp,0,.025))/2);
- const rz=Math.max(.035,(percentile(scalp,2,.95)-percentile(scalp,2,.05))/2);
+ const cx=(percentile(scalp,0,.04)+percentile(scalp,0,.96))/2;
+ const cz=(percentile(scalp,2,.04)+percentile(scalp,2,.96))/2;
+ const rx=Math.max(.035,(percentile(scalp,0,.96)-percentile(scalp,0,.04))/2);
+ const rz=Math.max(.035,(percentile(scalp,2,.96)-percentile(scalp,2,.04))/2);
  const forehead=scalp.filter(p=>Math.abs(p[0]-cx)<rx*.45);
  const frontZ=percentile(forehead.length>20?forehead:scalp,2,.95);
  const backZ=percentile(scalp,2,.05);
@@ -108,7 +108,7 @@ export function measureWigCrown(THREE,wigRoot,sourceBounds){
  if(samples.length<100)return null;
  const xl=percentile(samples,0,.04),xr=percentile(samples,0,.96);
  const zb=percentile(samples,2,.04),zf=percentile(samples,2,.96);
- if(xr-xl<width*.32||zf-zb<.015)return null;
+ if(xr-xl<width*.32||zf-zb<Math.max(.015,width*.28))return null;
  return {
   width:xr-xl,depth:zf-zb,
   cx:(xl+xr)/2,cz:(zb+zf)/2,
@@ -127,26 +127,32 @@ export function calculateWigFit(source,head,{
  const width=source.max.x-source.min.x;
  const height=source.max.y-source.min.y;
  if(!(width>.005&&height>.015))throw Error('GLBに有効な髪の大きさがありません');
- const targetWidth=head.rx*2*clamp(widthRatio,.95,1.35);
+ const ratio=clamp(widthRatio,.95,1.60);
+ const targetWidth=head.rx*2*ratio;
  const capWidth=crown?.width||width;
- const widthScale=targetWidth/capWidth;
- const depthScale=crown?.depth?(head.rz*2*1.035/crown.depth):widthScale;
- // Keep uniform scale. A depth mismatch can enlarge the cap a little,
- // but must not turn a narrow cap into an oversized floating helmet.
- const scale=Math.max(widthScale,Math.min(depthScale,widthScale*1.18));
+ const capDepth=crown?.depth||(source.max.z-source.min.z);
+ if(!(capWidth>.005&&capDepth>.005))throw Error('ウィッグ頂部の寸法が不正です');
+ // Without crown data preserve the legacy scale contract for other callers.
+ // With crown data, fully cover BOTH axes of the real v121 head. The previous
+ // min(depthScale,widthScale*1.18) deliberately left the scalp exposed.
+ const baseWidthScale=head.rx*2*1.035/capWidth;
+ const baseDepthScale=head.rz*2*1.035/capDepth;
+ const fittedScale=crown?Math.max(baseWidthScale,baseDepthScale):targetWidth/width;
+ // Slider remains monotonic even when depth, not width, determines the fit.
+ const scale=crown?fittedScale*ratio:fittedScale;
  if(!Number.isFinite(scale)||scale<.002||scale>2000)throw Error('ウィッグの縮尺が異常です');
  const centerX=crown?.cx??(source.max.x+source.min.x)/2;
  const centerZ=crown?.cz??(source.max.z+source.min.z)/2;
  return {
-  scale,
-  x:head.cx-centerX*scale,
-  y:head.top+(crown?.width?.003:.010)+clamp(vertical,-.035,.035)-source.max.y*scale,
+  scale,x:head.cx-centerX*scale,
+  y:head.top+(crown?.width?.009:.010)+clamp(vertical,-.035,.035)-source.max.y*scale,
   z:head.cz+clamp(forward,-.035,.045)-centerZ*scale,
   nativeWidth:width,expectedWidth:targetWidth,sourceHeight:height,
-  capWidth:capWidth*scale,
-  capDepth:(crown?.depth||source.max.z-source.min.z)*scale,
-  headWidth:head.rx*2,
-  headDepth:head.rz*2
+  capWidth:capWidth*scale,capDepth:capDepth*scale,
+  headWidth:head.rx*2,headDepth:head.rz*2,
+  coverageX:capWidth*scale/(head.rx*2),
+  coverageZ:capDepth*scale/(head.rz*2),
+  fitBasis:crown?'actual-v121-head-vs-cc0-crown':'legacy-bounds'
  };
 }
 
