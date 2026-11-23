@@ -250,8 +250,13 @@ def correct_chin_profile(points):
         lift=.0062*bell(y,.125,.026)*(1.-fade(ax,.039,.081))*vertical
         # A gently fuller central U-shaped menton in frontal view.
         rounded_x=x*(1.+.022*bell(y,.127,.027)*lateral*vertical)
-        result.append((rounded_x,y+lift,z-displacement*w))
-        if displacement*w>.00005 or lift>.00005:changed+=1
+        # The actual side-view defect is also the labiomental ledge around
+        # Y=.17: its +Z contour jumps forward sharply above the menton.
+        # Recede this *transition* smoothly, but leave real lips Y>=.21 intact.
+        transition=(.022*bell(y,.173,.014)*lateral*
+                    fade(z,.058,.116)*(1.-fade(y,.195,.212)))
+        result.append((rounded_x,y+lift,z-displacement*w-transition))
+        if displacement*w>.00005 or lift>.00005 or transition>.00005:changed+=1
     chin_after=max(z for x,y,z in result
                    if abs(x)<.055 and .110<y<.163)
     if chin_after>lip_front-clearance+.0006:
@@ -263,6 +268,7 @@ def correct_chin_profile(points):
         'chinAfterZ':round(chin_after,6),
         'lipChinDepthClearance':clearance,
         'vertexCorrectionZ':round(displacement,6),
+        'labiomentalTransitionRetreatMax':.022,
         'changedVertices':changed,
         'neutralUpperLipUnaffected':True,
         'neckBelow080Unaffected':True
