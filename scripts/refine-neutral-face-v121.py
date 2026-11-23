@@ -144,8 +144,8 @@ def skin_maps():
 def eye_map():
     n=RES
     center=n//2
-    radius=int(n*.235)
-    pupil=int(n*.083)
+    radius=int(n*.246)
+    pupil=int(n*.090)
     im=Image.new('RGB',(n,n),(241,236,232))
     d=ImageDraw.Draw(im)
     # Pigment fully baked into eye UV image; no independent iris/pupil parts.
