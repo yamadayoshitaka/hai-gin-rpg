@@ -110,42 +110,66 @@ def rim_from_cut(xyz,faces,cut):
 # The curves deliberately contain one anatomically rounded menton, without
 # a forward lower-jaw shelf or an extra protrusion under the chin.
 STATIONS=[
- (.238,.072,.138,-.058),  # vermilion and nose-side continuity
- (.234,.070,.134,-.058),  # neutral lip closure
- (.230,.071,.138,-.058),
- (.226,.073,.145,-.059),  # full lower vermilion
- (.222,.074,.145,-.059),
- (.218,.075,.140,-.060),
- (.213,.077,.132,-.061),  # lower lip skin border
- (.208,.077,.126,-.062),
- (.201,.077,.119,-.062),  # shallow labiomental sulcus
- (.194,.076,.123,-.063),  # chin rounds out once
- (.188,.075,.125,-.063),
- (.181,.074,.121,-.064),
- (.173,.071,.111,-.065),
- (.165,.067,.099,-.066),
- (.157,.065,.086,-.067),
- (.149,.063,.076,-.068),
- (.140,.061,.069,-.069),
- (.128,.060,.067,-.071),  # neck below menton
- (.114,.061,.066,-.074),
- (.100,.064,.068,-.075),
- (.086,.072,.071,-.077),
- (.071,.100,.077,-.083),
- (.054,.146,.090,-.090),  # clavicle / deltoid
- (.035,.187,.104,-.101),
- (.012,.197,.123,-.110),
- (-.021,.196,.143,-.118),
+ (.246,.070,.139,-.057),
+ (.242,.070,.141,-.058), # upper vermilion
+ (.238,.070,.140,-.058),
+ (.234,.070,.135,-.058), # mouth seal
+ (.230,.071,.136,-.058),
+ (.226,.071,.140,-.059),
+ (.222,.072,.143,-.060), # lower vermilion
+ (.218,.073,.139,-.060),
+ (.214,.073,.135,-.061),
+ (.209,.073,.129,-.061),
+ (.204,.071,.123,-.062),
+ (.198,.068,.120,-.062), # shallow labiomental sulcus
+ (.191,.066,.121,-.063),
+ (.185,.064,.123,-.063), # single rounded menton
+ (.179,.063,.121,-.064),
+ (.173,.063,.116,-.065),
+ (.164,.064,.107,-.066),
+ (.155,.064,.097,-.068),
+ (.145,.062,.085,-.069),
+ (.134,.061,.075,-.071),
+ (.122,.060,.068,-.073),
+ (.109,.061,.066,-.074),
+ (.094,.064,.068,-.076),
+ (.080,.078,.072,-.078),
+ (.065,.114,.079,-.084),
+ (.048,.155,.091,-.093),
+ (.030,.182,.105,-.104),
+ (.012,.196,.121,-.109),
+ (-.022,.196,.142,-.118),
  (-.075,.195,.144,-.124)
 ]
 
 def section(y):
+    """C1 Hermite interpolation without the stacked zero-slope banding.
+
+    The former smoothstep interpolation forced zero slope at *every* level,
+    producing severe horizontal convex rings and a duplicated chin shelf.
+    """
     if y>=STATIONS[0][0]:return STATIONS[0][1:]
-    for hi,lo in zip(STATIONS,STATIONS[1:]):
+    if y<=STATIONS[-1][0]:return STATIONS[-1][1:]
+    def derivative(i,k):
+        if i==0:
+            return (STATIONS[1][k]-STATIONS[0][k])/(STATIONS[1][0]-STATIONS[0][0])
+        if i==len(STATIONS)-1:
+            return (STATIONS[i][k]-STATIONS[i-1][k])/(STATIONS[i][0]-STATIONS[i-1][0])
+        lo=(STATIONS[i][k]-STATIONS[i-1][k])/(STATIONS[i][0]-STATIONS[i-1][0])
+        hi=(STATIONS[i+1][k]-STATIONS[i][k])/(STATIONS[i+1][0]-STATIONS[i][0])
+        if lo*hi<=0:return 0.
+        return 2.*lo*hi/(lo+hi)
+    for i,(hi,lo) in enumerate(zip(STATIONS,STATIONS[1:])):
         if hi[0]>=y>=lo[0]:
-            t=fade(hi[0]-y,0.,hi[0]-lo[0])
-            return tuple(hi[i]+(lo[i]-hi[i])*t for i in (1,2,3))
-    return STATIONS[-1][1:]
+            h=lo[0]-hi[0]
+            t=(y-hi[0])/h
+            return tuple((2*t**3-3*t*t+1)*hi[k]+
+                    (t**3-2*t*t+t)*h*derivative(i,k)+
+                    (-2*t**3+3*t*t)*lo[k]+
+                    (t**3-t*t)*h*derivative(i+1,k)
+                   for k in (1,2,3))
+    raise ValueError('Failed anatomical interpolation')
+
 
 def generate(theta,y):
     w,f,b=section(y)
@@ -218,8 +242,10 @@ def rebuild(path):
     thetas=[math.atan2(xyz[i][2],xyz[i][0]) for i in ring]
     # Keep nose bridge at retained top ring, then generate independent cutaneous
     # mouth, cheeks, chin, submental, neck, clavicle and bust by fixed sections.
-    ys=[.231,.225,.218,.212,.206,.201,.194,.188,.181,.173,.165,
-        .157,.149,.140,.128,.114,.100,.086,.071,.054,.035,.012,-.021,-.075]
+    ys=[.243,.240,.237,.234,.231,.228,.225,.222,.219,.216,
+        .213,.210,.207,.204,.201,.198,.194,.190,.185,.181,.176,
+        .171,.166,.160,.154,.148,.142,.135,.127,.118,.109,.100,
+        .092,.083,.074,.064,.054,.043,.031,.018,.006,-.021,-.075]
     if cut<=.242:ys=[y for y in ys if y<cut-.005]
     pos=list(top); tex=list(olduv); colors=list(oldcolors)
     for row,y in enumerate(ys):
@@ -291,7 +317,7 @@ def rebuild(path):
         ns[j]=old_norm[src]
     for v in pos:
         if not all(math.isfinite(q) for q in v):raise ValueError('Non-finite new geometry')
-    if len(pos)<=1000 or len(faces)<=1800:
+    if len(pos)<=2000 or len(faces)<=3500:
         raise ValueError('Fresh parametric lower face has insufficient topology')
     # Construct expression deltas on the new face and lips, so mouthOpen,
     # five vowels, smiles, etc move the generated lips rather than dead source.
