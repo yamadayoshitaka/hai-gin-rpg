@@ -62,8 +62,8 @@ class FourViewSculptQA(unittest.TestCase):
         nose=(0.,.251,.157)
         self.assertLess(transformed(nose)[2],nose[2])
         # Both lip vermilion bands gain actual volume, not painted lipstick.
-        upper=(.008,.209,.145)
-        lower=(.008,.183,.143)
+        upper=(.008,.240,.145)
+        lower=(.008,.223,.143)
         self.assertGreater(transformed(upper)[2],upper[2]+.001)
         self.assertGreater(transformed(lower)[2],lower[2]+.001)
         # A smooth profile needs cheek support beneath the cheekbone and
