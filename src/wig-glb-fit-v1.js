@@ -173,43 +173,57 @@ function fringeTexture(THREE){
  return tex;
 }
 
-/** Separate UV-mapped solid strands. The imported CC0 wig is never edited. */
+
+/**
+ * Independent solid strands following the actual v121 front skin samples.
+ * Roots sit close to the scalp, INSIDE the existing CC0 cap; no broad flat
+ * sheet outside the skull and no editing of the original long-hair mesh.
+ */
 export function buildReferenceFringe(THREE,head,{
- color='#d2b17a',style='blunt',lengthMm=75,widthPct=95,forwardMm=8
+ color='#d2b17a',style='blunt',lengthMm=55,widthPct=95,forwardMm=0
 }={}){
  const group=new THREE.Group();
  group.name='detachable-3d-bangs-'+style;
  if(style==='none')return group;
  if(!['blunt','center'].includes(style))throw Error('不正な前髪スタイルです');
- const count=72,steps=12,sides=8,p=[],uv=[],idx=[];
+ const count=72,steps=16,sides=8,p=[],uv=[],idx=[];
  const length=clamp(Number(lengthMm),30,115)/1000;
  const width=clamp(Number(widthPct),45,125)/100;
  const forward=clamp(Number(forwardMm),-20,35)/1000;
- const rootY=head.top-.023,span=head.rx*.87*width;
+ const rootY=head.top-.037,span=head.rx*.76*width;
+ const front=(x,y)=>{
+  if(typeof head.frontAt==='function')return head.frontAt(x,y);
+  return head.cz+head.rz*Math.sqrt(Math.max(.05,1-((x-head.cx)/head.rx)**2));
+ };
  for(let i=0;i<count;i++){
   const u=(i+.5)/count*2-1;
   if(style==='center'&&Math.abs(u)<.055)continue;
   const rootX=head.cx+u*span;
-  const sweep=style==='center'?Math.sign(u)*(.012+.016*(1-Math.min(1,Math.abs(u)))):0;
-  const tipY=rootY-length*(style==='center'?.93+.10*Math.abs(u):1)
-   +(style==='blunt'?.0015*Math.sin(i*2.17):0);
-  const scalpZ=head.cz+head.rz*Math.sqrt(Math.max(.06,1-(u*.91)**2));
-  const baseZ=Math.max(scalpZ,head.frontZ-.009)+.004+forward;
-  const start=p.length/3,half0=Math.max(.00075,span*1.93/count*.56);
+  const sweep=style==='center'?Math.sign(u)*(.008+.009*(1-Math.min(1,Math.abs(u)))):0;
+  const tipY=rootY-length*(style==='center'?.90+.09*Math.abs(u):1)
+   +(style==='blunt'?.001*Math.sin(i*2.17):0);
+  const start=p.length/3,half0=Math.max(.00065,span*1.95/count*.54);
+  const surfaceX=t=>clamp(rootX+sweep*t,head.cx-head.rx*.94,head.cx+head.rx*.94);
+  const rootZ=front(rootX,rootY)+.0009; // hidden under the CC0 outer layer
   for(let j=0;j<steps;j++){
    const t=j/(steps-1),ease=t*t*(3-2*t);
-   const x=rootX+sweep*ease+.0006*Math.sin(i*1.37+t*3)*t;
-   const y=lerp(rootY,tipY,t)+.0032*Math.sin(Math.PI*t);
-   const z=baseZ+.008*ease+.003*Math.sin(Math.PI*t);
-   const half=half0*(1-.2*t);
+   const x=surfaceX(ease)+.00035*Math.sin(i*1.37+t*3)*t;
+   const y=lerp(rootY,tipY,t)+.0014*Math.sin(Math.PI*t);
+   // Individual forehead sampling keeps the locks tangential to real skin.
+   const skin=front(x,y);
+   const clearance=.0011+ .0034*ease;
+   const z=lerp(rootZ,skin+clearance,ease)+forward+
+    .0006*Math.sin(i*.73+t*3.1)*ease;
+   const half=half0*(1-.17*t);
    for(let k=0;k<sides;k++){
-    const th=2*Math.PI*k/sides;
-    p.push(x+half*Math.cos(th),y,z+.00165*Math.sin(th));
+    const theta=2*Math.PI*k/sides;
+    p.push(x+half*Math.cos(theta),y,z+.0013*Math.sin(theta));
     uv.push(k/sides,t);
    }
   }
   const caps=p.length/3;
-  p.push(rootX,rootY,baseZ,rootX+sweep,tipY,baseZ+.008);
+  const tipX=surfaceX(1),tipZ=front(tipX,tipY)+.0045+forward;
+  p.push(rootX,rootY,rootZ+forward,tipX,tipY,tipZ);
   uv.push(.5,0,.5,1);
   for(let j=0;j<steps-1;j++)for(let k=0;k<sides;k++){
    const next=(k+1)%sides,a=start+j*sides+k,b=start+j*sides+next;
@@ -237,19 +251,41 @@ export function buildReferenceFringe(THREE,head,{
  return group;
 }
 
-/** Real v121 head geometry; preview-only and never part of the export root. */
+/**
+ * Display ONLY upper scalp triangles of the real v121 mesh, not the nose,
+ * ears, jaw or neck. Preview sibling, never exported into the wig GLB.
+ */
 export function createRealHeadWireframe(THREE,head){
  if(!head?.mesh?.geometry)throw Error('ワイヤー用v121頭部がありません');
  head.mesh.updateWorldMatrix(true,false);
- const tmp=head.mesh.geometry.clone();
- tmp.applyMatrix4(head.mesh.matrixWorld);
- const geo=new THREE.WireframeGeometry(tmp);
- tmp.dispose();
+ const original=head.mesh.geometry;
+ const position=original.getAttribute('position');
+ if(!position)throw Error('v121頭部に頂点がありません');
+ const worldPosition=new THREE.Vector3(),triangles=[];
+ const index=original.getIndex();
+ const getVertex=i=>new THREE.Vector3().fromBufferAttribute(position,i)
+  .applyMatrix4(head.mesh.matrixWorld);
+ // Crop via real mesh triangles; preserves exact scalp topology where shown.
+ const floor=Number.isFinite(head.top)?head.top-.110:-Infinity;
+ const triangleCount=Math.floor((index?index.count:position.count)/3);
+ for(let i=0;i<triangleCount;i++){
+  const ai=index?index.getX(i*3):i*3;
+  const bi=index?index.getX(i*3+1):i*3+1;
+  const ci=index?index.getX(i*3+2):i*3+2;
+  const a=getVertex(ai),b=getVertex(bi),c=getVertex(ci);
+  if(Math.min(a.y,b.y,c.y)<floor)continue;
+  triangles.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);
+ }
+ if(triangles.length<9)throw Error('v121頭部の頭皮ワイヤー用三角形が不足しています');
+ const cropped=new THREE.BufferGeometry();
+ cropped.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
+ const geo=new THREE.WireframeGeometry(cropped);
+ cropped.dispose();
  const mat=new THREE.LineBasicMaterial({
-  color:0x80dcff,transparent:true,opacity:.28,depthWrite:false,depthTest:true
+  color:0x80dcff,transparent:true,opacity:.23,depthWrite:false,depthTest:true
  });
  const wire=new THREE.LineSegments(geo,mat);
- wire.name='preview-v121-head-wire-not-exported';
+ wire.name='preview-v121-scalp-wire-not-exported';
  wire.frustumCulled=false;
  wire.userData.dispose=()=>{geo.dispose();mat.dispose();};
  return wire;
