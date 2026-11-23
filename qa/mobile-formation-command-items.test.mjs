@@ -35,7 +35,7 @@ assert.equal((formationHtml.match(/data-inn-wizard-formation="free"/g)||[]).leng
 assert.equal((formationHtml.match(/data-inn-wizard-formation-page=/g)||[]).length,2);
 // Pages deployment runs its smoke tests without npm install; keep this
 // structural assertion dependency-free instead of importing a DOM package.
-const card=formationHtml.match(/<article class="innWizardFormationCard">([\\s\\S]*?)<\\/article>/)?.[1]||'';
+const card=formationHtml.match(/<article class="innWizardFormationCard">([\s\S]*?)<\/article>/)?.[1]||'';
 assert.ok(card,'formation card must have an isolated height-constrained layout');
 const diagram=card.indexOf('class="innWizardFormationDiagram"');
 const select=card.indexOf('data-inn-wizard-formation="attack"');
