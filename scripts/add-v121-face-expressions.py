@@ -68,56 +68,58 @@ def add_float(g,b,rows,shape='VEC3'):
 
 
 def deformation(name,x,y,z,part):
-    """Natural muscle-inspired, neutral-relative shape deformation.
+    """Facial action units with separate lips, corners, brows and cheeks.
 
-    Volumes fade out from each facial region. Hair, brow, liner and eyelash
-    morph with the skin, preventing obvious detached expression parts.
+    Original v121 phonemes pulled the entire mandibular region downward
+    because lower lip was gated by a broad gaussian. The mouth now uses
+    narrow vermilion bands and independent lateral/vertical movements.
+    Chin and neck vertices below y=.160 must remain practically stationary.
+    The oral cavity preview is handled as separate geometry by WebGL.
     """
     ax=abs(x)
     sign=1. if x>=0 else -1.
-    front=fade(z,.055,.121)
-    if part!='skin':
-        front=1.
+    front=fade(z,.055,.121) if part=='skin' else 1.
+    mouth_front=fade(z,.105,.136) if part=='skin' else 1.
     eye=bell(ax,.043,.027)*bell(y,.308,.028)*front
-    outer=bell(ax,.048,.022)*bell(y,.308,.026)*front
     brow=bell(ax,.039,.032)*bell(y,.342,.022)*front
     inner_brow=bell(ax,.025,.015)*bell(y,.342,.020)*front
-    cheek=bell(ax,.067,.038)*bell(y,.260,.040)*front
-    corner=bell(ax,.042,.015)*bell(y,.196,.021)*front
-    lip=bell(x,0,.044)*bell(y,.195,.029)*front
-    upper=bell(y,.211,.013)*lip
-    lower=bell(y,.184,.013)*lip
+    cheek=bell(ax,.066,.039)*bell(y,.260,.035)*front
+    # Actual lip bands rather than a whole-jaw deformation.
+    lip_span=bell(x,0,.035)*mouth_front
+    upper=bell(y,.2085,.008)*lip_span
+    lower=bell(y,.1870,.009)*lip_span
+    corner=bell(ax,.043,.013)*bell(y,.197,.014)*mouth_front
     top_lid=bell(y,.320,.008)*eye
     lower_lid=bell(y,.296,.008)*eye
     if name=='blink':
-        # Eyelids/lashes close together; true geometry, not opacity flash.
-        return (0.,-.0140*top_lid+.0070*lower_lid, .0016*top_lid)
+        return (0.,-.0140*top_lid+.0070*lower_lid,.0016*top_lid)
     if name=='smile':
-        return (sign*.0028*corner, .0072*corner+.0011*cheek,
-                .0019*cheek+.0006*corner)
+        return (sign*.0058*corner,
+                .0072*corner+.0024*cheek+.0011*upper,
+                .0023*cheek+.0008*corner)
     if name=='laugh':
-        return (sign*.0035*corner,
-                .0090*corner+.0020*cheek+.0033*upper-.007*lower,
-                .0027*cheek+.0012*corner)
+        return (sign*.0074*corner,
+                .0090*corner+.0032*cheek+.0044*upper-.0105*lower,
+                .0032*cheek+.0010*corner)
     if name=='angry':
         return (0.,-.0080*inner_brow+.0012*(brow-inner_brow)-.0010*eye,
                 .0006*inner_brow)
     if name=='sad':
-        return (-sign*.0017*corner,
-                .0082*inner_brow-.0012*brow-.0055*corner,
+        return (-sign*.0025*corner,
+                .0082*inner_brow-.0012*brow-.0062*corner,
                 -.0007*corner)
     if name=='mouthOpen':
-        return (0.,.0037*upper-.0120*lower,-.0020*lip)
+        return (0.,.0050*upper-.0106*lower,-.0007*lower)
     if name=='vowelA':
-        return (0.,.0038*upper-.0160*lower,-.0020*lip)
+        return (sign*.0008*corner,.0065*upper-.0140*lower,-.0008*lower)
     if name=='vowelI':
-        return (sign*.0045*corner,.0015*upper-.0030*lower,-.0008*lip)
+        return (sign*.0065*corner,.0017*upper-.0027*lower,.0004*corner)
     if name=='vowelU':
-        return (-sign*.0060*corner,.0017*upper-.0065*lower,.0020*lip)
+        return (-sign*.0053*corner,.0032*upper-.0068*lower,.0022*(upper+lower))
     if name=='vowelE':
-        return (sign*.0038*corner,.0028*upper-.0070*lower,-.0010*lip)
+        return (sign*.0052*corner,.0038*upper-.0072*lower,-.0005*lower)
     if name=='vowelO':
-        return (-sign*.0050*corner,.0032*upper-.0110*lower,.0019*lip)
+        return (-sign*.0048*corner,.0047*upper-.0112*lower,.0015*(upper+lower))
     raise ValueError(name)
 
 
@@ -187,7 +189,10 @@ def build(path):
         'animatedMeshes':len(nodes),
         'animationNames':[clip['name'] for clip in g['animations']],
         'preservesSkinVertexIDs':13455,
-        'eyeGlobesRemainIndependent':True}
+        'eyeGlobesRemainIndependent':True,
+        'mouthShapeVersion':'independent_vermilion_corner_visemes_v2',
+        'jawNeckStationary':True,
+        'oralCavityPreview':'runtime_mesh_with_teeth_and_tongue'}
     if 'referenceFeatureSculpt' in meta:
         meta['referenceFeatureSculpt']['facialExpressionAnimations']=True
     if 'naturalFoldCleanup' in meta:
