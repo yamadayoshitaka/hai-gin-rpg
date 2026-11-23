@@ -235,6 +235,16 @@ jobs:
           assert x['referenceFeatureSculpt']['upperLowerVermilionFullnessRealMesh'] is True
           assert x['referenceFeatureSculpt']['lipFullnessFadesAtCornersAndChin'] is True
           assert x['referenceFeatureSculpt']['upperLipMShapedCupidBow'] is True
+          assert x['referenceFeatureSculpt']['version']=='v121-clear-lip-border-inner-fold-v17-20261124'
+          assert x['referenceFeatureSculpt']['anatomicalVermilionBorderRealGeometry'] is True
+          assert x['referenceFeatureSculpt']['upperCupidBowBorderAndLowerRimDefined'] is True
+          assert x['referenceFeatureSculpt']['lipCornerTaperedToOralCommissure'] is True
+          assert x['referenceFeatureSculpt']['noSecondSubLabialRidge'] is True
+          assert x['referenceFeatureSculpt']['outerCheekTrenchSoftened'] is True
+          assert x['referenceFeatureSculpt']['shallowInnerNasolabialFoldSculpted'] is True
+          assert len(x['naturalFoldCleanup']['nasolabialLeftVertexIds'])>8
+          assert len(x['naturalFoldCleanup']['nasolabialRightVertexIds'])>8
+          assert 'lip-border-inner-fold-v17' in pathlib.Path('pages-dist/face-neutral-v121.html').read_text()
           assert x['referenceFeatureSculpt']['nasalTipAndAlarNarrowed'] is True
           assert x['referenceFeatureSculpt']['philtrumDistanceShortenedByGeometry'] is True
           assert x['referenceFeatureSculpt']['philtrumReal3DGrooveNotMakeup'] is True
