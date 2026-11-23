@@ -48,13 +48,38 @@ class ReferenceV14(unittest.TestCase):
         self.assertLess(wing[0],original_nose[0]-.001)
         mouth=sculpt(0.,.240,.15)
         nose_base=sculpt(0.,.267,.15)
-        self.assertGreater(mouth[1]-.240,.001)
+        self.assertGreater(mouth[1]-.240,.003)
+        # Central nose-to-lip spacing must be shorter than the v14
+        # baseline, while the original nasal base stays locked.
         self.assertAlmostEqual(nose_base[1],.267,delta=.0002)
         self.assertLess(nose_base[1]-mouth[1],.027-.001)
         # A defined central groove fades laterally rather than being a line.
         groove=SCULPT['philtrum_relief'](0.,.252,.15)
         sides=SCULPT['philtrum_relief'](.028,.252,.15)
         self.assertLess(groove,sides-.001)
+        # A longitudinal (not oval or painted) groove must remain visible
+        # near both the upper Cupid edge and the underside of the nose.
+        for y in (.243,.268):
+            center=SCULPT['philtrum_relief'](0.,y,.15)
+            outer=SCULPT['philtrum_relief'](.028,y,.15)
+            self.assertLess(center,outer-.0007)
+
+    def test_chin_vline_tapers_without_lower_lip_or_neck_distortion(self):
+        sculpt=runpy.run_path(str(ROOT / 'scripts/rebuild-v121-mouth-chin.py'))
+        pts=[(x,.150,.15) for x in (-.056,-.040,.0,.040,.056)]
+        pts += [(x,.234,.15) for x in (-.056,-.04,0.,.04,.056)]
+        pts += [(x,.080,.15) for x in (-.056,-.04,0.,.04,.056)]
+        # The isolated low-density sample is too small for the 180-vertex
+        # production sculpt safety guard: add realistic synthetic patch.
+        pts += [(i/1000,j/1000,.15)
+                for i in range(-64,65,4) for j in range(80,265,4)]
+        out,meta=sculpt['new_lower_face_geometry'](pts,None)
+        for n in (0,4):
+            self.assertLess(abs(out[n][0]),abs(pts[n][0])-.002)
+        for n in range(5,15):
+            self.assertAlmostEqual(out[n][0],pts[n][0],delta=.0002)
+        self.assertTrue(meta['shortSharperVLineChin'])
+        self.assertTrue(meta['lipAndNeckExcludedFromJawTaper'])
 
     def test_chin_deep_shadow_source_is_reduced(self):
         old=(0.,.184,.142)
@@ -73,7 +98,7 @@ class ReferenceV14(unittest.TestCase):
         self.assertEqual(meta['version'],121)
         self.assertFalse(meta['hairIncluded'])
         self.assertEqual(meta['mouthChinRebuild']['version'],
-                         'female-v121-realspace-neutral-lower-face-v14')
+                         'female-v121-realspace-neutral-lower-face-v15')
         sculpt=meta['referenceFeatureSculpt']
         for field in ('lowerLipFullerAndCornerTapered',
                       'upperLipMShapedCupidBow',

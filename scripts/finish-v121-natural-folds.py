@@ -113,14 +113,16 @@ def philtrum_relief(x,y,z):
     # its y mask cut off well before the septum and the paired high columns
     # exaggerated the isolated depression. The actual philtrum is a LONG,
     # gently shaded central channel, not a circular indentation.
-    if y<.236 or y>.266:
+    if y<.239 or y>.273:
         return 0.
-    # The actual upper lip is centered at local Y≈.240, not .208. Keep
-    # the philtrum between the lip and nasal base, never on the chin.
-    vertical=fade(y,.236,.244)*(1.-fade(y,.258,.266))
+    # A long central groove from the upper Cupid's bow to beneath the
+    # columella. Preserve the known safe 3.8 mm maximum: extend its smooth
+    # longitudinal plateau rather than deepening a circular pit.
+    # Soft lateral columns describe genuine skin relief, never a drawn line.
+    vertical=fade(y,.239,.246)*(1.-fade(y,.264,.273))
     front=fade(z,.071,.116)
-    groove=-.0038*bell(x,0,.0057)*vertical*front
-    columns=.00095*(bell(x,-.0102,.0046)+bell(x,.0102,.0046))*vertical*front
+    groove=-.0038*bell(x,0,.0050)*vertical*front
+    columns=.00095*(bell(x,-.0098,.0046)+bell(x,.0098,.0046))*vertical*front
     return groove+columns
 
 
@@ -163,8 +165,11 @@ def nose_and_lips(x,y,z):
     # then lower the bottom vermilion rim a little to increase its height.
     # Leave the closed-mouth seal (Y ~ .232) in its original vertex band:
     # the native aperture morph is identified from these exact skin loops.
-    lip_lift=(.00215*bell(y,.240,.010)*horizontal*lip_front*
-              fade(y,.233,.239)*(1.-fade(y,.250,.259)))
+    # Pull the upper lip 2 mm further towards the nasal base at its center.
+    # The narrow mouth-seal Y band (~.232) is still hard-faded to zero;
+    # changing that seam would break real 3D mouth aperture topology.
+    lip_lift=(.00415*bell(y,.240,.010)*horizontal*lip_front*
+              fade(y,.235,.240)*(1.-fade(y,.250,.259)))
     bottom_rim=.00165*bell(y,.216,.0055)*horizontal*lip_front
     # Two peaks and a central dip make an actual M-shaped Cupid's bow.
     peaks=(bell(x,-.011,.005)+bell(x,.011,.005))
@@ -194,10 +199,10 @@ def neutral_color(x,y,z):
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
     # The upstream resting lipstick is strictly bounded to the two
     # anatomical vermilion bands. Gaussian tails must never tint a chin.
-    lip_region=(.211<=y<=.250 and abs(x)<=.052 and z>.119)
+    lip_region=(.211<=y<=.2515 and abs(x)<=.052 and z>.119)
     vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
     lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)*
-          fade(y,.211,.221)*(1.-fade(y,.247,.251))
+          fade(y,.211,.221)*(1.-fade(y,.248,.252))
           if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
@@ -339,7 +344,11 @@ def finish(path):
         'skinPBR':True,
         'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
-        'version':'v121-nose-lips-cupid-bow-v14-20261124',
+        'version':'v121-nose-lips-cupid-bow-short-philtrum-v15-20261124',
+        'upperLipRaisedTowardNoseMillimeters':4.15,
+        'philtrumLongitudinalCoverage':[.239,.273],
+        'philtrumReal3DGrooveNotMakeup':True,
+        'oralMouthSealProtected':True,
         'lowerLipFullerAndCornerTapered':True,
         'upperLipMShapedCupidBow':True,
         'nasalTipAndAlarNarrowed':True,
@@ -349,7 +358,7 @@ def finish(path):
         'centralPhiltrumStart':[0.,.264],
         'philtrumGrooveMasterDepth':.0038,
         'philtrumColumnsRelief':.00095,
-        'philtrumShape':'continuous_nose_base_to_vermilion_shallow_channel_v122fix',
+        'philtrumShape':'continuous_nose_base_to_vermilion_v15_extended_channel',
         'philtrumNoOvalPit':True,
         'parametricDepthControlSupported':True,
         'centralPhiltrumEnd':[0.,.238],

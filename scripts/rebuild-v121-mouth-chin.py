@@ -110,7 +110,18 @@ def new_lower_face_geometry(points,uv):
         # Slightly soften the point of the chin, never pinch mouth corners.
         # Never shift mouth-corner/dimple landmark X coordinates: only the
         # lower chin/jaw region may change width.
-        dx=-x*.009*bell(y,.153,.043)*middle*front*(1.-fade(y,.203,.215))
+        # Taper the lower mandibular outline into a sharper but short V-line.
+        # Avoid pushing the menton forward or making it longer. The taper
+        # fades out well below the mouth and above the neck; no hard shelf.
+        jaw_taper=(bell(y,.151,.034)*bell(abs(x),.048,.043)*
+                   fade(y,.097,.126)*(1.-fade(y,.191,.215))*front)
+        dx=-x*(.009*bell(y,.153,.043)*middle*front*
+               (1.-fade(y,.203,.215))+.087*jaw_taper)
+        # Subtle planar support along lateral chin, not a second groove
+        # between the lower lip and the chin point.
+        side_plane=(bell(y,.150,.036)*bell(abs(x),.054,.025)*
+                    fade(y,.105,.133)*(1.-fade(y,.187,.211))*front)
+        dz-=.0008*side_plane
         new=(x+dx,y+dy,z+dz)
         if not all(math.isfinite(q) for q in new):
             raise ValueError('Nonfinite real-space lower-face vertex')
@@ -128,7 +139,7 @@ def new_lower_face_geometry(points,uv):
     chin_depth=forward_depth(.142,.194)
     neck_depth=forward_depth(.075,.118)
     return result,{
-        'version':'female-v121-realspace-neutral-lower-face-v14',
+        'version':'female-v121-realspace-neutral-lower-face-v15',
         'method':'actual-XYZ-sagittal-C1-lip-sulcus-short-chin-and-boundary-welded-remesh',
         'mouthFrontZ':round(lip_front,6),
         'mentonAfterZ':round(chin_depth,6) if chin_depth is not None else None,
@@ -145,6 +156,9 @@ def new_lower_face_geometry(points,uv):
         'lowerVermilionHeightReduced':True,
         'shallowLabiomentalSulcus':True,
         'shortRoundedChin':True,
+        'shortSharperVLineChin':True,
+        'jawTaperPeakFraction':.087,
+        'lipAndNeckExcludedFromJawTaper':True,
         'secondaryUnderlipRidgeRemoved':True,
         'noNarrowUnderlipVerticalLift':True,
         'noseAndUpperFaceHardLocked':True,
