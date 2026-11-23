@@ -123,6 +123,29 @@ class TestRealExpressionGLB(unittest.TestCase):
         chin=[abs(q[1]) for p,q in zip(self.pos,shape)
               if p[1]<.160 and abs(p[0])<.075]
         self.assertLess(max(chin),.0007)
+        # Verify the actual v121 skin morph, not just the separate
+        # oral-cavity mesh or a UI label.
+        for expression in ('mouthOpen','vowelA','vowelO'):
+            delta=vector(g,self.b,self.prim['targets'][NAMES.index(expression)]['POSITION'])
+            chin_stretch=[abs(d[1]) for p,d in zip(self.pos,delta)
+                          if p[1]<.160 and abs(p[0])<.075]
+            self.assertLess(max(chin_stretch),.0007,expression)
+            recess=[d[2] for p,d in zip(self.pos,delta)
+                    if abs(p[0])<.020 and .192<p[1]<.202 and p[2]>.120]
+            self.assertGreater(len(recess),0,expression)
+            self.assertLess(min(recess),-.006,expression)
+        opened=vector(g,self.b,self.prim['targets'][NAMES.index('mouthOpen')]['POSITION'])
+        upper=[d[1] for p,d in zip(self.pos,opened)
+               if abs(p[0])<.025 and .205<p[1]<.213 and p[2]>.120]
+        lower=[d[1] for p,d in zip(self.pos,opened)
+               if abs(p[0])<.025 and .182<p[1]<.190 and p[2]>.120]
+        self.assertGreater(len(upper),0)
+        self.assertGreater(len(lower),0)
+        self.assertGreater(max(upper),.002)
+        self.assertLess(min(lower),-.006)
+        self.assertTrue(self.skin['extras']['facialExpressionRig']['skinMouthCenterInwardOnOpening'])
+        self.assertIn('recessed_oral_well',
+                      self.skin['extras']['facialExpressionRig']['mouthShapeVersion'])
 
     def test_real_brows_closer_to_upper_eye(self):
         brow=next(m for m in self.g['meshes']
