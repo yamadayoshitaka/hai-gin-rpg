@@ -47,7 +47,7 @@ export function v121MakeupMasks(x,y,z){
 export function attachV121Makeup({neutral,face,onChange=()=>{}}){
   const color=face.geometry.getAttribute('color');
   const position=face.geometry.getAttribute('position');
-  if(!color||color.count!==13455||color.itemSize!==3)
+  if(!color||color.count<13455||color.itemSize!==3)
     throw Error('Female v121 makeup requires 13,455 PBR vertex colours');
   const originals=new Float32Array(color.array);
   const localXYZ=new Float32Array(position.array);
