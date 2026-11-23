@@ -31,8 +31,8 @@ export function v119PortraitContourWeights({xn=0,yn=0,zn=0}={}){
  const lower=smooth(.23,.32,ax)*contour*
   bell(ax,.455,.20)*bell(yn,.405,.072)*
   smooth(.27,.33,yn)*(1-smooth(.485,.55,yn))*front;
- const nose=bell(ax,.095,.10)*bell(yn,.570,.050)*
-  (1-smooth(.69,.74,yn))*front;
+ const nose=bell(ax,.095,.10)*bell(yn,.570,.047)*
+  smooth(.525,.553,yn)*(1-smooth(.69,.74,yn))*front;
  const jaw=bell(ax,.39,.21)*bell(yn,.335,.075)*
   smooth(.26,.315,yn)*(1-smooth(.445,.51,yn))*front*contour;
  const chin=bell(ax,.14,.16)*bell(yn,.305,.055)*
@@ -62,14 +62,17 @@ export function sculptV119PortraitContours(geometry,{
   const xn=(x-cx)/(d.x*.5),yn=(y-box.min.y)/d.y,
    zn=(z-box.min.z)/d.z;
   if(yn<.26||yn>.785||Math.abs(xn)>.82||zn<.44)continue;
+  // Preserve the entire native oral opening ring. Re-triangulating its
+  // original seam after an unrelated contour pass produced instability.
+  if(yn>.458&&yn<.544&&Math.abs(xn)<.325)continue;
   const w=v119PortraitContourWeights({xn,yn,zn});
   const cheekBlend=clamp(w.cheek*.88+w.lower*.73);
   let nx=baseline[k],ny=baseline[k+1],nz=baseline[k+2];
   if(cheekBlend>.005){
    // Reanchor to continuous donor surface rather than add to pre-existing
    // face passes; prevents the v117 malar shelf/gaunt hollow stacking.
-   const referenceZ=z+d.z*((female?.065:.041)*w.cheek+
-                              (female?.054:.037)*w.lower);
+   const referenceZ=z+d.z*((female?.096:.057)*w.cheek+
+                              (female?.078:.045)*w.lower);
    const influence=clamp(cheekBlend*(female?.88:.70));
    nz+=(referenceZ-nz)*influence;
    nx+=(x-cx)*(female?.025:.012)*w.cheek;
