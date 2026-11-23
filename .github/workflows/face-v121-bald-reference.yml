@@ -9,6 +9,7 @@ on:
       - 'qa/face-v121-makeup-contour.test.mjs'
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
+      - 'scripts/rebuild-v121-mouth-chin.py'
       - 'qa/face-v121-natural-folds-cleanup.test.py'
       - 'qa/face-v121-lower-lashes-nose-lips.test.py'
       - 'qa/face-v121-eye-detail-real-glb.test.py'

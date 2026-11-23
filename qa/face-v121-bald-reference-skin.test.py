@@ -48,26 +48,44 @@ class TestFaceV121(unittest.TestCase):
         old_index=accessor(self.a,self.a_bin,src['indices'])
         new_index=accessor(self.b,self.b_bin,dst['indices'])
         self.assertEqual(len(old_index),len(new_index))
-        # The single native mouth aperture is a deliberate topology edit:
-        # only central oral triangles may become degenerate in the main
-        # mesh. They are copied in neutral pose into the cavity's skin seal.
+        # Local lower-face edges are deliberately reconnected. Unlike the
+        # former displacement-only version, source triangle IDs are not
+        # required to match inside the actual mouth/menton surface.
         detached=0
+        remeshed=0
         for i in range(0,len(old_index),3):
             before=old_index[i:i+3]
             after=new_index[i:i+3]
             if before==after:continue
-            self.assertEqual(after,[before[0]]*3)
-            for (index,) in before:
-                x,y,z=newp[index]
-                self.assertLess(abs(x),.033)
-                self.assertGreater(y,.230)
-                self.assertLess(y,.235)
-                self.assertGreater(z,.110)
-            detached+=1
-        self.assertEqual(detached,self.b['meshes'][0]['extras']
-                         ['facialExpressionRig']['splitMouthSeal']
+            if after==[before[0]]*3:
+                for (index,) in before:
+                    x,y,z=newp[index]
+                    self.assertLess(abs(x),.033)
+                    self.assertGreater(y,.230)
+                    self.assertLess(y,.235)
+                    self.assertGreater(z,.110)
+                detached+=1
+            else:
+                for (index,) in before+after:
+                    x,y,z=newp[index]
+                    self.assertLess(abs(x),.082)
+                    self.assertGreater(y,.110)
+                    self.assertLess(y,.267)
+                    self.assertGreater(z,.076)
+                remeshed+=1
+        rig=self.b['meshes'][0]['extras']['facialExpressionRig']
+        self.assertEqual(detached,rig['splitMouthSeal']
                          ['detachedSkinTriangles'])
         self.assertGreater(detached,20)
+        rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
+        self.assertEqual(rebuild['version'],
+                         'female-v121-continuous-sagittal-lowerface-v1')
+        self.assertGreater(rebuild['edgeFlips'],3)
+        self.assertGreater(remeshed,3)
+        self.assertTrue(rebuild['sideProfileMeasured'])
+        self.assertTrue(rebuild['outerBoundaryUntouched'])
+        self.assertLessEqual(rebuild['mentonAfterZ'],
+                             rebuild['mouthFrontZ']-.016)
         self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
                          accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0']))
         distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
