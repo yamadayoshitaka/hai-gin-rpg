@@ -18,57 +18,135 @@ export function selectRealHeadMesh(root) {
   throw Error('顔v121の頭部実メッシュが見つかりません');
  return candidates[0].node;
 }
-export function measureRealHead(THREE,root) {
+
+/**
+ * A front-surface lookup built from the actual transformed v121 vertices.
+ * Each 5 mm XY cell stores its frontmost skin vertex; nearest cells are
+ * smoothly interpolated. No synthetic sphere or old hair topology is used.
+ */
+function frontSurfaceSampler(points,cell=.005){
+ const bins=new Map();
+ for(const q of points){
+  const ix=Math.round(q[0]/cell),iy=Math.round(q[1]/cell);
+  const key=ix+':'+iy,old=bins.get(key);
+  if(!old||old[2]<q[2])bins.set(key,q);
+ }
+ return (x,y)=>{
+  const ix=Math.round(x/cell),iy=Math.round(y/cell);
+  let sum=0,total=0;
+  for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
+   const v=bins.get((ix+dx)+':'+(iy+dy));
+   if(!v)continue;
+   const d2=(v[0]-x)**2+(v[1]-y)**2;
+   const weight=1/(d2+.000002);
+   sum+=v[2]*weight;total+=weight;
+  }
+  return total?sum/total:null;
+ };
+}
+function percentile(points,axis,t){
+ const sorted=points.map(p=>p[axis]).sort((a,b)=>a-b);
+ return sorted[Math.floor((sorted.length-1)*t)];
+}
+
+export function measureRealHead(THREE,root){
  root.updateMatrixWorld(true);
  const mesh=selectRealHeadMesh(root);
  mesh.updateWorldMatrix(true,false);
- const p=mesh.geometry.getAttribute('position');
- const bounds=new THREE.Box3();
- const points=[];
+ const position=mesh.geometry.getAttribute('position');
+ const bounds=new THREE.Box3(),points=[];
  const v=new THREE.Vector3();
- for(let i=0;i<p.count;i++){
-  v.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);
+ for(let i=0;i<position.count;i++){
+  v.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);
   if(![v.x,v.y,v.z].every(Number.isFinite))throw Error('頭部GLBの座標が不正です');
   bounds.expandByPoint(v);
   points.push([v.x,v.y,v.z]);
  }
- const upper=points.filter(q=>q[1]>bounds.max.y-.135);
- if(upper.length<300)throw Error('頭頂部の頂点数が不足しています');
- const xs=upper.map(v=>v[0]).sort((a,b)=>a-b);
- const zs=upper.map(v=>v[2]).sort((a,b)=>a-b);
- const q=(list,t)=>list[Math.floor((list.length-1)*t)];
- const cx=(q(xs,.025)+q(xs,.975))/2;
- const cz=(q(zs,.025)+q(zs,.975))/2;
- const rx=Math.max(.06,(q(xs,.98)-q(xs,.02))/2);
- const rz=Math.max(.067,(q(zs,.98)-q(zs,.02))/2);
+ const top=bounds.max.y;
+ // Sample only the skull band, not the nose, ears, lower jaw or neck.
+ const scalp=points.filter(p=>p[1]>=top-.075&&p[1]<=top-.022);
+ if(scalp.length<100)throw Error('v121の頭皮領域が不足しています');
+ const cx=(percentile(scalp,0,.025)+percentile(scalp,0,.975))/2;
+ const cz=(percentile(scalp,2,.05)+percentile(scalp,2,.95))/2;
+ const rx=Math.max(.035,(percentile(scalp,0,.975)-percentile(scalp,0,.025))/2);
+ const rz=Math.max(.035,(percentile(scalp,2,.95)-percentile(scalp,2,.05))/2);
+ const forehead=scalp.filter(p=>Math.abs(p[0]-cx)<rx*.45);
+ const frontZ=percentile(forehead.length>20?forehead:scalp,2,.95);
+ const backZ=percentile(scalp,2,.05);
+ const sampler=frontSurfaceSampler(points.filter(p=>p[1]>top-.17));
  return {
-  mesh,vertices:p.count,
-  cx,cz,rx,rz,top:bounds.max.y,
-  hairlineY:bounds.max.y-.075,
-  frontZ:q(zs,.96),
-  backZ:q(zs,.04),
-  bounds
+  mesh,vertices:position.count,cx,cz,rx,rz,top,
+  hairlineY:top-.075,frontZ,backZ,bounds,
+  scalpVertices:scalp.length,
+  // Measurements use real-world v121 skin vertices and preserve facial curvature.
+  frontAt(x,y){
+   const z=sampler(x,y);
+   return z===null?frontZ:z;
+  }
  };
 }
-/** Given native source-world bounds, put the wig around the measured v121 scalp. */
-export function calculateWigFit(source,head,{widthRatio=1.11,vertical=0,forward=0}={}){
+
+/** Crown measurements of the imported, static CC0 hair, not its long tips. */
+export function measureWigCrown(THREE,wigRoot,sourceBounds){
+ wigRoot.updateWorldMatrix(true,true);
+ const width=sourceBounds.max.x-sourceBounds.min.x;
+ const height=sourceBounds.max.y-sourceBounds.min.y;
+ const top=sourceBounds.max.y;
+ const lower=top-Math.max(width*.43,height*.12);
+ const upper=top-Math.max(width*.045,height*.012);
+ const samples=[],v=new THREE.Vector3();
+ wigRoot.traverse(node=>{
+  if(!node.isMesh)return;
+  const a=node.geometry?.getAttribute?.('position');
+  if(!a)return;
+  for(let i=0;i<a.count;i++){
+   v.fromBufferAttribute(a,i).applyMatrix4(node.matrixWorld);
+   if(v.y>=lower&&v.y<=upper&&[v.x,v.y,v.z].every(Number.isFinite))
+    samples.push([v.x,v.y,v.z]);
+  }
+ });
+ if(samples.length<100)return null;
+ const xl=percentile(samples,0,.04),xr=percentile(samples,0,.96);
+ const zb=percentile(samples,2,.04),zf=percentile(samples,2,.96);
+ if(xr-xl<width*.32||zf-zb<.015)return null;
+ return {
+  width:xr-xl,depth:zf-zb,
+  cx:(xl+xr)/2,cz:(zb+zf)/2,
+  frontAt:frontSurfaceSampler(samples)
+ };
+}
+
+/**
+ * Fit using both crown width and crown depth, not the full long-hair bounds.
+ * A single uniform scale preserves the original CC0 wig shape.
+ */
+export function calculateWigFit(source,head,{
+ widthRatio=1.11,vertical=0,forward=0,crown=null
+}={}){
  if(!source?.min||!source?.max)throw Error('GLBの描画可能な境界がありません');
  const width=source.max.x-source.min.x;
  const height=source.max.y-source.min.y;
  if(!(width>.005&&height>.015))throw Error('GLBに有効な髪の大きさがありません');
  const targetWidth=head.rx*2*clamp(widthRatio,.95,1.35);
- const scale=targetWidth/width;
+ const capWidth=crown?.width||width;
+ const widthScale=targetWidth/capWidth;
+ const depthScale=crown?.depth?(head.rz*2*1.035/crown.depth):widthScale;
+ // Keep uniform scale. A depth mismatch can enlarge the cap a little,
+ // but must not turn a narrow cap into an oversized floating helmet.
+ const scale=Math.max(widthScale,Math.min(depthScale,widthScale*1.18));
  if(!Number.isFinite(scale)||scale<.002||scale>2000)throw Error('ウィッグの縮尺が異常です');
- const centerX=(source.max.x+source.min.x)/2;
- const centerZ=(source.max.z+source.min.z)/2;
+ const centerX=crown?.cx??(source.max.x+source.min.x)/2;
+ const centerZ=crown?.cz??(source.max.z+source.min.z)/2;
  return {
   scale,
   x:head.cx-centerX*scale,
-  y:head.top+.010+clamp(vertical,-.035,.035)-source.max.y*scale,
+  y:head.top+(crown?.width?.003:.010)+clamp(vertical,-.035,.035)-source.max.y*scale,
   z:head.cz+clamp(forward,-.035,.045)-centerZ*scale,
-  nativeWidth:width,
-  expectedWidth:targetWidth,
-  sourceHeight:height,
+  nativeWidth:width,expectedWidth:targetWidth,sourceHeight:height,
+  capWidth:capWidth*scale,
+  capDepth:(crown?.depth||source.max.z-source.min.z)*scale,
+  headWidth:head.rx*2,
+  headDepth:head.rz*2
  };
 }
 
