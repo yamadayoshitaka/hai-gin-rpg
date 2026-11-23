@@ -6905,6 +6905,8 @@ const exploreRangeBySquad=new Map(); // 0 means unrestricted, measured in map ce
 let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity,lastAllyItemDecisionAt=-Infinity;
 let allyAutoItemCursor=0;
 const lastEnemyTacticalOrderAt=new Map();
+// Formed teams launch their inn-authored three-job manoeuvres after the intro.
+const pendingOpeningFormationGroups=new Set();
 const squadOrderKey=(team,id)=>team+':'+String(id);
 const BUILDING_TYPE_NAMES={
  castle:'城',church:'教会',weapon:'武器屋',inn:'宿屋',shop:'道具屋',
@@ -7170,24 +7172,16 @@ function updateEnemyTacticalDecisions(){
   const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
   const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
   let mode=choice.mode,buildingId=null;
-  if(mode==='charge'&&previous!=='explore'&&elapsed>12){
-   const px=living.reduce((v,u)=>v+(u.x??u.cell?.x??0),0)/living.length;
-   const pz=living.reduce((v,u)=>v+(u.z??u.cell?.z??0),0)/living.length;
-   const nearEnemy=allies.some(u=>Math.hypot((u.x??u.cell?.x??0)-px,(u.z??u.cell?.z??0)-pz)<38);
-   if(!nearEnemy){
-    // Buildings do not change within this paused AI decision pass. One
-    // nearest-candidate scan replaces repeated filtering and array sorts.
-    availableBuildings??=availableExplorationBuildings();
-    let nearest=null,bestDistance=Infinity;
-    for(const candidate of availableBuildings){
-     const d=candidate.building.data,dist=Math.hypot(d.x-px,d.z-pz);
-     if(dist<40&&d.x>WORLD_SIZE*.45&&dist<bestDistance){
-      bestDistance=dist;nearest=candidate;
-     }
-    }
-    if(nearest){mode='explore';buildingId=nearest.id;}
-   }
-  }
+  // A hostile army's combat AI must not divert to unattended treasure
+  // buildings while enemy soldiers remain alive. Exploration is voluntary
+  // for player orders, never the enemy's default behaviour.
+  if(mode==='explore')mode='charge';
+  const inContact=living.some(u=>allies.some(v=>
+   Math.hypot((u.x??u.cell?.x??0)-(v.x??v.cell?.x??0),
+    (u.z??u.cell?.z??0)-(v.z??v.cell?.z??0))<=9));
+  // Counterattack enemies entering a defensive perimeter; holding a post
+  // is not permission to stand passive while an opponent attacks.
+  if(inContact&&['hold','defend','retreat'].includes(mode))mode='charge';
   if(mode===previous&&groupIds.every(sid=>
    startingSquadOrders.get(squadOrderKey(1,sid))?.mode===mode))continue;
   let successful=0;
@@ -9126,6 +9120,17 @@ const targetedOrderWatcher=setInterval(()=>{
   }
  }
  expireSkirmishDebuffs();
+ // Launch the same animated manoeuvre shown in the inn, without delaying
+ // manual orders. Unreachable waypoints fall back to normal combat movement.
+ if(pendingOpeningFormationGroups.size&&!battleCeremony.locked){
+  for(const group of [...pendingOpeningFormationGroups]){
+   pendingOpeningFormationGroups.delete(group);
+   const members=squadIds.filter(id=>String(armyGroupBySquad[id])===group);
+   if(!members.length||members.some(id=>!hasSquadCommander(id)))continue;
+   const outcome=issueFormationSignature({groupId:group,squadIds:members});
+   if(outcome!==true)log('第'+group+'隊：専用移動不可、通常戦闘へ切替（'+outcome+'）');
+  }
+ }
  advanceFormationSignatures();
  for(const [id,plan] of targetedArrivalOrders){
   const center=squadCenter(id,0);
@@ -11451,6 +11456,16 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   return true;
  },
  onStart:({initialPlans={}}={})=>{
+  // All enemies start with a real combat command; adaptive AI may amend it.
+  for(const sid of enemySquadIds)
+   if(!startingSquadOrders.has(squadOrderKey(1,sid)))
+    setStartingSquadOrder(1,sid,'charge');
+  pendingOpeningFormationGroups.clear();
+  for(const group of [1,2,3]){
+   const state=storyRequest?.formationIntegrity?.[String(group)];
+   if(THREE_TEAM_BATTLE&&!MASS_SIZE&&state?.active&&state.formation!=='free')
+    pendingOpeningFormationGroups.add(String(group));
+  }
   // Execute actual extra tactics, not just an opening-screen label.
   const applyOpeningAdditional=(group,members,id)=>{
    const method=STRATEGY_METHODS[id];
