@@ -2,8 +2,8 @@
  * Three-team auto-sortie builder. Campaign inventory is authoritative:
  * troops are allocated, never cloned or consumed by a formation preset.
  */
-import {ensureSortiePlan,sortiePlanningLimit,SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS} from './three-team-sortie.js';
-import {FORMATION_ROLES,ROLE_JOBS,formationMinimumForRole} from './sortie-formation-logic.js';
+import {ensureSortiePlan,sortiePlanningLimit,SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS} from './three-team-sortie.js?v=formation-job-20261123';
+import {FORMATION_ROLES,ROLE_JOBS,formationMinimumForRole} from './sortie-formation-logic.js?v=formation-job-20261123';
 import {rarityOf} from './sortie-formation-template-rules.js';
 
 export const THREE_TEAM_AUTO_MODES=Object.freeze({
