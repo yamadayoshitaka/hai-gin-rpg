@@ -205,80 +205,27 @@ def smooth_chin(points,faces):
 
 
 def correct_chin_profile(points):
-    """Rebuild v121 mandibular outline against the *finished* lower/upper lip.
+    """Do not apply the legacy secondary chin bridge.
 
-    Upstream sculpting uses coordinate-local gaussians.  They can all run
-    successfully while the final frontal chin is as far forward as the lips.
-    A measured sagittal guardrail avoids that visual regression and feathers
-    the correction out at the cheeks and toward the neck.
+    The former stacked Gaussians and artificial +0.020 z "bridge" caused a
+    second, protruding contour at the chin-to-neck junction. All lower-face
+    geometry is now solved ONCE by rebuild-v121-mouth-chin.py, after the lip
+    finish pass. Keep this stage for historical GLB metadata only.
     """
-    # Collect the frontal region without an assumed Z depth; the source GLB
-    # can vary its absolute facial Z offsets. Max Z selects the forward skin.
-    lip=[z for x,y,z in points if abs(x)<.042 and .217<y<.249]
-    chin=[z for x,y,z in points if abs(x)<.055 and .160<y<.204]
-    print('V121 SAGITTAL PROBE', {
-        'lipCount':len(lip), 'chinCount':len(chin),
-        'lipZMax':max(lip) if lip else None,
-        'chinZMax':max(chin) if chin else None})
-    if len(lip)<12 or len(chin)<12:
-        raise ValueError('Cannot measure v121 sagittal lip/chin profile')
-    lip_front=max(lip)
-    chin_before=max(chin)
-    clearance=.0170
-    # Even when the chin is already behind the lips numerically, the
-    # lower-face silhouette can still look elongated/angular. Give the
-    # menton a small, guaranteed round-and-recede fairing pass.
-    displacement=max(.0070,chin_before-(lip_front-clearance))
-    print('V121 CHIN SECTION ZMAX', [
-        (round(low,3),round(max((z for x,y,z in points
-            if abs(x)<.065 and low<=y<low+.016),default=-1.),5))
-        for low in (.092,.108,.124,.140,.156,.172,.188,.204)])
-    if displacement>.038:
-        raise ValueError('Chin correction too large; verify face coordinates')
-    result=[]
-    changed=0
-    for x,y,z in points:
-        ax=abs(x)
-        # Flat-topped core with smooth C1 lateral/vertical fades. There is
-        # no displacement on the red lip, lateral cheek or cervical base.
-        lateral=1.-fade(ax,.034,.083)
-        vertical=fade(y,.132,.163)*(1.-fade(y,.203,.217))
-        frontal=fade(z,.035,.086)
-        w=lateral*vertical*frontal
-        # Lift and round the menton a little without turning the jaw into
-        # a pointed wedge. The neck y<.080 does not move at all.
-        lift=.0045*bell(y,.181,.026)*(1.-fade(ax,.039,.081))*vertical
-        # A gently fuller central U-shaped menton in frontal view.
-        rounded_x=x*(1.+.025*bell(y,.181,.028)*lateral*vertical)
-        # One continuous lower-face mask handles chin and labiomental
-        # transition, rather than creating a new shelf or a sharp hook.
-        # Restore the continuous underside-to-lip silhouette. The donor
-        # has a sharp forward-surface depth jump near Y=.18 that creates
-        # a hook/double-chin when the upper menton alone is retracted.
-        # Smoothly support only the *front* midline; lips Y>=.21 and neck
-        # Y<=.155 retain their original position.
-        bridge=(.0200*fade(y,.155,.180)*(1.-fade(y,.181,.201))*
-                (1.-fade(ax,.034,.068))*fade(z,.040,.065)*
-                (1.-fade(z,.083,.112)))
-        result.append((rounded_x,y+lift,z-displacement*w+bridge))
-        if displacement*w>.00005 or lift>.00005 or bridge>.00005:changed+=1
-    chin_after=max(z for x,y,z in result
-                   if abs(x)<.055 and .160<y<.204)
-    if chin_after>lip_front-clearance+.0006:
-        raise ValueError('v121 sagittal chin profile remains protrusive')
-    return result,{
+    lip_front=max(z for x,y,z in points if abs(x)<.042 and .217<y<.249)
+    chin=max(z for x,y,z in points if abs(x)<.055 and .160<y<.204)
+    return points,{
         'version':'female-v121-sagittal-guard-20261123',
         'lipFrontZ':round(lip_front,6),
-        'chinBeforeZ':round(chin_before,6),
-        'chinAfterZ':round(chin_after,6),
-        'lipChinDepthClearance':clearance,
-        'vertexCorrectionZ':round(displacement,6),
-        'labiomentalTransitionContinuous':True,
-        'submentalSlopeBridgeMax':.020,
-        'changedVertices':changed,
-        'neutralUpperLipUnaffected':True,
+        'chinBeforeZ':round(chin,6),
+        'chinAfterZ':round(chin,6),
+        'lipChinDepthClearance':round(lip_front-chin,6),
+        'vertexCorrectionZ':0.,
+        'labiomentalTransitionContinuous':False,
+        'legacyBridgeDisabled':True,
         'neckBelow080Unaffected':True
     }
+
 
 def finish(path):
     g,b=read_glb(path)
@@ -298,7 +245,8 @@ def finish(path):
     if len(flat)!=25920*3:
         raise ValueError('Must preserve all 25920 skin triangles')
     faces=[tuple(flat[i:i+3]) for i in range(0,len(flat),3)]
-    xyz,chin_count=smooth_chin(pos,faces)
+    # No isolated chin smoothing pass: the rebuilt profile owns this region.
+    xyz,chin_count=pos,0
     folds_left=[]
     folds_right=[]
     philtrum_ids=[]
