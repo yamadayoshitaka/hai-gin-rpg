@@ -72,7 +72,12 @@ class TestFaceV121(unittest.TestCase):
         self.assertNotIn('animations',self.b)
         self.assertNotIn('targets',self.b['meshes'][0]['primitives'][0])
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
-        self.assertEqual(len(self.b['meshes']),5)
+        self.assertEqual(len(self.b['meshes']),6)
+        self.assertEqual(self.b['meshes'][-1]['name'],'V121_PUPIL_DISC_SAFELY_SEPARATE')
+        self.assertEqual(len([n for n in self.b['nodes']
+                              if n.get('name','').startswith('V121_PUPIL_')]),2)
+        self.assertIn('COLOR_0',self.b['meshes'][1]['primitives'][0]['attributes'])
+        self.assertIn('COLOR_0',self.b['meshes'][2]['primitives'][0]['attributes'])
 
     def test_pbr_maps_embedded_are_true_1024_px_skin_textures(self):
         skin=self.b['materials'][0]
