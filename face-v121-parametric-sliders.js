@@ -62,7 +62,7 @@ function transformPoint(x,y,z,state,kind){
     // A mouth-size slider must not scale the jaw or pull the chin down:
     // the mouth mask is confined to the lips and fades before the menton.
     const weight=kind==='mouth'?1:
-      (y>=.168?bell(x,0,.049)*bell(y,.198,.017)*front:0);
+      (y>=.168?bell(x,0,.049)*bell(y,.232,.017)*front:0);
     apply(m,weight,0,.198,false);
   }
   if(kind==='skin'){
@@ -81,7 +81,7 @@ function transformPoint(x,y,z,state,kind){
     // Bounded to skin's forward-facing area and never a separate dark stripe.
     // Match the newly sculpted continuous nose-base-to-upper-lip path.
     // This must not create the previous circular hole at y≈.224.
-    const f=fade(y,.201,.213)*(1-fade(y,.247,.255));
+    const f=fade(y,.235,.241)*(1-fade(y,.259,.267));
     dz-=state.philtrum*.00006*bell(x,0,.0057)*f*fade(z,.071,.116);
   }
   return [x+dx,y+dy,z+dz];
