@@ -204,7 +204,7 @@ function updateStats(){
  const model=current;
  if(!model)return;
  const f=model.root.userData.fit,scale=f.scale;
- $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（頭皮ベース内側→毛束外側v8）\n':'（頭部押し出し→彫刻v6）\n')+
+ $('viewerInfo').textContent='髪: '+selected.name+('（頭皮ベース内側→毛束外側v8）\n')+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
@@ -296,7 +296,7 @@ document.querySelectorAll('[data-motion]').forEach(b=>b.onclick=()=>{
 });
 $('wind').oninput=()=>$('windVal').textContent=$('wind').value;
 $('save').onclick=()=>{
- const data={schema:'hai-gin-head-sculpt-v6',sex,asset:selected.id,
+ const data={schema:'hai-gin-head-sculpt-v8',sex,asset:selected.id,
    sculptName:findSculptHairStyle(selected.id)?.label,source:'v121-head-mesh',
    head:headSize(),color:$('color').value,motion,wind:+$('wind').value};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
