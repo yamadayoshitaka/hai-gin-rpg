@@ -11,7 +11,8 @@ const attackTrainingGame=name=>{
  const game=createNewGame(name);
  game.campaign.squads=[
   {id:101,job:'騎士',rarity:'N',count:3,commanderId:'player'},
-  {id:102,job:'魔法使い',rarity:'N',count:3,commanderId:'player'}
+  {id:102,job:'魔法使い',rarity:'N',count:3,commanderId:'player'},
+  {id:103,job:'忍者',rarity:'N',count:2,commanderId:'player'}
  ];
  game.sortiePlan=null;
  return game;
@@ -45,36 +46,37 @@ test('training formation animation follows template list and precedes quote, wit
  assert.match(css,/\.trainingFormationQuote>small\{[\s\S]*?overflow:visible/);
 });
 
-test('training preview matches assigned job slots rather than always showing three',()=>{
+test('named previews require three distinct jobs; free allows one to three',()=>{
  const game=attackTrainingGame('陣形の人数整合');
  renderInnFormationWizard({game,view:'roster',teamId:1,rosterPreviewId:'attack'});
  const team=game.sortiePlan.teams[0];
  const assigned=team.slots.filter(id=>id!=null&&Number(team.counts[String(id)]||0)>0);
- assert.ok(assigned.length>=2,'fixture includes at least two assigned jobs');
- team.slots=[assigned[0],assigned[1],null];
+ assert.equal(assigned.length,3,'fixture includes the required three distinct jobs');
+ team.slots=[assigned[0],assigned[1],assigned[2]];
  const render=view=>renderInnFormationWizard({game,view,teamId:1,
   rosterPreviewId:'attack'});
  for(const view of ['roster','rosterQuote','formation']){
   const html=render(view);
-  assert.equal((html.match(/<animateTransform /g)||[]).length,2,view+' only animates two jobs');
-  assert.match(html,/味方 2ジョブ/);
+  assert.equal((html.match(/<animateTransform /g)||[]).length,3,view+' animates all three eligible jobs');
+  assert.match(html,/味方 3ジョブ/);
  }
- // The named preset automatically refills required roles when a team is
- // normalized. Use the editable free layout to test a genuinely vacant slot.
+ // Two real jobs remain deployed but cannot unlock a named formation.
  // Rendering normalizes the sortie plan and replaces the team object.
  // Always mutate the latest team, rather than an outdated test reference.
  const single=game.sortiePlan.teams[0];
  single.formation='free';
  single.grid.fill(null);
- single.slots=[assigned[0],null,null];
- delete single.counts[String(assigned[1])];
+ single.slots=[assigned[0],assigned[1],null];
+ delete single.counts[String(assigned[2])];
  assert.equal((render('roster').match(/<animateTransform /g)||[]).length,0);
- assert.match(render('roster'),/自由陣形で配置します/,'one job cannot fulfill a two-job preset');
+ assert.match(render('roster'),/自由陣形で配置します/,'two jobs cannot fulfill a three-job preset');
+ assert.equal(game.sortiePlan.teams[0].slots.filter(Boolean).length,2,'two assigned jobs remain in free layout');
  const empty=game.sortiePlan.teams[0];
- empty.slots=[null,null,null];
+ empty.slots=[assigned[0],null,null];
  empty.grid.fill(null);
- delete empty.counts[String(assigned[0])];
+ delete empty.counts[String(assigned[1])];
  assert.equal((render('roster').match(/<animateTransform /g)||[]).length,0);
+ assert.equal(game.sortiePlan.teams[0].slots.filter(Boolean).length,1,'free layout supports one job');
 });
 
 test('Android uses paged touch buttons rather than the system-wide dropdown',()=>{
