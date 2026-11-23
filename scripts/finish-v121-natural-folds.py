@@ -215,7 +215,7 @@ def correct_chin_profile(points):
     # Collect the frontal region without an assumed Z depth; the source GLB
     # can vary its absolute facial Z offsets. Max Z selects the forward skin.
     lip=[z for x,y,z in points if abs(x)<.042 and .217<y<.249]
-    chin=[z for x,y,z in points if abs(x)<.055 and .110<y<.163]
+    chin=[z for x,y,z in points if abs(x)<.055 and .160<y<.204]
     print('V121 SAGITTAL PROBE', {
         'lipCount':len(lip), 'chinCount':len(chin),
         'lipZMax':max(lip) if lip else None,
@@ -228,7 +228,7 @@ def correct_chin_profile(points):
     # Even when the chin is already behind the lips numerically, the
     # lower-face silhouette can still look elongated/angular. Give the
     # menton a small, guaranteed round-and-recede fairing pass.
-    displacement=max(.0060,chin_before-(lip_front-clearance))
+    displacement=max(.0070,chin_before-(lip_front-clearance))
     print('V121 CHIN SECTION ZMAX', [
         (round(low,3),round(max((z for x,y,z in points
             if abs(x)<.065 and low<=y<low+.016),default=-1.),5))
@@ -242,23 +242,20 @@ def correct_chin_profile(points):
         # Flat-topped core with smooth C1 lateral/vertical fades. There is
         # no displacement on the red lip, lateral cheek or cervical base.
         lateral=1.-fade(ax,.034,.083)
-        vertical=fade(y,.080,.116)*(1.-fade(y,.154,.182))
+        vertical=fade(y,.132,.163)*(1.-fade(y,.203,.217))
         frontal=fade(z,.035,.086)
         w=lateral*vertical*frontal
         # Lift and round the menton a little without turning the jaw into
         # a pointed wedge. The neck y<.080 does not move at all.
-        lift=.0062*bell(y,.125,.026)*(1.-fade(ax,.039,.081))*vertical
+        lift=.0045*bell(y,.181,.026)*(1.-fade(ax,.039,.081))*vertical
         # A gently fuller central U-shaped menton in frontal view.
-        rounded_x=x*(1.+.022*bell(y,.127,.027)*lateral*vertical)
-        # The actual side-view defect is also the labiomental ledge around
-        # Y=.17: its +Z contour jumps forward sharply above the menton.
-        # Recede this *transition* smoothly, but leave real lips Y>=.21 intact.
-        transition=(.022*bell(y,.173,.014)*lateral*
-                    fade(z,.058,.116)*(1.-fade(y,.195,.212)))
-        result.append((rounded_x,y+lift,z-displacement*w-transition))
-        if displacement*w>.00005 or lift>.00005 or transition>.00005:changed+=1
+        rounded_x=x*(1.+.025*bell(y,.181,.028)*lateral*vertical)
+        # One continuous lower-face mask handles chin and labiomental
+        # transition, rather than creating a new shelf or a sharp hook.
+        result.append((rounded_x,y+lift,z-displacement*w))
+        if displacement*w>.00005 or lift>.00005:changed+=1
     chin_after=max(z for x,y,z in result
-                   if abs(x)<.055 and .110<y<.163)
+                   if abs(x)<.055 and .160<y<.204)
     if chin_after>lip_front-clearance+.0006:
         raise ValueError('v121 sagittal chin profile remains protrusive')
     return result,{
@@ -268,7 +265,7 @@ def correct_chin_profile(points):
         'chinAfterZ':round(chin_after,6),
         'lipChinDepthClearance':clearance,
         'vertexCorrectionZ':round(displacement,6),
-        'labiomentalTransitionRetreatMax':.022,
+        'labiomentalTransitionContinuous':True,
         'changedVertices':changed,
         'neutralUpperLipUnaffected':True,
         'neckBelow080Unaffected':True
