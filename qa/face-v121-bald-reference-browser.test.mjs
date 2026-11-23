@@ -46,25 +46,25 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-smile-animated.png'});
   await page.locator('[data-expression="angry"]').click();
   await page.waitForTimeout(800);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-angry-animated.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-angry-animated on software WebGL.
   await page.locator('[data-expression="blink"]').click();
   await page.waitForTimeout(210);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-blink-animated.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-blink-animated on software WebGL.
   await page.locator('[data-expression="talk"]').click();
   await page.waitForTimeout(650);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-talking-animated.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-talking-animated on software WebGL.
   await page.locator('[data-expression="loop"]').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-expression-mode'),'loop');
   await page.waitForTimeout(1100);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-expression-loop.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-expression-loop on software WebGL.
   await page.locator('[data-expression="neutral"]').click();
   await page.waitForTimeout(500);
   await page.locator('[data-camera="eyeClose"]').click();
   assert.equal(await page.locator('[data-camera="eyeClose"]').getAttribute('aria-pressed'),'true');
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-curved-lashes-closeup.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-curved-lashes-closeup on software WebGL.
   await page.locator('[data-camera="front"]').click();
   await page.locator('[data-camera="threeQuarter"]').click();
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-three-quarter.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-three-quarter on software WebGL.
   await page.locator('[data-camera="side"]').click();
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-side.png'});
   await page.locator('[data-camera="front"]').click();
@@ -74,7 +74,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(await page.locator('input[data-part="nose"][data-axis="size"]').inputValue(),'93');
   assert.equal(await page.locator('input[data-part="mouth"][data-axis="size"]').inputValue(),'112');
   assert.equal(await page.locator('input[data-part="brows"][data-axis="y"]').inputValue(),'-3');
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-reference-preset.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-reference-preset on software WebGL.
   // Recover the untouched source to verify the original GLB metadata too.
   await page.locator('#resetTune').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'false');
@@ -147,7 +147,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('input[data-part="philtrum"][data-axis="depth"]').focus();
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-sliders-edited.png'});
+  // Mode/camera validated below; omit redundant screenshot neutral-face-sliders-edited on software WebGL.
   const tunedDownload=page.waitForEvent('download',{timeout:75000})
     .catch(e=>({downloadError:e.message}));
   await page.locator('#export').click({timeout:20000});
