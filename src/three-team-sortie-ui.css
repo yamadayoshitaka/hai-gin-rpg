@@ -711,3 +711,116 @@
  min-height:76px;padding:9px;text-align:center;font-size:12px;color:#ffe2a9;
  background:#1b3447;border:1px dashed #8496a5;border-radius:8px}
 .trainingFormationFreeNotice small{color:#d5dae0;font-size:10px}
+
+
+/* 2026-11-23: formation preview on short Android screens.
+   Diagram, description, controls and pager occupy separate flex regions.
+   No button contains SVG/animated text, so nothing paints over the pager. */
+#panel.formation-command-ui:has(.innWizardFormationCard) #panelSceneBanner{display:none!important}
+#panel.formation-command-ui:has(.innWizardFormationCard) #panelKeeper{padding:3px 6px!important;min-height:0}
+#panel.formation-command-ui:has(.innWizardFormationCard) #panelContent{
+ flex:1 1 0;min-height:0;overflow:hidden!important;display:flex!important;flex-direction:column
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizard{
+ height:100%;min-height:0;display:flex!important;flex-direction:column;gap:4px
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizardBody{
+ display:flex!important;flex:1 1 0;min-height:0;overflow:hidden!important;
+ flex-direction:column;gap:5px
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizardFormations{
+ flex:1 1 0;min-height:0;display:flex!important;flex-direction:column;overflow:hidden!important
+}
+#panel.formation-command-ui .innWizardFormationCard{
+ display:flex;flex:1 1 0;min-height:0;max-height:100%;flex-direction:column;
+ border:1px solid #6b8b9b;border-radius:8px;background:#11283a;
+ gap:4px;padding:7px;overflow:hidden;isolation:isolate
+}
+.innWizardFormationHeading{display:flex;align-items:baseline;justify-content:space-between;
+ gap:8px;min-width:0;flex:0 0 auto}
+.innWizardFormationHeading b{font-size:15px;color:#ffe3a8;white-space:nowrap}
+.innWizardFormationHeading small{min-width:0;overflow:hidden;text-overflow:ellipsis;
+ white-space:nowrap;font-size:10px;color:#cadde8}
+.innWizardFormationRoles{font-size:10px;color:#bdd8e6;white-space:nowrap;
+ text-overflow:ellipsis;overflow:hidden;flex:0 0 auto;min-width:0}
+#panel.formation-command-ui .innWizardFormationDiagram{
+ flex:1 1 0;min-height:58px;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;overflow:hidden;
+ border-radius:7px;position:relative
+}
+#panel.formation-command-ui .innWizardFormationDiagram .signaturePreview{
+ width:100%;max-width:370px;display:flex;flex-direction:column;gap:2px;
+ min-height:0;max-height:100%;overflow:hidden;flex:1 1 0
+}
+#panel.formation-command-ui .innWizardFormationDiagram .signaturePreview svg{
+ display:block;width:100%;height:auto!important;min-height:0;flex:1 1 0;
+ max-height:100%;object-fit:contain
+}
+#panel.formation-command-ui .innWizardFormationDiagram .signaturePhaseCaptions{
+ flex:0 0 auto;gap:3px
+}
+#panel.formation-command-ui .innWizardFormationDiagram .signaturePhaseCaptions span{
+ font-size:8px;padding:2px 1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+#panel.formation-command-ui .innWizardFormationDiagram .trainingFormationFreeNotice{
+ min-height:44px;max-height:100%;overflow:hidden;padding:5px;font-size:10px;line-height:1.25
+}
+#panel.formation-command-ui .innWizardFormationDetail{
+ flex:0 1 auto;min-height:0;display:grid;gap:1px;overflow:hidden;
+ font-size:10px;line-height:1.22;overflow-wrap:anywhere
+}
+.innWizardFormationDetail strong{font-size:11px;color:#ffe1ab}
+.innWizardFormationDetail small{font-size:9px;line-height:1.2;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.innWizardFormationDetail .innWizardEligibility{color:#ffe2a9}
+#panel.formation-command-ui .innWizardFormationCard>button[data-inn-wizard-formation]{
+ flex:0 0 auto;min-height:34px!important;padding:5px!important;
+ font-size:12px!important;display:block!important;width:100%
+}
+#panel.formation-command-ui .innWizardFormationPager{
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+ align-items:center;gap:5px;flex:0 0 auto;position:relative;z-index:2
+}
+#panel.formation-command-ui .innWizardFormationPager button{
+ min-height:35px!important;font-size:11px!important;padding:5px!important
+}
+#panel.formation-command-ui .innWizardFormationPager small{
+ white-space:nowrap;font-size:11px
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizardFreeFormation{
+ flex:0 0 auto;gap:1px
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizardFreeFormation button{
+ min-height:34px!important;padding:4px 5px!important;font-size:11px!important
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizardFreeFormation small{
+ font-size:9px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+#panel.formation-command-ui:has(.innWizardFormationCard) .innWizardFooter{
+ flex:0 0 auto;position:relative;z-index:2
+}
+@media(max-height:760px){
+ #panel.formation-command-ui:has(.innWizardFormationCard) .sortieWizardHeader span{display:none}
+ #panel.formation-command-ui .innWizardFormationDetail small:nth-of-type(2){display:none}
+ #panel.formation-command-ui .innWizardFormationCard{gap:2px;padding:5px}
+}
+/* Confirm transaction in page rather than a browser alert. */
+#townPurchaseConfirm{position:fixed;inset:0;z-index:10050;display:flex;
+ align-items:center;justify-content:center;padding:16px;
+ background:rgba(2,9,18,.83)}
+#townPurchaseConfirm[hidden]{display:none!important}
+#townPurchaseConfirm .purchaseConfirmCard{
+ width:min(94vw,430px);max-height:min(90dvh,480px);overflow:auto;
+ background:#132a40;border:2px solid #d7b879;border-radius:14px;
+ padding:18px;box-shadow:0 15px 50px #000b;color:#fff0d7;
+ display:grid;gap:12px
+}
+#townPurchaseConfirm h3{margin:0;font-size:20px;color:#ffe1a6}
+#townPurchaseConfirm p{margin:0;white-space:pre-line;overflow-wrap:anywhere;
+ line-height:1.5;font-size:14px}
+#townPurchaseConfirm .purchaseConfirmActions{display:grid;
+ grid-template-columns:1fr 1fr;gap:8px}
+#townPurchaseConfirm button{font-size:15px;min-height:46px;
+ border:1px solid #8da6b7;background:#284961;color:white;border-radius:9px}
+#townPurchaseConfirm button[data-confirm-purchase-yes]{
+ background:#70552c;border-color:#f3d59c;font-weight:800}
