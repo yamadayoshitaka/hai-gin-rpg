@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {join} from 'node:path';
-import {calculateWigFit,PUBLIC_WIG_SOURCES} from '../src/wig-glb-fit-v1.js';
+import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from '../src/wig-glb-fit-v1.js';
 
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const html=read('wig-studio.html');
@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=1/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=2/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
@@ -73,4 +73,47 @@ test('published source assets are verifiably valid glTF binaries when import dir
   assert.ok(style.meshes>=1,style.file);
   assert.equal(style.licence,'CC0-1.0');
  }
+});
+
+test('loaded MakeHuman SkinnedMesh becomes real static hair geometry only',async()=>{
+ const THREE=await import('three');
+ const geometry=new THREE.BoxGeometry(.20,.25,.12);
+ geometry.translate(0,1.53,0);
+ geometry.setAttribute('skinIndex',
+  new THREE.Uint16BufferAttribute(new Uint16Array(geometry.getAttribute('position').count*4),4));
+ geometry.setAttribute('skinWeight',
+  new THREE.Float32BufferAttribute(new Float32Array(geometry.getAttribute('position').count*4),4));
+ geometry.morphAttributes.position=[geometry.getAttribute('position').clone()];
+ const skinned=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x9b7b4e}));
+ skinned.name='bad-MakeHuman-full-body-rig-hair';
+ skinned.isSkinnedMesh=true; // simulate glTF SkinnedMesh without initializing irrelevant rig
+ const source=new THREE.Group();
+ source.add(skinned);
+ const bone=new THREE.Bone();source.add(bone);
+ const {root,bounds,audit}=extractUnskinnedWig(THREE,source);
+ assert.equal(audit.sourceSkinnedMeshes,1);
+ assert.equal(audit.droppedMorphTargets,1);
+ assert.equal(audit.droppedSkeletons,1);
+ assert.equal(root.children.length,1);
+ const output=root.children[0];
+ assert.equal(output.isMesh,true);
+ assert.equal(output.isSkinnedMesh,undefined);
+ assert.equal(output.geometry.getAttribute('skinIndex'),undefined);
+ assert.equal(output.geometry.getAttribute('skinWeight'),undefined);
+ assert.deepEqual(output.geometry.morphAttributes,{});
+ assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).x-.2)<.0001);
+ assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).y-.25)<.0001);
+ const head={cx:0,cz:0,rx:.095,rz:.10,top:.19};
+ const fitted=calculateWigFit(bounds,head);
+ assert.ok(fitted.scale>.9&&fitted.scale<1.15,
+  'real wig uses native .2m width, not a 0.031 corrupted full-body skeleton scale');
+ geometry.dispose();output.geometry.dispose();
+});
+test('the wig-only viewer drops the old face wireframe and inspects real static hair geometry',()=>{
+ assert.match(html,/extractUnskinnedWig\(THREE,gltf\.scene\)/);
+ assert.match(html,/rawBox=isolated\.bounds/);
+ assert.doesNotMatch(html,/function scalpWire\(/);
+ assert.doesNotMatch(html,/headGuide/);
+ assert.doesNotMatch(html,/id="guide"/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=2/);
 });
