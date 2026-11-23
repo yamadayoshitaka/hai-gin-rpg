@@ -206,7 +206,14 @@ def append_oral_parts(g,b,head_xyz):
             'weights':[0.]*len(NAMES),
             'extras':{'targetNames':list(NAMES),'v121OralPart':True}})
         node_id=len(g['nodes'])
-        g['nodes'].append({'name':kind,'mesh':mesh_id})
+        # Coordinates above are in the native head mesh's LOCAL space.
+        # The original head node is translated by about -0.207 in Y and
+        # scaled to 0.9. Without copying its transform, teeth and tongue
+        # float above the face instead of showing inside its opening.
+        head_node=next(n for n in g['nodes'] if n.get('mesh')==0)
+        placement={key:head_node[key] for key in
+                   ('translation','rotation','scale','matrix') if key in head_node}
+        g['nodes'].append({'name':kind,'mesh':mesh_id,**placement})
         nodes.append(node_id)
     g['scenes'][g.get('scene',0)].setdefault('nodes',[]).extend(nodes)
     return nodes
@@ -404,6 +411,7 @@ def build(path):
          'skinMouthCenterInwardOnOpening':True,
         'jawNeckStationary':True,
         'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue',
+        'oralPartsInSkinLocalSpace':True,
         'splitMouthSeal':aperture}
     if 'referenceFeatureSculpt' in meta:
         meta['referenceFeatureSculpt']['facialExpressionAnimations']=True
