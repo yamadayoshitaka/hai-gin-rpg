@@ -278,7 +278,9 @@ def split_native_mouth_seal(g,b,head):
     if len(xyz)!=13455 or len(indices)!=25920*3:
         raise ValueError('Only fixed female v121 skin can be split')
     triangles=[indices[i:i+3] for i in range(0,len(indices),3)]
-    inside=lambda v:(abs(v[0])<.035 and .1875<v[1]<.207
+    # Only split the lip-to-lip seam, not the actual upper/lower
+    # vermilion ridges or the cheek-adjacent skin.
+    inside=lambda v:(abs(v[0])<.032 and .191<v[1]<.203
                       and v[2]>.115)
     to_split=[i for i,t in enumerate(triangles)
               if all(inside(xyz[k]) for k in t)]
