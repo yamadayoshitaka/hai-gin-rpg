@@ -6,6 +6,8 @@ on:
       - 'scripts/refine-neutral-face-v121.py'
       - 'scripts/reshape-v121-reference-head.py'
       - 'qa/face-v121-four-view-mesh.test.py'
+      - 'qa/face-v121-lower-face-v12.test.py'
+      - 'qa/face-v121-wig-selection.test.mjs'
       - 'qa/face-v121-makeup-contour.test.mjs'
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
@@ -57,6 +59,8 @@ jobs:
           python3 qa/face-v121-lower-lashes-nose-lips.test.py
           python3 qa/face-v121-expression-morph.test.py
           python3 qa/face-v121-four-view-mesh.test.py
+          python3 qa/face-v121-lower-face-v12.test.py
+          node --test qa/face-v121-wig-selection.test.mjs
           node --test qa/face-v121-makeup-contour.test.mjs
       - uses: actions/upload-artifact@v4
         if: success()
