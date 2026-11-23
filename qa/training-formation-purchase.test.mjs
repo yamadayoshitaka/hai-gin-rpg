@@ -94,7 +94,7 @@ test('town click, cached module version and compact layout remain wired',()=>{
  const css=readFileSync(new URL('../src/three-team-sortie-ui.css',import.meta.url),'utf8');
  assert.match(html,/data-training-auto-formation/);
  assert.match(html,/purchaseAndArrangeTrainingFormation/);
- assert.match(html,/formation-job-20261123/);
+ assert.match(html,/formation-3jobs-20261123/);
  assert.match(css,/trainingHireJobLabel/);
  assert.match(css,/trainingFormationQuote/);
  assert.match(css,/overflow:hidden!important/);
