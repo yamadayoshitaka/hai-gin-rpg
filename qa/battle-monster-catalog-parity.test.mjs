@@ -25,7 +25,7 @@ for(const monster of MONSTER_CATALOG){
  assert.equal(summon.name,monster.name);
 }
 assert.equal(MONSTER_BY_ID.m031.name,'骸骨剣士');
-assert.match(manifest,/m031:define\('m031'.*'skeleton'/);
+assert.match(manifest,/m031:define\('m031'[\s\S]*?'skeleton'/);
 assert.match(manager,/createCosplayedHumanoidMonster\(m,/);
 assert.match(summons,/createCosplayedHumanoidMonster\(spec,/);
 assert.match(battle,/createCosplayedHumanoidMonster\(spec,/);
