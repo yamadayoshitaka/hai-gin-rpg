@@ -7,9 +7,19 @@ import {renderInnFormationWizard} from '../src/inn-formation-wizard.js';
 import {createRealtimeBattleCommands} from '../src/battle-realtime-commands.js';
 
 const file=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const attackTrainingGame=name=>{
+ const game=createNewGame(name);
+ game.campaign.squads=[
+  {id:101,job:'騎士',rarity:'N',count:3,commanderId:'player'},
+  {id:102,job:'魔法使い',rarity:'N',count:3,commanderId:'player'}
+ ];
+ game.sortiePlan=null;
+ return game;
+};
+
 
 test('training formation animation follows template list and precedes quote, with unclipped purchase controls',()=>{
- const game=createNewGame('訓練所UI確認');
+ const game=attackTrainingGame('訓練所UI確認');
  const markup=renderInnFormationWizard({
   game,view:'roster',teamId:1,rosterPreviewId:'attack',rosterFormationPage:0
  });
@@ -36,7 +46,7 @@ test('training formation animation follows template list and precedes quote, wit
 });
 
 test('training preview matches assigned job slots rather than always showing three',()=>{
- const game=createNewGame('陣形の人数整合');
+ const game=attackTrainingGame('陣形の人数整合');
  renderInnFormationWizard({game,view:'roster',teamId:1,rosterPreviewId:'attack'});
  const team=game.sortiePlan.teams[0];
  const assigned=team.slots.filter(id=>id!=null&&Number(team.counts[String(id)]||0)>0);
@@ -58,7 +68,8 @@ test('training preview matches assigned job slots rather than always showing thr
  single.grid.fill(null);
  single.slots=[assigned[0],null,null];
  delete single.counts[String(assigned[1])];
- assert.equal((render('roster').match(/<animateTransform /g)||[]).length,1);
+ assert.equal((render('roster').match(/<animateTransform /g)||[]).length,0);
+ assert.match(render('roster'),/自由陣形で配置します/,'one job cannot fulfill a two-job preset');
  const empty=game.sortiePlan.teams[0];
  empty.slots=[null,null,null];
  empty.grid.fill(null);
