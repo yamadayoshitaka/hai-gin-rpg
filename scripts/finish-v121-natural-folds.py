@@ -273,7 +273,7 @@ def neutral_color(x,y,z):
     # The very same M-bow and inward-tapering lip border gates pigment.
     # Outside the actual vermilion no lipstick can extend onto cheek/chin.
     lip_surface,_,_=vermilion_outline(x,y,z)
-    vermilion=.83*bell(y,.240,.0087)+bell(y,.2235,.0084)
+    vermilion=1.12*bell(y,.244,.0090)+.86*bell(y,.2235,.0084)
     lips=clamp(vermilion*lip_surface)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
