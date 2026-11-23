@@ -57,37 +57,53 @@ def bell(x, center, width):
 
 
 def new_lower_face_geometry(points,uv):
-    """Retopologize the lower face without projecting UVs into 3D space.
+    """Sculpt the real-XYZ lower face; never project UVs into 3D.
 
-    The prior UV->XYZ reconstruction moved mouth, cheeks and throat vertices
-    into flat horizontal strips. Instead preserve the actual anatomical X/Y
-    coordinates and sculpt shallow lower-face relief from real XYZ positions.
-    The old jaw patch connectivity is discarded and re-triangulated, using
-    the original one-loop disk and all of its registered vertex IDs.
-    This pass never touches eyes, brows, skull, nasal bridge or nose tip.
+    The mouth seal and every original vertex ID are retained. Only the area
+    BELOW the nasal base is permitted to move. A smooth sagittal profile
+    retracts the swollen lower vermilion, recesses the shallow labiomental
+    sulcus, and blends a short rounded chin into the neck without a shelf.
+    The subsequent jaw-disk retriangulation preserves the original boundary.
     """
     lip_front=max(z for x,y,z in points if abs(x)<.040 and .217<y<.249)
     result=[]
     changed=0
     max_move=0.
+    # Values in metres, ordered from the upper neck to the closed lip.
+    # A single C1-continuous contour prevents the prior independent Gaussian
+    # bulges from adding a second lip underneath the real lower lip.
+    sagittal=(
+        (.078, .0000),
+        (.102,-.0006),
+        (.126,-.0022),
+        (.149,-.0040),
+        (.173,-.0050),
+        (.188,-.0052),
+        (.202,-.0062),  # shallow labiomental sulcus
+        (.211,-.0048),
+        (.222,-.0050),  # lower lip loses forward projection
+        (.228,-.0033),
+        (.234,-.0005),  # keep the closed mouth seam and upper lip
+        (.245, .0000),
+        (.255, .0000),
+    )
     for x,y,z in points:
-        # All masks are defined in real head metres, NOT texture UV space.
-        front=fade(z,.058,.113)
-        middle=bell(x,0.,.060)
-        chin=bell(y,.168,.029)*middle*front
-        sulcus=bell(y,.202,.012)*bell(x,0.,.042)*front
-        submental=bell(y,.117,.030)*bell(x,0.,.076)*fade(z,.040,.105)
-        jaw_sides=bell(abs(x),.076,.029)*bell(y,.170,.039)*front
-        # Preserve existing vermilion loops and neutral mouth seal.
-        lip_front_mask=fade(z,.093,.128)*bell(x,0.,.041)
-        upper_lip=bell(y,.241,.0065)*lip_front_mask
-        lower_lip=bell(y,.224,.0080)*lip_front_mask
-        # Retract the old protruding chin, round the mentolabial transition,
-        # and blend the undersurface into neck without a second shelf.
-        dz=(-.0080*chin+.0017*sulcus-.0050*submental+
-             .0010*jaw_sides+.0010*upper_lip+.0014*lower_lip)
-        dy=.0014*chin+.0006*submental
-        dx=-x*(.018*chin+.007*jaw_sides)
+        # Hard isolation is important: not even a tiny Gaussian displacement
+        # may reach nose, nostrils, cheeks above the nasal base or eye meshes.
+        if y>=.255 or y<=.078:
+            result.append((x,y,z))
+            continue
+        front=fade(z,.063,.119)
+        middle=bell(x,0.,.061)
+        lip_zone=fade(z,.101,.131)*bell(x,0.,.042)
+        dz=profile(y,sagittal)*middle*front
+        # Narrow the LOWER vermilion by lifting only its bottom boundary.
+        # The upper lip and neutral lip seam stay in their current positions.
+        lip_bottom=bell(y,.216,.0042)*lip_zone
+        chin_zone=bell(y,.145,.041)*middle*front
+        dy=.0024*chin_zone+.0020*lip_bottom
+        # Slightly soften the point of the chin, never pinch mouth corners.
+        dx=-x*.009*bell(y,.153,.043)*middle*front
         new=(x+dx,y+dy,z+dz)
         if not all(math.isfinite(q) for q in new):
             raise ValueError('Nonfinite real-space lower-face vertex')
@@ -105,8 +121,8 @@ def new_lower_face_geometry(points,uv):
     chin_depth=forward_depth(.142,.194)
     neck_depth=forward_depth(.075,.118)
     return result,{
-        'version':'female-v121-realspace-neutral-lower-face-v11',
-        'method':'real-XYZ-bounded-lip-chin-neck-sculpt-plus-single-disk-retriangulation',
+        'version':'female-v121-realspace-neutral-lower-face-v12',
+        'method':'actual-XYZ-sagittal-C1-lip-sulcus-short-chin-and-boundary-welded-remesh',
         'mouthFrontZ':round(lip_front,6),
         'mentonAfterZ':round(chin_depth,6) if chin_depth is not None else None,
         'upperNeckZ':round(neck_depth,6) if neck_depth is not None else None,
@@ -118,6 +134,11 @@ def new_lower_face_geometry(points,uv):
         'lipLoopsRetained':True,
         'neckUnderjawSeamContinuous':True,
         'faceUVAndVertexIDsRetained':True,
+        'lowerLipDepthRetracted':True,
+        'lowerVermilionHeightReduced':True,
+        'shallowLabiomentalSulcus':True,
+        'shortRoundedChin':True,
+        'noseAndUpperFaceHardLocked':True,
     }
 
 

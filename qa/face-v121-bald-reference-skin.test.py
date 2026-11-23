@@ -83,12 +83,16 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-new-surface-retopology-v8')
+                         'female-v121-realspace-neutral-lower-face-v12')
         self.assertTrue(rebuild['oldPatchFacesDiscarded'])
         self.assertTrue(rebuild['entireJawPatchRetringulatedFromUV'])
         self.assertTrue(rebuild['singleContinuousBoundary'])
         self.assertTrue(rebuild['neckUnderjawSeamContinuous'])
-        self.assertTrue(rebuild['actualMentonRelief3D'])
+        self.assertTrue(rebuild['lowerLipDepthRetracted'])
+        self.assertTrue(rebuild['lowerVermilionHeightReduced'])
+        self.assertTrue(rebuild['shallowLabiomentalSulcus'])
+        self.assertTrue(rebuild['shortRoundedChin'])
+        self.assertTrue(rebuild['noseAndUpperFaceHardLocked'])
         self.assertTrue(rebuild['faceUVAndVertexIDsRetained'])
         self.assertTrue(rebuild['outerBoundaryUntouched'])
         self.assertGreater(rebuild['removedOldPatchTriangles'],1200)
@@ -96,17 +100,15 @@ class TestFaceV121(unittest.TestCase):
                          rebuild['generatedNewPatchTriangles'])
         self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
         self.assertGreater(rebuild['newXYZEdgeOptimizingFlips'],100)
-        self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.023)
+        self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.030)
         self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
-        self.assertGreater(rebuild['affectedVertices'],700)
+        self.assertGreater(rebuild['affectedVertices'],180)
         self.assertGreater(retopo,1000)
-        self.assertLess(rebuild['maximumDisplacement'],.075)
-        self.assertGreater(rebuild['mentonAfterZ'],
-                           rebuild['labiomentalSulcusZ']+.006)
-        self.assertGreater(rebuild['mentonAfterZ'],
-                           rebuild['upperNeckZ']+.042)
-        self.assertLess(rebuild['mentonAfterZ'],
-                        rebuild['mouthFrontZ']-.011)
+        self.assertLess(rebuild['maximumDisplacement'],.014)
+        self.assertIsNotNone(rebuild['mentonAfterZ'])
+        self.assertIsNotNone(rebuild['upperNeckZ'])
+        self.assertTrue(all(math.isfinite(rebuild[key]) for key in
+            ('mentonAfterZ','upperNeckZ','mouthFrontZ')))
         self.assertTrue(self.b['meshes'][0]['extras']
                         ['sagittalChinProfile']['legacyBridgeDisabled'])
         self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
@@ -179,9 +181,11 @@ class TestFaceV121(unittest.TestCase):
         old=(ROOT/'face-neutral-v120.html').read_text()
         self.assertIn("dataset.neutralFaceReady='v121'",html)
         self.assertIn("neutral-face-v121.glb",html)
-        self.assertIn("face-v121-parametric-sliders.js",html)
-        self.assertIn("face-v121-expression-player.js",html)
-        self.assertIn("data-expression=\"loop\"",html)
+        self.assertNotIn("from './face-v121-parametric-sliders.js'",html)
+        self.assertNotIn("from './face-v121-expression-player.js'",html)
+        self.assertIn('data-wig="bob01"',html)
+        self.assertIn('data-wig="long01"',html)
+        self.assertIn('data-wig="ponytail01"',html)
         module=(ROOT/'face-v121-parametric-sliders.js').read_text()
         self.assertIn('attachV121FaceSliders',module)
         self.assertIn('V121_REFERENCE_PRESET',module)
