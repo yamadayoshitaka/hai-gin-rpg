@@ -4475,7 +4475,11 @@ function crossingWaypoint(actor,worldGoal){
  // cancel an obsolete crossing instead of continuing toward the old enemy.
  if(actor.crossing&&targetSide&&targetSide===actor.crossing.fromSide){
   const center=riverX(actor.crossing.bridge.row);
-  if(Math.abs(current.x-center)>14)actor.crossing=null;
+  // Cancel only BEFORE entry, on the departure side. Absolute distance
+  // also matched the far bank and erased the landing state one tick early,
+  // causing an immediate reverse crossing on a newly selected enemy.
+  if((current.x-center)*actor.crossing.fromSide>14)
+   actor.crossing=null;
  }
  // Lock a single direction until BOTH the physical far-bank landing and
  // selected lane are reached. A switch in the nearest enemy cannot make the
