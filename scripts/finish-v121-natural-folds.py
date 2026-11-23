@@ -139,7 +139,8 @@ def nose_and_lips(x,y,z):
     nose_front=fade(z,.093,.141)*nasal
     wing=(bell(ax,.028,.017)*bell(y,.251,.017)*fade(z,.084,.127)*
           (1.-fade(ax,.043,.054))*nasal)
-    nose_head=bell(ax,.019,.015)*bell(y,.254,.017)*nose_front
+    nose_head=(bell(ax,.019,.015)*bell(y,.254,.017)*nose_front*
+               (1.-fade(ax,.038,.052)))
     nx=x*(1.-.103*wing-.055*nose_head)
     tip=bell(x,0.,.017)*bell(y,.251,.016)*fade(z,.122,.154)*nasal
     ala=bell(ax,.027,.011)*bell(y,.252,.016)*nose_front*(1.-fade(ax,.043,.054))
