@@ -231,9 +231,9 @@ def refine(path):
                 cache[key]=len(verts)-1
             return cache[key]
         out=[]
-        for a,b,c in triangles:
-            ab,bc,ca=midpoint(a,b),midpoint(b,c),midpoint(c,a)
-            out.extend(((a,ab,ca),(ab,b,bc),(ca,bc,c),(ab,bc,ca)))
+        for ia,ib,ic in triangles:
+            ab,bc,ca=midpoint(ia,ib),midpoint(ib,ic),midpoint(ic,ia)
+            out.extend(((ia,ab,ca),(ab,ib,bc),(ca,bc,ic),(ab,bc,ca)))
         # No overlaid pupil/iris geometry: color moves with the curved globe.
         uvs=[(.5+v[0]/(.0188*2),.5-v[1]/(.0188*2)) for v in verts]
         primitive['attributes']={
