@@ -123,7 +123,7 @@ test('all 26 heads generate ONLY exterior locks; absolutely no visible base and 
 test('the studio renders v9 only and never draws the former scalp hemisphere or rim curtain',()=>{
  const html=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  const code=readFileSync(new URL('../src/head-derived-hair-sculpt-v9.js',import.meta.url),'utf8');
- assert.match(html,/head-derived-hair-sculpt-v9\.js\?v=9/);
+ assert.match(html,/head-derived-hair-reference-v10\.js\?v=10/);
  assert.match(html,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
  assert.doesNotMatch(html,/loader\.loadAsync\(item\.path\)/);
  assert.match(code,/renderedScalpTriangles:0/);

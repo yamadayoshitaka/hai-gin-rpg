@@ -126,7 +126,7 @@ test('the actual head provides crown, fringe and side roots rather than free-flo
  const code=readFileSync(new URL('../src/female-hair-01-native-v4.js',import.meta.url),'utf8');
  assert.match(studio,/id="hairVersion"/);
  assert.match(studio,/配信コミット/);
- assert.match(studio,/head-derived-hair-sculpt-v9\.js\?v=9/);
+ assert.match(studio,/head-derived-hair-reference-v10\.js\?v=10/);
  assert.doesNotMatch(studio,/loader\.loadAsync\(item\.path\)/);
  assert.match(code,/skin\.geometry\.clone\(\)/);
  assert.match(code,/EYEBROW/);
