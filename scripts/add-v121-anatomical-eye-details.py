@@ -136,7 +136,7 @@ def main(path):
     liner=new_part('V121_UPPER_EYELINER',(.145,.080,.072),.69)
     crease=new_part('V121_NATURAL_UPPER_LID_CREASE',(.48,.30,.28),.90)
     upper=new_part('V121_TAPERED_UPPER_EYELASHES',(.115,.077,.061),.62)
-    lower=new_part('V121_FINE_LOWER_EYELASHES',(.26,.18,.15),.76)
+    lower=new_part('V121_FINE_LOWER_EYELASHES',(.19,.115,.095),.69)
     brow=new_part('V121_INDIVIDUAL_EYEBROW_FIBERS',(.36,.27,.23),.89)
     rng=random.Random(121236)
 
@@ -238,37 +238,41 @@ def main(path):
             t=-.91+1.85*j/40
             x,y=lid(side,t)
             z=skin_z(x,y)+.0010
-            length=(.0066+.0032*max(0.,1.-abs(t))+
-                    .0020*clamp((t-.25)/.75))*(.88+.18*rng.random())
-            fan=side*(.0018+.0040*clamp((t+.20)/1.20))
-            # Root first projects toward the viewer; later segments lift
-            # and curl upward in the reference's natural C-shaped silhouette.
-            pts=[(x+fan*u*(.65+.35*u),
-                  y+length*(.12*u+.88*u*u),
-                  z+.0060*math.sin(1.72*u)+.0001*u)
+            length=(.0065+.0027*max(0.,1.-abs(t))+
+                    .0014*clamp((t-.25)/.75))*(.82+.28*rng.random())
+            # Distinct silhouette-visible hook in the front view: the old
+            # x-path was almost linear, making every lash a straight spike.
+            outer=clamp((t+.35)/1.35)
+            fan=side*(.0015+.0080*outer)
+            hook=side*(.00125+.0020*outer)
+            pts=[(x+fan*(.22*u+.78*u*u)-hook*clamp((u-.72)/.28)**2,
+                  y+length*(.25*u+.75*u*u),
+                  z+.0065*math.sin(1.70*u)+.0001*u)
                  for u in (0,.16,.33,.50,.67,.84,1.)]
-            curved_lash(upper,pts,.000185+.000050*rng.random())
+            curved_lash(upper,pts,.00018+.000040*rng.random())
         for j in range(22):
             t=-.86+1.70*j/21
             x,y,z=lower_lid(side,t)
             # Root on the lower waterline, tips sweep DOWN and slightly OUT.
             # The reference has fine sparse lower lashes, not floating dots.
-            length=(.0036+.00165*(1-abs(t)))*(.88+.20*rng.random())
-            sideways=side*(.00050+.0017*max(0.,t))
-            # Lower lashes curve DOWN while first growing away from skin,
-            # so their tips are not hidden by the lower eyelid surface.
-            pts=[(x+sideways*u*(.8+.2*u),
-                  y-length*(.12*u+.88*u*u),
-                  z+.00295*math.sin(1.65*u)+.00035*u)
+            length=(.0065+.0020*(1-abs(t)))*(.86+.24*rng.random())
+            sideways=side*(.00065+.0024*clamp((t+.2)/1.2))
+            # The globe protrudes ~.008 world units ahead of the head's
+            # original lid rim. Old lower lashes projected only .003 and
+            # were occluded *behind the eyeball* despite passing root tests.
+            # Curve forwards first and then visibly DOWN in frontal view.
+            pts=[(x+sideways*u*(.40+.60*u),
+                  y-length*(.25*u+.75*u*u),
+                  z+.0112*math.sin(1.58*u)+.00055*u)
                  for u in (0,.16,.33,.50,.67,.84,1.)]
-            curved_lash(lower,pts,.000155+.000038*rng.random())
+            curved_lash(lower,pts,.000205+.000040*rng.random())
         # A soft, unobtrusive waterline connects the actual lower-lid rim,
         # making the roots visible even when the face fills ~280 mobile px.
         lower_edge=[]
         for j in range(33):
             t=-.86+1.72*j/32
             x,y,z=lower_lid(side,t)
-            lower_edge.append((x,y-.00016,z+.00072))
+            lower_edge.append((x,y-.00016,z+.0027))
         ribbon(lower,lower_edge,[.00007+.00035*math.sin(math.pi*j/32)**.8
                                 for j in range(33)])
         lower['strands']-=1  # Continuous lid edge is not an eyelash strand.
@@ -351,7 +355,11 @@ def main(path):
         'lowerLashPlacementVersion':'v121-anatomical-rim-20261123',
         'curvedLashGeometry':'seven_segment_elliptical_3d_tapered_C_curl',
         'upperLashCcurl':True,'lowerLashDownwardCurl':True,
-        'lowerLidWaterline':True}
+        'lowerLidWaterline':True,
+        'frontVisibleCurlVersion':'v121-front-hook-eyelashes-20261123',
+        'lowerLashProjectionOutward':.0112,
+        'upperLashProjectedOuterHook':True,
+        'lowerLashVisibility':'exposed_in_front_of_occluding_sclera'}
     if meta.get('hairIncluded') is not False:
         raise ValueError('Unexpected head hair state')
     g['buffers'][0]['byteLength']=len(b)
