@@ -48,7 +48,7 @@ test('v121 blush is cheek-localized and all preset lipstick stays natural',()=>{
   assert.equal(V121_MAKEUP_PRESETS.bare.lip,0);
 });
 
-test('v17 Cupid M and curved bottom edge make a bounded tapered lip mask',()=>{
+test('v18 lifted Cupid M and curved bottom edge make a bounded tapered lip mask',()=>{
   const center=v121VermilionBorders(0);
   const left=v121VermilionBorders(-.0115);
   const right=v121VermilionBorders(.0115);
@@ -60,6 +60,10 @@ test('v17 Cupid M and curved bottom edge make a bounded tapered lip mask',()=>{
   assert.ok(corner.lower>center.lower+.010,'lower rim converges to corner');
   assert.ok(v121MakeupMasks(.048,.231,.150).lip<
             v121MakeupMasks(0,.231,.150).lip*.5,'lip pigment tapers');
+  assert.ok(v121MakeupMasks(.0115,.253,.150).lip>.09,
+            'lifted Cupid peaks must not render as unpigmented skin');
+  assert.ok(v121MakeupMasks(0,.240,.150).lip>.80,
+            'upper vermilion is visibly within the pigment mask');
   for(const coord of [[0,.254,.150],[0,.209,.150],
                        [.060,.230,.150],[.038,.253,.150],
                        [0,.208,.153]]){
