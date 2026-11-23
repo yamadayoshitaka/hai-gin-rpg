@@ -49,8 +49,10 @@ class ReferenceFeatureTests(unittest.TestCase):
         self.assertTrue(sculpt['preservesEyeAndMouthTopology'])
         self.assertGreater(len(sculpt['nostrilWingVerticesAdjusted']),20)
         self.assertGreater(len(sculpt['lipVermilionVerticesAdjusted']),30)
-        self.assertGreater(len(meta['naturalFoldCleanup']['nasolabialLeftVertexIds']),40)
-        self.assertGreater(len(meta['naturalFoldCleanup']['nasolabialRightVertexIds']),40)
+        self.assertGreater(len(meta['naturalFoldCleanup']['philtrumVertexIds']),12)
+        self.assertGreater(len(meta['naturalFoldCleanup']['dimpleCorrectionVertexIds']),12)
+        self.assertTrue(sculpt['lateralNasolabialPitRemoved'])
+        self.assertEqual(sculpt['centralPhiltrumStart'][0],0.)
         for i in sculpt['nostrilWingVerticesAdjusted']:
             x,y,z=self.xyz[i]
             self.assertLess(abs(x),.055)
@@ -97,6 +99,9 @@ class ReferenceFeatureTests(unittest.TestCase):
         self.assertTrue(meta['upperLashCcurl'])
         self.assertTrue(meta['lowerLashDownwardCurl'])
         self.assertTrue(meta['lowerLidWaterline'])
+        self.assertEqual(meta['frontVisibleCurlVersion'],
+                         'v121-front-hook-eyelashes-20261123')
+        self.assertGreater(meta['lowerLashProjectionOutward'],.01)
         self.assertEqual(meta['curvedLashGeometry'],
                          'seven_segment_elliptical_3d_tapered_C_curl')
         def center(start):
@@ -111,11 +116,11 @@ class ReferenceFeatureTests(unittest.TestCase):
             first=center(i+6)
             mid=center(i+18)
             tip=center(i+36)
-            self.assertLess(tip[1],root[1]-.003,
+            self.assertLess(tip[1],root[1]-.005,
                             'Lower eyelash tips must visibly descend')
-            self.assertGreater(mid[2],root[2]+.0012,
+            self.assertGreater(mid[2],root[2]+.007,
                                'Curl must rise out from skin before dropping')
-            self.assertGreater(first[2],root[2]+.0004)
+            self.assertGreater(first[2],root[2]+.002)
             self.assertTrue(.298<root[1]<.312)
             nearest=min(math.dist(root,p) for p in boundary)
             max_gap=max(max_gap,nearest)
@@ -137,12 +142,17 @@ class ReferenceFeatureTests(unittest.TestCase):
             return tuple(sum(v[k] for v in points[i:i+6])/6 for k in range(3))
         for i in range(0,len(points),42):
             root,first,mid,tip=(center(i),center(i+6),center(i+18),center(i+36))
-            self.assertGreater(tip[1],root[1]+.006,
+            self.assertGreater(tip[1],root[1]+.0047,
                                'Upper lash must have a visible upward curl')
             self.assertGreater(mid[2],root[2]+.003,
                                'Upper lash must project out from eyelid')
             self.assertGreater(first[2],root[2]+.0006)
             self.assertGreater(tip[2],root[2]+.004)
+            # C-curl must also bend sideways in 2D front projection,
+            # not appear as rigid upward spikes.
+            near_tip=center(i+30)
+            self.assertGreater(abs(tip[0]-root[0]),.0001)
+            self.assertGreater(abs(near_tip[0]-root[0]),.0001)
         normal=get(g,b,prim['attributes']['NORMAL'])
         self.assertTrue(any(abs(v[1])>.3 for v in normal),
                         'Upper eyelash tubes must have actual tangent-based normals')

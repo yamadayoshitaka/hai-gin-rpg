@@ -86,30 +86,37 @@ def normals(points,triangles):
 
 
 def fold_displacement(x,y,z):
-    """Real continuous alar-to-commissure depressions in native head topology.
+    """Eliminate lateral dimples; retain only very fine under-eye skin relief.
 
-    Previous v121 fold started too high and too far outside the nostrils,
-    fading before reaching the mouth. This path starts at each nostril wing
-    (~x=0.025,y=0.239), curves to the mouth corner (~x=0.046,y=0.195),
-    and is paired with a subtle fuller-cheek ridge.
+    Earlier v121 built a nostril-to-mouth *lateral nasolabial* valley and an
+    extra mouth-corner pit. The reference request is instead the CENTRAL
+    philtrum beneath the columella, not smile lines at either cheek.
     """
+    front=fade(z,.075,.122)
     ax=abs(x)
-    front=fade(z,.064,.120)
-    t=(.241-y)/.052
-    if 0.<t<1.:
-        path=.0245+.0215*t+.0013*math.sin(math.pi*t)
-        envelope=fade(t,.005,.18)*(1.-fade(t,.80,.995))
-        valley=-.0051*bell(ax,path,.0066)
-        cheek_support=.00180*bell(ax,path+.010,.0091)
-        nasolabial=(valley+cheek_support)*envelope*front
-    else:
-        nasolabial=0.
-    # A tiny crescent below the nasal wing connects the nostril root to fold.
-    alar_transition=-.0012*bell(ax,.028,.007)*bell(y,.233,.008)*front
-    eye_mask=fade(ax,.023,.033)*(1-fade(ax,.062,.072))
-    under_eye=-.00033*bell(y,.287,.0035)*eye_mask*front
-    mouth_corner=-.00056*bell(ax,.045,.006)*bell(y,.193,.008)*front
-    return nasolabial+alar_transition+under_eye+mouth_corner
+    under_eye=(-.00026*bell(y,.287,.0038)*
+               fade(ax,.023,.033)*(1.-fade(ax,.062,.072))*front)
+    # Fill the artificial corner dimples left by the prior lateral crease.
+    # Only touch skin on the outward corner surface, not actual lip geometry.
+    dimple_fill=(.0028*bell(ax,.046,.010)*bell(y,.194,.014)*
+                 fade(z,.078,.128)*(1.-fade(z,.154,.17)))
+    return under_eye+dimple_fill
+
+
+def philtrum_relief(x,y,z):
+    """Real central groove under the nasal septum, fading into Cupid's bow.
+
+    The groove is not drawn as a dark cosmetic line. Paired raised philtral
+    columns create the light/shadow difference naturally from the 3D surface.
+    """
+    if y<.205 or y>.247:
+        return 0.
+    vertical=fade(y,.207,.218)*(1.-fade(y,.235,.247))
+    front=fade(z,.101,.141)
+    groove=-.0049*bell(x,0,.0060)*vertical*front
+    columns=.00155*(bell(x,-.0108,.0044)+bell(x,.0108,.0044))*vertical*front
+    return groove+columns
+
 
 
 def nose_and_lips(x,y,z):
@@ -133,10 +140,9 @@ def nose_and_lips(x,y,z):
     lower=bell(y,.1835,.0103)*horizontal*lip_front
     cupids=bell(ax,.012,.0065)*bell(y,.213,.007)*lip_front
     seam=bell(y,.197,.0028)*horizontal*lip_front
-    philtrum=bell(y,.223,.011)*bell(x,0,.0085)*lip_front
-    columns=bell(y,.219,.010)*bell(ax,.012,.006)*lip_front
     nz+=(.0028*upper+.0043*lower+.0012*cupids
-         -.0008*seam-.0011*philtrum+.00075*columns)
+         -.0008*seam)
+    nz+=philtrum_relief(nx,y,nz)
     return (nx,y,nz)
 
 
@@ -202,6 +208,8 @@ def finish(path):
     xyz,chin_count=smooth_chin(pos,faces)
     folds_left=[]
     folds_right=[]
+    philtrum_ids=[]
+    dimple_filled_ids=[]
     updated=[]
     nasal_vertices=[]
     lip_vertices=[]
@@ -209,8 +217,11 @@ def finish(path):
         nx,ny,nz=nose_and_lips(x,y,z)
         dz=fold_displacement(nx,ny,nz)
         updated.append((nx,ny,nz+dz))
-        if dz<-.00018 and .190<ny<.251 and .018<abs(nx)<.068:
-            (folds_left if nx<0 else folds_right).append(i)
+        central=philtrum_relief(nx,ny,nz)
+        if central<-.00038 and abs(nx)<.011 and .208<ny<.242:
+            philtrum_ids.append(i)
+        if dz>.00020 and .179<ny<.215 and .025<abs(nx)<.067:
+            dimple_filled_ids.append(i)
         if abs(nx-x)>.00008 and .225<y<.280:
             nasal_vertices.append(i)
         if abs(nz-z)>.00015 and .172<y<.227 and abs(x)<.058:
@@ -222,8 +233,8 @@ def finish(path):
     p['attributes']['NORMAL']=add_vec3(g,b,normals(updated,faces))
     colors=[neutral_color(x,y,z) for x,y,z in updated]
     p['attributes']['COLOR_0']=add_vec3(g,b,colors)
-    if len(folds_left)<10 or len(folds_right)<10:
-        raise ValueError('Both genuine nasolabial skin regions are required')
+    if len(philtrum_ids)<12 or len(dimple_filled_ids)<12:
+        raise ValueError('Real central philtrum and corner correction required')
     # Reduce the separate eyelid-crease ribbon tint: no hard pink mask.
     for material in g['materials']:
         if material['name']=='V121_NATURAL_UPPER_LID_CREASE_PBR':
@@ -234,8 +245,11 @@ def finish(path):
         'version':'v121-nose-lips-lower-lashes-20261123',
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
-        'nasolabialCurveStart':[.0245,.241],
-        'nasolabialCurveEnd':[.046,.189],
+        'centralPhiltrumStart':[0.,.241],
+        'centralPhiltrumEnd':[0.,.209],
+        'philtrumVertexIds':philtrum_ids,
+        'lateralDimpleCorrectionVertexIds':dimple_filled_ids,
+        'lateralNasolabialPitRemoved':True,
         'foldIsActualSkinGeometry':True,
         'preservesEyeAndMouthTopology':True,
         'facialExpressionAnimations':False}
@@ -245,12 +259,14 @@ def finish(path):
         'removedLegacyBrowLidBand':True,
         'removedChinTintLeakage':True,
         'chinVerticesSmoothed':chin_count,
-        'nasolabialLeftVertexIds':folds_left,
-        'nasolabialRightVertexIds':folds_right,
-        'additionalFoldRegions':['infraorbital','mouth-corners'],
+        'nasolabialLeftVertexIds':[],
+        'nasolabialRightVertexIds':[],
+        'philtrumVertexIds':philtrum_ids,
+        'dimpleCorrectionVertexIds':dimple_filled_ids,
+        'additionalFoldRegions':['central-philtrum','infraorbital'],
         'surfaceDeformationOnly':True,
         'expressionAnimationImplemented':False}
-    g['asset']['generator']='HaiGin v121 natural nasolabial folds + eye/chin colour cleanup'
+    g['asset']['generator']='HaiGin v121 central philtrum sculpt and lateral dimple removal'
     g['buffers'][0]['byteLength']=len(b)
     json_bytes=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode('utf8')
     json_bytes+=b' '*((-len(json_bytes))%4)
@@ -264,7 +280,8 @@ def finish(path):
         f.write(b)
     print('v121 skin cleanup complete',json.dumps({
         'vertices':len(updated),'chinSmoothed':chin_count,
-        'nasolabialLeft':len(folds_left),'nasolabialRight':len(folds_right),
+        'centralPhiltrumVertices':len(philtrum_ids),
+        'dimpleFillVertices':len(dimple_filled_ids),
         'noseChanged':len(nasal_vertices),'lipsChanged':len(lip_vertices),
         'byteLength':length}))
 
