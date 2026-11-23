@@ -16,6 +16,27 @@ export const ROLE_NAMES=Object.freeze({front:'前衛',guard:'盾役',scout:'遊�
  * Different cells may use the same job; both cells must independently qualify. */
 export const FORMATION_MINIMUM_SOLDIERS=Object.freeze({front:3,guard:3,scout:2,ranged:2,support:2});
 export const formationMinimumForRole=role=>FORMATION_MINIMUM_SOLDIERS[role]||1;
+/** Match only deployed, paid-for/owned job slots to a named formation.
+ * Return existing source IDs in ROLE order, or null; never recruit or swap jobs. */
+export function matchFormationRoleJobs(team,sources,formation,slotCount){
+ const slots=(team?.slots||[]).filter(id=>Number(team.counts?.[String(id)]||0)>0).map(String);
+ const roles=FORMATION_ROLES[formation]?.slice(0,Number(slotCount)||0)||[];
+ if(!roles.length||roles.length!==slots.length||new Set(slots).size!==slots.length)return null;
+ const byId=new Map(sources.map(s=>[String(s.id),s]));
+ const match=(index,remaining)=>{
+  if(index===roles.length)return [];
+  const role=roles[index],minimum=formationMinimumForRole(role);
+  for(const sid of remaining){
+   const source=byId.get(sid);
+   if(!source||!ROLE_JOBS[role]?.includes(source.job)||
+     Number(team.counts?.[sid]||0)<minimum)continue;
+   const rest=match(index+1,remaining.filter(id=>id!==sid));
+   if(rest)return [sid,...rest];
+  }
+  return null;
+ };
+ return match(0,slots);
+}
 export function formationJobMinimums(team,ownedSquads,positions,slots=null){
  const ids=positions?.[team?.formation]?.slice(0,Number(slots)||team?.slots?.filter(Boolean).length||3)||[];
  const sources=new Map(ownedSquads.map(s=>[String(s.id),s]));

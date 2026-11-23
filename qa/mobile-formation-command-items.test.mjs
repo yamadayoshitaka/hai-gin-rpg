@@ -28,8 +28,10 @@ assert.equal(innTeamItemsSummary(game,2).some(x=>x.id==='ether'),true);
 assert.match(renderInnFormationWizard({game,view:'items',teamId:1}),/持参アイテム/);
 assert.match(renderInnFormationWizard({game,view:'review',teamId:1}),/持参アイテム/);
 const formationHtml=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:0});
-assert.equal((formationHtml.match(/data-inn-wizard-formation="/g)||[]).length,1,
- 'the inn must display one formation per paged screen without vertical scrolling');
+assert.equal((formationHtml.match(/data-inn-wizard-formation="attack"/g)||[]).length,1,
+ 'the inn must display one named formation per paged screen without scrolling');
+assert.equal((formationHtml.match(/data-inn-wizard-formation="free"/g)||[]).length,1,
+ 'free formation is an always-available escape hatch, not a second named card');
 assert.equal((formationHtml.match(/data-inn-wizard-formation-page=/g)||[]).length,2);
 assert.match(formationHtml,/追加作戦/);
 assert.ok(Object.keys(SORTIE_FORMATIONS).length>8);
