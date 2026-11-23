@@ -13,6 +13,15 @@ const AXES = ['x','y','size'];
 const zeros=()=>Object.fromEntries(CONTROLS.map(([key])=>[
   key,{x:0,y:0,size:100}
 ]));
+// Hand-tuned modest slider values from the user-supplied front/profile
+// reference. These are reproducible *starting values*, not a 3D face scan.
+export const V121_REFERENCE_PRESET=Object.freeze({
+  eyes:{x:-1,y:1,size:108},
+  nose:{x:0,y:0,size:93},
+  mouth:{x:0,y:2,size:112},
+  brows:{x:-1,y:-3,size:105},
+  philtrum:8
+});
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const fade=(x,lo,hi)=>{let t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t)};
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -51,8 +60,10 @@ function transformPoint(x,y,z,state,kind){
   if(kind==='skin'){
     // Additional adjustable center philtrum depth, from septum to upper lip.
     // Bounded to skin's forward-facing area and never a separate dark stripe.
-    const f=fade(y,.207,.218)*(1-fade(y,.236,.247));
-    dz-=state.philtrum*.00009*bell(x,0,.0075)*f*fade(z,.070,.123);
+    // Match the newly sculpted continuous nose-base-to-upper-lip path.
+    // This must not create the previous circular hole at y≈.224.
+    const f=fade(y,.201,.213)*(1-fade(y,.247,.255));
+    dz-=state.philtrum*.00006*bell(x,0,.0057)*f*fade(z,.071,.116);
   }
   return [x+dx,y+dy,z+dz];
 }
@@ -155,17 +166,33 @@ export function attachV121FaceSliders({neutral,face,three,onChange=()=>{}}){
     apply();
   };
   inputs.forEach(input=>input.addEventListener('input',()=>onInput(input)));
-  function reset(){
-    for(const input of inputs){input.value=input.dataset.axis==='size'?'100':'0';}
-    const init=zeros();
-    for(const [key,settings] of Object.entries(init))Object.assign(state[key],settings);
-    state.philtrum=0;
+  function restore(values){
+    for(const [key] of CONTROLS){
+      const src=values[key]||{x:0,y:0,size:100};
+      for(const axis of AXES){
+        const input=inputs.find(i=>i.dataset.part===key&&i.dataset.axis===axis);
+        if(!input)throw new Error('Missing '+key+' '+axis+' slider');
+        const number=Number(src[axis]);
+        input.value=String(clamp(number,Number(input.min),Number(input.max)));
+        state[key][axis]=Number(input.value);
+      }
+    }
+    const groove=inputs.find(i=>i.dataset.part==='philtrum');
+    groove.value=String(clamp(Number(values.philtrum||0),
+                             Number(groove.min),Number(groove.max)));
+    state.philtrum=Number(groove.value);
     apply();
   }
-  apply();
+  function reset(){restore({...zeros(),philtrum:0});}
+  function applyReferencePreset(){restore(V121_REFERENCE_PRESET);}
+  // A reference-like face is the requested default, yet the original,
+  // untouched neutral master remains available with reset().
+  applyReferencePreset();
+  document.documentElement.dataset.v121Preset='reference';
   return {
     state,
     reset,
+    applyReferencePreset,
     isChanged:()=>document.documentElement.dataset.v121Tuned==='true',
     values:()=>JSON.parse(JSON.stringify(state)),
     count:vertexCount

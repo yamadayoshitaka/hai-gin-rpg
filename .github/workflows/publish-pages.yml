@@ -215,7 +215,8 @@ jobs:
           assert 'V121_UPPER_EYELINER' in [m['name'] for m in obj['meshes']]
           assert obj['meshes'][0]['extras']['naturalFoldCleanup']['removedLegacyBrowLidBand'] is True
           assert len(obj['meshes'][0]['extras']['referenceFeatureSculpt']['lipVermilionVerticesAdjusted'])>30
-          assert obj['meshes'][0]['extras']['referenceFeatureSculpt']['philtrumGrooveMasterDepth']>=0.009
+          assert 0.0037<=obj['meshes'][0]['extras']['referenceFeatureSculpt']['philtrumGrooveMasterDepth']<=0.0040
+          assert obj['meshes'][0]['extras']['referenceFeatureSculpt']['philtrumNoOvalPit'] is True
           assert obj['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'] is False
           print('PASS baked v121 bald PBR skin:',len(blob),'bytes')
           PY

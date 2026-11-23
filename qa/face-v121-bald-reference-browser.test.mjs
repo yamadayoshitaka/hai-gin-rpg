@@ -47,6 +47,16 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('[data-camera="side"]').click();
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-side.png'});
   await page.locator('[data-camera="front"]').click();
+  assert.equal(await page.locator('html').getAttribute('data-v121-preset'),'reference');
+  assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
+  assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'108');
+  assert.equal(await page.locator('input[data-part="nose"][data-axis="size"]').inputValue(),'93');
+  assert.equal(await page.locator('input[data-part="mouth"][data-axis="size"]').inputValue(),'112');
+  assert.equal(await page.locator('input[data-part="brows"][data-axis="y"]').inputValue(),'-3');
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-reference-preset.png'});
+  // Recover the untouched source to verify the original GLB metadata too.
+  await page.locator('#resetTune').click();
+  assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'false');
   const dl=page.waitForEvent('download',{timeout:50000});
   await page.locator('#export').click();
   const item=await dl;
@@ -65,7 +75,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(gltf.meshes[0].extras.topology.vertices,13455);
   assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,false);
   assert.equal(gltf.meshes[0].extras.referenceFeatureSculpt.parametricDepthControlSupported,true);
-  assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth>=.009);
+  assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth>=.0037);
+  assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth<=.0040);
+  assert.equal(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumNoOvalPit,true);
   assert.equal(gltf.meshes[0].extras.version,121);
   assert.equal(gltf.meshes[0].extras.hairIncluded,false);
   assert.equal(gltf.images.length,4,'PBR skin and eye atlas must be embedded');
@@ -89,6 +101,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
   assert.equal(gltf.materials[0].name,'V121_ANATOMICAL_SKIN_PBR_2048');
   assert.ok(gltf.meshes[0].extras.futureRigZones.mouth.length>10);
+  await page.locator('#applyReferenceTune').click();
+  assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
+  assert.equal(await page.locator('input[data-part="philtrum"][data-axis="depth"]').inputValue(),'8');
   // Test the real on-device editor, not just the presence of decorative controls.
   for(const part of ['eyes','nose','mouth','brows']){
    assert.equal(await page.locator('input[data-part="'+part+'"][data-axis="size"]').count(),1);
@@ -108,9 +123,15 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-sliders-edited.png'});
-  const tunedDownload=page.waitForEvent('download',{timeout:60000});
-  await page.locator('#export').click();
+  const tunedDownload=page.waitForEvent('download',{timeout:75000})
+    .catch(e=>({downloadError:e.message}));
+  await page.locator('#export').click({timeout:20000});
   const tuned=await tunedDownload;
+  if(tuned.downloadError){
+    const status=await page.locator('#status').textContent();
+    throw new Error('Adjusted GLB download failed: '+tuned.downloadError+
+      '; UI status='+status+'; console='+errors.join(' | '));
+  }
   assert.equal(tuned.suggestedFilename(),'hai-gin-face-v121-adjusted.glb');
   const tunedBuffer=readFileSync(await tuned.path());
   assert.equal(tunedBuffer.toString('ascii',0,4),'glTF');
