@@ -256,6 +256,8 @@ jobs:
           assert x['referenceFeatureSculpt']['oralMouthSealProtected'] is True
           assert x['referenceFeatureSculpt']['upperLipRaisedTowardNoseMillimeters']>=4.0
           assert x['mouthChinRebuild']['shortSharperVLineChin'] is True
+          assert x['mouthChinRebuild']['noBroadInvertedUnderlipNormals'] is True
+          assert x['mouthChinRebuild']['repairedExteriorLipNormals']>50
           assert len(obj['images'])==4 and 'normalTexture' in obj['materials'][0]
           assert len(obj['animations'])==2 and len(obj['meshes'][0]['primitives'][0]['targets'])==11
           assert obj['meshes'][0]['extras']['referenceMakeup']['skinPBR'] is True
