@@ -252,8 +252,15 @@ def correct_chin_profile(points):
         rounded_x=x*(1.+.025*bell(y,.181,.028)*lateral*vertical)
         # One continuous lower-face mask handles chin and labiomental
         # transition, rather than creating a new shelf or a sharp hook.
-        result.append((rounded_x,y+lift,z-displacement*w))
-        if displacement*w>.00005 or lift>.00005:changed+=1
+        # Restore the continuous underside-to-lip silhouette. The donor
+        # has a sharp forward-surface depth jump near Y=.18 that creates
+        # a hook/double-chin when the upper menton alone is retracted.
+        # Smoothly support only the *front* midline; lips Y>=.21 and neck
+        # Y<=.155 retain their original position.
+        bridge=(.0200*fade(y,.155,.180)*(1.-fade(y,.181,.201))*
+                (1.-fade(ax,.034,.068))*fade(z,.040,.095))
+        result.append((rounded_x,y+lift,z-displacement*w+bridge))
+        if displacement*w>.00005 or lift>.00005 or bridge>.00005:changed+=1
     chin_after=max(z for x,y,z in result
                    if abs(x)<.055 and .160<y<.204)
     if chin_after>lip_front-clearance+.0006:
@@ -266,6 +273,7 @@ def correct_chin_profile(points):
         'lipChinDepthClearance':clearance,
         'vertexCorrectionZ':round(displacement,6),
         'labiomentalTransitionContinuous':True,
+        'submentalSlopeBridgeMax':.020,
         'changedVertices':changed,
         'neutralUpperLipUnaffected':True,
         'neckBelow080Unaffected':True
