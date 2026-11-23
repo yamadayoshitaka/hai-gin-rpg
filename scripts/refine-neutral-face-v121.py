@@ -88,7 +88,7 @@ def resculpt(p):
     ear=gauss(ax,.137,.017)*gauss(y,.270,.052)
     nx=x*(1-.110*jaw-.033*chin-.014*temple+.018*malar-.027*wings)
     ny=y+.0014*chin
-    nz=(z+.0080*cheek+.0041*malar+.0022*chin+.0013*temple
+    nz=(z+.0025*cheek+.0020*malar+.0022*chin+.0013*temple
         -.0030*bridge-.0042*nasal_tip-.0012*wings
         +.0021*upper+.0031*lower+.0011*cupid-.0010*philtrum
         -.0014*brow+.0010*tear
@@ -130,6 +130,9 @@ def skin_maps():
         da.line((0,y,n,y),fill=(int(233+t),int(208+t*.8),int(201+t*.75)))
         rough=int(181+3*math.sin(y*.006))
         dr.line((0,y,n,y),fill=(250,rough,0))
+    # Skin-first PBR palette: warm fair ivory with matte cheek highlight.
+    # Makeup is region-masked in the true facial COLOR_0 attributes, never
+    # painted as free-floating dark strips on the face.
     # Rare subpixel pore grain, visually invisible at gameplay viewing range.
     for k in range(8500):
         x=(k*104729+173)%n

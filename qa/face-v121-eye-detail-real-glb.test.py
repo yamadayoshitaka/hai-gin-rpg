@@ -25,7 +25,7 @@ class TestV121RealDetailMeshes(unittest.TestCase):
         self.assertEqual(meta['version'],121)
         self.assertFalse(meta['hairIncluded'])
         self.assertEqual(meta['topology']['vertices'],13455)
-        self.assertFalse(meta['futureExpressionsImplemented'])
+        self.assertTrue(meta['futureExpressionsImplemented'])
         self.assertEqual(meta['eyelidFiberUpgrade']['version'],'v121-eye-details-2')
         names=[
             'V121_UPPER_EYELINER',

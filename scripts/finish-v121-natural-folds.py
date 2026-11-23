@@ -153,21 +153,26 @@ def nose_and_lips(x,y,z):
 
 
 def neutral_color(x,y,z):
-    """Remove the baked eyelid-to-brow brown stripe and chin pink patch.
+    """Reference-like soft makeup, anchored to anatomical vertices.
 
-    A neutral base with bounded, soft blush and colour only on actual lips.
-    Eyebrow hair, eyeliner and crease are separately sculpted native meshes.
+    Avoid colour patches between the eyes/brows or on chin. Each mask
+    fades on all edges; PBR BaseColor remains the underlying real skin.
     """
-    front=fade(z,.077,.122)
     ax=abs(x)
-    cheek=(bell(x,-.075,.041)+bell(x,.075,.041))*bell(y,.256,.039)*front
-    lips=(.85*bell(y,.208,.009)+bell(y,.184,.010))*bell(x,0,.038)*fade(z,.082,.127)
-    outer_eye=(bell(x,-.043,.023)+bell(x,.043,.023))*bell(y,.287,.013)*front
-    # No dark horizontal vertex-colour bands near y 0.322..0.349,
-    # and no blush/lip colour leakage into the chin (y < 0.17).
-    return (clamp(.995-.009*lips),
-            clamp(.994-.016*cheek-.188*lips-.005*outer_eye),
-            clamp(.992-.022*cheek-.154*lips-.006*outer_eye))
+    front=fade(z,.070,.125)
+    # Light rose blush following upper outer cheeks, nowhere near chin.
+    cheek=(bell(x,-.077,.037)+bell(x,.077,.037))*bell(y,.256,.033)*front
+    nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
+    # Lips: natural soft pink upper/lower lip gradient; no dark drawn seam.
+    vermilion=(.78*bell(y,.208,.009)+bell(y,.184,.010))
+    lips=vermilion*bell(x,0,.039)*fade(z,.076,.127)
+    # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
+    shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
+    lower_liner=(bell(x,-.044,.023)+bell(x,.044,.023))*bell(y,.295,.004)*front
+    # R channel near 1, G/B reductions create soft pink and taupe accents.
+    return (clamp(.995-.007*lips-.024*shadow-.009*lower_liner),
+            clamp(.994-.075*cheek-.022*nose_tip-.170*lips-.037*shadow-.015*lower_liner),
+            clamp(.992-.094*cheek-.027*nose_tip-.190*lips-.049*shadow-.021*lower_liner))
 
 
 def smooth_chin(points,faces):
@@ -247,6 +252,29 @@ def finish(path):
             material['pbrMetallicRoughness']['baseColorFactor']=[
                 .79,.65,.62,1.]
             material['pbrMetallicRoughness']['roughnessFactor']=.92
+    # Texture/PBR remains embedded in the same original GLB; use tasteful,
+    # low-gloss cosmetics rather than flat vertex-color face paint.
+    skin_material=g['materials'][0]
+    skin_material['pbrMetallicRoughness']['roughnessFactor']=.88
+    skin_material['normalTexture']['scale']=.075
+    for material in g['materials']:
+        name=material.get('name','')
+        pbr=material.get('pbrMetallicRoughness',{})
+        if name=='V121_UPPER_EYELINER_PBR':
+            pbr['baseColorFactor']=[.15,.095,.090,1.]
+        elif name=='V121_FINE_LOWER_EYELASHES_PBR':
+            pbr['baseColorFactor']=[.25,.17,.145,1.]
+        elif name=='V121_INDIVIDUAL_EYEBROW_FIBERS_PBR':
+            pbr['baseColorFactor']=[.38,.29,.235,1.]
+    meta['referenceMakeup']={
+        'version':'v121-makeup-20261123',
+        'skinPalette':'warm-natural-ivory',
+        'cheekBlush':'subtle-peach-rose',
+        'lips':'soft-rose-pink-vertex-gradient',
+        'upperLid':'warm-taupe-blended',
+        'lashColor':'soft-brown',
+        'skinPBR':True,
+        'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
         'version':'v121-nose-lips-lower-lashes-20261123',
         'nostrilWingVerticesAdjusted':nasal_vertices,

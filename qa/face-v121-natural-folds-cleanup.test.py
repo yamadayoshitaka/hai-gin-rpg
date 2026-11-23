@@ -43,7 +43,7 @@ class V121SkinClean(unittest.TestCase):
         meta=self.face['extras']
         self.assertEqual(meta['version'],121)
         self.assertFalse(meta['hairIncluded'])
-        self.assertFalse(meta['futureExpressionsImplemented'])
+        self.assertTrue(meta['futureExpressionsImplemented'])
         self.assertEqual(meta['topology']['vertices'],13455)
         self.assertEqual(len(self.xyz),13455)
         self.assertEqual(len(self.g['meshes']),8)

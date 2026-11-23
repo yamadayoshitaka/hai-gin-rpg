@@ -64,13 +64,13 @@ class TestFaceV121(unittest.TestCase):
         src=self.a['meshes'][0]['extras']
         dst=self.b['meshes'][0]['extras']
         self.assertEqual(dst['version'],121)
-        self.assertEqual(dst['futureExpressionsImplemented'],False)
+        self.assertEqual(dst['futureExpressionsImplemented'],True)
         self.assertEqual(dst['hairIncluded'],False)
         self.assertEqual(dst['topology'],src['topology'])
         self.assertEqual(dst['futureRigZones'],src['futureRigZones'])
         self.assertEqual(dst['futureExpressions'],src['futureExpressions'])
-        self.assertNotIn('animations',self.b)
-        self.assertNotIn('targets',self.b['meshes'][0]['primitives'][0])
+        self.assertEqual(len(self.b.get('animations',[])),2)
+        self.assertEqual(len(self.b['meshes'][0]['primitives'][0]['targets']),11)
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
         self.assertEqual(len(self.b['meshes']),8)
         self.assertTrue(all('GLOBE_UV' in mesh['name'] for mesh in self.b['meshes'][1:3]))
@@ -102,6 +102,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertIn('occlusionTexture',skin)
         self.assertEqual(len(self.b['scenes'][0]['nodes']),8)
         self.assertIn('eyelidFiberUpgrade',self.b['meshes'][0]['extras'])
+        self.assertIn('referenceMakeup',self.b['meshes'][0]['extras'])
         for name in ('V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS'):
             self.assertIn(name,[m['name'] for m in self.b['meshes']])
 
@@ -112,6 +113,8 @@ class TestFaceV121(unittest.TestCase):
         self.assertIn("dataset.neutralFaceReady='v121'",html)
         self.assertIn("neutral-face-v121.glb",html)
         self.assertIn("face-v121-parametric-sliders.js",html)
+        self.assertIn("face-v121-expression-player.js",html)
+        self.assertIn("data-expression=\"loop\"",html)
         module=(ROOT/'face-v121-parametric-sliders.js').read_text()
         self.assertIn('attachV121FaceSliders',module)
         self.assertIn('V121_REFERENCE_PRESET',module)

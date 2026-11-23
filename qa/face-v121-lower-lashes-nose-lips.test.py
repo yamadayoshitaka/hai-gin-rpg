@@ -40,7 +40,7 @@ class ReferenceFeatureTests(unittest.TestCase):
         self.assertEqual(meta['version'],121)
         self.assertEqual(meta['topology']['vertices'],13455)
         self.assertFalse(meta['hairIncluded'])
-        self.assertFalse(meta['futureExpressionsImplemented'])
+        self.assertTrue(meta['futureExpressionsImplemented'])
         self.assertEqual(len(self.xyz),13455)
         self.assertEqual(len(get(self.g,self.b,self.p['indices'])),25920*3)
         self.assertEqual(len(self.g['meshes']),8)
