@@ -133,7 +133,7 @@ test('actual scalp underlay derives from skin triangles and never changes source
  assert.match(hair,/skinFace\.add\(overlay\)/);
  assert.match(hair,/skinFace\?\.isMesh/);
  assert.match(mesh,/const w=right-left,d=front-back,h=Math\.min\(/);
- assert.match(viewer,/createV121AnatomicalHairCap/);
+ assert.doesNotMatch(viewer,/createV121AnatomicalHairCap/);
  assert.match(viewer,/bodyView\.visible=false/);
  assert.match(viewer,/v121FaceFile/);
  assert.match(viewer,/attachV121FaceSliders/);
@@ -172,11 +172,11 @@ test('no visible body proxies or static vertex-collider shredding',()=>{
  const viewer=read('hair-asset-studio.html');
  const mesh=read('src/independent-hair-mesh-v1.js');
  assert.match(viewer,/bodyView\.visible=false/);
- assert.match(viewer,/collision:motion!=='idle'/);
+ assert.match(viewer,/current\.updateMotion\(swayTime/);
  assert.match(viewer,/deformTips\(0,0,\{collision:false\}\)/);
  assert.match(viewer,/const details=document\.createElement\('details'\)/);
  assert.match(viewer,/capToggle/);
- assert.match(viewer,/cleanupStats\.removedTriangles/);
+ assert.match(viewer,/sculptHairFromHead/);
  assert.match(mesh,/cleanDetachedHairGeometry/);
  assert.match(mesh,/limit=\.004\+\.005\*w/);
  assert.match(mesh,/conformCrownAboveHeadSurface/);
