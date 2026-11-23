@@ -66,6 +66,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(gltf.meshes[0].extras.naturalFoldCleanup.removedLegacyBrowLidBand,true);
   assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialLeftVertexIds.length>10);
   assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialRightVertexIds.length>10);
+  assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLashPlacementVersion,'v121-anatomical-rim-20261123');
+  assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.nostrilWingVerticesAdjusted.length>20);
+  assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.lipVermilionVerticesAdjusted.length>30);
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
   assert.equal(gltf.materials[0].name,'V121_ANATOMICAL_SKIN_PBR_2048');
   assert.ok(gltf.meshes[0].extras.futureRigZones.mouth.length>10);
