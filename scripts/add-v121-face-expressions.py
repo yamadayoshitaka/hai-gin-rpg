@@ -89,9 +89,9 @@ def deformation(name,x,y,z,part):
     cheek=bell(ax,.066,.039)*bell(y,.260,.035)*front
     # Actual lip bands rather than a whole-jaw deformation.
     lip_span=bell(x,0,.035)*mouth_front
-    upper=bell(y,.2085,.008)*lip_span
-    lower=bell(y,.1870,.009)*lip_span
-    corner=bell(ax,.043,.013)*bell(y,.197,.014)*mouth_front
+    upper=bell(y,.2400,.008)*lip_span
+    lower=bell(y,.2235,.009)*lip_span
+    corner=bell(ax,.043,.013)*bell(y,.232,.014)*mouth_front
     top_lid=bell(y,.320,.008)*eye
     lower_lid=bell(y,.296,.008)*eye
     if name=='blink':
@@ -113,7 +113,7 @@ def deformation(name,x,y,z,part):
                 -.0007*corner)
     # Recess the central mouth surface while the upper and lower lip rings
     # separate. Chin and cervical tissue remain motionless.
-    center=bell(x,0,.027)*bell(y,.197,.008)*mouth_front if part=='skin' else 0.
+    center=bell(x,0,.027)*bell(y,.232,.008)*mouth_front if part=='skin' else 0.
     if name=='mouthOpen':
         return (sign*.0027*corner,.0052*upper-.0108*lower,
                 -.0145*center-.0007*lower)
@@ -137,7 +137,7 @@ def deformation(name,x,y,z,part):
 
 def append_oral_parts(g,b,head_xyz):
     """Real PBR 3D oral cavity, teeth, tongue: neutral hidden; visemes visible."""
-    front=[p for p in head_xyz if abs(p[0])<.056 and .170<p[1]<.224 and p[2]>.09]
+    front=[p for p in head_xyz if abs(p[0])<.056 and .209<p[1]<.259 and p[2]>.09]
     if len(front)<50:raise ValueError('Cannot locate lip surface for mouth cavity')
     def surface(x,y):
         nearest=sorted(front,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)[:6]
@@ -168,7 +168,7 @@ def append_oral_parts(g,b,head_xyz):
         else:
             poly=[(-1.,-1.),(1.,-1.),(1.,1.),(-1.,1.)]
             inds=[0,1,2,0,2,3]
-        rest=[(xx*.0002,.197+yy*.00008,surface(0,.197)-.014)
+        rest=[(xx*.0002,.232+yy*.00008,surface(0,.232)-.014)
               for xx,yy in poly]
         mat=len(g['materials'])
         g['materials'].append({'name':kind+'_PBR','doubleSided':True,
@@ -184,14 +184,14 @@ def append_oral_parts(g,b,head_xyz):
             dst=[]
             for xx,yy in poly:
                 if kind.endswith('CAVITY'):
-                    x=xx*width;y=.197+yy*height
+                    x=xx*width;y=.232+yy*height
                     # Dark cavity recessed behind separated lip edges.
                     dz=-.0035-.0025*abs(yy)
                 elif kind.endswith('TEETH'):
-                    x=xx*width*.69;y=.197+height*(.51+.12*yy)
+                    x=xx*width*.69;y=.232+height*(.51+.12*yy)
                     dz=.0008
                 else:
-                    x=xx*width*.55;y=.197-height*(.53-.13*yy)
+                    x=xx*width*.55;y=.232-height*(.53-.13*yy)
                     dz=.0012
                 z=surface(x,y)+dz
                 dst.append((x,y,z))
@@ -280,7 +280,7 @@ def split_native_mouth_seal(g,b,head):
     triangles=[indices[i:i+3] for i in range(0,len(indices),3)]
     # Only split the lip-to-lip seam, not the actual upper/lower
     # vermilion ridges or the cheek-adjacent skin.
-    inside=lambda v:(abs(v[0])<.032 and .191<v[1]<.203
+    inside=lambda v:(abs(v[0])<.032 and .2308<v[1]<.2345
                       and v[2]>.115)
     to_split=[i for i,t in enumerate(triangles)
               if all(inside(xyz[k]) for k in t)]
@@ -309,7 +309,7 @@ def split_native_mouth_seal(g,b,head):
         for x,y,z in base:
             dx,dy,dz=deformation(name,x,y,z,'skin')
             taper=(1.-fade(abs(x),.026,.038))*(
-                fade(y,.185,.192)*(1.-fade(y,.203,.209)))
+                fade(y,.227,.231)*(1.-fade(y,.235,.240)))
             result.append((dx,dy,dz-amplitude*taper))
         targets.append({'POSITION':add_float(g,b,result)})
     seal_prim={
@@ -414,6 +414,7 @@ def build(path):
         'jawNeckStationary':True,
         'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue',
         'oralPartsInSkinLocalSpace':True,
+        'mouthCenterLocalY':.232,
         'splitMouthSeal':aperture}
     if 'referenceFeatureSculpt' in meta:
         meta['referenceFeatureSculpt']['facialExpressionAnimations']=True
