@@ -109,7 +109,7 @@ def deformation(name,x,y,z,part):
     if name=='mouthOpen':
         return (0.,.0037*upper-.0120*lower,-.0020*lip)
     if name=='vowelA':
-        return (0.,.0027*upper-.0150*lower,-.0020*lip)
+        return (0.,.0038*upper-.0160*lower,-.0020*lip)
     if name=='vowelI':
         return (sign*.0045*corner,.0015*upper-.0030*lower,-.0008*lip)
     if name=='vowelU':
