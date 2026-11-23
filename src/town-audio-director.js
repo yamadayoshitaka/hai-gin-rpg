@@ -70,7 +70,8 @@ export function createTownAudioDirector({storage=null,onChange=()=>{}}={}){
   tryPlay();
  }
  function effect(kind='select'){
-  if(disposed||!enabled)return;
+  // BGM mute is independent of purchasing / menu sound effects.
+  if(disposed)return;
   const now=Date.now();
   if(now-lastToneAt<35)return;
   lastToneAt=now;
