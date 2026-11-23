@@ -43,13 +43,13 @@ class TestRealExpressionGLB(unittest.TestCase):
     def test_morph_tracks_and_real_positions(self):
         g=self.g
         self.assertEqual(len(self.pos),13455)
-        self.assertEqual(len(g['meshes']),8)
+        self.assertEqual(len(g['meshes']),11)
         self.assertEqual(len(g['animations']),2)
         self.assertEqual([clip['name'] for clip in g['animations']],
                          ['V121_BlinkLoop','V121_ExpressionShowcase'])
         rig=self.skin['extras']['facialExpressionRig']
         self.assertEqual(rig['channels'],NAMES)
-        self.assertEqual(rig['animatedMeshes'],6)
+        self.assertEqual(rig['animatedMeshes'],9)
         self.assertTrue(self.skin['extras']['futureExpressionsImplemented'])
         self.assertFalse(self.skin['extras']['hairIncluded'])
         for i,mesh in enumerate(g['meshes']):
@@ -63,7 +63,7 @@ class TestRealExpressionGLB(unittest.TestCase):
             for target in mesh['primitives'][0]['targets']:
                 self.assertEqual(g['accessors'][target['POSITION']]['count'],n)
         for clip in g['animations']:
-            self.assertEqual(len(clip['channels']),6)
+            self.assertEqual(len(clip['channels']),9)
             self.assertEqual(len(clip['samplers']),1)
             for ch in clip['channels']:
                 self.assertEqual(ch['target']['path'],'weights')
@@ -90,6 +90,36 @@ class TestRealExpressionGLB(unittest.TestCase):
                             for shape in morphs for delta in shape for c in delta))
         self.assertGreater(sum(any(abs(c)>.0001 for c in pt)
                                for pt in morphs[0]),60)
+
+    def test_real_mouth_opening_and_stable_chin(self):
+        g=self.g
+        expected=['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE']
+        self.assertEqual(self.skin['extras']['facialExpressionRig']['oralCavityMeshNames'],expected)
+        for name in expected:
+            mesh=next(m for m in g['meshes'] if m['name']==name)
+            self.assertEqual(len(mesh['primitives'][0]['targets']),11)
+            self.assertTrue(mesh['extras']['v121OralPart'])
+            original=vector(g,self.b,mesh['primitives'][0]['attributes']['POSITION'])
+            def extent(morph):
+                d=vector(g,self.b,mesh['primitives'][0]['targets'][NAMES.index(morph)]['POSITION'])
+                return [(p[0]+v[0],p[1]+v[1],p[2]+v[2]) for p,v in zip(original,d)]
+            a=extent('vowelA')
+            i=extent('vowelI')
+            u=extent('vowelU')
+            mouth=extent('mouthOpen')
+            if name==expected[0]:
+                h=lambda v:max(t[1] for t in v)-min(t[1] for t in v)
+                w=lambda v:max(t[0] for t in v)-min(t[0] for t in v)
+                self.assertGreater(h(a),.030)
+                self.assertGreater(h(mouth),.025)
+                self.assertLess(h(i),.015)
+                self.assertLess(w(u),w(i)*.60)
+                self.assertGreater(min(t[2] for t in a),min(t[2] for t in original)+.010)
+        # Mouth opening must not pull the chin down: vertex region below lip.
+        shape=vector(g,self.b,self.prim['targets'][NAMES.index('vowelA')]['POSITION'])
+        chin=[abs(q[1]) for p,q in zip(self.pos,shape)
+              if p[1]<.160 and abs(p[0])<.075]
+        self.assertLess(max(chin),.0007)
 
     def test_real_brows_closer_to_upper_eye(self):
         brow=next(m for m in self.g['meshes']
