@@ -26,7 +26,7 @@ test('wig swap releases existing meshes, ignores stale requests, and persists se
  assert.match(html,/wigRoot\.userData\.scalpCap\?\.userData\?\.dispose/);
 });
 test('face above nasal base stays isolated and expressions/sliders remain disabled',()=>{
- assert.match(html,/sourceURL=.*lowerlip-chin-v12/);
+ assert.match(html,/sourceURL=.*lips-nose-eyes-v13/);
  assert.doesNotMatch(html,/import .*face-v121-expression-player/);
  assert.doesNotMatch(html,/import .*face-v121-parametric-sliders/);
  assert.doesNotMatch(html,/<div id="v121-tuning"/);
