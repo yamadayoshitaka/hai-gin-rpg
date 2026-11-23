@@ -48,13 +48,21 @@ class ReferenceV14(unittest.TestCase):
         self.assertLess(wing[0],original_nose[0]-.001)
         mouth=sculpt(0.,.240,.15)
         nose_base=sculpt(0.,.267,.15)
-        self.assertGreater(mouth[1]-.240,.001)
+        self.assertGreater(mouth[1]-.240,.003)
+        # Central nose-to-lip spacing must be shorter than the v14
+        # baseline, while the original nasal base stays locked.
         self.assertAlmostEqual(nose_base[1],.267,delta=.0002)
         self.assertLess(nose_base[1]-mouth[1],.027-.001)
         # A defined central groove fades laterally rather than being a line.
         groove=SCULPT['philtrum_relief'](0.,.252,.15)
         sides=SCULPT['philtrum_relief'](.028,.252,.15)
         self.assertLess(groove,sides-.001)
+        # A longitudinal (not oval or painted) groove must remain visible
+        # near both the upper Cupid edge and the underside of the nose.
+        for y in (.243,.268):
+            center=SCULPT['philtrum_relief'](0.,y,.15)
+            outer=SCULPT['philtrum_relief'](.028,y,.15)
+            self.assertLess(center,outer-.0007)
 
     def test_chin_vline_tapers_without_lower_lip_or_neck_distortion(self):
         sculpt=runpy.run_path(str(ROOT / 'scripts/rebuild-v121-mouth-chin.py'))
