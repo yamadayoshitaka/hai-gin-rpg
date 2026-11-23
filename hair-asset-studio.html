@@ -78,7 +78,8 @@ import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
  from './src/independent-hair-library-v1.js?v=3';
 import {buildIndependentHairMesh,measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=4';
 import {attachV121FaceSliders,V121_REFERENCE_PRESET} from './face-v121-parametric-sliders.js';
-import {createV121AnatomicalHairCap} from './src/v121-anatomical-hair-cap.js?v=1';
+import {createV121AnatomicalHairCap} from './src/v121-anatomical-hair-cap.js?v=2';
+import {buildHair01FromScratch} from './src/female-hair-01-resculpt-v2.js?v=1';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
 const pivot=new THREE.Group();scene.add(pivot);
@@ -194,11 +195,12 @@ function updateStats(){
  const model=current;
  if(!model)return;
  const f=model.root.userData.fit,scale=f.scale;
- $('viewerInfo').textContent='髪: '+selected.name+'（実GLB）\n'+
+ $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（完全再構築v2）\n':'（実GLB）\n')+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
-  '\n頭皮下地：'+(current?.cap?.triangles||0)+'面（検査時のみ）'+
+  '\n新造頭頂面：'+(current?.diagnostics?.()?.crownTriangles||0)+'面'+
+   '\n旧頭皮下地：'+(current?.cap?.triangles||0)+'面（他の髪の検査時のみ）'+
   '\n細い立体毛流れ：'+(current?.cap?.fiberTriangles||0)+'面'+
   '\n浮遊した破片の除去：'+(current?.cleanupStats?.removedTriangles||0)+'面'+
   '\n頭皮と交差した毛根を補正：'+(current?.root?.userData?.crownVerticesAdjusted||0)+'頂点';
@@ -220,17 +222,23 @@ async function select(item){
   b.setAttribute('aria-pressed',String(b.dataset.hair===item.id)));
  $('status').textContent=item.name+' の髪メッシュを読込中…';
  try{
-  const gltf=await loader.loadAsync(item.path);
-  if(request!==selection)return;
   if(!faceLoaded)throw Error('実スキンヘッドv121がまだ読み込まれていません');
-  const next=buildIndependentHairMesh(THREE,gltf.scene,
-   {headSize:headSize(),headScalp:targetScalp(headSize()),color:$('color').value});
+  const rebuilt=item.id==='female-hair-01';
+  // Native resculpt: do not read the faulty source GLB for female 01.
+  const gltf=rebuilt?null:await loader.loadAsync(item.path);
+  if(request!==selection)return;
+  const next=rebuilt?buildHair01FromScratch(THREE,scalpSource.skinMesh,{
+   referenceRoot:pivot,headSize:headSize(),
+   headScalp:targetScalp(headSize()),color:$('color').value
+  }):buildIndependentHairMesh(THREE,gltf.scene,{
+   headSize:headSize(),headScalp:targetScalp(headSize()),color:$('color').value
+  });
   const old=current;
-  // The source GLB crown is intact. An overlaying scalp shell creates
-   // a circular disc across its native strands; diagnostics are opt-in.
-   const showCap=$('capToggle').getAttribute('aria-pressed')==='true';
-   next.cap=showCap?createV121AnatomicalHairCap(
-    THREE,scalpSource.skinMesh,{color:$('color').value}):null;
+  $('capToggle').disabled=rebuilt;
+  if(rebuilt)$('capToggle').setAttribute('aria-pressed','false');
+  const showCap=!rebuilt&&$('capToggle').getAttribute('aria-pressed')==='true';
+  next.cap=showCap?createV121AnatomicalHairCap(
+   THREE,scalpSource.skinMesh,{color:$('color').value}):null;
   current=next;pivot.add(next.root);
   old?.cap?.dispose();old?.dispose();
   // A new selection must always open in the intact GLB mode.
@@ -238,10 +246,13 @@ async function select(item){
   next.setExploded(false);next.setSectionColors(false);
   next.deformTips(0,0,{collision:false});
   spring.reset();makePartControls();updateStats();
+  $('source').textContent=rebuilt?'旧GLB（比較用）':'元のGLB';
   $('source').onclick=()=>{window.open(item.path,'_blank','noopener')};
-  $('status').textContent=item.name+'：実v121頭部に装着／浮遊小片'+
-   next.cleanupStats.removedTriangles+'面除去。静止時の接触変形はOFF。'+
-   (sex==='male'?' ※男性髪はv121頭部で仮試着':'');
+  $('status').textContent=rebuilt
+   ?item.name+'：頭頂・前髪・左右・後ろ髪を顔v121から新造。旧GLBのメッシュは不使用。'
+   :item.name+'：実v121頭部に装着／浮遊小片'+
+     next.cleanupStats.removedTriangles+'面除去。静止時の接触変形はOFF。'+
+     (sex==='male'?' ※男性髪はv121頭部で仮試着':'');
  }catch(error){if(request===selection)$('status').textContent='GLB読込エラー：'+error.message;}
 }
 function list(){
@@ -263,6 +274,7 @@ $('color').oninput=()=>{
  current?.setColor($('color').value);current?.cap?.setColor($('color').value);
 };
 $('capToggle').onclick=()=>{
+ if($('capToggle').disabled)return;
  const show=$('capToggle').getAttribute('aria-pressed')!=='true';
  $('capToggle').setAttribute('aria-pressed',String(show));
  $('capToggle').textContent=show?'頭皮下地を非表示（検査用）':'頭皮下地を表示（検査用）';

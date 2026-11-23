@@ -9,6 +9,8 @@ on:
       - 'qa/hair-island-cleanup.test.mjs'
       - 'qa/real-hair-glb-cleanup.test.mjs'
       - 'qa/hair-crown-underlay-v121.test.mjs'
+      - 'src/female-hair-01-resculpt-v2.js'
+      - 'qa/female-hair-01-resculpt-v2.test.mjs'
       - 'data/v121-adjusted-head-audit.json'
       - 'qa/independent-hair-catalog-motion.test.mjs'
       - '.github/workflows/independent-hair-catalog-qa.yml'
@@ -19,6 +21,8 @@ on:
       - 'hair-asset-studio.html'
       - 'src/v121-anatomical-hair-cap.js'
       - 'qa/hair-crown-underlay-v121.test.mjs'
+      - 'src/female-hair-01-resculpt-v2.js'
+      - 'qa/female-hair-01-resculpt-v2.test.mjs'
       - 'qa/independent-hair-catalog-motion.test.mjs'
 jobs:
   verify:
@@ -36,8 +40,10 @@ jobs:
           node --check src/independent-hair-library-v1.js
           node --check src/independent-hair-mesh-v1.js
           node --check src/v121-anatomical-hair-cap.js
+          node --check src/female-hair-01-resculpt-v2.js
           node --check src/hair-island-cleanup-v1.js
           node --test qa/hair-island-cleanup.test.mjs
           node --test qa/real-hair-glb-cleanup.test.mjs
           node --test qa/hair-crown-underlay-v121.test.mjs
+          node --test qa/female-hair-01-resculpt-v2.test.mjs
           node --test qa/independent-hair-catalog-motion.test.mjs
