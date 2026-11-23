@@ -1,0 +1,51 @@
+{
+  "schema": "hai-gin-v121-user-upload-skinhead-audit-v1",
+  "source": "User-uploaded hai-gin-face-v121-adjusted.glb (personal Library), not checked into repository",
+  "sha256": "76a609f1c9fb10b8953c5703bbfd3e5b7682fe136341dfb989de0c992127bb56",
+  "bytes": 2657228,
+  "meshes": 8,
+  "faceVertices": 13455,
+  "nodeCount": 9,
+  "eyebrowNode": "V121_INDIVIDUAL_EYEBROW_FIBERS",
+  "worldBoundsMeters": {
+    "min": [
+      -0.13680267,
+      -0.18509982,
+      -0.12342035
+    ],
+    "max": [
+      0.13680385,
+      0.18579073,
+      0.11671693
+    ]
+  },
+  "faceReferencePreset": {
+    "eyes": {
+      "x": -1,
+      "y": 1,
+      "size": 108
+    },
+    "nose": {
+      "x": 0,
+      "y": 0,
+      "size": 93
+    },
+    "mouth": {
+      "x": 0,
+      "y": 2,
+      "size": 112
+    },
+    "brows": {
+      "x": -1,
+      "y": -3,
+      "size": 105
+    },
+    "philtrum": 8
+  },
+  "notes": [
+    "Bounding volume includes bust/neck and is NOT the cranium fit volume.",
+    "A GLB authored with THREE.GLTFExporter contains a 0.9 scale and translated face nodes.",
+    "Do not import user bytes on GitHub without an explicit binary path. Default studio replays same reference sliders on public v121, while optional file picker uses the exact uploaded file.",
+    "No eyebrow or face mesh is mutated by the hair cap."
+  ]
+}
