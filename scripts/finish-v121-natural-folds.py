@@ -111,10 +111,12 @@ def philtrum_relief(x,y,z):
     """
     if y<.205 or y>.247:
         return 0.
-    vertical=fade(y,.207,.218)*(1.-fade(y,.235,.247))
-    front=fade(z,.101,.141)
-    groove=-.0049*bell(x,0,.0060)*vertical*front
-    columns=.00155*(bell(x,-.0108,.0044)+bell(x,.0108,.0044))*vertical*front
+    vertical=fade(y,.207,.217)*(1.-fade(y,.239,.247))
+    # Prior front gate was nearly zero on much of the actual upper lip,
+    # making the previous .0049 groove disappear in the Android render.
+    front=fade(z,.072,.124)
+    groove=-.0092*bell(x,0,.0072)*vertical*front
+    columns=.00235*(bell(x,-.0112,.0047)+bell(x,.0112,.0047))*vertical*front
     return groove+columns
 
 
@@ -246,6 +248,9 @@ def finish(path):
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
         'centralPhiltrumStart':[0.,.241],
+        'philtrumGrooveMasterDepth':.0092,
+        'philtrumColumnsRelief':.00235,
+        'parametricDepthControlSupported':True,
         'centralPhiltrumEnd':[0.,.209],
         'philtrumVertexIds':philtrum_ids,
         'lateralDimpleCorrectionVertexIds':dimple_filled_ids,
