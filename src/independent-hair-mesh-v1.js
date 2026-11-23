@@ -3,6 +3,7 @@
  * Normal render never uses per-triangle zone splitting. No face/eyebrow edits.
  * The optional breakdown is a separate inspection-only visualization.
  */
+import {cleanDetachedHairGeometry} from './hair-island-cleanup-v1.js';
 import {
  independentHairFitFromRoot,bodyCollisionProxies,resolveHairBodyContact,
  classifyHairTriangle
@@ -119,12 +120,17 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   const group=new THREE.Group();group.name='inspection-'+id;
   breakdownRoot.add(group);zones.set(id,group);
  }
+ let removedTriangles=0,removedComponents=0;
  const originals=[];
  scene.traverse(source=>{
   if(!source.isMesh||!source.geometry?.getAttribute('position'))return;
   // Keep every original triangle and material group in normal rendering.
   const geometry=source.geometry.clone();
   geometry.applyMatrix4(source.matrixWorld);
+  const cleaned=cleanDetachedHairGeometry(geometry);
+  removedTriangles+=cleaned.removedTriangles;
+  removedComponents+=cleaned.removedComponents;
+  if(!cleaned.keptTriangles){geometry.dispose();return;}
   const material=cloneMaterials(THREE,source.material,color);
   const mesh=new THREE.Mesh(geometry,material);
   mesh.name='intact-hair-'+(source.name||'mesh');
@@ -233,6 +239,7 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
    attr.needsUpdate=true;
   }
   root.userData.contactVertices=lastContacts;
+ root.userData.detachedFragmentsRemoved=removedTriangles;
   return lastContacts;
  };
  const dispose=()=>{
@@ -246,9 +253,11 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
  fitToHead(size,scalp);
  return {
   root,assetBox:hairBox,rootBandBox:rootBox,sectionCounts:counts,
+  cleanupStats:{removedTriangles,removedComponents},
   fitToHead,setColor,setSectionColors,setExploded,setSectionVisible,
   deformTips,dispose,
   diagnostics:()=>({normalIntact:normalRoot.visible,contacts:lastContacts,
-   rootBand:rootBox,headFit:root.userData.fit,color:colorValue})
+   rootBand:rootBox,headFit:root.userData.fit,color:colorValue,
+   removedTriangles,removedComponents})
  };
 }
