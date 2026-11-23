@@ -172,7 +172,7 @@ export function createV121AnatomicalHairCap(THREE,skinFace,{color='#c5a36f'}={})
   polygonOffsetUnits:-1
  });
  const fibers=buildCrownFiberRibbons(THREE,geom,box,color);
-  const overlay=new THREE.Mesh(geom,material);
+ const overlay=new THREE.Mesh(geom,material);
  overlay.name='independent-hair-cap-from-real-v121-skin';
  overlay.castShadow=true;
  overlay.receiveShadow=true;
@@ -184,6 +184,12 @@ export function createV121AnatomicalHairCap(THREE,skinFace,{color='#c5a36f'}={})
   fiberTriangles:fibers?.geometry.getIndex().count/3||0,
   setColor(value){material.color.set(value);
    fibers?.material.color.set(value);},
-  dispose(){overlay.removeFromParent();geom.dispose();material.dispose();}
+  dispose(){
+   overlay.removeFromParent();geom.dispose();material.dispose();
+   if(fibers){
+    fibers.removeFromParent();
+    fibers.geometry.dispose();fibers.material.dispose();
+   }
+  }
  };
 }
