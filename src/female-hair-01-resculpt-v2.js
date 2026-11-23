@@ -9,6 +9,18 @@ const ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 const rand=n=>{const x=Math.sin(n*129.3387+78.233)*43758.5453;return x-Math.floor(x);};
 const DEBUG={crown:0xdcc5a0,fringe:0xe4c5a1,left:0xe3a5a5,right:0xe3a5a5,back:0xb9cde8};
 const PARTS=['crown','fringe','left','right','back'];
+
+/** Brow-clear fringe target in real v121 head-local metres. */
+export function female01FringeEndY(h,index){
+ return h.height*(.5-.19-.02*rand(index*23+3));
+}
+/** Opaque crown boundary stays above eyes; rear remains covered. */
+export function female01HairlineY(h,x,z){
+ const front=clamp(z/(h.depth*.5),0,1),back=clamp(-z/(h.depth*.5),0,1);
+ const temple=clamp(Math.abs(x)/(h.width*.5),0,1);
+ return h.height*.5-h.height*(.36-.16*front+.17*back+.035*temple*(1-front));
+}
+
 const EXPLODE={crown:[0,.065,0],fringe:[0,0,.07],left:[-.08,0,0],right:[.08,0,0],back:[0,-.018,-.08]};
 function headRoof(geometry,top,width,depth){
  const pos=geometry.getAttribute('position'),cell=.009,grid=new Map();
@@ -107,7 +119,7 @@ function frontLocks(h,roof){
   // Brow ridge on the v121 portrait sits much lower than the nominal top.
   // Previous .37-.412 of head height placed the fringe below the eyelashes.
   // Finish well above the brow/eyelid plane, with small irregular tips.
-  const endY=top-y*(.19+.02*rand(i*23+3));
+  const endY=female01FringeEndY(h,i);
   const p=path(13,t=>{
    const x=x0+.0036*Math.sin(i*.9)*t,z=d*(.28+.30*ease(t));
    const startY=Math.max(endY+.035,roof(x,d*.28)+.009);
@@ -165,7 +177,7 @@ function crownShell(THREE,skin,referenceRoot,h){
   // and even a short fringe could not reveal the eyes behind the solid cap.
   // Frontal hairline now stops above the brows; temples/rear retain coverage.
   const temple=clamp(Math.abs(x)/(h.width*.5),0,1);
-  const cut=top-h.height*(.36-.16*front+.17*back+.035*temple*(1-front));
+  const cut=female01HairlineY(h,x,z);
   return y>=cut&&Math.abs(x)<h.width*.67&&Math.abs(z)<h.depth*.65;
  };
  const originalIndex=geometry.getIndex(),n=Math.floor((originalIndex?.count||p.count)/3),kept=[];
