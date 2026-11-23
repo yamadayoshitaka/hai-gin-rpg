@@ -110,8 +110,10 @@ def sculpt(p):
     # Retract the frontmost menton and shorten its lower outline together.
     # A feathered jaw-to-submental bridge prevents a shelf above the neck;
     # the masks are absent at the vermilion and at the cervical base.
+    # Preserve lower cheek fullness: the chin fairing fades away before
+    # lateral jaw/cheek x >= .085, otherwise the contour looks hollow.
     chin_profile=(gauss(y,.184,.028)*gauss(ax,.040,.050)*front*
-                  (1.-smooth(y,.211,.223)))
+                  (1.-smooth(y,.211,.223))*(1.-smooth(ax,.053,.085)))
     submental=(gauss(y,.153,.030)*gauss(ax,.065,.057)*side*
                 smooth(y,.090,.131))
     ny=y+.0055*chin+.0008*submental+.0006*jaw-.00045*frontal+.0006*under_eye
