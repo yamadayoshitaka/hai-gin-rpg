@@ -188,10 +188,17 @@ export function buildHair01FromScratch(THREE,skin,{referenceRoot,headSize,headSc
  const shell=new THREE.Mesh(crown.geometry,scalpMaterial);
  shell.name='actual-v121-head-conformal-continuous-hair-crown';
  shell.castShadow=true;shell.receiveShadow=true;root.add(shell);
- // Use the highest actual scalp vertex, not a fixed ellipsoid top.
- const roof=headRoof(crown.geometry,crown.geometry.boundingBox.max.y,size.width,size.depth);
- const plan={crown:topLocks(size,roof),fringe:frontLocks(size,roof),
-  left:sideLocks(size,roof,-1),right:sideLocks(size,roof,1),back:backLocks(size,roof)};
+ // Percentile head-size controls under-report lateral extents on v121.
+ // Sample the actual covered scalp box for every lock root; otherwise side
+ // hair can start buried inside the cheeks while only its tips protrude.
+ const bbox=crown.geometry.boundingBox;
+ const sculptureSize={...size,
+  width:Math.max(size.width,bbox.max.x-bbox.min.x),
+  depth:Math.max(size.depth,bbox.max.z-bbox.min.z)};
+ const roof=headRoof(crown.geometry,bbox.max.y,sculptureSize.width,sculptureSize.depth);
+ const plan={crown:topLocks(sculptureSize,roof),fringe:frontLocks(sculptureSize,roof),
+  left:sideLocks(sculptureSize,roof,-1),right:sideLocks(sculptureSize,roof,1),
+  back:backLocks(sculptureSize,roof)};
  const zones=new Map(),owned=[crown.geometry],materials=[scalpMaterial];
  const counts={crown:crown.triangles,fringe:0,left:0,right:0,back:0};
  for(const part of PARTS){
