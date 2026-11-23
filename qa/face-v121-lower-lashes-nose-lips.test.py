@@ -88,18 +88,61 @@ class ReferenceFeatureTests(unittest.TestCase):
                   if m['name']=='V121_FINE_LOWER_EYELASHES')
         prim=lash['primitives'][0]
         vertices=get(g,b,prim['attributes']['POSITION'])
-        self.assertEqual(len(vertices),352)
+        count=44
+        rings=7
+        radial_sides=6
+        hair_vertices=count*rings*radial_sides
+        self.assertEqual(len(vertices),hair_vertices+132,
+                         'Each eye adds 33 two-sided lid rim ribbon points')
+        self.assertTrue(meta['upperLashCcurl'])
+        self.assertTrue(meta['lowerLashDownwardCurl'])
+        self.assertTrue(meta['lowerLidWaterline'])
+        self.assertEqual(meta['curvedLashGeometry'],
+                         'seven_segment_elliptical_3d_tapered_C_curl')
+        def center(start):
+            ring=vertices[start:start+6]
+            return tuple(sum(p[j] for p in ring)/len(ring) for j in range(3))
         max_gap=0.
-        for i in range(0,len(vertices),8):
-            a,c=vertices[i:i+2]
-            root=((a[0]+c[0])*.5,(a[1]+c[1])*.5,(a[2]+c[2])*.5)
-            tip=vertices[i+6]
-            self.assertLess(tip[1],root[1]-.0013)
+        for i in range(0,hair_vertices,42):
+            root=center(i)
+            first=center(i+6)
+            mid=center(i+18)
+            tip=center(i+36)
+            self.assertLess(tip[1],root[1]-.003,
+                            'Lower eyelash tips must visibly descend')
+            self.assertGreater(mid[2],root[2]+.0012,
+                               'Curl must rise out from skin before dropping')
+            self.assertGreater(first[2],root[2]+.0004)
             self.assertTrue(.298<root[1]<.312)
             nearest=min(math.dist(root,p) for p in boundary)
             max_gap=max(max_gap,nearest)
             self.assertLess(nearest,.0055)
-        print('Lower lash maximum root-to-lid-boundary distance:',round(max_gap,6))
+        normals=get(g,b,prim['attributes']['NORMAL'])
+        self.assertEqual(len(normals),len(vertices))
+        self.assertTrue(any(abs(n[0])>.35 for n in normals[:hair_vertices]),
+                        'Lower lashes must have real 3D tube normals')
+        print('C-curved lower lash maximum root-to-lid-boundary distance:',
+              round(max_gap,6))
+
+    def test_upper_lashes_have_real_forward_then_upward_curl(self):
+        g,b=self.g,self.b
+        part=next(m for m in g['meshes'] if m['name']=='V121_TAPERED_UPPER_EYELASHES')
+        prim=part['primitives'][0]
+        points=get(g,b,prim['attributes']['POSITION'])
+        self.assertEqual(len(points),82*42)
+        def center(i):
+            return tuple(sum(v[k] for v in points[i:i+6])/6 for k in range(3))
+        for i in range(0,len(points),42):
+            root,first,mid,tip=(center(i),center(i+6),center(i+18),center(i+36))
+            self.assertGreater(tip[1],root[1]+.006,
+                               'Upper lash must have a visible upward curl')
+            self.assertGreater(mid[2],root[2]+.003,
+                               'Upper lash must project out from eyelid')
+            self.assertGreater(first[2],root[2]+.0006)
+            self.assertGreater(tip[2],root[2]+.004)
+        normal=get(g,b,prim['attributes']['NORMAL'])
+        self.assertTrue(any(abs(v[1])>.3 for v in normal),
+                        'Upper eyelash tubes must have actual tangent-based normals')
 
 if __name__=='__main__':
     unittest.main()
