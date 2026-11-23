@@ -59,8 +59,10 @@ function transformPoint(x,y,z,state,kind){
     apply(n,weight,0,.251,false);
   }
   if(kind==='mouth' || kind==='skin'){
+    // A mouth-size slider must not scale the jaw or pull the chin down:
+    // the mouth mask is confined to the lips and fades before the menton.
     const weight=kind==='mouth'?1:
-      bell(x,0,.054)*bell(y,.198,.030)*front;
+      (y>=.168?bell(x,0,.049)*bell(y,.198,.017)*front:0);
     apply(m,weight,0,.198,false);
   }
   if(kind==='skin'){
