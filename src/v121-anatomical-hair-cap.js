@@ -25,6 +25,17 @@ function makeRootTexture(THREE){
  strandTexture.wrapS=strandTexture.wrapT=THREE.RepeatWrapping;
  return strandTexture;
 }
+/** Head-local mask, exported to regression-test the eyebrow clearance. */
+export function scalpHairlineIncludesLocal(x,y,z,box){
+ const crownY=box.max.y,spanY=box.max.y-box.min.y;
+ const centerZ=(box.min.z+box.max.z)*.5;
+ const xHalf=(box.max.x-box.min.x)*.5;
+ const forwardDepth=Math.max(.035,box.max.z-centerZ);
+ const front=clamp((z-(centerZ+forwardDepth*.18))/(forwardDepth*.42),0,1);
+ const side=clamp((Math.abs(x)/(xHalf||1)-.52)*2.7,0,1);
+ const cut=crownY-spanY*(.39-.20*front-.075*side*(1-front));
+ return y>=cut;
+}
 export function createV121AnatomicalHairCap(THREE,skinFace,{color='#c5a36f'}={}){
  if(!skinFace?.isMesh)throw Error('髪下地を取る実スキンヘッドがありません');
  const source=skinFace.geometry;
@@ -33,21 +44,13 @@ export function createV121AnatomicalHairCap(THREE,skinFace,{color='#c5a36f'}={})
  source.computeBoundingBox();
  const box=source.boundingBox;
  const crownY=box.max.y,spanY=box.max.y-box.min.y;
- const centerZ=(box.min.z+box.max.z)*.5;
- const xHalf=(box.max.x-box.min.x)*.5;
  // The exported v121 scalp also includes face, neck and shoulders.
  // Select scalp using the actual anatomical vertex positions, NOT the full
  // object's bounding box as a fake spherical shell.
  const kept=[];
  const index=source.getIndex(),count=Math.floor((index?.count||pos.count)/3);
- const onScalp=i=>{
-  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
-  const front=clamp((z-centerZ)/(Math.max(.035,box.max.z-centerZ)),0,1);
-  const side=clamp((Math.abs(x)/(xHalf||1)-.52)*2.7,0,1);
-  // Hairline stays above brows: forward scalp ends higher than rear nape.
-  const cut=crownY-spanY*(.39-.20*front-.075*side*(1-front));
-  return y>=cut;
- };
+ const onScalp=i=>scalpHairlineIncludesLocal(
+  pos.getX(i),pos.getY(i),pos.getZ(i),box);
  for(let t=0;t<count;t++){
   const a=index?index.getX(t*3):t*3;
   const b=index?index.getX(t*3+1):t*3+1;

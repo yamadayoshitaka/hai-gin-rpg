@@ -136,3 +136,15 @@ test('actual scalp underlay derives from skin triangles and never changes source
  assert.match(viewer,/current\?\.cap\?\.setColor/);
  assert.match(viewer,/neutral-face-v121\.glb/);
 });
+
+test('uploaded v121 eyebrow fibers are kept outside the derived scalp cap',async()=>{
+ const {scalpHairlineIncludesLocal}=await import('../src/v121-anatomical-hair-cap.js');
+ // Exactly measured user GLB local face mesh bounds (before 0.9 node transform).
+ const faceBox={min:{x:-.15187104,y:.02417238,z:-.11054239},
+  max:{x:.15213621,y:.43627301,z:.15627682}};
+ assert.equal(scalpHairlineIncludesLocal(.04,.350,.12,faceBox),false,
+  'Face eyebrow strands may not be painted with crown hair');
+ assert.equal(scalpHairlineIncludesLocal(-.04,.356,.13,faceBox),false);
+ assert.equal(scalpHairlineIncludesLocal(0,.420,.04,faceBox),true);
+ assert.equal(scalpHairlineIncludesLocal(.02,.315,-.04,faceBox),true);
+});
