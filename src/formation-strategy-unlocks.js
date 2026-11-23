@@ -21,6 +21,7 @@ const UNLOCKS=Object.freeze({
  wall:['block_advance'],
  spear:['block_advance','melee_split'],
  arrow:['ranged_split'],
+ highground:['ranged_split','block_advance'],
  wedge:['melee_split'],
  pincer:['melee_split','ranged_split'],
  circle:['regroup','boost_speed'],
