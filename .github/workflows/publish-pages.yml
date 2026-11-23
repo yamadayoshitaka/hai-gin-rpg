@@ -27,6 +27,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
+      - name: Confirm face-release validation matches face editor version
+        run: node --test qa/pages-face-release-contract.test.mjs
       - name: Verify mobile squad commands, training formations, forge, hires and critical ally deaths
         run: |
           node --test qa/mobile-formation-command-items.test.mjs qa/inn-roster-first-formation.test.mjs
@@ -403,7 +405,7 @@ jobs:
           echo '::error::Deployed Pages did not serve the current maintenance center/PR preview for this SHA.'
           exit 1
 
-      - name: Confirm v117 newly sculpted donor-indexed face is public alongside v116 gestures
+      - name: Confirm v119 dual-gender face is public alongside v116 gestures and v117 baseline
         if: steps.latest.outputs.publish == 'true'
         shell: bash
         run: |
@@ -416,6 +418,7 @@ jobs:
             v107="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-v107-natural-smile.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
             initial_v110="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-initial-preview-v110.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
             v117_sculpt="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-v117-reference-portrait-mesh.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
+            v119_sculpt="https://yamadayoshitaka.github.io/hai-gin-rpg/src/face-v119-portrait-contours.js?face_verify=${GITHUB_SHA:0:12}-${attempt}"
             html_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-studio.html -w '%{http_code}' "${url}" || true)
             js_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-expression.js -w '%{http_code}' "${js}" || true)
             topology_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-topology.js -w '%{http_code}' "${topology}" || true)
@@ -423,10 +426,15 @@ jobs:
             v107_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-v107.js -w '%{http_code}' "${v107}" || true)
             initial_v110_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-v110-initial.js -w '%{http_code}' "${initial_v110}" || true)
             v117_sculpt_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-v117-sculpt.js -w '%{http_code}' "${v117_sculpt}" || true)
-            if [[ "${html_code}" == 200 && "${js_code}" == 200 && "${topology_code}" == 200 && "${local_retopo_code}" == 200 && "${v107_code}" == 200 && "${initial_v110_code}" == 200 && "${v117_sculpt_code}" == 200 ]] &&
+            v119_sculpt_code=$(curl -sSL --connect-timeout 8 --max-time 18 -H 'Cache-Control: no-cache' -o /tmp/public-face-v119-sculpt.js -w '%{http_code}' "${v119_sculpt}" || true)
+            if [[ "${html_code}" == 200 && "${js_code}" == 200 && "${topology_code}" == 200 && "${local_retopo_code}" == 200 && "${v107_code}" == 200 && "${initial_v110_code}" == 200 && "${v117_sculpt_code}" == 200 && "${v119_sculpt_code}" == 200 ]] &&
                grep -Fq "name=\"hai-gin-pages-sha\" content=\"${GITHUB_SHA}\"" /tmp/public-face-studio.html &&
-               grep -Fq '顔品質 v117' /tmp/public-face-studio.html &&
-               grep -Fq 'v117-portrait-mesh' /tmp/public-face-studio.html &&
+               grep -Fq '顔品質 v119' /tmp/public-face-studio.html &&
+               grep -Fq 'v119-portrait-contours' /tmp/public-face-studio.html &&
+               grep -Fq 'portraitV119' /tmp/public-face-studio.html &&
+               grep -Fq 'enableV119PortraitContours:portraitV119' /tmp/public-face-studio.html &&
+               grep -Fq 'sculptV119PortraitContours' /tmp/public-face-v119-sculpt.js &&
+               grep -Fq "['female','male'].includes(gender)" /tmp/public-face-v119-sculpt.js &&
                grep -Fq 'referencePortraitV117' /tmp/public-face-studio.html &&
                grep -Fq 'enableV117ReferencePortrait:referencePortraitV117' /tmp/public-face-studio.html &&
                grep -Fq 'sculptV117ReferencePortrait' /tmp/public-face-v117-sculpt.js &&
@@ -437,7 +445,7 @@ jobs:
                grep -Fq 'refineV106CheekMouthTopology' /tmp/public-face-v106-retopo.js &&
                grep -Fq 'v110DensityProfile' /tmp/public-face-v106-retopo.js &&
                grep -Fq 'v111CheekSurface' /tmp/public-face-v106-retopo.js &&
-               grep -Fq "dataset.faceMeshReady='v117'" /tmp/public-face-studio.html &&
+               grep -Fq "dataset.faceMeshReady='v119'" /tmp/public-face-studio.html &&
                grep -Fq 'experimentalCheekRetopo' /tmp/public-face-studio.html &&
                grep -Fq "enableV106LocalRetopo:g==='female'&&experimentalCheekRetopo" /tmp/public-face-studio.html &&
                grep -Fq 'v113NativeNormalGeometry' /tmp/public-face-studio.html &&
@@ -459,11 +467,11 @@ jobs:
                grep -Fq '品質・生成ログを表示' /tmp/public-face-studio.html &&
                grep -Fq 'v107NeutralCheekDepth' /tmp/public-face-v107.js &&
                grep -Fq 'v107BuildSignature' /tmp/public-face-expression.js; then
-              echo "PASS: public v117 donor-indexed portrait, v116 controls, v115 eye rig (${GITHUB_SHA})"
+              echo "PASS: public v119 dual-gender portrait and v117 baseline, v116 controls, v115 eye rig (${GITHUB_SHA})"
               exit 0
             fi
-            echo "::warning::Face v117 not public: HTML ${html_code} JS ${js_code} topology ${topology_code} local retopo ${local_retopo_code} (attempt ${attempt}/18)"
+            echo "::warning::Face v119 verification failed: HTML ${html_code} JS ${js_code} topology ${topology_code} retopo ${local_retopo_code} v119 ${v119_sculpt_code} (attempt ${attempt}/18)"
             sleep 5
           done
-          echo '::error::Pages still serves stale face HTML or facial animation JS; PR merge alone is not a successful release'
+          echo '::error::Pages did not pass v119 face release verification. Check current HTML version, JS modules and Pages source SHA.'
           exit 1
