@@ -125,7 +125,7 @@ def new_jaw_geometry(points,uv):
         'faceUVAndVertexIDsRetained':True,
     }
 
-def replacement_triangulation(uv,faces):
+def replacement_triangulation(uv,faces,xyz):
     """Remove every original chin patch triangle and re-mesh the whole disk.
 
     This is not the old 'local edge flip' retopology. Ear-clip the exposed
@@ -226,6 +226,33 @@ def replacement_triangulation(uv,faces):
             consumed.update((ti,tj));changed+=1
         flips+=changed
         if changed==0:break
+    # UV-based remeshing can join distant points around a chin fold.
+    # Replace those long diagonals with truly local XYZ edges, keeping the
+    # perimeter welded and never moving the original skin vertex IDs.
+    metric_flips=0
+    for _ in range(35):
+        adjacency=collections.defaultdict(list)
+        for i,(a,b,c) in enumerate(new):
+            for x,y,z in ((a,b,c),(b,c,a),(c,a,b)):
+                adjacency[tuple(sorted((x,y)))].append((i,x,y,z))
+        consumed=set();changed=0
+        for entries in adjacency.values():
+            if len(entries)!=2:continue
+            (ti,a,b,c),(tj,bb,aa,d)=entries
+            if ti in consumed or tj in consumed or a!=aa or b!=bb:continue
+            if min(direction*area(uv[c],uv[d],uv[b]),
+                   direction*area(uv[d],uv[c],uv[a]))<1e-10:continue
+            if math.dist(xyz[c],xyz[d])>=math.dist(xyz[a],xyz[b])*.999:
+                continue
+            new[ti]=(c,d,b)
+            new[tj]=(d,c,a)
+            consumed.update((ti,tj));changed+=1
+        metric_flips+=changed
+        if changed==0:break
+    longest=max(math.dist(xyz[a],xyz[b])
+                for a,b,c in new for a,b in ((a,b),(b,c),(c,a)))
+    if longest>.023:
+        raise ValueError('New chin has stretched 3D triangles: '+str(longest))
     if min(abs(area(uv[a],uv[b],uv[c])) for a,b,c in new)<1e-11:
         raise ValueError('New jaw still has degenerate UV faces')
     oldset={tuple(sorted(f)) for f in old}
@@ -249,6 +276,8 @@ def replacement_triangulation(uv,faces):
         'patchBoundaryVertices':len(ring),
         'uvPatchInteriorVertices':len(interior),
         'newDelaunayOptimizingFlips':flips,
+        'newXYZEdgeOptimizingFlips':metric_flips,
+        'maximumNewJawEdgeLengthMeters':round(longest,6),
         'oldPatchFacesDiscarded':True,
         'entireJawPatchRetringulatedFromUV':True,
         'singleContinuousBoundary':True,
@@ -282,7 +311,7 @@ def rebuild(path):
         raise ValueError('Unexpected v121 facial source topology')
     old=[tuple(indices[j:j+3]) for j in range(0,len(indices),3)]
     xyz,shape=new_jaw_geometry(pts,uv)
-    faces,replacement=replacement_triangulation(uv,old)
+    faces,replacement=replacement_triangulation(uv,old,xyz)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
