@@ -64,13 +64,18 @@ export function formationSignatureWaypoints(formation,center,enemy,roleIndex){
 /** One 320×138 looping schematic, not an unrelated illustration.
  * Uses the same phase arrays that the battle controller uses.
  */
-export function renderFormationSignaturePreview(formation,{labels=['前衛','中衛','後衛']}={}){
+export function renderFormationSignaturePreview(formation,{labels=['前衛','中衛','後衛'],activeSlots=[0,1,2]}={}){
  const rule=signatureStrategyFor(formation);if(!rule)return '';
  const esc=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
  const frame=(v,index)=>[38+v[0]*8.2,69+v[1]*3.6+(index===1?0:0)];
  const start=[[0,-7],[0,0],[0,7]];
  const paths=rule.phases;
- const squads=start.map((origin,i)=>{
+ // Restrict the illustrated allies to actually assigned slots. An empty third
+ // roster slot must never be animated as a phantom third job.
+ const occupied=[...new Set((Array.isArray(activeSlots)?activeSlots:[0,1,2])
+  .map(Number).filter(i=>Number.isInteger(i)&&i>=0&&i<3))].sort((a,b)=>a-b);
+ const squads=occupied.map(i=>{
+  const origin=start[i];
   const points=[origin,paths[0][i],paths[1][i]].map(v=>frame(v,i));
   const values=points.map(p=>p.join(' ')).join(';')+';'+points[2].join(' ')+';'+points[0].join(' ');
   const strokes=['#65d6ff','#8df1bd','#ffe29b'];
@@ -81,17 +86,17 @@ export function renderFormationSignaturePreview(formation,{labels=['前衛','中
    ' values="'+values+'" keyTimes="0;0.28;0.57;0.82;1"/>'+
    '</g>';
  }).join('');
- const trace=paths[1].map((v,i)=>{const p=frame(v,i);return '<path d="M'+(38)+' '+(69+(i-1)*25)+' L'+p[0]+' '+p[1]+'" fill="none" stroke="#b2dcea" stroke-width="1.4" stroke-dasharray="4 5" opacity=".6"/>'}).join('');
+ const trace=occupied.map(i=>{const p=frame(paths[1][i],i);return '<path d="M'+(38)+' '+(69+start[i][1]*3.6)+' L'+p[0]+' '+p[1]+'" fill="none" stroke="#b2dcea" stroke-width="1.4" stroke-dasharray="4 5" opacity=".6"/>'}).join('');
  return '<div class="signaturePreview" role="img" aria-label="'+esc(rule.name+'：'+rule.steps.join('、'))+'">'+
   '<svg viewBox="0 0 320 138" preserveAspectRatio="xMidYMid meet" aria-hidden="true">'+
   '<rect width="320" height="138" rx="10" fill="#102c39"/>'+
   '<rect x="12" y="11" width="190" height="115" rx="8" fill="#14556c" opacity=".20"/>'+
   '<rect x="215" y="11" width="92" height="115" rx="8" fill="#7f2b3a" opacity=".20"/>'+
   '<path d="M210 12 V125" stroke="#f3dbab" stroke-dasharray="4 5" opacity=".55"/>'+
-  '<text x="15" y="17" fill="#a7eafd" font-size="9">味方</text>'+
+  '<text x="15" y="17" fill="#a7eafd" font-size="9">味方 '+occupied.length+'ジョブ</text>'+
   '<text x="226" y="17" fill="#ffd0d0" font-size="9">敵陣</text>'+
   trace+
   '<g fill="#ee6773" stroke="#ffc4ce" stroke-width="1.3"><circle cx="267" cy="40" r="10"/><circle cx="278" cy="69" r="10"/><circle cx="267" cy="98" r="10"/></g>'+
   squads+'</svg>'+
-  '<div class="signaturePhaseCaptions"><span>① '+esc(rule.steps[0])+'</span><span>② '+esc(rule.steps[1])+'</span><span>③ '+esc(rule.steps[2])+'</span></div></div>';
+  '<div class="signaturePhaseCaptions" aria-label="動作の3段階（ジョブ数とは別）"><span>① '+esc(rule.steps[0])+'</span><span>② '+esc(rule.steps[1])+'</span><span>③ '+esc(rule.steps[2])+'</span></div></div>';
 }
