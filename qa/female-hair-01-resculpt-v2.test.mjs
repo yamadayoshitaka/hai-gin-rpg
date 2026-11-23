@@ -130,6 +130,6 @@ test('female 01 eye and eyebrow clearance uses safe forehead cut and short tips'
  assert.match(studio,/id="hairVersion"/);
  assert.match(studio,/配信コミット/);
  assert.match(studio,/sculptHairFromHead/);
- assert.match(studio,/head-derived-hair-sculpt-v6\.js\?v=6/);
+ assert.match(studio,/head-derived-hair-sculpt-v7\.js\?v=7/);
  assert.doesNotMatch(studio,/通常表示は元GLBの連続した髪/);
 });
