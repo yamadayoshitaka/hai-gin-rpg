@@ -105,10 +105,9 @@ def reconstruct_jaw(points, vertex_normals):
             controls[6][1]<lip_front-.015):
         raise ValueError('Missing real chin / labiomental transition')
 
-    # Rebuild the WHOLE transition continuously. v4 selected an outer
-    # sheet with a hard front/back flag and tore the chin-neck triangles.
-    # Every native vertex in the overlapping mandibular volume now receives
-    # a differentiable blend, including the lower return surface.
+    # The chin's visible outer sheet is reconstructed. The true under-jaw
+    # and cervical return surface stays physically attached and does NOT
+    # get pulled forward to the chin; v5 inflated it into a second jaw.
     xyz=[]
     count=0
     chin_count=0
@@ -120,13 +119,13 @@ def reconstruct_jaw(points, vertex_normals):
             xyz.append((x,y,z))
             continue
         target=chin_cross_section(y,ax,controls)
-        # No binary front/back classification; the entire stitched surface
-        # follows one C1 blend at the mouth, upper neck and jaw/cheek edge.
-        # This prevents 5cm discontinuities along neighboring triangles.
+        # No discrete topology/surface classifier. The differentiable front
+        # mask fades completely before the anatomical underjaw/throat,
+        # preventing both a split mesh and a forward-swollen second jaw.
         mask=((1.-fade(y,.208,.230))*
               (1.-fade(ax,.048,.091))*
-              fade(z,-.040,.082)*
-              fade(y,.095,.153))
+              fade(z,.048,.103)*
+              fade(y,.144,.183))
         zz=z+(target-z)*mask
         yy=y-.0014*math.exp(-.5*((y-.168)/.020)**2)*math.exp(
             -.5*(ax/.047)**2)*mask
@@ -158,7 +157,7 @@ def reconstruct_jaw(points, vertex_normals):
         raise ValueError('Anatomical remesh region invalid: '+
                          str((count,chin_count,jaw_count,max_shift)))
     return xyz,{
-        'version':'female-v121-unified-anatomical-jaw-surface-v5',
+        'version':'female-v121-anchored-anatomical-jaw-surface-v6',
         'method':'new-anatomical-sagittal-and-elliptical-cross-section-mesh',
         'referenceSource':'front-and-true-side-bald-female-drawing',
         'sourceOldChinDepthNotReused':True,
@@ -175,7 +174,7 @@ def reconstruct_jaw(points, vertex_normals):
         'actualMentonRelief3D':True,
         'hasLabiomentalSulcus':True,
         'frontalJawRoundnessByEllipse':True,
-        'underchinSheetContinuouslyBlended':True,
+        'underchinSurfaceProtected':True,
         'neckSeamPreserved':True,
         'vermilionBoundaryPreserved':True,
         'sideProfileMeasured':True,
