@@ -5,12 +5,12 @@
 import {
  ensureSortiePlan,sortieTeams,sortieTeamCount,sortiePlanningLimit,sortieLevel,setSortieFormation,
  SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS
-} from './three-team-sortie.js';
+} from './three-team-sortie.js?v=formation-job-20261123';
 import {
  FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES,formationTemplate,
  formationRarityCounts,rarityOf
 } from './sortie-formation-template-rules.js';
-import {matchFormationRoleJobs} from './sortie-formation-logic.js';
+import {matchFormationRoleJobs} from './sortie-formation-logic.js?v=formation-job-20261123';
 
 const rank={N:0,R:1,SR:2,SSR:3,UR:4};
 const freeCells=[5,6,9];
