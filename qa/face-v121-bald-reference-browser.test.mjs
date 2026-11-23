@@ -63,6 +63,9 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
    assert.ok(gltf.meshes.some(m=>m.name===part),part+' must be actual GLB mesh');
   }
   assert.equal(gltf.meshes[0].extras.eyeConstruction.irisAndPupilSeparateMeshes,false);
+  assert.equal(gltf.meshes[0].extras.naturalFoldCleanup.removedLegacyBrowLidBand,true);
+  assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialLeftVertexIds.length>10);
+  assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialRightVertexIds.length>10);
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
   assert.equal(gltf.materials[0].name,'V121_ANATOMICAL_SKIN_PBR_2048');
   assert.ok(gltf.meshes[0].extras.futureRigZones.mouth.length>10);
