@@ -144,8 +144,50 @@ class TestRealExpressionGLB(unittest.TestCase):
         self.assertGreater(max(upper),.002)
         self.assertLess(min(lower),-.006)
         self.assertTrue(self.skin['extras']['facialExpressionRig']['skinMouthCenterInwardOnOpening'])
-        self.assertIn('recessed_oral_well',
+        self.assertIn('real_aperture',
                       self.skin['extras']['facialExpressionRig']['mouthShapeVersion'])
+
+    def test_real_mouth_aperture_and_sagittal_chin_clearance(self):
+        profile=self.skin['extras']['sagittalChinProfile']
+        self.assertEqual(profile['version'],'female-v121-sagittal-guard-20261123')
+        self.assertLessEqual(profile['chinAfterZ'],
+                             profile['lipFrontZ']-.0164)
+        self.assertLessEqual(profile['chinAfterZ'],profile['chinBeforeZ'])
+        lip=[z for x,y,z in self.pos
+             if abs(x)<.026 and .179<y<.215 and z>.105]
+        chin=[z for x,y,z in self.pos
+              if abs(x)<.032 and .118<y<.153 and z>.080]
+        self.assertGreater(len(lip),12)
+        self.assertGreater(len(chin),12)
+        self.assertGreater(max(lip)-max(chin),.0163)
+        aperture=self.skin['extras']['facialExpressionRig']['splitMouthSeal']
+        self.assertTrue(aperture['openingFromRealTopology'])
+        self.assertTrue(aperture['noChinOrNeckTrianglesDetached'])
+        self.assertGreaterEqual(aperture['detachedSkinTriangles'],8)
+        self.assertGreaterEqual(aperture['sealVertices'],10)
+        skin_idx=self.g['accessors'][self.prim['indices']]
+        self.assertEqual(skin_idx['count'],25920*3)
+        # Removed triangles are degenerate, retained only for fixed index
+        # buffer length; a second primitive has the exact neutral skin patch.
+        index_view=self.g['bufferViews'][skin_idx['bufferView']]
+        offset=index_view.get('byteOffset',0)+skin_idx.get('byteOffset',0)
+        count=skin_idx['count']
+        raw=struct.unpack_from('<'+'I'*count,self.b,offset)
+        degenerate=sum(raw[i]==raw[i+1]==raw[i+2]
+                       for i in range(0,count,3))
+        self.assertGreaterEqual(degenerate,aperture['detachedSkinTriangles'])
+        cavity=next(m for m in self.g['meshes']
+                    if m['name']=='V121_ORAL_CAVITY')
+        self.assertEqual(len(cavity['primitives']),2)
+        seal=cavity['primitives'][1]
+        self.assertEqual(seal['material'],self.prim['material'])
+        for att in ('POSITION','NORMAL','TEXCOORD_0','COLOR_0'):
+            self.assertIn(att,seal['attributes'])
+        self.assertEqual(len(seal['targets']),11)
+        pos=vector(self.g,self.b,seal['attributes']['POSITION'])
+        mouth_delta=vector(self.g,self.b,seal['targets'][NAMES.index('mouthOpen')]['POSITION'])
+        self.assertLess(min(v[2] for v in mouth_delta),-.016)
+        self.assertTrue(all(.185<v[1]<.209 and abs(v[0])<.037 for v in pos))
 
     def test_real_brows_closer_to_upper_eye(self):
         brow=next(m for m in self.g['meshes']
