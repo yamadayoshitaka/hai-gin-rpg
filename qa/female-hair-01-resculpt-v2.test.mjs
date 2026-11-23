@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildHair01FromScratch} from '../src/female-hair-01-resculpt-v2.js';
+import {buildHair01FromScratch,female01FringeEndY,female01HairlineY} from '../src/female-hair-01-resculpt-v2.js';
 
 class Attribute {
  constructor(values,itemSize){this.array=Float32Array.from(values);this.itemSize=itemSize;this.count=this.array.length/itemSize;}
@@ -113,4 +113,23 @@ test('viewer uses the fully rebuilt hair 01 before attempting to load a legacy G
  assert.match(code,/skin\.geometry\.clone\(\)/);
  assert.match(code,/geometry\.setIndex\(kept\)/);
  assert.doesNotMatch(code,/SphereGeometry|new GLTFLoader|female_hair_01_lod0/);
+});
+
+test('female 01 eye and eyebrow clearance uses safe forehead cut and short tips',()=>{
+ const h={width:.205,height:.235,depth:.205};
+ for(let i=0;i<38;i++){
+  const y=female01FringeEndY(h,i);
+  assert.ok(y>.067 && y<.074,'fringe crosses v121 eyes: '+y);
+ }
+ const front=female01HairlineY(h,0,h.depth*.50);
+ assert.ok(front>.068,'opaque crown covers the eye area '+front);
+ assert.ok(front<.085,'hairline recedes unnaturally '+front);
+ const rear=female01HairlineY(h,0,-h.depth*.50);
+ assert.ok(rear<front,'rear scalp coverage must extend lower than forehead');
+ const studio=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
+ assert.match(studio,/id="hairVersion"/);
+ assert.match(studio,/配信コミット/);
+ assert.match(studio,/buildHair01FromScratch/);
+ assert.match(studio,/resculpt-v2\.js\?v=3/);
+ assert.doesNotMatch(studio,/通常表示は元GLBの連続した髪/);
 });
