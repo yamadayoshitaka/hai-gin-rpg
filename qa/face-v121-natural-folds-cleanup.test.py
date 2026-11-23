@@ -63,24 +63,24 @@ class V121SkinClean(unittest.TestCase):
         for ix in center:
             x,y,z=self.xyz[ix]
             self.assertLess(abs(x),.011)
-            self.assertGreater(y,.208)
-            self.assertLess(y,.242)
+            self.assertGreater(y,.241)
+            self.assertLess(y,.262)
         for ix in corrected:
             x,y,z=self.xyz[ix]
             self.assertGreater(abs(x),.025)
             self.assertLess(abs(x),.067)
-            self.assertGreater(y,.179)
-            self.assertLess(y,.215)
+            self.assertGreater(y,.217)
+            self.assertLess(y,.252)
         self.assertTrue(meta['referenceFeatureSculpt']['lateralNasolabialPitRemoved'])
         self.assertGreaterEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.0037)
         self.assertLessEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.004)
         self.assertGreater(meta['referenceFeatureSculpt']['philtrumColumnsRelief'],.0008)
         self.assertTrue(meta['referenceFeatureSculpt']['philtrumNoOvalPit'])
         self.assertIn('continuous_nose_base_to_vermilion',meta['referenceFeatureSculpt']['philtrumShape'])
-        self.assertGreater(meta['referenceFeatureSculpt']['centralPhiltrumStart'][1],.247)
-        self.assertLess(meta['referenceFeatureSculpt']['centralPhiltrumEnd'][1],.210)
+        self.assertGreater(meta['referenceFeatureSculpt']['centralPhiltrumStart'][1],.259)
+        self.assertLess(meta['referenceFeatureSculpt']['centralPhiltrumEnd'][1],.241)
         # The depression is continuous through the middle of the philtrum.
-        for low,high in ((.212,.222),(.222,.232),(.232,.242)):
+        for low,high in ((.242,.249),(.249,.255),(.255,.262)):
             self.assertGreater(sum(1 for i in center if low<=self.xyz[i][1]<high),
                                0, f'central philtrum groove missing in y band {low}..{high}')
         self.assertTrue(meta['referenceFeatureSculpt']['parametricDepthControlSupported'])
@@ -95,7 +95,7 @@ class V121SkinClean(unittest.TestCase):
         chin=[c for (x,y,z),c in zip(self.xyz,self.colors)
               if abs(x)<.052 and .111<y<.161 and z>.005]
         lip=[c for (x,y,z),c in zip(self.xyz,self.colors)
-             if abs(x)<.029 and .187<y<.209 and z>.12]
+             if abs(x)<.029 and .217<y<.247 and z>.12]
         self.assertGreater(len(brow),25)
         self.assertGreater(len(chin),20)
         self.assertGreater(len(lip),10)
