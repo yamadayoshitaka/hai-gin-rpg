@@ -22,3 +22,37 @@ export function reachableRoomExit(start,bounds,walkable,{limit=3000}={}){
  }
  return null;
 }
+
+
+/**
+ * Find an actually connected formation waypoint, not just a traversable cell
+ * on the other side of a castle wall. One cardinal flood fill from the
+ * squad's current tile uses the same walkability rules as live movement.
+ * Work is bounded and only performed on an issued formation order.
+ */
+export function reachableFormationWaypoint(start,desired,walkable,{
+ maxExpanded=55000,maxOffset=9
+}={}){
+ if(!start||!desired||typeof walkable!=='function')return null;
+ const x0=Math.round(start.x),z0=Math.round(start.z);
+ const gx=Math.round(desired.x),gz=Math.round(desired.z);
+ if(![x0,z0,gx,gz].every(Number.isFinite)||!walkable(x0,z0))return null;
+ const queue=[{x:x0,z:z0}],visited=new Set([x0+','+z0]);
+ const dirs=[[1,0],[0,1],[-1,0],[0,-1]];
+ let best=null,bestScore=Infinity;
+ const limit=Math.max(1,Math.floor(maxExpanded)),offset=Math.max(0,Math.floor(maxOffset));
+ for(let i=0;i<queue.length&&i<limit;i++){
+  const cell=queue[i],dx=cell.x-gx,dz=cell.z-gz;
+  if(Math.max(Math.abs(dx),Math.abs(dz))<=offset){
+   const score=dx*dx+dz*dz;
+   if(score<bestScore){best=cell;bestScore=score;}
+   if(score===0)return {x:cell.x,z:cell.z};
+  }
+  for(const [mx,mz] of dirs){
+   const x=cell.x+mx,z=cell.z+mz,key=x+','+z;
+   if(visited.has(key)||!walkable(x,z))continue;
+   visited.add(key);queue.push({x,z});
+  }
+ }
+ return best?{x:best.x,z:best.z}:null;
+}
