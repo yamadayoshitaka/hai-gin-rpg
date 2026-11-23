@@ -17,6 +17,8 @@ on:
       - 'src/female-hair-01-native-v4.js'
       - 'qa/female-hair-01-native-v4.test.mjs'
       - 'src/female-hair-01-solid-v5.js'
+      - 'src/head-derived-hair-sculpt-v6.js'
+      - 'qa/head-derived-hair-sculpt-v6.test.mjs'
       - 'qa/female-hair-01-solid-v5.test.mjs'
       - 'data/v121-adjusted-head-audit.json'
       - 'qa/independent-hair-catalog-motion.test.mjs'
@@ -36,6 +38,8 @@ on:
       - 'src/female-hair-01-native-v4.js'
       - 'qa/female-hair-01-native-v4.test.mjs'
       - 'src/female-hair-01-solid-v5.js'
+      - 'src/head-derived-hair-sculpt-v6.js'
+      - 'qa/head-derived-hair-sculpt-v6.test.mjs'
       - 'qa/female-hair-01-solid-v5.test.mjs'
       - 'qa/independent-hair-catalog-motion.test.mjs'
 jobs:
@@ -64,5 +68,7 @@ jobs:
           node --test qa/female-hair-01-native-v4.test.mjs
           node --check src/female-hair-01-solid-v5.js
           node --test qa/female-hair-01-solid-v5.test.mjs
+          node --check src/head-derived-hair-sculpt-v6.js
+          node --test qa/head-derived-hair-sculpt-v6.test.mjs
           node --test qa/independent-hair-catalog-motion.test.mjs
           node --test qa/hair-cache-reset.test.mjs
