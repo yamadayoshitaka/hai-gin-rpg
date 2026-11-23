@@ -181,14 +181,14 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   }
  }
  let size=headSize,scalp=headScalp,colorValue=color,breakdown=false,exploded=false;
- let colliders=bodyCollisionProxies(size),lastX=NaN,lastZ=NaN,lastContacts=0;
+ let colliders=bodyCollisionProxies(size),lastX=NaN,lastZ=NaN,lastContacts=0,lastCollision=null;
  const fitToHead=(nextSize=size,nextScalp=scalp)=>{
   size=nextSize;scalp=nextScalp;
   const f=independentHairFitFromRoot(rootBox,hairBox,size,scalp);
   root.scale.set(...f.scale);root.position.set(...f.position);
   root.userData.fit=f;
   colliders=bodyCollisionProxies(size);
-  lastX=NaN;lastZ=NaN;
+  lastX=NaN;lastZ=NaN;lastCollision=null;
   return f;
  };
  const setSectionColors=value=>{
@@ -211,8 +211,9 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
   if(zones.has(id))zones.get(id).visible=Boolean(visible);
  };
  const deformTips=(x=0,z=0,{collision=true}={})=>{
-  if(Math.abs(x-lastX)+Math.abs(z-lastZ)<.00005)return lastContacts;
-  lastX=x;lastZ=z;lastContacts=0;
+  if(Math.abs(x-lastX)+Math.abs(z-lastZ)<.00005&&lastCollision===collision)
+   return lastContacts;
+  lastX=x;lastZ=z;lastCollision=collision;lastContacts=0;
   const f=root.userData.fit;
   for(const d of deformers){
    const {attr,original,weights}=d,values=attr.array;
@@ -228,9 +229,16 @@ export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null
      const result=resolveHairBodyContact(real,colliders,.004);
      if(result.hits){
       // Collisions affect only free lengths: never shift scalp roots.
-      vx+=(result.position[0]-real[0])/f.scale[0]*w;
-      vy+=(result.position[1]-real[1])/f.scale[1]*w;
-      vz+=(result.position[2]-real[2])/f.scale[2]*w;
+      // Hard independent vertex projections shredded lower hair strips.
+      // A bounded soft correction preserves neighbouring triangle continuity.
+      const dx=result.position[0]-real[0],
+       dy=result.position[1]-real[1],dz=result.position[2]-real[2];
+      const length=Math.hypot(dx,dy,dz)||1;
+      const limit=.004+.005*w; // <=9 mm per vertex (moving preview only)
+      const factor=Math.min(1,limit/length)*w*w;
+      vx+=dx*factor/f.scale[0];
+      vy+=dy*factor/f.scale[1];
+      vz+=dz*factor/f.scale[2];
       lastContacts+=result.hits;
      }
     }
