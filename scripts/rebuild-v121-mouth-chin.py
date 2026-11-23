@@ -105,19 +105,10 @@ def reconstruct_jaw(points, vertex_normals):
             controls[6][1]<lip_front-.015):
         raise ValueError('Missing real chin / labiomental transition')
 
-    # Find the true outer facial sheet at each local xy, avoiding the second
-    # under-jaw/rear-facing layer near the chin that caused double outlines.
-    cell=.006
-    zmax={}
-    for x,y,z in points:
-        key=(round(x/cell),round(y/cell))
-        zmax[key]=max(zmax.get(key,-100.),z)
-
-    def outer_depth(x,y):
-        ix,iy=round(x/cell),round(y/cell)
-        return max(zmax.get((ix+u,iy+v),-100.)
-                   for u in (-1,0,1) for v in (-1,0,1))
-
+    # Rebuild the WHOLE transition continuously. v4 selected an outer
+    # sheet with a hard front/back flag and tore the chin-neck triangles.
+    # Every native vertex in the overlapping mandibular volume now receives
+    # a differentiable blend, including the lower return surface.
     xyz=[]
     count=0
     chin_count=0
@@ -125,23 +116,17 @@ def reconstruct_jaw(points, vertex_normals):
     max_shift=0.
     for (x,y,z),normal in zip(points,vertex_normals):
         ax=abs(x)
-        if not (.101<y<.229 and ax<.098 and z>-.020):
-            xyz.append((x,y,z))
-            continue
-        # A geometry/surface classifier, NOT an old-chin shape reference.
-        # The underside folds backward into the throat and must not be
-        # projected onto the anterior chin sheet.
-        front_sheet=(z>outer_depth(x,y)-.019 and
-                     (normal[2]>.14 or (y<.175 and normal[2]>-.10)))
-        if not front_sheet:
+        if not (.095<y<.235 and ax<.110 and z>-.060):
             xyz.append((x,y,z))
             continue
         target=chin_cross_section(y,ax,controls)
-        # Joint fade to old cheek, vermilion, jaw hinge and upper neck.
-        mask=((1.-fade(y,.208,.227))*
-              (1.-fade(ax,.047,.088))*
-              fade(z,-.018,.017)*
-              fade(y,.103,.140))
+        # No binary front/back classification; the entire stitched surface
+        # follows one C1 blend at the mouth, upper neck and jaw/cheek edge.
+        # This prevents 5cm discontinuities along neighboring triangles.
+        mask=((1.-fade(y,.208,.230))*
+              (1.-fade(ax,.048,.091))*
+              fade(z,-.040,.082)*
+              fade(y,.095,.153))
         zz=z+(target-z)*mask
         yy=y-.0014*math.exp(-.5*((y-.168)/.020)**2)*math.exp(
             -.5*(ax/.047)**2)*mask
@@ -173,7 +158,7 @@ def reconstruct_jaw(points, vertex_normals):
         raise ValueError('Anatomical remesh region invalid: '+
                          str((count,chin_count,jaw_count,max_shift)))
     return xyz,{
-        'version':'female-v121-independent-anatomical-jaw-surface-v4',
+        'version':'female-v121-unified-anatomical-jaw-surface-v5',
         'method':'new-anatomical-sagittal-and-elliptical-cross-section-mesh',
         'referenceSource':'front-and-true-side-bald-female-drawing',
         'sourceOldChinDepthNotReused':True,
@@ -190,7 +175,7 @@ def reconstruct_jaw(points, vertex_normals):
         'actualMentonRelief3D':True,
         'hasLabiomentalSulcus':True,
         'frontalJawRoundnessByEllipse':True,
-        'underchinSheetSeparated':True,
+        'underchinSheetContinuouslyBlended':True,
         'neckSeamPreserved':True,
         'vermilionBoundaryPreserved':True,
         'sideProfileMeasured':True,
