@@ -1142,7 +1142,7 @@ import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
-import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.69';
+import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,enemyContactResponse,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=enemy-counter-20261123';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
@@ -7148,7 +7148,6 @@ function updateEnemyTacticalDecisions(){
  const indexed=indexBattleDecisionUnits(massSim?.units??actors);
  const allies=indexed.allies,friendlyArmy=indexed.enemies;
  if(!allies.length)return;
- let availableBuildings=null;
  const enemyCommands=THREE_TEAM_BATTLE?[1,2,3].map(group=>
   enemySquadIds.filter(id=>Number(enemyGroupBySquad[id])===group)).filter(group=>group.length):
   enemySquadIds.map(id=>[id]);
@@ -7168,20 +7167,14 @@ function updateEnemyTacticalDecisions(){
   // A collapsing enemy team must not wait 120 seconds in its old stance.
   const secondsUntilReissue=critical?8:
    enemyOrderRefreshSeconds(previous,friendlyArmy.length,allies.length);
-  if(elapsed-(lastEnemyTacticalOrderAt.get(id)??-Infinity)<secondsUntilReissue)continue;
+  const threatened=enemyContactResponse(previous,previous,living,allies);
+  // Nearby attackers bypass the 120-second defensive reissue cooldown.
+  if(!threatened.counter&&elapsed-(lastEnemyTacticalOrderAt.get(id)??-Infinity)<secondsUntilReissue)continue;
   const defenseElapsed=elapsed-(lastEnemyTacticalOrderAt.get(id)??elapsed);
   const choice=chooseEnemyOrder(own,allies,previous,{friendlyArmy,defenseElapsed});
-  let mode=choice.mode,buildingId=null;
-  // A hostile army's combat AI must not divert to unattended treasure
-  // buildings while enemy soldiers remain alive. Exploration is voluntary
-  // for player orders, never the enemy's default behaviour.
-  if(mode==='explore')mode='charge';
-  const inContact=living.some(u=>allies.some(v=>
-   Math.hypot((u.x??u.cell?.x??0)-(v.x??v.cell?.x??0),
-    (u.z??u.cell?.z??0)-(v.z??v.cell?.z??0))<=9));
-  // Counterattack enemies entering a defensive perimeter; holding a post
-  // is not permission to stand passive while an opponent attacks.
-  if(inContact&&['hold','defend','retreat'].includes(mode))mode='charge';
+  const reaction=enemyContactResponse(previous,choice.mode,living,allies);
+  const mode=reaction.mode;
+  const buildingId=null;
   if(mode===previous&&groupIds.every(sid=>
    startingSquadOrders.get(squadOrderKey(1,sid))?.mode===mode))continue;
   let successful=0;
