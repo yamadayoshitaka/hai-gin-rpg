@@ -25,6 +25,45 @@ def fade(x, low, high):
     return t*t*(3-2*t)
 
 
+def vermilion_outline(x,y,z):
+    """One anatomically tapered closed boundary for geometry AND pigment.
+
+    In final actual XYZ, the upper edge is a shallow M with two Cupid peaks.
+    The lower edge curves toward the neutral oral commissures. Soft 1-3 mm
+    internal feathers make the surface legible without a painted hard stripe
+    or a second ridge underneath the lower lip.
+    """
+    ax=abs(x)
+    if ax>=.054 or z<=.119 or y<.210 or y>.254:
+        return 0.,0.,0.
+    corner=fade(ax,.029,.051)
+    upper=.2480+.0029*bell(ax,.0115,.006)-.00105*bell(ax,0.,.0042)-.0147*corner
+    lower=.2152+.0149*corner
+    if upper-lower<=.001:
+        return 0.,upper,lower
+    inside=(fade(y,lower-.0008,lower+.0024)*
+            (1.-fade(y,upper-.0024,upper+.0008)))
+    width=(1.-fade(ax,.037,.054))*bell(x,0.,.048)
+    return clamp(inside*width*fade(z,.119,.144)),upper,lower
+
+
+def nasolabial_relief(x,y,z):
+    """Shallow anatomical fold from side of ala toward mouth commissure.
+
+    Never carve a straight lateral cheek trench or touch the lip/philtrum.
+    The crease starts at x~33 mm below the nostril and curves gently outward
+    toward x~45 mm by the oral corner; it fades before reaching the chin.
+    """
+    ax=abs(x)
+    if not (.225<y<.275 and .026<ax<.063):
+        return 0.
+    upper_fraction=fade(y,.226,.271)
+    center=.045-.012*upper_fraction
+    length=fade(y,.225,.237)*(1.-fade(y,.263,.275))
+    return (-.00078*bell(ax,center,.0057)*length*
+            fade(z,.080,.123))
+
+
 def read_glb(path):
     data=path.read_bytes()
     if data[:4]!=b'glTF' or struct.unpack_from('<II',data,4)!=(2,len(data)):
@@ -86,21 +125,23 @@ def normals(points,triangles):
 
 
 def fold_displacement(x,y,z):
-    """Eliminate lateral dimples; retain only very fine under-eye skin relief.
+    """Fair the outer cheek and retain only a faint INNER smile fold.
 
-    Earlier v121 built a nostril-to-mouth *lateral nasolabial* valley and an
-    extra mouth-corner pit. The reference request is instead the CENTRAL
-    philtrum beneath the columella, not smile lines at either cheek.
+    Broad continuous cheek support removes the lateral linear hollows; a
+    separate curved nasolabial valley stays near the side of the nose, not
+    beneath the cheekbone. Both fade out before the jaw or oral seam.
     """
-    front=fade(z,.075,.122)
+    front=fade(z,.080,.123)
     ax=abs(x)
     under_eye=(-.00026*bell(y,.287,.0038)*
                fade(ax,.023,.033)*(1.-fade(ax,.062,.072))*front)
-    # Fill the artificial corner dimples left by the prior lateral crease.
-    # Only touch skin on the outward corner surface, not actual lip geometry.
-    dimple_fill=(.0028*bell(ax,.046,.010)*bell(y,.232,.014)*
-                 fade(z,.078,.128)*(1.-fade(z,.154,.17)))
-    return under_eye+dimple_fill
+    # Replace the prior narrow 2.8-mm pit fill with soft cheek-wide support,
+    # so it cannot read as an extra edge near the mouth corners.
+    lateral_fair=(.00140*bell(ax,.071,.023)*bell(y,.245,.040)*
+                  fade(y,.204,.222)*front)
+    corner_fair=(.00105*bell(ax,.050,.014)*bell(y,.233,.017)*
+                 front*(1.-fade(ax,.067,.083)))
+    return under_eye+lateral_fair+corner_fair+nasolabial_relief(x,y,z)
 
 
 def philtrum_relief(x,y,z):
@@ -194,6 +235,13 @@ def nose_and_lips(x,y,z):
     # Keep a single center groove between the columella and Cupid's bow;
     # the two philtral columns remain soft and do not cross the upper lip.
     nz+=philtrum_relief(nx,y,nz)
+    # Trace the actual vermilion border with SUB-millimetre inward geometry.
+    # The lift is inside the existing lip, not on the adjacent upper skin
+    # or under the lower lip: no doubled contour or horizontal shadow band.
+    skin_lip,upper_edge,lower_edge=vermilion_outline(nx,ny,nz)
+    if skin_lip>0.:
+        nz+=skin_lip*(.00055*bell(ny,upper_edge-.0020,.0015)+
+                      .00032*bell(ny,lower_edge+.0019,.0015))
     return (nx,ny,nz)
 
 
@@ -210,20 +258,18 @@ def neutral_color(x,y,z):
     cheek=((bell(x,-.077,.037)+bell(x,.077,.037))*
            bell(y,.256,.033)*front if y>=.215 else 0.)
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
-    # The upstream resting lipstick is strictly bounded to the two
-    # anatomical vermilion bands. Gaussian tails must never tint a chin.
-    lip_region=(.211<=y<=.2515 and abs(x)<=.052 and z>.119)
-    vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
-    lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)*
-          fade(y,.211,.221)*(1.-fade(y,.248,.252))
-          if lip_region else 0.)
+    # The very same M-bow and inward-tapering lip border gates pigment.
+    # Outside the actual vermilion no lipstick can extend onto cheek/chin.
+    lip_surface,_,_=vermilion_outline(x,y,z)
+    vermilion=.83*bell(y,.240,.0087)+bell(y,.2235,.0084)
+    lips=clamp(vermilion*lip_surface)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
     lower_liner=(bell(x,-.044,.023)+bell(x,.044,.023))*bell(y,.295,.004)*front
     # R channel near 1, G/B reductions create soft pink and taupe accents.
     return (clamp(.995-.007*lips-.024*shadow-.009*lower_liner),
-            clamp(.994-.075*cheek-.022*nose_tip-.170*lips-.037*shadow-.015*lower_liner),
-            clamp(.992-.094*cheek-.027*nose_tip-.190*lips-.049*shadow-.021*lower_liner))
+            clamp(.994-.075*cheek-.022*nose_tip-.202*lips-.037*shadow-.015*lower_liner),
+            clamp(.992-.094*cheek-.027*nose_tip-.225*lips-.049*shadow-.021*lower_liner))
 
 
 def smooth_chin(points,faces):
@@ -304,6 +350,9 @@ def finish(path):
         nx,ny,nz=nose_and_lips(x,y,z)
         dz=fold_displacement(nx,ny,nz)
         updated.append((nx,ny,nz+dz))
+        fold=nasolabial_relief(nx,ny,nz)
+        if fold<-.00016:
+            (folds_left if nx<0. else folds_right).append(i)
         central=philtrum_relief(nx,ny,nz)
         if central<-.00038 and abs(nx)<.011 and .241<ny<.262:
             philtrum_ids.append(i)
@@ -325,8 +374,9 @@ def finish(path):
     p['attributes']['NORMAL']=add_vec3(g,b,normals(updated,faces))
     colors=[neutral_color(x,y,z) for x,y,z in updated]
     p['attributes']['COLOR_0']=add_vec3(g,b,colors)
-    if len(philtrum_ids)<12 or len(dimple_filled_ids)<12:
-        raise ValueError('Real central philtrum and corner correction required')
+    if (len(philtrum_ids)<12 or len(dimple_filled_ids)<12 or
+            len(folds_left)<8 or len(folds_right)<8):
+        raise ValueError('Real philtrum, faint inner folds and cheek fairing required')
     # Reduce the separate eyelid-crease ribbon tint: no hard pink mask.
     for material in g['materials']:
         if material['name']=='V121_NATURAL_UPPER_LID_CREASE_PBR':
@@ -348,7 +398,7 @@ def finish(path):
         elif name=='V121_INDIVIDUAL_EYEBROW_FIBERS_PBR':
             pbr['baseColorFactor']=[.38,.29,.235,1.]
     meta['referenceMakeup']={
-        'version':'v121-makeup-20261123',
+        'version':'v121-makeup-lip-border-v17-20261124',
         'skinPalette':'warm-natural-ivory',
         'cheekBlush':'subtle-peach-rose',
         'lips':'soft-rose-pink-vertex-gradient',
@@ -357,11 +407,17 @@ def finish(path):
         'skinPBR':True,
         'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
-        'version':'v121-sharp-nose-full-lips-v16-20261124',
+        'version':'v121-clear-lip-border-inner-fold-v17-20261124',
         'narrowerNasalWingsAndHeadRealMesh':True,
         'centralNasalDorsumRidgeRealMesh':True,
         'upperLowerVermilionFullnessRealMesh':True,
         'lipFullnessFadesAtCornersAndChin':True,
+        'anatomicalVermilionBorderRealGeometry':True,
+        'upperCupidBowBorderAndLowerRimDefined':True,
+        'lipCornerTaperedToOralCommissure':True,
+        'noSecondSubLabialRidge':True,
+        'outerCheekTrenchSoftened':True,
+        'shallowInnerNasolabialFoldSculpted':True,
         'upperLipRaisedTowardNoseMillimeters':4.15,
         'philtrumLongitudinalCoverage':[.239,.273],
         'philtrumReal3DGrooveNotMakeup':True,
@@ -382,24 +438,26 @@ def finish(path):
         'philtrumVertexIds':philtrum_ids,
         'lateralDimpleCorrectionVertexIds':dimple_filled_ids,
         'lateralNasolabialPitRemoved':True,
+        'nasolabialLeftVertexIds':folds_left,
+        'nasolabialRightVertexIds':folds_right,
         'foldIsActualSkinGeometry':True,
         'preservesEyeAndMouthTopology':True,
         'facialExpressionAnimations':False}
     meta['naturalFoldCleanup']={
-        'version':'v121-folds-20261123',
+        'version':'v121-inner-nasolabial-20261124-v17',
         'technique':'native indexed skin vertex sculpt and corrected neutral vertex colors',
         'removedLegacyBrowLidBand':True,
         'removedChinTintLeakage':True,
         'lipPigmentRestrictedToVermilion':True,
         'chinVerticesSmoothed':chin_count,
-        'nasolabialLeftVertexIds':[],
-        'nasolabialRightVertexIds':[],
+        'nasolabialLeftVertexIds':folds_left,
+        'nasolabialRightVertexIds':folds_right,
         'philtrumVertexIds':philtrum_ids,
         'dimpleCorrectionVertexIds':dimple_filled_ids,
-        'additionalFoldRegions':['central-philtrum','infraorbital'],
+        'additionalFoldRegions':['central-philtrum','infraorbital','inner-nasolabial'],
         'surfaceDeformationOnly':True,
         'expressionAnimationImplemented':False}
-    g['asset']['generator']='HaiGin v121 central philtrum sculpt and lateral dimple removal'
+    g['asset']['generator']='HaiGin v121 v17 anatomical lip border and subtle inner nasolabial fold'
     g['buffers'][0]['byteLength']=len(b)
     json_bytes=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode('utf8')
     json_bytes+=b' '*((-len(json_bytes))%4)
