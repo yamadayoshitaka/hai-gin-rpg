@@ -3,14 +3,14 @@
  * This module never clones troop inventory or silently replaces the roster.
  */
 import {
- ensureSortiePlan,sortieTeams,sortieTeamCount,sortiePlanningLimit,sortieLevel,
+ ensureSortiePlan,sortieTeams,sortieTeamCount,sortiePlanningLimit,sortieLevel,setSortieFormation,
  SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS
 } from './three-team-sortie.js';
 import {
  FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES,formationTemplate,
  formationRarityCounts,rarityOf
 } from './sortie-formation-template-rules.js';
-import {FORMATION_ROLES,ROLE_JOBS,formationMinimumForRole} from './sortie-formation-logic.js';
+import {matchFormationRoleJobs} from './sortie-formation-logic.js';
 
 const rank={N:0,R:1,SR:2,SSR:3,UR:4};
 const freeCells=[5,6,9];
@@ -22,22 +22,7 @@ const headcount=team=>Object.values(team.counts||{}).reduce((n,c)=>n+Number(c||0
 
 /** Return a role -> squad assignment without changing the player's roster. */
 export function matchFormationJobs(team,sources,formation){
- const slots=(team.slots||[]).filter(id=>assigned(team,id)>0).map(String);
- const roles=FORMATION_ROLES[formation]?.slice(0,formationTemplate(formation)?.slots||0)||[];
- if(roles.length!==slots.length)return null;
- const byId=new Map(sources.map(s=>[String(s.id),s]));
- function match(roleIndex,remaining){
-  if(roleIndex===roles.length)return [];
-  const role=roles[roleIndex],minimum=formationMinimumForRole(role);
-  for(const sid of remaining){
-   const source=byId.get(sid);
-   if(!source||!ROLE_JOBS[role]?.includes(source.job)||assigned(team,sid)<minimum)continue;
-   const after=match(roleIndex+1,remaining.filter(v=>v!==sid));
-   if(after)return [sid,...after];
-  }
-  return null;
- }
- return match(0,slots);
+ return matchFormationRoleJobs(team,sources,formation,formationTemplate(formation)?.slots);
 }
 
 export function inspectInnFormation(game,teamId,formation){
@@ -128,6 +113,7 @@ export function setInnRosterCount(game,teamId,squadId,delta){
 
 /** Apply the role matching to a 4x4 grid while keeping soldier counts and captain fixed. */
 export function chooseInnFormation(game,teamId,formation){
+ if(formation==='free')return setSortieFormation(game,teamId,'free');
  const result=inspectInnFormation(game,teamId,formation);
  if(!result.eligible)throw Error('陣形条件未達：'+result.reason);
  const team=game.sortiePlan.teams.find(t=>t.id===Number(teamId));
