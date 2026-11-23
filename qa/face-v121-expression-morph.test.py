@@ -79,7 +79,8 @@ class TestRealExpressionGLB(unittest.TestCase):
         self.assertLess(min(y('blink')),-.004)
         self.assertGreater(max(y('blink')),.003)
         self.assertGreater(max(y('smile')),.0036)
-        self.assertGreater(max(y('laugh')),max(y('smile')))
+        # Laughter opens the lower lip rather than lifting the whole chin.
+        self.assertLess(min(y('laugh')),min(y('smile'))-.004)
         self.assertLess(min(y('angry')),-.002)
         self.assertGreater(max(y('sad')),.003)
         self.assertLess(min(y('mouthOpen')),-.006)
