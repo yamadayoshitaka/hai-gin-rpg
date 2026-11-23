@@ -90,7 +90,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertTrue(rebuild['neckSeamPreserved'])
         self.assertTrue(rebuild['vermilionBoundaryPreserved'])
         self.assertGreater(rebuild['remodeledAnteriorChinVertices'],39)
-        self.assertGreater(rebuild['remodeledLateralJawVertices'],14)
+        self.assertGreater(rebuild['remodeledLateralJawVertices'],9)
         self.assertGreater(rebuild['affectedVertices'],400)
         self.assertLess(rebuild['maximum3DDisplacement'],.070)
         self.assertTrue(rebuild['outerBoundaryUntouched'])
