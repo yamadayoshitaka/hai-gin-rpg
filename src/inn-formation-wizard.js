@@ -318,35 +318,39 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const ids=Object.keys(SORTIE_FORMATIONS),per=1,pages=Math.ceil(ids.length/per);
   const page=Math.max(0,Math.min(pages-1,Number(formationPage)||0));
   const options=ids.slice(page*per,page*per+per);
+  // One compact card per page: the animated diagram owns a dedicated
+  // layout region and is never nested inside a button (Android overflow bug).
   body='<div class="sortieWizardFormationChoices innWizardFormations">'+options.map(id=>{
    const f=SORTIE_FORMATIONS[id],elig=inspectInnFormation(game,team.id,id),brief=purpose(id);
    const signature=signatureStrategyFor(id);
-   const cells=SORTIE_FORMATION_CELLS[id].slice(0,f.slots),roles=FORMATION_ROLES[id];
-   const mini=Array.from({length:16},(_,i)=>{
-    const roleIndex=cells.indexOf(i);
-    const label=roleIndex<0?'':ROLE_NAMES[roles[roleIndex]]?.slice(0,1)||'●';
-    return '<i class="'+(roleIndex<0?'':'occupied')+'">'+esc(label)+'</i>';
-   }).join('');
-   return button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
-    '<span class="sortieWizardFormationTitle"><b>'+esc(f.name)+'</b></span>'+
-    '<small>目的：'+esc(brief.purpose)+'</small>'+ 
-    '<small>必須3ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
-    renderTeamFormationPreview(id,game,team)+
-    '<small>動き：'+esc(brief.movement)+'</small>'+ 
-    '<strong class="signatureName">★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
-    '<small class="signatureSummary">'+esc(signature?.summary||'')+'</small>'+ 
-    '<small>追加作戦：'+esc(formationUnlockLabels(id).join('・')||'基本作戦のみ')+'</small>'+
-    '<small>条件：Lv.'+f.level+'・'+esc(requirement(id))+'</small>'+
-    '<small class="sortieWizardFormationBonus">成立時バフ：'+esc(formationBuffLabel(id))+'</small>'+ 
-    '<small>'+(elig.eligible?'✓ 利用可能':'🔒 '+esc(elig.reason))+'</small>',team.formation===id);
+   return '<article class="innWizardFormationCard">'+
+    '<div class="innWizardFormationHeading"><b>'+esc(f.name)+'</b>'+
+    '<small>目的：'+esc(brief.purpose)+'</small></div>'+ 
+    '<div class="innWizardFormationRoles" title="'+esc(formationTargetJobs(id))+'">対象3ジョブ：'+
+     esc(formationTargetJobs(id))+'</div>'+
+    '<div class="innWizardFormationDiagram">'+renderTeamFormationPreview(id,game,team)+'</div>'+
+    '<div class="innWizardFormationDetail">'+
+     '<strong>★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
+     '<small>動き：'+esc(signature?.summary||brief.movement)+'</small>'+ 
+     '<small>追加作戦：'+esc(formationUnlockLabels(id).join('・')||'基本作戦のみ')+'</small>'+
+     '<small>成立時バフ：'+esc(formationBuffLabel(id))+'</small>'+
+     '<small>条件：Lv.'+f.level+'／'+esc(requirement(id))+'</small>'+ 
+     '<small class="innWizardEligibility">'+(elig.eligible?'✓ 使用可能':'🔒 '+esc(elig.reason))+'</small>'+
+    '</div>'+
+    button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
+      elig.eligible?'✓ この陣形を使用':'この陣形は条件不足',team.formation===id)+
+    '</article>';
   }).join('')+'</div>'+
-   '<div class="sortieWizardPager">'+button('data-inn-wizard-formation-page="-1" '+(!page?'disabled':''),'◀ 前の陣形')+
-   '<small>'+(page+1)+' / '+pages+'</small>'+
-   button('data-inn-wizard-formation-page="1" '+(page>=pages-1?'disabled':''),'次の陣形 ▶')+'</div>'+
+   '<div class="sortieWizardPager innWizardFormationPager">'+
+    button('data-inn-wizard-formation-page="-1" '+(!page?'disabled':''),'◀ 前の陣形')+
+    '<small>'+(page+1)+' / '+pages+'</small>'+
+    (page>=pages-1?
+     button('data-inn-wizard-return-teams="1"','隊選択に戻る ▶'):
+     button('data-inn-wizard-formation-page="1"','次の陣形 ▶'))+'</div>'+
    '<div class="innWizardFreeFormation">'+
     button('data-inn-wizard-formation="free"','自由陣形（1〜3ジョブ・陣形バフなし）',team.formation==='free')+
-    '<small>条件不足で自由陣形になっても、ジョブ・人数・リーダーは保持します。</small></div>'+ 
-   '<small class="innWizardInfo">通常陣形は3ジョブ揃った場合のみ成立し、固有バフが反映されます。</small>';
+    '<small>条件不足でも配置・人数・リーダーは維持されます。</small></div>';
+
   back='leader';
  }else{
   const f=SORTIE_FORMATIONS[team.formation],brief=purpose(team.formation);

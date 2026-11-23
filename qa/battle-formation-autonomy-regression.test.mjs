@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 import {CombatActionRuntime} from '../src/combat-action-runtime.js';
-import {chooseEnemyOrder} from '../src/battle-tactical-policy.js';
+import {chooseEnemyOrder,enemyContactResponse} from '../src/battle-tactical-policy.js';
 import {shouldCounterNearbyThreat} from '../src/battle-defensive-doctrine.js';
 
 const size=232,walkable=new Uint8Array(size*size).fill(1);
@@ -56,6 +56,30 @@ const full=(hp=100,team=1)=>Array.from({length:8},(_,id)=>({
 }));
 assert.equal(chooseEnemyOrder(full(17),full(95,0),'defend').mode,'retreat',
  'Nearly defeated enemy armies do not stand and watch');
+
+const hostile=[{id:1,team:1,x:31,z:33,hp:50,maxHp:100,alive:true,jobId:'knight'}];
+const invasion=[{id:2,team:0,x:35,z:35,hp:75,maxHp:100,alive:true,jobId:'sword'}];
+const contact=enemyContactResponse('defend','defend',hostile,invasion);
+assert.equal(contact.inContact,true);
+assert.equal(contact.counter,true);
+assert.equal(contact.mode,'charge','guarding enemies counterattack when attacked nearby');
+assert.equal(enemyContactResponse('defend','retreat',hostile,invasion).mode,'retreat',
+ 'near-dead enemies must retain their tactical escape option');
+assert.equal(enemyContactResponse('defend','defend',hostile,
+ [{...invasion[0],x:95,z:95}]).mode,'defend',
+ 'a distant foe does not pull defensive troops away from their post');
+assert.equal(enemyContactResponse('charge','explore',hostile,invasion).mode,'charge',
+ 'hostile combat AI must not diverge into irrelevant building exploration');
+const runtimeSource=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(runtimeSource,/setStartingSquadOrder\(1,sid,'charge'\)/,
+ 'enemy squads receive a real combat start command');
+assert.match(runtimeSource,/pendingOpeningFormationGroups\.add/,
+ 'an eligible inn formation starts its own movement on battle opening');
+assert.match(runtimeSource,/issueFormationSignature\(\{groupId:group,squadIds:members\}\)/,
+ 'the inn-authored movement sequence executes rather than remaining a static preview');
+assert.match(runtimeSource,/const threatened=enemyContactResponse\(/,
+ 'nearby hostile contact bypasses the stale 120-second defensive order cooldown');
+
 console.log('PASS formation-aware priest triage, MP cost, preserved hold order, bridge and enemy AI contracts');
 
 const nearbyPolicy=shouldCounterNearbyThreat;
