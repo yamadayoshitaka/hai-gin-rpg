@@ -1924,9 +1924,13 @@ export class MassBattleGridSimulation {
         // or a mission is active. The previous condition exempted those
         // cases, allowing a 1-cell A->B->A oscillation under congestion.
         // High-ground repositioning remains a separately authorized move.
-        if(rawFlow>=here&&(!higherStep||
-           !this.elevationMap||
-           this.elevationMap[z*this.width+x]<=heightHere+.2))continue;
+        if(rawFlow>=here&&!higherStep)continue;
+        // Height seeking is the sole exception to monotonic flow. It may
+        // override BFS only for a genuinely higher, free, navigable cell;
+        // otherwise two neighboring tiles can alternate forever.
+        if(rawFlow>=here&&higherStep&&
+           (!this.elevationMap||
+            this.elevationMap[z*this.width+x]<=heightHere+.2))continue;
         // A 2D detour around a stair core must not alternate between the
         // cell just visited and the current cell every AI tick. Backtracking
         // is valid only when a newly changed goal actually lowers the flow;
