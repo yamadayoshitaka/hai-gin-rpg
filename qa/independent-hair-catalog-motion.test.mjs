@@ -184,3 +184,45 @@ test('real-head cap adds skin-following fibers without modifying face topology',
  assert.match(cap,/skinFace\.add\(fibers\)/);
  assert.match(cap,/fibers\.geometry\.dispose\(\)/);
 });
+
+test('fit excludes orphan POSITION vertices after island cleanup',async()=>{
+ const {rootBandBounds}=await import('../src/independent-hair-mesh-v1.js');
+ class Vector3{
+  constructor(x=0,y=0,z=0){this.set(x,y,z);}
+  set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}
+ }
+ class Box3{
+  constructor(min=new Vector3(Infinity,Infinity,Infinity),
+   max=new Vector3(-Infinity,-Infinity,-Infinity)){
+   this.min=min;this.max=max;
+  }
+  isEmpty(){return this.max.x<this.min.x||this.max.y<this.min.y||
+   this.max.z<this.min.z;}
+  expandByPoint(v){
+   for(const k of ['x','y','z']){
+    this.min[k]=Math.min(this.min[k],v[k]);
+    this.max[k]=Math.max(this.max[k],v[k]);
+   }
+   return this;
+  }
+ }
+ const vertices=Array.from({length:90},(_,i)=>[
+  (i%15-7)*.008,.027+(i%5)*.001,(Math.floor(i/15)-3)*.018
+ ]);
+ // Simulates a deleted floating island whose vertices remain in POSITION.
+ vertices.push([.7,-.23,.3],[.9,-.27,.4],[-.5,.5,-.7]);
+ const position={
+  count:vertices.length,
+  getX:i=>vertices[i][0],getY:i=>vertices[i][1],getZ:i=>vertices[i][2]
+ };
+ const geometry={
+  getAttribute:k=>k==='position'?position:null,
+  getIndex:()=>({count:90,getX:i=>i})
+ };
+ const result=rootBandBounds({Vector3,Box3},[geometry]);
+ assert.equal(result.liveVertices,90);
+ assert.ok(result.hairBox.max.x<.1);
+ assert.ok(result.hairBox.min.y>.02);
+ assert.ok(result.rootBox.max.x<.1);
+ assert.ok(result.rootBox.min.x>-.1);
+});
