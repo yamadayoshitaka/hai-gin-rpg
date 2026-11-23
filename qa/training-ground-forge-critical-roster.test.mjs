@@ -65,7 +65,8 @@ test('formation selection shows all presets, remaining headcount and missing rar
  assert.match(preview,/あと\d+人/);
  assert.match(preview,/不足：/);
  assert.match(preview,/R以上|必要な職業|軍師Lv/);
- assert.match(preview,/signaturePreview/);
+ assert.match(preview,/自由陣形で配置します/,
+  'do not animate a high-tier named doctrine with no eligible deployed jobs');
 });
 test('blacksmith charges gold, remembers a specific weapon +1 and changes real battle buff',()=>{
  const game=createNewGame('鍛冶QA');
