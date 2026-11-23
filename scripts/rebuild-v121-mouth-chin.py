@@ -77,15 +77,15 @@ def new_lower_face_geometry(points,uv):
         (.102,-.0006),
         (.126,-.0018),
         (.149,-.0032),
-        (.173,-.0050),
-        (.188,-.0058),
-        (.198,-.0062),
-        (.204,-.0063),  # single very shallow labiomental sulcus
-        (.211,-.0059),  # never rise into a second lower-lip ridge
-        (.218,-.0047),  # soften transition into fuller true vermilion
-        (.224,-.0046),  # preserve natural lower-lip volume without extra ridge
-        (.228,-.0030),
-        (.234,-.0005),  # keep the closed mouth seam and upper lip
+        (.173,-.0032),
+        (.188,-.0043),
+        (.198,-.0047),
+        (.204,-.0048),  # wide, shallow skin-only sulcus, not a dark shelf
+        (.211,-.0044),  # continuous normal transition below lower lip
+        (.218,-.0037),
+        (.224,-.00335), # actual lower vermilion stays round, no second lip
+        (.228,-.00235),
+        (.234,-.0005),  # keep the closed oral seam and entire upper lip
         (.245, .0000),
         (.255, .0000),
     )
@@ -96,7 +96,10 @@ def new_lower_face_geometry(points,uv):
             result.append((x,y,z))
             continue
         front=fade(z,.063,.119)
-        middle=bell(x,0.,.061)
+        # Keep sagittal mouth/chin fairing on the FRONT lower face. The
+        # old 61-mm falloff bent cheeks as far as the commissures and
+        # reinforced a long lateral crease in front/quarter views.
+        middle=bell(x,0.,.046)*(1.-fade(abs(x),.053,.078))
         lip_zone=fade(z,.101,.131)*bell(x,0.,.042)
         dz=profile(y,sagittal)*middle*front
         # Narrow the LOWER vermilion by lifting only its bottom boundary.
@@ -361,6 +364,42 @@ def relax_labiomental_shading(points,faces):
     return xyz,len(moved)
 
 
+def repair_outer_lip_normals(xyz, raw):
+    """Repair inward-facing front skin normals next to the closed mouth.
+
+    The inherited jaw UV remesh can average back-facing lip/inner-oral
+    triangles into the actual front skin (N.z below zero). This rendered a
+    wide charcoal bar beneath the lip despite a geometrically soft sulcus.
+    Blend only exterior front-facing cheek/lip surface toward an outward
+    normal, while preserving the thin actual oral seam and nose/eyes.
+    """
+    adjusted=[]
+    changed=0
+    for (x,y,z),(nx,ny,nz) in zip(xyz,raw):
+        ax=abs(x)
+        if not (.206<y<.251 and ax<.055 and z>.123 and nz<.72):
+            adjusted.append((nx,ny,nz))
+            continue
+        weight=(fade(y,.206,.215)*(1.-fade(y,.244,.251))*
+                fade(z,.123,.138)*(1.-fade(ax,.035,.055)))
+        # The real mouth seal must remain a single dark LINE, not a filled bar.
+        weight*=1.-math.exp(-.5*((y-.232)/.0015)**2)
+        blend=.93*weight
+        if blend<.015:
+            adjusted.append((nx,ny,nz))
+            continue
+        target=(nx*.45,ny*.55,.78)
+        length=math.sqrt(sum(t*t for t in target))
+        target=tuple(t/length for t in target)
+        new=(nx*(1.-blend)+target[0]*blend,
+             ny*(1.-blend)+target[1]*blend,
+             nz*(1.-blend)+target[2]*blend)
+        length=math.sqrt(sum(t*t for t in new))
+        adjusted.append(tuple(t/length for t in new))
+        changed+=1
+    return adjusted,changed
+
+
 def write_indices(g,b,indices):
     while len(b)%4:b.append(0)
     offset=len(b)
@@ -394,10 +433,13 @@ def rebuild(path):
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
-    prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
+    safe_normals,normal_fix_count=repair_outer_lip_normals(xyz,normals(xyz,faces))
+    prim['attributes']['NORMAL']=add_vec3(g,b,safe_normals)
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
+        'repairedExteriorLipNormals':normal_fix_count,
+        'noBroadInvertedUnderlipNormals':True,
         'noSecondaryUnderlipLine':True,
         'realGeometryNotMaterialOnly':True,
         'sourceSkinVerticesRetained':len(xyz),
