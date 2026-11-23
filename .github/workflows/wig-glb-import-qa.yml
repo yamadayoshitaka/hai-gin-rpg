@@ -22,6 +22,8 @@ jobs:
         run: node --test qa/wig-glb-import.test.mjs
       - name: Download only license-reviewed CC0 hair GLB files and check blob identity
         run: python3 scripts/import-cc0-wigs.py --out /tmp/hai-gin-wig-cc0
+      - name: Inspect upstream GLB geometry, axes and spike triangles
+        run: python3 scripts/audit-wig-glb.py /tmp/hai-gin-wig-cc0/hair_long01.glb /tmp/hai-gin-wig-cc0/hair_bob01.glb /tmp/hai-gin-wig-cc0/hair_ponytail01.glb
       - name: Validate imported GLB files and upstream provenance
         env:
           WIG_IMPORT_DIR: /tmp/hai-gin-wig-cc0
