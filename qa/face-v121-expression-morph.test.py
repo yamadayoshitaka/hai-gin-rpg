@@ -95,6 +95,13 @@ class TestRealExpressionGLB(unittest.TestCase):
         g=self.g
         expected=['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE']
         self.assertEqual(self.skin['extras']['facialExpressionRig']['oralCavityMeshNames'],expected)
+        self.assertTrue(self.skin['extras']['facialExpressionRig']['oralPartsInSkinLocalSpace'])
+        skin_node=next(n for n in g['nodes'] if n.get('mesh')==0)
+        for name in expected:
+            oral_node=next(n for n in g['nodes'] if n.get('name')==name)
+            for transform in ('translation','rotation','scale','matrix'):
+                self.assertEqual(oral_node.get(transform),skin_node.get(transform),
+                                 name+' must share the actual transformed face origin')
         for name in expected:
             mesh=next(m for m in g['meshes'] if m['name']==name)
             self.assertEqual(len(mesh['primitives'][0]['targets']),11)
