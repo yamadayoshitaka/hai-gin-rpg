@@ -5,6 +5,9 @@ on:
       - 'src/independent-hair-*.js'
       - 'hair-asset-studio.html'
       - 'src/v121-anatomical-hair-cap.js'
+      - 'src/hair-island-cleanup-v1.js'
+      - 'qa/hair-island-cleanup.test.mjs'
+      - 'qa/real-hair-glb-cleanup.test.mjs'
       - 'data/v121-adjusted-head-audit.json'
       - 'qa/independent-hair-catalog-motion.test.mjs'
       - '.github/workflows/independent-hair-catalog-qa.yml'
@@ -30,4 +33,7 @@ jobs:
           node --check src/independent-hair-library-v1.js
           node --check src/independent-hair-mesh-v1.js
           node --check src/v121-anatomical-hair-cap.js
+          node --check src/hair-island-cleanup-v1.js
+          node --test qa/hair-island-cleanup.test.mjs
+          node --test qa/real-hair-glb-cleanup.test.mjs
           node --test qa/independent-hair-catalog-motion.test.mjs
