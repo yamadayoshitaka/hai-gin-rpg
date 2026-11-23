@@ -133,7 +133,7 @@ test('actual head hairline and grooming lengths expose the forehead and reach sh
 test('the viewer uses only v121 native head input for v5 and has independent sway',()=>{
  const s=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  const code=readFileSync(new URL('../src/female-hair-01-solid-v5.js',import.meta.url),'utf8');
- assert.match(s,/head-derived-hair-sculpt-v9\.js\?v=9/);
+ assert.match(s,/head-derived-hair-reference-v10\.js\?v=10/);
  assert.doesNotMatch(s,/loader\.loadAsync\(item\.path\)/);
  assert.match(s,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
  assert.match(s,/current\.updateMotion\(swayTime,\{motion,wind:w,time:timer\}\)/);
