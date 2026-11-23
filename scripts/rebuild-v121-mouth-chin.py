@@ -100,9 +100,9 @@ def new_jaw_geometry(points,uv):
         candidates=[result[i][2] for i,(u,t) in enumerate(uv)
                     if abs(u-.5)<.016 and abs(t-v)<.011]
         if not candidates:raise ValueError('Missing anatomical profile '+str(v))
-        return max(candidates)
+        return sorted(candidates)[len(candidates)//2]
     menton=depth_at_v(.443)
-    sulcus=depth_at_v(.393)
+    sulcus=depth_at_v(.407)
     throat=depth_at_v(.560)
     if changed<700 or max_move>.075:
         raise ValueError('Jaw was not fully reconstructed')
