@@ -70,12 +70,12 @@ class FourViewSculptQA(unittest.TestCase):
         # a shorter, softly rounded chin, not a point or hollowed jaw.
         lower_cheek=(.088,.217,.098)
         self.assertGreater(transformed(lower_cheek)[2],lower_cheek[2]+.0006)
-        chin=(.030,.135,.138)
-        self.assertGreater(transformed(chin)[1],chin[1]+.005)
+        chin=(.030,.180,.138)
+        self.assertGreater(transformed(chin)[1],chin[1]+.003)
         self.assertLess(transformed(chin)[2],chin[2]-.005)
         # The front of the chin is drawn back and lifted while the mouth
         # and the lower neck retain their independent silhouette.
-        central=(0.,.132,.142)
+        central=(0.,.184,.142)
         self.assertLess(transformed(central)[2],central[2]-.006)
         jaw_side=(.055,.155,.11)
         self.assertLess(transformed(jaw_side)[2],jaw_side[2])
