@@ -79,7 +79,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-continuous-sagittal-lowerface-v1')
+                         'female-v121-continuous-sagittal-lowerface-v2')
         self.assertGreater(rebuild['edgeFlips'],3)
         self.assertGreater(remeshed,3)
         self.assertTrue(rebuild['sideProfileMeasured'])
