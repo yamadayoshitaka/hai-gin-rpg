@@ -2,7 +2,9 @@ name: Face v120 independent neutral master
 on:
   pull_request:
     paths:
-      - 'src/neutral-face-v120.js'
+      - 'scripts/build-neutral-face-v120.py'
+      - 'scripts/prepare-pages-site.py'
+      - '.github/workflows/publish-pages.yml'
       - 'face-neutral-v120.html'
       - 'face-mesh-studio.html'
       - 'qa/face-v120-neutral-head.test.mjs'
@@ -21,15 +23,10 @@ jobs:
           node-version: '22'
       - name: Install the same Three.js major used by Pages
         run: npm install --no-save --package-lock=false three@0.160.1
-      - name: Validate high-resolution source geometry and manifold
-        run: |
-          node --check src/neutral-face-v120.js
-          node --test qa/face-v120-neutral-head.test.mjs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: face-v120-original-cc0-donor-reference
-          path: assets/master-sources/blender/realistic-head-animation.glb
-          retention-days: 1
+      - name: Bake anatomy-derived v120 neutral face
+        run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
+      - name: Validate baked neutral GLB geometry and future expression zones
+        run: node --test qa/face-v120-neutral-head.test.mjs
       - name: Validate browser entry module syntax
         run: |
           python3 - <<'PY'
@@ -52,11 +49,13 @@ jobs:
         run: |
           npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
           npx playwright install --with-deps chromium
+      - name: Bake anatomy-derived v120 neutral face for browser testing
+        run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
       - name: Serve the neutral model viewer
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v120-server.log 2>&1 &
           sleep 2
-      - name: Android WebGL neutral face, profile and GLB exporter smoke
+      - name: Android WebGL baked neutral face, profile and real GLB download smoke
         run: node --test qa/face-v120-neutral-browser.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
