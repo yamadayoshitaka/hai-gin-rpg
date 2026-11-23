@@ -37,7 +37,7 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 #viewport{height:46vh;min-height:305px}.settings{grid-column:auto}}
 </style></head><body>
 <header><h1>独立ヘアアセット・スタジオ</h1>
-<div class="muted">女性ヘア01：実際のv121頭皮の三角形から連続した髪ベースを構築。その他の髪型は従来のGLB。顔v121と眉毛は変更しません。</div>
+<div class="muted">女性ヘア01：顔v121の頭部三角形を押し出して髪の厚みを生成。その同じメッシュを伸ばして造形・揺れを表現。その他の髪型は従来のGLB。顔v121と眉毛は変更しません。</div>
 <div class="muted"><a href="./face-neutral-v121.html">顔v121（スキンヘッド）</a> ｜ <a href="./face-mesh-studio.html">顔編集</a> ｜ <a href="./character-face-catalog.html">顔・髪管理一覧</a></div></header>
 <main>
 <section class="panel"><h2>男女別ヘアカタログ</h2>
@@ -45,10 +45,10 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <p class="muted">26種類の3Dメッシュ。カタログの番号は元GLBの識別子で、髪型名を未検証のまま割り当てません。</p>
 <div class="catalog" id="catalog" aria-label="3D髪型一覧"></div></section>
 <section class="panel">
-<div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">女性ヘア01：実頭皮フィットv4（連続髪ベース）・配信コミット確認中</div>
+<div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">女性ヘア01：顔メッシュ押し出しv5（厚み・造形・揺れ）｜配信コミット確認中</div>
 <div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
 <div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：顔v121実スキンヘッド（読込中）<br>髪メッシュ：読込中</div></div>
-<p class="muted">ドラッグで360度回転、ピンチで拡大。女性ヘア01は実頭皮に密着した連続ベースとつながった髪面を表示。元GLBは比較専用。色分け・分解は検査モードのみ。眉毛・目・顔は変更しません。</p>
+<p class="muted">ドラッグで360度回転、ピンチで拡大。女性ヘア01は頭部メッシュの二重押し出しから髪を造形。前髪・横髪・後ろ髪は連続した同一メッシュです。揺れは根元を固定。元GLBは比較専用。色分け・分解は検査モードのみ。眉毛・目・顔は変更しません。</p>
 <div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="capToggle" aria-pressed="false">頭皮下地を表示（検査用）</button><button id="source">元のGLB</button></div>
 <div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
 <div id="parts" aria-label="髪メッシュのパーツ表示"></div>
@@ -80,16 +80,16 @@ import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
 import {buildIndependentHairMesh,measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=4';
 import {attachV121FaceSliders,V121_REFERENCE_PRESET} from './face-v121-parametric-sliders.js';
 import {createV121AnatomicalHairCap} from './src/v121-anatomical-hair-cap.js?v=2';
-import {buildHair01FromScratch} from './src/female-hair-01-native-v4.js?v=4';
+import {buildHeadDerivedHair01} from './src/female-hair-01-solid-v5.js?v=5';
 const $=id=>document.getElementById(id);
 fetch('./release.json?hair01_check='+Date.now(),{cache:'no-store'})
  .then(r=>{if(!r.ok)throw Error('release.json HTTP '+r.status);return r.json();})
  .then(release=>{
   const sha=String(release.sha||'unknown');
-  $('hairVersion').textContent='女性ヘア01：実頭皮フィットv4／連続髪ベース｜配信コミット '+sha.slice(0,12);
+  $('hairVersion').textContent='女性ヘア01：頭部メッシュ押し出しv5／厚み・造形・揺れ｜配信コミット '+sha.slice(0,12);
  })
  .catch(()=>{
-  $('hairVersion').textContent='女性ヘア01：実頭皮フィットv4／連続髪ベース｜配信コミット未取得';
+  $('hairVersion').textContent='女性ヘア01：頭部メッシュ押し出しv5／厚み・造形・揺れ｜配信コミット未取得';
  });
 const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
 const pivot=new THREE.Group();scene.add(pivot);
@@ -205,7 +205,7 @@ function updateStats(){
  const model=current;
  if(!model)return;
  const f=model.root.userData.fit,scale=f.scale;
- $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（実頭皮フィットv4／連続ベース）\n':'（実GLB）\n')+
+ $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（頭部メッシュ押し出しv5／厚み・揺れ）\n':'（実GLB）\n')+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
@@ -237,7 +237,7 @@ async function select(item){
   // Native resculpt: do not read the faulty source GLB for female 01.
   const gltf=rebuilt?null:await loader.loadAsync(item.path);
   if(request!==selection)return;
-  const next=rebuilt?buildHair01FromScratch(THREE,scalpSource.skinMesh,{
+  const next=rebuilt?buildHeadDerivedHair01(THREE,scalpSource.skinMesh,{
    referenceRoot:pivot,headSize:headSize(),
    headScalp:targetScalp(headSize()),color:$('color').value
   }):buildIndependentHairMesh(THREE,gltf.scene,{
@@ -259,7 +259,7 @@ async function select(item){
   $('source').textContent=rebuilt?'旧GLB（比較用）':'元のGLB';
   $('source').onclick=()=>{window.open(item.path,'_blank','noopener')};
   $('status').textContent=rebuilt
-   ?item.name+'：顔v121の頭皮実メッシュから連続ベースと面状の前髪・左右・後ろ髪を構築（v4）。旧GLB不使用。'
+   ?item.name+'：顔v121の頭部メッシュを厚く押し出し、同一メッシュを前髪・横髪・後ろ髪まで連続延長（v5）。毛先の揺れ対応。旧GLB不使用。'
    :item.name+'：実v121頭部に装着／浮遊小片'+
      next.cleanupStats.removedTriangles+'面除去。静止時の接触変形はOFF。'+
      (sex==='male'?' ※男性髪はv121頭部で仮試着':'');
@@ -346,9 +346,14 @@ function frame(now){
  swayTime+=dt;
  if(swayTime>=1/30){
   const w=+$('wind').value;
-  const d=spring.step({dt:swayTime,velocityX:vx,velocityZ:vz,turnSpeed:turn,
-   wind:Math.sin(timer*1.6)*w});
-  current?.deformTips(d.x,d.z,{collision:motion!=='idle'});swayTime=0;
+  if(current?.updateMotion){
+   current.updateMotion(swayTime,{motion,wind:w,time:timer});
+  }else{
+   const d=spring.step({dt:swayTime,velocityX:vx,velocityZ:vz,turnSpeed:turn,
+    wind:Math.sin(timer*1.6)*w});
+   current?.deformTips(d.x,d.z,{collision:motion!=='idle'});
+  }
+  swayTime=0;
  }
  controls.update();renderer.render(scene,camera);
 }
