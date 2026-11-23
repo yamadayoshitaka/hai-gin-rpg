@@ -105,3 +105,34 @@ test('3D studio inline module compiles (prevents blank mobile canvas)',()=>{
   {encoding:'utf8',input:match[1]});
  assert.equal(result.status,0,result.stderr);
 });
+
+test('user-provided adjusted GLB metadata matches the default portrait preset',async()=>{
+ const audit=JSON.parse(read('data/v121-adjusted-head-audit.json'));
+ const {V121_REFERENCE_PRESET}=await import('../face-v121-parametric-sliders.js');
+ assert.equal(audit.bytes,2657228);
+ assert.equal(audit.faceVertices,13455);
+ assert.equal(audit.meshes,8);
+ assert.deepEqual(audit.faceReferencePreset,V121_REFERENCE_PRESET);
+ assert.match(audit.eyebrowNode,/EYEBROW/);
+ assert.ok(audit.worldBoundsMeters.min[1]<-.18);
+ assert.ok(audit.worldBoundsMeters.max[1]>.18);
+});
+test('actual scalp underlay derives from skin triangles and never changes source face',()=>{
+ const hair=read('src/v121-anatomical-hair-cap.js');
+ const viewer=read('hair-asset-studio.html');
+ const mesh=read('src/independent-hair-mesh-v1.js');
+ assert.match(hair,/skinFace\.geometry/);
+ assert.match(hair,/const geom=source\.clone\(\)/);
+ assert.match(hair,/const kept=\[\]/);
+ assert.match(hair,/skinFace\.add\(overlay\)/);
+ assert.match(hair,/skinFace\.isMesh/);
+ assert.match(mesh,/const w=right-left,d=front-back,h=Math\.min\(/);
+ assert.match(viewer,/createV121AnatomicalHairCap/);
+ assert.match(viewer,/bodyView\.visible=false/);
+ assert.match(viewer,/v121FaceFile/);
+ assert.match(viewer,/attachV121FaceSliders/);
+ assert.match(viewer,/if\(!file\)attachV121FaceSliders/);
+ assert.match(viewer,/headModel\.clear\(\)/);
+ assert.match(viewer,/current\?\.cap\?\.setColor/);
+ assert.match(viewer,/neutral-face-v121\.glb/);
+});
