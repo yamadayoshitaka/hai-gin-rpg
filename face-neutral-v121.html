@@ -138,7 +138,7 @@ import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 import {attachV121Expressions,V121_EXPRESSIONS} from './face-v121-expression-player.js';
 import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-anatomical-cervical-bust-natural-lip-v9-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-welded-one-skin-full-lowerface-v3-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null,expressionPlayer=null,expressionClips=[],faceMakeup=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -236,7 +236,7 @@ async function init(){
  expressionClips=gltf.animations||[];
  neutral.traverse(o=>{
   if(!o.isMesh)return;
-  if(o.geometry?.getAttribute('position')?.count===13455)face=o;
+  if(o.geometry?.getAttribute('position')?.count>=13455)face=o;
   else if(/GLOBE_UV|EYELINER|LID_CREASE|EYELASHES/.test(o.name))eyeNodes.push(o);
  });
  if(!face||eyeNodes.length<2)throw Error('正規の頭部・眼球メッシュを取得できません');
