@@ -161,11 +161,16 @@ def neutral_color(x,y,z):
     ax=abs(x)
     front=fade(z,.070,.125)
     # Light rose blush following upper outer cheeks, nowhere near chin.
-    cheek=(bell(x,-.077,.037)+bell(x,.077,.037))*bell(y,.256,.033)*front
+    # Do not extend blush into the lower jaw, even at a tiny gaussian tail.
+    cheek=((bell(x,-.077,.037)+bell(x,.077,.037))*
+           bell(y,.256,.033)*front if y>=.215 else 0.)
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
-    # Lips: natural soft pink upper/lower lip gradient; no dark drawn seam.
-    vermilion=(.78*bell(y,.208,.009)+bell(y,.184,.010))
-    lips=vermilion*bell(x,0,.039)*fade(z,.076,.127)
+    # The upstream resting lipstick is strictly bounded to the two
+    # anatomical vermilion bands. Gaussian tails must never tint a chin.
+    lip_region=(.174<=y<=.220 and abs(x)<=.052 and z>.119)
+    vermilion=(.78*bell(y,.208,.007)+bell(y,.185,.0078))
+    lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)
+          if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
     lower_liner=(bell(x,-.044,.023)+bell(x,.044,.023))*bell(y,.295,.004)*front
@@ -297,6 +302,7 @@ def finish(path):
         'technique':'native indexed skin vertex sculpt and corrected neutral vertex colors',
         'removedLegacyBrowLidBand':True,
         'removedChinTintLeakage':True,
+        'lipPigmentRestrictedToVermilion':True,
         'chinVerticesSmoothed':chin_count,
         'nasolabialLeftVertexIds':[],
         'nasolabialRightVertexIds':[],
