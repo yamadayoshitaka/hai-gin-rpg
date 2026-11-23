@@ -79,10 +79,10 @@ function colorFor(x,u,frontal){
  const cheek=(gaussian(x,u,.046,.49,.024,.045)+gaussian(x,u,-.046,.49,.024,.045))*frontal;
  const lip=gaussian(x,u,0,.395,.024,.028)*frontal;
  const baseline=new THREE.Color(0xd9ab9d);
- const pink=new THREE.Color(0xc77f82);
+ const pink=new THREE.Color(0xc38a88);
  const blush=new THREE.Color(0xd99b97);
  baseline.lerp(blush,clamp(cheek*.21));
- baseline.lerp(pink,clamp(lip*.56));
+ baseline.lerp(pink,clamp(lip*.64));
  return baseline;
 }
 function buildSkin(){
@@ -186,8 +186,8 @@ function iris(side){
  const group=new THREE.Group();group.name=side<0?'IRIS_L_NEUTRAL':'IRIS_R_NEUTRAL';
  const z=surface(x,u)+.007;
  for(const [r,d,c] of [
-  [.0067,.0006,0x49392f],[.0049,.0014,0x775943],
-  [.0030,.0025,0x19181b],[.00105,.0034,0xf4ece4]
+  [.0055,.0006,0x49392f],[.0044,.0014,0x775943],
+  [.0025,.0025,0x19181b],[.0007,.0034,0xf4ece4]
  ]){
   const geom=new THREE.CircleGeometry(r,48);
   const m=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({
@@ -295,7 +295,7 @@ export function createNeutralFaceV120({showEyes=true}={}){
   restLandmarks:{
    leftEye:[-.034,.276*(.681-.49),surface(-.034,.681)],
    rightEye:[.034,.276*(.681-.49),surface(.034,.681)],
-   noseTip:[0,.276*(.464-.49),surface(0,.464)],
+   noseTip:[0,.276*(.515-.49),surface(0,.515)],
    upperLip:[0,.276*(.413-.49),surface(0,.413)],
    lowerLip:[0,.276*(.380-.49),surface(0,.380)],
    chin:[0,.276*(.150-.49),surface(0,.150)]
