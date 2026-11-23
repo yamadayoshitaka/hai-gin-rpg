@@ -214,7 +214,7 @@ class TestRealExpressionGLB(unittest.TestCase):
         makeup=self.skin['extras']['referenceMakeup']
         self.assertTrue(makeup['skinPBR'])
         self.assertTrue(makeup['noSeparateFloatingDecals'])
-        self.assertEqual(makeup['version'],'v121-makeup-20261123')
+        self.assertEqual(makeup['version'],'v121-makeup-lip-border-v17-20261124')
         colors=vector(self.g,self.b,self.prim['attributes']['COLOR_0'])
         cheek=[rgb for (x,y,z),rgb in zip(self.pos,colors)
                if .058<abs(x)<.092 and .235<y<.281 and z>.075]
