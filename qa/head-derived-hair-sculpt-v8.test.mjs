@@ -223,5 +223,5 @@ test('all 26 styles construct a closed *outer* groom over the inner head cap',()
  assert.match(code,/const offset=\.0097\+Math\.min\(\.0025,style\.volume\*\.13\)/);
  assert.match(code,/const externalLocks=buildOutsideLocks\(h,style,pool,place,sectionTris\)/);
  assert.match(code,/const capA=place\(\.\.\.first,section,0\)/);
- assert.match(code,/const capB=place\(\.\.\.last,section,1\)/);
+ assert.match(code,/capB=place\(\.\.\.last,section,1\)/);
 });
