@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=7/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=8/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
@@ -116,7 +116,7 @@ test('the wig-only viewer drops the old face wireframe and inspects real static 
  assert.doesNotMatch(html,/function scalpWire\(/);
  assert.doesNotMatch(html,/headGuide/);
  assert.doesNotMatch(html,/id="guide"/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=7/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=8/);
 });
 
 test('separate bangs retain physical thickness, UVs, slider effects and optional middle part',async()=>{
@@ -308,4 +308,47 @@ test('layered high-quality bangs produce many thin textured locks on v121 forehe
  assert.match(html,/scalpCap\.traverse/);
  blunt.userData.dispose();center.userData.dispose();
  geometry.dispose();face.material.dispose();
+});
+
+test('long CC0 hair keeps textured outer shell and uses only inward front hairline liner',async()=>{
+ const THREE=await import('three');
+ const originalGeometry=new THREE.SphereGeometry(.10,96,64);
+ originalGeometry.translate(0,.11,0);
+ const originalPositions=originalGeometry.getAttribute('position').array.slice();
+ const face=new THREE.Mesh(originalGeometry,new THREE.MeshStandardMaterial());
+ const root=new THREE.Group();root.add(face);
+ const head=measureRealHead(THREE,root);
+ const longCap=buildFittedScalpCap(THREE,head,{style:'long01',color:'#ceb27c'});
+ const bobCap=buildFittedScalpCap(THREE,head,{style:'bob01',color:'#ceb27c'});
+ assert.equal(longCap.userData.style,'long01');
+ assert.equal(longCap.userData.longBackFacesExcluded,true);
+ assert.equal(bobCap.userData.longBackFacesExcluded,false);
+ assert.ok(longCap.userData.triangleCount>100,'front hairline liner exists');
+ assert.ok(bobCap.userData.triangleCount>longCap.userData.triangleCount,
+  'full cap still retained for bob while long back no longer protrudes');
+ const mesh=longCap.children[0];
+ const pos=mesh.geometry.getAttribute('position');
+ const normal=mesh.geometry.getAttribute('normal');
+ const uv=mesh.geometry.getAttribute('uv');
+ const color=mesh.geometry.getAttribute('color');
+ assert.equal(pos.count,normal.count,'v121 smooth normals per vertex');
+ assert.equal(pos.count,uv.count,'no strand texture UV regression');
+ assert.equal(pos.count,color.count,'no strand color regression');
+ assert.equal(mesh.material.color.getHexString(),'ceb27c');
+ assert.ok(pos.count>300);
+ for(let i=0;i<pos.count;i++){
+  assert.ok(Number.isFinite(pos.getX(i))&&Number.isFinite(pos.getY(i))&&Number.isFinite(pos.getZ(i)));
+  assert.ok(pos.getZ(i)>=longCap.userData.rearCutZ-.002,
+   'rear cap vertex escaped rear cut plane (visible blob)');
+  const norm=Math.hypot(normal.getX(i),normal.getY(i),normal.getZ(i));
+  assert.ok(norm>.9&&norm<1.1,'normal should remain smooth and normalized');
+ }
+ assert.deepEqual(originalGeometry.getAttribute('position').array,originalPositions,
+  'v121 source geometry was modified in place');
+ assert.match(html,/buildFittedScalpCap\(THREE,head,\{color:\$\('color'\)\.value,style:descriptor\.id\}\)/);
+ assert.match(html,/wig\.add\(wigContent\)/,'the original textured CC0 wig remains');
+ assert.match(html,/wig\.add\(scalpCap\)/);
+ assert.doesNotMatch(html,/wig\.add\(headWire\)/);
+ longCap.userData.dispose();bobCap.userData.dispose();
+ originalGeometry.dispose();face.material.dispose();
 });

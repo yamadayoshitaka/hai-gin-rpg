@@ -94,7 +94,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,buildFittedScalpCap,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=7';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,buildFittedScalpCap,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=8';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -241,6 +241,7 @@ function updateFit(){
   '\n外側の髪のカバー率（横 / 奥）：'+(fit.coverageX*100).toFixed(0)+'% / '+(fit.coverageZ*100).toFixed(0)+'%'+
   '\n頭頂部の隙間はv121髪色キャップで補完'+
   '\n共通座標：v121実メッシュ / 髪キャップ：'+(scalpCap?.userData?.triangleCount||0)+'三角形'+
+  (scalpCap?.userData?.longBackFacesExcluded?'\nロング背面：元CC0髪を優先、後頭部キャップを生成しない':'')+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
   '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
   '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目'+
@@ -304,7 +305,7 @@ async function loadWig(style,sourceFile){
  wig.add(wigContent);
  installMaterials(wigContent);
  // All three hairstyles share the actual v121 scalp coordinate frame.
- scalpCap=buildFittedScalpCap(THREE,head,{color:$('color').value});
+ scalpCap=buildFittedScalpCap(THREE,head,{color:$('color').value,style:descriptor.id});
  wig.add(scalpCap);
  scene.add(wig);
  rawMode=used+' / '+descriptor.id;
@@ -313,7 +314,7 @@ async function loadWig(style,sourceFile){
  frameView('front');
  $('export').disabled=false;
  $('wip').hidden=true;
- setStatus(descriptor.label+'：v121共通座標で装着。'+(activeId==='bob01'?'確認済みボブのサイズを維持しました。':'過剰拡大を抑える髪型別補正を適用しました。')+'隙間は髪色キャップで補完します。');
+ setStatus(descriptor.label+'：v121共通座標で装着。'+(activeId==='long01'?'後頭部の飛び出しを防ぐため、髪色キャップを生え際の内側だけに再構成しました。元の毛筋とテクスチャを維持しています。':activeId==='bob01'?'ボブの装着と髪色キャップは従来どおりです。':'ポニーテールの装着と髪色キャップは従来どおりです。'));
 }
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
  frameView(button.dataset.view==='reset'?'front':button.dataset.view);

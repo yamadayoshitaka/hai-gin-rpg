@@ -322,23 +322,45 @@ export function buildReferenceFringe(THREE,head,{
  * The cap is included in wig GLB, while the cyan head guide stays preview only.
  * Crown/temple/back cutoffs are asymmetric to keep eyes and face uncovered.
  */
-export function buildFittedScalpCap(THREE,head,{color='#d2b17a'}={}){
+/**
+ * Hair-color underlay, built from the ACTUAL v121 scalp, not a fake sphere.
+ *
+ * Long hair already supplies its own continuous outer shell at the back.
+ * An all-around head cap was protruding through it as a faceted oval patch.
+ * Therefore the long style uses a small, inward-set FRONT hairline liner:
+ * no rear triangles are generated at all. Other styles retain the existing
+ * coverage envelope while also benefiting from smooth source normals.
+ *
+ * All source CC0 mesh geometry, original UVs, and hair textures are untouched.
+ */
+export function buildFittedScalpCap(THREE,head,{
+ color='#d2b17a',style='bob01'
+}={}){
  if(!head?.mesh?.geometry)throw Error('v121頭部メッシュがありません');
  head.mesh.updateWorldMatrix(true,false);
- const src=head.mesh.geometry,p=src.getAttribute('position');
- if(!p)throw Error('v121頭部の頂点データがありません');
+ const world=head.mesh.geometry.clone();
+ world.applyMatrix4(head.mesh.matrixWorld);
+ if(!world.getAttribute('normal'))world.computeVertexNormals();
+ const src=world,p=src.getAttribute('position'),normals=src.getAttribute('normal');
+ if(!p){world.dispose();throw Error('v121頭部の頂点データがありません');}
  const ind=src.getIndex(),n=Math.floor((ind?ind.count:p.count)/3);
- const positions=[],uvs=[],tints=[];
+ const positions=[],uvs=[],tints=[],smoothNormals=[];
  const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
- const v=new THREE.Vector3(),headCenterY=head.top-.12;
- const getPoint=(id,out)=>out.fromBufferAttribute(p,id)
-  .applyMatrix4(head.mesh.matrixWorld);
+ const v=new THREE.Vector3(),normal=new THREE.Vector3();
+ const headCenterY=head.top-.12;
+ const isLong=style==='long01';
+ // Behind this plane the CC0 long-hair shell is the ONLY visible hair.
+ const rearCutZ=head.cz+head.rz*.20;
  const spanX=Math.max(head.rx*2,.04),spanY=.22;
+ const getPoint=(id,out)=>out.fromBufferAttribute(p,id);
  function floorAt(x,z){
-  // The forehead hairline remains above the eyebrows; deeper coverage
-  // continues over temples and nape without painting over the face.
   const forward=(z-head.cz)/Math.max(head.rz,.03);
   const lateral=Math.abs(x-head.cx)/Math.max(head.rx,.03);
+  if(isLong){
+   // Shallow root liner only, safely inside the front hairline.
+   // It must never extend over the eyes or wrap around the back.
+   return head.top-(forward>.65?.058:.072);
+  }
   const drop=forward>.45?(lateral>.72?.124:.092):
     (forward>-.15?.137:.160);
   return head.top-drop;
@@ -348,40 +370,51 @@ export function buildFittedScalpCap(THREE,head,{color='#d2b17a'}={}){
   const bi=ind?ind.getX(i*3+1):i*3+1;
   const ci=ind?ind.getX(i*3+2):i*3+2;
   getPoint(ai,a);getPoint(bi,b);getPoint(ci,c);
-  const verts=[a,b,c];
+  const verts=[a,b,c],ids=[ai,bi,ci];
+  if(isLong&&verts.some(q=>q.z<rearCutZ))continue;
   if(verts.some(q=>q.y<floorAt(q.x,q.z)))continue;
-  for(const q of verts){
-   // Expand by a tiny amount along an approximation of the normal to the
-   // head. This avoids z-fighting with the cyan reference guide and skin.
-   v.set((q.x-head.cx), (q.y-headCenterY)*.82,(q.z-head.cz));
-   v.normalize().multiplyScalar(.0027);
+  for(let j=0;j<3;j++){
+   const q=verts[j],id=ids[j];
+   // Long: slightly INSET from the head surface and behind the real wig.
+   // Others retain previous outward clearance for their missing cap areas.
+   v.set(q.x-head.cx,(q.y-headCenterY)*.82,q.z-head.cz);
+   v.normalize().multiplyScalar(isLong?-.0016:.0027);
    positions.push(q.x+v.x,q.y+v.y,q.z+v.z);
    const u=(q.x-head.cx)/spanX+.5;
    const hairV=(head.top-q.y)/spanY;
    uvs.push(u*3.8,hairV*5.0);
    const shade=.93+.045*Math.sin(q.x*147+q.z*83);
    tints.push(shade,shade*.99,shade*.98);
+   // Reuse smooth vertex normals from v121 instead of computing a new
+   // hard normal for every duplicate triangle (the prior low-poly patch).
+   normal.fromBufferAttribute(normals,id).normalize();
+   smoothNormals.push(normal.x,normal.y,normal.z);
   }
  }
- if(positions.length<900)throw Error('v121頭部から髪キャップを構築できません');
+ world.dispose();
+ if(positions.length<300)throw Error('v121頭部から髪キャップを構築できません');
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
  geo.setAttribute('color',new THREE.Float32BufferAttribute(tints,3));
- geo.computeVertexNormals();
+ geo.setAttribute('normal',new THREE.Float32BufferAttribute(smoothNormals,3));
  const texture=fringeTexture(THREE);
  const mat=new THREE.MeshStandardMaterial({
   color,roughness:.79,metalness:0,side:THREE.DoubleSide,
   vertexColors:true,...(texture?{map:texture}:{})
  });
  const mesh=new THREE.Mesh(geo,mat);
- mesh.name='v121-scalp-fitted-CC0-hair-under-cap';
+ mesh.name=isLong?'v121-inner-front-hairline-long-no-rear-cap':
+  'v121-scalp-fitted-CC0-hair-under-cap';
  mesh.castShadow=true;
  const group=new THREE.Group();
  group.name='v121-hair-coverage-cap-not-skin';
  group.add(mesh);
  group.userData.dispose=()=>{geo.dispose();mat.dispose();texture?.dispose();};
  group.userData.triangleCount=positions.length/9;
+ group.userData.style=style;
+ group.userData.rearCutZ=isLong?rearCutZ:null;
+ group.userData.longBackFacesExcluded=isLong;
  return group;
 }
 
