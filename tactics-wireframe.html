@@ -4802,6 +4802,7 @@ function moveActor(a,goal,dt,stop){
   // backwards/forwards loop; each step still reserves its real collision tile.
   // Both sides use the same routing policy, including enemy counterattacks.
   if(currentSkirmishDirective(a)?.mode==='charge'&&
+     a.healTargetSquadId==null&&
      (goalOccluded||a.blockedSince!=null)){
    const attackStep=sharedSkirmishAssaultStep(a);
    if(attackStep&&startCellMove(a,attackStep.x,attackStep.z)){
