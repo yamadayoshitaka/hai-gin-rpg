@@ -88,9 +88,27 @@ test('v119 GLB source: both genders receive real connected topology changes',()=
   // does not edit indices at all.
   assert.ok(Math.abs(b.index.length-a.index.length)<=6,
    'Native oral triangulation changed by more than two triangles');
-  const reordered=b.index.reduce((n,id,i)=>n+(id!==a.index[i]),0);
-  console.log('V119_NATIVE_ORAL_TRIANGLE_REORDER',gender,reordered,b.index.length);
-  assert.ok(reordered<b.index.length*.05,'Too many downstream triangles changed');
+  // The existing downstream oral triangulator can INSERT one triangle
+  // early in the index buffer, shifting every later position. Compare
+  // actual unordered triangle membership, not raw index-array offsets.
+  const triangles=index=>{
+   const map=new Map();
+   for(let k=0;k<index.length;k+=3){
+    const key=[index[k],index[k+1],index[k+2]]
+     .sort((u,v)=>u-v).join(':');
+    map.set(key,(map.get(key)||0)+1);
+   }
+   return map;
+  };
+  const oldTriangles=triangles(a.index),newTriangles=triangles(b.index);
+  let changedTriangles=0;
+  for(const [key,count] of oldTriangles)
+   changedTriangles+=Math.max(0,count-(newTriangles.get(key)||0));
+  for(const [key,count] of newTriangles)
+   changedTriangles+=Math.max(0,count-(oldTriangles.get(key)||0));
+  console.log('V119_NATIVE_ORAL_CHANGED_TRIANGLES',gender,changedTriangles);
+  assert.ok(changedTriangles<=12,
+   'Too many downstream native face triangles changed');
   assert.deepEqual(b.uv,a.uv,'Do not change face UVs');
   assert.equal(changed.face.userData.v88NativeOralRig?.ready,true);
   assert.ok(changed.parts.getObjectByName('LEFT_UPPER_ANATOMICAL_EYELID'));
