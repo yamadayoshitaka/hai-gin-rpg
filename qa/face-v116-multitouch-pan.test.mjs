@@ -20,7 +20,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?qa=expression',
   {waitUntil:'domcontentloaded',timeout:90000});
- await page.waitForFunction(()=>document.documentElement.dataset.faceMeshReady==='v115'&&
+ await page.waitForFunction(()=>document.documentElement.dataset.faceMeshReady==='v117'&&
   typeof window.__faceExpressionQA?.gestureProbe==='function',
   null,{timeout:90000});
  await page.locator('#faceCanvas').scrollIntoViewIfNeeded();
