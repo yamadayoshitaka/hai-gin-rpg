@@ -1168,6 +1168,7 @@ import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
 import {formationCombatIntent,isHighGroundFiringJob} from './src/formation-driven-ai.js?v=formation-ai-v1-20261124';
 import {reachableRoomExit,reachableFormationWaypoint,sharedRoomExitFlow,sharedRoomExitStep} from './src/formation-ai-indoor-route.js?v=castle-exit-relief-v3-20261124';
+import {buildSkirmishAssaultFlow,nextSkirmishAssaultStep} from './src/battle-skirmish-assault-flow.js?v=skirmish-assault-r1-20261124';
 import {createRegisteredBattleMonster}
  from './src/battle-registered-monster-model.js?v=battle-catalog-parity-20261123';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=20261117-horse-saddle-fix1';
@@ -4467,6 +4468,32 @@ function stableActorRouteStep(a,goal,maxExpanded=14000){
  a._stableMovementPath=result.state;
  return result;
 }
+// Cached once per side/terrain profile, not once per soldier. When stone
+// fences or a castle wall interrupt line of sight, an explicit assault
+// must find the REAL opening rather than exhaust an individual A* budget.
+const skirmishAssaultFlowCache=new Map();
+function sharedSkirmishAssaultStep(actor){
+ if(actor.isStrategist)return null;
+ const key=actor.team+':'+(actor.jobId==='ninja'?'water':'ground');
+ let record=skirmishAssaultFlowCache.get(key);
+ if(!record||elapsed-record.createdAt>=1.5){
+  const passable=actor.jobId==='ninja'
+   ?new Uint8Array(combatWalkableMap):combatWalkableMap;
+  if(actor.jobId==='ninja')for(let index=0;index<passable.length;index++){
+   if(!combatWaterMap[index])continue;
+   const x=index%WORLD_SIZE,z=Math.floor(index/WORLD_SIZE);
+   if(traversableCell(x,z,actor))passable[index]=1;
+  }
+  const targets=actors.filter(other=>other.team!==actor.team&&other.hp>0&&
+   !other.defeated&&(other.indoorFloor??1)===1&&other.cell)
+   .map(other=>({x:other.cell.x,z:other.cell.z}));
+  record={createdAt:elapsed,passable,
+   field:buildSkirmishAssaultFlow(WORLD_SIZE,WORLD_SIZE,passable,targets)};
+  skirmishAssaultFlowCache.set(key,record);
+ }
+ return nextSkirmishAssaultStep(actor.cell,record.field,WORLD_SIZE,WORLD_SIZE,
+  record.passable,(x,z)=>availableCell(x,z,actor));
+}
 // Cross-river orders are routed through a surviving bridge, not straight into water.
 // Bridge navigation: preserve a single crossing until the opposite bank is reached.
 function crossingWaypoint(actor,worldGoal){
@@ -4769,6 +4796,18 @@ function moveActor(a,goal,dt,stop){
    // Never replan against a moving enemy target while locked to a bridge.
    // Wait for the next forward cell, or the dedicated bank-side reroute.
    a.poseMoving=false;return;
+  }
+  // A charge toward an enemy behind a physical fence follows the shared
+  // ground-distance field. No teleport, fence clipping, or one-cell
+  // backwards/forwards loop; each step still reserves its real collision tile.
+  // Both sides use the same routing policy, including enemy counterattacks.
+  if(currentSkirmishDirective(a)?.mode==='charge'&&
+     a.healTargetSquadId==null&&
+     (goalOccluded||a.blockedSince!=null)){
+   const attackStep=sharedSkirmishAssaultStep(a);
+   if(attackStep&&startCellMove(a,attackStep.x,attackStep.z)){
+    a._stableMovementPath=null;a.jumping=false;return;
+   }
   }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
   // Prefer a real diagonal dash when both axes have a destination. The
