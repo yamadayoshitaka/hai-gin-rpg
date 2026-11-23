@@ -126,11 +126,13 @@ def philtrum_relief(x,y,z):
 
 
 def nose_and_lips(x,y,z):
-    """Localized real-mesh sculpt; keep nostril cavity and mouth loop intact.
+    """Reference-profile nose / distinct vermilion contours continuous into cheeks.
 
-    Narrow the alar silhouette and soften the front-facing bulbous nasal
-    tip without bridging the two nostril openings. Shape a genuine Cupid's
-    bow, upper and lower vermilion, philtrum and relaxed closed lip seam.
+    Shape both lip ridges on the actual contiguous skin mesh (not decal planes).
+    The new nose base is closer to the upper lip; the outer lip rims taper
+    anatomically into both mouth corners and surrounding cheek without a
+    truncated strip, detached polygons, or a widened tooth-like lower jaw.
+    Keep the central oral seam near local y=.232 for native A/I/U/E/O morphs.
     """
     ax=abs(x)
     nose_front=fade(z,.093,.141)
@@ -139,17 +141,27 @@ def nose_and_lips(x,y,z):
     nx=x*(1.-.063*wing)
     tip=bell(x,0.,.017)*bell(y,.250,.016)*fade(z,.122,.154)
     ala=bell(ax,.027,.011)*bell(y,.242,.018)*nose_front*(1.-fade(ax,.043,.054))
+    # The old ~24 mm nose-lip gap elongated the entire lower midface.
+    # Move ONLY the inferior nasal-base skin downward, not the mouth rig.
+    nasal_base=(bell(y,.264,.009)*bell(nx,0.,.028)*
+                fade(z,.105,.140))
+    ny=y-.0065*nasal_base
     nz=z-.0030*tip-.00115*ala
-    lip_front=fade(z,.103,.137)
-    horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
-    upper=bell(y,.2400,.0072)*horizontal*lip_front
-    lower=bell(y,.2235,.0086)*horizontal*lip_front
-    cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
-    seam=bell(y,.232,.0028)*horizontal*lip_front
-    nz+=(.0010*upper+.0016*lower+.0006*cupids
-         -.0003*seam)
-    nz+=philtrum_relief(nx,y,nz)
-    return (nx,y,nz)
+    lip_front=fade(z,.102,.136)
+    # Wide but finitely tapered skin support: lip corners weld to the cheeks.
+    horizontal=bell(nx,0,.043)*(1.-fade(ax,.043,.064))
+    upper=bell(ny,.2400,.0074)*horizontal*lip_front
+    lower=bell(ny,.2235,.0090)*horizontal*lip_front
+    cupids=bell(ax,.0116,.0064)*bell(ny,.245,.0068)*lip_front
+    seam=bell(ny,.232,.0030)*horizontal*lip_front
+    corner=bell(ax,.045,.014)*bell(ny,.232,.012)*fade(z,.082,.127)
+    # Lower vermilion has its own convex volume and a visible border against
+    # the adjacent cutaneous lip; the corner terminates inside cheek skin.
+    lower_border=bell(ny,.210,.0048)*bell(nx,0,.039)*lip_front
+    nz+=(.0027*upper+.0038*lower+.00115*cupids-.0005*seam+
+         .0013*corner-.0007*lower_border)
+    nz+=philtrum_relief(nx,ny,nz)
+    return (nx,ny,nz)
 
 
 def neutral_color(x,y,z):
@@ -167,17 +179,17 @@ def neutral_color(x,y,z):
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
     # The upstream resting lipstick is strictly bounded to the two
     # anatomical vermilion bands. Gaussian tails must never tint a chin.
-    lip_region=(.216<=y<=.249 and abs(x)<=.052 and z>.119)
-    vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
-    lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)
+    lip_region=(.214<=y<=.249 and abs(x)<=.059 and z>.115)
+    vermilion=(.84*bell(y,.240,.0073)+bell(y,.224,.0083))
+    lips=(vermilion*bell(x,0,.038)*(1.-fade(ax,.041,.059))*fade(z,.115,.140)
           if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
     lower_liner=(bell(x,-.044,.023)+bell(x,.044,.023))*bell(y,.295,.004)*front
     # R channel near 1, G/B reductions create soft pink and taupe accents.
     return (clamp(.995-.007*lips-.024*shadow-.009*lower_liner),
-            clamp(.994-.075*cheek-.022*nose_tip-.170*lips-.037*shadow-.015*lower_liner),
-            clamp(.992-.094*cheek-.027*nose_tip-.190*lips-.049*shadow-.021*lower_liner))
+            clamp(.994-.075*cheek-.022*nose_tip-.225*lips-.037*shadow-.015*lower_liner),
+            clamp(.992-.094*cheek-.027*nose_tip-.255*lips-.049*shadow-.021*lower_liner))
 
 
 def smooth_chin(points,faces):
@@ -330,6 +342,9 @@ def finish(path):
         'removedLegacyBrowLidBand':True,
         'removedChinTintLeakage':True,
         'lipPigmentRestrictedToVermilion':True,
+        'shorterNasalBaseToUpperLipDistance':True,
+        'continuousOuterLipCheekInterface':True,
+        'upperLowerVermilionDifferentCurvatures':True,
         'chinVerticesSmoothed':chin_count,
         'nasolabialLeftVertexIds':[],
         'nasolabialRightVertexIds':[],
