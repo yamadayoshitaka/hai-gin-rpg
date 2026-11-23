@@ -94,9 +94,9 @@ def deformation(name,x,y,z,part):
     if name=='blink':
         return (0.,-.0140*top_lid+.0070*lower_lid,.0016*top_lid)
     if name=='smile':
-        return (sign*.0058*corner,
-                .0072*corner+.0024*cheek+.0011*upper,
-                .0023*cheek+.0008*corner)
+        return (sign*.0066*corner,
+                .0122*corner+.0037*cheek+.0015*upper,
+                .0025*cheek+.0009*corner)
     if name=='laugh':
         return (sign*.0074*corner,
                 .0090*corner+.0032*cheek+.0044*upper-.0105*lower,
