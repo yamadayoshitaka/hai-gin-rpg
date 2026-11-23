@@ -1,0 +1,21 @@
+name: Pages face release version contract
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/publish-pages.yml'
+      - '.github/workflows/pages-face-release-contract.yml'
+      - 'qa/pages-face-release-contract.test.mjs'
+      - 'face-mesh-studio.html'
+  push:
+    branches: [fix/pages-v119-public-face-validation]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public face gate and current editor must agree on release
+        run: node --test qa/pages-face-release-contract.test.mjs
