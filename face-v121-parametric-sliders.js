@@ -63,7 +63,7 @@ function transformPoint(x,y,z,state,kind){
     // the mouth mask is confined to the lips and fades before the menton.
     const weight=kind==='mouth'?1:
       (y>=.168?bell(x,0,.049)*bell(y,.232,.017)*front:0);
-    apply(m,weight,0,.198,false);
+    apply(m,weight,0,.232,false);
   }
   if(kind==='skin'){
     // Smoothly modify cheek depth (especially side profile) and chin shape
