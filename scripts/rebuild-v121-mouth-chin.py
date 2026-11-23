@@ -98,8 +98,8 @@ def new_jaw_geometry(points,uv):
         result.append(target)
     def depth_at_v(v):
         candidates=[result[i][2] for i,(u,t) in enumerate(uv)
-                    if abs(u-.5)<.008 and abs(t-v)<.006]
-        if len(candidates)<3:raise ValueError('Missing anatomical profile '+str(v))
+                    if abs(u-.5)<.016 and abs(t-v)<.011]
+        if not candidates:raise ValueError('Missing anatomical profile '+str(v))
         return max(candidates)
     menton=depth_at_v(.443)
     sulcus=depth_at_v(.393)
