@@ -11,7 +11,7 @@ function geometry(){
  };
  const groups=[];
  groups.push(quad(0,0,.065,.06,0));        // substantial base
- groups.push(quad(.08,-.06,.007,.006,1));  // near hair: keep
+ groups.push(quad(.048,.025,.007,.006,1));  // near hair: keep
  groups.push(quad(.21,.08,.005,.006,1));   // detached tiny floating scrap: remove
  groups.push(quad(-.1,-.17,.005,.14,1));  // genuine long lock: preserve
  const pos={count:data.length/3,
