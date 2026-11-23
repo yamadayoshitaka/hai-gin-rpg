@@ -4,6 +4,9 @@ on:
     paths:
       - 'src/independent-hair-*.js'
       - 'hair-asset-studio.html'
+      - 'hair-cache-reset.html'
+      - 'qa/hair-cache-reset.test.mjs'
+      - 'scripts/prepare-pages-site.py'
       - 'src/v121-anatomical-hair-cap.js'
       - 'src/hair-island-cleanup-v1.js'
       - 'qa/hair-island-cleanup.test.mjs'
@@ -23,6 +26,9 @@ on:
     paths:
       - 'src/independent-hair-*.js'
       - 'hair-asset-studio.html'
+      - 'hair-cache-reset.html'
+      - 'qa/hair-cache-reset.test.mjs'
+      - 'scripts/prepare-pages-site.py'
       - 'src/v121-anatomical-hair-cap.js'
       - 'qa/hair-crown-underlay-v121.test.mjs'
       - 'src/female-hair-01-resculpt-v2.js'
@@ -59,3 +65,4 @@ jobs:
           node --check src/female-hair-01-solid-v5.js
           node --test qa/female-hair-01-solid-v5.test.mjs
           node --test qa/independent-hair-catalog-motion.test.mjs
+          node --test qa/hair-cache-reset.test.mjs
