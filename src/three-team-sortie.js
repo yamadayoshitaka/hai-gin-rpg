@@ -3,7 +3,7 @@
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
-import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS,formationJobMinimums,formationMinimumForRole} from './sortie-formation-logic.js';
+import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS,formationJobMinimums,formationMinimumForRole,matchFormationRoleJobs} from './sortie-formation-logic.js';
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts,FORMATION_ENTRY_REQUIREMENTS} from './sortie-formation-template-rules.js';
@@ -140,6 +140,41 @@ const ACTIVE_ORDER_IDS=Object.freeze(['charge','defend','hold','retreat','suppor
 const allSlots=Object.freeze(Array.from({length:12},(_,i)=>i));
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const ownSquads=game=>(game?.campaign?.squads||[]).filter(s=>s.count>0&&String(s.commanderId??'player')!=='reserve');
+// A named formation may reorganize the positions of existing jobs, but must
+// never pull in a different class or silently change the headcount.
+function eligibleFormationAssignment(game,team,formation,sources){
+ const spec=formationTemplate(formation),base=SORTIE_FORMATIONS[formation];
+ if(!spec||!base||sortieLevel(game)<base.level)return null;
+ const assignment=matchFormationRoleJobs(team,sources,formation,spec.slots);
+ if(!assignment)return null;
+ const total=sortieTeamCount(team),req=FORMATION_ENTRY_REQUIREMENTS[formation];
+ if(total>spec.maxTroops||total>sortiePlanningLimit(game)||total<(req?.people||0))return null;
+ const rarity=formationRarityCounts(team,sources);
+ if(Object.keys(rarity).some(t=>rarity[t]>spec.rarityCaps[t]))return null;
+ if(req){
+  const r=rarity.R+rarity.SR+rarity.SSR+rarity.UR;
+  const sr=rarity.SR+rarity.SSR+rarity.UR;
+  const ssr=rarity.SSR+rarity.UR;
+  if(r<req.rPlus||sr<req.srPlus||ssr<req.ssrPlus||rarity.UR<req.ur)return null;
+ }
+ return assignment;
+}
+function useFreeFormation(team){
+ team.formation=FREE_FORMATION;
+ team.grid=Array(SORTIE_GRID_CELLS).fill(null);
+ for(let i=0;i<SORTIE_SQUADS_PER_GROUP;i++){
+  const id=team.slots[i];
+  if(id&&Number(team.counts[String(id)]||0)>0)team.grid[[5,6,9][i]]=String(id);
+ }
+ return team;
+}
+function useEligibleFormation(team,formation,assignment){
+ team.formation=formation;
+ team.slots=[...assignment,...Array(SORTIE_SQUADS_PER_GROUP-assignment.length).fill(null)];
+ team.grid=Array(SORTIE_GRID_CELLS).fill(null);
+ assignment.forEach((id,i)=>{team.grid[SORTIE_FORMATION_CELLS[formation][i]]=id;});
+ return team;
+}
 export const stageIsControlled=(game,stage)=>Boolean(stage?.id&&game?.completedStages?.includes(stage.id));
 export const allowedSortieSlots=(game,stage)=>stageIsControlled(game,stage)?allSlots:SORTIE_ENTRY_SLOTS;
 const blankTeam=id=>({id,slots:Array(SORTIE_SQUADS_PER_GROUP).fill(null),grid:Array(SORTIE_GRID_CELLS).fill(null),counts:{},divisions:{},captainId:null,formation:'balanced',tactics:[],items:{},deploymentSlot:SORTIE_ENTRY_SLOTS[id-1],initialOrder:'charge'});
@@ -207,8 +242,7 @@ export function ensureSortiePlan(game){
   const captain=candidates.find(s=>String(s.id)===String(old.captainId))||
    [...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0];
   team.captainId=captain?.id??null;
-  if(team.formation!==FREE_FORMATION&&!formationStatus(team,sources,SORTIE_FORMATION_CELLS,sortieSquadCap(game)).valid)
-   arrangeFormation(team,sources,team.formation,SORTIE_FORMATION_CELLS,sortieSquadCap(game));
+  // Validate and align the exact saved roster after global troop limits are applied.
   team.initialOrder=ACTIVE_ORDER_IDS.includes(old.initialOrder)?old.initialOrder:'charge';
   team.tactics=Array.isArray(old.tactics)?old.tactics.filter((id,index,arr)=>STRATEGY_METHODS[id]&&arr.indexOf(id)===index).slice(0,16):[];
   // Item reservations survive old-save normalization without consuming town stock.
@@ -225,18 +259,22 @@ export function ensureSortiePlan(game){
    team.counts[String(s.id)]=s.count;team.divisions[String(s.id)]=1;
   });
   teams.forEach(team=>{
-   arrangeFormation(team,sources,'balanced',SORTIE_FORMATION_CELLS,sortieSquadCap(game));
    const candidates=sources.filter(s=>team.counts[String(s.id)]);
    team.captainId=[...candidates].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
   });
  }
  clampPlannedHeadcount(teams,sortiePlanningLimit(game));
  for(const team of teams)if(team.formation===FREE_FORMATION)clampFreeTeam(team,sources);
- for(const team of teams)if(team.formation!==FREE_FORMATION&&sortieTeamCount(team)){
-  // Preserve the exact roster, headcounts and captain selected at the inn.
-  // Only migrate legacy saves whose named formation has an invalid job/cell layout.
-  if(!formationStatus(team,sources,SORTIE_FORMATION_CELLS,sortieSquadCap(game)).valid)
-   rebuildNamedFormation(game,teams,team,team.formation,team.slots.filter(Boolean).length);
+ // Never convert an incompatible named formation into a different roster.
+ // Preserve source IDs, exact soldier counts, and captain; use free layout if
+ // the selected jobs, minimum cell sizes, rank or level cannot qualify.
+ for(const team of teams){
+  if(team.formation===FREE_FORMATION)useFreeFormation(team);
+  else{
+   const assignment=eligibleFormationAssignment(game,team,team.formation,sources);
+   if(assignment)useEligibleFormation(team,team.formation,assignment);
+   else useFreeFormation(team);
+  }
  }
  game.sortiePlan={version:1,teams};
  return game.sortiePlan;
@@ -244,73 +282,6 @@ export function ensureSortiePlan(game){
 export const sortieTeams=game=>ensureSortiePlan(game).teams;
 export const sortieTeamCount=team=>Object.values(team?.counts||{}).reduce((a,b)=>a+Number(b||0),0);
 
-/** A named formation owns its job-to-cell mapping. Rebuild from inventory
- * rather than preserving user-swapped cells or incompatible old-save jobs.
- */
-function rebuildNamedFormation(game,teams,team,formation,desired){
- const candidates=ownSquads(game),other=new Map();
- for(const t of teams)if(t!==team)for(const [id,count] of Object.entries(t.counts))
-  other.set(id,(other.get(id)||0)+Number(count||0));
- const current={...team.counts},currentTotal=Object.values(current).reduce((n,x)=>n+Number(x||0),0);
- const spec=formationTemplate(formation),maxRows=Math.min(sortieSquadCap(game),spec.slots);
- const slots=Array(SORTIE_SQUADS_PER_GROUP).fill(null),chosen=[],used=new Set(),pickedRarity={N:0,R:0,SR:0,SSR:0,UR:0};
- for(let i=0;i<maxRows;i++){
-  const role=FORMATION_ROLES[formation][i],jobs=ROLE_JOBS[role]||[];
-  const eligible=candidates.filter(item=>{
-   const id=String(item.id);
-   const rarity=rarityOf(item);
-   return !used.has(id)&&jobs.includes(item.job)&&item.count>(other.get(id)||0)&&
-    pickedRarity[rarity]<spec.rarityCaps[rarity];
-  });
-  eligible.sort((a,b)=>{
-   const av=Number(current[String(a.id)]||0),bv=Number(current[String(b.id)]||0);
-   return (bv>0?1:0)-(av>0?1:0)||bv-av||
-    (b.count-(other.get(String(b.id))||0))-(a.count-(other.get(String(a.id))||0));
-  });
-  const candidate=eligible[0];if(!candidate)continue;
-  const id=String(candidate.id),rarity=rarityOf(candidate);
-  used.add(id);slots[i]=id;pickedRarity[rarity]++;
-  chosen.push({id,rarity,capacity:candidate.count-(other.get(id)||0),
-   minimum:formationMinimumForRole(role),
-   weight:Math.max(1,Number(current[id]||Math.min(10,candidate.count)))});
- }
- const maxTotal=Math.max(0,sortiePlanningLimit(game)-teams.filter(t=>t!==team)
-  .reduce((n,t)=>n+sortieTeamCount(t),0));
- const target=Math.min(Math.max(currentTotal,chosen.reduce((n,x)=>n+x.minimum,0)),maxTotal,spec.maxTroops,
-  chosen.reduce((n,x)=>n+x.capacity,0));
- const counts={},divisions={},shares=chosen.map(x=>({...x,count:0})),
-  rarityUsed={N:0,R:0,SR:0,SSR:0,UR:0};
- if(target>0){
-  // Reserve the minimum headcount for each job cell first. If the stage or
-  // rarity cap cannot cover it, this template remains invalid (no buff).
-  let available=target;
-  for(const x of shares){
-   if(available<=0)break;
-   const minimum=Math.max(1,x.minimum);
-   const picked=Math.max(0,Math.min(minimum,x.capacity,
-    spec.rarityCaps[x.rarity]-rarityUsed[x.rarity],available));
-   x.count=picked;rarityUsed[x.rarity]+=picked;available-=picked;
-  }
-  let left=target-shares.reduce((n,x)=>n+x.count,0);
-  while(left>0){
-   const best=shares.filter(x=>x.count<x.capacity&&rarityUsed[x.rarity]<spec.rarityCaps[x.rarity])
-    .sort((a,b)=>b.weight/(b.count+1)-a.weight/(a.count+1)||a.id.localeCompare(b.id))[0];
-   if(!best)break;best.count++;rarityUsed[best.rarity]++;left--;
-  }
- }
- for(const x of shares)if(x.count){
-  counts[x.id]=x.count;divisions[x.id]=Math.max(1,Math.min(team.divisions[x.id]||1,x.count,4));
- }
- team.formation=formation;team.slots=slots;team.counts=counts;team.divisions=divisions;
- // Positions are owned by the template; never reshuffle into other role cells.
- team.grid=Array(SORTIE_GRID_CELLS).fill(null);
- slots.forEach((id,i)=>{if(id&&counts[id])team.grid[SORTIE_FORMATION_CELLS[formation][i]]=id;});
- if(!counts[String(team.captainId)]){
-  const people=candidates.filter(x=>counts[String(x.id)]);
-  team.captainId=[...people].sort((a,b)=>rarityScore(b)-rarityScore(a))[0]?.id??null;
- }
- return team;
-}
 /** Deprecated: preset sizes are immutable and only preset selection may change them. */
 export function setSortieFormationSize(){
  throw Error('陣形の隊数はテンプレート固定です。別の陣形を選択してください。');
@@ -499,8 +470,12 @@ export function setSortieFormation(game,teamId,formation){
  ensureSortiePlan(game);
  const team=teamOf(game,teamId);
  if(!team||(formation!==FREE_FORMATION&&(!Object.hasOwn(SORTIE_FORMATIONS,formation)||SORTIE_FORMATIONS[formation].level>sortieLevel(game))))throw Error('この陣形は軍師レベルが不足しています。');
- if(formation===FREE_FORMATION){team.formation=formation;clampFreeTeam(team,ownSquads(game));}
- else rebuildNamedFormation(game,game.sortiePlan.teams,team,formation,formationTemplate(formation).slots);
+ if(formation===FREE_FORMATION)useFreeFormation(team);
+ else{
+  const assignment=eligibleFormationAssignment(game,team,formation,ownSquads(game));
+  if(assignment)useEligibleFormation(team,formation,assignment);
+  else useFreeFormation(team); // No class substitution or hidden recruitment.
+ }
  if(!availableSortieOrders(game,teamId).includes(team.initialOrder))team.initialOrder='hold';
  return team;
 }
