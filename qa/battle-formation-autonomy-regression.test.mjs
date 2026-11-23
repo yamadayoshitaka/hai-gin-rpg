@@ -38,6 +38,24 @@ assert.equal(sim.squadCommands.get(String(priest.squadId)),'hold',
  'Healing must not overwrite the command');
 assert.ok(priest.mp<beforeMp,'Real healing consumes MP');
 
+// End-to-end: a real guarded enemy deals HP damage at melee contact.
+// Do not mistake an order-label transition for a functioning attack AI.
+const contactSim=new MassBattleGridSimulation(50,1123,{
+ width:size,height:size,walkable:new Uint8Array(size*size).fill(1),bridges:[],riverXAt:()=>116
+});
+const attacker=contactSim.units.find(u=>u.team===1&&!u.isStrategist&&u.jobId==='sword');
+const victim=contactSim.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='shield')||
+ contactSim.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='sword');
+assert.ok(attacker&&victim,'real melee jobs exist in both armies');
+Object.assign(attacker,{x:24,z:24,fromX:24,fromZ:24,cooldown:0});
+Object.assign(victim,{x:25,z:24,fromX:25,fromZ:24,cooldown:10000});
+assert.equal(contactSim.setSquadCommand(attacker.squadId,'defend',1),true);
+assert.equal(contactSim.setSquadCommand(victim.squadId,'hold',0),true);
+const victimStartingHp=victim.hp;
+for(let tick=0;tick<70&&victim.hp===victimStartingHp;tick++)contactSim.step(.1);
+assert.ok(victim.hp<victimStartingHp,
+ 'defending enemy sword must actually attack and damage an adjacent hostile');
+
 const skills=readFileSync(new URL('../src/combat-action-runtime.js',import.meta.url),'utf8');
 assert.match(skills,/skills\.sort\(\(a,b\)=>Number\(b\.kind==='heal'\)/,
  'Priests must prioritize healing magic under fire');
@@ -66,6 +84,15 @@ assert.equal(contact.mode,'charge','guarding enemies counterattack when attacked
 assert.equal(enemyContactResponse('defend','retreat',hostile,invasion).mode,'retreat',
  'near-dead enemies must retain their tactical escape option');
 assert.equal(enemyContactResponse('defend','defend',hostile,
+ [{...invasion[0],x:46,z:33}]).mode,'charge',
+ 'a live opponent twelve tiles away must wake a guarding enemy without waiting 120 seconds');
+assert.equal(enemyContactResponse('hold','defend',hostile,
+ [{...invasion[0],x:47,z:33}]).mode,'charge',
+ 'sixteen-tile guard contact also applies to a waiting enemy');
+assert.equal(enemyContactResponse('defend','retreat',hostile,
+ [{...invasion[0],x:46,z:33}]).mode,'retreat',
+ 'contact must not override emergency retreat for near-dead enemies');
+assert.equal(enemyContactResponse('defend','defend',hostile,
  [{...invasion[0],x:95,z:95}]).mode,'defend',
  'a distant foe does not pull defensive troops away from their post');
 assert.equal(enemyContactResponse('charge','explore',hostile,invasion).mode,'charge',
@@ -75,10 +102,17 @@ assert.match(runtimeSource,/setStartingSquadOrder\(1,sid,'charge'\)/,
  'enemy squads receive a real combat start command');
 assert.match(runtimeSource,/pendingOpeningFormationGroups\.add/,
  'an eligible inn formation starts its own movement on battle opening');
-assert.match(runtimeSource,/issueFormationSignature\(\{groupId:group,squadIds:members\}\)/,
+assert.match(runtimeSource,/issueFormationSignature\(\{groupId:group,squadIds:members,automaticOpening:true\}\)/,
  'the inn-authored movement sequence executes rather than remaining a static preview');
 assert.match(runtimeSource,/const threatened=enemyContactResponse\(/,
  'nearby hostile contact bypasses the stale 120-second defensive order cooldown');
+assert.match(runtimeSource,/massSim\?\.enemySquadCommands\?\.get\(String\(id\)\)/,
+ 'enemy strategic AI reads the executed order rather than an outdated opening command');
+assert.match(runtimeSource,/automaticOpening:true/,
+ 'eligible opening formations launch without a manual-order cooldown');
+assert.match(runtimeSource,/squadRoster\.some\(a=>a\.team===0/,
+ 'formation waypoints use authoritative living squads, not only visible detail rigs');
+
 
 console.log('PASS formation-aware priest triage, MP cost, preserved hold order, bridge and enemy AI contracts');
 

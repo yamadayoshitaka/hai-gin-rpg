@@ -79,6 +79,45 @@ test('named previews require three distinct jobs; free allows one to three',()=>
  assert.equal(game.sortiePlan.teams[0].slots.filter(Boolean).length,1,'free layout supports one job');
 });
 
+test('training formation page separates all controls and returns to team selection at the end',()=>{
+ const game=attackTrainingGame('訓練所全画面ページ');
+ const first=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:0});
+ const last=renderInnFormationWizard({game,view:'formation',teamId:1,formationPage:13});
+ const parsed=parseHTML(first).document;
+ const article=parsed.querySelector('.innWizardFormationCard');
+ assert.ok(article,'one complete formation must live in a separate card');
+ assert.equal(parsed.querySelectorAll('.innWizardFormationCard').length,1,
+  'a smartphone page displays one formation, not an overlapping grid');
+ assert.ok(article.querySelector('.innWizardFormationDiagram'),'formation diagram stays in its own region');
+ assert.equal(article.querySelector('.innWizardFormationDiagram').closest('button'),null,
+  'animation must never be nested inside an action button');
+ assert.ok(article.querySelector('.innWizardFormationDetail'),'information stays below animation');
+ assert.ok(parsed.querySelector('.innWizardFormationPager'),'pager is a sibling below the card');
+ assert.ok(parsed.querySelector('.innWizardFreeFormation'),'free formation remains independently selectable');
+ assert.match(first,/data-inn-wizard-formation-page="1"/);
+ assert.match(last,/data-inn-wizard-return-teams="1"/);
+ assert.doesNotMatch(last,/data-inn-wizard-formation-page="1"/,
+  'the final page goes back to the team selector instead of wrapping to page one');
+ const css=file('src/three-team-sortie-ui.css');
+ assert.match(css,/\.innWizardFormationCard\{/);
+ assert.match(css,/\.innWizardFormationDiagram\{/);
+ assert.match(css,/\.innWizardFormationPager\{/);
+ assert.match(css,/\.innWizardFormationCard\) \.innWizardBody\{/);
+});
+
+test('all paid town actions require explicit confirmation and success plays the coin chime',()=>{
+ const town=file('town-hub.html'),audio=file('src/town-audio-director.js');
+ for(const key of ['d.trainingHire','d.trainingAutoFormation','d.innWizardBuyEquip',
+  'd.buy','d.forgeWeapon','d.tavernGacha','showTownTransactionConfirm(button,summary)',
+  'event.stopImmediatePropagation()','data-confirm-purchase-yes',
+  "townAudio.effect('coin')"]){
+  assert.ok(town.includes(key),'missing purchase confirmation/audio contract: '+key);
+ }
+ assert.match(town,/root\.querySelector\('\[data-confirm-purchase-yes\]'\)\.onclick=/);
+ assert.match(audio,/coin:\[\[1450/,'a distinct metallic coin sound is synthesized');
+ assert.match(audio,/kind==='coin'\?'triangle'/,'coin sound is not a generic menu tap');
+});
+
 test('Android uses paged touch buttons rather than the system-wide dropdown',()=>{
  const js=file('src/battle-realtime-commands.js'),css=file('src/battle-realtime-commands.css');
  assert.match(js,/<select id="realtimeInitialStrategy" hidden tabindex="-1"/);

@@ -40,7 +40,7 @@ export function enemyOrderRefreshSeconds(previous,friendlyAlive,opponentAlive){
 /** Hostile combat intent cannot be replaced by treasure exploration.
  * A guarding squad immediately counterattacks if live opponents enter its
  * local perimeter; depleted squads may still retreat for survival. */
-export function enemyContactResponse(previous,chosen,own=[],opponents=[],radius=9){
+export function enemyContactResponse(previous,chosen,own=[],opponents=[],radius=16){
  const ready=own.filter(u=>u?.alive!==false&&(u?.hp??0)>0&&!u.isStrategist);
  const active=opponents.filter(u=>u?.alive!==false&&(u?.hp??0)>0&&!u.isStrategist);
  // Sector hash avoids O(allies × enemies) spikes at 1000 vs 1000.
@@ -61,6 +61,8 @@ export function enemyContactResponse(previous,chosen,own=[],opponents=[],radius=
  });
  if(chosen==='explore')chosen='charge';
  const counter=inContact&&['defend','hold'].includes(previous);
+ // Contact forces a guarding squad to fight, but a severely depleted squad
+ // must still be able to disengage when its tactical AI chooses retreat.
  if(counter&&chosen!=='retreat')chosen='charge';
  return {mode:chosen,inContact,counter};
 }
