@@ -225,7 +225,14 @@ def correct_chin_profile(points):
     lip_front=max(lip)
     chin_before=max(chin)
     clearance=.0170
-    displacement=max(0.,chin_before-(lip_front-clearance))
+    # Even when the chin is already behind the lips numerically, the
+    # lower-face silhouette can still look elongated/angular. Give the
+    # menton a small, guaranteed round-and-recede fairing pass.
+    displacement=max(.0060,chin_before-(lip_front-clearance))
+    print('V121 CHIN SECTION ZMAX', [
+        (round(low,3),round(max((z for x,y,z in points
+            if abs(x)<.065 and low<=y<low+.016),default=-1.),5))
+        for low in (.092,.108,.124,.140,.156,.172,.188,.204)])
     if displacement>.038:
         raise ValueError('Chin correction too large; verify face coordinates')
     result=[]
@@ -240,11 +247,13 @@ def correct_chin_profile(points):
         w=lateral*vertical*frontal
         # Lift and round the menton a little without turning the jaw into
         # a pointed wedge. The neck y<.080 does not move at all.
-        lift=.0020*bell(y,.124,.023)*(1.-fade(ax,.037,.075))*vertical
-        result.append((x,y+lift,z-displacement*w))
+        lift=.0062*bell(y,.125,.026)*(1.-fade(ax,.039,.081))*vertical
+        # A gently fuller central U-shaped menton in frontal view.
+        rounded_x=x*(1.+.022*bell(y,.127,.027)*lateral*vertical)
+        result.append((rounded_x,y+lift,z-displacement*w))
         if displacement*w>.00005 or lift>.00005:changed+=1
     chin_after=max(z for x,y,z in result
-                   if abs(x)<.032 and .118<y<.153 and z>.080)
+                   if abs(x)<.055 and .110<y<.163)
     if chin_after>lip_front-clearance+.0006:
         raise ValueError('v121 sagittal chin profile remains protrusive')
     return result,{
