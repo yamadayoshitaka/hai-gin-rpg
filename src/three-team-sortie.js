@@ -3,7 +3,7 @@
  * inventory remains in campaign.squads, while this plan assigns actual people.
  * A source squad may be split between teams but never duplicated.
  */
-import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS,formationJobMinimums,formationMinimumForRole,matchFormationRoleJobs} from './sortie-formation-logic.js';
+import {formationStatus,arrangeFormation,formationCellsAtLevel,FREE_FORMATION,FORMATION_ROLES,ROLE_JOBS,formationJobMinimums,formationMinimumForRole,matchFormationRoleJobs} from './sortie-formation-logic.js?v=formation-job-20261123';
 import {STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
 import {FORMATION_TEMPLATE_LIMITS,formationTemplate,rarityOf,formationCapacityStatus,formationRarityCounts,FORMATION_ENTRY_REQUIREMENTS} from './sortie-formation-template-rules.js';
