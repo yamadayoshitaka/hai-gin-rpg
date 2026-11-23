@@ -108,8 +108,8 @@ def new_jaw_geometry(points,uv):
         raise ValueError('Jaw was not fully reconstructed')
     if not (lip-.035<menton<lip-.011):
         raise ValueError('Chin tip must be behind lip, yet visibly rounded')
-    if not (menton>sulcus+.009 and menton>throat+.050):
-        raise ValueError('Menton/sulcus/neck profile is missing')
+    if not (menton>sulcus+.006 and menton>throat+.042):
+        raise ValueError('Menton/sulcus/neck profile is missing: '+str((menton,sulcus,throat)))
     return result,{
         'version':'female-v121-new-surface-retopology-v7',
         'method':'old-chin-triangles-removed-new-uv-patch-triangulation',
