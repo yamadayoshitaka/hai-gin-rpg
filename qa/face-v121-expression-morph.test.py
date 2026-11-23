@@ -49,13 +49,11 @@ class TestRealExpressionGLB(unittest.TestCase):
                          ['V121_BlinkLoop','V121_ExpressionShowcase'])
         rig=self.skin['extras']['facialExpressionRig']
         self.assertEqual(rig['channels'],NAMES)
-        self.assertEqual(rig['animatedMeshes'],9)
+        self.assertEqual(rig['animatedMeshes'],10)
         self.assertTrue(self.skin['extras']['futureExpressionsImplemented'])
         self.assertFalse(self.skin['extras']['hairIncluded'])
         for i,mesh in enumerate(g['meshes']):
-            if i in (1,2,11):
-                # The generated cervical/shoulder surface is anatomically
-                # static; only native lips, jaw and eyelids have face morphs.
+            if i in (1,2):
                 self.assertNotIn('targets',mesh['primitives'][0])
                 continue
             self.assertEqual(mesh['extras']['targetNames'],NAMES)
@@ -65,7 +63,7 @@ class TestRealExpressionGLB(unittest.TestCase):
             for target in mesh['primitives'][0]['targets']:
                 self.assertEqual(g['accessors'][target['POSITION']]['count'],n)
         for clip in g['animations']:
-            self.assertEqual(len(clip['channels']),9)
+            self.assertEqual(len(clip['channels']),10)
             self.assertEqual(len(clip['samplers']),1)
             for ch in clip['channels']:
                 self.assertEqual(ch['target']['path'],'weights')
