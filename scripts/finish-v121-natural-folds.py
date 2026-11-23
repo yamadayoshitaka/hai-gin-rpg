@@ -139,10 +139,10 @@ def smooth_chin(points,faces):
     result=list(points)
     smoothed=0
     for i,(x,y,z) in enumerate(points):
-        if not (.098<y<.177 and abs(x)<.082 and z>.055):
+        if not (.098<y<.177 and abs(x)<.082 and z>.005):
             continue
         weight=(fade(y,.109,.133)*(1-fade(y,.153,.172))*
-                (1-fade(abs(x),.058,.080))*fade(z,.068,.110))
+                (1-fade(abs(x),.058,.080))*fade(z,.005,.050))
         if weight<.015 or not adjacency[i]:
             continue
         mean=sum(points[j][2] for j in adjacency[i])/len(adjacency[i])
