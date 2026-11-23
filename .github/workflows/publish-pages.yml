@@ -192,13 +192,15 @@ jobs:
           obj=json.loads(blob[20:20+size])
           info=obj['meshes'][0]['extras']
           assert info['topology']['vertices']==13455
-          assert info['futureExpressionsImplemented'] is False
+          assert info['futureExpressionsImplemented'] is True
           print('PASS baked v120 neutral face:',len(blob),'bytes')
           PY
       - name: Require v121 skinhead PBR face and its preview in the Pages artifact
         run: |
           test -s pages-dist/face-neutral-v121.html
           test -s pages-dist/face-v121-parametric-sliders.js
+          test -s pages-dist/face-v121-expression-player.js
+          grep -q 'face-v121-expression-player.js' pages-dist/face-neutral-v121.html
           grep -q 'face-v121-parametric-sliders.js' pages-dist/face-neutral-v121.html
           test -s pages-dist/assets/generated/neutral-face-v121.glb
           python3 - <<'PY'
@@ -209,8 +211,10 @@ jobs:
           obj=json.loads(blob[20:20+size])
           x=obj['meshes'][0]['extras']
           assert x['version']==121 and x['topology']['vertices']==13455
-          assert x['futureExpressionsImplemented'] is False and x['hairIncluded'] is False
+          assert x['futureExpressionsImplemented'] is True and x['hairIncluded'] is False
           assert len(obj['images'])==4 and 'normalTexture' in obj['materials'][0]
+          assert len(obj['animations'])==2 and len(obj['meshes'][0]['primitives'][0]['targets'])==11
+          assert obj['meshes'][0]['extras']['referenceMakeup']['skinPBR'] is True
           assert len(obj['meshes'])==8
           assert 'V121_UPPER_EYELINER' in [m['name'] for m in obj['meshes']]
           assert obj['meshes'][0]['extras']['naturalFoldCleanup']['removedLegacyBrowLidBand'] is True
