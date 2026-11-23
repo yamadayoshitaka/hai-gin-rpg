@@ -40,7 +40,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <main>
 <nav><a href="./face-neutral-v120.html?v=120">従来の中立顔 v120</a>　｜　<a href="./face-mesh-studio.html">顔・髪エディターへ戻る</a></nav>
 <h1>参考画像基準・女性スキンヘッド v121</h1>
-<p>提示された肌・目元・唇の参考画像を目標に、顔輪郭と頬・鼻・顎を造形し直した女性の中立顔です。髪は付けず、1024pxの肌色・粗さ・微細凹凸のPBRテクスチャをGLBに内蔵。表情は後から追加します。</p>
+<p>提示された肌・目元・唇の参考画像を目標に、顔輪郭と頬・鼻・顎を造形し直した女性の中立顔です。髪は付けず、2048pxの肌色・粗さ・微細凹凸のPBRテクスチャをGLBに内蔵。表情は後から追加します。</p>
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
 <canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
@@ -78,7 +78,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-uv-eye-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={};
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -104,7 +104,7 @@ function saveBlob(blob,name){
 }
 async function exportGLB(){
  const button=$('export');button.disabled=true;
- update('status','v121スキンヘッドGLBを保存中…');
+ update('status','v121眼球UV・高品質スキンヘッドGLBを保存中…');
  try{
   const response=await fetch(sourceURL,{cache:'no-store'});
   if(!response.ok)throw Error('GLB HTTP '+response.status);
@@ -189,7 +189,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：参考画像基準の肌PBR適用済み・スキンヘッド（表情なし）');
+ update('status','顔 v121：眼球UV・2048px PBR・輪郭造形更新済み（スキンヘッド・中立）');
  document.documentElement.dataset.neutralFaceReady='v121';
  const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
  draw();
