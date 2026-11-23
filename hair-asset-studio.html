@@ -18,7 +18,9 @@ button[aria-pressed=true],button:focus-visible,input:focus-visible{border-color:
 .controls{display:flex;flex-wrap:wrap;gap:6px}.controls button{flex:1;white-space:nowrap}
 #viewport{position:relative;height:min(70vh,580px);min-height:330px;border-radius:9px;overflow:hidden;background:radial-gradient(ellipse at center,#304050,#0a1624)}
 #viewport canvas{width:100%;height:100%;display:block;touch-action:none}
-.viewerInfo{position:absolute;left:8px;top:8px;pointer-events:none;background:#071827bb;padding:8px;border-radius:7px;font-size:12px;max-width:75%}
+.viewerInfo{white-space:pre-wrap;background:#10243a;padding:9px 11px;border-radius:7px;font-size:12px;max-width:100%;margin-top:6px}
+.fitDetails{margin-top:8px;color:#c9dbe9;font-size:13px}
+.fitDetails summary{cursor:pointer;padding:9px;border:1px solid #55718d;border-radius:8px}
 label{display:block;color:#d5e5f1;font-size:13px;margin:11px 0}label span{float:right;color:#f5e7c1}
 input[type=range],input[type=color]{display:block;width:100%;min-height:28px;margin-top:6px;accent-color:#79c7b1}
 input[type=color]{height:38px}
@@ -46,7 +48,7 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
 <div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：顔v121実スキンヘッド（読込中）<br>髪メッシュ：読込中</div></div>
 <p class="muted">ドラッグで360度回転、ピンチで拡大。通常表示は元GLBの連続した髪のままです。色分け・分解は検査モードのみ。眉毛・目・顔は変更しません。</p>
-<div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="source">元のGLB</button></div>
+<div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="capToggle" aria-pressed="true">頭皮下地を表示</button><button id="source">元のGLB</button></div>
 <div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
 <div id="parts" aria-label="髪メッシュのパーツ表示"></div>
 </section>
@@ -87,6 +89,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 viewport.append(renderer.domElement);
+const details=document.createElement('details');details.className='fitDetails';
+const summary=document.createElement('summary');summary.textContent='装着情報・フィット倍率（タップで開く）';
+details.append(summary,$('viewerInfo'));viewport.after(details);
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=.10;controls.minDistance=.28;controls.maxDistance=1.8;
 controls.target.set(0,-.045,0);camera.position.set(.045,.03,.78);controls.update();
@@ -191,7 +196,9 @@ function updateStats(){
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
-  '\n頭皮下地：'+(current?.cap?.triangles||0)+'面（実メッシュ由来）';
+  '\n頭皮下地：'+(current?.cap?.triangles||0)+'面（実メッシュ由来）'+
+  '\n細い立体毛流れ：'+(current?.cap?.fiberTriangles||0)+'面'+
+  '\n浮遊した破片の除去：'+(current?.cleanupStats?.removedTriangles||0)+'面';
 }
 function makePartControls(){
  const root=$('parts');root.replaceChildren();if(!current)return;
@@ -217,15 +224,20 @@ async function select(item){
    {headSize:headSize(),headScalp:targetScalp(headSize()),color:$('color').value});
   const old=current;
   next.cap=createV121AnatomicalHairCap(THREE,scalpSource.skinMesh,{color:$('color').value});
+  const showCap=$('capToggle').getAttribute('aria-pressed')==='true';
+  next.cap.object.visible=showCap;
+  if(next.cap.fibers)next.cap.fibers.visible=showCap;
   current=next;pivot.add(next.root);
   old?.cap?.dispose();old?.dispose();
   // A new selection must always open in the intact GLB mode.
   for(const id of ['breakdown','explode'])$(id).setAttribute('aria-pressed','false');
-  next.setExploded(false);next.setSectionColors(false);next.deformTips(0,0);
+  next.setExploded(false);next.setSectionColors(false);
+  next.deformTips(0,0,{collision:false});
   spring.reset();makePartControls();updateStats();
   $('source').onclick=()=>{window.open(item.path,'_blank','noopener')};
-  $('status').textContent=item.name+'：実v121頭部に装着（眉毛を維持／元髪GLBの形状を保持）'+
-   (sex==='male'?' ※男性髪は現段階ではv121頭部で仮試着':'');
+  $('status').textContent=item.name+'：実v121頭部に装着／浮遊小片'+
+   next.cleanupStats.removedTriangles+'面除去。静止時の接触変形はOFF。'+
+   (sex==='male'?' ※男性髪はv121頭部で仮試着':'');
  }catch(error){if(request===selection)$('status').textContent='GLB読込エラー：'+error.message;}
 }
 function list(){
@@ -233,7 +245,7 @@ function list(){
  for(const item of INDEPENDENT_HAIR_CATALOG[sex]){
   const b=document.createElement('button');b.type='button';
   b.dataset.hair=item.id;b.setAttribute('aria-pressed',String(item.id===selected.id));
-  const icon=document.createElement('span');icon.className='iconHair';icon.textContent='♜';
+  const icon=document.createElement('span');icon.className='iconHair';icon.textContent='髪';
   const text=document.createElement('span');text.textContent=item.name;
   b.append(icon,text);b.onclick=()=>select(item);root.append(b);
  }
@@ -245,6 +257,15 @@ for(const g of ['female','male'])$(g).onclick=()=>{
 for(const key of ['width','height','depth'])$(key).oninput=updateHead;
 $('color').oninput=()=>{
  current?.setColor($('color').value);current?.cap?.setColor($('color').value);
+};
+$('capToggle').onclick=()=>{
+ const show=$('capToggle').getAttribute('aria-pressed')!=='true';
+ $('capToggle').setAttribute('aria-pressed',String(show));
+ $('capToggle').textContent=show?'頭皮下地を表示':'頭皮下地を非表示';
+ if(current?.cap){
+  current.cap.object.visible=show;
+  if(current.cap.fibers)current.cap.fibers.visible=show;
+ }
 };
 for(const key of ['breakdown','explode'])$(key).onclick=()=>{
  const pressed=$(key).getAttribute('aria-pressed')!=='true';
@@ -297,7 +318,7 @@ function frame(now){
   const w=+$('wind').value;
   const d=spring.step({dt:swayTime,velocityX:vx,velocityZ:vz,turnSpeed:turn,
    wind:Math.sin(timer*1.6)*w});
-  current?.deformTips(d.x,d.z,{collision:true});swayTime=0;
+  current?.deformTips(d.x,d.z,{collision:motion!=='idle'});swayTime=0;
  }
  controls.update();renderer.render(scene,camera);
 }
