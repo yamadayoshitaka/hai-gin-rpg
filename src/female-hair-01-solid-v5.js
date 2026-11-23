@@ -235,7 +235,8 @@ function createHairBody(THREE,head,anatomy,color){
 export function buildHeadDerivedHair01(THREE,skin,{referenceRoot,headSize,color='#c5a36f'}={}){
  if(!skin?.isMesh||!referenceRoot||!headSize)throw Error('v121の実頭部メッシュが必要です');
  const source=skinInHeadSpace(skin,referenceRoot);
- const eyebrow=browElevation(skin,referenceRoot,source.boundingBox?.max?.y||headSize.height*.5,headSize);
+ const sourceBounds=boundsOf(source);
+ const eyebrow=browElevation(skin,referenceRoot,sourceBounds.max.y,headSize);
  const anatomy=actualHeadAnatomy(source,eyebrow);
  // If the face's parent scene uses a different transform, update brow from
  // transformed actual crown height rather than a guessed head-height offset.
