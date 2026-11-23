@@ -24,5 +24,5 @@ jobs:
       - name: Syntax check and both-bank bridge movement regression
         run: |
           node --check src/battle-bridge-crossing-lock.js
-          node --test qa/battle-bridge-oneway-traffic.test.mjs
+          node --test qa/battle-bridge-oneway-traffic.test.mjs qa/battle-wide-bridge-clearance.test.mjs
           node --test qa/battle-ai-wandering-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs
