@@ -277,9 +277,15 @@ def rebuild(path):
             v=generate(theta,y)
             # Smooth joining only, without using source body geometry in
             # any independent ring after the lip region begins.
-            if row==0:
-                # Natural lower-nasal transition: upper ring stays at cut y.
-                v=(v[0],v[1],v[2])
+            if row<4:
+                # Start each new surface at the exact existing cut boundary,
+                # then fair into independent lips within the next 12 mm.
+                # This is a NEW bridge mesh, not reuse of old lower-face
+                # triangles or old chin vertex offsets.
+                blend=(.23,.48,.72,.93)[row]
+                v=(top[j][0]*(1-blend)+v[0]*blend,
+                   v[1],
+                   top[j][2]*(1-blend)+v[2]*blend)
             pos.append(v)
             t=fade(row,0.,5.)
             tex.append(tuple(olduv[j][k]*(1-t)+(.78+(theta/math.tau)*.10,.84-y*.10)[k]*t for k in (0,1)))
