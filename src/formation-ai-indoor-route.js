@@ -69,7 +69,8 @@ export function sharedRoomExitFlow(width,height,walkable,exits=[]){
  const queue=new Int32Array(width*height);let head=0,tail=0;
  for(const point of exits){
   const x=Math.round(point?.x),z=Math.round(point?.z),index=z*width+x;
-  if(x<0||z<0||x>=width||z>=height||!walkable(x,z)||distances[index]===0)continue;
+  if(!Number.isFinite(x)||!Number.isFinite(z)||x<0||z<0||x>=width||z>=height||
+   !walkable(x,z)||distances[index]===0)continue;
   distances[index]=0;queue[tail++]=index;
  }
  if(!tail)return null;
