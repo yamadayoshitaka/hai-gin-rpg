@@ -177,14 +177,16 @@ def rebuild(path):
             colors.append(tuple(col[k]*(1-t)+(.98,.96,.945)[k]*t for k in range(3)))
     faces=[]
     for row in range(10):
-        a=row*rcount
-        b=(row+1)*rcount
+        top=row*rcount
+        lower=(row+1)*rcount
         for j in range(rcount):
             n=(j+1)%rcount
             if area>0:
-                faces.extend(((a+j,a+n,b+j),(a+n,b+n,b+j)))
+                faces.extend(((top+j,top+n,lower+j),
+                              (top+n,lower+n,lower+j)))
             else:
-                faces.extend(((a+n,a+j,b+j),(b+n,a+n,b+j)))
+                faces.extend(((top+n,top+j,lower+j),
+                              (lower+n,top+n,lower+j)))
     # Close bottom below the viewport to avoid the source's triangular open bib.
     bottom=len(positions)
     positions.append((0.,-.076,0.))
