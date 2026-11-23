@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=6/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=7/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
@@ -116,7 +116,7 @@ test('the wig-only viewer drops the old face wireframe and inspects real static 
  assert.doesNotMatch(html,/function scalpWire\(/);
  assert.doesNotMatch(html,/headGuide/);
  assert.doesNotMatch(html,/id="guide"/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=6/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=7/);
 });
 
 test('separate bangs retain physical thickness, UVs, slider effects and optional middle part',async()=>{
@@ -228,8 +228,9 @@ test('CC0 crown uses both lateral and depth measurements without deforming impor
  mesh.geometry.dispose();mesh.material.dispose();
 });
 
-test('three real CC0 source size profiles fit the same v121 scalp X/Z coordinates',()=>{
+test('bob remains unchanged; long and ponytails use smaller balanced v121 fitting',()=>{
  const head={cx:.004,cz:-.005,rx:.092,rz:.103,top:.202};
+ // Native verified CC0 hair GLB bounding dimensions from import QA.
  const profiles=[
   ['long01',.261249,.728558,.246588],
   ['bob01',.212840,.239823,.257404],
@@ -238,14 +239,31 @@ test('three real CC0 source size profiles fit the same v121 scalp X/Z coordinate
  for(const [name,w,h,d] of profiles){
   const box={min:{x:-w/2,y:0,z:-d/2},max:{x:w/2,y:h,z:d/2}};
   const crown={width:w,depth:d,cx:0,cz:0};
-  const fit=calculateWigFit(box,head,{widthRatio:1.20,crown});
-  assert.ok(fit.coverageX>=1.20,'insufficient scalp width: '+name);
-  assert.ok(fit.coverageZ>=1.20,'insufficient scalp depth: '+name);
-  assert.ok(Math.abs(fit.x-head.cx)<1e-10,'misaligned X '+name);
-  assert.ok(Math.abs(fit.z-head.cz)<1e-10,'misaligned Z '+name);
-  assert.ok(calculateWigFit(box,head,{widthRatio:1.35,crown}).scale>fit.scale,
-   'slider must enlarge consistently '+name);
+  const opt={widthRatio:1.20,crown};
+  const fitted=calculateWigFit(box,head,{...opt,style:name});
+  const earlier=calculateWigFit(box,head,{...opt,style:'bob01'});
+  const expectedOld=Math.max(head.rx*2*1.035/w,head.rz*2*1.035/d)*1.20;
+  assert.ok(Math.abs(earlier.scale-expectedOld)<1e-12);
+  assert.ok(Math.abs(fitted.x-head.cx)<1e-10,'x alignment '+name);
+  assert.ok(Math.abs(fitted.z-head.cz)<1e-10,'z alignment '+name);
+  assert.ok(Number.isFinite(fitted.y)&&fitted.uniformSize);
+  const wider=calculateWigFit(box,head,{...opt,widthRatio:1.35,style:name});
+  assert.ok(wider.scale>fitted.scale,'slider monotonic '+name);
+  if(name==='bob01'){
+   assert.equal(fitted.fitMode,'full-coverage');
+   assert.equal(fitted.scale,earlier.scale,'approved bob must remain same size');
+   assert.ok(fitted.coverageX>=1.20&&fitted.coverageZ>=1.20);
+  }else{
+   assert.equal(fitted.fitMode,'balanced-crown');
+   assert.ok(fitted.scale<earlier.scale*.90,
+    'long/pony must shrink at least 10% without changing bob: '+name);
+   assert.ok(fitted.scale>earlier.scale*.60,
+    'long/pony cannot collapse to an excessively small cap: '+name);
+   assert.ok(fitted.capWidth>0&&fitted.capDepth>0);
+  }
  }
+ assert.match(html,/style:activeId/,'UI must pass current CC0 style into fit');
+ assert.match(html,/buildFittedScalpCap\(THREE,head/,'a real v121 hair cap fills intentional gaps');
 });
 test('v121-derived tinted hair cap covers crown independently of source wig and wire',async()=>{
  const THREE=await import('three');
