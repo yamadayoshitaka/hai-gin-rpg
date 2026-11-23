@@ -23,7 +23,6 @@ def read_glb(path):
     magic,version,length=struct.unpack_from('<4sII',data)
     if (magic,version,length)!=(b'glTF',2,len(data)):
         raise ValueError('Source must be GLB 2.0')
-    ptr=12;gltf=None, 
     ptr=12;gltf=None;buffer=None
     while ptr<len(data):
         size,kind=struct.unpack_from('<I4s',data,ptr)
@@ -147,7 +146,6 @@ def build(source,destination):
     p['attributes']['POSITION']=floats(positions,'VEC3')
     p['attributes']['COLOR_0']=floats(colors,'VEC3')
     # The displaced head needs recomputed normals, *not* old v120 normals.
-    from collections import defaultdict
     norms=[[0.,0.,0.] for _ in positions]
     for i in range(0,len(indexes),3):
         a,b,c=(indexes[j][0] for j in (i,i+1,i+2))
