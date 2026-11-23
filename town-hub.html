@@ -149,7 +149,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .forgePanel b{font-size:14px;color:#ffe0a2}.forgePanel small{font-size:11px;color:#d4e0e7}
 #panel .forgePanel button{background:#79552c;border-color:#d9ba7d;min-height:42px}
 </style>
-<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=formation-3jobs-20261123"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=training-confirm-battle-20261123"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、軍訓練所、鍛冶屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -184,7 +184,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
 import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=formation-3jobs-20261123';
-import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=formation-3jobs-20261123';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=training-confirm-battle-20261123';
 import {purchaseAndArrangeTrainingFormation,inspectTrainingFormationPurchase} from './src/training-formation-purchase.js?v=formation-3jobs-20261123';
 import {setInnTeamItem} from './src/inn-team-items.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=formation-3jobs-20261123';
@@ -208,7 +208,7 @@ import {drawTavernGacha,renderTavernGacha,renderTavernGachaResult} from './src/t
 import {resolveTownConversation} from './src/town-dialogue-catalog.js';
 import {tavernQuestStages,runTavernSideQuest,tavernQuestBattleSettings} from './src/town-side-quests.js';
 import {makeCoreBattleRequest,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
-import {createTownAudioDirector} from './src/town-audio-director.js';
+import {createTownAudioDirector} from './src/town-audio-director.js?v=training-confirm-battle-20261123';
 import {createStoryVoiceDirector} from './src/story-voice-director.js';
 import {TOWN_SHOP,TOWN_EVENTS,getSaveSlots,getSavedGame,loadGame,persistSession,saveAtTown,buyTownItem,hireTownSoldiers,trainingHireCapacity,equipSquadItem,buyAndEquipSquadItem,transferSquadItem,forgeSquadWeapon,MAX_WEAPON_FORGE_LEVEL,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
