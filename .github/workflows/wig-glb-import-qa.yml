@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+      - name: Install the same three.js version as the wig viewer for real geometry validation
+        run: npm install --no-save --package-lock=false three@0.160.1
       - name: Validate the new wig-only viewer and head fit
         run: node --test qa/wig-glb-import.test.mjs
       - name: Download only license-reviewed CC0 hair GLB files and check blob identity
