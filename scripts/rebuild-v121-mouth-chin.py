@@ -77,15 +77,15 @@ def new_lower_face_geometry(points,uv):
         (.102,-.0006),
         (.126,-.0018),
         (.149,-.0032),
-        (.173,-.0050),
-        (.188,-.0058),
-        (.198,-.0062),
-        (.204,-.0063),  # single very shallow labiomental sulcus
-        (.211,-.0059),  # never rise into a second lower-lip ridge
-        (.218,-.0047),  # soften transition into fuller true vermilion
-        (.224,-.0046),  # preserve natural lower-lip volume without extra ridge
-        (.228,-.0030),
-        (.234,-.0005),  # keep the closed mouth seam and upper lip
+        (.173,-.0032),
+        (.188,-.0043),
+        (.198,-.0047),
+        (.204,-.0048),  # wide, shallow skin-only sulcus, not a dark shelf
+        (.211,-.0044),  # continuous normal transition below lower lip
+        (.218,-.0037),
+        (.224,-.00335), # actual lower vermilion stays round, no second lip
+        (.228,-.00235),
+        (.234,-.0005),  # keep the closed oral seam and entire upper lip
         (.245, .0000),
         (.255, .0000),
     )
@@ -96,7 +96,10 @@ def new_lower_face_geometry(points,uv):
             result.append((x,y,z))
             continue
         front=fade(z,.063,.119)
-        middle=bell(x,0.,.061)
+        # Keep sagittal mouth/chin fairing on the FRONT lower face. The
+        # old 61-mm falloff bent cheeks as far as the commissures and
+        # reinforced a long lateral crease in front/quarter views.
+        middle=bell(x,0.,.046)*(1.-fade(abs(x),.053,.078))
         lip_zone=fade(z,.101,.131)*bell(x,0.,.042)
         dz=profile(y,sagittal)*middle*front
         # Narrow the LOWER vermilion by lifting only its bottom boundary.
