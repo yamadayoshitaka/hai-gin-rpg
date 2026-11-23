@@ -64,6 +64,28 @@ class ReferenceV14(unittest.TestCase):
             outer=SCULPT['philtrum_relief'](.028,y,.15)
             self.assertLess(center,outer-.0007)
 
+    def test_v16_nasal_taper_and_fuller_real_vermilion(self):
+        sculpt=SCULPT['nose_and_lips']
+        # Anatomical alar and tip mesh is measurably slimmer, not just paint.
+        left=sculpt(-.026,.254,.153)
+        right=sculpt(.026,.254,.153)
+        self.assertLess(right[0]-left[0],.044)
+        bridge=sculpt(0.,.275,.153)
+        cheek=sculpt(.080,.275,.153)
+        self.assertGreater(bridge[2]-.153,.0006)
+        self.assertAlmostEqual(cheek[0],.080,delta=.0001)
+        # The two vermilion bands have actual 3D projection, and mouth
+        # corners, sealed mouth, sublabial chin remain protected.
+        upper=sculpt(0.,.240,.150)
+        lower=sculpt(0.,.224,.150)
+        corner=sculpt(.055,.224,.150)
+        chin=sculpt(0.,.201,.150)
+        self.assertGreater(upper[2]-.150,.0016)
+        self.assertGreater(lower[2]-.150,.0047)
+        self.assertLess(abs(corner[2]-.150),.0004)
+        self.assertLess(abs(chin[2]-.150),.0003)
+        self.assertLess(sculpt(0.,.246,.150)[1]-.246,.012)
+
     def test_chin_vline_tapers_without_lower_lip_or_neck_distortion(self):
         sculpt=runpy.run_path(str(ROOT / 'scripts/rebuild-v121-mouth-chin.py'))
         pts=[(x,.150,.15) for x in (-.056,-.040,.0,.040,.056)]
@@ -98,12 +120,17 @@ class ReferenceV14(unittest.TestCase):
         self.assertEqual(meta['version'],121)
         self.assertFalse(meta['hairIncluded'])
         self.assertEqual(meta['mouthChinRebuild']['version'],
-                         'female-v121-realspace-neutral-lower-face-v15')
+                         'female-v121-realspace-neutral-lower-face-v16')
         sculpt=meta['referenceFeatureSculpt']
         for field in ('lowerLipFullerAndCornerTapered',
                       'upperLipMShapedCupidBow',
                       'nasalTipAndAlarNarrowed',
                       'philtrumDistanceShortenedByGeometry'):
+            self.assertTrue(sculpt[field],field)
+        for field in ('narrowerNasalWingsAndHeadRealMesh',
+                      'centralNasalDorsumRidgeRealMesh',
+                      'upperLowerVermilionFullnessRealMesh',
+                      'lipFullnessFadesAtCornersAndChin'):
             self.assertTrue(sculpt[field],field)
         self.assertEqual(meta['topology']['vertices'],13455)
         self.assertEqual(len(g['meshes'][0]['primitives'][0]['targets']),11)

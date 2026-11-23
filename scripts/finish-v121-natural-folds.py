@@ -143,11 +143,18 @@ def nose_and_lips(x,y,z):
           (1.-fade(ax,.043,.054))*nasal)
     nose_head=(bell(ax,.019,.015)*bell(y,.254,.017)*nose_front*
                (1.-fade(ax,.038,.052)))
-    nx=x*(1.-.103*wing-.055*nose_head)
+    # Narrow the full alar silhouette and the nose head in actual XYZ,
+    # without treating dark nostril pixels as a 2D texture. The nostril rim
+    # and adjoining cheeks fade to the untouched source outside the masks.
+    nx=x*(1.-.145*wing-.092*nose_head)
     tip=bell(x,0.,.017)*bell(y,.251,.016)*fade(z,.122,.154)*nasal
     ala=bell(ax,.027,.011)*bell(y,.252,.016)*nose_front*(1.-fade(ax,.043,.054))
     bridge=bell(x,0.,.012)*bell(y,.282,.030)*fade(z,.087,.138)
-    nz=z-.00275*tip-.00110*ala+.00065*bridge
+    # Keep a narrow central dorsal ridge rather than a blunt nasal button.
+    # The narrow lift is balanced by a gentle alar/tip retraction in profile.
+    central_ridge=(bell(x,0.,.009)*bell(y,.274,.018)*
+                   fade(z,.118,.151)*nasal)
+    nz=z-.00305*tip-.00152*ala+.00085*bridge+.00115*central_ridge
 
     # Mouth corners fall off continuously to zero, while the central lip
     # retains volume. A narrower bottom boundary restores the reference's
@@ -170,14 +177,20 @@ def nose_and_lips(x,y,z):
     # changing that seam would break real 3D mouth aperture topology.
     lip_lift=(.00415*bell(y,.240,.010)*horizontal*lip_front*
               fade(y,.235,.240)*(1.-fade(y,.250,.259)))
+    # Expand the real lip boundary vertically; do not move the resting
+    # oral-seal band or make a second ridge beneath the lower vermilion.
     bottom_rim=.00165*bell(y,.216,.0055)*horizontal*lip_front
+    upper_rim=(.00095*bell(y,.246,.0045)*horizontal*lip_front*
+               fade(y,.237,.242))
     # Two peaks and a central dip make an actual M-shaped Cupid's bow.
     peaks=(bell(x,-.011,.005)+bell(x,.011,.005))
     bow_lift=.00160*peaks*bell(y,.245,.0045)*lip_front
     central_notch=.00086*bell(x,0,.0042)*bell(y,.245,.0045)*lip_front
-    ny=y+lip_lift-bottom_rim+bow_lift-central_notch
+    ny=y+lip_lift+upper_rim-bottom_rim+bow_lift-central_notch
 
-    nz+=(.00105*upper+.00345*lower+.00095*cupids-.00025*seam)
+    # Increase upper/lower vermilion projection, not the adjacent chin.
+    # The fullness tapers into the genuine mouth corners via horizontal.
+    nz+=(.00245*upper+.00550*lower+.00125*cupids-.00025*seam)
     # Keep a single center groove between the columella and Cupid's bow;
     # the two philtral columns remain soft and do not cross the upper lip.
     nz+=philtrum_relief(nx,y,nz)
@@ -344,7 +357,11 @@ def finish(path):
         'skinPBR':True,
         'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
-        'version':'v121-nose-lips-cupid-bow-short-philtrum-v15-20261124',
+        'version':'v121-sharp-nose-full-lips-v16-20261124',
+        'narrowerNasalWingsAndHeadRealMesh':True,
+        'centralNasalDorsumRidgeRealMesh':True,
+        'upperLowerVermilionFullnessRealMesh':True,
+        'lipFullnessFadesAtCornersAndChin':True,
         'upperLipRaisedTowardNoseMillimeters':4.15,
         'philtrumLongitudinalCoverage':[.239,.273],
         'philtrumReal3DGrooveNotMakeup':True,

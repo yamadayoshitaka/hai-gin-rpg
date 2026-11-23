@@ -82,9 +82,9 @@ def new_lower_face_geometry(points,uv):
         (.198,-.0062),
         (.204,-.0063),  # single very shallow labiomental sulcus
         (.211,-.0059),  # never rise into a second lower-lip ridge
-        (.218,-.0055),
-        (.224,-.0052),  # gently retract real lower vermilion
-        (.228,-.0032),
+        (.218,-.0047),  # soften transition into fuller true vermilion
+        (.224,-.0046),  # preserve natural lower-lip volume without extra ridge
+        (.228,-.0030),
         (.234,-.0005),  # keep the closed mouth seam and upper lip
         (.245, .0000),
         (.255, .0000),
@@ -139,7 +139,7 @@ def new_lower_face_geometry(points,uv):
     chin_depth=forward_depth(.142,.194)
     neck_depth=forward_depth(.075,.118)
     return result,{
-        'version':'female-v121-realspace-neutral-lower-face-v15',
+        'version':'female-v121-realspace-neutral-lower-face-v16',
         'method':'actual-XYZ-sagittal-C1-lip-sulcus-short-chin-and-boundary-welded-remesh',
         'mouthFrontZ':round(lip_front,6),
         'mentonAfterZ':round(chin_depth,6) if chin_depth is not None else None,

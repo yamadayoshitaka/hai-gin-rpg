@@ -228,8 +228,12 @@ jobs:
           x=obj['meshes'][0]['extras']
           assert x['version']==121 and x['topology']['vertices']==13455
           assert x['futureExpressionsImplemented'] is True and x['hairIncluded'] is False
-          assert x['mouthChinRebuild']['version']=='female-v121-realspace-neutral-lower-face-v15'
+          assert x['mouthChinRebuild']['version']=='female-v121-realspace-neutral-lower-face-v16'
           assert x['referenceFeatureSculpt']['lowerLipFullerAndCornerTapered'] is True
+          assert x['referenceFeatureSculpt']['narrowerNasalWingsAndHeadRealMesh'] is True
+          assert x['referenceFeatureSculpt']['centralNasalDorsumRidgeRealMesh'] is True
+          assert x['referenceFeatureSculpt']['upperLowerVermilionFullnessRealMesh'] is True
+          assert x['referenceFeatureSculpt']['lipFullnessFadesAtCornersAndChin'] is True
           assert x['referenceFeatureSculpt']['upperLipMShapedCupidBow'] is True
           assert x['referenceFeatureSculpt']['nasalTipAndAlarNarrowed'] is True
           assert x['referenceFeatureSculpt']['philtrumDistanceShortenedByGeometry'] is True
