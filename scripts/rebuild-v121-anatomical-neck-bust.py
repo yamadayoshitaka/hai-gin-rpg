@@ -82,7 +82,25 @@ def rim_from_cut(xyz,faces,cut):
         if nxt in ring:raise ValueError('Cut ring self-repeats')
         before=ring[-1]
         ring.append(nxt)
-    if len(ring)!=len(adjacency):raise ValueError('Disconnected cut ring')
+    if len(ring)!=len(adjacency):
+        seen=set()
+        cycles=[]
+        for startnode in adjacency:
+            if startnode in seen:continue
+            queue=[startnode]
+            component=set()
+            while queue:
+                q=queue.pop()
+                if q in component:continue
+                component.add(q)
+                queue.extend(adjacency[q]-component)
+            seen|=component
+            cycles.append({'n':len(component),
+                 'x':(round(min(t[0] for t in component),4),round(max(t[0] for t in component),4)),
+                 'y':(round(min(t[1] for t in component),4),round(max(t[1] for t in component),4)),
+                 'z':(round(min(t[2] for t in component),4),round(max(t[2] for t in component),4))})
+        print('LOWER_FACE_CUT_COMPONENTS',cut,json.dumps(sorted(cycles,key=lambda x:-x['n'])))
+        raise ValueError('Disconnected cut ring')
     ids=[min(members[k]) for k in ring]
     if len(ids)<55 or len(ids)>300:
         raise ValueError('Wrong rim size: '+str(len(ids)))
