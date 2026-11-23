@@ -71,7 +71,7 @@ def sculpt(v):
     nz=z+.0058*cheek+.0028*midface-.0048*nose-.0024*brow+.003*chin
     # Keep a natural female side profile, without an exaggerated protrusion.
     lip=bell(x,0,.039)*bell(y,.232,.023)*front
-    nz-=.0015*lip
+    nz-=.0004*lip
     return (nx,y,nz)
 
 def color(v):
