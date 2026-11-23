@@ -29,9 +29,10 @@ function rootBandBounds(THREE,geometries){
  for(const geometry of geometries)all.union(new THREE.Box3().setFromBufferAttribute(
   geometry.getAttribute('position')));
  if(!validBox(all))throw Error('髪の境界を計測できません');
- // 16cm from the crown, NOT a percentage of the total long-hair length.
- // Ignore isolated outliers through trimmed quantiles.
- const floor=all.max.y-Math.min(.16,(all.max.y-all.min.y)*.80);
+ // Only the 8.5 cm crown attachment band defines the wig fit.
+ // The former 16 cm band included bangs/side locks and dragged their
+ // asymmetric outline into the scalp width, depth and horizontal centre.
+ const floor=all.max.y-Math.min(.085,(all.max.y-all.min.y)*.70);
  for(const geometry of geometries){
   const pos=geometry.getAttribute('position');
   const stride=Math.max(1,Math.floor(pos.count/40000));
@@ -42,8 +43,8 @@ function rootBandBounds(THREE,geometries){
  }
  if(xs.length<30)throw Error('髪の頭頂／根元帯を計測できません');
  const box=new THREE.Box3(
-  new THREE.Vector3(percentile(xs,.03),percentile(ys,.03),percentile(zs,.03)),
-  new THREE.Vector3(percentile(xs,.97),all.max.y,percentile(zs,.97))
+  new THREE.Vector3(percentile(xs,.06),percentile(ys,.03),percentile(zs,.06)),
+  new THREE.Vector3(percentile(xs,.94),all.max.y,percentile(zs,.94))
  );
  if(!validBox(box))throw Error('髪の根元帯が空です');
  return {rootBox:asBox(box),hairBox:asBox(all)};
