@@ -68,10 +68,10 @@ class TestFaceV121(unittest.TestCase):
             else:
                 for (index,) in before+after:
                     x,y,z=newp[index]
-                    self.assertLess(abs(x),.082)
+                    self.assertLess(abs(x),.119)
                     self.assertGreater(y,.110)
                     self.assertLess(y,.267)
-                    self.assertGreater(z,.076)
+                    self.assertGreater(z,.063)
                 remeshed+=1
         rig=self.b['meshes'][0]['extras']['facialExpressionRig']
         self.assertEqual(detached,rig['splitMouthSeal']
@@ -79,10 +79,18 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-continuous-sagittal-lowerface-v2')
+                         'female-v121-front-profile-jaw-neck-remodel-v3')
         self.assertGreater(rebuild['edgeFlips'],3)
         self.assertGreater(remeshed,3)
         self.assertTrue(rebuild['sideProfileMeasured'])
+        self.assertTrue(rebuild['chinTipRoundness3D'])
+        self.assertTrue(rebuild['frontalJawWidthBlending'])
+        self.assertTrue(rebuild['submentalToNeckBlend'])
+        self.assertEqual(rebuild['chinVerticalShorteningMeters'],.006)
+        self.assertGreater(rebuild['remodeledAnteriorChinVertices'],11)
+        self.assertGreater(rebuild['blendedSubmentalNeckVertices'],7)
+        self.assertGreater(rebuild['affectedVertices'],60)
+        self.assertLess(rebuild['maximum3DDisplacement'],.045)
         self.assertTrue(rebuild['outerBoundaryUntouched'])
         self.assertTrue(rebuild['monotoneNoDoubleChin'])
         self.assertTrue(rebuild['legacyChinBridgeDisabled'])
