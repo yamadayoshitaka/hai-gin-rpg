@@ -134,7 +134,7 @@ test('the viewer uses only v121 native head input for v5 and has independent swa
  const s=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  const code=readFileSync(new URL('../src/female-hair-01-solid-v5.js',import.meta.url),'utf8');
  assert.match(s,/head-derived-hair-sculpt-v6\.js\?v=6/);
- assert.match(s,/const gltf=rebuilt\?null:await loader\.loadAsync\(item\.path\)/);
+ assert.doesNotMatch(s,/loader\.loadAsync\(item\.path\)/);
  assert.match(s,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
  assert.match(s,/current\.updateMotion\(swayTime,\{motion,wind:w,time:timer\}\)/);
  assert.match(code,/skin\.geometry\.clone\(\)/);
