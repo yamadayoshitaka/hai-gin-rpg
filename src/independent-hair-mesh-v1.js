@@ -95,13 +95,15 @@ export function measureBaldHeadSurface(THREE,model){
  const xs=upper.map(v=>v[0]),zs=upper.map(v=>v[2]);
  const left=percentile(xs,.025),right=percentile(xs,.975);
  const back=percentile(zs,.025),front=percentile(zs,.975);
- const w=right-left,d=front-back,h=top-bottom;
+ // The v121 mesh includes shoulders/neck. Never use the entire bust
+ // height for the hair fitting volume: its anatomical cranium is ~24 cm.
+ const w=right-left,d=front-back,h=Math.min(.245,(top-bottom)*.66);
  if(!(w>.05&&d>.05&&h>.13))throw Error('スキンヘッドの寸法が異常');
  return Object.freeze({
   skinMesh:face,vertexCount:points.length,
   width:w,depth:d,height:h,top,front,
-  centerX:(left+right)/2,centerY:(top+bottom)/2,centerZ:(back+front)/2,
-  skinBounds:{min:[left,bottom,back],max:[right,top,front]}
+  centerX:(left+right)/2,centerY:top-h*.5,centerZ:(back+front)/2,
+  skinBounds:{min:[left,top-h,back],max:[right,top,front]}
  });
 }
 export function buildIndependentHairMesh(THREE,scene,{headSize={},headScalp=null,
