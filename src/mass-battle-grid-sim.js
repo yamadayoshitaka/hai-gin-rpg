@@ -1917,7 +1917,7 @@ export class MassBattleGridSimulation {
       const healingRoute=triageNeedsMovement?this._pursuitFlow(triageTarget,u.jobId):null;
       const triageFlow=healingRoute&&healingRoute[cell]<0x3fffffff?healingRoute:null;
       const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
-        triageFlow|| (reachable&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
+        triageFlow|| (reachable&&!allyCover&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
         supporting?this.supportFlow:chaseFlow||(globalChase?enemyFlow:
         reachable?assignedFlow:defaultFlow));
       if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0&&
