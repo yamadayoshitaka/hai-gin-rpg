@@ -39,51 +39,55 @@ class TestFaceV121(unittest.TestCase):
         cls.b,cls.b_bin=glb(NEW)
 
     def test_geometry_is_a_new_real_3d_sculpt_preserving_v120_index_order(self):
-        src=self.a['meshes'][0]['primitives'][0]
-        dst=self.b['meshes'][0]['primitives'][0]
-        oldp=accessor(self.a,self.a_bin,src['attributes']['POSITION'])
-        newp=accessor(self.b,self.b_bin,dst['attributes']['POSITION'])
+        source=self.a['meshes'][0]['primitives'][0]
+        result=self.b['meshes'][0]['primitives'][0]
+        oldp=accessor(self.a,self.a_bin,source['attributes']['POSITION'])
+        newp=accessor(self.b,self.b_bin,result['attributes']['POSITION'])
         self.assertEqual(len(oldp),13455)
-        self.assertEqual(len(newp),len(oldp))
-        original=accessor(self.a,self.a_bin,src['indices'])
-        current=accessor(self.b,self.b_bin,dst['indices'])
-        self.assertEqual(len(original),len(current))
+        self.assertGreater(len(newp),16000)
         meta=self.b['meshes'][0]['extras']['neckBustRebuild']
+        self.assertEqual(meta['version'],'female-v121-true-one-skin-topology-v3')
         self.assertTrue(meta['entireOldLowerFaceRemoved'])
+        self.assertTrue(meta['samePrimitiveRealIndexWeld'])
+        self.assertTrue(meta['noDuplicatedOrOverlaidSkinSeam'])
         self.assertTrue(meta['oneContiguousGeneratedMouthChinNeckShoulderBust'])
+        self.assertEqual(meta['sourceRetainedVertexIds'],13455)
+        self.assertEqual(meta['freshVisibleSurfaceVertices'],len(newp)-13455)
         self.assertEqual(meta['oldBodyTrianglesUsedInNewMesh'],0)
+        self.assertEqual(meta['newMorphedNodesAddedToAnimation'],0)
+        self.assertGreater(meta['oldLowerFaceChinNeckBustTrianglesRetired'],8000)
+        self.assertGreater(meta['freshVisibleSurfaceTriangles'],8000)
         cut=meta['replacedFromY']
-        self.assertGreater(cut,.237)
-        self.assertLess(cut,.255)
-        retired=sum(1 for k in range(0,len(current),3)
-                    if current[k]==current[k+1]==current[k+2])
-        self.assertGreater(retired,meta['oldLowerFaceChinNeckBustTrianglesRetired'])
-        self.assertGreater(meta['oldLowerFaceChinNeckBustTrianglesRetired'],4000)
-        # This is the essential regression: no source chin, lips, throat,
-        # jaw or shoulder triangles can remain visible below the cut.
-        for k in range(0,len(current),3):
-            face=[t[0] for t in current[k:k+3]]
-            if len(set(face))!=3:continue
-            self.assertGreaterEqual(min(newp[i][1] for i in face),cut-1e-7)
-        self.assertEqual(self.b['meshes'][-1]['name'],
-                         'V121_NEW_CONTIGUOUS_LOWER_FACE_LIPS_CHIN_NECK_BUST')
-        replacement=self.b['meshes'][-1]['primitives'][0]
-        positions=accessor(self.b,self.b_bin,replacement['attributes']['POSITION'])
-        self.assertEqual(len(positions),meta['freshVisibleSurfaceVertices'])
-        self.assertGreater(len(positions),1000)
-        self.assertGreater(len(self.b['meshes'][-1]['primitives'][0]['targets']),10)
-        self.assertLess(min(p[1] for p in positions),-.07)
-        self.assertTrue(all(math.isfinite(v) for p in positions for v in p))
-        # Retain indexed upper-face UV and 11 native expression channels.
-        self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
-                         accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0']))
-        self.assertEqual(len(dst['targets']),11)
-        self.assertEqual(len(accessor(self.b,self.b_bin,dst['attributes']['NORMAL'])),13455)
-        distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
-        self.assertGreater(sum(d>.00004 for d in distances),1000)
+        self.assertTrue(.238<cut<.255)
+        ix=[int(row[0]) for row in accessor(self.b,self.b_bin,result['indices'])]
+        self.assertGreater(len(ix),25920*3)
+        # Every ORIGINAL lower-face/neck/chest triangle must be invisible.
+        retired=0
+        for k in range(0,25920*3,3):
+            a,b,c=ix[k:k+3]
+            if len({a,b,c})<3:
+                retired+=1
+                continue
+            self.assertGreaterEqual(min(newp[i][1] for i in (a,b,c)),cut-1e-7)
+        self.assertGreaterEqual(retired,meta['oldLowerFaceChinNeckBustTrianglesRetired'])
+        # New faces use freshly generated IDs, while border indices are
+        # EXACT original head IDs (physical weld, not coincident overlays).
+        appended=ix[25920*3:]
+        self.assertTrue(any(i<13455 for i in appended))
+        self.assertTrue(any(i>=13455 for i in appended))
+        for i in appended:self.assertLess(i,len(newp))
+        old_uv=accessor(self.a,self.a_bin,source['attributes']['TEXCOORD_0'])
+        new_uv=accessor(self.b,self.b_bin,result['attributes']['TEXCOORD_0'])
+        self.assertEqual(new_uv[:13455],old_uv)
+        self.assertEqual(len(new_uv),len(newp))
+        self.assertEqual(len(accessor(self.b,self.b_bin,result['attributes']['NORMAL'])),len(newp))
+        self.assertEqual(len(accessor(self.b,self.b_bin,result['attributes']['COLOR_0'])),len(newp))
+        self.assertEqual(len(result['targets']),11)
+        for shape in result['targets']:
+            self.assertEqual(len(accessor(self.b,self.b_bin,shape['POSITION'])),len(newp))
         self.assertTrue(all(math.isfinite(v) for p in newp for v in p))
-        colors=accessor(self.b,self.b_bin,dst['attributes']['COLOR_0'])
-        self.assertGreater(len(set(tuple(round(v,2) for v in c) for c in colors)),10)
+        distances=[math.dist(a,b) for a,b in zip(oldp,newp[:13455])]
+        self.assertGreater(sum(d>.00004 for d in distances),1000)
 
 
     def test_skinhead_and_future_expression_safety(self):
@@ -98,7 +102,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertEqual(len(self.b.get('animations',[])),2)
         self.assertEqual(len(self.b['meshes'][0]['primitives'][0]['targets']),11)
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
-        self.assertEqual(len(self.b['meshes']),12)
+        self.assertEqual(len(self.b['meshes']),11)
         sculpt=self.b['meshes'][0]['extras']['referenceMeshResculpt']
         self.assertGreater(sculpt['changedVerticesAbove045mm'],900)
         self.assertEqual(sculpt['baseVertices'],13455)
@@ -131,7 +135,7 @@ class TestFaceV121(unittest.TestCase):
             self.assertEqual(png.format,'PNG')
         self.assertIn('GLOBE_IRIS_PUPIL_UV',self.b['materials'][1]['name'])
         self.assertIn('occlusionTexture',skin)
-        self.assertEqual(len(self.b['scenes'][0]['nodes']),12)
+        self.assertEqual(len(self.b['scenes'][0]['nodes']),11)
         self.assertIn('eyelidFiberUpgrade',self.b['meshes'][0]['extras'])
         self.assertIn('referenceMakeup',self.b['meshes'][0]['extras'])
         for name in ('V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS'):
