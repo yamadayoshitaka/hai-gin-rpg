@@ -51,13 +51,18 @@ test('training preview matches assigned job slots rather than always showing thr
  }
  // The named preset automatically refills required roles when a team is
  // normalized. Use the editable free layout to test a genuinely vacant slot.
- team.formation='free';
- team.grid.fill(null);
- team.slots=[assigned[0],null,null];
- delete team.counts[String(assigned[1])];
+ // Rendering normalizes the sortie plan and replaces the team object.
+ // Always mutate the latest team, rather than an outdated test reference.
+ const single=game.sortiePlan.teams[0];
+ single.formation='free';
+ single.grid.fill(null);
+ single.slots=[assigned[0],null,null];
+ delete single.counts[String(assigned[1])];
  assert.equal((render('roster').match(/<animateTransform /g)||[]).length,1);
- team.slots=[null,null,null];
- delete team.counts[String(assigned[0])];
+ const empty=game.sortiePlan.teams[0];
+ empty.slots=[null,null,null];
+ empty.grid.fill(null);
+ delete empty.counts[String(assigned[0])];
  assert.equal((render('roster').match(/<animateTransform /g)||[]).length,0);
 });
 
