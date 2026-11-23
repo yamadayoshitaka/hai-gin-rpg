@@ -66,7 +66,7 @@ test('route recovery is legal, and rally destination can resume pursuit',()=>{
  const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
  const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
  assert.match(grid,/const resumeCombat=assignedReached/);
- assert.match(grid,/\(!reachable\|\|resumeCombat\|\|closeThreat\)/);
+ assert.match(grid,/\(!reachable\|\|resumeCombat\|\|closeThreat\|\|allyCover\)/);
  assert.match(battle,/const exitCandidates=legal\.filter\(cell=>!routeOccludedByTerrain\(cell,target,a\)\)/);
  assert.match(battle,/neighbors:exitCandidates,maxWorsening:1,requireEscape:true/);
  assert.match(battle,/if\(route\.state\?\.search\)return false/);
