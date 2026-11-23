@@ -86,7 +86,7 @@ test('catalog uses the v121 real hairless head with eyebrows left intact',()=>{
  const html=read('hair-asset-studio.html');
  const mesh=read('src/independent-hair-mesh-v1.js');
  assert.match(html,/neutral-face-v121\.glb/);
- assert.match(html,/loadRealBaldHead\(\)/);
+ assert.match(html,/async function loadRealBaldHead\(file=null\)/);
  assert.match(html,/measureBaldHeadSurface/);
  assert.doesNotMatch(html,/new THREE\.SphereGeometry\(1,48,32\)/);
  assert.match(html,/headModel\.add\(gltf\.scene\)/);
@@ -125,7 +125,7 @@ test('actual scalp underlay derives from skin triangles and never changes source
  assert.match(hair,/const geom=source\.clone\(\)/);
  assert.match(hair,/const kept=\[\]/);
  assert.match(hair,/skinFace\.add\(overlay\)/);
- assert.match(hair,/skinFace\.isMesh/);
+ assert.match(hair,/skinFace\?\.isMesh/);
  assert.match(mesh,/const w=right-left,d=front-back,h=Math\.min\(/);
  assert.match(viewer,/createV121AnatomicalHairCap/);
  assert.match(viewer,/bodyView\.visible=false/);
