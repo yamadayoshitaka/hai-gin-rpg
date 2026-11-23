@@ -126,30 +126,54 @@ def philtrum_relief(x,y,z):
 
 
 def nose_and_lips(x,y,z):
-    """Localized real-mesh sculpt; keep nostril cavity and mouth loop intact.
+    """Sculpt the v121 neutral head in real XYZ, preserving mouth seal.
 
-    Narrow the alar silhouette and soften the front-facing bulbous nasal
-    tip without bridging the two nostril openings. Shape a genuine Cupid's
-    bow, upper and lower vermilion, philtrum and relaxed closed lip seam.
+    Eyeballs and lid loops are outside the region. Narrow only the nasal tip
+    and nasal wings, not the upper lip; sculpt M-shaped Cupid peaks and fuller
+    lower vermilion. Separate the lower-lip volume from the labiomental skin,
+    never adding a second ridge below the genuine lip boundary.
     """
     ax=abs(x)
-    nose_front=fade(z,.093,.141)
-    wing=(bell(ax,.028,.017)*bell(y,.243,.024)*fade(z,.084,.127)*
-          (1.-fade(ax,.043,.054)))
-    nx=x*(1.-.077*wing)
-    tip=bell(x,0.,.017)*bell(y,.250,.016)*fade(z,.122,.154)
-    ala=bell(ax,.027,.011)*bell(y,.242,.018)*nose_front*(1.-fade(ax,.043,.054))
-    nz=z-.00335*tip-.00125*ala
+    # Guard the nose from deforming lip corners directly below the alae.
+    nasal=fade(y,.243,.254)
+    nose_front=fade(z,.093,.141)*nasal
+    wing=(bell(ax,.028,.017)*bell(y,.251,.017)*fade(z,.084,.127)*
+          (1.-fade(ax,.043,.054))*nasal)
+    nose_head=bell(ax,.019,.015)*bell(y,.254,.017)*nose_front
+    nx=x*(1.-.103*wing-.055*nose_head)
+    tip=bell(x,0.,.017)*bell(y,.251,.016)*fade(z,.122,.154)*nasal
+    ala=bell(ax,.027,.011)*bell(y,.252,.016)*nose_front*(1.-fade(ax,.043,.054))
+    bridge=bell(x,0.,.012)*bell(y,.282,.030)*fade(z,.087,.138)
+    nz=z-.00275*tip-.00110*ala+.00065*bridge
+
+    # Mouth corners fall off continuously to zero, while the central lip
+    # retains volume. A narrower bottom boundary restores the reference's
+    # convex lower-lip surface without creating an infra-labial shelf.
     lip_front=fade(z,.103,.137)
     horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
     upper=bell(y,.2400,.0072)*horizontal*lip_front
-    lower=bell(y,.2235,.0086)*horizontal*lip_front
+    lower=(bell(y,.2235,.0080)*horizontal*lip_front*
+           fade(y,.213,.221)*(1.-fade(y,.230,.239)))
     cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
     seam=bell(y,.232,.0028)*horizontal*lip_front
-    nz+=(.0010*upper+.00065*lower+.0006*cupids
-         -.0003*seam)
+
+    # Physically shorten the nose-to-upper-lip interval, rather than merely
+    # painting a vertical philtrum. Lift the entire closed-mouth area softly,
+    # then lower the bottom vermilion rim a little to increase its height.
+    lip_lift=(.00215*bell(y,.238,.013)*horizontal*lip_front*
+              (1.-fade(y,.250,.259)))
+    bottom_rim=.00165*bell(y,.216,.0055)*horizontal*lip_front
+    # Two peaks and a central dip make an actual M-shaped Cupid's bow.
+    peaks=(bell(x,-.011,.005)+bell(x,.011,.005))
+    bow_lift=.00160*peaks*bell(y,.245,.0045)*lip_front
+    central_notch=.00086*bell(x,0,.0042)*bell(y,.245,.0045)*lip_front
+    ny=y+lip_lift-bottom_rim+bow_lift-central_notch
+
+    nz+=(.00105*upper+.00345*lower+.00095*cupids-.00025*seam)
+    # Keep a single center groove between the columella and Cupid's bow;
+    # the two philtral columns remain soft and do not cross the upper lip.
     nz+=philtrum_relief(nx,y,nz)
-    return (nx,y,nz)
+    return (nx,ny,nz)
 
 
 def neutral_color(x,y,z):
@@ -167,10 +191,10 @@ def neutral_color(x,y,z):
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
     # The upstream resting lipstick is strictly bounded to the two
     # anatomical vermilion bands. Gaussian tails must never tint a chin.
-    lip_region=(.216<=y<=.249 and abs(x)<=.052 and z>.119)
+    lip_region=(.211<=y<=.250 and abs(x)<=.052 and z>.119)
     vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
     lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)*
-          fade(y,.216,.224)*(1.-fade(y,.246,.250))
+          fade(y,.211,.221)*(1.-fade(y,.247,.251))
           if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
@@ -309,7 +333,11 @@ def finish(path):
         'skinPBR':True,
         'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
-        'version':'v121-nose-lips-lower-lashes-20261123',
+        'version':'v121-nose-lips-cupid-bow-v14-20261124',
+        'lowerLipFullerAndCornerTapered':True,
+        'upperLipMShapedCupidBow':True,
+        'nasalTipAndAlarNarrowed':True,
+        'philtrumDistanceShortenedByGeometry':True,
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
         'centralPhiltrumStart':[0.,.264],
