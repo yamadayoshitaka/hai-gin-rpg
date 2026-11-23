@@ -79,11 +79,12 @@ def color(v):
     lips=bell(x,0,.039)*bell(y,.194,.016)*front
     lid=(bell(x,-.043,.031)+bell(x,.043,.031))*bell(y,.312,.014)*front
     brow=(bell(x,-.044,.034)+bell(x,.044,.034))*bell(y,.353,.012)*front
+    brow_line=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.353,.0045)*front
     ear=bell(abs(x),.135,.024)*bell(y,.267,.065)
-    # Neutral vertex tint multiplies the 1024px micro-skin base texture.
-    r=1.0-.025*lid-.022*brow
-    g=1.0-.085*cheek-.045*ear-.29*lips-.045*lid-.065*brow
-    b=1.0-.088*cheek-.048*ear-.21*lips-.045*lid-.075*brow
+    # 3D vertex-color makeup and light natural eyebrows, no painted shell.
+    r=1.0-.025*lid-.022*brow-.24*brow_line-.055*lips
+    g=1.0-.085*cheek-.045*ear-.44*lips-.045*lid-.065*brow-.38*brow_line
+    b=1.0-.088*cheek-.048*ear-.36*lips-.045*lid-.075*brow-.40*brow_line
     return (clamp(r,.66,1),clamp(g,.58,1),clamp(b,.62,1))
 
 def texture_images():
