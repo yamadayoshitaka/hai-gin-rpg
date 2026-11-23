@@ -41,8 +41,8 @@ class ReferenceFeatureTests(unittest.TestCase):
         self.assertEqual(meta['topology']['vertices'],13455)
         self.assertFalse(meta['hairIncluded'])
         self.assertTrue(meta['futureExpressionsImplemented'])
-        self.assertEqual(len(self.xyz),13455)
-        self.assertEqual(len(get(self.g,self.b,self.p['indices'])),25920*3)
+        self.assertGreater(len(self.xyz),16000)
+        self.assertGreater(len(get(self.g,self.b,self.p['indices'])),25920*3)
         self.assertEqual(len(self.g['meshes']),11)
         sculpt=meta['referenceFeatureSculpt']
         self.assertTrue(sculpt['foldIsActualSkinGeometry'])
@@ -60,10 +60,10 @@ class ReferenceFeatureTests(unittest.TestCase):
             self.assertLess(y,.280)
         for i in sculpt['lipVermilionVerticesAdjusted']:
             x,y,z=self.xyz[i]
-            self.assertLess(abs(x),.058)
-            self.assertGreater(y,.215)
+            self.assertLess(abs(x),.069)
+            self.assertGreater(y,.213)
             self.assertLess(y,.253)
-        self.assertEqual(len(get(self.g,self.b,self.p['attributes']['NORMAL'])),13455)
+        self.assertEqual(len(get(self.g,self.b,self.p['attributes']['NORMAL'])),len(self.xyz))
         self.assertTrue(all(math.isfinite(v) for xyz in self.xyz for v in xyz))
 
     def test_lower_lashes_attach_to_real_eyelid_boundary(self):

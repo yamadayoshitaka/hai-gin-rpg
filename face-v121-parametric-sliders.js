@@ -92,8 +92,8 @@ function transformPoint(x,y,z,state,kind){
  *    onChange?:(change:boolean)=>void}} options
  */
 export function attachV121FaceSliders({neutral,face,three,onChange=()=>{}}){
-  if(!face||!neutral||face.geometry?.getAttribute('position')?.count!==13455)
-    throw new Error('v121 anatomical sliders require the 13455-vertex neutral skin');
+  if(!face||!neutral||face.geometry?.getAttribute('position')?.count<13455)
+    throw new Error('v121 anatomical sliders require retained 13455 original skin IDs plus any new welded vertices');
   const node=document.getElementById('v121-tune-sliders');
   if(!node)throw new Error('Missing v121 slider region');
   const state={...zeros(),philtrum:0};

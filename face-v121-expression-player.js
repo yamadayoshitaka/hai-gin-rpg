@@ -21,7 +21,7 @@ export function attachV121Expressions({neutral,faceTune,onChange=()=>{}}){
   // The cavity now has two GLB primitives: the dark interior and a real
   // detachable rest-pose skin seal. GLTFLoader exposes each as one mesh.
   if(meshes.length!==10||eyeballs.length!==2)
-    throw Error('v121 expressive GLB must have 10 morphable primitives including its oral seal, and 2 intact globes');
+    throw Error('v121 expressive GLB must have 10 morphable primitives; the new lower face is welded into the skin and oral seal, and 2 intact globes');
   const current=Object.fromEntries(V121_EXPRESSIONS.map(n=>[n,0]));
   let mode='neutral',modeSince=performance.now(),last=performance.now();
   const segment=[
