@@ -52,12 +52,18 @@ export function attachV121Makeup({neutral,face,onChange=()=>{}}){
     };
   });
 
+  const originalMaterials=new Map(cosmetic.map(part=>
+    [part,part.material.color.clone()]));
   let current='pink';
   function select(id){
     const preset=V121_MAKEUP_PRESETS[id];
     if(!preset)throw Error('Unknown v121 makeup preset '+id);
     current=id;
     for(let i=0;i<color.count;i++){
+      if(id==='bare'){
+        color.array.set(originals.subarray(i*3,i*3+3),i*3);
+        continue;
+      }
       const m=masks[i], k=i*3;
       // The PBR base texture provides skin grain and skin tone; COLOR_0
       // introduces layerable pigments by physically situated face regions.
@@ -81,6 +87,10 @@ export function attachV121Makeup({neutral,face,onChange=()=>{}}){
       const name=part.name;
       const mat=part.material;
       if(!mat?.color)continue;
+      if(id==='bare'){
+        mat.color.copy(originalMaterials.get(part));mat.needsUpdate=true;
+        continue;
+      }
       if(/EYEBROW/.test(name))mat.color.setHex(preset.brow);
       else if(/EYELINER/.test(name))mat.color.setHex(preset.linerColor);
       else if(/EYELASHES/.test(name))mat.color.setHex(preset.linerColor);
