@@ -8780,7 +8780,8 @@ function issueFormationSignature({groupId,squadIds:requested=[],automaticOpening
   const role=Math.min(2,cellRanks.length?rank:index%3);
   const realUnit=squadRoster.find(u=>u.team===0&&String(u.squadId)===id&&
    u.hp>0&&u.alive!==false&&!u.isStrategist);
-  const origin=realUnit?.cell||centers.find(x=>x.id===id)?.point;
+  const origin=realUnit?{x:realUnit.cell?.x??realUnit.x,z:realUnit.cell?.z??realUnit.z}:
+   centers.find(x=>x.id===id)?.point;
   const points=formationSignatureWaypoints(formation.formation,center,target,role)
    .map(goal=>signatureLegalPoint(goal,origin));
   return {id,role,points,final:rule.final[role]};
