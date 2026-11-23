@@ -1,0 +1,40 @@
+name: Face v119 dual-gender portrait geometry
+on:
+  pull_request:
+    paths:
+      - 'src/face-v119-portrait-contours.js'
+      - 'src/independent-face-masters.js'
+      - 'face-mesh-studio.html'
+      - 'qa/face-v119-portrait-contours.test.mjs'
+      - '.github/workflows/face-v119-portrait-geometry.yml'
+  push:
+    branches:
+      - 'fix/face-v119-dual-gender-portrait-contour'
+jobs:
+  mesh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Actual 3490 vertex CC0 dual-gender geometry and stability
+        run: node --test qa/face-v119-portrait-contours.test.mjs
+      - name: Syntax and existing v117 geometry baseline
+        run: |
+          node --check src/face-v119-portrait-contours.js
+          node --check src/independent-face-masters.js
+          node --test qa/face-v117-reference-portrait.test.mjs
+      - name: Check embedded editor module syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('face-mesh-studio.html').read_text()
+          script=html.split('<script type="module">',1)[1].split('</script>',1)[0]
+          Path('/tmp/face-v119-editor.mjs').write_text(script)
+          assert 'enableV119PortraitContours:portraitV119' in script
+          assert "dataset.faceMeshReady='v119'" in script
+          PY
+          node --check /tmp/face-v119-editor.mjs
