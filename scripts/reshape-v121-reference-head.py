@@ -111,7 +111,8 @@ def sculpt(p):
     # A feathered jaw-to-submental bridge prevents a shelf above the neck;
     # the masks are absent at the vermilion and at the cervical base.
     chin_profile=gauss(y,.132,.030)*gauss(ax,.035,.047)*front
-    submental=gauss(y,.108,.032)*gauss(ax,.065,.057)*side
+    submental=(gauss(y,.108,.032)*gauss(ax,.065,.057)*side*
+                smooth(y,.065,.101))
     ny=y+.0065*chin+.0010*submental+.0006*jaw-.00045*frontal+.0006*under_eye
     nz=(z-.0031*malar+.0018*under_eye
         +.0014*lower_cheek+.0013*jaw
