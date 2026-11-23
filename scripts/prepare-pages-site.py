@@ -57,6 +57,12 @@ REQUIRED = (
 # This affects only pages-dist; it does not modify or shrink git master files.
 OFFLOAD_BINARY_SUFFIXES = {".glb", ".bin", ".bvh", ".mp3", ".ogg", ".wav", ".mp4", ".fbx", ".webm"}
 OFFLOAD_MIN_BYTES = 128_000
+# The chapter-one approved high-resolution WebP illustrations are already
+# served by commit-pinned raw URLs in manga/runtime; do not duplicate every
+# >400KiB panel in the Pages payload as well. The service worker routes
+# these exact public URLs to the same release's GitHub raw files.
+OFFLOAD_STORY_WEBP_MIN_BYTES = 400_000
+OFFLOAD_STORY_WEBP_PREFIX = "assets/story/chapters/c01/"
 REMOTE_ONLY_PREFIXES = (
     "audio/voicevox/clips/", "assets/master-sources/", "assets/ai-reference/",
     "motions/candidates/", "assets/characters/experimental/",
@@ -73,6 +79,10 @@ def is_large_runtime_binary(rel: Path, src: Path) -> bool:
     if rel.as_posix() in {"assets/generated/neutral-face-v120.glb",
                             "assets/generated/neutral-face-v121.glb"}:
         return False
+    if (rel.as_posix().startswith(OFFLOAD_STORY_WEBP_PREFIX)
+            and rel.suffix.lower() == ".webp"
+            and src.stat().st_size > OFFLOAD_STORY_WEBP_MIN_BYTES):
+        return True
     return rel.suffix.lower() in OFFLOAD_BINARY_SUFFIXES and src.stat().st_size > OFFLOAD_MIN_BYTES
 
 

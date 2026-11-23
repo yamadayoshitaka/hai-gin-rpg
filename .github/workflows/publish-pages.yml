@@ -178,6 +178,8 @@ jobs:
           python3 qa/face-v121-natural-folds-cleanup.test.py
           python3 qa/face-v121-lower-lashes-nose-lips.test.py
           python3 qa/face-v121-expression-morph.test.py
+      - name: Verify approved chapter-one art relay and preserve v121 local GLB
+        run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
       - name: Require baked neutral v120 GLB and preview in published Pages artifact
@@ -193,7 +195,7 @@ jobs:
           obj=json.loads(blob[20:20+size])
           info=obj['meshes'][0]['extras']
           assert info['topology']['vertices']==13455
-          assert info['futureExpressionsImplemented'] is True
+          assert info['futureExpressionsImplemented'] is False
           print('PASS baked v120 neutral face:',len(blob),'bytes')
           PY
       - name: Require v121 skinhead PBR face and its preview in the Pages artifact
