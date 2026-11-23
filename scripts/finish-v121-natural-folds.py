@@ -136,17 +136,17 @@ def nose_and_lips(x,y,z):
     nose_front=fade(z,.093,.141)
     wing=(bell(ax,.028,.017)*bell(y,.243,.024)*fade(z,.084,.127)*
           (1.-fade(ax,.043,.054)))
-    nx=x*(1.-.063*wing)
+    nx=x*(1.-.077*wing)
     tip=bell(x,0.,.017)*bell(y,.250,.016)*fade(z,.122,.154)
     ala=bell(ax,.027,.011)*bell(y,.242,.018)*nose_front*(1.-fade(ax,.043,.054))
-    nz=z-.0030*tip-.00115*ala
+    nz=z-.00335*tip-.00125*ala
     lip_front=fade(z,.103,.137)
     horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
     upper=bell(y,.2400,.0072)*horizontal*lip_front
     lower=bell(y,.2235,.0086)*horizontal*lip_front
     cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
     seam=bell(y,.232,.0028)*horizontal*lip_front
-    nz+=(.0010*upper+.0016*lower+.0006*cupids
+    nz+=(.0010*upper+.00065*lower+.0006*cupids
          -.0003*seam)
     nz+=philtrum_relief(nx,y,nz)
     return (nx,y,nz)
@@ -169,7 +169,8 @@ def neutral_color(x,y,z):
     # anatomical vermilion bands. Gaussian tails must never tint a chin.
     lip_region=(.216<=y<=.249 and abs(x)<=.052 and z>.119)
     vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
-    lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)
+    lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)*
+          fade(y,.216,.224)*(1.-fade(y,.246,.250))
           if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
