@@ -212,10 +212,14 @@ def correct_chin_profile(points):
     A measured sagittal guardrail avoids that visual regression and feathers
     the correction out at the cheeks and toward the neck.
     """
-    lip=[z for x,y,z in points
-         if abs(x)<.026 and .179<y<.215 and z>.105]
-    chin=[z for x,y,z in points
-          if abs(x)<.032 and .118<y<.153 and z>.080]
+    # Collect the frontal region without an assumed Z depth; the source GLB
+    # can vary its absolute facial Z offsets. Max Z selects the forward skin.
+    lip=[z for x,y,z in points if abs(x)<.042 and .179<y<.215]
+    chin=[z for x,y,z in points if abs(x)<.055 and .110<y<.163]
+    print('V121 SAGITTAL PROBE', {
+        'lipCount':len(lip), 'chinCount':len(chin),
+        'lipZMax':max(lip) if lip else None,
+        'chinZMax':max(chin) if chin else None})
     if len(lip)<12 or len(chin)<12:
         raise ValueError('Cannot measure v121 sagittal lip/chin profile')
     lip_front=max(lip)
