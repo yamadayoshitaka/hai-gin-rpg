@@ -117,7 +117,7 @@ import {measureRealHead,calculateWigFit,measureWigCrown,
  buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES}
  from './src/wig-glb-fit-v1.js?v=8';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-short-philtrum-v15-20261124';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-sharp-nose-full-lips-v16-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 let wigRoot=null,wigHead=null,wigRequestId=0;
 const WIG_STORE_KEY='hai-gin-v121-selected-wig';
@@ -371,7 +371,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121：鼻と上唇をさらに近づけ、鼻下からM字上唇まで自然な縦の人中溝を実3Dメッシュで形成。スライダーと表情はオフです。');
+ update('status','女性v121：鼻筋と鼻先・小鼻を細くシャープに再造形し、上下の唇の厚みと丸みを増加。M字上唇・人中とVライン顎を維持。スライダーと表情はオフです。');
  void selectWig(restoreWigChoice());
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
