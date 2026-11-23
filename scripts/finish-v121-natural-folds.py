@@ -160,8 +160,10 @@ def nose_and_lips(x,y,z):
     # Physically shorten the nose-to-upper-lip interval, rather than merely
     # painting a vertical philtrum. Lift the entire closed-mouth area softly,
     # then lower the bottom vermilion rim a little to increase its height.
-    lip_lift=(.00215*bell(y,.238,.013)*horizontal*lip_front*
-              (1.-fade(y,.250,.259)))
+    # Leave the closed-mouth seal (Y ~ .232) in its original vertex band:
+    # the native aperture morph is identified from these exact skin loops.
+    lip_lift=(.00215*bell(y,.240,.010)*horizontal*lip_front*
+              fade(y,.233,.239)*(1.-fade(y,.250,.259)))
     bottom_rim=.00165*bell(y,.216,.0055)*horizontal*lip_front
     # Two peaks and a central dip make an actual M-shaped Cupid's bow.
     peaks=(bell(x,-.011,.005)+bell(x,.011,.005))
