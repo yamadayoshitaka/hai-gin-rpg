@@ -66,6 +66,15 @@ assert.equal(contact.mode,'charge','guarding enemies counterattack when attacked
 assert.equal(enemyContactResponse('defend','retreat',hostile,invasion).mode,'retreat',
  'near-dead enemies must retain their tactical escape option');
 assert.equal(enemyContactResponse('defend','defend',hostile,
+ [{...invasion[0],x:46,z:33}]).mode,'charge',
+ 'a live opponent twelve tiles away must wake a guarding enemy without waiting 120 seconds');
+assert.equal(enemyContactResponse('hold','defend',hostile,
+ [{...invasion[0],x:47,z:33}]).mode,'charge',
+ 'sixteen-tile guard contact also applies to a waiting enemy');
+assert.equal(enemyContactResponse('defend','retreat',hostile,
+ [{...invasion[0],x:46,z:33}]).mode,'retreat',
+ 'contact must not override emergency retreat for near-dead enemies');
+assert.equal(enemyContactResponse('defend','defend',hostile,
  [{...invasion[0],x:95,z:95}]).mode,'defend',
  'a distant foe does not pull defensive troops away from their post');
 assert.equal(enemyContactResponse('charge','explore',hostile,invasion).mode,'charge',
@@ -79,6 +88,13 @@ assert.match(runtimeSource,/issueFormationSignature\(\{groupId:group,squadIds:me
  'the inn-authored movement sequence executes rather than remaining a static preview');
 assert.match(runtimeSource,/const threatened=enemyContactResponse\(/,
  'nearby hostile contact bypasses the stale 120-second defensive order cooldown');
+assert.match(runtimeSource,/massSim\?\.enemySquadCommands\?\.get\(String\(id\)\)/,
+ 'enemy strategic AI reads the executed order rather than an outdated opening command');
+assert.match(runtimeSource,/automaticOpening:true/,
+ 'eligible opening formations launch without a manual-order cooldown');
+assert.match(runtimeSource,/squadRoster\.some\(a=>a\.team===0/,
+ 'formation waypoints use authoritative living squads, not only visible detail rigs');
+
 
 console.log('PASS formation-aware priest triage, MP cost, preserved hold order, bridge and enemy AI contracts');
 
