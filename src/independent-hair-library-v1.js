@@ -130,9 +130,14 @@ export function resolveHairBodyContact(point,colliders=[],clearance=.005){
   let dx=x-cx,dy=y-cy,dz=z-cz;
   let q=Math.sqrt((dx/rx)**2+(dy/ry)**2+(dz/rz)**2);
   if(q>=1+clearance/Math.min(rx,ry,rz))continue;
-  if(q<1e-5){dz=z<0?-1:1;dx=0;dy=0;q=Math.abs(dz/rz);}
+  if(q<1e-5){
+   // Exact collider centre: choose the shortest outward depth direction.
+   z=cz+(z<cz?-1:1)*(rz+clearance);hits++;continue;
+  }
   const target=1+clearance/Math.max(.025,Math.min(rx,ry,rz));
-  const amount=Math.min(.06,Math.max(0,(target/q-1)*Math.hypot(dx,dy,dz)));
+  // Project to the surface even for deep penetrations. Limiting to .06 m
+  // left shoulder-centre vertices buried inside the body every frame.
+  const amount=Math.max(0,(target/q-1)*Math.hypot(dx,dy,dz));
   const len=Math.hypot(dx,dy,dz)||1;
   x+=dx/len*amount;y+=dy/len*amount;z+=dz/len*amount;hits++;
  }
