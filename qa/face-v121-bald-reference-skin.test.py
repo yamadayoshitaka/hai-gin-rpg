@@ -72,11 +72,11 @@ class TestFaceV121(unittest.TestCase):
         self.assertNotIn('animations',self.b)
         self.assertNotIn('targets',self.b['meshes'][0]['primitives'][0])
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
-        self.assertEqual(len(self.b['meshes']),3)
-        self.assertTrue(all('GLOBE_UV' in mesh['name'] for mesh in self.b['meshes'][1:]))
+        self.assertEqual(len(self.b['meshes']),8)
+        self.assertTrue(all('GLOBE_UV' in mesh['name'] for mesh in self.b['meshes'][1:3]))
         self.assertFalse(any('PUPIL_' in node.get('name','') for node in self.b['nodes']))
         self.assertEqual(self.b['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'],False)
-        for globe in self.b['meshes'][1:]:
+        for globe in self.b['meshes'][1:3]:
             self.assertIn('TEXCOORD_0',globe['primitives'][0]['attributes'])
             self.assertGreater(len(accessor(self.b,self.b_bin,globe['primitives'][0]['attributes']['POSITION'])),2000)
 
@@ -100,7 +100,10 @@ class TestFaceV121(unittest.TestCase):
             self.assertEqual(png.format,'PNG')
         self.assertIn('GLOBE_IRIS_PUPIL_UV',self.b['materials'][1]['name'])
         self.assertIn('occlusionTexture',skin)
-        self.assertEqual(len(self.b['scenes'][0]['nodes']),3)
+        self.assertEqual(len(self.b['scenes'][0]['nodes']),8)
+        self.assertIn('eyelidFiberUpgrade',self.b['meshes'][0]['extras'])
+        for name in ('V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS'):
+            self.assertIn(name,[m['name'] for m in self.b['meshes']])
 
     def test_v121_preview_and_v120_viewer_are_separate(self):
         html=(ROOT/'face-neutral-v121.html').read_text()
