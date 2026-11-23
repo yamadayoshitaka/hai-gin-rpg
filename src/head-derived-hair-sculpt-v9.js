@@ -456,7 +456,7 @@ export function sculptHairFromHead(THREE,skin,{referenceRoot,headSize,color='#b6
   },
   setColor:value=>{tint=value;recolor();},
   diagnostics:()=>({source:'v121-head-only',hairStyle:style.label,styleId:style.id,
-    uniqueSculpt:true,oldHairGeometryUsed:false,oneSolid:true,antiHelmetSculpt:true,underlayerNotRendered:true,
+    uniqueSculpt:true,oldHairGeometryUsed:false,oneSolid:true,antiHelmetSculpt:true,underlayerNotRendered:true,sourceSkinNeverRendered:true,
     crownTriangles:groom.crownFaces,boundaryEdges:groom.boundaryEdges,
     totalTriangles:Object.values(groom.counts).reduce((a,b)=>a+b,0),
     totalVertices:groom.vertices,exteriorLocks:groom.exteriorLocks,renderedScalpTriangles:groom.renderedScalpTriangles,renderedSkirtTriangles:groom.renderedSkirtTriangles,browY:shape.brow,topY:shape.top,
