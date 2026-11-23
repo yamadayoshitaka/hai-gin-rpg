@@ -364,6 +364,42 @@ def relax_labiomental_shading(points,faces):
     return xyz,len(moved)
 
 
+def repair_outer_lip_normals(xyz, raw):
+    """Repair inward-facing front skin normals next to the closed mouth.
+
+    The inherited jaw UV remesh can average back-facing lip/inner-oral
+    triangles into the actual front skin (N.z below zero). This rendered a
+    wide charcoal bar beneath the lip despite a geometrically soft sulcus.
+    Blend only exterior front-facing cheek/lip surface toward an outward
+    normal, while preserving the thin actual oral seam and nose/eyes.
+    """
+    adjusted=[]
+    changed=0
+    for (x,y,z),(nx,ny,nz) in zip(xyz,raw):
+        ax=abs(x)
+        if not (.206<y<.251 and ax<.055 and z>.123 and nz<.72):
+            adjusted.append((nx,ny,nz))
+            continue
+        weight=(fade(y,.206,.215)*(1.-fade(y,.244,.251))*
+                fade(z,.123,.138)*(1.-fade(ax,.035,.055)))
+        # The real mouth seal must remain a single dark LINE, not a filled bar.
+        weight*=1.-math.exp(-.5*((y-.232)/.0015)**2)
+        blend=.93*weight
+        if blend<.015:
+            adjusted.append((nx,ny,nz))
+            continue
+        target=(nx*.45,ny*.55,.78)
+        length=math.sqrt(sum(t*t for t in target))
+        target=tuple(t/length for t in target)
+        new=(nx*(1.-blend)+target[0]*blend,
+             ny*(1.-blend)+target[1]*blend,
+             nz*(1.-blend)+target[2]*blend)
+        length=math.sqrt(sum(t*t for t in new))
+        adjusted.append(tuple(t/length for t in new))
+        changed+=1
+    return adjusted,changed
+
+
 def write_indices(g,b,indices):
     while len(b)%4:b.append(0)
     offset=len(b)
@@ -397,10 +433,13 @@ def rebuild(path):
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
-    prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
+    safe_normals,normal_fix_count=repair_outer_lip_normals(xyz,normals(xyz,faces))
+    prim['attributes']['NORMAL']=add_vec3(g,b,safe_normals)
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
+        'repairedExteriorLipNormals':normal_fix_count,
+        'noBroadInvertedUnderlipNormals':True,
         'noSecondaryUnderlipLine':True,
         'realGeometryNotMaterialOnly':True,
         'sourceSkinVerticesRetained':len(xyz),
