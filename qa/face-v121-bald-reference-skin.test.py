@@ -60,8 +60,8 @@ class TestFaceV121(unittest.TestCase):
             for (index,) in before:
                 x,y,z=newp[index]
                 self.assertLess(abs(x),.033)
-                self.assertGreater(y,.190)
-                self.assertLess(y,.204)
+                self.assertGreater(y,.230)
+                self.assertLess(y,.235)
                 self.assertGreater(z,.110)
             detached+=1
         self.assertEqual(detached,self.b['meshes'][0]['extras']
