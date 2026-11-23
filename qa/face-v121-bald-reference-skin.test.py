@@ -52,13 +52,17 @@ class TestFaceV121(unittest.TestCase):
         # former displacement-only version, source triangle IDs are not
         # required to match inside the actual mouth/menton surface.
         detached=0
+        replaced_body=0
         retopo=0
         uv=accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0'])
         for i in range(0,len(old_index),3):
             before=old_index[i:i+3]
             after=new_index[i:i+3]
             if before==after:continue
-            if after==[before[0]]*3:
+            if after[0]==after[1]==after[2]:
+                if newp[after[0][0]][1]<.170:
+                    replaced_body+=1
+                    continue
                 for (index,) in before:
                     x,y,z=newp[index]
                     self.assertLess(abs(x),.033)
@@ -81,6 +85,11 @@ class TestFaceV121(unittest.TestCase):
         self.assertEqual(detached,rig['splitMouthSeal']
                          ['detachedSkinTriangles'])
         self.assertGreater(detached,20)
+        self.assertGreater(replaced_body,1400)
+        self.assertGreater(self.b['meshes'][0]['extras']['neckBustRebuild']
+                           ['removedLegacyNeckShoulderTriangles'],1400)
+        self.assertEqual(self.b['meshes'][-1]['name'],
+                         'V121_NEW_ANATOMICAL_CERVICAL_SHOULDERS_BUST')
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
                          'female-v121-new-surface-retopology-v8')
@@ -134,7 +143,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertEqual(len(self.b.get('animations',[])),2)
         self.assertEqual(len(self.b['meshes'][0]['primitives'][0]['targets']),11)
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
-        self.assertEqual(len(self.b['meshes']),11)
+        self.assertEqual(len(self.b['meshes']),12)
         sculpt=self.b['meshes'][0]['extras']['referenceMeshResculpt']
         self.assertGreater(sculpt['changedVerticesAbove045mm'],900)
         self.assertEqual(sculpt['baseVertices'],13455)
@@ -167,7 +176,7 @@ class TestFaceV121(unittest.TestCase):
             self.assertEqual(png.format,'PNG')
         self.assertIn('GLOBE_IRIS_PUPIL_UV',self.b['materials'][1]['name'])
         self.assertIn('occlusionTexture',skin)
-        self.assertEqual(len(self.b['scenes'][0]['nodes']),11)
+        self.assertEqual(len(self.b['scenes'][0]['nodes']),12)
         self.assertIn('eyelidFiberUpgrade',self.b['meshes'][0]['extras'])
         self.assertIn('referenceMakeup',self.b['meshes'][0]['extras'])
         for name in ('V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS'):
