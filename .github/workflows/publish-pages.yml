@@ -211,8 +211,12 @@ jobs:
           test -s pages-dist/face-v121-expression-player.js
           test -s pages-dist/face-v121-makeup-presets.js
           grep -q 'face-v121-makeup-presets.js' pages-dist/face-neutral-v121.html
-          grep -q 'face-v121-expression-player.js' pages-dist/face-neutral-v121.html
-          grep -q 'face-v121-parametric-sliders.js' pages-dist/face-neutral-v121.html
+          # v121 is neutral-only while the lower face is being rebuilt:
+          # legacy adjustment and expression modules must NOT load in the viewer.
+          ! grep -q "import .*face-v121-expression-player.js" pages-dist/face-neutral-v121.html
+          ! grep -q "import .*face-v121-parametric-sliders.js" pages-dist/face-neutral-v121.html
+          ! grep -q 'id="v121-tuning"' pages-dist/face-neutral-v121.html
+          ! grep -q 'id="v121-expressions"' pages-dist/face-neutral-v121.html
           test -s pages-dist/assets/generated/neutral-face-v121.glb
           python3 - <<'PY'
           import json,struct,pathlib
