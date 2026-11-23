@@ -278,8 +278,8 @@ def rebuild(path):
     # v4 looked "passed" on absolute positions but produced 5cm torn strips.
     # Topologically neighboring vertices must remain locally connected.
     max_edge_stretch=1.
-    for a,b,c in tris:
-        for i,j in ((a,b),(b,c),(c,a)):
+    for i0,i1,i2 in tris:
+        for i,j in ((i0,i1),(i1,i2),(i2,i0)):
             old_len=math.dist(positions[i],positions[j])
             if old_len<.00001:continue
             max_edge_stretch=max(max_edge_stretch,
