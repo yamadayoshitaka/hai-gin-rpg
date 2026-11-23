@@ -41,7 +41,7 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 </header>
 <main>
 <section class="panel">
-<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">実際の3DウィッグGLBを読み込みます。顔・眉毛・身体は表示しません。</div><div id="badge">CC0 / MakeHuman</div></div>
+<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">実際の3DウィッグGLBを読み込みます。顔・眉毛・身体は表示しません。骨格変形は適用しません。</div><div id="badge">CC0 / MakeHuman</div></div>
 <div class="actions">
 <button type="button" data-view="front">正面</button>
 <button type="button" data-view="side">側面</button>
@@ -69,7 +69,6 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 <label>上下位置 <output id="verticalValue">0 mm</output>
 <input type="range" id="vertical" min="-20" max="20" step="1" value="0"></label>
 <label class="check"><input id="bangs" type="checkbox">眉上でそろえた前髪を追加（試作）</label>
-<label class="check"><input id="guide" type="checkbox">採寸用の頭型ワイヤーを表示</label>
 <label class="check"><input id="spin" type="checkbox">自動で回転</label>
 <button type="button" id="export" disabled>ウィッグだけをGLBで保存</button>
 <button type="button" id="reset">装着位置を初期化</button>
@@ -82,7 +81,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,PUBLIC_WIG_SOURCES} from './src/wig-glb-fit-v1.js?v=1';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=2';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -106,8 +105,8 @@ const loader=new GLTFLoader();
 const exporter=new GLTFExporter();
 const STYLES=new Map(PUBLIC_WIG_SOURCES.map(s=>[s.id,s]));
 const ORIGIN='https://raw.githubusercontent.com/kblood/CharacterCreator/master/output/';
-let head=null,headGuide=null,wig=null,wigContent=null,rawBox=null,fringe=null,activeId='long01',token=0;
-let nativeMats=[],viewCenter=new THREE.Vector3(),viewRadius=.6,rawMode='';
+let head=null,wig=null,wigContent=null,rawBox=null,fringe=null,activeId='long01',token=0;
+let nativeMats=[],viewCenter=new THREE.Vector3(),viewRadius=.6,rawMode='',geometryAudit=null;
 function setStatus(message,error=false){
  $('status').textContent=message;
  $('status').style.color=error?'#ffd0c8':'#dbeeea';
@@ -187,7 +186,10 @@ function updateFit(){
  $('assetLog').textContent='装着先：v121の実頭部 '+head.vertices+'頂点'+
   '\n髪の元モデル：'+rawMode+
   '\n頭への拡大率：'+fit.scale.toFixed(3)+
-  '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m';
+  '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m'+
+  '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
+  '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
+  '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目';
 }
 function frameView(view='front'){
  if(!wig)return;
@@ -202,25 +204,12 @@ function frameView(view='front'){
  controls.target.copy(center);
  controls.update();
 }
-function scalpWire(){
- if(headGuide||!head)return;
- const mesh=head.mesh;
- const material=new THREE.MeshBasicMaterial({
-  color:'#78b3d0',transparent:true,opacity:.18,wireframe:true,depthWrite:false
- });
- const geometry=mesh.geometry.clone();
- geometry.applyMatrix4(mesh.matrixWorld);
- headGuide=new THREE.Mesh(geometry,material);
- headGuide.name='optional-measurement-head-wireframe';
- headGuide.visible=false;
- scene.add(headGuide);
-}
 async function initHead(){
  try{
   const gltf=await loader.loadAsync('./assets/generated/neutral-face-v121.glb');
   gltf.scene.updateMatrixWorld(true);
   head=measureRealHead(THREE,gltf.scene);
-  scalpWire();
+  // Face is measured but never added to the visible scene.
  }catch(err){
   throw Error('採寸用v121頭部GLBを開けません：'+err.message);
  }
@@ -246,9 +235,14 @@ async function loadWig(style,sourceFile){
  }
  clearWig();
  wig=new THREE.Group();wig.name='only-exportable-wig';
- wigContent=gltf.scene;
- rawBox=new THREE.Box3().setFromObject(wigContent);
- if(rawBox.isEmpty())throw Error('インポートGLBに表示できる3D髪がありません');
+ // CRITICAL: GLTFLoader creates a SkinnedMesh with the full MakeHuman
+ // skeleton and 92 morph targets. Never scale/bound/render that mixed rig.
+ // Take ONLY the original hair POSITION/NORMAL/UV and source texture.
+ const isolated=extractUnskinnedWig(THREE,gltf.scene);
+ wigContent=isolated.root;
+ geometryAudit=isolated.audit;
+ rawBox=isolated.bounds;
+ if(rawBox.isEmpty())throw Error('髪だけの独立メッシュがありません');
  wigContent.name='imported-CC0-'+descriptor.id;
  wig.add(wigContent);
  installMaterials(wigContent);
@@ -258,7 +252,7 @@ async function loadWig(style,sourceFile){
  colorWig();
  frameView('front');
  $('export').disabled=false;
- setStatus(descriptor.label+'の本物のGLBを読み込み、頭型に合わせました。表示しているのはウィッグだけです。');
+ setStatus(descriptor.label+'：骨格変形を除外した独立した髪メッシュだけを読み込みました。頭部ワイヤーと全身骨格は表示しません。');
 }
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
  frameView(button.dataset.view==='reset'?'front':button.dataset.view);
@@ -267,12 +261,10 @@ $('source').addEventListener('change',()=>{activeId=$('source').value;loadWig(ac
 for(const id of ['width','forward','vertical','bangs']){
  $(id).addEventListener('input',()=>{if(wig)updateFit()});
 }
-$('guide').addEventListener('change',()=>{if(headGuide)headGuide.visible=$('guide').checked;});
 $('color').addEventListener('input',colorWig);
 $('reset').addEventListener('click',()=>{
  $('width').value='111';$('forward').value='0';$('vertical').value='0';
- $('bangs').checked=false;$('guide').checked=false;$('spin').checked=false;
- if(headGuide)headGuide.visible=false;
+ $('bangs').checked=false;$('spin').checked=false;
  updateFit();frameView('front');
 });
 $('export').addEventListener('click',()=>{

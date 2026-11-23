@@ -132,3 +132,65 @@ export const PUBLIC_WIG_SOURCES=Object.freeze([
  Object.freeze({id:'bob01',label:'ロングボブ',file:'hair_bob01.glb',license:'CC0'}),
  Object.freeze({id:'ponytail01',label:'ポニーテール',file:'hair_ponytail01.glb',license:'CC0'})
 ]);
+
+
+/**
+ * Discard the complete MakeHuman skeleton at import time. The CC0 hair GLB
+ * POSITION data already contains an anatomically plausible rest-pose wig.
+ * Keeping its whole-body Skinning/92 morphs in an unrelated face scene causes
+ * enormous SkinnedMesh bounds and starburst geometry on screen.
+ *
+ * Returns a static-only THREE.Group: base POSITION/NORMAL/UV + original
+ * materials. No SkinnedMesh, bones, morph targets, legacy hat, or human model.
+ * IMPORTANT: fits must measure THIS static group, never the source glTF scene.
+ */
+export function extractUnskinnedWig(THREE,gltfRoot){
+ const root=new THREE.Group();
+ root.name='actual-hair-only-no-makehuman-skeleton';
+ const audit={sourceSkinnedMeshes:0,staticMeshes:0,droppedSkeletons:0,
+  droppedMorphTargets:0,vertices:0,triangles:0};
+ gltfRoot.updateWorldMatrix(true,true);
+ gltfRoot.traverse(node=>{
+  if(node.isBone){audit.droppedSkeletons++;return;}
+  if(!node.isMesh)return;
+  if(node.isSkinnedMesh)audit.sourceSkinnedMeshes++;
+  const source=node.geometry;
+  if(!source?.getAttribute?.('position'))return;
+  const vertices=source.getAttribute('position').count;
+  if(vertices<100)throw Error('GLBの髪メッシュが小さすぎます');
+  const geometry=source.clone();
+  // Keep the rest-position physical hair geometry, NOT the deformed skin.
+  geometry.deleteAttribute('skinIndex');
+  geometry.deleteAttribute('skinWeight');
+  audit.droppedMorphTargets+=Object.values(geometry.morphAttributes||{})
+    .reduce((acc,x)=>acc+x.length,0);
+  geometry.morphAttributes={};
+  geometry.morphTargetsRelative=false;
+  geometry.applyMatrix4(node.matrixWorld);
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  const box=geometry.boundingBox,size=box.getSize(new THREE.Vector3());
+  if(![size.x,size.y,size.z].every(Number.isFinite)||size.x<.03||size.x>3||
+      size.y<.025||size.y>3)
+   throw Error('元GLBの頂点座標が異常です（髪幅・高さ）');
+  const sourceMaterials=Array.isArray(node.material)?node.material:[node.material];
+  const mesh=new THREE.Mesh(geometry,sourceMaterials.length===1?
+    sourceMaterials[0]:sourceMaterials);
+  mesh.name='unskinned-hair-'+(node.name||audit.staticMeshes+1);
+  mesh.castShadow=true;mesh.receiveShadow=true;
+  root.add(mesh);
+  audit.staticMeshes++;audit.vertices+=vertices;
+  audit.triangles+=geometry.getIndex()?
+   Math.floor(geometry.getIndex().count/3):
+   Math.floor(vertices/3);
+ });
+ if(audit.staticMeshes<1||audit.vertices<700)
+  throw Error('3Dウィッグの髪メッシュが見つかりません');
+ const native=new THREE.Box3().setFromObject(root);
+ if(native.isEmpty())throw Error('ウィッグの独立形状が空です');
+ const bounds=native.getSize(new THREE.Vector3());
+ if(![bounds.x,bounds.y,bounds.z].every(Number.isFinite)||
+   bounds.x<.03||bounds.x>.65||bounds.y<.04||bounds.y>1.4)
+  throw Error('ウィッグGLBの元の大きさが不正です');
+ return {root,bounds:native,audit};
+}
