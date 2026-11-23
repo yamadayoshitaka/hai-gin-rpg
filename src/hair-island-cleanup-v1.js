@@ -79,6 +79,19 @@ export function cleanDetachedHairGeometry(geometry,{
    }
   }
  }
+ // Explicitly disabling the fragment thresholds must keep all disconnected
+ // authoring cards, as in the legacy cleanup API.
+ const contentMin=[Infinity,Infinity,Infinity],
+  contentMax=[-Infinity,-Infinity,-Infinity];
+ for(const component of components.values())for(let i=0;i<3;i++){
+  contentMin[i]=Math.min(contentMin[i],component.min[i]);
+  contentMax[i]=Math.max(contentMax[i],component.max[i]);
+ }
+ const contentDiagonal=Math.hypot(...contentMax.map((x,i)=>x-contentMin[i]));
+ if(fragmentMaxTriangles>=triangleCount&&fragmentMaxDiagonal>=contentDiagonal&&
+    triangles.length===triangleCount)
+  return {geometry,removedTriangles:0,removedComponents:0,
+   keptTriangles:triangleCount};
  // Anchor detection is based on the crown, NOT triangle count alone.
  // Real CC BY hair GLBs consist of hundreds of disconnected cards. A
  // detached 30-50 mm fragment below the neck can be larger than 18 triangles
