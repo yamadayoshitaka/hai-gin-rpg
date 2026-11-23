@@ -52,7 +52,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <body>
 <main>
 <nav><a href="./face-neutral-v120.html?v=120">従来の中立顔 v120</a>　｜　<a href="./face-mesh-studio.html">顔・髪エディターへ戻る</a>　｜　<a href="./hair-asset-studio.html?v=1">独立ヘアカタログ（男女・自動フィット・髪の揺れ）</a></nav>
-<h1>参考画像基準・女性スキンヘッド v121</h1>
+<h1>4方向の見本基準・女性スキンヘッド v121</h1>
 <p>提示された肌・目元・唇の参考画像を目標に、顔輪郭と頬・鼻・顎を造形し直した女性の中立顔です。髪は付けず、2048pxの肌PBRに加え、実3Dメッシュのアイライン・上下まつ毛・眉毛、鼻の中央から上唇中央へ続く人中の縦溝と正面から見えるCカールの立体まつ毛をGLBに内蔵。表情はまばたき・笑顔・怒り・困り・発話をブレンドシェイプとアニメーションで再生できます。</p>
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
@@ -84,14 +84,15 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <p>操作：一本指＝回転／二本指＝移動・ピンチ。GLBはスキンヘッドの女性v121と実3D表情アニメーションを含みます。顔の頂点・UV・将来の目口変形用領域はv120から保持します。</p>
 </div>
 <details class="panel" id="v121-tuning" open>
-<summary>顔パーツを調整（目・鼻・口・眉）</summary>
-<p>見本の正面・横顔に合わせて、目は少し大きく、鼻は控えめに、口元はふっくら、眉はやや下げた参考値を初期適用します。目・眉の「左右」は左右の間隔です。人中は鼻の真下から上唇中央へ連続する浅い溝に修正しました。</p>
+<summary>顔パーツを調整（目・鼻・口・眉・頬・顎）</summary>
+<p>今回のスキンヘッド見本（正面・斜め45度・横顔・後頭部）を女性v121の標準値に採用しました。大きめの自然な目、細い鼻筋、立体的な唇、目元に近い眉、滑らかな頬と繊細な顎を初期適用します。頬・顎もスライダーで調整できます。※見本画像の座標を自動復元したものではなく、参考特徴に合わせた初期値です。</p>
+<p><strong>現在の標準：</strong>4方向スキンヘッド見本。目110％・鼻91％・口114％・眉105％、眉を目に近づけ、頬の厚みと顎の輪郭も調整済み。</p>
 <div id="v121-tune-sliders" aria-label="顔v121の形状調整スライダー"></div>
 <div class="controls">
-<button type="button" id="applyReferenceTune" class="primary" disabled>参考画像に近づける</button>
+<button type="button" id="applyReferenceTune" class="primary" disabled>新しい見本の標準値に戻す</button>
 <button type="button" id="resetTune" disabled>全スライダーを0に戻す</button>
 </div>
-<p id="v121-tune-note" role="status">参考画像寄せのスライダー値を読み込んでいます…</p>
+<p id="v121-tune-note" role="status">スキンヘッドの4方向見本に合わせた標準値を読み込んでいます…</p>
 </details>
 <section class="panel" id="v121-expressions" aria-label="表情アニメーションプレビュー">
 <h2>表情アニメーション（顔・眉・目・口の実3D変形・口腔と歯・舌）</h2>
@@ -137,7 +138,7 @@ import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 import {attachV121Expressions,V121_EXPRESSIONS} from './face-v121-expression-player.js';
 import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-oral-opening-makeup-presets-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-4view-skinhead-reference-mouth-makeup-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null,expressionPlayer=null,expressionClips=[],faceMakeup=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
