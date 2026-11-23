@@ -89,6 +89,7 @@ test('loaded MakeHuman SkinnedMesh becomes real static hair geometry only',async
  skinned.name='bad-MakeHuman-full-body-rig-hair';
  skinned.isSkinnedMesh=true; // simulate glTF SkinnedMesh without initializing irrelevant rig
  const source=new THREE.Group();
+ source.scale.setScalar(50); // original MakeHuman full-body parent scale: must NOT bake into hair vertices
  source.add(skinned);
  const bone=new THREE.Bone();source.add(bone);
  const {root,bounds,audit}=extractUnskinnedWig(THREE,source);
@@ -102,7 +103,8 @@ test('loaded MakeHuman SkinnedMesh becomes real static hair geometry only',async
  assert.equal(output.geometry.getAttribute('skinIndex'),undefined);
  assert.equal(output.geometry.getAttribute('skinWeight'),undefined);
  assert.deepEqual(output.geometry.morphAttributes,{});
- assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).x-.2)<.0001);
+ assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).x-.2)<.0001,
+  'hair native width stays 20cm even if source glTF parent has 50x scale');
  assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).y-.25)<.0001);
  const head={cx:0,cz:0,rx:.095,rz:.10,top:.19};
  const fitted=calculateWigFit(bounds,head);
