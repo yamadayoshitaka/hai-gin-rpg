@@ -81,7 +81,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=2';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=3';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -185,6 +185,7 @@ function updateFit(){
  viewRadius=Math.max(.35,size.length()*.75);
  $('assetLog').textContent='装着先：v121の実頭部 '+head.vertices+'頂点'+
   '\n髪の元モデル：'+rawMode+
+  '\n髪の元幅：'+(rawBox.max.x-rawBox.min.x).toFixed(3)+' m'+
   '\n頭への拡大率：'+fit.scale.toFixed(3)+
   '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m'+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
@@ -243,6 +244,9 @@ async function loadWig(style,sourceFile){
  geometryAudit=isolated.audit;
  rawBox=isolated.bounds;
  if(rawBox.isEmpty())throw Error('髪だけの独立メッシュがありません');
+ const nativeSize=rawBox.getSize(new THREE.Vector3());
+ if(nativeSize.x<.10||nativeSize.x>.4)
+  throw Error('元GLBの髪幅が異常です：'+nativeSize.x.toFixed(3)+'m。表示を中止しました');
  wigContent.name='imported-CC0-'+descriptor.id;
  wig.add(wigContent);
  installMaterials(wigContent);
