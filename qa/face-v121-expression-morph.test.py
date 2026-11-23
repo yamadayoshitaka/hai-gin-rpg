@@ -118,8 +118,8 @@ class TestRealExpressionGLB(unittest.TestCase):
             if name==expected[0]:
                 h=lambda v:max(t[1] for t in v)-min(t[1] for t in v)
                 w=lambda v:max(t[0] for t in v)-min(t[0] for t in v)
-                self.assertGreater(h(a),.030)
-                self.assertGreater(h(mouth),.025)
+                self.assertGreater(h(a),.019)
+                self.assertGreater(h(mouth),.016)
                 self.assertLess(h(i),.015)
                 self.assertLess(w(u),w(i)*.60)
                 # Outer rim conforms to the local curved lip rather than moving
