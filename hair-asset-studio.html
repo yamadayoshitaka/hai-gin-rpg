@@ -37,19 +37,19 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 #viewport{height:46vh;min-height:305px}.settings{grid-column:auto}}
 </style></head><body>
 <header><h1>独立ヘアアセット・スタジオ</h1>
-<div class="muted">顔v121を基準に頭頂・前髪・左右・後ろ髪を独立造形。女性ヘア01は見本のストレートロング＋ぱっつん前髪。微細な毛流れテクスチャ付き。旧GLBは使用しません。</div>
+<div class="muted">実際のv121頭部メッシュから頭型を採寸し、厚み付き毛束を彫刻。頭頂・前髪・左右・後ろ髪を別々に製造し、最後に頭へ組み付けます。旧GLBを流用しません。</div>
 <div class="muted"><a href="./face-neutral-v121.html">顔v121（スキンヘッド）</a> ｜ <a href="./face-mesh-studio.html">顔編集</a> ｜ <a href="./character-face-catalog.html">顔・髪管理一覧</a> ｜ <a href="./hair-cache-reset.html?reset=20261123">キャッシュを消して最新版を開く</a></div></header>
 <main>
 <section class="panel"><h2>男女別ヘアカタログ</h2>
 <div class="controls" role="group" aria-label="性別"><button id="female" aria-pressed="true">女性 12</button><button id="male" aria-pressed="false">男性 14</button></div>
-<p class="muted">女性12種・男性14種。女性ヘア01は見本の5パーツ構造へ変更。他の髪型も頭部形状を基準に生成し、カタログとの一致は実機で確認します。</p>
+<p class="muted">女性12種・男性14種。全種類を新しい5パーツ組立造形へ切替。女性01は見本のぱっつん前髪と長い後ろ髪を基準に設計しています。</p>
 <div class="catalog" id="catalog" aria-label="3D髪型一覧"></div></section>
 <section class="panel">
-<div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">全26髪型：5パーツの高密度ヘア造形 v10｜配信コミット確認中</div>
+<div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">全26髪型：頭型から製作する分割組立ヘア v11｜配信コミット確認中</div>
 <div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
 <div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：顔v121実スキンヘッド（読込中）<br>髪メッシュ：読込中</div></div>
-<p class="muted">ドラッグで360度回転、ピンチで拡大。髪は頭頂・前髪・左髪・右髪・後ろ髪の独立3Dパーツ。頭皮との隙間には0.45mmの内側下地を配置し、外側を毛流れ造形で密に覆います。眉毛・目・顔は変更しません。</p>
-<div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="capToggle" aria-pressed="false" disabled>内側の毛根下地あり</button><button id="source">造形情報</button></div>
+<p class="muted">ドラッグで360度回転、ピンチで拡大。髪は頭頂・前髪・左髪・右髪・後ろ髪の5つの着脱パーツ。頭部三角形に密着する0.45mmの下地を内側に置き、外側を重なり合う薄い立体毛束で覆います。毛束単位で頭・首・肩との接触を補正し、顔・眉は変更しません。</p>
+<div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="capToggle" aria-pressed="false" disabled>内側の毛根下地0.45mm</button><button id="source">造形情報</button></div>
 <div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
 <div id="parts" aria-label="髪メッシュのパーツ表示"></div>
 </section>
@@ -79,16 +79,16 @@ import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
  from './src/independent-hair-library-v1.js?v=3';
 import {measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=4';
 import {attachV121FaceSliders,V121_REFERENCE_PRESET} from './face-v121-parametric-sliders.js';
-import {sculptHairFromHead,findSculptHairStyle} from './src/head-derived-hair-reference-v10.js?v=10';
+import {sculptHairFromHead,findHairStyle as findSculptHairStyle} from './src/head-derived-hair-modular-v11.js?v=11';
 const $=id=>document.getElementById(id);
-fetch('./release.json?hair26v10_check='+Date.now(),{cache:'no-store'})
+fetch('./release.json?hair26v11_check='+Date.now(),{cache:'no-store'})
  .then(r=>{if(!r.ok)throw Error('release.json HTTP '+r.status);return r.json();})
  .then(release=>{
   const sha=String(release.sha||'unknown');
-  $('hairVersion').textContent='全26髪型：5パーツ造形・毛流れ質感v10｜配信コミット '+sha.slice(0,12);
+  $('hairVersion').textContent='全26髪型：分割組立＋毛束別衝突判定v11｜配信コミット '+sha.slice(0,12);
  })
  .catch(()=>{
-  $('hairVersion').textContent='全26髪型：5パーツ造形・毛流れ質感v10｜配信コミット未取得';
+  $('hairVersion').textContent='全26髪型：分割組立＋毛束別衝突判定v11｜配信コミット未取得';
  });
 const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
 const pivot=new THREE.Group();scene.add(pivot);
@@ -204,15 +204,15 @@ function updateStats(){
  const model=current;
  if(!model)return;
  const f=model.root.userData.fit,scale=f.scale;
- $('viewerInfo').textContent='髪: '+selected.name+('（頭頂・前髪・左右・後ろ髪 v10）\n')+
+ $('viewerInfo').textContent='髪: '+selected.name+('（分割して組み付ける5パーツ v11）\n')+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
-  '\n毛根下地：'+(current?.diagnostics?.()?.scalpBackingTriangles||0)+'面（外側の髪で覆う）'+
-  '\n独立3Dパーツ：'+(current?.diagnostics?.()?.hairParts||0)+'個'+
-  '\n頭頂の毛流れ：'+(current?.diagnostics?.()?.crownStrands||0)+'束'+
-  '\n前髪：'+(current?.diagnostics?.()?.frontalStrands||0)+'束'+
-  '\n髪全体の造形：'+(current?.diagnostics?.()?.totalTriangles||0)+'面'+
+  '\n頭型から生成した内側下地：'+(current?.diagnostics?.()?.rootBackingTriangles||0)+'面'+
+  '\n分割組立パーツ：'+(current?.diagnostics?.()?.hairParts||0)+'個'+
+  '\n独立毛束（衝突判定あり）：'+(current?.diagnostics?.()?.separateCollisionStrands||0)+'束'+
+  '\n接触補正（直近フレーム）：'+(current?.diagnostics?.()?.collisionContacts||0)+'回'+
+  '\n立体メッシュ：'+(current?.diagnostics?.()?.triangleCount||0)+'面'+
   '\n浮遊した破片の除去：'+(current?.cleanupStats?.removedTriangles||0)+'面'+
   '\n頭皮と交差した毛根を補正：'+(current?.root?.userData?.crownVerticesAdjusted||0)+'頂点';
 }
@@ -252,7 +252,7 @@ async function select(item){
   spring.reset();makePartControls();updateStats();
   $('source').textContent='造形情報';
   $('source').onclick=()=>{details.open=true;details.scrollIntoView({behavior:'smooth',block:'nearest'});};
-  $('status').textContent=item.name+'・'+profile.label+'：v121頭部メッシュから厚み、長さ、輪郭の削り込みを新規生成（v10）。旧GLB不使用。';
+  $('status').textContent=item.name+'・'+profile.label+'：v121頭部メッシュから厚み、長さ、輪郭の削り込みを新規生成（v11）。旧GLB不使用。';
 
  }catch(error){if(request===selection)$('status').textContent='GLB読込エラー：'+error.message;}
 }
@@ -298,7 +298,7 @@ document.querySelectorAll('[data-motion]').forEach(b=>b.onclick=()=>{
 });
 $('wind').oninput=()=>$('windVal').textContent=$('wind').value;
 $('save').onclick=()=>{
- const data={schema:'hai-gin-five-part-groom-v10',sex,asset:selected.id,
+ const data={schema:'hai-gin-modular-plate-groom-v11',sex,asset:selected.id,
    sculptName:findSculptHairStyle(selected.id)?.label,source:'v121-head-mesh',
    head:headSize(),color:$('color').value,motion,wind:+$('wind').value};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
