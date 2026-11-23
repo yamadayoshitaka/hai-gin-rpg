@@ -25,7 +25,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible{outline:2px solid white}
 #previewStage{position:relative}
 #faceCanvas{width:100%;height:min(69vh,610px);min-height:335px;border-radius:12px;
-display:block;background:#203348;touch-action:none}
+display:block;background:#203348;touch-action:none;overscroll-behavior:contain}
+#faceTouchHint{margin:5px 2px 7px;font-size:12px;color:#c9e1ed;line-height:1.45}
 #status{padding:8px;color:#d7e9f7;font-size:13px;min-height:33px}
 #metrics{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.6;
 padding:10px;background:#12263a;border-radius:8px}
@@ -94,7 +95,8 @@ button{padding:9px 11px}
 </div>
 <div class="previewStage" id="previewStage">
 <div id="faceViewerStatus" role="status" aria-live="polite">顔 v115・髪 v72｜3Dモデルを読込中…</div>
-<canvas id="faceCanvas" aria-label="髪とメイクを取り除いた、灰色の独立した顔3Dメッシュ"></canvas>
+<canvas id="faceCanvas" aria-label="3D顔ビューアー。一本指で回転、二本指スライドで上下左右へ平行移動、二本指ピンチで拡大縮小"></canvas>
+<p id="faceTouchHint" role="note">操作：1本指＝回転 ／ 2本指スライド＝上下左右へ移動 ／ ピンチ＝拡大・縮小（操作 v116）</p>
 <div class="controls" aria-label="視点切替">
 <button id="front" aria-pressed="true" disabled>正面</button>
 <button id="threeQuarter" aria-pressed="false" disabled>斜め45°</button>
@@ -326,7 +328,15 @@ const edgeLight=new THREE.DirectionalLight(0xffe9da,.78);
 edgeLight.position.set(-2.5,2,-3);scene.add(edgeLight);
 const camera=new THREE.PerspectiveCamera(34,1,.005,100);
 const orbit=new OrbitControls(camera,canvas);
-orbit.enableDamping=true;orbit.enablePan=false;
+// V116: OrbitControls already supports two-finger DOLLY_PAN when pan is
+// enabled. The old enablePan=false silently disabled sliding on Android.
+// Use its native pointer-handler so pinch and translate work simultaneously,
+// without touchmove preventDefault hacks or manual pointer capture.
+orbit.enableDamping=true;orbit.enablePan=true;
+orbit.screenSpacePanning=true;
+orbit.panSpeed=1.0;orbit.zoomSpeed=.85;
+orbit.touches.ONE=THREE.TOUCH.ROTATE;
+orbit.touches.TWO=THREE.TOUCH.DOLLY_PAN;
 orbit.minDistance=.1;orbit.maxDistance=6;
 const models=new Map(),wigs=new Map();
 const hairPalette=Object.fromEntries(Object.entries(HAIR_COLORS).map(([key,item])=>
@@ -536,6 +546,20 @@ function updateFacePoseDiagnostics(){
 if(new URLSearchParams(location.search).get('qa')==='expression'){
  // Deterministic WebGL testing only; no extra controls exposed in gameplay.
  window.__faceExpressionQA={
+  gestureProbe(){
+   return {
+    cameraPosition:camera.position.toArray(),
+    target:orbit.target.toArray(),
+    distance:camera.position.distanceTo(orbit.target),
+    panEnabled:orbit.enablePan,
+    screenSpacePanning:orbit.screenSpacePanning,
+    oneFinger:orbit.touches.ONE,
+    twoFingers:orbit.touches.TWO,
+    expectedOneFinger:THREE.TOUCH.ROTATE,
+    expectedTwoFingers:THREE.TOUCH.DOLLY_PAN,
+    canvasTouchAction:getComputedStyle(canvas).touchAction
+   };
+  },
   // Read the ACTUAL visible 3D eyelid and optic mesh, not the preset label.
   // V114 regression probes iris radius, lash-line shape and unaffected male.
   eyeQualityProbe(){

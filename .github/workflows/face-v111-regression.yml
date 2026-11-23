@@ -10,6 +10,7 @@ on:
       - 'qa/face-v111-initial-cheek-regression.test.mjs'
       - 'qa/face-v114-natural-eye.test.mjs'
       - 'qa/face-v115-liner-lash-geometry.test.mjs'
+      - 'qa/face-v116-gesture-contract.test.mjs'
       - 'qa/face-v114-eye-migration.test.mjs'
       - 'src/face-part-catalog-v32.js'
       - '.github/workflows/face-v111-regression.yml'
@@ -24,6 +25,7 @@ on:
       - 'qa/face-v111-initial-cheek-regression.test.mjs'
       - 'qa/face-v114-natural-eye.test.mjs'
       - 'qa/face-v115-liner-lash-geometry.test.mjs'
+      - 'qa/face-v116-gesture-contract.test.mjs'
       - 'src/face-part-catalog-v32.js'
   workflow_dispatch:
 permissions:
@@ -48,12 +50,13 @@ jobs:
           node --check src/face-feature-meshes.js
           node --check qa/face-v114-natural-eye.test.mjs
           node --check qa/face-v115-liner-lash-geometry.test.mjs
+          node --check qa/face-v116-gesture-contract.test.mjs
           node --check src/face-expression-animation-v48.js
           node --check src/face-v114-eye-migration.js
           node --check qa/face-v114-eye-migration.test.mjs
       - name: Compare actual CC0 GLB normals and triangle indices after body reselect
         run: node --test qa/face-v111-initial-cheek-regression.test.mjs
       - name: Verify reference eye contours, real iris ratio and intact source preset
-        run: node --test qa/face-v114-natural-eye.test.mjs qa/face-v114-eye-migration.test.mjs qa/face-v115-liner-lash-geometry.test.mjs
+        run: node --test qa/face-v114-natural-eye.test.mjs qa/face-v114-eye-migration.test.mjs qa/face-v115-liner-lash-geometry.test.mjs qa/face-v116-gesture-contract.test.mjs
       - name: Ensure previous v106/v107/v110 face contracts still pass
         run: node --test qa/face-v106-local-retopo.test.mjs qa/face-v107-natural-smile.test.mjs qa/face-v110-initial-normal-mesh.test.mjs
