@@ -95,7 +95,7 @@ jobs:
           npm install --no-save --package-lock=false three@0.160.1
           node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
       - name: Block v114 publication unless realistic eyes, native face and shaded wire contracts pass
-        run: node --test qa/face-v111-initial-cheek-regression.test.mjs qa/face-v112-opaque-skin-contract.test.mjs qa/face-v113-native-first-contract.test.mjs qa/face-v114-natural-eye.test.mjs qa/face-v114-eye-migration.test.mjs qa/face-v115-liner-lash-geometry.test.mjs
+        run: node --test qa/face-v111-initial-cheek-regression.test.mjs qa/face-v112-opaque-skin-contract.test.mjs qa/face-v113-native-first-contract.test.mjs qa/face-v114-natural-eye.test.mjs qa/face-v114-eye-migration.test.mjs qa/face-v115-liner-lash-geometry.test.mjs qa/face-v116-gesture-contract.test.mjs
       - name: Verify m019 Android limb visibility / colour / toe continuity in low and high LOD
         # Failures remain visible in the workflow; publishing may proceed.
         id: qa_m019
@@ -403,7 +403,7 @@ jobs:
           echo '::error::Deployed Pages did not serve the current maintenance center/PR preview for this SHA.'
           exit 1
 
-      - name: Confirm public v115 eyeliner-conforming iris and lash roots, v113 native face and v112 wire
+      - name: Confirm public v115 face and v116 two-finger camera pan/zoom controls
         if: steps.latest.outputs.publish == 'true'
         shell: bash
         run: |
@@ -437,6 +437,9 @@ jobs:
                grep -Fq 'v113NativeNormalGeometry' /tmp/public-face-studio.html &&
                grep -Fq 'eyeQualityProbe' /tmp/public-face-studio.html &&
                grep -Fq 'v115UpperLashRootError' /tmp/public-face-studio.html &&
+               grep -Fq 'orbit.enablePan=true' /tmp/public-face-studio.html &&
+               grep -Fq 'orbit.touches.TWO=THREE.TOUCH.DOLLY_PAN' /tmp/public-face-studio.html &&
+               grep -Fq 'faceTouchHint' /tmp/public-face-studio.html &&
                grep -Fq 'v115-eye-liner-lashes' /tmp/public-face-studio.html &&
                grep -Fq 'migrateV114UneditedAutoSavedEyes' /tmp/public-face-studio.html &&
                grep -Fq 'v114-natural-realistic-eyes' /tmp/public-face-studio.html &&
@@ -450,7 +453,7 @@ jobs:
                grep -Fq '品質・生成ログを表示' /tmp/public-face-studio.html &&
                grep -Fq 'v107NeutralCheekDepth' /tmp/public-face-v107.js &&
                grep -Fq 'v107BuildSignature' /tmp/public-face-expression.js; then
-              echo "PASS: public face studio, FACS and nose/oral topology modules are current v115 (${GITHUB_SHA})"
+              echo "PASS: public face studio, v116 pan controls, FACS and nose/oral modules current v115 (${GITHUB_SHA})"
               exit 0
             fi
             echo "::warning::Face v115 not public: HTML ${html_code} JS ${js_code} topology ${topology_code} local retopo ${local_retopo_code} (attempt ${attempt}/18)"
