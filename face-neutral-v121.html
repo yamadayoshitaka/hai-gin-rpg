@@ -53,7 +53,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <main>
 <nav><a href="./face-neutral-v120.html?v=120">従来の中立顔 v120</a>　｜　<a href="./face-mesh-studio.html">顔・髪エディターへ戻る</a>　｜　<a href="./hair-asset-studio.html?v=1">独立ヘアカタログ（男女・自動フィット・髪の揺れ）</a></nav>
 <h1>4方向の見本基準・女性スキンヘッド v121</h1>
-<p>女性v121の鼻下から唇・顎・首へのメッシュを新たに形成しています。鼻から上と目・眉は維持し、調整スライダーと表情の再生は一時停止中です。</p>
+<p>女性v121の下顔面です。破綻の原因だったUV座標からの強制的なX/Y/Z投影を撤去し、元の唇・鼻・首の位置関係を維持しながら口の下・顎・顎下を実3D座標で再形成しました。スライダーと表情再生は停止中です。</p>
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
 <canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
@@ -104,7 +104,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-neutral-rebuild-v9-20261124';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-realxyz-neutral-v11-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -257,7 +257,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121：鼻下から口・顎・首を再構成。スライダーと表情はオフです。');
+ update('status','女性v121：UV→XYZ投影による横縞を解消するよう、実3D座標で下顔面を修正。スライダーと表情はオフです。');
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
  const draw=(now=0)=>{

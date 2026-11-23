@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Replace original v121 female nasal-base-to-throat skin with new neutral topology.
+"""v121 lower-face rebuild: safe actual-XYZ sculpt and one-loop chin retopology.
 
-Cut out the complete lower-front skin region, generate an independent
-philtrum/lip/mental-crease/chin/neck surface and retriangulate the cut disk.
-Keep scalp, eyes, eyebrows and actual nose above its base unchanged.
-Existing vertex IDs and UV boundary remain welded; v120/males untouched.
+Avoid UV->XYZ projection, preserve real facial landmarks and lips, and discard
+the old chin patch triangles before local remeshing. Facial sliders and
+expression playback remain disabled in the standalone v121 viewer.
 """
 import collections
 import json
@@ -20,13 +19,9 @@ accessor=helpers['accessor']
 add_vec3=helpers['add_vec3']
 normals=helpers['normals']
 
-# The original chin UV region is a single disk with one perimeter loop.
-# A larger UV selection crosses mouth/nose islands and cannot be ear-clipped
-# by the single-boundary triangulator (multiple rim loops).
-# Keep the *topology deletion* on the proven disk while still generating a
-# fully new anatomical nose-to-throat surface over the larger sculpt region.
+# The chin UV disk has a single rim loop. This is ONLY a topological
+# selection; all position changes are computed from real XYZ coordinates.
 UV_BOUNDS=(.360,.640,.385,.585)
-SCULPT_BOUNDS=(.335,.665,.285,.595)
 
 def fade(v,a,b):
     t=max(0.,min(1.,(v-a)/(b-a)))
@@ -57,80 +52,72 @@ def profile(value,knots):
             (-2*t**3+3*t*t)*bz+
             (t**3-t*t)*h*tangent(j+1))
 
+def bell(x, center, width):
+    return math.exp(-.5*((x-center)/width)**2)
+
+
 def new_lower_face_geometry(points,uv):
-    """Independent anatomical cross-sections, not deformations of old jaw."""
-    lip=max(z for x,y,z in points if abs(x)<.040 and .217<y<.249)
-    zknots=[
-        (.285,lip-.022),(.302,lip-.026),(.319,lip-.021),
-        (.331,lip-.011),(.340,lip-.003),(.349,lip+.001),
-        (.357,lip-.005),(.366,lip-.001),(.381,lip-.027),
-        (.399,lip-.041),(.414,lip-.039),(.437,lip-.023),
-        (.458,lip-.021),(.483,lip-.034),(.510,lip-.056),
-        (.540,lip-.082),(.570,lip-.102),(.595,lip-.109)]
-    yknots=[
-        (.285,.270),(.302,.260),(.319,.250),(.331,.245),
-        (.340,.240),(.349,.233),(.357,.227),(.366,.220),
-        (.381,.207),(.399,.195),(.414,.189),(.437,.184),
-        (.458,.176),(.483,.164),(.510,.146),(.540,.125),
-        (.570,.108),(.595,.087)]
-    widthknots=[
-        (.285,.390),(.340,.395),(.385,.398),(.435,.402),
-        (.475,.406),(.515,.427),(.555,.468),(.595,.476)]
-    sideknots=[
-        (.285,lip-.051),(.350,lip-.057),(.385,lip-.066),
-        (.435,lip-.073),(.485,lip-.091),(.540,lip-.106),
-        (.595,lip-.119)]
+    """Retopologize the lower face without projecting UVs into 3D space.
+
+    The prior UV->XYZ reconstruction moved mouth, cheeks and throat vertices
+    into flat horizontal strips. Instead preserve the actual anatomical X/Y
+    coordinates and sculpt shallow lower-face relief from real XYZ positions.
+    The old jaw patch connectivity is discarded and re-triangulated, using
+    the original one-loop disk and all of its registered vertex IDs.
+    This pass never touches eyes, brows, skull, nasal bridge or nose tip.
+    """
+    lip_front=max(z for x,y,z in points if abs(x)<.040 and .217<y<.249)
     result=[]
     changed=0
     max_move=0.
-    xmin,xmax,vmin,vmax=SCULPT_BOUNDS
-    for (x,y,z),(u,v) in zip(points,uv):
-        if not (xmin<u<xmax and vmin<v<vmax):
-            result.append((x,y,z));continue
-        seam=(fade(min(u-xmin,xmax-u),0.,.036)*
-              fade(min(v-vmin,vmax-v),0.,.018))
-        if seam<1.e-9:
-            result.append((x,y,z));continue
-        central=max(0.,1.-(abs(u-.5)/.165)**1.7)
-        zz=profile(v,sideknots)+(profile(v,zknots)-profile(v,sideknots))*central
-        target=((u-.5)*profile(v,widthknots),profile(v,yknots),zz)
-        new=tuple(old+seam*(fresh-old) for old,fresh in zip((x,y,z),target))
+    for x,y,z in points:
+        # All masks are defined in real head metres, NOT texture UV space.
+        front=fade(z,.058,.113)
+        middle=bell(x,0.,.060)
+        chin=bell(y,.168,.029)*middle*front
+        sulcus=bell(y,.202,.012)*bell(x,0.,.042)*front
+        submental=bell(y,.117,.030)*bell(x,0.,.076)*fade(z,.040,.105)
+        jaw_sides=bell(abs(x),.076,.029)*bell(y,.170,.039)*front
+        # Preserve existing vermilion loops and neutral mouth seal.
+        lip_front_mask=fade(z,.093,.128)*bell(x,0.,.041)
+        upper_lip=bell(y,.241,.0065)*lip_front_mask
+        lower_lip=bell(y,.224,.0080)*lip_front_mask
+        # Retract the old protruding chin, round the mentolabial transition,
+        # and blend the undersurface into neck without a second shelf.
+        dz=(-.0080*chin+.0017*sulcus-.0050*submental+
+             .0010*jaw_sides+.0010*upper_lip+.0014*lower_lip)
+        dy=.0014*chin+.0006*submental
+        dx=-x*(.018*chin+.007*jaw_sides)
+        new=(x+dx,y+dy,z+dz)
         if not all(math.isfinite(q) for q in new):
-            raise ValueError('Non-finite lower-face reconstruction')
-        delta=math.dist((x,y,z),new)
-        if delta>.0001:changed+=1
-        max_move=max(max_move,delta)
+            raise ValueError('Nonfinite real-space lower-face vertex')
+        shift=math.dist((x,y,z),new)
+        if shift>.0001:changed+=1
+        max_move=max(max_move,shift)
         result.append(new)
-    def depth_at_v(v):
-        candidates=[result[i][2] for i,(u,t) in enumerate(uv)
-                    if abs(u-.5)<.015 and abs(t-v)<.008]
-        if not candidates:raise ValueError('Missing lower-face profile '+str(v))
-        return sorted(candidates)[len(candidates)//2]
-    menton=depth_at_v(.447)
-    sulcus=depth_at_v(.408)
-    throat=depth_at_v(.555)
-    if changed<1000 or max_move>.110:
-        raise ValueError('Lower face reconstruction incomplete '+str((changed,max_move)))
-    if not (lip-.042<menton<lip-.010):
-        raise ValueError('Chin must sit behind the lips, not protrude')
-    if not (menton>sulcus+.004 and menton>throat+.035):
-        raise ValueError('Natural mentolabial/chin/neck transition missing')
+    if changed<180 or max_move>.014:
+        raise ValueError('Unsafe local lower-face reconstruction: '+
+                         str((changed,max_move)))
+    def forward_depth(lo,hi,width=.055):
+        region=[p[2] for p in result
+                if lo<=p[1]<=hi and abs(p[0])<width and p[2]>.047]
+        return max(region) if region else None
+    chin_depth=forward_depth(.142,.194)
+    neck_depth=forward_depth(.075,.118)
     return result,{
-        'version':'female-v121-neutral-nasal-base-to-neck-retopo-v10',
-        'method':'new-nasal-base-to-neck-surface-with-single-disk-chin-retriangulation',
-        'mouthFrontZ':round(lip,6),
-        'mentonAfterZ':round(menton,6),
-        'labiomentalSulcusZ':round(sulcus,6),
-        'upperNeckZ':round(throat,6),
+        'version':'female-v121-realspace-neutral-lower-face-v11',
+        'method':'real-XYZ-bounded-lip-chin-neck-sculpt-plus-single-disk-retriangulation',
+        'mouthFrontZ':round(lip_front,6),
+        'mentonAfterZ':round(chin_depth,6) if chin_depth is not None else None,
+        'upperNeckZ':round(neck_depth,6) if neck_depth is not None else None,
         'affectedVertices':changed,
         'maximumDisplacement':round(max_move,6),
-        'chinFromIndependentReferenceSections':True,
-        'actualMentonRelief3D':True,
+        'anatomicalCoordinateSystem':'actual-mesh-XYZ-meters',
+        'uvToXYZProjectionRemoved':True,
+        'nasalBaseAndEyesUnchanged':True,
+        'lipLoopsRetained':True,
         'neckUnderjawSeamContinuous':True,
         'faceUVAndVertexIDsRetained':True,
-        'neutralLowerFaceFromNasalBase':True,
-        'noLegacyJawOffsets':True,
-        'singleDiskRetopologyBoundary':True,
     }
 
 
