@@ -37,24 +37,24 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 #viewport{height:46vh;min-height:305px}.settings{grid-column:auto}}
 </style></head><body>
 <header><h1>独立ヘアアセット・スタジオ</h1>
-<div class="muted">女性ヘア01：顔v121の頭部三角形を押し出して髪の厚みを生成。その同じメッシュを伸ばして造形・揺れを表現。その他の髪型は従来のGLB。顔v121と眉毛は変更しません。</div>
+<div class="muted">全26髪型を顔v121の頭部メッシュから新規生成。厚みと長さを作り、彫刻のように髪型を削り込みます。旧GLBは表示に使用しません。</div>
 <div class="muted"><a href="./face-neutral-v121.html">顔v121（スキンヘッド）</a> ｜ <a href="./face-mesh-studio.html">顔編集</a> ｜ <a href="./character-face-catalog.html">顔・髪管理一覧</a> ｜ <a href="./hair-cache-reset.html?reset=20261123">キャッシュを消して最新版を開く</a></div></header>
 <main>
 <section class="panel"><h2>男女別ヘアカタログ</h2>
 <div class="controls" role="group" aria-label="性別"><button id="female" aria-pressed="true">女性 12</button><button id="male" aria-pressed="false">男性 14</button></div>
-<p class="muted">26種類の3Dメッシュ。カタログの番号は元GLBの識別子で、髪型名を未検証のまま割り当てません。</p>
+<p class="muted">女性12種・男性14種。名前は新規造形プロファイルの仮名です。ヘアカタログの見本との一致は引き続き確認対象です。</p>
 <div class="catalog" id="catalog" aria-label="3D髪型一覧"></div></section>
 <section class="panel">
 <div id="hairVersion" role="status" style="font-size:13px;padding:7px 9px;margin-bottom:7px;border:1px solid #56748b;border-radius:7px;color:#ebdfc4">全26髪型：顔メッシュ押し出し→長さ→彫刻v6｜配信コミット確認中</div>
 <div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
 <div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：顔v121実スキンヘッド（読込中）<br>髪メッシュ：読込中</div></div>
-<p class="muted">ドラッグで360度回転、ピンチで拡大。女性ヘア01は頭部メッシュの二重押し出しから髪を造形。前髪・横髪・後ろ髪は連続した同一メッシュです。揺れは根元を固定。元GLBは比較専用。色分け・分解は検査モードのみ。眉毛・目・顔は変更しません。</p>
+<p class="muted">ドラッグで360度回転、ピンチで拡大。全26種類を実v121の頭部から厚み→長さ→彫刻で造形します。根元を固定し、毛先に向けて揺れを付けます。旧GLBは読み込まず、眉毛・目・顔を変更しません。</p>
 <div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="capToggle" aria-pressed="false" disabled>旧頭皮カバー無効</button><button id="source">造形情報</button></div>
 <div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
 <div id="parts" aria-label="髪メッシュのパーツ表示"></div>
 </section>
 <section class="panel settings"><h2>自動フィット・揺れの検証</h2>
-<p class="muted">v121実スキンヘッドを装着台として使用し、その頭頂・側頭の計測値を基準に髪の根元を自動調整します。顔の頂点・眉毛は変更しません。</p>
+<p class="muted">頭部の実メッシュと眉毛位置を測り、髪の厚み、長さ、刈り込み輪郭を生成します。顔の頂点・眉毛は変更しません。</p>
 <label>頭の幅 <span id="widthVal"></span><input id="width" type="range" min=".14" max=".28" step=".005" value=".205"></label>
 <label>頭の高さ <span id="heightVal"></span><input id="height" type="range" min=".17" max=".32" step=".005" value=".235"></label>
 <label>頭の奥行き <span id="depthVal"></span><input id="depth" type="range" min=".14" max=".28" step=".005" value=".205"></label>
@@ -65,12 +65,12 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <h2>頭部・身体の動き</h2>
 <div class="controls"><button data-motion="idle" aria-pressed="true">静止</button><button data-motion="walk" aria-pressed="false">歩行</button><button data-motion="run" aria-pressed="false">走行</button><button data-motion="turn" aria-pressed="false">旋回</button></div>
 <label>風・揺れの強さ <span id="windVal">0</span><input id="wind" type="range" min="0" max="3" step=".1" value="0"></label>
-<p class="muted">根元は頭に固定。毛先はばね減衰と首・肩・胸・背中の近似衝突判定で揺れます。衣装の全三角形を毎フレーム検査する方式ではありません。ゲーム本体への組み込みは別途必要です。</p>
+<p class="muted">根元は頭に固定し、毛先だけにばね減衰による揺れを付けます。身体との精密な接触判定は未実装です。ゲーム本体への組み込みも別途必要です。</p>
 <button id="save" style="width:100%">現在の組み合わせをJSON保存</button>
-<p class="muted">出力は髪型ID・髪色・頭サイズ・動作設定です。元の3Dメッシュはライセンス表記付きGLBとして別管理します。</p></section>
+<p class="muted">出力は新規造形ID・髪色・頭サイズ・動作設定です。旧GLBは描画に利用しません。</p></section>
 </main>
 <div id="v121-tune-sliders" hidden aria-hidden="true"></div>
-<footer>素材：Vincent Freelance ／ CC BY 4.0。<a href="./assets/characters/hair-fitted-v1/ATTRIBUTION.md">著作者・出典・改変履歴</a>を確認してください。髪型資料の写真はゲームへ取り込みません。</footer>
+<footer>頭部ベース：顔v121。髪形状は独立した新規造形プログラムで生成。旧GLBはリポジトリに保存されていますが、このスタジオでは使用しません。</footer>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -204,13 +204,13 @@ function updateStats(){
  const model=current;
  if(!model)return;
  const f=model.root.userData.fit,scale=f.scale;
- $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（頭部メッシュ押し出しv5／厚み・揺れ）\n':'（実GLB）\n')+
+ $('viewerInfo').textContent='髪: '+selected.name+(selected.id==='female-hair-01'?'（頭部押し出し→彫刻v6）\n':'（頭部押し出し→彫刻v6）\n')+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
   '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
   '\n頭部GLB：'+headFileName+
-  '\n実頭皮由来の連続ベース：'+(current?.diagnostics?.()?.crownTriangles||0)+'面'+
-   '\n旧頭皮下地：'+(current?.cap?.triangles||0)+'面（他の髪の検査時のみ）'+
-  '\n細い立体毛流れ：'+(current?.cap?.fiberTriangles||0)+'面'+
+  '\n頭部由来の髪ベース：'+(current?.diagnostics?.()?.crownTriangles||0)+'面'+
+   '\n旧頭皮下地：使用しない'+
+  '\n髪全体の造形：'+(current?.diagnostics?.()?.totalTriangles||0)+'面'+
   '\n浮遊した破片の除去：'+(current?.cleanupStats?.removedTriangles||0)+'面'+
   '\n頭皮と交差した毛根を補正：'+(current?.root?.userData?.crownVerticesAdjusted||0)+'頂点';
 }
@@ -296,9 +296,9 @@ document.querySelectorAll('[data-motion]').forEach(b=>b.onclick=()=>{
 });
 $('wind').oninput=()=>$('windVal').textContent=$('wind').value;
 $('save').onclick=()=>{
- const data={schema:'hai-gin-independent-hair-v1',sex,asset:selected.id,glb:selected.path,
-  head:headSize(),color:$('color').value,motion,wind:+$('wind').value,
-  license:'Vincent Freelance / CC BY 4.0'};
+ const data={schema:'hai-gin-head-sculpt-v6',sex,asset:selected.id,
+   sculptName:findSculptHairStyle(selected.id)?.label,source:'v121-head-mesh',
+   head:headSize(),color:$('color').value,motion,wind:+$('wind').value};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='hair-'+selected.id+'.json';a.click();
