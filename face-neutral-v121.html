@@ -233,7 +233,15 @@ async function init(){
   eyeNodes.forEach(eye=>eye.visible=next);
   $('eyes').setAttribute('aria-pressed',String(next));
  });
- $('export').addEventListener('click',exportGLB);
+ // GLTFExporter serializes 2048px PBR textures synchronously for part
+ // of the save. Defer it beyond the click dispatch so touch/click handlers
+ // acknowledge immediately; otherwise slow Android renderers and Playwright
+ // report a click timeout even when a valid GLB is being produced.
+ $('export').addEventListener('click',()=>{
+  $('export').disabled=true;
+  update('status','調整済みv121 GLBを生成中…');
+  window.setTimeout(()=>{void exportGLB();},0);
+ });
  $('exportStructure').addEventListener('click',exportJSON);
  for(const [id,value]of Object.entries({
   vertexCount:metrics.vertices.toLocaleString('ja-JP'),
