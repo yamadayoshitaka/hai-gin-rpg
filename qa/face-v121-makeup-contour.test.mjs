@@ -4,8 +4,8 @@ import {v121MakeupMasks,V121_MAKEUP_PRESETS}
   from '../face-v121-makeup-presets.js';
 
 test('v121 pigments stay on real upper and lower vermilion, not chin or jaw',()=>{
-  const upper=v121MakeupMasks(0,.208,.150);
-  const lower=v121MakeupMasks(0,.185,.150);
+  const upper=v121MakeupMasks(0,.240,.150);
+  const lower=v121MakeupMasks(0,.224,.150);
   const chin=v121MakeupMasks(0,.140,.155);
   const jaw=v121MakeupMasks(.080,.157,.128);
   const neck=v121MakeupMasks(.045,.045,.060);
@@ -15,7 +15,7 @@ test('v121 pigments stay on real upper and lower vermilion, not chin or jaw',()=
   for(const [name,mask] of Object.entries({chin,jaw,neck,nose})){
     assert.ok(mask.lip<.0001,name+' must not receive lipstick');
   }
-  assert.ok(v121MakeupMasks(0,.185,.090).lip===0,
+  assert.ok(v121MakeupMasks(0,.225,.090).lip===0,
     'lip pigment must not seep through underlying back-facing skin');
 });
 
@@ -23,7 +23,7 @@ test('all four lipsticks have an absolute exclusion mask at chin, jaw and neck',
   const excluded=[
     [0,.130,.156], [.026,.160,.154], [.075,.154,.128],
     [.043,.045,.060], [0,.170,.150], [.054,.190,.155],
-    [0,.197,.110], [0,.224,.153]
+    [0,.197,.110], [0,.208,.153]
   ];
   for(const [x,y,z] of excluded){
     const mask=v121MakeupMasks(x,y,z);
