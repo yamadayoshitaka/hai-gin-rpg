@@ -68,13 +68,15 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   }
   assert.equal(gltf.meshes[0].extras.eyeConstruction.irisAndPupilSeparateMeshes,false);
   assert.equal(gltf.meshes[0].extras.naturalFoldCleanup.removedLegacyBrowLidBand,true);
-  assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialLeftVertexIds.length>10);
-  assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.nasolabialRightVertexIds.length>10);
+  assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.philtrumVertexIds.length>12);
+  assert.ok(gltf.meshes[0].extras.naturalFoldCleanup.dimpleCorrectionVertexIds.length>12);
+  assert.equal(gltf.meshes[0].extras.referenceFeatureSculpt.lateralNasolabialPitRemoved,true);
   assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLashPlacementVersion,'v121-anatomical-rim-20261123');
   assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.curvedLashGeometry,'seven_segment_elliptical_3d_tapered_C_curl');
   assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.upperLashCcurl,true);
   assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLashDownwardCurl,true);
   assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.lowerLidWaterline,true);
+  assert.equal(gltf.meshes[0].extras.eyelidFiberUpgrade.frontVisibleCurlVersion,'v121-front-hook-eyelashes-20261123');
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.nostrilWingVerticesAdjusted.length>20);
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.lipVermilionVerticesAdjusted.length>30);
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
