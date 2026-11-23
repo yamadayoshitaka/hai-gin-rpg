@@ -288,6 +288,78 @@ export function buildReferenceFringe(THREE,head,{
  return group;
 }
 
+
+/**
+ * v121 is the single coordinate authority for every CC0 style. This is a
+ * separately textured *hair* under-cap generated from its actual triangles,
+ * not a skin-head preview and not part of the MakeHuman source GLB.
+ *
+ * The cap is included in wig GLB, while the cyan head guide stays preview only.
+ * Crown/temple/back cutoffs are asymmetric to keep eyes and face uncovered.
+ */
+export function buildFittedScalpCap(THREE,head,{color='#d2b17a'}={}){
+ if(!head?.mesh?.geometry)throw Error('v121頭部メッシュがありません');
+ head.mesh.updateWorldMatrix(true,false);
+ const src=head.mesh.geometry,p=src.getAttribute('position');
+ if(!p)throw Error('v121頭部の頂点データがありません');
+ const ind=src.getIndex(),n=Math.floor((ind?ind.count:p.count)/3);
+ const positions=[],uvs=[],tints=[];
+ const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+ const v=new THREE.Vector3(),headCenterY=head.top-.12;
+ const getPoint=(id,out)=>out.fromBufferAttribute(p,id)
+  .applyMatrix4(head.mesh.matrixWorld);
+ const spanX=Math.max(head.rx*2,.04),spanY=.22;
+ function floorAt(x,z){
+  // The forehead hairline remains above the eyebrows; deeper coverage
+  // continues over temples and nape without painting over the face.
+  const forward=(z-head.cz)/Math.max(head.rz,.03);
+  const lateral=Math.abs(x-head.cx)/Math.max(head.rx,.03);
+  const drop=forward>.45?(lateral>.72?.124:.092):
+    (forward>-.15?.137:.160);
+  return head.top-drop;
+ }
+ for(let i=0;i<n;i++){
+  const ai=ind?ind.getX(i*3):i*3;
+  const bi=ind?ind.getX(i*3+1):i*3+1;
+  const ci=ind?ind.getX(i*3+2):i*3+2;
+  getPoint(ai,a);getPoint(bi,b);getPoint(ci,c);
+  const verts=[a,b,c];
+  if(verts.some(q=>q.y<floorAt(q.x,q.z)))continue;
+  for(const q of verts){
+   // Expand by a tiny amount along an approximation of the normal to the
+   // head. This avoids z-fighting with the cyan reference guide and skin.
+   v.set((q.x-head.cx), (q.y-headCenterY)*.82,(q.z-head.cz));
+   v.normalize().multiplyScalar(.0027);
+   positions.push(q.x+v.x,q.y+v.y,q.z+v.z);
+   const u=(q.x-head.cx)/spanX+.5;
+   const hairV=(head.top-q.y)/spanY;
+   uvs.push(u*3.8,hairV*5.0);
+   const shade=.93+.045*Math.sin(q.x*147+q.z*83);
+   tints.push(shade,shade*.99,shade*.98);
+  }
+ }
+ if(positions.length<900)throw Error('v121頭部から髪キャップを構築できません');
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(tints,3));
+ geo.computeVertexNormals();
+ const texture=fringeTexture(THREE);
+ const mat=new THREE.MeshStandardMaterial({
+  color,roughness:.79,metalness:0,side:THREE.DoubleSide,
+  vertexColors:true,...(texture?{map:texture}:{})
+ });
+ const mesh=new THREE.Mesh(geo,mat);
+ mesh.name='v121-scalp-fitted-CC0-hair-under-cap';
+ mesh.castShadow=true;
+ const group=new THREE.Group();
+ group.name='v121-hair-coverage-cap-not-skin';
+ group.add(mesh);
+ group.userData.dispose=()=>{geo.dispose();mat.dispose();texture?.dispose();};
+ group.userData.triangleCount=positions.length/9;
+ return group;
+}
+
 /**
  * Display ONLY upper scalp triangles of the real v121 mesh, not the nose,
  * ears, jaw or neck. Preview sibling, never exported into the wig GLB.
