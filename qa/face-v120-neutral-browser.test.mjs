@@ -14,14 +14,14 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',e=>errors.push('pageerror '+e.message));
-  page.on('console',m=>{if(m.type()==='error')errors.push('console '+m.text())});
+  page.on('console',m=>{if(m.type()==='error')errors.push('console '+m.textContent())});
   await page.goto('http://127.0.0.1:8765/face-neutral-v120.html?v=120',{
    waitUntil:'domcontentloaded',timeout:25000});
   await page.waitForFunction(()=>document.documentElement.dataset.neutralFaceReady==='v120',
    null,{timeout:50000});
   assert.deepEqual(errors,[],'No runtime errors in new model preview');
-  assert.match(await page.locator('#status').text(),/顔 v120/);
-  assert.ok(Number((await page.locator('#vertexCount').text()).replace(/,/g,''))>16000);
+  assert.match(await page.locator('#status').textContent(),/顔 v120/);
+  assert.ok(Number((await page.locator('#vertexCount').textContent()).replace(/,/g,''))>16000);
   await page.locator('[data-camera="side"]').click();
   assert.equal(await page.locator('[data-camera="side"]').getAttribute('aria-pressed'),'true');
   await page.locator('[data-camera="front"]').click();
@@ -51,7 +51,7 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
   assert.ok(gltf.meshes.some(m=>m.name==='V120_SKIN_CONNECTED_NEUTRAL'));
   assert.ok(gltf.nodes.some(n=>n.name==='V120_ORIGINAL_NEUTRAL_FACE_MASTER'));
   console.log('PASS v120 WebGL and export',JSON.stringify({
-   vertexText:await page.locator('#vertexCount').text(),
+   vertexText:await page.locator('#vertexCount').textContent(),
    binaryBytes:buf.length,accessors:gltf.accessors.length,meshes:gltf.meshes.length
   }));
  }finally{await browser.close();}
