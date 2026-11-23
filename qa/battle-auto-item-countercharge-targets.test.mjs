@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {chooseEnemyOrder} from '../src/battle-tactical-policy.js';
+import {chooseEnemyOrder,enemyContactResponse} from '../src/battle-tactical-policy.js';
 import {chooseAutoSquadItem} from '../src/battle-auto-item-policy.js';
 import {recommendBattleTactics} from '../src/battle-quick-recommendation.js';
 
@@ -21,6 +21,16 @@ const distant=foe.map(u=>({...u,x:u.x+100,hp:100}));
 assert.equal(chooseEnemyOrder(squad,distant,'defend').mode,'defend',
  'A tired squad should not countercharge a distant healthy enemy');
 
+const closeHealthy=[soldier(90,100,12,0,0)];
+assert.deepEqual(enemyContactResponse('defend','defend',[soldier(1,100,0,0)],closeHealthy).mode,'charge',
+ 'enemy defenders must counterattack when a live opponent approaches within 16 cells');
+assert.equal(enemyContactResponse('hold','retreat',[soldier(1,10,0,0)],closeHealthy).mode,'charge',
+ 'hostile contact cannot leave enemy guards indefinitely idle');
+assert.equal(enemyContactResponse('defend','defend',[soldier(1,100,0,0)],
+ [soldier(91,100,30,0,0)]).mode,'defend',
+ 'distant opponents must not cancel the defense order');
+assert.equal(enemyContactResponse('defend','defend',[soldier(1,100,0,0)],[]).mode,'defend',
+ 'empty battlefield cannot create phantom aggression');
 const types={
  healing_potion:{kind:'heal',squadHealHp:200},
  war_banner:{kind:'squad_buff',attack:.2},
