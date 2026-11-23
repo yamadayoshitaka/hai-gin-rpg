@@ -27,7 +27,7 @@ class LowerFaceProfileQA(unittest.TestCase):
         def delta_y(y):
             i=original(y)
             return result[i][1]-points[i][1]
-        self.assertEqual(meta['version'],'female-v121-realspace-neutral-lower-face-v13')
+        self.assertEqual(meta['version'],'female-v121-realspace-neutral-lower-face-v14')
         self.assertTrue(meta['noseAndUpperFaceHardLocked'])
         self.assertTrue(meta['lowerLipDepthRetracted'])
         self.assertTrue(meta['shallowLabiomentalSulcus'])
