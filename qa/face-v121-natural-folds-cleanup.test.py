@@ -46,7 +46,7 @@ class V121SkinClean(unittest.TestCase):
         self.assertTrue(meta['futureExpressionsImplemented'])
         self.assertEqual(meta['topology']['vertices'],13455)
         self.assertEqual(len(self.xyz),13455)
-        self.assertEqual(len(self.g['meshes']),11)
+        self.assertEqual(len(self.g['meshes']),12)
         self.assertIn('eyeConstruction',meta)
         self.assertIn('eyelidFiberUpgrade',meta)
         self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-folds-20261123')
@@ -108,7 +108,7 @@ class V121SkinClean(unittest.TestCase):
         normals=accessor(self.g,self.buffer,self.p['attributes']['NORMAL'])
         self.assertTrue(all(math.isfinite(v) for row in normals for v in row))
         self.assertTrue(all(.95<math.sqrt(sum(v*v for v in row))<1.05 for row in normals))
-        self.assertEqual(len(self.g['nodes']),11)
+        self.assertEqual(len(self.g['nodes']),12)
         for name in ('V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES',
                      'V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS'):
             self.assertIn(name,[m['name'] for m in self.g['meshes']])
