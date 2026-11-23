@@ -101,10 +101,10 @@ def sculpt(p):
     # Upper and lower vermilion must remain separate from the chin surface.
     lips_f=smooth(z,.095,.143)
     lip_width=gauss(x,0,.037)
-    upper=gauss(y,.209,.0075)*lip_width*lips_f
-    lower=gauss(y,.184,.0090)*lip_width*lips_f
-    cupid=gauss(y,.217,.006)*gauss(ax,.011,.007)*lips_f
-    corners=gauss(y,.197,.012)*gauss(ax,.042,.014)*lips_f
+    upper=gauss(y,.240,.0075)*lip_width*lips_f
+    lower=gauss(y,.223,.0090)*lip_width*lips_f
+    cupid=gauss(y,.244,.006)*gauss(ax,.011,.007)*lips_f
+    corners=gauss(y,.232,.012)*gauss(ax,.042,.014)*lips_f
     nx=x*(1-.029*temple-.026*frontal+.008*lower_cheek
           -.055*jaw-.025*chin_corners-.055*ala-.028*bridge)
     # Retract the frontmost menton and shorten its lower outline together.
