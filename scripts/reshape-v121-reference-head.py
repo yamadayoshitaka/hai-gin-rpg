@@ -118,7 +118,7 @@ def sculpt(p):
                 smooth(y,.090,.131))
     ny=y+.0055*chin+.0008*submental+.0006*jaw-.00045*frontal+.0006*under_eye
     nz=(z-.0031*malar+.0018*under_eye
-        +.0014*lower_cheek+.0013*jaw
+        +.0017*lower_cheek+.0013*jaw
         -.0145*chin_profile-.0030*submental
         -.0036*tip-.0013*ala-.0009*bridge
         +.0015*upper+.0018*lower+.0006*cupid
