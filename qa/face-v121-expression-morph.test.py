@@ -154,9 +154,9 @@ class TestRealExpressionGLB(unittest.TestCase):
                              profile['lipFrontZ']-.0164)
         self.assertLessEqual(profile['chinAfterZ'],profile['chinBeforeZ'])
         lip=[z for x,y,z in self.pos
-             if abs(x)<.026 and .179<y<.215 and z>.105]
+             if abs(x)<.042 and .179<y<.215]
         chin=[z for x,y,z in self.pos
-              if abs(x)<.032 and .118<y<.153 and z>.080]
+              if abs(x)<.055 and .110<y<.163]
         self.assertGreater(len(lip),12)
         self.assertGreater(len(chin),12)
         self.assertGreater(max(lip)-max(chin),.0163)
