@@ -158,7 +158,7 @@ test('hair is physically grown from the real hairline, then carved by smooth len
 test('the user-facing catalog never loads source hair GLBs, for female OR male',()=>{
  const studio=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  const engine=readFileSync(new URL('../src/head-derived-hair-sculpt-v7.js',import.meta.url),'utf8');
- assert.match(studio,/head-derived-hair-reference-v10\.js\?v=10/);
+ assert.match(studio,/head-derived-hair-modular-v11\.js\?v=11/);
  assert.match(studio,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
  assert.match(studio,/findSculptHairStyle\(item\.id\)/);
  assert.doesNotMatch(studio,/loader\.loadAsync\(item\.path\)/);
