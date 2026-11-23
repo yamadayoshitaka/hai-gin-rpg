@@ -73,7 +73,11 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
    gltf.accessors[p.attributes.POSITION]?.count>13000)),
    'The exported GLB must retain the high-resolution anatomical head skin');
   assert.equal(gltf.meshes[0].extras.topology.vertices,13455);
-  assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,false);
+  assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,true);
+  assert.equal(gltf.meshes[0].primitives[0].targets.length,11);
+  assert.equal(gltf.animations.length,2);
+  assert.equal(gltf.meshes[0].extras.facialExpressionRig.animatedMeshes,6);
+  assert.ok(gltf.meshes[0].extras.referenceMakeup.skinPBR);
   assert.equal(gltf.meshes[0].extras.referenceFeatureSculpt.parametricDepthControlSupported,true);
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth>=.0037);
   assert.ok(gltf.meshes[0].extras.referenceFeatureSculpt.philtrumGrooveMasterDepth<=.0040);
