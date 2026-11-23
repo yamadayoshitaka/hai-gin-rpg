@@ -305,7 +305,7 @@ def split_native_mouth_seal(g,b,head):
                       and v[2]>.115)
     to_split=[i for i,t in enumerate(triangles)
               if all(inside(xyz[k]) for k in t)]
-    if not 8<=len(to_split)<=320:
+    if not 8<=len(to_split)<=600:
         raise ValueError('Unsafe aperture topology: %d face triangles'%
                          len(to_split))
     mouth_ids=sorted({k for i in to_split for k in triangles[i]})
