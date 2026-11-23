@@ -42,20 +42,19 @@ function parseNativeHairCrown(path){
  return {centerCrown,upperCrown};
 }
 
-test('the actual female hair 01 GLB already closes its crown; the UI must not paint a scalp disc over it',()=>{
+test('archived hair GLB remains inspectable but no studio path loads old assets',()=>{
  const result=parseNativeHairCrown(hairPath);
  assert.ok(result.upperCrown>500,JSON.stringify(result));
  assert.ok(result.centerCrown>100,JSON.stringify(result));
- assert.match(studio,/id="capToggle" aria-pressed="false"/);
- assert.match(studio,/next\.cap=showCap\?createV121AnatomicalHairCap\(/);
- assert.doesNotMatch(studio,/next\.cap=createV121AnatomicalHairCap\(THREE,scalpSource/);
+ assert.match(studio,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
+ assert.doesNotMatch(studio,/loader\.loadAsync\(item\.path\)/);
+ assert.doesNotMatch(studio,/createV121AnatomicalHairCap\(THREE,scalpSource/);
 });
-test('scalp underlay remains opt-in, follows the hair color, and can be inspected without recreating it at every selection',()=>{
- assert.match(studio,/if\(current&&show&&!current\.cap&&scalpSource\?\.skinMesh\)/);
- assert.match(studio,/current\.cap\.object\.visible=show/);
- assert.match(studio,/current\?\.cap\?\.setColor\(/);
- assert.match(studio,/current\?\.cap\?\.dispose\(\)/);
- assert.match(studio,/show\?'頭皮下地を非表示（検査用）':'頭皮下地を表示（検査用）'/);
+test('legacy scalp overlay cannot cover newly sculpted crown',()=>{
+ assert.match(studio,/id="capToggle" aria-pressed="false" disabled/);
+ assert.match(studio,/next\.cap=null/);
+ assert.doesNotMatch(studio,/next\.cap=showCap/);
+ assert.match(studio,/\$\('capToggle'\)\.disabled=true/);
 });
 test('the optional scalp shell and test fibers sit beneath the original 3.5 mm hair root clearance',()=>{
  assert.match(cap,/normal\.getX\(i\)\*\.0005/);
