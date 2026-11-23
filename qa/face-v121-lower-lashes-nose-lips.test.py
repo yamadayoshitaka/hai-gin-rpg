@@ -103,7 +103,10 @@ class ReferenceFeatureTests(unittest.TestCase):
             ring=vertices[start:start+6]
             return tuple(sum(p[j] for p in ring)/len(ring) for j in range(3))
         max_gap=0.
-        for i in range(0,hair_vertices,42):
+        # Two eyes each have 22 tubes followed by a 66-vertex lid ribbon.
+        # Sample tube roots/tips only; interleaved waterlines are not lashes.
+        for i in (eye*(22*42+66)+strand*42
+                  for eye in range(2) for strand in range(22)):
             root=center(i)
             first=center(i+6)
             mid=center(i+18)
