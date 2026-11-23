@@ -153,7 +153,7 @@ def reconstruct_jaw(points, vertex_normals):
         raise ValueError('Labiomental sulcus was erased: '+str((menton,sulcus)))
     if menton-neck<.025:
         raise ValueError('Chin-to-neck contour too flat: '+str((menton,neck)))
-    if chin_count<40 or jaw_count<15 or count<400 or max_shift>.070:
+    if chin_count<40 or jaw_count<10 or count<400 or max_shift>.070:
         raise ValueError('Anatomical remesh region invalid: '+
                          str((count,chin_count,jaw_count,max_shift)))
     return xyz,{
