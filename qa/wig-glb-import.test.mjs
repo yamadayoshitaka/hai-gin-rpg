@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=2/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=3/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
