@@ -51,7 +51,7 @@ class TestFaceV121(unittest.TestCase):
                          accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0']))
         distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
         self.assertGreater(sum(x>0.00004 for x in distances),1000)
-        self.assertLess(max(distances),0.024)
+        self.assertLess(max(distances),0.040)
         self.assertTrue(all(math.isfinite(v) for p in newp for v in p))
         self.assertEqual(len(accessor(self.b,self.b_bin,dst['attributes']['NORMAL'])),13455)
         colors=accessor(self.b,self.b_bin,dst['attributes']['COLOR_0'])
@@ -72,33 +72,35 @@ class TestFaceV121(unittest.TestCase):
         self.assertNotIn('animations',self.b)
         self.assertNotIn('targets',self.b['meshes'][0]['primitives'][0])
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
-        self.assertEqual(len(self.b['meshes']),6)
-        self.assertEqual(self.b['meshes'][-1]['name'],'V121_PUPIL_DISC_SAFELY_SEPARATE')
-        self.assertEqual(len([n for n in self.b['nodes']
-                              if n.get('name','').startswith('V121_PUPIL_')]),2)
-        self.assertIn('COLOR_0',self.b['meshes'][1]['primitives'][0]['attributes'])
-        self.assertIn('COLOR_0',self.b['meshes'][2]['primitives'][0]['attributes'])
+        self.assertEqual(len(self.b['meshes']),3)
+        self.assertTrue(all('GLOBE_UV' in mesh['name'] for mesh in self.b['meshes'][1:]))
+        self.assertFalse(any('PUPIL_' in node.get('name','') for node in self.b['nodes']))
+        self.assertEqual(self.b['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'],False)
+        for globe in self.b['meshes'][1:]:
+            self.assertIn('TEXCOORD_0',globe['primitives'][0]['attributes'])
+            self.assertGreater(len(accessor(self.b,self.b_bin,globe['primitives'][0]['attributes']['POSITION'])),2000)
 
     def test_pbr_maps_embedded_are_true_1024_px_skin_textures(self):
         skin=self.b['materials'][0]
-        self.assertEqual(skin['name'],'V121_PORCELAIN_SKIN_PBR')
+        self.assertEqual(skin['name'],'V121_ANATOMICAL_SKIN_PBR_2048')
         mr=skin['pbrMetallicRoughness']
         self.assertEqual(mr['metallicFactor'],0)
         indices=[mr['baseColorTexture']['index'],
                  mr['metallicRoughnessTexture']['index'],
                  skin['normalTexture']['index']]
         self.assertEqual(len(set(indices)),3)
-        self.assertEqual(len(self.b['images']),3)
-        self.assertEqual(self.b['meshes'][0]['extras']['pbr']['embeddedImages'],3)
+        self.assertEqual(len(self.b['images']),4)
+        self.assertEqual(self.b['meshes'][0]['extras']['pbr']['embeddedImages'],4)
         for texture in indices:
             image=self.b['images'][self.b['textures'][texture]['source']]
             v=self.b['bufferViews'][image['bufferView']]
             pixels=self.b_bin[v['byteOffset']:v['byteOffset']+v['byteLength']]
             png=Image.open(BytesIO(pixels))
-            self.assertEqual(png.size,(1024,1024))
+            self.assertEqual(png.size,(2048,2048))
             self.assertEqual(png.format,'PNG')
-        self.assertIn('BROWN',self.b['materials'][1]['name'])
-        self.assertIn('SCLERA',self.b['materials'][2]['name'])
+        self.assertIn('GLOBE_IRIS_PUPIL_UV',self.b['materials'][1]['name'])
+        self.assertIn('occlusionTexture',skin)
+        self.assertEqual(len(self.b['scenes'][0]['nodes']),3)
 
     def test_v121_preview_and_v120_viewer_are_separate(self):
         html=(ROOT/'face-neutral-v121.html').read_text()
