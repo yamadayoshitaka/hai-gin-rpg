@@ -1,0 +1,30 @@
+name: Independent hair catalog QA
+on:
+  pull_request:
+    paths:
+      - 'src/independent-hair-*.js'
+      - 'hair-asset-studio.html'
+      - 'qa/independent-hair-catalog-motion.test.mjs'
+      - '.github/workflows/independent-hair-catalog-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/independent-hair-*.js'
+      - 'hair-asset-studio.html'
+      - 'qa/independent-hair-catalog-motion.test.mjs'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate modules and isolated source assets
+        run: |
+          node --check src/independent-hair-library-v1.js
+          node --check src/independent-hair-mesh-v1.js
+          node --test qa/independent-hair-catalog-motion.test.mjs
