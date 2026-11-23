@@ -16,4 +16,18 @@ for y0,y1 in [(-.30,-.15),(-.15,-.08),(-.08,0),(0,.025),(.025,.050),(.050,.075),
  front=[(p,u) for p,u in rows if abs(p[0])<.015 and p[2]>.0]
  side=[(p,u) for p,u in rows if abs(p[0])>.04 and p[2]>.0]
  print('ANATOMY_BAND',json.dumps(dict(y=[y0,y1],n=len(rows),front=len(front),x=q([abs(p[0]) for p,u in rows],.95),zFront=q([p[2] for p,u in front],.9),zMedian=q([p[2] for p,u in rows],.5),zBack=q([p[2] for p,u in rows],.1),uvFront=[q([u[0] for p,u in front],.5),q([u[1] for p,u in front],.5)],side=len(side))))
+
+for cut in (.105,.115,.125,.135,.145,.155):
+ removed=set(i for i in range(len(tri)//3) if min(pts[k][1] for k in tri[3*i:3*i+3])<cut and len(set(tri[3*i:3*i+3]))==3)
+ keep=collections.defaultdict(list);drop=collections.defaultdict(list)
+ for i in range(len(tri)//3):
+  a,b,c=tri[3*i:3*i+3]
+  if len({a,b,c})<3:continue
+  pool=drop if i in removed else keep
+  for q,t in ((a,b),(b,c),(c,a)):
+   pool[tuple(sorted((q,t)))].append((q,t))
+ border={key for key in keep if key in drop}
+ verts={v for key in border for v in key}
+ degree=collections.Counter(v for a,b in border for v in (a,b))
+ print('ANATOMY_CUT',json.dumps(dict(cut=cut,removed=len(removed),edges=len(border),vertices=len(verts),degrees=collections.Counter(degree.values()),xMax=round(max((abs(pts[v][0]) for v in verts),default=0),5),yMin=round(min((pts[v][1] for v in verts),default=0),5),yMax=round(max((pts[v][1] for v in verts),default=0),5))))
 print('ANATOMY_DONE')
