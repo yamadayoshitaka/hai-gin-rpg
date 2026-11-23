@@ -12,6 +12,7 @@ on:
       - 'face-neutral-v121.html'
       - 'face-v121-parametric-sliders.js'
       - 'face-v121-expression-player.js'
+      - 'face-v121-makeup-presets.js'
       - 'scripts/add-v121-face-expressions.py'
       - 'qa/face-v121-expression-morph.test.py'
       - 'face-neutral-v120.html'
