@@ -43,7 +43,7 @@ class TestRealExpressionGLB(unittest.TestCase):
     def test_morph_tracks_and_real_positions(self):
         g=self.g
         self.assertEqual(len(self.pos),13455)
-        self.assertEqual(len(g['meshes']),11)
+        self.assertEqual(len(g['meshes']),12)
         self.assertEqual(len(g['animations']),2)
         self.assertEqual([clip['name'] for clip in g['animations']],
                          ['V121_BlinkLoop','V121_ExpressionShowcase'])
