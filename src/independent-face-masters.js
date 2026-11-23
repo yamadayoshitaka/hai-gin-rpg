@@ -8,6 +8,7 @@ import {fairV102CheekContour} from './face-v102-cheek-contour.js?v=105-nonexcava
 import {smoothV104Cheek} from './face-v104-cheek-microfair.js?v=104-v102-rollback-single-pass';
 import {sculptV117ReferencePortrait} from './face-v117-reference-portrait-mesh.js?v=20261123-v117-oval-mesh';
 import {transferFaceReference} from './face-v118-alina-reference-transfer.js';
+import {sculptV119PortraitContours} from './face-v119-portrait-contours.js';
 import {attachAgeDetails} from './face-age-detail-v49.js?v=89-aligned-folds';
 import {applyRealSkinPhotoToFace} from './face-photo-microdetail-v76.js?v=90-actual-skin-roughness';
 import {resolveDemographicProfile} from './character-demographics-v47.js?v=80-nine-age-bands';
@@ -198,7 +199,7 @@ export const FACE_MASTER_SPEC=Object.freeze({
  })
 });
 
-export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v105',enableV106LocalRetopo=false,enableV117ReferencePortrait=false,alinaReference=null}={}){
+export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},maleControls={},partSelection=null,cheekContourMode='v105',enableV106LocalRetopo=false,enableV117ReferencePortrait=false,enableV119PortraitContours=false,alinaReference=null}={}){
  const spec=FACE_MASTER_SPEC[gender];
  const controls=gender==='male'?normalizeMaleFaceControls(maleControls):
   normalizeFemaleFaceControls(femaleControls);
@@ -508,6 +509,10 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
   'reference-comparison-disabled':'legacy-cheek-comparison-preserved'};
  // V118: analyzed external GLB is used ONLY as a dimensional reference.
  // Male and female retain independent topology and existing expression rigs.
+ const portraitV119=enableV119PortraitContours?
+  sculptV119PortraitContours(geometry,{gender,ageBand:demo.ageBand,
+   donorPositions:originalPoints,donorBox:b}):
+  {applied:false,reason:'v119-disabled-for-comparison'};
  const alinaReferenceReport=alinaReference?
   transferFaceReference(geometry,{gender,reference:alinaReference,donorPositions:originalPoints}):
   {applied:false,reason:'no-local-reference-loaded'};
@@ -546,6 +551,7 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
    v93PortraitFairing:portraitFairing,
    v117ReferencePortrait:referencePortrait,
    v118DualGenderReference:alinaReferenceReport,
+   v119PortraitContours:portraitV119,
    v95NasalSideProfile:nasalEdgeFlow,
    v99FeminineMalarAlar:feminineProfile,
    v102CheekContour:cheekContour,

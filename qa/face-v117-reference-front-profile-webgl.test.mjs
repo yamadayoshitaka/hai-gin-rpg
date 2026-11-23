@@ -23,7 +23,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/face-mesh-studio.html?qa=expression'+suffix,
    {waitUntil:'domcontentloaded',timeout:90000});
-  await page.waitForFunction(()=>document.documentElement.dataset.faceMeshReady==='v117'&&
+  await page.waitForFunction(()=>['v117','v119'].includes(document.documentElement.dataset.faceMeshReady)&&
    window.__faceExpressionQA?.referencePortraitProbe?.()?.faceGeometryVertices===3490,
    null,{timeout:90000});
   return page;
