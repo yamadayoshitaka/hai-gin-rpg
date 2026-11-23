@@ -301,7 +301,7 @@ def split_native_mouth_seal(g,b,head):
     triangles=[indices[i:i+3] for i in range(0,len(indices),3)]
     # Only split the lip-to-lip seam, not the actual upper/lower
     # vermilion ridges or the cheek-adjacent skin.
-    inside=lambda v:(abs(v[0])<.032 and .2308<v[1]<.2345
+    inside=lambda v:(abs(v[0])<.024 and .2308<v[1]<.2345
                       and v[2]>.115)
     to_split=[i for i,t in enumerate(triangles)
               if all(inside(xyz[k]) for k in t)]
