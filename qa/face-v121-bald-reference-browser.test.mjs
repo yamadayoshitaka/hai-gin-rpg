@@ -38,6 +38,27 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('#wire').click();
   mkdirSync('qa/screenshots/face-v121',{recursive:true});
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-front.png'});
+  // Native GLB morphs must visibly animate multiple face parts on mobile.
+  assert.equal(await page.locator('#expressionCount').textContent(),'11種 / GLBアニメーション2本');
+  await page.locator('[data-expression="smile"]').click();
+  assert.equal(await page.locator('html').getAttribute('data-v121-expression-mode'),'smile');
+  await page.waitForTimeout(800);
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-smile-animated.png'});
+  await page.locator('[data-expression="angry"]').click();
+  await page.waitForTimeout(800);
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-angry-animated.png'});
+  await page.locator('[data-expression="blink"]').click();
+  await page.waitForTimeout(210);
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-blink-animated.png'});
+  await page.locator('[data-expression="talk"]').click();
+  await page.waitForTimeout(650);
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-talking-animated.png'});
+  await page.locator('[data-expression="loop"]').click();
+  assert.equal(await page.locator('html').getAttribute('data-v121-expression-mode'),'loop');
+  await page.waitForTimeout(1100);
+  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-expression-loop.png'});
+  await page.locator('[data-expression="neutral"]').click();
+  await page.waitForTimeout(500);
   await page.locator('[data-camera="eyeClose"]').click();
   assert.equal(await page.locator('[data-camera="eyeClose"]').getAttribute('aria-pressed'),'true');
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-curved-lashes-closeup.png'});
@@ -141,6 +162,10 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(tunedBuffer.toString('ascii',0,4),'glTF');
   assert.ok(tunedBuffer.length>800_000,'Adjusted export must have real 3D mesh + textures');
   const adjustedJson=JSON.parse(tunedBuffer.toString('utf8',20,20+tunedBuffer.readUInt32LE(12)).trim());
+  assert.ok(adjustedJson.meshes.some(m=>m.primitives?.[0]?.targets?.length===11),
+    'Edited GLB must retain all expression morph deltas');
+  assert.ok(adjustedJson.animations?.length>=2,
+    'Edited GLB must preserve both native expression animation clips');
   assert.ok(adjustedJson.meshes?.some(m=>m.primitives?.some(p=>
     adjustedJson.accessors[p.attributes.POSITION]?.count>=13000)),
     'Edited GLB must contain the full anatomical face, not a slider settings file');
@@ -149,7 +174,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'false');
   assert.equal(await page.locator('input[data-part="eyes"][data-axis="size"]').inputValue(),'100');
   assert.equal(await page.locator('input[data-part="philtrum"][data-axis="depth"]').inputValue(),'0');
-  assert.deepEqual(errors,[],'Slider adjustment and GLTFExporter must not throw');
+  assert.deepEqual(errors,[],'Slider adjustment, morph animations and GLTFExporter must not throw');
   console.log('PASS editable v121 face with 13 real range inputs and binary GLB export',tunedBuffer.length);
   console.log('PASS v121 WebGL and export',JSON.stringify({
    vertexText:await page.locator('#vertexCount').textContent(),
