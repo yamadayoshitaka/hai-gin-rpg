@@ -142,9 +142,13 @@ def append_oral_parts(g,b,head_xyz):
     def surface(x,y):
         nearest=sorted(front,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)[:6]
         return max(p[2] for p in nearest)
-    styles={'smile':(.036,.0055),'laugh':(.039,.014),
-       'mouthOpen':(.030,.015),'vowelA':(.030,.019),'vowelI':(.040,.005),
-       'vowelU':(.016,.010),'vowelE':(.037,.010),'vowelO':(.021,.016)}
+    # Anatomical mouth width is materially smaller than the full lower
+    # face.  Previous preview used a 60-mm-wide flat ellipse resembling a
+    # painted cartoon disc. Width and height below are half-extents in GLB
+    # LOCAL head space; the teeth/tongue sit behind lip skin, not in front.
+    styles={'smile':(.025,.0030),'laugh':(.024,.010),
+       'mouthOpen':(.021,.010),'vowelA':(.019,.012),'vowelI':(.026,.0030),
+       'vowelU':(.012,.007),'vowelE':(.024,.0055),'vowelO':(.014,.0095)}
     def pack_indices(seq):
         raw=b''.join(struct.pack('<I',v) for v in seq)
         while len(b)%4:b.append(0)
@@ -162,13 +166,30 @@ def append_oral_parts(g,b,head_xyz):
       ('V121_ORAL_UPPER_TEETH',[.90,.85,.76,1.]),
       ('V121_ORAL_TONGUE',[.56,.19,.23,1.])):
         if kind.endswith('CAVITY'):
-            poly=[(math.cos(j*math.tau/24),math.sin(j*math.tau/24))
-                  for j in range(24)]
-            inds=[q for j in range(1,23) for q in (0,j,j+1)]
+            # Taper the aperture at both lip corners (not a circular disc).
+            poly=[(math.cos(j*math.tau/32),
+                   math.sin(j*math.tau/32)*
+                   (1.-.48*abs(math.cos(j*math.tau/32))))
+                  for j in range(32)]
+            inds=[q for j in range(1,31) for q in (0,j,j+1)]
+        elif kind.endswith('TEETH'):
+            # Six distinct small off-white teeth, avoiding the former single
+            # uninterrupted rectangular bar across the mouth.
+            poly=[];inds=[]
+            for tooth in range(6):
+                left=-.93+tooth*.31
+                right=left+.275
+                start=len(poly)
+                poly.extend(((left,-1.),(right,-1.),(right,.65),(left,.65)))
+                inds.extend((start,start+1,start+2,
+                             start,start+2,start+3))
         else:
-            poly=[(-1.,-1.),(1.,-1.),(1.,1.),(-1.,1.)]
-            inds=[0,1,2,0,2,3]
-        rest=[(xx*.0002,.232+yy*.00008,surface(0,.232)-.014)
+            # Rounded tongue patch recessed into the lower cavity.
+            poly=[(.75*math.cos(j*math.tau/20),
+                   -.50+.36*math.sin(j*math.tau/20))
+                  for j in range(20)]
+            inds=[q for j in range(1,19) for q in (0,j,j+1)]
+        rest=[(xx*.0002,.232+yy*.00008,surface(0,.232)-.028)
               for xx,yy in poly]
         mat=len(g['materials'])
         g['materials'].append({'name':kind+'_PBR','doubleSided':True,
@@ -186,13 +207,13 @@ def append_oral_parts(g,b,head_xyz):
                 if kind.endswith('CAVITY'):
                     x=xx*width;y=.232+yy*height
                     # Dark cavity recessed behind separated lip edges.
-                    dz=-.0035-.0025*abs(yy)
+                    dz=-.0105-.0010*abs(yy)
                 elif kind.endswith('TEETH'):
-                    x=xx*width*.69;y=.232+height*(.51+.12*yy)
-                    dz=.0008
+                    x=xx*width*.69;y=.232+height*(.47+.12*yy)
+                    dz=-.0058
                 else:
                     x=xx*width*.55;y=.232-height*(.53-.13*yy)
-                    dz=.0012
+                    dz=-.0050
                 z=surface(x,y)+dz
                 dst.append((x,y,z))
             targets.append({'POSITION':add_float(g,b,[
