@@ -31,6 +31,18 @@ for(const id of ids){
   assert.ok(points.every(p=>p.x>=70),'Progress moves toward the target');
  }
 }
+// The signature has three steps, but only occupied team slots should
+// appear as moving allied markers in a training-ground preview.
+for(const [activeSlots,expected] of [[[],0],[[0],1],[[0,2],2],[[0,1,2],3]]){
+ const preview=renderFormationSignaturePreview('attack',{activeSlots});
+ assert.equal((preview.match(/<animateTransform /g)||[]).length,expected);
+ assert.match(preview,new RegExp('味方 '+expected+'ジョブ'));
+}
+const separated=renderFormationSignaturePreview('attack',{activeSlots:[0,2]});
+assert.ok(separated.includes('>1</text>'));
+assert.ok(separated.includes('>3</text>'));
+assert.ok(!separated.includes('>2</text>'));
+
 const wedge=signatureStrategyFor('wedge');
 assert.ok(wedge.phases[1][0][0]>wedge.phases[1][1][0],
  'Wedge leader is at the tip, with flanking followers behind');
