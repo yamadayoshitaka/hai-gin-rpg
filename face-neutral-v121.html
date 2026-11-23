@@ -84,7 +84,7 @@ const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
  const positions={
   front:[0,0,.66],threeQuarter:[.40,0,.52],
-  side:[.66,0,0],back:[0,0,-.66]
+  side:[-.66,0,0],back:[0,0,-.66]
  };
  if(!positions[kind])return;
  camera.position.set(...positions[kind]);
