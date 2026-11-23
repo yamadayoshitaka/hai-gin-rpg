@@ -89,6 +89,22 @@ class LipAndCheekV17(unittest.TestCase):
             self.assertGreater(len(folds[field]),8)
         self.assertEqual(len(gltf['meshes'][0]['primitives']),1)
         self.assertTrue(meta['mouthChinRebuild']['noSecondaryUnderlipLine'])
+        self.assertTrue(meta['mouthChinRebuild']['noBroadInvertedUnderlipNormals'])
+        self.assertGreater(meta['mouthChinRebuild']['repairedExteriorLipNormals'],50)
+        from statistics import median
+        n=struct.unpack_from('<I',raw,12)[0]
+        offset=28+n
+        blob=raw[offset:]
+        prim=gltf['meshes'][0]['primitives'][0]
+        accessor=SCULPT['accessor']
+        points=accessor(gltf,blob,prim['attributes']['POSITION'])
+        normals=accessor(gltf,blob,prim['attributes']['NORMAL'])
+        underlip=[normal[2] for point,normal in zip(points,normals)
+                  if abs(point[0])<.03 and .214<point[1]<.223
+                  and point[2]>.132]
+        self.assertGreater(len(underlip),35)
+        self.assertGreater(median(underlip),.60,
+                           'do not allow inward-facing broad underlip bar')
         self.assertEqual(meta['version'],121)
         self.assertFalse(meta['hairIncluded'])
 
