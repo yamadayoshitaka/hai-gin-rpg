@@ -14,7 +14,7 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',e=>errors.push('pageerror '+e.message));
-  page.on('console',m=>{if(m.type()==='error')errors.push('console '+m.textContent())});
+  page.on('console',m=>{if(m.type()==='error')errors.push('console '+m.text())});
   await page.goto('http://127.0.0.1:8765/face-neutral-v120.html?v=120',{
    waitUntil:'domcontentloaded',timeout:25000});
   await page.waitForFunction(()=>document.documentElement.dataset.neutralFaceReady==='v120',
