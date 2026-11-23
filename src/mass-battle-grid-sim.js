@@ -11,6 +11,7 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
+import {formationCombatIntent,isHighGroundFiringJob} from './formation-driven-ai.js';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
@@ -375,6 +376,9 @@ export class MassBattleGridSimulation {
     const candidates=this.highGroundRoutes.slice().sort((a,b)=>
       a.buildingIndex-b.buildingIndex||rank(a)-rank(b));
     for(const route of candidates){
+      // Indoor exploration is a manual objective, never an automatic
+      // combat patrol: the old AI left whole squads standing in rooms.
+      if(route.kind==='interior')continue;
       if(this._highGroundClaims.has(route.buildingIndex+':'+route.team)||!this._highGroundRouteAlive(route))continue;
       const index=this.highGroundRoutes.indexOf(route),flow=this._highGroundFlows[index];
       let best=null,score=Infinity;
@@ -383,9 +387,13 @@ export class MassBattleGridSimulation {
           (u.team===0&&(this.squadDestinations.has(String(u.squadId))||
             this.squadMissions.has(String(u.squadId))))||
           u.highGroundRouteIndex>=0||u.hp<u.maxHp*.35)continue;
-        if(route.kind==='roof'?u.jobId!=='ninja':
-          route.kind==='interior'?!['sword','shield','fighter','thief','priest'].includes(u.jobId):
-          !['archer','mage'].includes(u.jobId))continue;
+        if(route.kind==='roof'?
+          !(u.jobId==='ninja'&&['attack','ambush','highground'].includes(u.formationType)):
+          !(isHighGroundFiringJob(u.jobId)&&
+            ['highground','support','balanced'].includes(u.formationType)))continue;
+        const standingOrder=(u.team===0?this.squadCommands:this.enemySquadCommands)
+          .get(String(u.squadId));
+        if(['hold','defend','retreat'].includes(standingOrder))continue;
         // A specialist can divert to a nearby accessible stair, but not
         // abandon a distant front line to cross the entire 232-cell map.
         const d=Math.hypot(u.x-route.access.x,u.z-route.access.z);
@@ -571,6 +579,13 @@ export class MassBattleGridSimulation {
         return true;
       }
       if(route.kind==='interior'){
+        // Autonomous combat AI must leave the room when there is no
+        // explicit exploration/hold assignment; normal BFS then pursues
+        // living opponents through the collision map and real doors.
+        if(!u.highGroundManualHold&&
+           !this.explorationOrders.has(u.team+':'+String(u.squadId))){
+          this._releaseHighGroundUnit(u);return false;
+        }
         // Remain visibly INSIDE the room for exploration/loot, but fight
         // normally if an enemy actually approaches the same floor.
         if(Math.hypot(u.x-route.access.x,u.z-route.access.z)>4){
@@ -1781,7 +1796,8 @@ export class MassBattleGridSimulation {
       // No optional high-ground repositioning while an enemy is already
       // in physical contact. This must hold for 100 and 1000 per side.
       const immediateThreat=nearest&&best<=Math.min(4,job.range*job.range);
-      if(nearest&&!immediateThreat&&this.elevationMap&&isHeightTactician(u.jobId)){
+      if(nearest&&!immediateThreat&&u.formationType==='highground'&&
+         this.elevationMap&&isHeightTactician(u.jobId)){
         const highNeighbors=[];
         for(const [dx,dz] of NEIGHBORS){
           const x=u.x+dx,z=u.z+dz;
@@ -1814,8 +1830,15 @@ export class MassBattleGridSimulation {
       }
       const squadCommand=(u.tacticalOrderUntil>this.time?u.tacticalOrder:null)||
          (u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
-      const order=['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.team===0?(u.order||
-        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
+      const doctrine=formationCombatIntent({
+        formation:u.formationType,jobId:u.jobId,
+        command:['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:
+          ['charge','defend','hold','retreat'].includes(u.order)?u.order:null,
+        hasEnemies:this.live[1-u.team]>0,
+        enemyDistance:nearest?Math.sqrt(best):Infinity,attackRange:job.range,
+        healthRatio:u.hp/Math.max(1,u.maxHp)
+      });
+      const order=doctrine.order;
       // Guard is a stationary posture. Combat was resolved above, so do
       // not wander towards an enemy outside attack range or chase a lost target.
       // Move, exploration and mission commands override the fallback stance.
@@ -1901,7 +1924,9 @@ export class MassBattleGridSimulation {
         // or a mission is active. The previous condition exempted those
         // cases, allowing a 1-cell A->B->A oscillation under congestion.
         // High-ground repositioning remains a separately authorized move.
-        if(rawFlow>=here&&!higherStep)continue;
+        if(rawFlow>=here&&(!higherStep||
+           !this.elevationMap||
+           this.elevationMap[z*this.width+x]<=heightHere+.2))continue;
         // A 2D detour around a stair core must not alternate between the
         // cell just visited and the current cell every AI tick. Backtracking
         // is valid only when a newly changed goal actually lowers the flow;
