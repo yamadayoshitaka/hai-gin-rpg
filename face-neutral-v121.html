@@ -78,7 +78,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-natural-folds-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-nose-lips-lower-lashes-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={};
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -189,7 +189,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：目元の着色帯・顎の色ムラを除去、ほうれい線と目元の薄いシワを実メッシュに造形（中立・スキンヘッド）');
+ update('status','顔 v121：下まつ毛を実際の下まぶたに密着、鼻翼・唇を実メッシュ再造形、小鼻から口角へ連続する浅いくぼみを改善（スキンヘッド・中立）');
  document.documentElement.dataset.neutralFaceReady='v121';
  const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
  draw();
