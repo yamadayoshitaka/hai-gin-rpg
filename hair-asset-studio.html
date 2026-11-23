@@ -144,7 +144,7 @@ function updateHead(){
  }
  bodyView.scale.set(h.width/.205,h.height/.235,h.depth/.205);
  current?.fitToHead(h,targetScalp(h));
- current?.deformTips(0,0);
+ current?.deformTips(0,0,{collision:false});
  updateStats();
 }
 async function loadRealBaldHead(file=null){
