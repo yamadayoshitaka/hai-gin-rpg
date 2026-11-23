@@ -3,7 +3,7 @@
  * Normal render never uses per-triangle zone splitting. No face/eyebrow edits.
  * The optional breakdown is a separate inspection-only visualization.
  */
-import {cleanDetachedHairGeometry} from './hair-island-cleanup-v1.js';
+import {cleanDetachedHairGeometry} from './hair-island-cleanup-v1.js?v=4';
 import {
  independentHairFitFromRoot,bodyCollisionProxies,resolveHairBodyContact,
  classifyHairTriangle
