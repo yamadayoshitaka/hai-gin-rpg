@@ -7,21 +7,27 @@ const CONTROLS = Object.freeze([
   ['eyes','目','間隔','上下','大きさ'],
   ['nose','鼻','左右','上下','大きさ'],
   ['mouth','口','左右','上下','大きさ'],
-  ['brows','眉','間隔','上下','大きさ']
+  ['brows','眉','間隔','上下','大きさ'],
+  ['cheeks','頬','前後の厚み','高さ','ふくらみ'],
+  ['chin','顎','左右幅','上下','丸み・大きさ']
 ]);
 const AXES = ['x','y','size'];
 const zeros=()=>Object.fromEntries(CONTROLS.map(([key])=>[
   key,{x:0,y:0,size:100}
 ]));
-// Hand-tuned modest slider values from the user-supplied front/profile
-// reference. These are reproducible *starting values*, not a 3D face scan.
+// Baseline uses the newly supplied 4-view bald female character sheet
+// (front, 45 degrees, side and rear). These are manually calibrated,
+// reversible morphological approximations, not an extracted 3D scan.
 export const V121_REFERENCE_PRESET=Object.freeze({
-  eyes:{x:-1,y:1,size:108},
-  nose:{x:0,y:0,size:93},
-  mouth:{x:0,y:2,size:112},
-  brows:{x:-1,y:-3,size:105},
-  philtrum:8
+  eyes:{x:-2,y:1,size:110},
+  nose:{x:0,y:1,size:91},
+  mouth:{x:0,y:1,size:114},
+  brows:{x:-1,y:-6,size:105},
+  cheeks:{x:-4,y:1,size:98},
+  chin:{x:-2,y:2,size:92},
+  philtrum:3
 });
+export const V121_REFERENCE_IMAGE='3089-skinhead-front-45-side-rear-20261123';
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const fade=(x,lo,hi)=>{let t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t)};
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -58,6 +64,17 @@ function transformPoint(x,y,z,state,kind){
     apply(m,weight,0,.198,false);
   }
   if(kind==='skin'){
+    // Smoothly modify cheek depth (especially side profile) and chin shape
+    // without stretching the nose, lips or neck. Full strength stays inside
+    // the malar / inferior-jaw region, tapering at every boundary.
+    const cheek=bell(ax,.075,.032)*bell(y,.258,.039)*front;
+    dz+=cheek*(state.cheeks.x*.00068+
+               (state.cheeks.size-100)*.00012);
+    dy+=cheek*state.cheeks.y*.00048;
+    const chin=bell(ax,.037,.042)*bell(y,.157,.034)*fade(z,.035,.115);
+    dx+=chin*((state.chin.size/100-1)*x*.78+
+              mirror(x)*state.chin.x*.00030);
+    dy+=chin*state.chin.y*.00058;
     // Additional adjustable center philtrum depth, from septum to upper lip.
     // Bounded to skin's forward-facing area and never a separate dark stripe.
     // Match the newly sculpted continuous nose-base-to-upper-lip path.
@@ -190,6 +207,7 @@ export function attachV121FaceSliders({neutral,face,three,onChange=()=>{}}){
   // untouched neutral master remains available with reset().
   applyReferencePreset();
   document.documentElement.dataset.v121Preset='reference';
+  document.documentElement.dataset.v121Reference=V121_REFERENCE_IMAGE;
   return {
     state,
     reset,
