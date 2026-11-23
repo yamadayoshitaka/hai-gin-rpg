@@ -79,12 +79,12 @@ def color(v):
     lips=bell(x,0,.039)*bell(y,.194,.016)*front
     lid=(bell(x,-.043,.031)+bell(x,.043,.031))*bell(y,.312,.014)*front
     brow=(bell(x,-.044,.034)+bell(x,.044,.034))*bell(y,.353,.012)*front
-    brow_line=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.353,.0045)*front
+    brow_line=(bell(x,-.044,.023)+bell(x,.044,.023))*bell(y,.337,.0043)*front
     ear=bell(abs(x),.135,.024)*bell(y,.267,.065)
     # 3D vertex-color makeup and light natural eyebrows, no painted shell.
-    r=1.0-.025*lid-.022*brow-.24*brow_line-.055*lips
-    g=1.0-.085*cheek-.045*ear-.44*lips-.045*lid-.065*brow-.38*brow_line
-    b=1.0-.088*cheek-.048*ear-.36*lips-.045*lid-.075*brow-.40*brow_line
+    r=1.0-.025*lid-.022*brow-.38*brow_line-.055*lips
+    g=1.0-.085*cheek-.045*ear-.44*lips-.045*lid-.065*brow-.54*brow_line
+    b=1.0-.088*cheek-.048*ear-.36*lips-.045*lid-.075*brow-.59*brow_line
     return (clamp(r,.66,1),clamp(g,.58,1),clamp(b,.62,1))
 
 def texture_images():
@@ -184,18 +184,69 @@ def build(source,destination):
         'metallicRoughnessTexture':{'index':indices[1]}}
     skin['normalTexture']={'index':indices[2],'scale':.18}
     skin['doubleSided']=True
-    # Brown irises and cream sclera; preserve original independent geometry.
+    # Real iris rings: the CC0 donor has a tiny hole in its iris center,
+    # through which the white sclera was incorrectly visible. Add a true,
+    # dark pupil disc at that center, and pigment the ring vertices.
     gltf['materials'][1]['name']='V121_HAZEL_BROWN_IRIS'
     gltf['materials'][1]['pbrMetallicRoughness']={
-        'baseColorFactor':[.43,.245,.175,1],'metallicFactor':0,'roughnessFactor':.27}
-    # Donor iris discs sit behind the sclera surface. Lift both iris nodes
-    # only 4.5mm along the viewer-forward axis so the brown iris is visible.
+        'baseColorFactor':[1,1,1,1],'metallicFactor':0,'roughnessFactor':.29}
+    gltf['materials'][1]['doubleSided']=True
+    for iris_index in [1,2]:
+        ip=gltf['meshes'][iris_index]['primitives'][0]
+        iris_xyz=unpack(gltf,buffer,ip['attributes']['POSITION'])
+        iris_color=[]
+        for xx,yy,zz in iris_xyz:
+            r=math.hypot(xx,yy)
+            if r<.0038:
+                tint=(.19,.115,.074)
+            elif r<.0075:
+                tint=(.51,.315,.185)
+            else:
+                tint=(.14,.09,.062)
+            iris_color.append(tint)
+        ip['attributes']['COLOR_0']=floats(iris_color,'VEC3')
+    iris_nodes=[]
     for node in gltf['nodes']:
         if 'iris.' in node.get('name','').lower():
             if 'translation' in node:
                 node['translation'][2]+=0.0045
             elif 'matrix' in node:
                 node['matrix'][14]+=0.0045
+            iris_nodes.append(node)
+    if len(iris_nodes)!=2:
+        raise ValueError('Expected exactly two source iris node transforms')
+    # One shared, low-poly pupil mesh, two nodes inheriting each iris's matrix.
+    pupil_xyz=[(0.,0.,.0165)]
+    pupil_xyz.extend((math.cos(i*math.tau/40)*.0034,
+                      math.sin(i*math.tau/40)*.0034,.0165) for i in range(40))
+    pupil_pos=floats(pupil_xyz,'VEC3')
+    pupil_nor=floats([(0.,0.,1.)]*len(pupil_xyz),'VEC3')
+    pupil_faces=[]
+    for i in range(40):
+        pupil_faces.extend((0,i+1,(i+1)%40+1))
+    view=put(b''.join(struct.pack('<I',j) for j in pupil_faces))
+    pup_indices=len(gltf['accessors'])
+    gltf['accessors'].append({
+        'bufferView':view,'componentType':5125,'count':len(pupil_faces),'type':'SCALAR'})
+    matid=len(gltf['materials'])
+    gltf['materials'].append({
+        'name':'V121_DARK_BROWN_PUPIL','doubleSided':True,
+        'pbrMetallicRoughness':{'baseColorFactor':[.042,.026,.021,1],
+                               'metallicFactor':0,'roughnessFactor':.22}})
+    meshid=len(gltf['meshes'])
+    gltf['meshes'].append({
+        'name':'V121_PUPIL_DISC_SAFELY_SEPARATE',
+        'primitives':[{'attributes':{'POSITION':pupil_pos,'NORMAL':pupil_nor},
+                       'indices':pup_indices,'material':matid}]})
+    for j,node in enumerate(iris_nodes):
+        pupil_node={'name':'V121_PUPIL_'+('L' if j==0 else 'R'),'mesh':meshid}
+        if 'matrix' in node:pupil_node['matrix']=list(node['matrix'])
+        else:
+            for field in ('translation','rotation','scale'):
+                if field in node:pupil_node[field]=list(node[field])
+        nid=len(gltf['nodes'])
+        gltf['nodes'].append(pupil_node)
+        gltf['scenes'][0]['nodes'].append(nid)
     gltf['materials'][2]['name']='V121_NATURAL_IVORY_SCLERA'
     gltf['materials'][2]['pbrMetallicRoughness']={
         'baseColorFactor':[.94,.91,.87,1],'metallicFactor':0,'roughnessFactor':.3}
