@@ -36,6 +36,8 @@ jobs:
           node --test qa/training-gear-owner-purchase.test.mjs qa/town-facility-squad-gear.test.mjs
       - name: Verify chained battle orders, no-wander formations, corpse collision and basic commands
         run: node --test qa/battle-command-followup.test.mjs qa/battle-signature-command-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs qa/battle-ai-wandering-regression.test.mjs
+      - name: Verify bridge direction lock for both teams, all lanes and congested far-bank landing
+        run: node --test qa/battle-bridge-oneway-traffic.test.mjs
       - name: Verify published batch PR preview and checkpoint contract
         id: qa_0
         # Owner permits deployment despite QA failure; leave the outcome visible.
