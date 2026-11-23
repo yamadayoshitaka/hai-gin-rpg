@@ -73,6 +73,11 @@ class TestFaceV121(unittest.TestCase):
         self.assertEqual(len(self.b['meshes'][0]['primitives'][0]['targets']),11)
         self.assertFalse(any('hair' in x.get('name','').lower() for x in self.b['meshes']))
         self.assertEqual(len(self.b['meshes']),11)
+        sculpt=self.b['meshes'][0]['extras']['referenceMeshResculpt']
+        self.assertGreater(sculpt['changedVerticesAbove045mm'],900)
+        self.assertEqual(sculpt['baseVertices'],13455)
+        self.assertEqual(sculpt['triangleCount'],25920)
+        self.assertTrue(sculpt['uvAndTriangleIndicesPreserved'])
         self.assertTrue(all('GLOBE_UV' in mesh['name'] for mesh in self.b['meshes'][1:3]))
         self.assertFalse(any('PUPIL_' in node.get('name','') for node in self.b['nodes']))
         self.assertEqual(self.b['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'],False)
