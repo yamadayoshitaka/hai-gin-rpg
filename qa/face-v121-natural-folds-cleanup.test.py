@@ -72,8 +72,17 @@ class V121SkinClean(unittest.TestCase):
             self.assertGreater(y,.179)
             self.assertLess(y,.215)
         self.assertTrue(meta['referenceFeatureSculpt']['lateralNasolabialPitRemoved'])
-        self.assertGreaterEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.009)
-        self.assertGreaterEqual(meta['referenceFeatureSculpt']['philtrumColumnsRelief'],.002)
+        self.assertGreaterEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.0037)
+        self.assertLessEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.004)
+        self.assertGreater(meta['referenceFeatureSculpt']['philtrumColumnsRelief'],.0008)
+        self.assertTrue(meta['referenceFeatureSculpt']['philtrumNoOvalPit'])
+        self.assertIn('continuous_nose_base_to_vermilion',meta['referenceFeatureSculpt']['philtrumShape'])
+        self.assertGreater(meta['referenceFeatureSculpt']['centralPhiltrumStart'][1],.247)
+        self.assertLess(meta['referenceFeatureSculpt']['centralPhiltrumEnd'][1],.210)
+        # The depression is continuous through the middle of the philtrum.
+        for low,high in ((.212,.222),(.222,.232),(.232,.242)):
+            self.assertGreater(sum(1 for i in center if low<=self.xyz[i][1]<high),
+                               0, f'central philtrum groove missing in y band {low}..{high}')
         self.assertTrue(meta['referenceFeatureSculpt']['parametricDepthControlSupported'])
         self.assertEqual(len(accessor(self.g,self.buffer,self.p['indices'])),25920*3)
         self.assertEqual(len(accessor(self.g,self.buffer,self.p['attributes']['NORMAL'])),13455)
