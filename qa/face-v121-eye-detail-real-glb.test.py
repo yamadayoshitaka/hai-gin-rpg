@@ -20,7 +20,7 @@ class TestV121RealDetailMeshes(unittest.TestCase):
     def test_real_glb_not_2d_overlay(self):
         g=self.g
         self.assertEqual(len(g['meshes']),12)
-        self.assertEqual(len(g['nodes']),11)
+        self.assertEqual(len(g['nodes']),12)
         meta=g['meshes'][0]['extras']
         self.assertEqual(meta['version'],121)
         self.assertFalse(meta['hairIncluded'])
