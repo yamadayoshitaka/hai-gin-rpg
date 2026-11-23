@@ -75,14 +75,16 @@ def new_lower_face_geometry(points,uv):
     sagittal=(
         (.078, .0000),
         (.102,-.0006),
-        (.126,-.0022),
-        (.149,-.0040),
+        (.126,-.0018),
+        (.149,-.0032),
         (.173,-.0050),
-        (.188,-.0052),
-        (.202,-.0062),  # shallow labiomental sulcus
-        (.211,-.0048),
-        (.222,-.0050),  # lower lip loses forward projection
-        (.228,-.0033),
+        (.188,-.0058),
+        (.198,-.0062),
+        (.204,-.0063),  # single very shallow labiomental sulcus
+        (.211,-.0059),  # never rise into a second lower-lip ridge
+        (.218,-.0055),
+        (.224,-.0052),  # gently retract real lower vermilion
+        (.228,-.0032),
         (.234,-.0005),  # keep the closed mouth seam and upper lip
         (.245, .0000),
         (.255, .0000),
@@ -99,9 +101,12 @@ def new_lower_face_geometry(points,uv):
         dz=profile(y,sagittal)*middle*front
         # Narrow the LOWER vermilion by lifting only its bottom boundary.
         # The upper lip and neutral lip seam stay in their current positions.
-        lip_bottom=bell(y,.216,.0042)*lip_zone
+        lip_bottom=bell(y,.216,.0090)*lip_zone
         chin_zone=bell(y,.145,.041)*middle*front
-        dy=.0024*chin_zone+.0020*lip_bottom
+        # The previous 2 mm narrow vertical bulge created a second ledge
+        # directly below the lower lip. Leave only a broad sub-millimetre
+        # lift of the actual vermilion boundary, with a continuous chin.
+        dy=.0021*chin_zone+.00042*lip_bottom
         # Slightly soften the point of the chin, never pinch mouth corners.
         # Never shift mouth-corner/dimple landmark X coordinates: only the
         # lower chin/jaw region may change width.
@@ -123,7 +128,7 @@ def new_lower_face_geometry(points,uv):
     chin_depth=forward_depth(.142,.194)
     neck_depth=forward_depth(.075,.118)
     return result,{
-        'version':'female-v121-realspace-neutral-lower-face-v12',
+        'version':'female-v121-realspace-neutral-lower-face-v13',
         'method':'actual-XYZ-sagittal-C1-lip-sulcus-short-chin-and-boundary-welded-remesh',
         'mouthFrontZ':round(lip_front,6),
         'mentonAfterZ':round(chin_depth,6) if chin_depth is not None else None,
@@ -140,6 +145,8 @@ def new_lower_face_geometry(points,uv):
         'lowerVermilionHeightReduced':True,
         'shallowLabiomentalSulcus':True,
         'shortRoundedChin':True,
+        'secondaryUnderlipRidgeRemoved':True,
+        'noNarrowUnderlipVerticalLift':True,
         'noseAndUpperFaceHardLocked':True,
     }
 
@@ -302,6 +309,44 @@ def replacement_triangulation(uv,faces,xyz):
         'singleContinuousBoundary':True,
     }
 
+def relax_labiomental_shading(points,faces):
+    """Fair the single chin skin surface in real XYZ; never erase the lips.
+
+    Retriangulation in UV space can create small zig-zags in 3D vertex
+    normals. Diffuse only very short, front-facing edges of the transition
+    below the lower vermilion. Mouth seam, actual lips, jaw rim, nasal root,
+    eyeballs, eyelids and the cervical base are strictly outside the mask.
+    """
+    adjacent=[set() for _ in points]
+    for a,b,c in faces:
+        adjacent[a].update((b,c))
+        adjacent[b].update((a,c))
+        adjacent[c].update((a,b))
+    xyz=list(points)
+    moved=set()
+    for _ in range(4):
+        next_xyz=list(xyz)
+        for i,(x,y,z) in enumerate(xyz):
+            if not (.174<y<.218 and abs(x)<.075 and z>.099):
+                continue
+            blend=(.24*fade(y,.175,.190)*(1.-fade(y,.204,.217))*
+                   fade(z,.100,.124)*(1.-fade(abs(x),.049,.074)))
+            if blend<.001:
+                continue
+            near=[xyz[j] for j in adjacent[i]
+                  if abs(xyz[j][0]-x)<.009 and abs(xyz[j][1]-y)<.010
+                  and abs(xyz[j][2]-z)<.008 and xyz[j][2]>.099]
+            if len(near)<3:continue
+            depth=sum(v[2] for v in near)/len(near)
+            # Do not create a bulge from a steep, genuine lip contour.
+            dz=max(-.0006,min(.0006,blend*(depth-z)))
+            if abs(dz)>1e-8:
+                next_xyz[i]=(x,y,z+dz)
+                moved.add(i)
+        xyz=next_xyz
+    return xyz,len(moved)
+
+
 def write_indices(g,b,indices):
     while len(b)%4:b.append(0)
     offset=len(b)
@@ -331,12 +376,15 @@ def rebuild(path):
     old=[tuple(indices[j:j+3]) for j in range(0,len(indices),3)]
     xyz,shape=new_lower_face_geometry(pts,uv)
     faces,replacement=replacement_triangulation(uv,old,xyz)
+    xyz,fair_count=relax_labiomental_shading(xyz,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
     prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     info['mouthChinRebuild']={**shape,**replacement,
+        'labiomentalFairingVertices':fair_count,
+        'noSecondaryUnderlipLine':True,
         'realGeometryNotMaterialOnly':True,
         'sourceSkinVerticesRetained':len(xyz),
         'sourceTriangleCountRetained':len(faces),
