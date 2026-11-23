@@ -43,7 +43,7 @@ class ReferenceFeatureTests(unittest.TestCase):
         self.assertTrue(meta['futureExpressionsImplemented'])
         self.assertEqual(len(self.xyz),13455)
         self.assertEqual(len(get(self.g,self.b,self.p['indices'])),25920*3)
-        self.assertEqual(len(self.g['meshes']),11)
+        self.assertEqual(len(self.g['meshes']),12)
         sculpt=meta['referenceFeatureSculpt']
         self.assertTrue(sculpt['foldIsActualSkinGeometry'])
         self.assertTrue(sculpt['preservesEyeAndMouthTopology'])
