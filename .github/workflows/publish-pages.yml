@@ -177,6 +177,7 @@ jobs:
           python3 qa/face-v121-eye-detail-real-glb.test.py
           python3 qa/face-v121-natural-folds-cleanup.test.py
           python3 qa/face-v121-lower-lashes-nose-lips.test.py
+          python3 qa/face-v121-expression-morph.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
       - name: Require baked neutral v120 GLB and preview in published Pages artifact
