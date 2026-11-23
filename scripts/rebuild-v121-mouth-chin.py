@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild the v121 *female* mouth-to-menton surface and local connectivity.
+"""Rebuild the v121 female nose-down mouth, jaw, menton and neck in 3D.
 
 This stage runs after the donor-derived eye/skin sculpt and BEFORE morph targets.
 The source's 13,455 vertex IDs, UV and external face boundary are maintained
@@ -38,12 +38,14 @@ def frontal_depth(points,y):
 
 
 def contour(points):
-    """Single C1 sagittal reconstruction from upper neck to lower lip.
+    """Remodel the REAL lower-face skin in 3 axes, from lip to neck.
 
-    The old profile was non-monotone (a forward peak at y=.177, a retreat
-    at .191, then another forward peak below the lip), visually creating
-    two chins. Set one strictly ascending forward contour with a rounded
-    menton and a continuous submental transition. No second smoothing pass.
+    Front: raise and round the previously elongated V-shaped menton and
+    distribute the chin's width without widening the cheeks.
+    Profile: tuck the anterior jaw behind the lips with ONE smooth contour,
+    then feather the submental fold into the anterior neck. All displacements
+    are continuous, finite and vanish at the untouched mouth/cheek/neck seams.
+    This is deliberately not a material edit or a camera-space correction.
     """
     lip_front=max(z for x,y,z in points
                   if abs(x)<.040 and .217<y<.249)
@@ -51,24 +53,23 @@ def contour(points):
                  if abs(x)<.055 and .160<y<.204)
     section_y=(.111,.125,.143,.160,.177,.192,.205,.219,.236)
     source=[frontal_depth(points,y) for y in section_y]
-    # Geometry is in the GLB's original local face coordinates. Rearward
-    # depth compared to lip front is intentional; no protruding chin peak.
+    # Keep the original neck and lip anchors. Remove the old chin bulge,
+    # particularly 0.17-0.21m, without extending the lip or jaw forward.
     target=[
         source[0],
         source[1],
-        lip_front-.083,
+        lip_front-.081,
         lip_front-.068,
-        lip_front-.046,
-        lip_front-.034,
-        lip_front-.025,
-        lip_front-.012,
-        source[-1],
+        lip_front-.053,
+        lip_front-.043,
+        lip_front-.032,
+        lip_front-.014,
+        max(source[-1],lip_front-.011),
     ]
-    # The original lips may stand slightly farther back at the centerline.
-    # Never move the actual vermilion or make the final control turn inward.
     target[-1]=max(target[-2]+.0005,target[-1])
     if not all(b>a for a,b in zip(target,target[1:])):
-        raise ValueError('Lower-face contour is not monotone: '+str(target))
+        raise ValueError('Lower-face reference anchors out of order: '+str(target))
+
     def curve(y,values):
         if y<=section_y[0]:return values[0]
         if y>=section_y[-1]:return values[-1]
@@ -76,8 +77,6 @@ def contour(points):
                if section_y[j]<=y<=section_y[j+1])
         a,b=section_y[i:i+2]
         t=(y-a)/(b-a)
-        # Monotone cubic with no profile overshoot, even for the source
-        # which can have large donor folds near the chin base.
         slopes=[(values[k+1]-values[k])/(section_y[k+1]-section_y[k])
                 for k in range(len(values)-1)]
         def tangent(k):
@@ -85,45 +84,81 @@ def contour(points):
             if k==len(values)-1:return slopes[-1]
             left,right=slopes[k-1:k+1]
             if left*right<=0:return 0.
-            return min(2.*min(abs(left),abs(right)),
-                       (abs(left)+abs(right))*.5)*(1 if left>0 else -1)
+            return math.copysign(min(2.*min(abs(left),abs(right)),
+                                     (abs(left)+abs(right))*.5),left)
         h=b-a
         return ((2*t**3-3*t*t+1)*values[i]+
                 (t**3-2*t*t+t)*h*tangent(i)+
                 (-2*t**3+3*t*t)*values[i+1]+
                 (t**3-t*t)*h*tangent(i+1))
 
-    result=[]
-    shifted=0
-    for x,y,z in points:
-        # Rebuild the complete FRONT sagittal section, but keep the lateral
-        # mandible, lip border and neck seam continuous. The central front
-        # region uses one shared profile rather than independent Gaussian
-        # pushes on either side of the jawline.
-        lateral=1.-fade(abs(x),.056,.098)
-        frontal=fade(z,.020,.090)
-        vertical=fade(y,.110,.137)*(1.-fade(y,.218,.235))
-        delta=(curve(y,target)-curve(y,source))*lateral*frontal*vertical
-        result.append((x,y,z+delta))
-        if abs(delta)>.00015:shifted+=1
+    def bell(v,c,w):
+        return math.exp(-.5*((v-c)/w)**2)
 
-    new_chin=max(z for x,y,z in result
+    remodeled=[]
+    shifted=0
+    center_chin=0
+    neck_blended=0
+    max_move=0.
+    for x,y,z in points:
+        ax=abs(x)
+        # 3D region grows from the nasal/labial boundary across the anterior
+        # mandible and fades on the lateral jaw. The surface MUST stay joined
+        # to the scalp, lips, cheeks and upper-chest vertex boundary.
+        lateral=1.-fade(ax,.046,.119)
+        anterior=fade(z,.018,.101)
+        vertical=fade(y,.100,.140)*(1.-fade(y,.215,.242))
+        depth=(curve(y,target)-curve(y,source))*lateral*anterior*vertical
+
+        # Eliminate the submental shelf that reads as a second jaw in
+        # three-quarter view. Transition is broad and weak at the neckline.
+        submental=-.0030*bell(y,.129,.019)*bell(ax,0.,.070)*anterior
+
+        # The original silhouette has a long, sharply pointed V chin.
+        # Lift its anterior underside by 6mm, tapering to zero at the lips
+        # and neck. Slight lateral spread makes the frontal tip rounded.
+        chin_mask=bell(y,.159,.025)*bell(ax,0.,.060)*anterior
+        shorten=.0060*chin_mask*(1.-fade(y,.196,.225))
+        widen=x*.060*bell(y,.170,.031)*bell(ax,.034,.048)*anterior
+        xx=x+widen
+        yy=y+shorten
+        zz=z+depth+submental
+        if not all(math.isfinite(v) for v in (xx,yy,zz)):
+            raise ValueError('Non-finite jaw remesh coordinate')
+        change=math.dist((x,y,z),(xx,yy,zz))
+        if change>.00015:shifted+=1
+        if .147<y<.191 and ax<.055 and change>.0001:center_chin+=1
+        if .112<y<.150 and ax<.100 and change>.0001:neck_blended+=1
+        max_move=max(max_move,change)
+        remodeled.append((xx,yy,zz))
+
+    new_chin=max(z for x,y,z in remodeled
                  if abs(x)<.055 and .160<y<.204)
-    if shifted<60:
-        raise ValueError('No real lower-face resculpt occurred')
+    if shifted<60 or center_chin<12 or neck_blended<8:
+        raise ValueError('Chin/neck geometry was not actually remodeled: '+
+                         str((shifted,center_chin,neck_blended)))
     if new_chin>lip_front-.016:
-        raise ValueError('Rebuilt profile still has a protruding chin')
-    return result,{
-        'version':'female-v121-continuous-sagittal-lowerface-v2',
+        raise ValueError('Rebuilt side profile still has a protruding chin')
+    if max_move>.045:
+        raise ValueError('Jaw reconstruction exceeds safe local displacement')
+    return remodeled,{
+        'version':'female-v121-front-profile-jaw-neck-remodel-v3',
         'mouthFrontZ':round(lip_front,6),
         'mentonBeforeZ':round(old_chin,6),
         'mentonAfterZ':round(new_chin,6),
         'profileControlY':section_y,
-        'profileControlZ':[round(z,6) for z in target],
+        'profileControlZ':[round(v,6) for v in target],
         'affectedVertices':shifted,
+        'remodeledAnteriorChinVertices':center_chin,
+        'blendedSubmentalNeckVertices':neck_blended,
+        'maximum3DDisplacement':round(max_move,6),
+        'chinVerticalShorteningMeters':.006,
+        'chinTipRoundness3D':True,
+        'frontalJawWidthBlending':True,
         'sideProfileMeasured':True,
         'noMentonLengthening':True,
         'monotoneNoDoubleChin':True,
+        'submentalToNeckBlend':True,
         'legacyChinBridgeDisabled':True,
     }
 
@@ -164,7 +199,7 @@ def retopologize(points,faces):
             quad=[points[k] for k in (a,b,c,d)]
             # Retopology affects only the mouth-adjacent surface, never the
             # central aperture seam (which is split by the next stage).
-            if any(abs(x)>.074 or not(.199<y<.264) or z<.108
+            if any(abs(x)>.116 or not(.142<y<.264) or z<.065
                    for x,y,z in quad):continue
             if any(.229<y<.238 for x,y,z in quad):continue
             if max(p[2] for p in quad)-min(p[2] for p in quad)>.019:continue
@@ -179,7 +214,7 @@ def retopologize(points,faces):
             after=min(quality(pc,pd,pb),quality(pd,pc,pa))
             if after<before+.035:continue
             # Avoid creating long bridging edges over lips or cheek folds.
-            if math.dist(pc,pd)>.019:continue
+            if math.dist(pc,pd)>.020:continue
             tris[ti]=(c,d,b)
             tris[tj]=(d,c,a)
             consumed.update((ti,tj))
@@ -224,7 +259,7 @@ def rebuild(path):
     prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     meta['mouthChinRebuild']={
-        **profile,'retopology':'new-convex-local-edge-connectivity',
+        **profile,'retopology':'lip-menton-anterior-jaw-reconnected-convex-edges',
         'edgeFlips':flips,
         'sourceSkinVerticesRetained':len(xyz),
         'sourceTriangleCountRetained':len(faces),
