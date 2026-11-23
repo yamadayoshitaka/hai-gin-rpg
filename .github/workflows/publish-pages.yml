@@ -432,7 +432,7 @@ jobs:
                grep -Fq 'portraitV119' /tmp/public-face-studio.html &&
                grep -Fq 'enableV119PortraitContours:portraitV119' /tmp/public-face-studio.html &&
                grep -Fq 'sculptV119PortraitContours' /tmp/public-face-v119-sculpt.js &&
-               grep -Fq "gender!=='female'&&gender!=='male'" /tmp/public-face-v119-sculpt.js &&
+               grep -Fq "['female','male'].includes(gender)" /tmp/public-face-v119-sculpt.js &&
                grep -Fq 'referencePortraitV117' /tmp/public-face-studio.html &&
                grep -Fq 'enableV117ReferencePortrait:referencePortraitV117' /tmp/public-face-studio.html &&
                grep -Fq 'sculptV117ReferencePortrait' /tmp/public-face-v117-sculpt.js &&
