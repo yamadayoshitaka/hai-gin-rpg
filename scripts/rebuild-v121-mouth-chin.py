@@ -68,9 +68,9 @@ def new_jaw_geometry(points,uv):
         (.510,lip-.050),(.540,lip-.080),(.570,lip-.100),
         (.585,lip-.104)]
     yknots=[
-        (.385,.205),(.400,.194),(.415,.189),(.435,.186),
-        (.455,.185),(.475,.183),(.495,.176),(.515,.157),
-        (.540,.133),(.565,.111),(.585,.093)]
+        (.385,.205),(.400,.194),(.415,.189),(.435,.185),
+        (.455,.177),(.475,.168),(.495,.158),(.515,.145),
+        (.540,.125),(.565,.111),(.585,.093)]
     widthknots=[(.385,.40),(.435,.40),(.475,.40),(.515,.42),
                 (.550,.47),(.585,.48)]
     result=[]
@@ -111,7 +111,7 @@ def new_jaw_geometry(points,uv):
     if not (menton>sulcus+.006 and menton>throat+.042):
         raise ValueError('Menton/sulcus/neck profile is missing: '+str((menton,sulcus,throat)))
     return result,{
-        'version':'female-v121-new-surface-retopology-v7',
+        'version':'female-v121-new-surface-retopology-v8',
         'method':'old-chin-triangles-removed-new-uv-patch-triangulation',
         'mouthFrontZ':round(lip,6),
         'mentonAfterZ':round(menton,6),
