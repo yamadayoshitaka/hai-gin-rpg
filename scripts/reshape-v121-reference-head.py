@@ -114,7 +114,7 @@ def sculpt(p):
     submental=gauss(y,.108,.032)*gauss(ax,.065,.057)*side
     ny=y+.0065*chin+.0010*submental+.0006*jaw-.00045*frontal+.0006*under_eye
     nz=(z-.0031*malar+.0018*under_eye
-        +.0014*lower_cheek-.0012*jaw
+        +.0014*lower_cheek+.0013*jaw
         -.0110*chin_profile-.0020*submental
         -.0036*tip-.0013*ala-.0009*bridge
         +.0037*upper+.0045*lower+.0010*cupid
