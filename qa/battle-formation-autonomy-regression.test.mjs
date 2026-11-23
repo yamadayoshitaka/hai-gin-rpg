@@ -38,6 +38,24 @@ assert.equal(sim.squadCommands.get(String(priest.squadId)),'hold',
  'Healing must not overwrite the command');
 assert.ok(priest.mp<beforeMp,'Real healing consumes MP');
 
+// End-to-end: a real guarded enemy deals HP damage at melee contact.
+// Do not mistake an order-label transition for a functioning attack AI.
+const contactSim=new MassBattleGridSimulation(50,1123,{
+ width:size,height:size,walkable:new Uint8Array(size*size).fill(1),bridges:[],riverXAt:()=>116
+});
+const attacker=contactSim.units.find(u=>u.team===1&&!u.isStrategist&&u.jobId==='sword');
+const victim=contactSim.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='shield')||
+ contactSim.units.find(u=>u.team===0&&!u.isStrategist&&u.jobId==='sword');
+assert.ok(attacker&&victim,'real melee jobs exist in both armies');
+Object.assign(attacker,{x:24,z:24,fromX:24,fromZ:24,cooldown:0});
+Object.assign(victim,{x:25,z:24,fromX:25,fromZ:24,cooldown:10000});
+assert.equal(contactSim.setSquadCommand(attacker.squadId,'defend',1),true);
+assert.equal(contactSim.setSquadCommand(victim.squadId,'hold',0),true);
+const victimStartingHp=victim.hp;
+for(let tick=0;tick<70&&victim.hp===victimStartingHp;tick++)contactSim.step(.1);
+assert.ok(victim.hp<victimStartingHp,
+ 'defending enemy sword must actually attack and damage an adjacent hostile');
+
 const skills=readFileSync(new URL('../src/combat-action-runtime.js',import.meta.url),'utf8');
 assert.match(skills,/skills\.sort\(\(a,b\)=>Number\(b\.kind==='heal'\)/,
  'Priests must prioritize healing magic under fire');
