@@ -53,7 +53,7 @@ function buildCrownFiberRibbons(THREE,scalpGeometry,box,color){
  const stride=Math.max(1,Math.ceil(seedPool.length/250));
  const seeds=seedPool.filter((p,i)=>i%stride===0).slice(0,250);
  const coords=[],uvs=[],indices=[],colors=[];
- const tone=new THREE.Color(),base=new THREE.Color(color);
+ const tone=new THREE.Color();
  const find=(x,y,prevZ)=>{
   const k=Math.round(y/step);
   let best=null,bestScore=.0007;
@@ -85,7 +85,8 @@ function buildCrownFiberRibbons(THREE,scalpGeometry,box,color){
    for(const sign of [-1,1]){
     coords.push(centre[0]+tx*half*sign,centre[1],centre[2]+tz*half*sign);
     uvs.push((sign+1)*.5,j/13);
-    tone.copy(base).multiplyScalar(.77+((s*17)%13)/48);
+    const intensity=.77+((s*17)%13)/48;
+    tone.setRGB(intensity,intensity,intensity);
     colors.push(tone.r,tone.g,tone.b);
    }
    if(previousIndex>=0)indices.push(previousIndex,previousIndex+1,at,
@@ -106,7 +107,7 @@ function buildCrownFiberRibbons(THREE,scalpGeometry,box,color){
  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  geo.setIndex(indices);geo.computeVertexNormals();
  const mat=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.73,metalness:0,
+  color,vertexColors:true,roughness:.73,metalness:0,
   side:THREE.DoubleSide
  });
  const fibers=new THREE.Mesh(geo,mat);
