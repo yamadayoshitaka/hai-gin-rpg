@@ -116,6 +116,16 @@ test('all 26 profiles construct from only an unmodified real-mesh proxy and have
   const idx=geo.getIndex().array;
   assert.ok(idx.length>6000,profile.id);
   assert.ok(idx.every(i=>i>=0&&i<pos.length/3),'invalid topology in '+profile.id);
+  const edges=new Map();
+  for(let k=0;k<idx.length;k+=3){
+   for(const [a,b] of [[idx[k],idx[k+1]],[idx[k+1],idx[k+2]],[idx[k+2],idx[k]]]){
+    const key=Math.min(a,b)+':'+Math.max(a,b);
+    edges.set(key,(edges.get(key)||0)+1);
+   }
+  }
+  const openings=[...edges.values()].filter(count=>count===1).length;
+  assert.equal(openings,0,'open boundary / bald scalp at '+profile.id);
+
   const minY=Math.min(...Array.from(pos).filter((_,i)=>i%3===1));
   bounds.add(Math.round(minY*1000));
   identities.add(hair.root.name);
