@@ -24,7 +24,11 @@ export function formationCombatIntent({
   order:'defend',advance:enemy&&distance<=Math.max(12,range*2),
   seekHighGround:false,reason:'command-defend'
  };
- if(!enemy)return {order:'hold',advance:false,seekHighGround:false,reason:'no-hostile'};
+ // Preserve the assault's one-way march to its last shared rally front.
+ // The battle director ends on victory; the grid still settles at a stable
+ // BFS goal rather than stopping arbitrarily or wandering between cells.
+ if(!enemy)return {order:explicit==='charge'?'charge':'charge',advance:true,
+  seekHighGround:false,reason:'frontline-rally'};
  const ranged=RANGED.has(job)||job==='summoner';
  const healer=job==='priest';
  const height=type==='highground'&&RANGED.has(job);
