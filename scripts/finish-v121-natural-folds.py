@@ -121,13 +121,14 @@ def nose_and_lips(x,y,z):
     """
     ax=abs(x)
     nose_front=fade(z,.093,.141)
-    wing=bell(ax,.028,.017)*bell(y,.243,.024)*fade(z,.084,.127)
+    wing=(bell(ax,.028,.017)*bell(y,.243,.024)*fade(z,.084,.127)*
+          (1.-fade(ax,.043,.054)))
     nx=x*(1.-.063*wing)
     tip=bell(x,0.,.017)*bell(y,.250,.016)*fade(z,.122,.154)
-    ala=bell(ax,.027,.011)*bell(y,.242,.018)*nose_front
+    ala=bell(ax,.027,.011)*bell(y,.242,.018)*nose_front*(1.-fade(ax,.043,.054))
     nz=z-.0030*tip-.00115*ala
     lip_front=fade(z,.103,.137)
-    horizontal=bell(x,0,.038)
+    horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
     upper=bell(y,.2075,.0086)*horizontal*lip_front
     lower=bell(y,.1835,.0103)*horizontal*lip_front
     cupids=bell(ax,.012,.0065)*bell(y,.213,.007)*lip_front
