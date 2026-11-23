@@ -28,6 +28,10 @@ button:disabled{opacity:.45}
 dl{display:grid;grid-template-columns:1fr auto;gap:6px;margin:5px 0;font-size:13px}
 dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 .notice{border-left:3px solid #8dbab8;padding:6px 9px;margin-top:8px;background:#17344b}
+.makeup-presets{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+.makeup-presets button{min-height:42px;padding:8px 11px;border-radius:8px}
+.makeup-presets button[aria-pressed="true"]{border:2px solid #96efd2;background:#215950}
+.makeup-dot{display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:5px;vertical-align:middle}
 #v121-tuning summary{cursor:pointer;font-weight:700;font-size:16px;min-height:40px}
 #v121-tune-sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:10px 0}
 .v121-tune-group{border:1px solid #52687a;border-radius:9px;padding:7px 10px;min-width:0}
@@ -53,6 +57,17 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
 <canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
+<div id="v121-makeup" aria-label="女性顔の化粧パターンを選択">
+<strong>化粧を変更（実3D／GLB保存対応）</strong>
+<div class="makeup-presets">
+<button type="button" data-makeup="bare" aria-pressed="false" disabled><span class="makeup-dot" style="background:#dfb6aa"></span>すっぴん</button>
+<button type="button" data-makeup="natural" aria-pressed="false" disabled><span class="makeup-dot" style="background:#cd938e"></span>ナチュラル</button>
+<button type="button" data-makeup="pink" aria-pressed="true" disabled><span class="makeup-dot" style="background:#e58ea0"></span>血色ピンク</button>
+<button type="button" data-makeup="brown" aria-pressed="false" disabled><span class="makeup-dot" style="background:#ab6f64"></span>ブラウン</button>
+<button type="button" data-makeup="glamorous" aria-pressed="false" disabled><span class="makeup-dot" style="background:#b95772"></span>華やか</button>
+</div>
+<p id="v121-makeup-status" role="status">化粧の実3Dデータを読み込み中…</p>
+</div>
 <div class="controls">
 <button type="button" data-camera="front" aria-pressed="true">正面</button>
 <button type="button" data-camera="eyeClose" aria-pressed="false">目元を拡大</button>
@@ -79,7 +94,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <p id="v121-tune-note" role="status">参考画像寄せのスライダー値を読み込んでいます…</p>
 </details>
 <section class="panel" id="v121-expressions" aria-label="表情アニメーションプレビュー">
-<h2>表情アニメーション（顔・眉・目・口の実3D変形）</h2>
+<h2>表情アニメーション（顔・眉・目・口の実3D変形・口腔と歯・舌）</h2>
 <div class="controls" id="expressionControls">
 <button type="button" data-expression="neutral" aria-pressed="true" disabled>中立</button>
 <button type="button" data-expression="blink" aria-pressed="false" disabled>まばたき</button>
@@ -88,7 +103,12 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <button type="button" data-expression="angry" aria-pressed="false" disabled>怒る</button>
 <button type="button" data-expression="sad" aria-pressed="false" disabled>困る</button>
 <button type="button" data-expression="mouthOpen" aria-pressed="false" disabled>口を開く</button>
-<button type="button" data-expression="talk" aria-pressed="false" disabled>あいうえお</button>
+<button type="button" data-expression="vowelA" aria-pressed="false" disabled>あ</button>
+<button type="button" data-expression="vowelI" aria-pressed="false" disabled>い</button>
+<button type="button" data-expression="vowelU" aria-pressed="false" disabled>う</button>
+<button type="button" data-expression="vowelE" aria-pressed="false" disabled>え</button>
+<button type="button" data-expression="vowelO" aria-pressed="false" disabled>お</button>
+<button type="button" data-expression="talk" aria-pressed="false" disabled>あいうえお連続</button>
 <button type="button" data-expression="loop" aria-pressed="false" disabled class="primary">表情ループ再生</button>
 </div>
 <p>顔の頂点と眉・まつ毛が連動して動きます。ループでは笑顔・怒り・困り・発話を順に確認できます。</p>
@@ -115,9 +135,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 import {attachV121Expressions,V121_EXPRESSIONS} from './face-v121-expression-player.js';
+import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-makeup-brow-cheek-expressions-20261123';
-let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null,expressionPlayer=null,expressionClips=[];
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-oral-opening-makeup-presets-20261123';
+let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null,expressionPlayer=null,expressionClips=[],faceMakeup=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
  const positions={
@@ -147,7 +168,7 @@ function saveBlob(blob,name){
 async function exportGLB(){
  const button=$('export');button.disabled=true;
  try{
-  if(!faceTune||!faceTune.isChanged()){
+  if((!faceTune||!faceTune.isChanged())&&(!faceMakeup||!faceMakeup.isChanged())){
    const response=await fetch(sourceURL,{cache:'no-store'});
    if(!response.ok)throw Error('GLB HTTP '+response.status);
    const bytes=await response.blob();
@@ -161,6 +182,7 @@ async function exportGLB(){
   const visibility=[];
   neutral.traverse(o=>{if(o.isMesh){visibility.push([o,o.visible]);o.visible=true;}});
   neutral.userData.v121FaceSliderValues=faceTune.values();
+  neutral.userData.v121MakeupPreset=faceMakeup?.current()||'bare';
   try{
    const binary=await new Promise((resolve,reject)=>
     new GLTFExporter().parse(neutral,resolve,reject,
@@ -185,6 +207,7 @@ function exportJSON(){
   skinPbr:rigMap.pbr,
   hairIncluded:false,
   sliderValues:faceTune?.values()||null,
+  makeupPreset:faceMakeup?.current()||'bare',
   instructions:'Preserve the v121 rest mesh and vertex order for future expression morph targets.'
  };
  saveBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),
@@ -232,6 +255,15 @@ async function init(){
    '参考値または調整した形状を表示しています。「現在の顔をGLB保存」で実GLBに書き出せます。':
    '初期値のv121です。元のGLBは変更されていません。';
  }});
+ faceMakeup=attachV121Makeup({neutral,face,onChange:(id,label)=>{
+  document.querySelectorAll('[data-makeup]').forEach(button=>
+   button.setAttribute('aria-pressed',String(button.dataset.makeup===id)));
+  $('v121-makeup-status').textContent='選択中：'+label+'。チーク・唇・アイシャドウを3Dに反映しています。';
+ }});
+ document.querySelectorAll('[data-makeup]').forEach(button=>{
+  button.disabled=false;
+  button.addEventListener('click',()=>faceMakeup.select(button.dataset.makeup));
+ });
  expressionPlayer=attachV121Expressions({neutral,faceTune,onChange:mode=>{
   document.querySelectorAll('[data-expression]').forEach(btn=>
    btn.setAttribute('aria-pressed',String(btn.dataset.expression===mode)));
@@ -277,7 +309,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：眉を目に近づけ横顔の頬を補正。肌色・化粧と表情アニメーションを実3Dへ反映しました。');
+ update('status','顔 v121：化粧を5パターンで切替可能。口の開閉・5母音を口腔・歯・舌を含む実3Dメッシュで再生できます。');
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
  const draw=(now=0)=>{
