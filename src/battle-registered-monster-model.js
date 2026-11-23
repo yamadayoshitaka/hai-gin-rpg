@@ -5,6 +5,8 @@
  * No missing actor while loading, no per-instance 1000v1000 GLB request.
  */
 import * as THREE from 'three';
+import {createCosplayedHumanoidMonster}
+ from './monster-character-cosplay.js?v=seraph-forest-quality-v5-20261122';
 import {monsterBattleLengthCells,monsterBattleLengthScale} from './monster-battle-display-size.js';
 import {createMonsterModel,disposeMonsterSculpture}
  from './monster-geometry.js?v=monster-all50-pbr-v1-20261121';
@@ -36,14 +38,58 @@ export function createRegisteredBattleMonster(spec,{
  root.userData.requestedMesh=choice.selected;
  root.userData.selectedMesh='legacy';
  root.userData.modelLoadStatus='procedural-ready';
- let native=createMonsterModel(spec,{detail}),external=null;
+ let native=null,external=null,cosplayHandle=null,statusMarker=null;
  let disposed=false,lastAction='idle',lastTime=null;
  const lengthCells=monsterBattleLengthCells(spec.id);
- const restBounds=lengthCells?boundsOf(native):null;
- if(lengthCells)root.scale.setScalar(monsterBattleLengthScale(restBounds,cellSize,lengthCells));
- root.add(native);
- startMonsterAction(native,'idle',0);
+ let restBounds=null;
  let ready=Promise.resolve(root);
+ if(choice.kind==='canonical-humanoid'){
+  // The editor and summoned bestiary both use this precise rig+costume
+  // pipeline for all 16 humanoids, including m031's real sculpted bones.
+  // Do not instantiate the retired generic upright torso even temporarily.
+  root.userData.modelLoadStatus='loading-canonical-humanoid';
+  cosplayHandle=createCosplayedHumanoidMonster(spec,{
+   detail,withoutFallback:true
+  });
+  root.add(cosplayHandle.root);
+  statusMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.13,0),
+   new THREE.MeshBasicMaterial({color:0xd7ab66}));
+  statusMarker.name='canonical-humanoid-load-indicator';
+  statusMarker.position.y=1;
+  root.add(statusMarker);
+  cosplayHandle.start('idle',0);
+  ready=cosplayHandle.ready.then(result=>{
+   if(disposed)return root;
+   if(result.source==='canonical-character-cosplay'){
+    statusMarker.parent?.remove(statusMarker);
+    statusMarker.geometry.dispose();statusMarker.material.dispose();statusMarker=null;
+    root.userData.selectedMesh='canonical-character-cosplay';
+    root.userData.modelLoadStatus='canonical-humanoid-ready';
+    root.traverse(part=>{
+     if(part.isMesh){part.castShadow=true;part.receiveShadow=true;}
+    });
+   }else{
+    root.userData.modelLoadStatus='canonical-humanoid-failed';
+    root.userData.modelLoadError=result.reason||result.source;
+    if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
+   }
+   return root;
+  }).catch(error=>{
+   if(!disposed){
+    root.userData.modelLoadStatus='canonical-humanoid-failed';
+    root.userData.modelLoadError=String(error?.message||error);
+    if(statusMarker)statusMarker.material.color.setHex(0xcf5964);
+   }
+   return root;
+  });
+ }else{
+  // Nonhumanoid catalog and combat use the same authored species sculpt.
+  native=createMonsterModel(spec,{detail});
+  restBounds=lengthCells?boundsOf(native):null;
+  if(lengthCells)root.scale.setScalar(monsterBattleLengthScale(restBounds,cellSize,lengthCells));
+  root.add(native);
+  startMonsterAction(native,'idle',0);
+ }
  if(choice.externalSource){
   root.userData.modelLoadStatus='loading-optional-source';
   const source=choice.externalSource;
@@ -94,13 +140,15 @@ export function createRegisteredBattleMonster(spec,{
     'hit','leap','defeat','guard'].includes(action)?action:'idle';
   if(next!==lastAction){
    if(external)external.play(technique?.base||next);
+   else if(cosplayHandle)cosplayHandle.start(next,time);
    else if(native)startMonsterAction(native,next,time);
    lastAction=next;
   }
   if(external){
    const dt=lastTime==null?0:Math.max(0,Math.min(.10,time-lastTime));
    external.update(dt);
-  }else if(native)animateMonsterModel(native,time);
+  }else if(cosplayHandle)cosplayHandle.update(time);
+  else if(native)animateMonsterModel(native,time);
   lastTime=time;
   return true;
  }
@@ -108,11 +156,16 @@ export function createRegisteredBattleMonster(spec,{
   if(disposed)return;
   disposed=true;
   if(external){external.dispose();external=null;}
+  if(cosplayHandle){cosplayHandle.dispose();cosplayHandle=null;}
   if(native){disposeMonsterSculpture(native);native=null;}
+  if(statusMarker){
+   statusMarker.parent?.remove(statusMarker);
+   statusMarker.geometry.dispose();statusMarker.material.dispose();statusMarker=null;
+  }
   root.parent?.remove(root);
  }
  return {root,choice,ready,update,dispose,
-  currentModel:()=>external?.root||native,
+  currentModel:()=>external?.root||cosplayHandle?.root||native,
   get source(){return root.userData.selectedMesh;}
  };
 }

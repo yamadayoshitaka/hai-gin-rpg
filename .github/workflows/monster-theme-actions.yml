@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'src/monster-*'
+      - 'src/battle-registered-monster-model.js'
+      - 'src/creature-game-model-routing.js'
+      - 'qa/battle-monster-catalog-parity.test.mjs'
+      - 'tactics-wireframe.html'
       - 'src/nonhuman-model-quality.js'
       - 'src/creature-master-runtime.js'
       - 'monster-manager.html'
@@ -37,6 +41,8 @@ jobs:
           node --check src/monster-summon-renderer.js
           node --check src/battle-registered-monster-model.js
           node --check src/nonhuman-model-quality.js
+      - name: Verify bestiary models match real enemy battle and summon mapping
+        run: npm run test:monster-battle-sync
       - name: Verify 50 live low LODs, 250 theme actions and quality stages
         run: node --test qa/monster-all-50-theme-actions.test.mjs
       - name: Verify protected canonical humanoid joints and gargoyle

@@ -79,6 +79,40 @@ export const MONSTER_CATALOG=Object.freeze(data.map(([id,name,family,element,rar
  });
 }));
 export const MONSTER_BY_ID=Object.freeze(Object.fromEntries(MONSTER_CATALOG.map(item=>[item.id,item])));
+/** The same per-device bestiary save used by monster-manager.html.
+ * The canonical 50 species (IDs, family, skills and spawn pool) cannot be
+ * replaced by local edits; only the editor's validated cosmetic/stat fields.
+ * Exported JSON and editor-only comparison GLBs are not automatically shipped.
+ */
+export const MONSTER_EDITOR_STORAGE_KEY='hai-gin.monster-manager.v1';
+export function resolveMonsterGameSpec(id,{storage=globalThis.localStorage}={}){
+ const base=MONSTER_BY_ID[id];
+ if(!base)return null;
+ let edit=null;
+ try{
+  const saved=JSON.parse(storage?.getItem?.(MONSTER_EDITOR_STORAGE_KEY)||'{}');
+  if(saved&&typeof saved==='object'&&!Array.isArray(saved))edit=saved[id];
+ }catch{}
+ if(!edit||typeof edit!=='object'||Array.isArray(edit))return base;
+ const number=(v,f,min,max)=>Number.isFinite(Number(v))?
+  Math.max(min,Math.min(max,Math.round(Number(v)))):f;
+ const stats=edit.stats&&typeof edit.stats==='object'&&!Array.isArray(edit.stats)?{
+  hp:number(edit.stats.hp,base.stats.hp,1,99999),
+  attack:number(edit.stats.attack,base.stats.attack,1,9999),
+  defense:number(edit.stats.defense,base.stats.defense,0,9999),
+  speed:number(edit.stats.speed,base.stats.speed,1,999)
+ }:base.stats;
+ const validColor=c=>typeof c==='string'&&/^#[a-f0-9]{6}$/i.test(c);
+ const colors=edit.colors&&typeof edit.colors==='object'&&!Array.isArray(edit.colors)?{
+  base:validColor(edit.colors.base)?edit.colors.base:base.colors.base,
+  highlight:validColor(edit.colors.highlight)?edit.colors.highlight:base.colors.highlight,
+  accent:validColor(edit.colors.accent)?edit.colors.accent:base.colors.accent
+ }:base.colors;
+ return {...base,
+  name:typeof edit.name==='string'?edit.name.slice(0,40).trim()||base.name:base.name,
+  level:edit.level==null?base.level:number(edit.level,base.level,1,100),
+  stats,colors};
+}
 export function monsterList({family='',element='',keyword=''}={}){
  const q=String(keyword).trim().toLowerCase();
  return MONSTER_CATALOG.filter(m=>(!family||m.family===family)&&(!element||m.element===element)&&(!q||[m.id,m.name,m.skill,m.description].some(s=>s.toLowerCase().includes(q))));
