@@ -47,7 +47,7 @@ try{
   'The new portrait must update real head vertices, not only shaders');
  assert.equal(first.sourceUntouched,true);
  const sig=()=>p.evaluate(()=>window.__faceExpressionQA.geometrySignature());
- const firstSig=await sig();
+ let firstSig;
  const captureViews=async tag=>{
   for(const [id,name] of [['front','front'],['threeQuarter','45deg'],['side','side']]){
    await p.locator('#'+id).click();
@@ -56,6 +56,7 @@ try{
  };
  await captureViews('reference-hair-on');
  await p.locator('#wig').click();
+ firstSig=await sig(); // identical hair/scalp state across rebuild
  await captureViews('reference-hair-off');
  await p.locator('#faceExpression').selectOption('softSmile');
  await picture(p,'reference-smile-hair-off');
