@@ -98,6 +98,11 @@ def sculpt(p):
     bridge=gauss(y,.285,.038)*gauss(ax,.022,.015)*front
     ala=gauss(y,.248,.018)*gauss(ax,.031,.013)*front
     tip=gauss(y,.251,.015)*gauss(x,0,.021)*smooth(z,.118,.158)
+    # A modest bridge-to-tip fairing removes the disjoint bulbous tip
+    # without touching eye sockets or flattening the nostril apertures.
+    root=gauss(y,.303,.022)*gauss(ax,.011,.009)*smooth(z,.071,.131)
+    upper_lid=(gauss(x,-.043,.014)+gauss(x,.043,.014))*gauss(y,.314,.005)*smooth(z,.090,.128)
+    lower_lid=(gauss(x,-.043,.014)+gauss(x,.043,.014))*gauss(y,.305,.004)*smooth(z,.090,.128)
     # Upper and lower vermilion must remain separate from the chin surface.
     lips_f=smooth(z,.095,.143)
     lip_width=gauss(x,0,.037)
@@ -106,7 +111,7 @@ def sculpt(p):
     cupid=gauss(y,.244,.006)*gauss(ax,.011,.007)*lips_f
     corners=gauss(y,.232,.012)*gauss(ax,.042,.014)*lips_f
     nx=x*(1-.029*temple-.026*frontal+.008*lower_cheek
-          -.055*jaw-.025*chin_corners-.055*ala-.028*bridge)
+          -.055*jaw-.025*chin_corners-.064*ala-.029*bridge)
     # Retract the frontmost menton and shorten its lower outline together.
     # A feathered jaw-to-submental bridge prevents a shelf above the neck;
     # the masks are absent at the vermilion and at the cervical base.
@@ -116,12 +121,14 @@ def sculpt(p):
                   (1.-smooth(y,.211,.223))*(1.-smooth(ax,.053,.085)))
     submental=(gauss(y,.153,.030)*gauss(ax,.065,.057)*side*
                 smooth(y,.090,.131))
-    ny=y+.0055*chin+.0008*submental+.0006*jaw-.00045*frontal+.0006*under_eye
+    ny=(y+.0055*chin+.0008*submental+.0006*jaw
+        -.00045*frontal+.0006*under_eye
+        +.00072*upper_lid-.00040*lower_lid)
     nz=(z-.0031*malar+.0018*under_eye
         +.0017*lower_cheek+.0013*jaw
         -.0145*chin_profile-.0030*submental
-        -.0036*tip-.0013*ala-.0009*bridge
-        +.0015*upper+.0018*lower+.0006*cupid
+        -.0036*tip-.0015*ala-.0013*bridge-.00055*root
+        +.0015*upper+.00075*lower+.0006*cupid
         -.0007*corners)
     return (nx,ny,nz),{
       'temple':temple,'malar':malar,'jaw':jaw,'tip':tip,
