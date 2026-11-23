@@ -693,3 +693,21 @@
  }
  #panel.formation-command-ui:has(.innGearCatalog) .sortieWizardHeader span{display:none}
 }
+
+/* The free-formation escape hatch stays visible below the one-card picker. */
+#panel.formation-command-ui .innWizardFreeFormation{display:grid;gap:2px;flex-shrink:0}
+#panel.formation-command-ui .innWizardFreeFormation button{
+ min-height:39px!important;padding:6px 10px!important;font-size:13px!important;
+ background:#264862!important;border:1px solid #83adbf!important;
+ color:#fff2d9!important;border-radius:8px
+}
+#panel.formation-command-ui .innWizardFreeFormation button.selected{
+ background:#70532c!important;border-color:#e3c38c!important
+}
+#panel.formation-command-ui .innWizardFreeFormation small{
+ font-size:10px!important;line-height:1.2;color:#c9d7e0
+}
+.trainingFormationFreeNotice{display:grid;align-content:center;justify-items:center;
+ min-height:76px;padding:9px;text-align:center;font-size:12px;color:#ffe2a9;
+ background:#1b3447;border:1px dashed #8496a5;border-radius:8px}
+.trainingFormationFreeNotice small{color:#d5dae0;font-size:10px}
