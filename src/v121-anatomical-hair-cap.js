@@ -80,7 +80,8 @@ function buildCrownFiberRibbons(THREE,scalpGeometry,box,color){
    // Thin, raised hair locks follow the real v121 surface normal.
    let tx=p.nz,tz=-p.nx;
    const ln=Math.hypot(tx,tz)||1;tx/=ln;tz/=ln;
-   const bump=.0042+.0007*Math.cos(s*1.81);
+   // Inspection underlay must stay below the original GLB hair canopy.
+   const bump=.00065+.0002*Math.cos(s*1.81);
    const half=width*.5*Math.pow(1-j/Math.max(9,maxLength/step),.55);
    const centre=[p.x+p.nx*bump,p.y+p.ny*bump,p.z+p.nz*bump];
    const at=coords.length/3;
@@ -156,9 +157,9 @@ export function createV121AnatomicalHairCap(THREE,skinFace,{color='#c5a36f'}={})
  const p=geom.getAttribute('position');
  const uv=new Float32Array(p.count*2);
  for(let i=0;i<p.count;i++){
-  p.setXYZ(i,p.getX(i)+normal.getX(i)*.003,
-   p.getY(i)+normal.getY(i)*.003,
-   p.getZ(i)+normal.getZ(i)*.003);
+  p.setXYZ(i,p.getX(i)+normal.getX(i)*.0005,
+   p.getY(i)+normal.getY(i)*.0005,
+   p.getZ(i)+normal.getZ(i)*.0005);
   uv[i*2]=clamp((p.getX(i)-box.min.x)/(box.max.x-box.min.x),0,1)*2;
   uv[i*2+1]=clamp((crownY-p.getY(i))/Math.max(.08,spanY),0,1)*2.5;
  }

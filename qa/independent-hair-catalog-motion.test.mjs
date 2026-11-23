@@ -106,13 +106,19 @@ test('3D studio inline module compiles (prevents blank mobile canvas)',()=>{
  assert.equal(result.status,0,result.stderr);
 });
 
-test('user-provided adjusted GLB metadata matches the default portrait preset',async()=>{
+test('user-uploaded adjusted GLB audit remains independent from the evolving public v121 slider defaults',async()=>{
  const audit=JSON.parse(read('data/v121-adjusted-head-audit.json'));
  const {V121_REFERENCE_PRESET}=await import('../face-v121-parametric-sliders.js');
  assert.equal(audit.bytes,2657228);
  assert.equal(audit.faceVertices,13455);
  assert.equal(audit.meshes,8);
- assert.deepEqual(audit.faceReferencePreset,V121_REFERENCE_PRESET);
+ // The uploaded binary is immutable. Revisions to the live v121 default
+ // (including added cheek/chin sliders) must never overwrite its audit.
+ assert.equal(audit.sha256,'76a609f1c9fb10b8953c5703bbfd3e5b7682fe136341dfb989de0c992127bb56');
+ for(const part of ['eyes','nose','mouth','brows']){
+  assert.ok(audit.faceReferencePreset[part],part+' missing from original audit');
+  assert.ok(V121_REFERENCE_PRESET[part],part+' missing from public default');
+ }
  assert.match(audit.eyebrowNode,/EYEBROW/);
  assert.ok(audit.worldBoundsMeters.min[1]<-.18);
  assert.ok(audit.worldBoundsMeters.max[1]>.18);
