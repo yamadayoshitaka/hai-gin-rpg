@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {join} from 'node:path';
-import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig,buildReferenceFringe,createRealHeadWireframe} from '../src/wig-glb-fit-v1.js';
+import {calculateWigFit,PUBLIC_WIG_SOURCES,extractUnskinnedWig,buildReferenceFringe,createRealHeadWireframe,measureRealHead,measureWigCrown} from '../src/wig-glb-fit-v1.js';
 
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const html=read('wig-studio.html');
@@ -14,7 +14,7 @@ const pipeline=read('.github/workflows/publish-pages.yml');
 test('the old corrupt helmet-and-fringe studio redirects to an independent wig-only screen',()=>{
  assert.match(retired,/location\.replace\('\.\/wig-studio\.html\?new=1/);
  assert.match(html,/<title>灰銀のレゾナンス｜新・ウィッグ工房<\/title>/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=3/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=4/);
  assert.doesNotMatch(html,/head-derived-hair-modular-v11\.js|hair-asset-studio\.html\?hair/);
  assert.doesNotMatch(html,/src\/female-hair|src\/head-derived-hair-sculpt/);
  assert.match(html,/assets\/generated\/neutral-face-v121\.glb/);
@@ -116,7 +116,7 @@ test('the wig-only viewer drops the old face wireframe and inspects real static 
  assert.doesNotMatch(html,/function scalpWire\(/);
  assert.doesNotMatch(html,/headGuide/);
  assert.doesNotMatch(html,/id="guide"/);
- assert.match(html,/src\/wig-glb-fit-v1\.js\?v=3/);
+ assert.match(html,/src\/wig-glb-fit-v1\.js\?v=4/);
 });
 
 test('separate bangs retain physical thickness, UVs, slider effects and optional middle part',async()=>{
@@ -172,4 +172,58 @@ test('v121 preview wire is real head topology and never included in wig GLB',asy
   assert.match(html,new RegExp('id="'+id+'"'));
  wire.userData.dispose();
  headMesh.geometry.dispose();headMesh.material.dispose();
+});
+
+test('actual v121 scalp measurement excludes ears/neck and projects strand paths onto its front surface',async()=>{
+ const THREE=await import('three');
+ const geo=new THREE.SphereGeometry(.10,80,64);
+ geo.scale(.95,1.15,1);
+ geo.translate(0,.11,0);
+ const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial());
+ const root=new THREE.Group();root.add(mesh);
+ const head=measureRealHead(THREE,root);
+ assert.ok(head.scalpVertices>100);
+ assert.ok(head.vertices>5000);
+ assert.ok(Math.abs(head.frontAt(0,head.top-.05))>.03);
+ const before=head.frontAt(0,head.top-.042);
+ const below=head.frontAt(0,head.top-.125);
+ assert.ok(Number.isFinite(before)&&Number.isFinite(below));
+ const bangs=buildReferenceFringe(THREE,head,{style:'blunt',lengthMm:55,forwardMm:0});
+ const coordinates=bangs.children[0].geometry.getAttribute('position');
+ const first=coordinates.getZ(0),end=coordinates.getZ(15*8);
+ assert.ok(Math.abs(first-end)>.002,'bangs curve around the actual forehead instead of a front-facing slab');
+ const wire=createRealHeadWireframe(THREE,head);
+ const vertices=wire.geometry.getAttribute('position');
+ let minY=Infinity;
+ for(let i=0;i<vertices.count;i++)minY=Math.min(minY,vertices.getY(i));
+ assert.ok(minY>=head.top-.110-.00001,'the wire must not display neck/chin or lower face');
+ assert.equal(wire.material.transparent,true);
+ assert.ok(wire.material.opacity<.5);
+ bangs.userData.dispose();wire.userData.dispose();
+ mesh.geometry.dispose();mesh.material.dispose();
+});
+test('CC0 crown uses both lateral and depth measurements without deforming imported wig geometry',async()=>{
+ const THREE=await import('three');
+ const geo=new THREE.SphereGeometry(.11,64,40);
+ geo.scale(1,1.35,.85);
+ geo.translate(0,.18,0);
+ const input=geo.getAttribute('position').array.slice();
+ const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial());
+ const group=new THREE.Group();group.add(mesh);
+ const bbox=new THREE.Box3().setFromObject(group);
+ const crown=measureWigCrown(THREE,group,bbox);
+ assert.ok(crown?.width>.03&&crown.depth>.02);
+ const head={cx:0,cz:0,top:.30,rx:.095,rz:.09};
+ const fit=calculateWigFit(bbox,head,{widthRatio:1.04,crown});
+ assert.ok(fit.capWidth>=head.rx*2*1.04-.00001);
+ assert.ok(fit.capDepth>0&&Number.isFinite(fit.z));
+ assert.ok(fit.scale>0&&Number.isFinite(fit.scale));
+ assert.deepEqual(geo.getAttribute('position').array.slice(),input,
+  'original CC0 geometry must not be modified by fitting');
+ assert.match(html,/crown:rawCrown/);
+ assert.match(html,/measureWigCrown\(THREE,wigContent,rawBox\)/);
+ assert.match(html,/id="bangLength"[^>]+value="55"/);
+ assert.match(html,/id="bangForward"[^>]+value="0"/);
+ assert.match(html,/wip'\)\.hidden=true/);
+ mesh.geometry.dispose();mesh.material.dispose();
 });
