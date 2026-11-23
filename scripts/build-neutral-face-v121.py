@@ -285,3 +285,4 @@ if __name__=='__main__':
     subprocess.run([sys.executable,'scripts/refine-neutral-face-v121.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/add-v121-anatomical-eye-details.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/finish-v121-natural-folds.py',str(args.out)],check=True)
+    subprocess.run([sys.executable,'scripts/add-v121-face-expressions.py',str(args.out)],check=True)
