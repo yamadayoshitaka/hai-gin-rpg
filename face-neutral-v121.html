@@ -40,7 +40,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <main>
 <nav><a href="./face-neutral-v120.html?v=120">従来の中立顔 v120</a>　｜　<a href="./face-mesh-studio.html">顔・髪エディターへ戻る</a></nav>
 <h1>参考画像基準・女性スキンヘッド v121</h1>
-<p>提示された肌・目元・唇の参考画像を目標に、顔輪郭と頬・鼻・顎を造形し直した女性の中立顔です。髪は付けず、2048pxの肌色・粗さ・微細凹凸のPBRテクスチャをGLBに内蔵。表情は後から追加します。</p>
+<p>提示された肌・目元・唇の参考画像を目標に、顔輪郭と頬・鼻・顎を造形し直した女性の中立顔です。髪は付けず、2048pxの肌PBRに加え、実3Dメッシュのアイライン・上下まつ毛・眉毛をGLBに内蔵。表情は後から追加します。</p>
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
 <canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
@@ -78,7 +78,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-uv-eye-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-eye-details-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={};
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -150,8 +150,8 @@ async function init(){
  neutral=gltf.scene;neutral.name='V121_CC0_BASED_NEUTRAL_MASTER';
  neutral.traverse(o=>{
   if(!o.isMesh)return;
-  if(o.geometry?.getAttribute('position')?.count>13000)face=o;
-  else eyeNodes.push(o);
+  if(o.geometry?.getAttribute('position')?.count===13455)face=o;
+  else if(/GLOBE_UV|EYELINER|LID_CREASE|EYELASHES/.test(o.name))eyeNodes.push(o);
  });
  if(!face||eyeNodes.length<2)throw Error('正規の頭部・眼球メッシュを取得できません');
  rigMap=gltf.parser.json.meshes?.[0]?.extras||{};
@@ -189,7 +189,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：眼球UV・2048px PBR・輪郭造形更新済み（スキンヘッド・中立）');
+ update('status','顔 v121：アイライン・上下まつ毛・眉毛の実メッシュを追加済み（2048px肌PBR・スキンヘッド・中立）');
  document.documentElement.dataset.neutralFaceReady='v121';
  const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
  draw();
