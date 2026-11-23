@@ -1165,6 +1165,8 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v=battle-catalog-parity-20261123';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
+import {formationCombatIntent,isHighGroundFiringJob} from './src/formation-driven-ai.js?v=formation-ai-v1-20261124';
+import {reachableRoomExit} from './src/formation-ai-indoor-route.js?v=room-exit-v1-20261124';
 import {createRegisteredBattleMonster}
  from './src/battle-registered-monster-model.js?v=battle-catalog-parity-20261123';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=20261117-horse-saddle-fix1';
@@ -3721,7 +3723,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const selectedPreview=battleParams.get('monster');
  const previewMonsterId=selectedPreview&&MONSTER_CATALOG.some(m=>m.id===selectedPreview)?
    selectedPreview:null;
- const monsterId=team===1&&i===0&&previewMonsterId?previewMonsterId:
+ const monsterId=team===1&&i<6&&previewMonsterId&&!storyRequest?previewMonsterId:
    storyRequest?.enemyMode==='monsters'&&team===1?
      storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?resolveMonsterGameSpec(monsterId):null;
@@ -3741,6 +3743,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
   commanderId:storyUnit?.commanderId??'provisional',armyGroupId:storyUnit?.armyGroupId??null,
   formationBaseStats:withoutFormation,isStrategist:Boolean(storyUnit?.isStrategist),isPlayerHero:Boolean(storyUnit?.isPlayerHero),
   isSquadLeader:!storyRequest&&!TOWN_MODE&&i%Math.max(5,Math.ceil(TEAM_SIZE/10))===0,
+  formationType:storyUnit?.formationType??null,formationCell:storyUnit?.formationCell??null,
   appearanceOptions:storyUnit?{gender:storyUnit.gender,ageBand:storyUnit.ageBand,
    bodyType:storyUnit.bodyType,faceId:storyUnit.faceId,hairStyle:storyUnit.hairStyle,
    hairColor:storyUnit.hairColor}:null};
@@ -4637,36 +4640,31 @@ function moveActor(a,goal,dt,stop){
   const goalOccluded=routeOccludedByTerrain(a.cell,finalGoalCell,a);
   if(d<=stop&&!goalOccluded&&
      (!insideAnyHut||goalInSameHut||hutShotClear(p,goal))&&!crossingWaypoint(a,goal))return;
-  // A unit indoors must reach the south doorway before chasing outside targets.
-  const buildings=[
-   {bounds:hutBounds,center:75.5},
-   {bounds:secondHutBounds,center:158.5}
-  ];
-  for(const b of buildings){
-   const inside=(x,z)=>x>b.bounds.minX&&x<b.bounds.maxX&&z>b.bounds.minZ&&z<b.bounds.maxZ;
+  // Indoor soldiers exit through a REAL, reachable doorway. An arbitrary
+  // south-door guess used to strand whole squads behind furniture or walls.
+  for(const bounds of [hutBounds,secondHutBounds]){
+   const inside=(x,z)=>x>bounds.minX&&x<bounds.maxX&&z>bounds.minZ&&z<bounds.maxZ;
    if(!inside(a.cell.x,a.cell.z)||inside(finalGoalCell.x,finalGoalCell.z))continue;
-   // Units pursuing a goal OUTSIDE the room use the real doorway.
-   const doorwayCandidates=[Math.floor(b.center),Math.ceil(b.center)];
-   let step=null;
-   // Maintain one doorway target until its incremental A* completes.
-   // Switching to the next door (or to staging) in the same AI tick would
-   // destroy the saved frontier and strand units forever at a busy entrance.
-   doorwayCandidates.sort((x,y)=>Number(y===a._exitRoute?.goalX)-Number(x===a._exitRoute?.goalX));
-   for(const x of doorwayCandidates){
-    const candidate=exitPathStep(a,{x,z:b.bounds.maxZ+1});
-    if(candidate&&availableCell(candidate.x,candidate.z,a)){step=candidate;break}
-    if(a._exitRoute?.search)break;
+   const roomKey=[bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ].join(':');
+   if(a._indoorExit?.roomKey!==roomKey||
+      (!a._indoorExit?.goal&&elapsed>=(a._indoorExit?.retryAt??0))||
+      (a._indoorExit?.goal&&!traversableCell(a._indoorExit.goal.x,a._indoorExit.goal.z,a))){
+    const exit=reachableRoomExit(a.cell,bounds,
+     (x,z)=>traversableCell(x,z,a),{limit:4000});
+    a._indoorExit={roomKey,goal:exit,retryAt:elapsed+1.5};
+    a._exitRoute=null;
    }
-   if(step&&startCellMove(a,step.x,step.z)){a.jumping=false;return}
-   if(a._exitRoute?.search){a.poseMoving=false;return;}
-   // If the doorway is occupied, stage units near it without overlapping.
-   const staging={x:Math.round(b.center),z:b.bounds.maxZ-1};
-   if(a.cell.x!==staging.x||a.cell.z!==staging.z){
-    const candidate=exitPathStep(a,staging);
-    if(candidate&&startCellMove(a,candidate.x,candidate.z)){a.jumping=false;return}
+   const targetExit=a._indoorExit?.goal;
+   if(!targetExit){a.poseMoving=false;return;}
+   const step=exitPathStep(a,targetExit);
+   if(step&&availableCell(step.x,step.z,a)&&startCellMove(a,step.x,step.z)){
+    a.jumping=false;return;
    }
-   recoverBlockedActor(a,goal);return;
+   // Keep one incremental route frontier until the live doorway is clear.
+   // Switching goals or shuffling between staging cells caused ping-pong.
+   a.poseMoving=false;return;
   }
+  a._indoorExit=null;
   const crossing=crossingWaypoint(a,goal);
   if(crossing){
    const target=crossing;
@@ -12727,8 +12725,8 @@ function animate(){
     continue;
    }
    if(a.hp<=0)continue;
-   if(!massSim&&a._distantCard){
-    // The same high-quality source outfit is already on one GPU card.
+   if(!massSim&&a._distantCard&&!a.monsterSpec){
+    // Monsters stay on the registered 3D meshes, never a human crowd card.
     a.root.visible=false;continue;
    }
    if(!massSim&&!a.floorTravel&&!(a.indoorFloor>1)&&
