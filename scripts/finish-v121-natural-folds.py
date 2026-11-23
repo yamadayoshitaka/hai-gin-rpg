@@ -203,6 +203,58 @@ def smooth_chin(points,faces):
     return result,smoothed
 
 
+
+def correct_chin_profile(points):
+    """Rebuild v121 mandibular outline against the *finished* lower/upper lip.
+
+    Upstream sculpting uses coordinate-local gaussians.  They can all run
+    successfully while the final frontal chin is as far forward as the lips.
+    A measured sagittal guardrail avoids that visual regression and feathers
+    the correction out at the cheeks and toward the neck.
+    """
+    lip=[z for x,y,z in points
+         if abs(x)<.026 and .179<y<.215 and z>.105]
+    chin=[z for x,y,z in points
+          if abs(x)<.032 and .118<y<.153 and z>.080]
+    if len(lip)<12 or len(chin)<12:
+        raise ValueError('Cannot measure v121 sagittal lip/chin profile')
+    lip_front=max(lip)
+    chin_before=max(chin)
+    clearance=.0170
+    displacement=max(0.,chin_before-(lip_front-clearance))
+    if displacement>.038:
+        raise ValueError('Chin correction too large; verify face coordinates')
+    result=[]
+    changed=0
+    for x,y,z in points:
+        ax=abs(x)
+        # Flat-topped core with smooth C1 lateral/vertical fades. There is
+        # no displacement on the red lip, lateral cheek or cervical base.
+        lateral=1.-fade(ax,.034,.083)
+        vertical=fade(y,.080,.116)*(1.-fade(y,.154,.182))
+        frontal=fade(z,.035,.086)
+        w=lateral*vertical*frontal
+        # Lift and round the menton a little without turning the jaw into
+        # a pointed wedge. The neck y<.080 does not move at all.
+        lift=.0020*bell(y,.124,.023)*(1.-fade(ax,.037,.075))*vertical
+        result.append((x,y+lift,z-displacement*w))
+        if displacement*w>.00005 or lift>.00005:changed+=1
+    chin_after=max(z for x,y,z in result
+                   if abs(x)<.032 and .118<y<.153 and z>.080)
+    if chin_after>lip_front-clearance+.0006:
+        raise ValueError('v121 sagittal chin profile remains protrusive')
+    return result,{
+        'version':'female-v121-sagittal-guard-20261123',
+        'lipFrontZ':round(lip_front,6),
+        'chinBeforeZ':round(chin_before,6),
+        'chinAfterZ':round(chin_after,6),
+        'lipChinDepthClearance':clearance,
+        'vertexCorrectionZ':round(displacement,6),
+        'changedVertices':changed,
+        'neutralUpperLipUnaffected':True,
+        'neckBelow080Unaffected':True
+    }
+
 def finish(path):
     g,b=read_glb(path)
     face=g['meshes'][0]
@@ -244,6 +296,8 @@ def finish(path):
             lip_vertices.append(i)
     if len(nasal_vertices)<20 or len(lip_vertices)<30:
         raise ValueError('Nose and vermilion must have actual displaced vertices')
+    updated,chin_profile=correct_chin_profile(updated)
+    meta['sagittalChinProfile']=chin_profile
     # Keep the original POSITION vertex order, immutable UVs and triangles.
     p['attributes']['POSITION']=add_vec3(g,b,updated)
     p['attributes']['NORMAL']=add_vec3(g,b,normals(updated,faces))
