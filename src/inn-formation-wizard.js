@@ -26,14 +26,19 @@ const purpose=id=>FORMATION_BATTLE_PURPOSES[id]||{purpose:'汎用隊列',movemen
 // The preview represents this team's occupied job slots, not a fictional
 // three-job template. The manoeuvre may still have three chronological phases.
 const renderTeamFormationPreview=(id,game,team)=>{
- const slots=Array.from({length:3},(_,i)=>{
-  const source=game.campaign.squads.find(s=>String(s.id)===String(team.slots[i]));
-  const count=source?Number(team.counts[String(source.id)]||0):0;
-  return count>0?{label:source.job+' '+count+'人'}:null;
- });
+ const eligibility=inspectInnFormation(game,team.id,id);
+ // Never illustrate a named formation that the selected jobs cannot execute.
+ if(!eligibility.eligible)return '<div class="trainingFormationFreeNotice" role="note">'+
+  '現在のジョブではこの陣形は成立しません。自由陣形で配置します。'+
+  '<small>不足：'+esc(eligibility.reason)+'</small></div>';
+ const byId=new Map(game.campaign.squads.map(s=>[String(s.id),s]));
+ const matched=eligibility.assignment||[];
  return renderFormationSignaturePreview(id,{
-  activeSlots:slots.flatMap((slot,i)=>slot?[i]:[]),
-  labels:slots.map((slot,i)=>slot?.label||'第'+(i+1)+'枠（空き）')
+  activeSlots:matched.map((_,i)=>i),
+  labels:matched.map(sid=>{
+   const source=byId.get(String(sid));
+   return (source?.job||'ジョブ')+' '+Number(team.counts[String(sid)]||0)+'人';
+  })
  });
 };
 
@@ -151,7 +156,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const currentPage=Math.max(0,Math.min(maxPage,Number(rosterFormationPage)||0));
   const display=entries.slice(currentPage*per,(currentPage+1)*per);
   const previewEntry=display.find(entry=>entry.id===rosterPreviewId)||
-   display.find(entry=>entry.id===team.formation)||display[0];
+   display.find(entry=>entry.id===team.formation)||
+   display.find(entry=>entry.eligible)||display[0];
   const previewId=previewEntry?.id;
   const preview=previewId?SORTIE_FORMATIONS[previewId]:null;
   const plan=previewId?signatureStrategyFor(previewId):null;
@@ -325,7 +331,10 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    '<div class="sortieWizardPager">'+button('data-inn-wizard-formation-page="-1" '+(!page?'disabled':''),'◀ 前の陣形')+
    '<small>'+(page+1)+' / '+pages+'</small>'+
    button('data-inn-wizard-formation-page="1" '+(page>=pages-1?'disabled':''),'次の陣形 ▶')+'</div>'+
-   '<small class="innWizardInfo">必要なジョブ・レアリティ・人数が足りない陣形は選べません。高性能ほど厳しい条件です。</small>';
+   '<div class="innWizardFreeFormation">'+
+    button('data-inn-wizard-formation="free"','自由陣形を選択（対象ジョブ不一致・条件不足でも編成を維持）',team.formation==='free')+
+    '<small>登録済みジョブ・人数・リーダーは変更しません。専用陣形補正なし。</small></div>'+
+   '<small class="innWizardInfo">陣形は配置済みジョブ・最低人数・レアリティで判定。成立しない場合は自由陣形のまま出撃します。</small>';
   back='leader';
  }else{
   const f=SORTIE_FORMATIONS[team.formation],brief=purpose(team.formation);
