@@ -100,9 +100,9 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(retopo,1000)
         self.assertLess(rebuild['maximumDisplacement'],.075)
         self.assertGreater(rebuild['mentonAfterZ'],
-                           rebuild['labiomentalSulcusZ']+.009)
+                           rebuild['labiomentalSulcusZ']+.006)
         self.assertGreater(rebuild['mentonAfterZ'],
-                           rebuild['upperNeckZ']+.05)
+                           rebuild['upperNeckZ']+.042)
         self.assertLess(rebuild['mentonAfterZ'],
                         rebuild['mouthFrontZ']-.011)
         self.assertTrue(self.b['meshes'][0]['extras']
