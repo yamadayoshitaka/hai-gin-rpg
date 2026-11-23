@@ -57,6 +57,8 @@ jobs:
         if: always()
         with:
           name: face-v120-front-side
-          path: qa/screenshots/face-v120/*.png
+          path: |
+            qa/screenshots/face-v120/*.png
+            qa/screenshots/face-v120/*.glb
           if-no-files-found: ignore
           retention-days: 7
