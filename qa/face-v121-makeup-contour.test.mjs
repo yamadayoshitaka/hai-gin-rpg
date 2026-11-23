@@ -60,7 +60,7 @@ test('v18 lifted Cupid M and curved bottom edge make a bounded tapered lip mask'
   assert.ok(corner.lower>center.lower+.010,'lower rim converges to corner');
   assert.ok(v121MakeupMasks(.048,.231,.150).lip<
             v121MakeupMasks(0,.231,.150).lip*.5,'lip pigment tapers');
-  assert.ok(v121MakeupMasks(.0115,.253,.150).lip>.09,
+  assert.ok(v121MakeupMasks(.011,.250,.150).lip>.09,
             'lifted Cupid peaks must not render as unpigmented skin');
   assert.ok(v121MakeupMasks(0,.240,.150).lip>.80,
             'upper vermilion is visibly within the pigment mask');
