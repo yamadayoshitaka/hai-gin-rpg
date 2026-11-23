@@ -275,6 +275,19 @@ def rebuild(path):
     tris=[tuple(flat[i:i+3]) for i in range(0,len(flat),3)]
     original_normals=[tuple(p) for p in accessor(g,b,prim['attributes']['NORMAL'])]
     xyz,profile=reconstruct_jaw(positions,original_normals)
+    # v4 looked "passed" on absolute positions but produced 5cm torn strips.
+    # Topologically neighboring vertices must remain locally connected.
+    max_edge_stretch=1.
+    for a,b,c in tris:
+        for i,j in ((a,b),(b,c),(c,a)):
+            old_len=math.dist(positions[i],positions[j])
+            if old_len<.00001:continue
+            max_edge_stretch=max(max_edge_stretch,
+                math.dist(xyz[i],xyz[j])/old_len)
+    if max_edge_stretch>4.5:
+        raise ValueError('Rebuilt jaw has torn triangle edge: x'+
+                         str(round(max_edge_stretch,3)))
+    profile['maximumNativeEdgeStretch']=round(max_edge_stretch,4)
     faces,flips=retopologize(xyz,tris)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
