@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {v121MakeupMasks,V121_MAKEUP_PRESETS}
+import {v121MakeupMasks,v121VermilionBorders,V121_MAKEUP_PRESETS}
   from '../face-v121-makeup-presets.js';
 
 test('v121 pigments stay on real upper and lower vermilion, not chin or jaw',()=>{
@@ -46,4 +46,24 @@ test('v121 blush is cheek-localized and all preset lipstick stays natural',()=>{
   assert.ok(V121_MAKEUP_PRESETS.glamorous.lip<.8,
     'dramatic preset must not produce clown-red lipstick');
   assert.equal(V121_MAKEUP_PRESETS.bare.lip,0);
+});
+
+test('v17 Cupid M and curved bottom edge make a bounded tapered lip mask',()=>{
+  const center=v121VermilionBorders(0);
+  const left=v121VermilionBorders(-.0115);
+  const right=v121VermilionBorders(.0115);
+  const corner=v121VermilionBorders(.048);
+  assert.ok(left.upper>center.upper+.002,'left Cupid peak');
+  assert.ok(right.upper>center.upper+.002,'right Cupid peak');
+  assert.ok(Math.abs(left.upper-right.upper)<1.e-10,'symmetric M peaks');
+  assert.ok(corner.upper<center.upper-.010,'upper vermilion must converge to corner');
+  assert.ok(corner.lower>center.lower+.010,'lower rim converges to corner');
+  assert.ok(v121MakeupMasks(.048,.231,.150).lip<
+            v121MakeupMasks(0,.231,.150).lip*.5,'lip pigment tapers');
+  for(const coord of [[0,.254,.150],[0,.209,.150],
+                       [.060,.230,.150],[.038,.253,.150],
+                       [0,.208,.153]]){
+    assert.equal(v121MakeupMasks(...coord).lip,0,
+      'no painted second lip or skin spill at '+coord.join(','));
+  }
 });

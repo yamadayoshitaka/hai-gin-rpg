@@ -17,7 +17,7 @@ test('Android v121 neutral GLB front/quarter/side, makeup and disabled expressio
   page.on('console',message=>{
    if(message.type()==='error')errors.push('console '+message.text());
   });
-  await page.goto('http://127.0.0.1:8765/face-neutral-v121.html?v=121-lowerlip-v12',
+  await page.goto('http://127.0.0.1:8765/face-neutral-v121.html?v=121-lip-border-inner-fold-v17',
    {waitUntil:'domcontentloaded',timeout:25000});
   try{
    await page.waitForFunction(
@@ -39,7 +39,7 @@ test('Android v121 neutral GLB front/quarter/side, makeup and disabled expressio
    await page.locator('[data-camera="'+angle+'"]').click();
    assert.equal(await page.locator('[data-camera="'+angle+'"]').getAttribute('aria-pressed'),'true');
    await page.locator('#viewport').screenshot({
-    path:'qa/screenshots/face-v121/neutral-face-'+angle+'-v12.png'});
+    path:'qa/screenshots/face-v121/neutral-face-'+angle+'-v17.png'});
   }
   for(const preset of ['brown','glamorous','natural','pink','bare']){
    await page.locator('[data-makeup="'+preset+'"]').click();

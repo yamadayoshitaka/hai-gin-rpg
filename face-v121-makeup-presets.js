@@ -25,18 +25,25 @@ const clamp=x=>Math.max(0,Math.min(1,x));
  * nor cheek blush is permitted to run onto the jaw or underside of the head.
  * Exported for independent regression checks on anatomically critical points.
  */
+export function v121VermilionBorders(x){
+  const ax=Math.abs(x),corner=fade(ax,.029,.051);
+  return {
+    // The same two Cupid peaks / central notch as the real GLB sculpt.
+    upper:.2480+.0029*gauss(ax,.0115,.006)-.00105*gauss(ax,0,.0042)-.0147*corner,
+    lower:.2152+.0149*corner
+  };
+}
 export function v121MakeupMasks(x,y,z){
   const ax=Math.abs(x),front=fade(z,.084,.132);
-  // Absolute anatomical guards are intentional: a gaussian alone has
-  // nonzero tails on the chin and jaw. Do not let any preset cross them.
-  // The upper vermilion is now raised closer to the nose in actual XYZ.
-  // Keep the contour tint on the lip while excluding the nasal base at Y=.252.
-  const vermilion=(y>=.211&&y<=.2515&&ax<=.052&&z>.119);
-  const lipBands=(.82*gauss(y,.240,.0068)+gauss(y,.223,.0077));
-  // Feather both pigmentation boundaries so no second horizontal lip line
-  // is drawn by the COLOR_0 cutoff below the lower vermilion.
-  const lipSurface=vermilion?
-    fade(z,.119,.143)*fade(y,.211,.221)*(1-fade(y,.248,.252)):0;
+  const {upper,lower}=v121VermilionBorders(x);
+  // A defined, but feathered, border. No pigment on cheek, philtrum,
+  // sublabial skin or jaw; corners shrink to the oral commissures.
+  const inside=ax<.054&&z>.119&&y>=.210&&y<=.254&&upper-lower>.001;
+  const lipSurface=inside?
+    fade(y,lower-.0008,lower+.0024)*
+    (1-fade(y,upper-.0024,upper+.0008))*
+    (1-fade(ax,.037,.054))*gauss(x,0,.048)*fade(z,.119,.144):0;
+  const lipBands=.83*gauss(y,.240,.0087)+gauss(y,.2235,.0084);
   return {
     blush:y>=.215?(gauss(x,-.076,.031)+gauss(x,.076,.031))*
       gauss(y,.257,.028)*front:0,
