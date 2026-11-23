@@ -245,6 +245,61 @@ jobs:
           assert obj['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'] is False
           print('PASS baked v121 bald PBR skin:',len(blob),'bytes')
           PY
+      # Preview is deliberately isolated from the production v121 model.
+      # It is built from the WIP PR branch only during Pages packaging.
+      - name: Check out unmerged v121 rebuild for isolated review
+        uses: actions/checkout@v5
+        with:
+          ref: fix/v121-rebuild-neck-bust-lips-20261123
+          path: _preview_v121_source
+          persist-credentials: false
+          sparse-checkout: |
+            scripts
+            face-neutral-v121.html
+            face-v121-parametric-sliders.js
+            face-v121-expression-player.js
+            face-v121-makeup-presets.js
+          sparse-checkout-cone-mode: false
+      - name: Bake and stage unmerged female v121 3D model review page
+        working-directory: _preview_v121_source
+        run: |
+          mkdir -p assets/generated
+          cp ../assets/generated/neutral-face-v120.glb assets/generated/neutral-face-v120.glb
+          python3 scripts/build-neutral-face-v121.py --out assets/generated/neutral-face-v121.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, struct, subprocess, shutil
+          source = Path('.')
+          output = Path('../pages-dist/preview/face-v121-wip')
+          (output / 'assets/generated').mkdir(parents=True, exist_ok=True)
+          for name in ['face-v121-parametric-sliders.js',
+                       'face-v121-expression-player.js',
+                       'face-v121-makeup-presets.js']:
+              shutil.copy2(source / name, output / name)
+          model = source / 'assets/generated/neutral-face-v121.glb'
+          blob = model.read_bytes()
+          assert blob[:4] == b'glTF' and len(blob) > 800000, 'WIP model missing'
+          size = struct.unpack_from('<I', blob, 12)[0]
+          gltf = json.loads(blob[20:20 + size])
+          assert gltf['meshes'][0]['extras']['version'] == 121
+          assert gltf['meshes'][0]['primitives'][0]['attributes']['POSITION'] >= 0
+          shutil.copy2(model, output / 'assets/generated/neutral-face-v121.glb')
+          page = (source / 'face-neutral-v121.html').read_text(encoding='utf-8')
+          page = page.replace('<title>', '<title>【作業中 PR #1114】', 1)
+          page = page.replace('</h1>', '【未完成・PR #1114】</h1>', 1)
+          page = page.replace('<nav>', '<nav><a href="../../face-neutral-v121.html">公開版 v121 に戻る</a> ｜ ', 1)
+          for filename in ['face-neutral-v120.html', 'face-mesh-studio.html', 'hair-asset-studio.html']:
+              page = page.replace('./' + filename, '../../' + filename)
+          page = page.replace('</head>', '<meta name="robots" content="noindex"></head>', 1)
+          page = page.replace('<div class="panel">', '<div class="notice">これは未マージの顔再構築モデルです。外観QA不合格・作業中。本番の顔モデルは変更していません。</div><div class="panel">', 1)
+          (output / 'index.html').write_text(page, encoding='utf-8')
+          sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          (output / 'build.json').write_text(json.dumps({'source_pr': 1114, 'source_sha': sha,
+              'status': 'wip_visual_review_not_approved',
+              'model_path': 'assets/generated/neutral-face-v121.glb'}, indent=2) + '\n', encoding='utf-8')
+          assert (output / 'index.html').is_file()
+          print('WIP face model preview packaged at preview/face-v121-wip/ from', sha, 'GLB bytes:', len(blob))
+          PY
       - name: Validate batch center and PR preview are shipped in the same Pages artifact
         id: qa_13
         # Owner permits deployment despite QA failure; leave the outcome visible.
