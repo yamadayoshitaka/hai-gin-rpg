@@ -10,6 +10,7 @@ on:
       - 'qa/face-v121-lower-lashes-nose-lips.test.py'
       - 'qa/face-v121-eye-detail-real-glb.test.py'
       - 'face-neutral-v121.html'
+      - 'face-v121-parametric-sliders.js'
       - 'face-neutral-v120.html'
       - 'face-mesh-studio.html'
       - 'qa/face-v121-bald-reference-skin.test.py'

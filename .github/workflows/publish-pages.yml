@@ -198,6 +198,8 @@ jobs:
       - name: Require v121 skinhead PBR face and its preview in the Pages artifact
         run: |
           test -s pages-dist/face-neutral-v121.html
+          test -s pages-dist/face-v121-parametric-sliders.js
+          grep -q 'face-v121-parametric-sliders.js' pages-dist/face-neutral-v121.html
           test -s pages-dist/assets/generated/neutral-face-v121.glb
           python3 - <<'PY'
           import json,struct,pathlib
@@ -213,6 +215,7 @@ jobs:
           assert 'V121_UPPER_EYELINER' in [m['name'] for m in obj['meshes']]
           assert obj['meshes'][0]['extras']['naturalFoldCleanup']['removedLegacyBrowLidBand'] is True
           assert len(obj['meshes'][0]['extras']['referenceFeatureSculpt']['lipVermilionVerticesAdjusted'])>30
+          assert obj['meshes'][0]['extras']['referenceFeatureSculpt']['philtrumGrooveMasterDepth']>=0.009
           assert obj['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'] is False
           print('PASS baked v121 bald PBR skin:',len(blob),'bytes')
           PY
