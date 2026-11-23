@@ -241,6 +241,21 @@ def rebuild(path):
     oldcolors=[old_color[i] for i in ring]
     thetas=[math.atan2(xyz[i][2],xyz[i][0]) for i in ring]
     angular_edges=[((thetas[(i+1)%n]-thetas[i]+math.pi)%math.tau)-math.pi for i in range(n)]
+    if sum(t<-.0001 for t in angular_edges)>0:
+        # The donor cut boundary is a nonconvex loop, so direct polar angles
+        # can locally reverse along the circumference. Parameterize the NEW
+        # mesh by cumulative boundary arc length instead. All new circles have
+        # strictly monotonic angular ordering, preventing folded ring strips.
+        lengths=[math.dist(top[i],top[(i+1)%n]) for i in range(n)]
+        perimeter=sum(lengths)
+        start_angle=thetas[0]
+        orient=1 if sum(angular_edges)>0 else -1
+        cumulative=0.
+        new_angles=[]
+        for i in range(n):
+            new_angles.append(start_angle+orient*math.tau*cumulative/perimeter)
+            cumulative+=lengths[i]
+        thetas=new_angles
     print('V121_LOWERFACE_RING_GEOMETRY',json.dumps({
         'samples':n,'positiveAngleEdges':sum(t>.0001 for t in angular_edges),
         'negativeAngleEdges':sum(t<-.0001 for t in angular_edges),
