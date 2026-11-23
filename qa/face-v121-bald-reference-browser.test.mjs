@@ -149,7 +149,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(gltf.meshes[0].extras.version,121);
   assert.equal(gltf.meshes[0].extras.hairIncluded,false);
   assert.equal(gltf.images.length,4,'PBR skin and eye atlas must be embedded');
-  assert.equal(gltf.meshes.length,11,'Skin, 2 globes, 5 cosmetic meshes and 3 oral cavity / teeth / tongue meshes');
+  assert.equal(gltf.meshes.length,12,'Skin, 2 globes, 5 cosmetic meshes, 3 oral meshes and rebuilt cervical bust');
   for(const part of ['V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS']){
    assert.ok(gltf.meshes.some(m=>m.name===part),part+' must be actual GLB mesh');
   }
