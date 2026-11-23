@@ -151,6 +151,10 @@ def main(path):
         for j in range(len(control)-1):
             a=at+2*j
             part['faces'].extend(((a,a+1,a+2),(a+1,a+3,a+2)))
+        if 'normals' in part:
+            # Keep per-vertex normals aligned when a lower-lid ribbon is
+            # interleaved between the left and right eye's 3D lash tubes.
+            part['normals'].extend([(0.,0.,1.)]*(2*len(control)))
         part['strands']+=1
 
     def curved_lash(part,pts,root_radius):
@@ -303,11 +307,8 @@ def main(path):
             raise ValueError('Face detail has no triangles: '+part['name'])
         all_normals=part.get('normals',[])
         if all_normals:
-            if len(all_normals)>len(part['xyz']):
-                raise ValueError('Curved lash normals exceed geometry count')
-            # The single lower lid edge appended after lower lashes uses
-            # front-facing normals; lashes use real radial tube normals.
-            all_normals=all_normals+[(0.,0.,1.)]*(len(part['xyz'])-len(all_normals))
+            if len(all_normals)!=len(part['xyz']):
+                raise ValueError('Curved lash normals are not vertex-index aligned')
         else:
             all_normals=[(0.,0.,1.)]*len(part['xyz'])
         attrs={
