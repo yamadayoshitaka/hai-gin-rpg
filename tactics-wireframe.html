@@ -1142,7 +1142,7 @@ import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.49';
-import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,enemyContactResponse,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=enemy-counter-20261123';
+import {squadJobComposition,chooseEnemyOrder,enemyOrderRefreshSeconds,enemyContactResponse,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=enemy-live-contact-20261123';
 import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=20261116-ai1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
@@ -7157,7 +7157,8 @@ function updateEnemyTacticalDecisions(){
   const living=groupIds.flatMap(sid=>indexed.living(1,sid));
   if(!living.length)continue;
   if(massSim&&!groupIds.some(sid=>indexed.livingStrategists[1].has(sid)))continue;
-  const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
+  const previous=massSim?.enemySquadCommands?.get(String(id))||
+   startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
   // The ordinary command cooldown is preserved except for defending squads
   // whose whole army now decisively outnumbers the opponent.
   const casualties=own.filter(u=>!u.isStrategist).length-living.length;
@@ -8649,7 +8650,7 @@ function signatureLegalPoint(goal){
  }
  return null;
 }
-function issueFormationSignature({groupId,squadIds:requested=[]}){
+function issueFormationSignature({groupId,squadIds:requested=[],automaticOpening=false}){
  const group=String(groupId),formation=storyRequest?.formationIntegrity?.[group];
  const rule=signatureStrategyFor(formation?.formation);
  if(!THREE_TEAM_BATTLE||!battleReady||finished||battleCeremony.locked)
@@ -8658,9 +8659,9 @@ function issueFormationSignature({groupId,squadIds:requested=[]}){
   return '陣形が不成立です。宿屋の職業・人数・生存数を確認してください。';
  const allowedIds=new Set(squadIds.filter(sid=>String(armyGroupBySquad[sid])===group));
  const members=[...new Set(requested.map(String))].filter(sid=>allowedIds.has(sid)&&
-  actors.some(a=>a.team===0&&String(a.squadId)===sid&&a.hp>0&&!a.defeated));
+  squadRoster.some(a=>a.team===0&&String(a.squadId)===sid&&a.hp>0&&a.alive!==false&&a.defeated!==true));
  if(!members.length)return 'この隊には動ける兵士がいません。';
- if(members.some(id=>individualCommanderUnavailableReason(id)||squadOrderCooldownSeconds(id)>0))
+ if(members.some(id=>individualCommanderUnavailableReason(id)||(!automaticOpening&&squadOrderCooldownSeconds(id)>0)))
   return '軍師の状態または命令間隔により発令できません。';
  const centers=members.map(id=>({id,point:squadCenter(id,0)})).filter(x=>x.point);
  if(!centers.length)return '部隊位置を取得できません。';
@@ -9120,7 +9121,7 @@ const targetedOrderWatcher=setInterval(()=>{
    pendingOpeningFormationGroups.delete(group);
    const members=squadIds.filter(id=>String(armyGroupBySquad[id])===group);
    if(!members.length||members.some(id=>!hasSquadCommander(id)))continue;
-   const outcome=issueFormationSignature({groupId:group,squadIds:members});
+   const outcome=issueFormationSignature({groupId:group,squadIds:members,automaticOpening:true});
    if(outcome!==true)log('第'+group+'隊：専用移動不可、通常戦闘へ切替（'+outcome+'）');
   }
  }
@@ -11456,7 +11457,7 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   pendingOpeningFormationGroups.clear();
   for(const group of [1,2,3]){
    const state=storyRequest?.formationIntegrity?.[String(group)];
-   if(THREE_TEAM_BATTLE&&!MASS_SIZE&&state?.active&&state.formation!=='free')
+   if(THREE_TEAM_BATTLE&&state?.active&&state.formation!=='free')
     pendingOpeningFormationGroups.add(String(group));
   }
   // Execute actual extra tactics, not just an opening-screen label.
