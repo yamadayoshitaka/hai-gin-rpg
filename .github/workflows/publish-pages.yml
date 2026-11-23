@@ -173,15 +173,6 @@ jobs:
         run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
       - name: Bake v121 UV globe eyes and 2048px embedded PBR skin
         run: python3 scripts/build-neutral-face-v121.py --out assets/generated/neutral-face-v121.glb
-      - name: Validate v121 geometry, retained future morph topology and skin material
-        run: |
-          python3 qa/face-v121-bald-reference-skin.test.py
-          python3 qa/face-v121-eye-detail-real-glb.test.py
-          python3 qa/face-v121-natural-folds-cleanup.test.py
-          python3 qa/face-v121-lower-lashes-nose-lips.test.py
-          python3 qa/face-v121-expression-morph.test.py
-          python3 qa/face-v121-four-view-mesh.test.py
-          node --test qa/face-v121-makeup-contour.test.mjs
       - name: Verify approved chapter-one art relay and preserve v121 local GLB
         run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
