@@ -107,7 +107,7 @@ export class MassBattleGridSimulation {
     // the direction of an enemy hidden by a wall, tree or indoor furnishing.
     // The budget prevents 2000 agents from creating separate A* searches.
     this._pursuitFlows=new Map();this._pursuitBuildsThisTick=0;
-    this._enemyPursuitFlows=new Map();this._enemyBuildsThisTick=0;
+    this._enemyPursuitFlows=new Map();this._enemyBuildsPerTeam=[0,0];
     this.squadHealTargets=new Map();this.squadMissions=new Map();
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
     this.actions=new CombatActionRuntime({width,height,walkable,mountForbidden:this.mountForbidden});
@@ -736,8 +736,8 @@ export class MassBattleGridSimulation {
   // Cache at most sixteen flow maps; share each among the nearby soldiers.
   _pursuitFlow(target,jobId){
     if(!target||!Number.isFinite(target.x)||!Number.isFinite(target.z))return null;
-    const x=Math.round(target.x/3)*3,z=Math.round(target.z/3)*3;
-    const ninja=jobId==='ninja',key=(ninja?'n:':'r:')+x+':'+z;
+    const x=Math.round(target.x),z=Math.round(target.z);
+    const ninja=jobId==='ninja',key=(ninja?'n:':'r:')+Math.round(x/3)*3+':'+Math.round(z/3)*3;
     const cached=this._pursuitFlows.get(key);
     if(cached&&this.time-cached.createdAt<1.8)return cached.flow;
     if(this._pursuitBuildsThisTick>=2)return cached?.flow??null;
@@ -760,6 +760,27 @@ export class MassBattleGridSimulation {
     return flow;
   }
 
+  /** Defenders help nearby comrades already fighting instead of watching
+   * another division be surrounded. Explicit HOLD remains stationary; DEFEND
+   * leaves its post only within a compact local support perimeter. */
+  _engagedAllyNear(u,heads,nextIds,radius=10){
+    const sx=Math.floor(u.x/SECTOR),sz=Math.floor(u.z/SECTOR);
+    const sectors=Math.ceil(radius/SECTOR),r2=radius*radius;
+    for(let dz=-sectors;dz<=sectors;dz++)
+      for(let dx=-sectors;dx<=sectors;dx++){
+        const x=sx+dx,z=sz+dz;
+        if(x<0||z<0||x>=this._sectorCols||z>=this._sectorRows)continue;
+        for(let id=heads[z*this._sectorCols+x];id!==-1;id=nextIds[id]){
+          const ally=this.units[id];
+          if(!ally||ally===u||!ally.alive||ally.team!==u.team||
+            ally.isStrategist||ally.currentTargetSquadId==null||
+            ally.currentTargetSquadId<0||!['attack','skill'].includes(ally.action))continue;
+          if((ally.x-u.x)**2+(ally.z-u.z)**2<=r2)return true;
+        }
+      }
+    return false;
+  }
+
   // Periodically refreshed shared goal field for every surviving enemy.
   // Unlike the fixed front-line flow, this also works after a flank or retreat.
   _enemyPursuitFlow(team,jobId,targetSquadId=null){
@@ -767,18 +788,25 @@ export class MassBattleGridSimulation {
     const key=team+':'+(ninja?'n':'r')+':'+(targetSquadId??'*');
     const cached=this._enemyPursuitFlows.get(key);
     if(cached&&this.time-cached.createdAt<1.5)return cached.flow;
-    if(this._enemyBuildsThisTick>=1)return cached?.flow??null;
+    // One budget for each team: iterating player units first used to starve
+    // every enemy of target paths on every tick.
+    if(this._enemyBuildsPerTeam[team]>=1)return cached?.flow??null;
     const goals=[];
     for(const enemy of this.units){
       if(!enemy.alive||enemy.team===team||
+         (enemy.highGroundPhase===2&&enemy.highGroundFloor>1)||
          (targetSquadId!=null&&String(enemy.squadId)!==String(targetSquadId)))continue;
-      for(const [dx,dz] of [[0,0],...NEIGHBORS]){
+      for(const [dx,dz] of NEIGHBORS){
         const x=enemy.x+dx,z=enemy.z+dz;
-        if(this._walkable(x,z,jobId))goals.push({x,z});
+        // A reachable tile just OUTSIDE a castle wall must not become a
+        // completed attack goal while the opponent stands INSIDE the wall.
+        // Only actual visible approach cells can terminate pursuit.
+        if(this._walkable(x,z,jobId)&&this._canSee({x,z},enemy))
+          goals.push({x,z});
       }
     }
     if(!goals.length)return null;
-    this._enemyBuildsThisTick++;
+    this._enemyBuildsPerTeam[team]++;
     const flow=makeFlow(this.width,this.height,ninja?this.ninjaWalkable:this.walkable,goals);
     this._enemyPursuitFlows.delete(key);
     this._enemyPursuitFlows.set(key,{flow,createdAt:this.time});
@@ -1435,6 +1463,7 @@ export class MassBattleGridSimulation {
   updateOpaque(next){
     if(!(next instanceof Uint8Array)||next.length!==this.opaque.length)throw Error('遮蔽マップが不正です');
     this.opaque=next;
+    this._pursuitFlows.clear();this._enemyPursuitFlows.clear();
   }
 
   killAtCells(cells){
@@ -1492,7 +1521,7 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
-    this._pursuitBuildsThisTick=0;this._enemyBuildsThisTick=0;
+    this._pursuitBuildsThisTick=0;this._enemyBuildsPerTeam.fill(0);
     if(this.tickCount%30===0){
       this._refreshSquadObjectives();this._applyGlobalStrategy();
       this._assignHighGroundUnits();this._assignUpperFloorPursuits();
@@ -1848,7 +1877,9 @@ export class MassBattleGridSimulation {
       const closeThreat=guarding&&nearest&&shouldCounterNearbyThreat({
        order:'hold',enemyDistance:Math.sqrt(best),attackRange:job.range
       });
-      if(guarding&&!triageNeedsMovement&&!closeThreat){
+      const allyCover=guarding&&order==='defend'&&this.live[1-u.team]>0&&
+        this._engagedAllyNear(u,heads,nextIds,10);
+      if(guarding&&!triageNeedsMovement&&!closeThreat&&!allyCover){
         u.action='hold';u.vx=0;u.vz=0;u.blockedTicks=0;continue;
       }
       const isNinja=u.jobId==='ninja';
@@ -1871,13 +1902,13 @@ export class MassBattleGridSimulation {
       const assignedReached=Boolean(reachable&&assignedFlow[cell]===0);
       const resumeCombat=assignedReached&&!['hold','defend','retreat'].includes(order)&&
         this.live[1-u.team]>0;
-      const pursuing=(!reachable||resumeCombat||closeThreat)&&!supporting&&order!=='retreat'&&remembered&&
+      const pursuing=(!reachable||resumeCombat||closeThreat||allyCover)&&!supporting&&order!=='retreat'&&remembered&&
         Math.hypot(u.x-remembered.x,u.z-remembered.z)<26;
       const targetFlow=pursuing?this._pursuitFlow(remembered,u.jobId):null;
       const chaseFlow=targetFlow&&targetFlow[cell]<0x3fffffff?targetFlow:null;
       const missionSquad=mission&&['eliminate_squad','eliminate_commander'].includes(mission.type)?
         mission.targetSquadId:null;
-      const enemyFlow=(!reachable||resumeCombat||closeThreat)&&!supporting&&order!=='retreat'?
+      const enemyFlow=(!reachable||resumeCombat||closeThreat||allyCover)&&!supporting&&order!=='retreat'?
         this._enemyPursuitFlow(u.team,u.jobId,missionSquad):null;
       const globalChase=!chaseFlow&&enemyFlow&&enemyFlow[cell]<0x3fffffff;
       const highRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase===0?
@@ -1886,10 +1917,13 @@ export class MassBattleGridSimulation {
       const healingRoute=triageNeedsMovement?this._pursuitFlow(triageTarget,u.jobId):null;
       const triageFlow=healingRoute&&healingRoute[cell]<0x3fffffff?healingRoute:null;
       const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
-        triageFlow|| (reachable&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
+        triageFlow|| (reachable&&!allyCover&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
         supporting?this.supportFlow:chaseFlow||(globalChase?enemyFlow:
         reachable?assignedFlow:defaultFlow));
-      if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
+      if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0&&
+         !(order==='charge'&&this.live[1-u.team]>0)){
+        u.action='hold';u.vx=0;u.vz=0;continue;
+      }
       if(supporting&&!reachable&&flow===this.supportFlow&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
       // The target cell of a BFS is an arrival point, not a patrol loop.
@@ -1897,7 +1931,11 @@ export class MassBattleGridSimulation {
       // adjust within their separate arrival areas.
       const taskNeedsApproach=Boolean(triageNeedsMovement||mission||highFlow||exploration);
       if(here===0&&!nearest&&!taskNeedsApproach){
-        u.action='hold';u.vx=0;u.vz=0;u.blockedTicks=0;continue;
+        // A front-line/rally field is not a kill target. When opponents
+        // survive, request a fresh enemy approach rather than proclaiming
+        // arrival and holding outside a castle facade.
+        u.action=(order==='charge'&&this.live[1-u.team]>0)?'blocked':'hold';
+        u.vx=0;u.vz=0;u.blockedTicks=0;continue;
       }
       let next=null,score=Infinity;
       const preferred=nearest?{x:nearest.x,z:nearest.z}:chaseFlow?remembered:null;

@@ -12,6 +12,8 @@ on:
       - 'src/formation-signature-strategies.js'
       - 'tactics-wireframe.html'
       - 'qa/formation-driven-battle-ai.test.mjs'
+      - 'qa/castle-formation-relief-regression.test.mjs'
+      - 'qa/battle-formation-autonomy-regression.test.mjs'
       - '.github/workflows/formation-driven-battle-qa.yml'
   workflow_dispatch:
 permissions:
@@ -35,5 +37,5 @@ jobs:
           node --check src/formation-signature-strategies.js
       - name: Test symmetric enemy/ally doctrine, indoor exits and production movement gates
         run: |
-          node --test qa/formation-driven-battle-ai.test.mjs
+          node --test qa/formation-driven-battle-ai.test.mjs qa/castle-formation-relief-regression.test.mjs qa/battle-formation-autonomy-regression.test.mjs
           node --test qa/battle-ai-wandering-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs

@@ -130,4 +130,4 @@ const mass=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url
 assert.match(skirmish,/const nearbyCounter=enemy&&shouldCounterNearbyThreat/);
 assert.match(skirmish,/if\(order==='hold'&&!nearbyCounter\)/);
 assert.match(mass,/const closeThreat=guarding&&nearest&&shouldCounterNearbyThreat/);
-assert.match(mass,/const pursuing=\(!reachable\|\|resumeCombat\|\|closeThreat\)/);
+assert.match(mass,/const pursuing=\(!reachable\|\|resumeCombat\|\|closeThreat\|\|allyCover\)/);
