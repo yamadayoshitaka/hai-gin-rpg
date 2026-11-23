@@ -277,7 +277,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔v121：眉を目に近づけ横顔の頬を補正。肌色・化粧と表情アニメーションを実3Dへ反映しました。');
+ update('status','顔 v121：眉を目に近づけ横顔の頬を補正。肌色・化粧と表情アニメーションを実3Dへ反映しました。');
  document.documentElement.dataset.neutralFaceReady='v121';
  const draw=()=>{requestAnimationFrame(draw);expressionPlayer?.tick();orbit.update();renderer.render(scene,camera)};
  draw();
