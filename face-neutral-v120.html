@@ -40,7 +40,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <main>
 <nav><a href="./face-mesh-studio.html">顔・髪エディター v119へ戻る</a></nav>
 <h1>新・中立顔メッシュ v120</h1>
-<p>参考画像の卵型輪郭・ふっくらした頬・細い鼻・自然な唇の比率をもとに、新しい頭部をゼロから構築。髪・表情・口パク・体型変更はまだ組み込んでいません。</p>
+<p>参考画像を基準に、既存CC0頭部の鼻・まぶた・唇を残し、頬・輪郭を再造形した独立の高密度中立顔。髪・表情・口パクは未実装です。</p>
 <div class="panel">
 <div id="status" role="status">独立した新顔メッシュを生成しています…</div>
 <canvas id="viewport" aria-label="新規3D顔メッシュ。一本指で回転、二本指でズームと移動"></canvas>
@@ -50,18 +50,18 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <button type="button" data-camera="side" aria-pressed="false">横顔</button>
 <button type="button" data-camera="back" aria-pressed="false">後頭部</button>
 <button id="wire" type="button" aria-pressed="false">輪郭・ワイヤー表示</button>
-<button id="eyes" type="button" aria-pressed="true">目・唇・耳の仮パーツ</button>
+<button id="eyes" type="button" aria-pressed="true">眼球パーツを表示</button>
 </div>
 <div class="controls">
 <button id="export" class="primary" type="button" disabled>中立顔をGLB保存</button>
 <button id="exportStructure" type="button" disabled>表情追加用の構造JSON保存</button>
 </div>
-<p>操作：一本指＝回転／二本指＝移動・ピンチ。GLBは髪・表情無しの中立モデルです。</p>
+<p>操作：一本指＝回転／二本指＝移動・ピンチ。GLBは髪・表情無し。鼻孔・唇・まぶたは実メッシュの造形です。</p>
 </div>
 <div class="panel">
 <h2>新メッシュの構造</h2>
 <dl>
-<dt>顔の頂点数</dt><dd id="vertexCount">—</dd>
+<dt>顔（スキン）の頂点数</dt><dd id="vertexCount">—</dd>
 <dt>顔の三角形数</dt><dd id="triangleCount">—</dd>
 <dt>左右の目周りの制御領域</dt><dd id="eyeCount">—</dd>
 <dt>口周りの制御領域</dt><dd id="mouthCount">—</dd>
@@ -75,107 +75,124 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 </main>
 <script type="module">
 import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {createNeutralFaceV120,NEUTRAL_FACE_V120} from './src/neutral-face-v120.js?v=20261123-neutral-v120';
 const $=id=>document.getElementById(id);
-let renderer,scene,camera,orbit,face,wire,neutral,parts,metrics;
+const sourceURL='./assets/generated/neutral-face-v120.glb?v=120';
+let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={};
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
- const targets={
-  front:[0,.008,.47],threeQuarter:[.32,.008,.40],
-  side:[.47,.008,0],back:[0,.008,-.47]
+ const positions={
+  front:[0,0,.66],threeQuarter:[.40,0,.52],
+  side:[.66,0,0],back:[0,0,-.66]
  };
- if(!targets[kind])return;
- camera.position.set(...targets[kind]);
+ if(!positions[kind])return;
+ camera.position.set(...positions[kind]);
  orbit.target.set(0,0,0);orbit.update();
- document.querySelectorAll('[data-camera]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.camera===kind)));
+ document.querySelectorAll('[data-camera]').forEach(btn=>
+  btn.setAttribute('aria-pressed',String(btn.dataset.camera===kind)));
 }
 function resize(){
  const el=$('viewport'),w=el.clientWidth,h=el.clientHeight;
  if(!w||!h)return;
  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
 }
-async function saveBlob(blob,name){
+function saveBlob(blob,name){
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1800);
+ setTimeout(()=>URL.revokeObjectURL(url),3500);
 }
 async function exportGLB(){
- const button=$('export'),wasVisible=parts.visible;
- button.disabled=true;update('status','中立顔のGLBを生成中…');
+ const button=$('export');button.disabled=true;
+ update('status','検証済み中立顔GLBを保存中…');
  try{
-  parts.visible=true;
-  const exporter=new GLTFExporter();
-  const binary=await exporter.parseAsync(neutral,{binary:true,onlyVisible:true,maxTextureSize:1024});
-  await saveBlob(new Blob([binary],{type:'model/gltf-binary'}),'hai-gin-neutral-face-v120.glb');
-  update('status','GLB保存開始：中立顔・固定トポロジー・表情無し');
- }catch(e){update('status','GLB出力失敗：'+e.message);console.error(e);}
- finally{parts.visible=wasVisible;button.disabled=false;}
+  const response=await fetch(sourceURL,{cache:'no-store'});
+  if(!response.ok)throw Error('GLB HTTP '+response.status);
+  const bytes=await response.blob();
+  if(bytes.size<350000)throw Error('GLB is unexpectedly small');
+  saveBlob(bytes,'hai-gin-neutral-face-v120.glb');
+  update('status','中立顔GLBの保存を開始しました（表情・髪なし）');
+ }catch(e){update('status','GLB保存失敗：'+e.message);console.error(e);}
+ finally{button.disabled=false;}
 }
 function exportJSON(){
- const g=face.geometry;
  const payload={
-  ...NEUTRAL_FACE_V120,
-  skinMesh:face.name,
-  regions:g.userData.regionVertexIds,
-  landmarks:neutral.userData.restLandmarks,
-  futureExpressionChannels:neutral.userData.futureExpressionChannels,
-  geometryMetrics:metrics,
-  instructions:'Do not reorder vertices after authoring expression morphs. Start from neutral rest state.'
+  version:120,source:'CC0 anatomical head independently re-sculpted',
+  skinMesh:face.name,regions:rigMap.futureRigZones,
+  topology:rigMap.topology,
+  futureExpressionChannels:rigMap.futureExpressions,
+  futureExpressionsImplemented:false,
+  instructions:'Preserve the v120 rest mesh and vertex order for future expression morph targets.'
  };
  saveBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),
   'hai-gin-neutral-face-v120-rig-map.json');
 }
-try{
+async function init(){
  scene=new THREE.Scene();
- camera=new THREE.PerspectiveCamera(37,1,.01,20);
- renderer=new THREE.WebGLRenderer({canvas:$('viewport'),antialias:true,alpha:true,powerPreference:'default'});
+ camera=new THREE.PerspectiveCamera(36,1,.01,20);
+ renderer=new THREE.WebGLRenderer({canvas:$('viewport'),antialias:true,alpha:true});
  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1.32;
+ renderer.toneMappingExposure=1.2;
  orbit=new OrbitControls(camera,$('viewport'));
- orbit.enableDamping=true;orbit.dampingFactor=.12;
- orbit.enablePan=true;orbit.minDistance=.28;orbit.maxDistance=1.2;
+ orbit.enableDamping=true;orbit.dampingFactor=.11;
+ orbit.enablePan=true;orbit.minDistance=.33;orbit.maxDistance=1.3;
  orbit.touches.ONE=THREE.TOUCH.ROTATE;orbit.touches.TWO=THREE.TOUCH.DOLLY_PAN;
- scene.add(new THREE.HemisphereLight(0xf7f1e8,0x62798d,2.5));
- const key=new THREE.DirectionalLight(0xffe5d8,2.4);key.position.set(-.35,.45,.8);scene.add(key);
- const rim=new THREE.DirectionalLight(0xd2e8ff,1.0);rim.position.set(.25,.15,-.65);scene.add(rim);
- const base=createNeutralFaceV120();
- neutral=base.root;face=base.skin;parts=base.parts;metrics=base.metrics;
+ scene.add(new THREE.HemisphereLight(0xfaf2e7,0x839aad,2.1));
+ const key=new THREE.DirectionalLight(0xffe7d6,2.2);
+ key.position.set(-.38,.47,.75);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xecf5ff,.65);
+ fill.position.set(.45,.05,.48);scene.add(fill);
+ const gltf=await new GLTFLoader().loadAsync(sourceURL);
+ neutral=gltf.scene;neutral.name='V120_CC0_BASED_NEUTRAL_MASTER';
+ neutral.traverse(o=>{
+  if(!o.isMesh)return;
+  if(o.geometry?.getAttribute('position')?.count>13000)face=o;
+  else eyeNodes.push(o);
+ });
+ if(!face||eyeNodes.length<2)throw Error('正規の頭部・眼球メッシュを取得できません');
+ rigMap=gltf.parser.json.meshes?.[0]?.extras||{};
+ if(!rigMap.topology?.stableIndexedGeometry||rigMap.topology.vertices<13000)
+  throw Error('中立形状の構造検証に失敗');
+ metrics={
+  vertices:face.geometry.getAttribute('position').count,
+  triangles:face.geometry.getIndex().count/3,
+  eyeRegionVertices:(rigMap.futureRigZones?.leftEye?.length||0)+
+                   (rigMap.futureRigZones?.rightEye?.length||0),
+  mouthRegionVertices:rigMap.futureRigZones?.mouth?.length||0
+ };
  scene.add(neutral);
  wire=new THREE.LineSegments(new THREE.EdgesGeometry(face.geometry,38),
-  new THREE.LineBasicMaterial({color:0x70e5c8,transparent:true,opacity:.28,depthTest:true}));
- wire.name='V120_WIREFRAME_DIAGNOSTIC';wire.visible=false;face.add(wire);
- view('front');
- resize();new ResizeObserver(resize).observe($('viewport'));
- document.querySelectorAll('[data-camera]').forEach(btn=>btn.addEventListener('click',()=>view(btn.dataset.camera)));
+  new THREE.LineBasicMaterial({color:0x67d6bb,transparent:true,opacity:.35}));
+ wire.name='V120_CONNECTED_FACE_WIRE';wire.visible=false;face.add(wire);
+ view('front');resize();new ResizeObserver(resize).observe($('viewport'));
+ document.querySelectorAll('[data-camera]').forEach(btn=>
+  btn.addEventListener('click',()=>view(btn.dataset.camera)));
  $('wire').addEventListener('click',()=>{
   wire.visible=!wire.visible;
   $('wire').setAttribute('aria-pressed',String(wire.visible));
  });
  $('eyes').addEventListener('click',()=>{
-  parts.visible=!parts.visible;
-  $('eyes').setAttribute('aria-pressed',String(parts.visible));
+  const next=!eyeNodes[0].visible;
+  eyeNodes.forEach(eye=>eye.visible=next);
+  $('eyes').setAttribute('aria-pressed',String(next));
  });
  $('export').addEventListener('click',exportGLB);
  $('exportStructure').addEventListener('click',exportJSON);
- for(const [id,v] of Object.entries({
+ for(const [id,value]of Object.entries({
   vertexCount:metrics.vertices.toLocaleString('ja-JP'),
   triangleCount:metrics.triangles.toLocaleString('ja-JP'),
   eyeCount:metrics.eyeRegionVertices.toLocaleString('ja-JP'),
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
- }))update(id,v);
+ }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v120：新規中立メッシュ生成済み（表情・髪は未実装）');
+ update('status','顔 v120：解剖学的な中立GLB読込完了（表情・髪なし）');
  document.documentElement.dataset.neutralFaceReady='v120';
- const frame=()=>{requestAnimationFrame(frame);orbit.update();renderer.render(scene,camera);};
- frame();
-}catch(e){
- update('status','顔メッシュの生成／WebGL表示に失敗：'+e.message);
- console.error('V120 neutral face',e);
+ const draw=()=>{requestAnimationFrame(draw);orbit.update();renderer.render(scene,camera)};
+ draw();
 }
+init().catch(e=>{update('status','顔メッシュ読込エラー：'+e.message);console.error('V120 GLB',e)});
 </script>
 </body>
 </html>
