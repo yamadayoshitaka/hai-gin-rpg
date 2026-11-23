@@ -103,7 +103,9 @@ def new_lower_face_geometry(points,uv):
         chin_zone=bell(y,.145,.041)*middle*front
         dy=.0024*chin_zone+.0020*lip_bottom
         # Slightly soften the point of the chin, never pinch mouth corners.
-        dx=-x*.009*bell(y,.153,.043)*middle*front
+        # Never shift mouth-corner/dimple landmark X coordinates: only the
+        # lower chin/jaw region may change width.
+        dx=-x*.009*bell(y,.153,.043)*middle*front*(1.-fade(y,.203,.215))
         new=(x+dx,y+dy,z+dz)
         if not all(math.isfinite(q) for q in new):
             raise ValueError('Nonfinite real-space lower-face vertex')
