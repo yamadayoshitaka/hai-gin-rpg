@@ -48,7 +48,9 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
   const jsonOffset=20,jsonSize=buf.readUInt32LE(12);
   const gltf=JSON.parse(buf.toString('utf8',jsonOffset,jsonOffset+jsonSize).trim());
   assert.ok(gltf.meshes.length>=1&&gltf.accessors.length>=3);
-  assert.ok(gltf.meshes.some(m=>m.name==='V120_SKIN_CONNECTED_NEUTRAL'));
+  assert.ok(gltf.meshes.some(m=>m.primitives?.some(p=>
+   gltf.accessors[p.attributes.POSITION]?.count>16000)),
+   'The exported GLB must retain the high-resolution original head skin');
   assert.ok(gltf.nodes.some(n=>n.name==='V120_ORIGINAL_NEUTRAL_FACE_MASTER'));
   console.log('PASS v120 WebGL and export',JSON.stringify({
    vertexText:await page.locator('#vertexCount').textContent(),
