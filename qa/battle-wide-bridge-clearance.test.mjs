@@ -47,5 +47,6 @@ test('skirmish placement, movement and routing use collision-safe wide bridge la
  assert.match(html,/monsterHasClearance\(x,z,actor\?\.monsterSpec,actors,actor\)/);
  assert.match(html,/for\(const laneOffset of BATTLE_BRIDGE_LANE_OFFSETS\)/);
  assert.match(html,/actor\.crossing=\{bridge:chosen\.bridge,fromSide:currentSide,laneOffset:chosen\.laneOffset\}/);
- assert.match(html,/return \{x:safeApproach\(farX\),z:laneZ\}/);
+ assert.match(html,/const locked=bridgeCrossingWaypoint\(current,\{/);
+ assert.match(html,/return locked;/,'the selected bridge lane has a forward-only far-bank goal');
 });
