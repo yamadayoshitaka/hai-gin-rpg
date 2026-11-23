@@ -63,8 +63,8 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 </select></label>
 <label>髪色
 <input type="color" id="color" value="#d9b77e"></label>
-<label>頭型へのフィット幅 <output id="widthValue">104%</output>
-<input type="range" id="width" min="99" max="125" step="1" value="104"></label>
+<label>頭部へのフィット倍率 <output id="widthValue">120%</output>
+<input type="range" id="width" min="100" max="160" step="1" value="120"></label>
 <label>前後位置 <output id="forwardValue">0 mm</output>
 <input type="range" id="forward" min="-25" max="35" step="1" value="0"></label>
 <label>上下位置 <output id="verticalValue">0 mm</output>
@@ -75,10 +75,10 @@ strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;wo
 <option value="blunt">ぱっつん</option>
 <option value="center">センターパート</option>
 </select></label>
-<label>前髪の長さ <output id="bangLengthValue">55 mm</output>
-<input type="range" id="bangLength" min="30" max="115" value="55" step="1"></label>
-<label>前髪の幅 <output id="bangWidthValue">95%</output>
-<input type="range" id="bangWidth" min="45" max="125" value="95" step="1"></label>
+<label>前髪の長さ <output id="bangLengthValue">70 mm</output>
+<input type="range" id="bangLength" min="30" max="115" value="70" step="1"></label>
+<label>前髪の幅 <output id="bangWidthValue">100%</output>
+<input type="range" id="bangWidth" min="45" max="125" value="100" step="1"></label>
 <label>前髪の前後位置 <output id="bangForwardValue">0 mm</output>
 <input type="range" id="bangForward" min="-20" max="35" value="0" step="1"></label>
 <label class="check"><input id="headWire" type="checkbox">v121実頭部ワイヤーを表示（水色）</label>
@@ -94,7 +94,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=4';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=5';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -226,6 +226,7 @@ function updateFit(){
   '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m'+
   '\n頭皮の横幅・奥行：'+(fit.headWidth*1000).toFixed(1)+' / '+(fit.headDepth*1000).toFixed(1)+' mm'+
   '\nウィッグ頂部の横幅・奥行：'+(fit.capWidth*1000).toFixed(1)+' / '+(fit.capDepth*1000).toFixed(1)+' mm'+
+  '\n頭部へのカバー率（横 / 奥）：'+(fit.coverageX*100).toFixed(0)+'% / '+(fit.coverageZ*100).toFixed(0)+'%'+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
   '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
   '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目'+
@@ -310,9 +311,9 @@ $('headWire').addEventListener('change',()=>{
 });
 $('color').addEventListener('input',colorWig);
 $('reset').addEventListener('click',()=>{
- $('width').value='104';$('forward').value='0';$('vertical').value='0';
- $('bangStyle').value='none';$('bangLength').value='55';
- $('bangWidth').value='95';$('bangForward').value='0';
+ $('width').value='120';$('forward').value='0';$('vertical').value='0';
+ $('bangStyle').value='none';$('bangLength').value='70';
+ $('bangWidth').value='100';$('bangForward').value='0';
  $('headWire').checked=false;$('spin').checked=false;
  updateHeadWire();
  updateFit();frameView('front');
