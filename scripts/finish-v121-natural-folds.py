@@ -98,7 +98,7 @@ def fold_displacement(x,y,z):
                fade(ax,.023,.033)*(1.-fade(ax,.062,.072))*front)
     # Fill the artificial corner dimples left by the prior lateral crease.
     # Only touch skin on the outward corner surface, not actual lip geometry.
-    dimple_fill=(.0028*bell(ax,.046,.010)*bell(y,.194,.014)*
+    dimple_fill=(.0028*bell(ax,.046,.010)*bell(y,.232,.014)*
                  fade(z,.078,.128)*(1.-fade(z,.154,.17)))
     return under_eye+dimple_fill
 
@@ -113,11 +113,11 @@ def philtrum_relief(x,y,z):
     # its y mask cut off well before the septum and the paired high columns
     # exaggerated the isolated depression. The actual philtrum is a LONG,
     # gently shaded central channel, not a circular indentation.
-    if y<.201 or y>.255:
+    if y<.236 or y>.266:
         return 0.
-    # In the anatomical model, the subnasale lies near y=.250 and the
-    # upper vermilion edge near y=.205. Taper ONLY at those endpoints.
-    vertical=fade(y,.201,.213)*(1.-fade(y,.247,.255))
+    # The actual upper lip is centered at local Y≈.240, not .208. Keep
+    # the philtrum between the lip and nasal base, never on the chin.
+    vertical=fade(y,.236,.244)*(1.-fade(y,.258,.266))
     front=fade(z,.071,.116)
     groove=-.0038*bell(x,0,.0057)*vertical*front
     columns=.00095*(bell(x,-.0102,.0046)+bell(x,.0102,.0046))*vertical*front
@@ -142,10 +142,10 @@ def nose_and_lips(x,y,z):
     nz=z-.0030*tip-.00115*ala
     lip_front=fade(z,.103,.137)
     horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
-    upper=bell(y,.2075,.0086)*horizontal*lip_front
-    lower=bell(y,.1835,.0103)*horizontal*lip_front
-    cupids=bell(ax,.012,.0065)*bell(y,.213,.007)*lip_front
-    seam=bell(y,.197,.0028)*horizontal*lip_front
+    upper=bell(y,.2400,.0072)*horizontal*lip_front
+    lower=bell(y,.2235,.0086)*horizontal*lip_front
+    cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
+    seam=bell(y,.232,.0028)*horizontal*lip_front
     nz+=(.0028*upper+.0043*lower+.0012*cupids
          -.0008*seam)
     nz+=philtrum_relief(nx,y,nz)
@@ -167,8 +167,8 @@ def neutral_color(x,y,z):
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
     # The upstream resting lipstick is strictly bounded to the two
     # anatomical vermilion bands. Gaussian tails must never tint a chin.
-    lip_region=(.174<=y<=.220 and abs(x)<=.052 and z>.119)
-    vermilion=(.78*bell(y,.208,.007)+bell(y,.185,.0078))
+    lip_region=(.216<=y<=.249 and abs(x)<=.052 and z>.119)
+    vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
     lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)
           if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
@@ -214,7 +214,7 @@ def correct_chin_profile(points):
     """
     # Collect the frontal region without an assumed Z depth; the source GLB
     # can vary its absolute facial Z offsets. Max Z selects the forward skin.
-    lip=[z for x,y,z in points if abs(x)<.042 and .179<y<.215]
+    lip=[z for x,y,z in points if abs(x)<.042 and .217<y<.249]
     chin=[z for x,y,z in points if abs(x)<.055 and .110<y<.163]
     print('V121 SAGITTAL PROBE', {
         'lipCount':len(lip), 'chinCount':len(chin),
@@ -299,13 +299,13 @@ def finish(path):
         dz=fold_displacement(nx,ny,nz)
         updated.append((nx,ny,nz+dz))
         central=philtrum_relief(nx,ny,nz)
-        if central<-.00038 and abs(nx)<.011 and .208<ny<.242:
+        if central<-.00038 and abs(nx)<.011 and .241<ny<.262:
             philtrum_ids.append(i)
-        if dz>.00020 and .179<ny<.215 and .025<abs(nx)<.067:
+        if dz>.00020 and .218<ny<.251 and .025<abs(nx)<.067:
             dimple_filled_ids.append(i)
         if abs(nx-x)>.00008 and .225<y<.280:
             nasal_vertices.append(i)
-        if abs(nz-z)>.00015 and .172<y<.227 and abs(x)<.058:
+        if abs(nz-z)>.00015 and .216<y<.252 and abs(x)<.058:
             lip_vertices.append(i)
     if len(nasal_vertices)<20 or len(lip_vertices)<30:
         raise ValueError('Nose and vermilion must have actual displaced vertices')
@@ -351,13 +351,13 @@ def finish(path):
         'version':'v121-nose-lips-lower-lashes-20261123',
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
-        'centralPhiltrumStart':[0.,.252],
+        'centralPhiltrumStart':[0.,.264],
         'philtrumGrooveMasterDepth':.0038,
         'philtrumColumnsRelief':.00095,
         'philtrumShape':'continuous_nose_base_to_vermilion_shallow_channel_v122fix',
         'philtrumNoOvalPit':True,
         'parametricDepthControlSupported':True,
-        'centralPhiltrumEnd':[0.,.204],
+        'centralPhiltrumEnd':[0.,.238],
         'philtrumVertexIds':philtrum_ids,
         'lateralDimpleCorrectionVertexIds':dimple_filled_ids,
         'lateralNasolabialPitRemoved':True,
