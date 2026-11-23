@@ -1167,7 +1167,7 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
 import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v=battle-catalog-parity-20261123';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
 import {formationCombatIntent,isHighGroundFiringJob} from './src/formation-driven-ai.js?v=formation-ai-v1-20261124';
-import {reachableRoomExit,reachableFormationWaypoint} from './src/formation-ai-indoor-route.js?v=castle-exit-relief-v2-20261124';
+import {reachableRoomExit,reachableFormationWaypoint,sharedRoomExitFlow,sharedRoomExitStep} from './src/formation-ai-indoor-route.js?v=castle-exit-relief-v3-20261124';
 import {createRegisteredBattleMonster}
  from './src/battle-registered-monster-model.js?v=battle-catalog-parity-20261123';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=20261117-horse-saddle-fix1';
@@ -4642,6 +4642,25 @@ function nearestWalkableApproach(goal,actor){
  }
  return null;
 }
+// A single castle gate field is shared by the whole defending/assaulting
+// army. Rebuilding a per-soldier A* search at the castle exit saturated the
+// 50v50 route budget and left the rear ranks stuck indoors.
+const castleExitFlowCache=new Map();
+function sharedCastleExit(actor,bounds){
+ const key=[bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ].join(':');
+ let field=castleExitFlowCache.get(key);
+ if(!field){
+  const center=Math.round((bounds.minX+bounds.maxX)/2),exits=[];
+  for(let x=center-4;x<=center+4;x++)
+   if(traversableCell(x,bounds.maxZ))exits.push({x,z:bounds.maxZ});
+  field=sharedRoomExitFlow(WORLD_SIZE,WORLD_SIZE,
+   (x,z)=>traversableCell(x,z,actor),exits);
+  if(!field)return null;
+  castleExitFlowCache.set(key,field);
+ }
+ return {field,next:sharedRoomExitStep(actor.cell,field,WORLD_SIZE,WORLD_SIZE,
+  (x,z)=>availableCell(x,z,actor))};
+}
 function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
  const p=a.root.position;
@@ -4663,6 +4682,18 @@ function moveActor(a,goal,dt,stop){
   for(const bounds of [...castleIndoorBounds,...(selectedStage.huts?[hutBounds,secondHutBounds]:[])]){
    const inside=(x,z)=>x>bounds.minX&&x<bounds.maxX&&z>bounds.minZ&&z<bounds.maxZ;
    if(!inside(a.cell.x,a.cell.z)||inside(finalGoalCell.x,finalGoalCell.z))continue;
+   if(castleIndoorBounds.includes(bounds)&&a.jobId!=='ninja'){
+    const exit=sharedCastleExit(a,bounds);
+    const distance=exit?.field?.[a.cell.z*WORLD_SIZE+a.cell.x];
+    if(Number.isFinite(distance)&&distance<0x3fffffff){
+     if(exit.next&&startCellMove(a,exit.next.x,exit.next.z)){
+      a.jumping=false;return;
+     }
+     // Wait at a blocked door; never step back into the castle only to
+     // retrace the same two cells on the next AI tick.
+     a.poseMoving=false;return;
+    }
+   }
    const roomKey=[bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ].join(':');
    if(a._indoorExit?.roomKey!==roomKey||
       (!a._indoorExit?.goal&&elapsed>=(a._indoorExit?.retryAt??0))||
@@ -8725,7 +8756,9 @@ function issueFormationSignature({groupId,squadIds:requested=[],automaticOpening
  const drafts=members.map((id,index)=>{
   const rank=Math.max(0,cellRanks.indexOf(cellOf(id)));
   const role=Math.min(2,cellRanks.length?rank:index%3);
-  const origin=centers.find(x=>x.id===id)?.point;
+  const realUnit=squadRoster.find(u=>u.team===0&&String(u.squadId)===id&&
+   u.hp>0&&u.alive!==false&&!u.isStrategist);
+  const origin=realUnit?.cell||centers.find(x=>x.id===id)?.point;
   const points=formationSignatureWaypoints(formation.formation,center,target,role)
    .map(goal=>signatureLegalPoint(goal,origin));
   return {id,role,points,final:rule.final[role]};
