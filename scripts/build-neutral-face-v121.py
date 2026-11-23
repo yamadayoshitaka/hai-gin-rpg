@@ -65,7 +65,7 @@ def sculpt(v):
     wings=(bell(x,-.029,.012)+bell(x,.029,.012))*bell(y,.245,.023)*front
     brow=bell(y,.321,.023)*(bell(x,-.042,.026)+bell(x,.042,.026))*front
     # Softer, narrower oval jaw, connected cheek volume, delicate nasal tip.
-    nx=x*(1-.105*lower-.039*chin-.019*wings+.014*midface)
+    nx=x*(1-.168*lower-.052*chin-.041*wings+.014*midface)
     nz=z+.0058*cheek+.0028*midface-.0048*nose-.0024*brow+.003*chin
     # Keep a natural female side profile, without an exaggerated protrusion.
     lip=bell(x,0,.039)*bell(y,.194,.029)*front
@@ -187,6 +187,14 @@ def build(source,destination):
     gltf['materials'][1]['name']='V121_HAZEL_BROWN_IRIS'
     gltf['materials'][1]['pbrMetallicRoughness']={
         'baseColorFactor':[.43,.245,.175,1],'metallicFactor':0,'roughnessFactor':.27}
+    # Donor iris discs sit behind the sclera surface. Lift both iris nodes
+    # only 4.5mm along the viewer-forward axis so the brown iris is visible.
+    for node in gltf['nodes']:
+        if 'iris.' in node.get('name','').lower():
+            if 'translation' in node:
+                node['translation'][2]+=0.0045
+            elif 'matrix' in node:
+                node['matrix'][14]+=0.0045
     gltf['materials'][2]['name']='V121_NATURAL_IVORY_SCLERA'
     gltf['materials'][2]['pbrMetallicRoughness']={
         'baseColorFactor':[.94,.91,.87,1],'metallicFactor':0,'roughnessFactor':.3}
