@@ -1163,10 +1163,10 @@ import {bridgeSafetySnapshot} from './src/battle-bridge-safety.js?v=20261120-bri
 import {BATTLE_BRIDGE_WIDTH_CELLS,BATTLE_BRIDGE_HALF_WIDTH_CELLS,BATTLE_BRIDGE_LANE_OFFSETS,monsterHasClearance} from './src/battle-wide-bridge-clearance.js?v=20261121-wide1';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
-import {MONSTER_CATALOG} from './src/monster-catalog.js';
+import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v=battle-catalog-parity-20261123';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
 import {createRegisteredBattleMonster}
- from './src/battle-registered-monster-model.js?v=m019-high-contrast-four-limbs-v11-20261120';
+ from './src/battle-registered-monster-model.js?v=battle-catalog-parity-20261123';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=20261117-horse-saddle-fix1';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
@@ -3724,7 +3724,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const monsterId=team===1&&i===0&&previewMonsterId?previewMonsterId:
    storyRequest?.enemyMode==='monsters'&&team===1?
      storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
- const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
+ const monsterSpec=monsterId?resolveMonsterGameSpec(monsterId):null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
  // Start the strategist on the clear town road instead of the forest edge.
  new THREE.Vector3((townNpcSites[i][0]-6)*CELL,0,(townNpcSites[i][1]-6)*CELL):
