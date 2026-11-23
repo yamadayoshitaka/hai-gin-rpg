@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache">
+<title>灰銀のレゾナンス｜新・ウィッグ工房</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#101824;color:#eff4fa}
+*{box-sizing:border-box}body{margin:0}a{color:#acdce8}
+header{background:#192838;border-bottom:1px solid #455c6f;padding:14px 18px}
+h1{font-size:21px;margin:0 0 5px}h2{font-size:15px;margin:0 0 10px}
+header p{font-size:12px;line-height:1.6;color:#b5cad8;margin:0}
+main{max-width:1080px;margin:auto;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:12px}
+.panel{padding:12px;background:#182738;border:1px solid #3b566a;border-radius:12px;min-width:0}
+#viewport{position:relative;height:min(75vh,660px);min-height:340px;background:radial-gradient(ellipse at 52% 40%,#354350,#111a27 78%);border-radius:10px;overflow:hidden;touch-action:none}
+#viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#wip{position:absolute;left:12px;top:12px;right:12px;pointer-events:none;font-size:11px;color:#c5d3dc;text-shadow:0 1px 3px #101824}
+#badge{position:absolute;right:12px;bottom:12px;pointer-events:none;font-size:11px;color:#d9cbaa;background:#101824ae;border-radius:6px;padding:5px 8px}
+button,select,input[type=color]{font:inherit;min-height:42px;color:#f4f9ff;background:#263f52;border:1px solid #638397;border-radius:8px;padding:8px}
+button{cursor:pointer}button:focus-visible{outline:2px solid #9dcebd}button:disabled{opacity:.55;cursor:default}
+.actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:9px}
+.actions button{font-size:13px;padding:5px 2px;min-height:38px}
+#status{font-size:13px;min-height:48px;padding:10px;border-radius:8px;background:#22374a;margin-top:9px;line-height:1.5}
+label{display:block;font-size:13px;margin:14px 0 0;color:#cfdfeb}
+label>select,label>input[type=range],label>input[type=color]{display:block;width:100%;margin-top:5px}
+input[type=range]{accent-color:#c9a87a;min-height:30px}
+.check{display:flex;gap:8px;align-items:center}input[type=checkbox]{width:18px;height:18px}
+#export{width:100%;background:#2d665e;margin-top:14px}
+#reset{width:100%;margin-top:6px}
+.note{font-size:12px;line-height:1.7;color:#b6c9d7;margin-top:12px}
+strong{color:#fff}#assetLog{font-size:11px;color:#9ab2c5;white-space:pre-wrap;word-break:break-word;margin-top:8px}
+@media(max-width:760px){main{grid-template-columns:1fr}#viewport{height:56vh;min-height:350px}.actions{grid-template-columns:repeat(5,minmax(0,1fr))}header{padding:12px 14px}h1{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+<h1>ウィッグ工房 <small style="font-size:12px;font-weight:400;color:#c5d0da">NEW / GLB</small></h1>
+<p>旧ヘアスタジオの生成コード・UIは使用しません。顔v121の実頭部メッシュで採寸し、ネットから取得した別体ウィッグGLBのみを表示・調整します。</p>
+</header>
+<main>
+<section class="panel">
+<div id="viewport" aria-label="ウィッグのみの3Dプレビュー"><div id="wip">実際の3DウィッグGLBを読み込みます。顔・眉毛・身体は表示しません。</div><div id="badge">CC0 / MakeHuman</div></div>
+<div class="actions">
+<button type="button" data-view="front">正面</button>
+<button type="button" data-view="side">側面</button>
+<button type="button" data-view="back">背面</button>
+<button type="button" data-view="top">真上</button>
+<button type="button" data-view="reset">視点戻す</button>
+</div>
+<div id="status" role="status" aria-live="polite">顔v121の頭型とCC0ウィッグGLBを読み込み中…</div>
+<div id="assetLog" aria-label="読み込み元と3Dモデルの状態"></div>
+</section>
+<aside class="panel">
+<h2>独立したGLBウィッグ</h2>
+<label>元の3D髪素材（CC0）
+<select id="source">
+<option value="long01">ロングヘア / MakeHuman</option>
+<option value="bob01">ロングボブ / MakeHuman</option>
+<option value="ponytail01">ポニーテール / MakeHuman</option>
+</select></label>
+<label>髪色
+<input type="color" id="color" value="#d9b77e"></label>
+<label>頭型へのフィット幅 <output id="widthValue">111%</output>
+<input type="range" id="width" min="99" max="125" step="1" value="111"></label>
+<label>前後位置 <output id="forwardValue">0 mm</output>
+<input type="range" id="forward" min="-25" max="35" step="1" value="0"></label>
+<label>上下位置 <output id="verticalValue">0 mm</output>
+<input type="range" id="vertical" min="-20" max="20" step="1" value="0"></label>
+<label class="check"><input id="bangs" type="checkbox">眉上でそろえた前髪を追加（試作）</label>
+<label class="check"><input id="guide" type="checkbox">採寸用の頭型ワイヤーを表示</label>
+<label class="check"><input id="spin" type="checkbox">自動で回転</label>
+<button type="button" id="export" disabled>ウィッグだけをGLBで保存</button>
+<button type="button" id="reset">装着位置を初期化</button>
+<div class="note"><strong>見本に合わせる工程</strong>：実際のGLBを頭型へ装着してから、髪の流れ・分け目・前髪・毛先の形を確認します。外部GLBそのものが見本と完全一致するわけではありません。</div>
+<div class="note">素材：<a href="https://github.com/kblood/CharacterCreator" target="_blank" rel="noopener noreferrer">CharacterCreator / MakeHuman</a>。配布元によるGLB素材の指定は<strong>CC0-1.0</strong>です。出典情報は<a href="https://github.com/kblood/CharacterCreator/blob/master/LICENSE-NOTES.md" target="_blank" rel="noopener noreferrer">ライセンス文書</a>を参照してください。</div>
+</aside>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,PUBLIC_WIG_SOURCES} from './src/wig-glb-fit-v1.js?v=1';
+
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#111c29');
+const camera=new THREE.PerspectiveCamera(34,1,.005,20);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.18;
+$('viewport').prepend(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=.07;
+controls.enablePan=false;controls.minDistance=.18;controls.maxDistance=2.2;
+scene.add(new THREE.HemisphereLight(0xe8f1ff,0x574331,2.1));
+const frontLight=new THREE.DirectionalLight(0xffead0,3.15);
+frontLight.position.set(.35,.6,1.3);scene.add(frontLight);
+const rimLight=new THREE.DirectionalLight(0xa5c9e9,1.4);
+rimLight.position.set(-.8,.35,-1.1);scene.add(rimLight);
+const loader=new GLTFLoader();
+const exporter=new GLTFExporter();
+const STYLES=new Map(PUBLIC_WIG_SOURCES.map(s=>[s.id,s]));
+const ORIGIN='https://raw.githubusercontent.com/kblood/CharacterCreator/master/output/';
+let head=null,headGuide=null,wig=null,wigContent=null,rawBox=null,fringe=null,activeId='long01',token=0;
+let nativeMats=[],viewCenter=new THREE.Vector3(),viewRadius=.6,rawMode='';
+function setStatus(message,error=false){
+ $('status').textContent=message;
+ $('status').style.color=error?'#ffd0c8':'#dbeeea';
+}
+function clearWig(){
+ if(!wig)return;
+ scene.remove(wig);
+ wig.traverse(node=>{
+  if(!node.isMesh)return;
+  // GLB material and geometry are released on selection change, not while exported.
+  node.geometry?.dispose?.();
+  const mats=Array.isArray(node.material)?node.material:[node.material];
+  for(const material of mats){
+   if(material?.userData?.wigOwned)material.dispose();
+  }
+ });
+ fringe?.userData?.dispose?.();
+ wig=null;wigContent=null;rawBox=null;fringe=null;nativeMats=[];
+ $('export').disabled=true;
+}
+function colorWig(){
+ const tint=$('color').value;
+ for(const m of nativeMats){
+  m.color?.set(tint);
+  if(m.map)m.map.anisotropy=8;
+  m.roughness=.71;
+  m.metalness=0;
+  m.needsUpdate=true;
+ }
+ if(fringe){
+  fringe.traverse(m=>{if(m.material?.color)m.material.color.set(tint)});
+ }
+}
+function installMaterials(gltfRoot){
+ nativeMats=[];
+ gltfRoot.traverse(node=>{
+  if(!node.isMesh)return;
+  const initial=Array.isArray(node.material)?node.material:[node.material];
+  const mapped=initial.map(original=>{
+   const material=original?.clone?.()||new THREE.MeshStandardMaterial();
+   material.userData={...(material.userData||{}),wigOwned:true};
+   material.side=THREE.DoubleSide;
+   nativeMats.push(material);
+   return material;
+  });
+  node.material=Array.isArray(node.material)?mapped:mapped[0];
+  node.castShadow=true;node.receiveShadow=true;
+ });
+ colorWig();
+}
+function updateFit(){
+ if(!wigContent||!rawBox||!head)return;
+ const opts={
+  widthRatio:Number($('width').value)/100,
+  forward:Number($('forward').value)/1000,
+  vertical:Number($('vertical').value)/1000
+ };
+ const fit=calculateWigFit(rawBox,head,opts);
+ wigContent.scale.setScalar(fit.scale);
+ wigContent.position.set(fit.x,fit.y,fit.z);
+ wigContent.updateWorldMatrix(true,true);
+ for(const id of ['width','forward','vertical']){
+  const value=$(id).value;
+  $(id+'Value').textContent=id==='width'?value+'%':value+' mm';
+ }
+ if(fringe){wig.remove(fringe);fringe.userData?.dispose?.();fringe=null;}
+ if($('bangs').checked){
+  fringe=buildReferenceFringe(THREE,head,{color:$('color').value});
+  fringe.name='optional-bangs-only';
+  wig.add(fringe);
+ }
+ const placed=new THREE.Box3().setFromObject(wig);
+ const center=placed.getCenter(new THREE.Vector3());
+ const size=placed.getSize(new THREE.Vector3());
+ viewCenter.copy(center);
+ viewRadius=Math.max(.35,size.length()*.75);
+ $('assetLog').textContent='装着先：v121の実頭部 '+head.vertices+'頂点'+
+  '\n髪の元モデル：'+rawMode+
+  '\n頭への拡大率：'+fit.scale.toFixed(3)+
+  '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m';
+}
+function frameView(view='front'){
+ if(!wig)return;
+ const distance=Math.min(1.5,Math.max(.48,viewRadius*1.8));
+ const center=viewCenter;
+ const pos=new THREE.Vector3();
+ if(view==='side')pos.set(center.x+distance,center.y+.02,center.z);
+ else if(view==='back')pos.set(center.x,center.y+.02,center.z-distance);
+ else if(view==='top')pos.set(center.x,center.y+distance,center.z+.005);
+ else pos.set(center.x,center.y+.02,center.z+distance);
+ camera.position.copy(pos);
+ controls.target.copy(center);
+ controls.update();
+}
+function scalpWire(){
+ if(headGuide||!head)return;
+ const mesh=head.mesh;
+ const material=new THREE.MeshBasicMaterial({
+  color:'#78b3d0',transparent:true,opacity:.18,wireframe:true,depthWrite:false
+ });
+ const geometry=mesh.geometry.clone();
+ geometry.applyMatrix4(mesh.matrixWorld);
+ headGuide=new THREE.Mesh(geometry,material);
+ headGuide.name='optional-measurement-head-wireframe';
+ headGuide.visible=false;
+ scene.add(headGuide);
+}
+async function initHead(){
+ try{
+  const gltf=await loader.loadAsync('./assets/generated/neutral-face-v121.glb');
+  gltf.scene.updateMatrixWorld(true);
+  head=measureRealHead(THREE,gltf.scene);
+  scalpWire();
+ }catch(err){
+  throw Error('採寸用v121頭部GLBを開けません：'+err.message);
+ }
+}
+async function loadWig(style,sourceFile){
+ const ticket=++token;
+ const descriptor=STYLES.get(style)||STYLES.get('long01');
+ const local='./assets/wigs/cc0/'+descriptor.file;
+ const remote=ORIGIN+descriptor.file;
+ let gltf,used;
+ setStatus('CC0のウィッグGLBを読み込み中：'+descriptor.label+'…');
+ for(const url of [sourceFile||local,remote]){
+  try{
+   gltf=await loader.loadAsync(url);
+   used=url===remote?'配布元のGLB（直接取得）':sourceFile?'端末から読み込んだGLB':'GitHub Pagesに配置したCC0 GLB';
+   break;
+  }catch(err){console.warn('ウィッグ読み込み失敗',url,err);}
+ }
+ if(ticket!==token)return;
+ if(!gltf){
+  setStatus('GLB取得に失敗しました。GitHub Pagesの公開状況またはネット接続を確認してください。',true);
+  return;
+ }
+ clearWig();
+ wig=new THREE.Group();wig.name='only-exportable-wig';
+ wigContent=gltf.scene;
+ rawBox=new THREE.Box3().setFromObject(wigContent);
+ if(rawBox.isEmpty())throw Error('インポートGLBに表示できる3D髪がありません');
+ wigContent.name='imported-CC0-'+descriptor.id;
+ wig.add(wigContent);
+ installMaterials(wigContent);
+ scene.add(wig);
+ rawMode=used+' / '+descriptor.id;
+ updateFit();
+ colorWig();
+ frameView('front');
+ $('export').disabled=false;
+ setStatus(descriptor.label+'の本物のGLBを読み込み、頭型に合わせました。表示しているのはウィッグだけです。');
+}
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
+ frameView(button.dataset.view==='reset'?'front':button.dataset.view);
+}));
+$('source').addEventListener('change',()=>{activeId=$('source').value;loadWig(activeId).catch(e=>setStatus(e.message,true));});
+for(const id of ['width','forward','vertical','bangs']){
+ $(id).addEventListener('input',()=>{if(wig)updateFit()});
+}
+$('guide').addEventListener('change',()=>{if(headGuide)headGuide.visible=$('guide').checked;});
+$('color').addEventListener('input',colorWig);
+$('reset').addEventListener('click',()=>{
+ $('width').value='111';$('forward').value='0';$('vertical').value='0';
+ $('bangs').checked=false;$('guide').checked=false;$('spin').checked=false;
+ if(headGuide)headGuide.visible=false;
+ updateFit();frameView('front');
+});
+$('export').addEventListener('click',()=>{
+ if(!wig){setStatus('GLBが読み込まれていません',true);return;}
+ $('export').disabled=true;
+ setStatus('ウィッグのみをGLBに書き出しています…');
+ exporter.parse(wig,(buffer)=>{
+  const blob=new Blob([buffer],{type:'model/gltf-binary'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='hai-gin-wig-'+activeId+'-fitted.glb';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  $('export').disabled=false;
+  setStatus('ウィッグだけのGLBを出力しました。頭と顔は含まれません。');
+ },err=>{
+  $('export').disabled=false;setStatus('GLB書き出しに失敗：'+err.message,true);
+ },{binary:true,onlyVisible:true,embedImages:true});
+});
+function resize(){
+ const rect=$('viewport').getBoundingClientRect();
+ const w=Math.max(1,Math.floor(rect.width)),h=Math.max(1,Math.floor(rect.height));
+ renderer.setSize(w,h,false);
+ camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe($('viewport'));
+window.addEventListener('resize',resize);
+resize();
+camera.position.set(0,0,.7);
+let prev=0;
+function render(ts){
+ requestAnimationFrame(render);
+ const dt=Math.min(.05,Math.max(0,(ts-prev)/1000||0));prev=ts;
+ if($('spin').checked&&wig)wig.rotation.y+=dt*.34;
+ controls.update();renderer.render(scene,camera);
+}
+requestAnimationFrame(render);
+try{
+ await initHead();
+ await loadWig('long01');
+}catch(error){console.error(error);setStatus(error.message,true);}
+</script>
+</body></html>

@@ -184,6 +184,17 @@ jobs:
         run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Import verified open-licensed wig GLBs from public MakeHuman source
+        run: python3 scripts/import-cc0-wigs.py --out pages-dist/assets/wigs/cc0
+      - name: Verify new wig-only studio and CC0 source models are in the public artifact
+        run: |
+          test -s pages-dist/wig-studio.html
+          test -s pages-dist/src/wig-glb-fit-v1.js
+          test -s pages-dist/assets/wigs/cc0/manifest.json
+          test -s pages-dist/assets/wigs/cc0/hair_long01.glb
+          test -s pages-dist/assets/wigs/cc0/hair_bob01.glb
+          test -s pages-dist/assets/wigs/cc0/hair_ponytail01.glb
+          node --test qa/wig-glb-import.test.mjs
       - name: Require baked neutral v120 GLB and preview in published Pages artifact
         run: |
           test -s pages-dist/face-neutral-v120.html
