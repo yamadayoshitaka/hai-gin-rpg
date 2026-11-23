@@ -27,7 +27,7 @@ class LowerFaceProfileQA(unittest.TestCase):
         def delta_y(y):
             i=original(y)
             return result[i][1]-points[i][1]
-        self.assertEqual(meta['version'],'female-v121-realspace-neutral-lower-face-v12')
+        self.assertEqual(meta['version'],'female-v121-realspace-neutral-lower-face-v13')
         self.assertTrue(meta['noseAndUpperFaceHardLocked'])
         self.assertTrue(meta['lowerLipDepthRetracted'])
         self.assertTrue(meta['shallowLabiomentalSulcus'])
@@ -35,7 +35,11 @@ class LowerFaceProfileQA(unittest.TestCase):
         self.assertLess(delta_z(.224),-.003)
         self.assertGreater(delta_z(.240),-.001)
         self.assertLess(delta_z(.202),delta_z(.173)-.0007)
-        self.assertGreater(delta_y(.216),.001)
+        # No second lip-like ridge may form below the actual lower lip.
+        self.assertLess(delta_z(.211),delta_z(.188)+.0004)
+        self.assertGreater(delta_y(.216),0.)
+        self.assertLess(delta_y(.216),.0015)
+        self.assertTrue(meta['secondaryUnderlipRidgeRemoved'])
         self.assertGreater(delta_y(.149),.001)
         self.assertEqual(result[original(.260)],points[original(.260)])
         self.assertEqual(result[original(.270)],points[original(.270)])
