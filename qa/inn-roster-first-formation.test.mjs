@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createNewGame,equipSquadItem} from '../src/game-core-flow.js';
-import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieFormationStatus,sortiePlanningLimit,SORTIE_FORMATIONS} from '../src/three-team-sortie.js';
+import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieFormationStatus,sortiePlanningLimit,SORTIE_FORMATIONS,setSortieFormation} from '../src/three-team-sortie.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation,inspectInnFormation} from '../src/inn-formation-rules.js';
 import {renderInnFormationWizard} from '../src/inn-formation-wizard.js';
 
@@ -81,6 +81,51 @@ selectInnRosterJob(game,2,0,1);
 setInnRosterCount(game,2,1,3);
 assert.throws(()=>selectInnRosterJob(game,3,0,1),/空き兵員|他の隊/);
 assert.equal(sortieTeams(game).reduce((n,t)=>n+sortieTeamCount(t),0),36);
+
+// A named formation must use only the chosen jobs. No automatic replacement.
+const selected=createNewGame('適合ジョブだけの陣形');
+selected.sortieTestLevel=99;
+selected.campaign.squads=[
+ {id:101,job:'僧侶',rarity:'N',count:2,commanderId:'player'},
+ {id:102,job:'魔法使い',rarity:'N',count:4,commanderId:'player'},
+ {id:103,job:'騎士',rarity:'N',count:10,commanderId:'player'}
+];
+ensureSortiePlan(selected);
+const roster=selected.sortiePlan.teams[0];
+roster.formation='free';
+roster.slots=['101','102',null];
+roster.counts={'101':2,'102':4};roster.divisions={'101':1,'102':1};
+roster.grid=Array(16).fill(null);roster.captainId=101;
+const jobSnapshot=()=>({
+ jobs: selected.sortiePlan.teams[0].slots.filter(Boolean).slice().sort(),
+ counts:{...selected.sortiePlan.teams[0].counts},
+ captainId:selected.sortiePlan.teams[0].captainId
+});
+const originalRoster=jobSnapshot();
+assert.equal(inspectInnFormation(selected,1,'support').eligible,true,'monk and mage match rear formation');
+setSortieFormation(selected,1,'support');
+assert.equal(selected.sortiePlan.teams[0].formation,'support');
+assert.deepEqual(jobSnapshot(),originalRoster,'eligible formation cannot modify jobs, counts or captain');
+assert.equal(sortieFormationStatus(selected,1).valid,true);
+setSortieFormation(selected,1,'attack');
+assert.equal(selected.sortiePlan.teams[0].formation,'free',
+ 'missing front-line class falls back to free, never swapping the monk');
+assert.deepEqual(jobSnapshot(),originalRoster);
+setSortieFormation(selected,1,'balanced');
+assert.equal(selected.sortiePlan.teams[0].formation,'free',
+ 'three-job preset cannot activate with only two chosen jobs');
+assert.deepEqual(jobSnapshot(),originalRoster);
+setSortieFormation(selected,1,'support');
+selected.sortiePlan.teams[0].formation='attack'; // invalid saved preset
+ensureSortiePlan(selected);
+assert.equal(selected.sortiePlan.teams[0].formation,'free','load incompatible saved formation as free');
+assert.deepEqual(jobSnapshot(),originalRoster,'loading must never recruit or replace another job');
+assert.match(renderInnFormationWizard({game:selected,view:'formation',teamId:1}),
+ /data-inn-wizard-formation="free"/);
+assert.match(renderInnFormationWizard({game:selected,view:'roster',teamId:1,rosterPreviewId:'attack'}),
+ /自由陣形で配置します/);
+chooseInnFormation(selected,1,'free');
+assert.equal(selected.sortiePlan.teams[0].formation,'free');
 
 const town=readFileSync(new URL('../town-hub.html',import.meta.url),'utf8');
 assert.match(town,/innWizardStep='teamPick'/);
