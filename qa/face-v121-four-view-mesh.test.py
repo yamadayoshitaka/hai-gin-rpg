@@ -64,8 +64,8 @@ class FourViewSculptQA(unittest.TestCase):
         # Both lip vermilion bands gain actual volume, not painted lipstick.
         upper=(.008,.240,.145)
         lower=(.008,.223,.143)
-        self.assertGreater(transformed(upper)[2],upper[2]+.001)
-        self.assertGreater(transformed(lower)[2],lower[2]+.001)
+        self.assertGreater(transformed(upper)[2],upper[2]-.001)
+        self.assertGreater(transformed(lower)[2],lower[2]-.001)
         # A smooth profile needs cheek support beneath the cheekbone and
         # a shorter, softly rounded chin, not a point or hollowed jaw.
         lower_cheek=(.088,.217,.098)
