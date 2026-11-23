@@ -329,8 +329,10 @@ def split_native_mouth_seal(g,b,head):
         }.get(name,0.)
         for x,y,z in base:
             dx,dy,dz=deformation(name,x,y,z,'skin')
-            taper=(1.-fade(abs(x),.026,.038))*(
-                fade(y,.227,.231)*(1.-fade(y,.235,.240)))
+            # Keep skin in place at the outer aperture rim; the original
+            # broader seal recession exposed jagged triangles beside lips.
+            taper=(1.-fade(abs(x),.016,.024))*(
+                fade(y,.228,.231)*(1.-fade(y,.234,.237)))
             result.append((dx,dy,dz-amplitude*taper))
         targets.append({'POSITION':add_float(g,b,result)})
     seal_prim={
