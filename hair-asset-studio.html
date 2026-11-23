@@ -35,7 +35,7 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 #viewport{height:46vh;min-height:305px}.settings{grid-column:auto}}
 </style></head><body>
 <header><h1>独立ヘアアセット・スタジオ</h1>
-<div class="muted">髪は顔v121のスキンヘッドから独立。男女別の実GLBを頭部に自動フィットし、パーツ単位で確認・動作検証します。</div>
+<div class="muted">髪メッシュは顔v121（眉毛付きスキンヘッド）から独立。元GLBをそのまま保持して頭に被せ、毛先は首・肩・胸・背中と接触計算します。</div>
 <div class="muted"><a href="./face-neutral-v121.html">顔v121（スキンヘッド）</a> ｜ <a href="./face-mesh-studio.html">顔編集</a> ｜ <a href="./character-face-catalog.html">顔・髪管理一覧</a></div></header>
 <main>
 <section class="panel"><h2>男女別ヘアカタログ</h2>
@@ -44,14 +44,14 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <div class="catalog" id="catalog" aria-label="3D髪型一覧"></div></section>
 <section class="panel">
 <div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
-<div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：独立ダミー<br>髪メッシュ：読込中</div></div>
-<p class="muted">ドラッグで360度回転、ピンチで拡大。色分け＋分解表示は頭頂／前髪／左右横髪／後ろ髪のジオメトリ単位で切り替えます。</p>
+<div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：顔v121実スキンヘッド（読込中）<br>髪メッシュ：読込中</div></div>
+<p class="muted">ドラッグで360度回転、ピンチで拡大。通常表示は元GLBの連続した髪のままです。色分け・分解は検査モードのみ。眉毛・目・顔は変更しません。</p>
 <div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="source">元のGLB</button></div>
 <div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
 <div id="parts" aria-label="髪メッシュのパーツ表示"></div>
 </section>
 <section class="panel settings"><h2>自動フィット・揺れの検証</h2>
-<p class="muted">頭の寸法を変更しても、髪の根元を合わせ直します。顔自体のメッシュは一切更新しません。</p>
+<p class="muted">v121実スキンヘッドを装着台として使用し、その頭頂・側頭の計測値を基準に髪の根元を自動調整します。顔の頂点・眉毛は変更しません。</p>
 <label>頭の幅 <span id="widthVal"></span><input id="width" type="range" min=".14" max=".28" step=".005" value=".205"></label>
 <label>頭の高さ <span id="heightVal"></span><input id="height" type="range" min=".17" max=".32" step=".005" value=".235"></label>
 <label>頭の奥行き <span id="depthVal"></span><input id="depth" type="range" min=".14" max=".28" step=".005" value=".205"></label>
@@ -59,7 +59,7 @@ footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-siz
 <h2>頭部・身体の動き</h2>
 <div class="controls"><button data-motion="idle" aria-pressed="true">静止</button><button data-motion="walk" aria-pressed="false">歩行</button><button data-motion="run" aria-pressed="false">走行</button><button data-motion="turn" aria-pressed="false">旋回</button></div>
 <label>風・揺れの強さ <span id="windVal">0</span><input id="wind" type="range" min="0" max="3" step=".1" value="0"></label>
-<p class="muted">根元は頭と一緒に動き、長い毛先ほどばね減衰で遅れて戻ります。動作中の髪の揺れはこのプレビュー用で、ゲーム本体への適用には更新ループへの接続が必要です。</p>
+<p class="muted">根元は頭に固定。毛先はばね減衰と首・肩・胸・背中の近似衝突判定で揺れます。衣装の全三角形を毎フレーム検査する方式ではありません。ゲーム本体への組み込みは別途必要です。</p>
 <button id="save" style="width:100%">現在の組み合わせをJSON保存</button>
 <p class="muted">出力は髪型ID・髪色・頭サイズ・動作設定です。元の3Dメッシュはライセンス表記付きGLBとして別管理します。</p></section>
 </main>
@@ -69,8 +69,8 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
- from './src/independent-hair-library-v1.js?v=1';
-import {buildIndependentHairMesh} from './src/independent-hair-mesh-v1.js?v=1';
+ from './src/independent-hair-library-v1.js?v=2';
+import {buildIndependentHairMesh,measureBaldHeadSurface} from './src/independent-hair-mesh-v1.js?v=2';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
 const pivot=new THREE.Group();scene.add(pivot);
@@ -87,26 +87,63 @@ controls.target.set(0,-.045,0);camera.position.set(.045,.03,.78);controls.update
 scene.add(new THREE.HemisphereLight(0xd5eaff,0x32302c,2.2));
 const light=new THREE.DirectionalLight(0xffe7d0,3.0);light.position.set(1.1,1.6,2);scene.add(light);
 const rim=new THREE.DirectionalLight(0xb5d4ff,1.7);rim.position.set(-1,1,-1);scene.add(rim);
-const skinMaterial=new THREE.MeshStandardMaterial({color:0xd9b7a2,roughness:.85});
-const head=new THREE.Group();pivot.add(head);
-const face=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),skinMaterial);head.add(face);
-const ears=[];
-for(const sign of [-1,1]){
- const e=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),skinMaterial);
- e.position.set(sign*.108,0,.002);e.scale.set(.023,.038,.015);head.add(e);ears.push(e);
+// Preview the REAL v121 bald anatomical head (with its existing eyebrows).
+// Do not use the former sphere/cylinder/cone head dummy.
+const skinMaterial=new THREE.MeshStandardMaterial({color:0xc69f90,roughness:.87});
+const bodyMaterial=new THREE.MeshStandardMaterial({color:0x566779,roughness:.89});
+const headModel=new THREE.Group();headModel.name='unchanged-v121-face-and-brows';
+pivot.add(headModel);
+const bodyView=new THREE.Group();bodyView.name='mobile-proxy-body-preview';
+pivot.add(bodyView);
+let scalpSource=null,faceLoaded=false;
+const previewCollider=(name,x,y,z,rx,ry,rz,material)=>{
+ const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),material);
+ mesh.name='body-collider-'+name;
+ mesh.position.set(x,y,z);mesh.scale.set(rx,ry,rz);bodyView.add(mesh);
+ return mesh;
+};
+previewCollider('neck',0,-.122,-.004,.064,.10,.067,skinMaterial);
+previewCollider('left-shoulder',-.144,-.235,-.008,.105,.076,.105,bodyMaterial);
+previewCollider('right-shoulder',.144,-.235,-.008,.105,.076,.105,bodyMaterial);
+previewCollider('chest',0,-.258,.06,.173,.126,.108,bodyMaterial);
+previewCollider('upper-back',0,-.26,-.078,.172,.148,.101,bodyMaterial);
+function headSize(){
+ return {width:+$('width').value,height:+$('height').value,depth:+$('depth').value};
 }
-const nose=new THREE.Mesh(new THREE.ConeGeometry(.018,.055,12),skinMaterial);
-nose.rotation.x=Math.PI/2;nose.position.set(0,-.018,.105);head.add(nose);
-function headSize(){return {width:+$('width').value,height:+$('height').value,depth:+$('depth').value};}
+function targetScalp(h){
+ // Skin measurements calibrate the real head shape; the controls only vary
+ // the size of this unchanged mesh in the independent preview.
+ const forward=scalpSource?
+  (scalpSource.front-scalpSource.centerZ)/scalpSource.depth:.39;
+ return {width:h.width,depth:h.depth,height:h.height,top:h.height*.5,
+  frontZ:h.depth*forward,centerX:0,centerZ:0};
+}
 function updateHead(){
  const h=headSize();
- face.position.y=.01;face.scale.set(h.width*.50,h.height*.50,h.depth*.50);
- for(let i=0;i<2;i++){ears[i].position.x=(i===0?-1:1)*h.width*.53;
-  ears[i].scale.set(h.width*.11,h.height*.16,h.depth*.075);}
- nose.position.z=h.depth*.51;
- for(const key of ['width','height','depth'])$(key+'Val').textContent=(h[key]*100).toFixed(1)+' cm';
- current?.fitToHead(h);
+ for(const key of ['width','height','depth'])
+  $(key+'Val').textContent=(h[key]*100).toFixed(1)+' cm';
+ if(scalpSource){
+  const sx=h.width/scalpSource.width,sy=h.height/scalpSource.height,
+   sz=h.depth/scalpSource.depth;
+  headModel.scale.set(sx,sy,sz);
+  headModel.position.set(-scalpSource.centerX*sx,
+   -scalpSource.centerY*sy,-scalpSource.centerZ*sz);
+ }
+ bodyView.scale.set(h.width/.205,h.height/.235,h.depth/.205);
+ current?.fitToHead(h,targetScalp(h));
+ current?.deformTips(0,0);
  updateStats();
+}
+async function loadRealBaldHead(){
+ const url='./assets/generated/neutral-face-v121.glb';
+ const gltf=await loader.loadAsync(url);
+ const data=measureBaldHeadSurface(THREE,gltf.scene);
+ // Face and brows are a single unchanged imported asset, not an ellipsoid.
+ scalpSource=data;
+ gltf.scene.name='original-bald-face-v121-eyebrows-preserved';
+ headModel.add(gltf.scene);
+ faceLoaded=true;updateHead();
+ return data;
 }
 let sex='female',current=null,selection=0,selected=INDEPENDENT_HAIR_CATALOG.female[0];
 let motion='idle',timer=0,last=performance.now(),swayTime=0;
@@ -122,7 +159,8 @@ function updateStats(){
  const f=model.root.userData.fit,scale=f.scale;
  $('viewerInfo').textContent='髪: '+selected.name+'（実GLB）\n'+
   'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
-  '\nパーツ：頭頂 / 前髪 / 左右 / 後髪';
+  '\n頭部：'+(faceLoaded?'実v121（眉毛維持）':'読込中')+
+  '\n衝突：首・肩・胸・背中（近似）';
 }
 function makePartControls(){
  const root=$('parts');root.replaceChildren();if(!current)return;
@@ -143,14 +181,17 @@ async function select(item){
  try{
   const gltf=await loader.loadAsync(item.path);
   if(request!==selection)return;
+  if(!faceLoaded)throw Error('実スキンヘッドv121がまだ読み込まれていません');
   const next=buildIndependentHairMesh(THREE,gltf.scene,
-   {headSize:headSize(),color:$('color').value});
+   {headSize:headSize(),headScalp:targetScalp(headSize()),color:$('color').value});
   const old=current;current=next;pivot.add(next.root);old?.dispose();
-  next.setSectionColors($('breakdown').getAttribute('aria-pressed')==='true');
-  next.setExploded($('explode').getAttribute('aria-pressed')==='true');
+  // A new selection must always open in the intact GLB mode.
+  for(const id of ['breakdown','explode'])$(id).setAttribute('aria-pressed','false');
+  next.setExploded(false);next.setSectionColors(false);next.deformTips(0,0);
   spring.reset();makePartControls();updateStats();
   $('source').onclick=()=>{window.open(item.path,'_blank','noopener')};
-  $('status').textContent=item.name+'：独立した髪GLBを表示中（元の顔モデルは変更なし）';
+  $('status').textContent=item.name+'：実v121頭部に装着（眉毛を維持／元髪GLBの形状を保持）'+
+   (sex==='male'?' ※男性髪は現段階ではv121頭部で仮試着':'');
  }catch(error){if(request===selection)$('status').textContent='GLB読込エラー：'+error.message;}
 }
 function list(){
@@ -172,8 +213,13 @@ $('color').oninput=()=>current?.setColor($('color').value);
 for(const key of ['breakdown','explode'])$(key).onclick=()=>{
  const pressed=$(key).getAttribute('aria-pressed')!=='true';
  $(key).setAttribute('aria-pressed',String(pressed));
- if(key==='breakdown')current?.setSectionColors(pressed);
- else current?.setExploded(pressed);
+ if(key==='breakdown'){
+  current?.setSectionColors(pressed);
+  if(!pressed){$('explode').setAttribute('aria-pressed','false');current?.setExploded(false);}
+ }else{
+  current?.setExploded(pressed);
+  if(pressed){$('breakdown').setAttribute('aria-pressed','true');current?.setSectionColors(true);}
+ }
 };
 function orient(x,y,z){camera.position.set(x,y,z);controls.target.set(0,-.045,0);controls.update();}
 $('front').onclick=()=>orient(0,.03,.78);
@@ -215,9 +261,16 @@ function frame(now){
   const w=+$('wind').value;
   const d=spring.step({dt:swayTime,velocityX:vx,velocityZ:vz,turnSpeed:turn,
    wind:Math.sin(timer*1.6)*w});
-  current?.deformTips(d.x,d.z);swayTime=0;
+  current?.deformTips(d.x,d.z,{collision:true});swayTime=0;
  }
  controls.update();renderer.render(scene,camera);
 }
-updateHead();list();select(selected);requestAnimationFrame(frame);
+updateHead();list();requestAnimationFrame(frame);
+loadRealBaldHead().then(data=>{
+ $('status').textContent='v121のスキンヘッドを読込みました（'+data.vertexCount+'頂点／眉毛付き）。髪を装着中…';
+ select(selected);
+}).catch(error=>{
+ $('status').textContent='実スキンヘッド読込失敗：'+error.message+'。球体ダミーには戻しません。';
+ console.error('hair studio v121 source head',error);
+});
 </script></body></html>

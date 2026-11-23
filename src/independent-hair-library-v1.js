@@ -62,6 +62,87 @@ export function independentHairFit(assetBox,headSize={}){
   scalpGap:.0035,crownY,foreheadZ:frontZ
  });
 }
+/**
+ * Align the hair ROOTS to the real head's scalp measurements.
+ * The full length of long hair is deliberately not used to infer head size.
+ * All coordinates are metres, in one local head space (front = +Z).
+ */
+export function independentHairFitFromRoot(rootBox,hairBox,headSize={},scalp=null){
+ const h=normalizeHeadSize(headSize);
+ const b=rootBox?.min,e=rootBox?.max;
+ const hb=hairBox?.min,he=hairBox?.max;
+ if(!b||!e||!hb||!he||
+    ![b.x,b.y,b.z,e.x,e.y,e.z,hb.x,hb.y,hb.z,he.x,he.y,he.z]
+      .every(Number.isFinite)||
+    !(e.x>b.x&&e.y>b.y&&e.z>b.z&&he.y>hb.y)){
+  throw Error('髪の根元帯の境界が無効です');
+ }
+ const scalpWidth=Number.isFinite(scalp?.width)?scalp.width:h.width;
+ const scalpDepth=Number.isFinite(scalp?.depth)?scalp.depth:h.depth;
+ const scalpTop=Number.isFinite(scalp?.top)?scalp.top:h.height*.5;
+ const scalpFront=Number.isFinite(scalp?.frontZ)?scalp.frontZ:h.depth*.39;
+ const scalpCenterX=Number.isFinite(scalp?.centerX)?scalp.centerX:0;
+ const scalpCenterZ=Number.isFinite(scalp?.centerZ)?scalp.centerZ:0;
+ // Scalp clearance is several millimetres, not a wide helmet-like gap.
+ const margin=.0035;
+ const sx=clamp((scalpWidth+margin*2)/Math.max(.035,e.x-b.x),.58,2.05);
+ const sz=clamp((scalpDepth+margin*2)/Math.max(.035,e.z-b.z),.58,2.05);
+ const sy=clamp(Math.sqrt(sx*sz),.6,1.85);
+ const rootCenterX=(b.x+e.x)*.5;
+ const rootCenterZ=(b.z+e.z)*.5;
+ const crownY=scalpTop+margin;
+ const position=freeze([
+  scalpCenterX-rootCenterX*sx,
+  crownY-e.y*sy,
+  scalpCenterZ-rootCenterZ*sz+clamp(
+   scalpFront-(e.z*sz+(scalpCenterZ-rootCenterZ*sz)),-.025,.025)
+ ]);
+ return freeze({scale:freeze([sx,sy,sz]),position,headSize:h,
+  scalpGap:margin,crownY,foreheadZ:scalpFront,fitMethod:'root-band-real-scalp',
+  scalpWidth,scalpDepth});
+}
+/**
+ * Local-body collider proxy definition. 3D garment cloth and huge surfaces
+ * are NOT intersected triangle-by-triangle in the mobile render loop.
+ */
+export function bodyCollisionProxies({width=.205,height=.235,depth=.205}={}){
+ const h=normalizeHeadSize({width,height,depth});
+ const w=h.width/.205,sy=h.height/.235,d=h.depth/.205;
+ const item=(name,x,y,z,rx,ry,rz)=>freeze({
+  name,center:freeze([x*w,y*sy,z*d]),
+  radius:freeze([rx*w,ry*sy,rz*d])
+ });
+ return freeze([
+  item('neck',0,-.122,-.004,.064,.10,.067),
+  item('left-shoulder',-.144,-.235,-.008,.105,.076,.105),
+  item('right-shoulder',.144,-.235,-.008,.105,.076,.105),
+  item('chest',0,-.258,.06,.173,.126,.108),
+  item('upper-back',0,-.26,-.078,.172,.148,.101)
+ ]);
+}
+export function resolveHairBodyContact(point,colliders=[],clearance=.005){
+ // Pure, bounded ellipsoid projection. Call for free ends only, never roots.
+ let [x,y,z]=point;
+ let hits=0;
+ for(const collider of colliders){
+  const [cx,cy,cz]=collider.center,[rx,ry,rz]=collider.radius;
+  if(rx<=0||ry<=0||rz<=0)continue;
+  let dx=x-cx,dy=y-cy,dz=z-cz;
+  let q=Math.sqrt((dx/rx)**2+(dy/ry)**2+(dz/rz)**2);
+  if(q>=1+clearance/Math.min(rx,ry,rz))continue;
+  if(q<1e-5){
+   // Exact collider centre: choose the shortest outward depth direction.
+   z=cz+(z<cz?-1:1)*(rz+clearance);hits++;continue;
+  }
+  const target=1+clearance/Math.max(.025,Math.min(rx,ry,rz));
+  // Project to the surface even for deep penetrations. Limiting to .06 m
+  // left shoulder-centre vertices buried inside the body every frame.
+  const amount=Math.max(0,(target/q-1)*Math.hypot(dx,dy,dz));
+  const len=Math.hypot(dx,dy,dz)||1;
+  x+=dx/len*amount;y+=dy/len*amount;z+=dz/len*amount;hits++;
+ }
+ return freeze({position:freeze([x,y,z]),hits});
+}
 export function classifyHairTriangle(x,y,z,box,headHeight){
  const scalpDepth=Math.max(.12,headHeight);
  const cZ=(box.min.z+box.max.z)/2;
