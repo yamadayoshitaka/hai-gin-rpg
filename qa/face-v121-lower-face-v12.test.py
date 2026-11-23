@@ -16,7 +16,7 @@ class LowerFaceProfileQA(unittest.TestCase):
                 for i in range(-60,61,4)
                 for j in range(80,265,4)]
         points.extend([(0.,y,.15) for y in
-                       (.216,.222,.224,.232,.240,.245,.255,.260,.270,
+                       (.211,.216,.222,.224,.232,.240,.245,.255,.260,.270,
                         .202,.173,.149,.126)])
         result,meta=sculpt(points,None)
         def original(y):
