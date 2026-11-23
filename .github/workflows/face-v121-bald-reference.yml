@@ -11,6 +11,9 @@ on:
       - 'qa/face-v121-eye-detail-real-glb.test.py'
       - 'face-neutral-v121.html'
       - 'face-v121-parametric-sliders.js'
+      - 'face-v121-expression-player.js'
+      - 'scripts/add-v121-face-expressions.py'
+      - 'qa/face-v121-expression-morph.test.py'
       - 'face-neutral-v120.html'
       - 'face-mesh-studio.html'
       - 'qa/face-v121-bald-reference-skin.test.py'
@@ -47,6 +50,7 @@ jobs:
           python3 qa/face-v121-eye-detail-real-glb.test.py
           python3 qa/face-v121-natural-folds-cleanup.test.py
           python3 qa/face-v121-lower-lashes-nose-lips.test.py
+          python3 qa/face-v121-expression-morph.test.py
       - uses: actions/upload-artifact@v4
         if: success()
         with:
