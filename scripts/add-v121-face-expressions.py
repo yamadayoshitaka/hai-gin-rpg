@@ -123,6 +123,82 @@ def deformation(name,x,y,z,part):
     raise ValueError(name)
 
 
+def append_oral_parts(g,b,head_xyz):
+    """Real PBR 3D oral cavity, teeth, tongue: neutral hidden; visemes visible."""
+    front=[p for p in head_xyz if abs(p[0])<.056 and .170<p[1]<.224 and p[2]>.09]
+    if len(front)<50:raise ValueError('Cannot locate lip surface for mouth cavity')
+    def surface(x,y):
+        nearest=sorted(front,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)[:6]
+        return max(p[2] for p in nearest)
+    styles={'smile':(.036,.0055),'laugh':(.039,.014),
+       'mouthOpen':(.030,.015),'vowelA':(.030,.019),'vowelI':(.040,.005),
+       'vowelU':(.016,.010),'vowelE':(.037,.010),'vowelO':(.021,.016)}
+    def pack_indices(seq):
+        raw=b''.join(struct.pack('<I',v) for v in seq)
+        while len(b)%4:b.append(0)
+        off=len(b);b.extend(raw)
+        v=len(g['bufferViews'])
+        g['bufferViews'].append({'buffer':0,'byteOffset':off,
+                                 'byteLength':len(raw),'target':34963})
+        a=len(g['accessors'])
+        g['accessors'].append({'bufferView':v,'componentType':5125,
+          'count':len(seq),'type':'SCALAR','min':[min(seq)],'max':[max(seq)]})
+        return a
+    nodes=[]
+    for kind,color in (
+      ('V121_ORAL_CAVITY',[.115,.03,.044,1.]),
+      ('V121_ORAL_UPPER_TEETH',[.90,.85,.76,1.]),
+      ('V121_ORAL_TONGUE',[.56,.19,.23,1.])):
+        if kind.endswith('CAVITY'):
+            poly=[(math.cos(j*math.tau/24),math.sin(j*math.tau/24))
+                  for j in range(24)]
+            inds=[q for j in range(1,23) for q in (0,j,j+1)]
+        else:
+            poly=[(-1.,-1.),(1.,-1.),(1.,1.),(-1.,1.)]
+            inds=[0,1,2,0,2,3]
+        rest=[(xx*.0002,.197+yy*.00008,surface(0,.197)-.014)
+              for xx,yy in poly]
+        mat=len(g['materials'])
+        g['materials'].append({'name':kind+'_PBR','doubleSided':True,
+          'pbrMetallicRoughness':{'baseColorFactor':color,'metallicFactor':0.,
+          'roughnessFactor':.76}})
+        targets=[]
+        for name in NAMES:
+            wh=styles.get(name)
+            if wh is None:
+                targets.append({'POSITION':add_float(g,b,[(0.,0.,0.)]*len(poly))})
+                continue
+            width,height=wh
+            dst=[]
+            for xx,yy in poly:
+                if kind.endswith('CAVITY'):
+                    x=xx*width;y=.197+yy*height
+                    dz=.006
+                elif kind.endswith('TEETH'):
+                    x=xx*width*.69;y=.197+height*(.51+.12*yy)
+                    dz=.0072
+                else:
+                    x=xx*width*.55;y=.197-height*(.53-.13*yy)
+                    dz=.0075
+                z=surface(x,y)+dz
+                dst.append((x,y,z))
+            targets.append({'POSITION':add_float(g,b,[
+                tuple(dst[j][k]-rest[j][k] for k in range(3))
+                for j in range(len(rest))])})
+        mesh_id=len(g['meshes'])
+        g['meshes'].append({'name':kind,
+            'primitives':[{'attributes':{'POSITION':add_float(g,b,rest),
+             'NORMAL':add_float(g,b,[(0.,0.,1.)]*len(rest))},
+             'indices':pack_indices(inds),'material':mat,'targets':targets}],
+            'weights':[0.]*len(NAMES),
+            'extras':{'targetNames':list(NAMES),'v121OralPart':True}})
+        node_id=len(g['nodes'])
+        g['nodes'].append({'name':kind,'mesh':mesh_id})
+        nodes.append(node_id)
+    g['scenes'][g.get('scene',0)].setdefault('nodes',[]).extend(nodes)
+    return nodes
+
+
 def animation(g,b,name,times,frames,nodes):
     assert len(times)==len(frames)
     inp=add_float(g,b,times,'SCALAR')
@@ -166,6 +242,7 @@ def build(path):
         count[mesh.get('name','mesh-'+str(i))]=len(xyz)
         nodes.extend(j for j,node in enumerate(g['nodes']) if node.get('mesh')==i)
     if len(nodes)!=6:raise ValueError('Expected skin and five cosmetic morph nodes')
+    nodes.extend(append_oral_parts(g,b,vertices(g,b,head['primitives'][0]['attributes']['POSITION'])))
     base={}
     blink=[
         (0.00,{}),(.12,{'blink':.3}),(.20,{'blink':1.}),
@@ -190,9 +267,10 @@ def build(path):
         'animationNames':[clip['name'] for clip in g['animations']],
         'preservesSkinVertexIDs':13455,
         'eyeGlobesRemainIndependent':True,
+        'oralCavityMeshNames':['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE'],
         'mouthShapeVersion':'independent_vermilion_corner_visemes_v2',
         'jawNeckStationary':True,
-        'oralCavityPreview':'runtime_mesh_with_teeth_and_tongue'}
+        'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue'}
     if 'referenceFeatureSculpt' in meta:
         meta['referenceFeatureSculpt']['facialExpressionAnimations']=True
     if 'naturalFoldCleanup' in meta:
