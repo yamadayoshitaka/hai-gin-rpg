@@ -22,6 +22,8 @@ class LipAndCheekV17(unittest.TestCase):
                       (.060,.231,.150),(0.,.225,.090),
                       (.036,.200,.150)):
             self.assertEqual(outline(*point)[0],0.,point)
+        # Exclude red pigment from chin; natural cheek/nose blush is allowed.
+        for point in ((0.,.208,.150),(0.,.200,.150),(.036,.200,.150)):
             color=SCULPT['neutral_color'](*point)
             self.assertLess(color[0]-color[1],.025)
         # Each Cupid peak is a higher border, not painted straight across.
