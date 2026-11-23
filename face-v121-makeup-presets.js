@@ -5,19 +5,42 @@
  */
 export const V121_MAKEUP_PRESETS=Object.freeze({
   bare:{label:'すっぴん',blush:0,lip:0,shadow:0,liner:.25,
-    lipColor:[.02,.20,.23],shadowColor:[.24,.28,.32],brow:0x79695e,linerColor:0x59413b},
-  natural:{label:'ナチュラル',blush:.27,lip:.54,shadow:.21,liner:.50,
-    lipColor:[.04,.31,.30],shadowColor:[.26,.29,.34],brow:0x61504b,linerColor:0x422e2b},
-  pink:{label:'血色ピンク',blush:.63,lip:.98,shadow:.40,liner:.72,
-    lipColor:[.03,.39,.34],shadowColor:[.22,.28,.34],brow:0x574239,linerColor:0x382325},
-  brown:{label:'ブラウン',blush:.37,lip:.82,shadow:.79,liner:.96,
-    lipColor:[.16,.33,.32],shadowColor:[.43,.37,.29],brow:0x47362e,linerColor:0x291d1d},
-  glamorous:{label:'華やか',blush:.78,lip:1.13,shadow:.93,liner:1.12,
-    lipColor:[.08,.54,.48],shadowColor:[.29,.31,.37],brow:0x43302a,linerColor:0x241719}
+    lipColor:[.01,.10,.13],shadowColor:[.24,.28,.32],brow:0x79695e,linerColor:0x59413b},
+  natural:{label:'ナチュラル',blush:.30,lip:.36,shadow:.18,liner:.43,
+    lipColor:[.015,.14,.16],shadowColor:[.22,.27,.31],brow:0x65534c,linerColor:0x483632},
+  pink:{label:'血色ピンク',blush:.48,lip:.58,shadow:.34,liner:.66,
+    lipColor:[.015,.22,.22],shadowColor:[.22,.28,.33],brow:0x59483e,linerColor:0x3c292a},
+  brown:{label:'ブラウン',blush:.31,lip:.51,shadow:.58,liner:.84,
+    lipColor:[.06,.17,.19],shadowColor:[.36,.32,.27],brow:0x503d34,linerColor:0x332523},
+  glamorous:{label:'華やか',blush:.55,lip:.74,shadow:.70,liner:.97,
+    lipColor:[.025,.26,.26],shadowColor:[.26,.30,.34],brow:0x4c3833,linerColor:0x302022}
 });
 const gauss=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
 const fade=(x,a,b)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)};
 const clamp=x=>Math.max(0,Math.min(1,x));
+
+/**
+ * Derive pigments from real facial coordinates rather than 2D projected
+ * circles. The lower vermilion begins above the chin; neither lip colour
+ * nor cheek blush is permitted to run onto the jaw or underside of the head.
+ * Exported for independent regression checks on anatomically critical points.
+ */
+export function v121MakeupMasks(x,y,z){
+  const ax=Math.abs(x),front=fade(z,.084,.132);
+  const lipBands=(.82*gauss(y,.208,.0068)+gauss(y,.185,.0077));
+  const lipSurface=fade(z,.110,.141)*fade(y,.163,.178)*
+    (1-fade(y,.224,.240));
+  return {
+    blush:(gauss(x,-.076,.031)+gauss(x,.076,.031))*
+      gauss(y,.257,.028)*front,
+    lip:clamp(lipBands*gauss(x,0,.033)*lipSurface),
+    shadow:(gauss(x,-.044,.026)+gauss(x,.044,.026))*
+      gauss(y,.323,.008)*fade(z,.090,.128),
+    liner:(gauss(x,-.043,.024)+gauss(x,.043,.024))*
+      gauss(y,.304,.003)*fade(z,.085,.127),
+    highlighter:gauss(ax,.058,.024)*gauss(y,.272,.024)*front
+  };
+}
 
 export function attachV121Makeup({neutral,face,onChange=()=>{}}){
   const color=face.geometry.getAttribute('color');
@@ -34,27 +57,15 @@ export function attachV121Makeup({neutral,face,onChange=()=>{}}){
   });
   if(cosmetic.length<5)throw Error('Missing eyelid, brow and lash geometry');
 
-  // Respect the face's local model space and the actual lip/eye anatomy.
-  const masks=Array.from({length:color.count},(_,i)=>{
-    const x=localXYZ[3*i],y=localXYZ[3*i+1],z=localXYZ[3*i+2];
-    const ax=Math.abs(x);
-    const front=fade(z,.084,.132);
-    return {
-      blush:(gauss(x,-.074,.033)+gauss(x,.074,.033))*
-        gauss(y,.258,.029)*front,
-      lip:(.86*gauss(y,.208,.008)+gauss(y,.185,.009))*
-        gauss(x,0,.032)*fade(z,.087,.133),
-      shadow:(gauss(x,-.044,.026)+gauss(x,.044,.026))*
-        gauss(y,.323,.008)*fade(z,.090,.128),
-      liner:(gauss(x,-.043,.024)+gauss(x,.043,.024))*
-        gauss(y,.304,.003)*fade(z,.085,.127),
-      highlighter:gauss(ax,.058,.024)*gauss(y,.272,.024)*front
-    };
-  });
+  // Capture the position after the selected neutral face reference is applied.
+  // The pigments stay anchored to the anatomical lip bands, not a floating
+  // cosmetic disc or a face-wide re-colour.
+  const masks=Array.from({length:color.count},(_,i)=>
+    v121MakeupMasks(localXYZ[3*i],localXYZ[3*i+1],localXYZ[3*i+2]));
 
   const originalMaterials=new Map(cosmetic.map(part=>
     [part,part.material.color.clone()]));
-  let current='pink';
+  let current='natural';
   function select(id){
     const preset=V121_MAKEUP_PRESETS[id];
     if(!preset)throw Error('Unknown v121 makeup preset '+id);
@@ -65,22 +76,19 @@ export function attachV121Makeup({neutral,face,onChange=()=>{}}){
         continue;
       }
       const m=masks[i], k=i*3;
-      // The PBR base texture provides skin grain and skin tone; COLOR_0
-      // introduces layerable pigments by physically situated face regions.
-      // Stronger than the previous invisible ~2% default makeup.
+      // Preserve each source skin colour, including its natural lip
+      // undertone. Apply small channel-wise pigment differences ONLY inside
+      // the localized anatomical mask. No jaw/chin colour replacement.
       const blush=m.blush*preset.blush;
       const lipstick=m.lip*preset.lip;
       const eyes=m.shadow*preset.shadow;
       const upper=m.liner*preset.liner;
-      const baseR=clamp(.995-.027*blush-.008*m.highlighter);
-      const baseG=clamp(.994-.150*blush-.018*m.highlighter);
-      const baseB=clamp(.992-.162*blush-.022*m.highlighter);
-      color.array[k]=clamp(baseR-lipstick*preset.lipColor[0]-
-        eyes*preset.shadowColor[0]-.055*upper);
-      color.array[k+1]=clamp(baseG-lipstick*preset.lipColor[1]-
-        eyes*preset.shadowColor[1]-.105*upper);
-      color.array[k+2]=clamp(baseB-lipstick*preset.lipColor[2]-
-        eyes*preset.shadowColor[2]-.100*upper);
+      color.array[k]=clamp(originals[k]-.019*blush-.004*m.highlighter-
+        lipstick*preset.lipColor[0]-eyes*preset.shadowColor[0]-.040*upper);
+      color.array[k+1]=clamp(originals[k+1]-.072*blush-.007*m.highlighter-
+        lipstick*preset.lipColor[1]-eyes*preset.shadowColor[1]-.075*upper);
+      color.array[k+2]=clamp(originals[k+2]-.080*blush-.008*m.highlighter-
+        lipstick*preset.lipColor[2]-eyes*preset.shadowColor[2]-.070*upper);
     }
     color.needsUpdate=true;
     for(const part of cosmetic){
@@ -103,7 +111,7 @@ export function attachV121Makeup({neutral,face,onChange=()=>{}}){
     onChange(id,preset.label);
     return id;
   }
-  select('pink');
+  select('natural');
   return {select,current:()=>current,isChanged:()=>current!=='bare',
           presets:V121_MAKEUP_PRESETS,originals};
 }
