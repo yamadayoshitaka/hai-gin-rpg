@@ -128,7 +128,8 @@ function targetScalp(h){
  const forward=scalpSource?
   (scalpSource.front-scalpSource.centerZ)/scalpSource.depth:.39;
  return {width:h.width,depth:h.depth,height:h.height,top:h.height*.5,
-  frontZ:h.depth*forward,centerX:0,centerZ:0};
+  frontZ:h.depth*forward,centerX:0,centerZ:0,
+  scalpRoofPoints:scalpSource?.scalpRoofPoints||[]};
 }
 function updateHead(){
  const h=headSize();
@@ -198,7 +199,8 @@ function updateStats(){
   '\n頭部GLB：'+headFileName+
   '\n頭皮下地：'+(current?.cap?.triangles||0)+'面（実メッシュ由来）'+
   '\n細い立体毛流れ：'+(current?.cap?.fiberTriangles||0)+'面'+
-  '\n浮遊した破片の除去：'+(current?.cleanupStats?.removedTriangles||0)+'面';
+  '\n浮遊した破片の除去：'+(current?.cleanupStats?.removedTriangles||0)+'面'+
+  '\n頭皮と交差した毛根を補正：'+(current?.root?.userData?.crownVerticesAdjusted||0)+'頂点';
 }
 function makePartControls(){
  const root=$('parts');root.replaceChildren();if(!current)return;
