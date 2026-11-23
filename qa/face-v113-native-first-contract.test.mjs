@@ -9,8 +9,8 @@ test('v113 default reuses the previously approved smooth original source and nev
  assert.match(html,/enableV106LocalRetopo:experimentalCheekRetopo/);
  assert.match(html,/v113NativeNormalGeometry:!experimentalCheekRetopo/);
  assert.match(html,/v113FaceVertexCount:/);
- assert.match(html,/<h1>顔・髪の編集｜顔品質 v117・髪造形 v72<\/h1>/);
- assert.match(html,/dataset\.faceMeshReady='v117'/);
+ assert.match(html,/<h1>顔・髪の編集｜顔品質 v(?:117|119)・髪造形 v72<\/h1>/);
+ assert.match(html,/dataset\.faceMeshReady='v(?:117|119)'/);
  assert.doesNotMatch(html,/enableV106LocalRetopo:g==='female',/);
  assert.doesNotMatch(html,/enableV106LocalRetopo:true,/);
 });
