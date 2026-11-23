@@ -10,7 +10,9 @@ function makeRootTexture(THREE){
  if(strandTexture||typeof document==='undefined')return strandTexture;
  const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
  const ctx=canvas.getContext('2d');if(!ctx)return null;
- ctx.fillStyle='#bfa98a';ctx.fillRect(0,0,512,512);
+ // Near-neutral texture keeps the selected hair color consistent across
+ // the actual hair GLB and this anatomical hairline underlay.
+ ctx.fillStyle='#f7f3eb';ctx.fillRect(0,0,512,512);
  // Long flowing parallel fibers; colors wrap gently across UV seams.
  for(let i=0;i<970;i++){
   const x=(i*0.527)%512,a=.12+.22*Math.sin(i*12.9898)**2;
