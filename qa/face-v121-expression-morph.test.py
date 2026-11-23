@@ -138,14 +138,14 @@ class TestRealExpressionGLB(unittest.TestCase):
                           if p[1]<.160 and abs(p[0])<.075]
             self.assertLess(max(chin_stretch),.0007,expression)
             recess=[d[2] for p,d in zip(self.pos,delta)
-                    if abs(p[0])<.020 and .192<p[1]<.202 and p[2]>.120]
+                    if abs(p[0])<.020 and .228<p[1]<.236 and p[2]>.120]
             self.assertGreater(len(recess),0,expression)
             self.assertLess(min(recess),-.006,expression)
         opened=vector(g,self.b,self.prim['targets'][NAMES.index('mouthOpen')]['POSITION'])
         upper=[d[1] for p,d in zip(self.pos,opened)
-               if abs(p[0])<.025 and .205<p[1]<.213 and p[2]>.120]
+               if abs(p[0])<.025 and .236<p[1]<.245 and p[2]>.120]
         lower=[d[1] for p,d in zip(self.pos,opened)
-               if abs(p[0])<.025 and .182<p[1]<.190 and p[2]>.120]
+               if abs(p[0])<.025 and .218<p[1]<.228 and p[2]>.120]
         self.assertGreater(len(upper),0)
         self.assertGreater(len(lower),0)
         self.assertGreater(max(upper),.002)
@@ -161,7 +161,7 @@ class TestRealExpressionGLB(unittest.TestCase):
                              profile['lipFrontZ']-.0164)
         self.assertLessEqual(profile['chinAfterZ'],profile['chinBeforeZ'])
         lip=[z for x,y,z in self.pos
-             if abs(x)<.042 and .179<y<.215]
+             if abs(x)<.042 and .217<y<.249]
         chin=[z for x,y,z in self.pos
               if abs(x)<.055 and .110<y<.163]
         self.assertGreater(len(lip),12)
@@ -194,7 +194,7 @@ class TestRealExpressionGLB(unittest.TestCase):
         pos=vector(self.g,self.b,seal['attributes']['POSITION'])
         mouth_delta=vector(self.g,self.b,seal['targets'][NAMES.index('mouthOpen')]['POSITION'])
         self.assertLess(min(v[2] for v in mouth_delta),-.016)
-        self.assertTrue(all(.185<v[1]<.209 and abs(v[0])<.037 for v in pos))
+        self.assertTrue(all(.230<v[1]<.235 and abs(v[0])<.037 for v in pos))
 
     def test_real_brows_closer_to_upper_eye(self):
         brow=next(m for m in self.g['meshes']
@@ -214,7 +214,7 @@ class TestRealExpressionGLB(unittest.TestCase):
         cheek=[rgb for (x,y,z),rgb in zip(self.pos,colors)
                if .058<abs(x)<.092 and .235<y<.281 and z>.075]
         lip=[rgb for (x,y,z),rgb in zip(self.pos,colors)
-             if abs(x)<.025 and .178<y<.218 and z>.075]
+             if abs(x)<.025 and .216<y<.249 and z>.075]
         chin=[rgb for (x,y,z),rgb in zip(self.pos,colors)
               if abs(x)<.045 and .110<y<.158 and z>.01]
         self.assertGreater(len(cheek),30)
