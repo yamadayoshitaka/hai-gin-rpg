@@ -147,7 +147,7 @@ test('all 26 styles generate without source GLBs, broken geometry or visible sca
 test('studio uses the five-part v10 renderer and fine-strand texture workflow, never old hair GLB',()=>{
  const html=readFileSync(new URL('../hair-asset-studio.html',import.meta.url),'utf8');
  const code=readFileSync(new URL('../src/head-derived-hair-reference-v10.js',import.meta.url),'utf8');
- assert.match(html,/head-derived-hair-reference-v10\.js\?v=10/);
+ assert.match(html,/head-derived-hair-modular-v11\.js\?v=11/);
  assert.match(html,/sculptHairFromHead\(THREE,scalpSource\.skinMesh/);
  assert.match(html,/5パーツの高密度ヘア造形 v10/);
  assert.doesNotMatch(html,/loader\.loadAsync\(item\.path\)/);
