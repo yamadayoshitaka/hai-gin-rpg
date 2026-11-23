@@ -64,7 +64,7 @@ def new_jaw_geometry(points,uv):
     lip=max(z for x,y,z in points if abs(x)<.040 and .217<y<.249)
     zknots=[
         (.385,lip-.035),(.400,lip-.033),(.414,lip-.024),
-        (.436,lip-.018),(.460,lip-.019),(.485,lip-.030),
+        (.436,lip-.021),(.460,lip-.021),(.485,lip-.030),
         (.510,lip-.050),(.540,lip-.080),(.570,lip-.100),
         (.585,lip-.104)]
     yknots=[
