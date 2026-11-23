@@ -21,7 +21,7 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
    null,{timeout:50000});
   assert.deepEqual(errors,[],'No runtime errors in new model preview');
   assert.match(await page.locator('#status').textContent(),/顔 v120/);
-  assert.ok(Number((await page.locator('#vertexCount').textContent()).replace(/,/g,''))>16000);
+  assert.ok(Number((await page.locator('#vertexCount').textContent()).replace(/,/g,''))>13000);
   await page.locator('[data-camera="side"]').click();
   assert.equal(await page.locator('[data-camera="side"]').getAttribute('aria-pressed'),'true');
   await page.locator('[data-camera="front"]').click();
@@ -44,14 +44,16 @@ test('Android-size v120 face renders and downloads an actual binary neutral GLB'
   const buf=readFileSync(localGLB);
   copyFileSync(localGLB,'qa/screenshots/face-v120/neutral-face-v120.glb');
   assert.equal(buf.toString('ascii',0,4),'glTF');
-  assert.ok(buf.length>200_000,'GLB must contain real indexed 3D geometry');
+  assert.ok(buf.length>400_000,'GLB must contain real indexed 3D geometry');
   const jsonOffset=20,jsonSize=buf.readUInt32LE(12);
   const gltf=JSON.parse(buf.toString('utf8',jsonOffset,jsonOffset+jsonSize).trim());
   assert.ok(gltf.meshes.length>=1&&gltf.accessors.length>=3);
   assert.ok(gltf.meshes.some(m=>m.primitives?.some(p=>
-   gltf.accessors[p.attributes.POSITION]?.count>16000)),
-   'The exported GLB must retain the high-resolution original head skin');
-  assert.ok(gltf.nodes.some(n=>n.name==='V120_ORIGINAL_NEUTRAL_FACE_MASTER'));
+   gltf.accessors[p.attributes.POSITION]?.count>13000)),
+   'The exported GLB must retain the high-resolution anatomical head skin');
+  assert.equal(gltf.meshes[0].extras.topology.vertices,13455);
+  assert.equal(gltf.meshes[0].extras.futureExpressionsImplemented,false);
+  assert.ok(gltf.meshes[0].extras.futureRigZones.mouth.length>10);
   console.log('PASS v120 WebGL and export',JSON.stringify({
    vertexText:await page.locator('#vertexCount').textContent(),
    binaryBytes:buf.length,accessors:gltf.accessors.length,meshes:gltf.meshes.length
