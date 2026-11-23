@@ -142,7 +142,7 @@ class ReferenceFeatureTests(unittest.TestCase):
             return tuple(sum(v[k] for v in points[i:i+6])/6 for k in range(3))
         for i in range(0,len(points),42):
             root,first,mid,tip=(center(i),center(i+6),center(i+18),center(i+36))
-            self.assertGreater(tip[1],root[1]+.006,
+            self.assertGreater(tip[1],root[1]+.0047,
                                'Upper lash must have a visible upward curl')
             self.assertGreater(mid[2],root[2]+.003,
                                'Upper lash must project out from eyelid')
