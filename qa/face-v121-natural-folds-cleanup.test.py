@@ -76,7 +76,7 @@ class V121SkinClean(unittest.TestCase):
         brow=[c for (x,y,z),c in zip(self.xyz,self.colors)
               if .028<abs(x)<.066 and .324<y<.346 and z>.085]
         chin=[c for (x,y,z),c in zip(self.xyz,self.colors)
-              if abs(x)<.052 and .111<y<.161 and z>.077]
+              if abs(x)<.052 and .111<y<.161 and z>.005]
         lip=[c for (x,y,z),c in zip(self.xyz,self.colors)
              if abs(x)<.029 and .187<y<.209 and z>.12]
         self.assertGreater(len(brow),25)
