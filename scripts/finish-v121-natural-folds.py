@@ -98,7 +98,7 @@ def fold_displacement(x,y,z):
                fade(ax,.023,.033)*(1.-fade(ax,.062,.072))*front)
     # Fill the artificial corner dimples left by the prior lateral crease.
     # Only touch skin on the outward corner surface, not actual lip geometry.
-    dimple_fill=(.0028*bell(ax,.046,.010)*bell(y,.194,.014)*
+    dimple_fill=(.0028*bell(ax,.046,.010)*bell(y,.232,.014)*
                  fade(z,.078,.128)*(1.-fade(z,.154,.17)))
     return under_eye+dimple_fill
 
@@ -113,11 +113,11 @@ def philtrum_relief(x,y,z):
     # its y mask cut off well before the septum and the paired high columns
     # exaggerated the isolated depression. The actual philtrum is a LONG,
     # gently shaded central channel, not a circular indentation.
-    if y<.201 or y>.255:
+    if y<.236 or y>.266:
         return 0.
-    # In the anatomical model, the subnasale lies near y=.250 and the
-    # upper vermilion edge near y=.205. Taper ONLY at those endpoints.
-    vertical=fade(y,.201,.213)*(1.-fade(y,.247,.255))
+    # The actual upper lip is centered at local Y≈.240, not .208. Keep
+    # the philtrum between the lip and nasal base, never on the chin.
+    vertical=fade(y,.236,.244)*(1.-fade(y,.258,.266))
     front=fade(z,.071,.116)
     groove=-.0038*bell(x,0,.0057)*vertical*front
     columns=.00095*(bell(x,-.0102,.0046)+bell(x,.0102,.0046))*vertical*front
@@ -142,12 +142,12 @@ def nose_and_lips(x,y,z):
     nz=z-.0030*tip-.00115*ala
     lip_front=fade(z,.103,.137)
     horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
-    upper=bell(y,.2075,.0086)*horizontal*lip_front
-    lower=bell(y,.1835,.0103)*horizontal*lip_front
-    cupids=bell(ax,.012,.0065)*bell(y,.213,.007)*lip_front
-    seam=bell(y,.197,.0028)*horizontal*lip_front
-    nz+=(.0028*upper+.0043*lower+.0012*cupids
-         -.0008*seam)
+    upper=bell(y,.2400,.0072)*horizontal*lip_front
+    lower=bell(y,.2235,.0086)*horizontal*lip_front
+    cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
+    seam=bell(y,.232,.0028)*horizontal*lip_front
+    nz+=(.0010*upper+.0016*lower+.0006*cupids
+         -.0003*seam)
     nz+=philtrum_relief(nx,y,nz)
     return (nx,y,nz)
 
@@ -167,8 +167,8 @@ def neutral_color(x,y,z):
     nose_tip=bell(x,0,.024)*bell(y,.258,.012)*fade(z,.118,.153)
     # The upstream resting lipstick is strictly bounded to the two
     # anatomical vermilion bands. Gaussian tails must never tint a chin.
-    lip_region=(.174<=y<=.220 and abs(x)<=.052 and z>.119)
-    vermilion=(.78*bell(y,.208,.007)+bell(y,.185,.0078))
+    lip_region=(.216<=y<=.249 and abs(x)<=.052 and z>.119)
+    vermilion=(.78*bell(y,.240,.0068)+bell(y,.224,.0078))
     lips=(vermilion*bell(x,0,.033)*fade(z,.119,.143)
           if lip_region else 0.)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
@@ -203,6 +203,83 @@ def smooth_chin(points,faces):
     return result,smoothed
 
 
+
+def correct_chin_profile(points):
+    """Rebuild v121 mandibular outline against the *finished* lower/upper lip.
+
+    Upstream sculpting uses coordinate-local gaussians.  They can all run
+    successfully while the final frontal chin is as far forward as the lips.
+    A measured sagittal guardrail avoids that visual regression and feathers
+    the correction out at the cheeks and toward the neck.
+    """
+    # Collect the frontal region without an assumed Z depth; the source GLB
+    # can vary its absolute facial Z offsets. Max Z selects the forward skin.
+    lip=[z for x,y,z in points if abs(x)<.042 and .217<y<.249]
+    chin=[z for x,y,z in points if abs(x)<.055 and .160<y<.204]
+    print('V121 SAGITTAL PROBE', {
+        'lipCount':len(lip), 'chinCount':len(chin),
+        'lipZMax':max(lip) if lip else None,
+        'chinZMax':max(chin) if chin else None})
+    if len(lip)<12 or len(chin)<12:
+        raise ValueError('Cannot measure v121 sagittal lip/chin profile')
+    lip_front=max(lip)
+    chin_before=max(chin)
+    clearance=.0170
+    # Even when the chin is already behind the lips numerically, the
+    # lower-face silhouette can still look elongated/angular. Give the
+    # menton a small, guaranteed round-and-recede fairing pass.
+    displacement=max(.0070,chin_before-(lip_front-clearance))
+    print('V121 CHIN SECTION ZMAX', [
+        (round(low,3),round(max((z for x,y,z in points
+            if abs(x)<.065 and low<=y<low+.016),default=-1.),5))
+        for low in (.092,.108,.124,.140,.156,.172,.188,.204)])
+    if displacement>.038:
+        raise ValueError('Chin correction too large; verify face coordinates')
+    result=[]
+    changed=0
+    for x,y,z in points:
+        ax=abs(x)
+        # Flat-topped core with smooth C1 lateral/vertical fades. There is
+        # no displacement on the red lip, lateral cheek or cervical base.
+        lateral=1.-fade(ax,.034,.083)
+        vertical=fade(y,.132,.163)*(1.-fade(y,.203,.217))
+        frontal=fade(z,.035,.086)
+        w=lateral*vertical*frontal
+        # Lift and round the menton a little without turning the jaw into
+        # a pointed wedge. The neck y<.080 does not move at all.
+        lift=.0045*bell(y,.181,.026)*(1.-fade(ax,.039,.081))*vertical
+        # A gently fuller central U-shaped menton in frontal view.
+        rounded_x=x*(1.+.025*bell(y,.181,.028)*lateral*vertical)
+        # One continuous lower-face mask handles chin and labiomental
+        # transition, rather than creating a new shelf or a sharp hook.
+        # Restore the continuous underside-to-lip silhouette. The donor
+        # has a sharp forward-surface depth jump near Y=.18 that creates
+        # a hook/double-chin when the upper menton alone is retracted.
+        # Smoothly support only the *front* midline; lips Y>=.21 and neck
+        # Y<=.155 retain their original position.
+        bridge=(.0200*fade(y,.155,.180)*(1.-fade(y,.181,.201))*
+                (1.-fade(ax,.034,.068))*fade(z,.040,.065)*
+                (1.-fade(z,.083,.112)))
+        result.append((rounded_x,y+lift,z-displacement*w+bridge))
+        if displacement*w>.00005 or lift>.00005 or bridge>.00005:changed+=1
+    chin_after=max(z for x,y,z in result
+                   if abs(x)<.055 and .160<y<.204)
+    if chin_after>lip_front-clearance+.0006:
+        raise ValueError('v121 sagittal chin profile remains protrusive')
+    return result,{
+        'version':'female-v121-sagittal-guard-20261123',
+        'lipFrontZ':round(lip_front,6),
+        'chinBeforeZ':round(chin_before,6),
+        'chinAfterZ':round(chin_after,6),
+        'lipChinDepthClearance':clearance,
+        'vertexCorrectionZ':round(displacement,6),
+        'labiomentalTransitionContinuous':True,
+        'submentalSlopeBridgeMax':.020,
+        'changedVertices':changed,
+        'neutralUpperLipUnaffected':True,
+        'neckBelow080Unaffected':True
+    }
+
 def finish(path):
     g,b=read_glb(path)
     face=g['meshes'][0]
@@ -234,16 +311,18 @@ def finish(path):
         dz=fold_displacement(nx,ny,nz)
         updated.append((nx,ny,nz+dz))
         central=philtrum_relief(nx,ny,nz)
-        if central<-.00038 and abs(nx)<.011 and .208<ny<.242:
+        if central<-.00038 and abs(nx)<.011 and .241<ny<.262:
             philtrum_ids.append(i)
-        if dz>.00020 and .179<ny<.215 and .025<abs(nx)<.067:
+        if dz>.00020 and .218<ny<.251 and .025<abs(nx)<.067:
             dimple_filled_ids.append(i)
         if abs(nx-x)>.00008 and .225<y<.280:
             nasal_vertices.append(i)
-        if abs(nz-z)>.00015 and .172<y<.227 and abs(x)<.058:
+        if abs(nz-z)>.00015 and .216<y<.252 and abs(x)<.058:
             lip_vertices.append(i)
     if len(nasal_vertices)<20 or len(lip_vertices)<30:
         raise ValueError('Nose and vermilion must have actual displaced vertices')
+    updated,chin_profile=correct_chin_profile(updated)
+    meta['sagittalChinProfile']=chin_profile
     # Keep the original POSITION vertex order, immutable UVs and triangles.
     p['attributes']['POSITION']=add_vec3(g,b,updated)
     p['attributes']['NORMAL']=add_vec3(g,b,normals(updated,faces))
@@ -284,13 +363,13 @@ def finish(path):
         'version':'v121-nose-lips-lower-lashes-20261123',
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
-        'centralPhiltrumStart':[0.,.252],
+        'centralPhiltrumStart':[0.,.264],
         'philtrumGrooveMasterDepth':.0038,
         'philtrumColumnsRelief':.00095,
         'philtrumShape':'continuous_nose_base_to_vermilion_shallow_channel_v122fix',
         'philtrumNoOvalPit':True,
         'parametricDepthControlSupported':True,
-        'centralPhiltrumEnd':[0.,.204],
+        'centralPhiltrumEnd':[0.,.238],
         'philtrumVertexIds':philtrum_ids,
         'lateralDimpleCorrectionVertexIds':dimple_filled_ids,
         'lateralNasolabialPitRemoved':True,

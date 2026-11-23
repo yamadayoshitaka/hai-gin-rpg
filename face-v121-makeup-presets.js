@@ -29,8 +29,8 @@ export function v121MakeupMasks(x,y,z){
   const ax=Math.abs(x),front=fade(z,.084,.132);
   // Absolute anatomical guards are intentional: a gaussian alone has
   // nonzero tails on the chin and jaw. Do not let any preset cross them.
-  const vermilion=(y>=.175&&y<=.221&&ax<=.052&&z>.119);
-  const lipBands=(.82*gauss(y,.208,.0068)+gauss(y,.185,.0077));
+  const vermilion=(y>=.216&&y<=.248&&ax<=.052&&z>.119);
+  const lipBands=(.82*gauss(y,.240,.0068)+gauss(y,.223,.0077));
   const lipSurface=vermilion?fade(z,.119,.143):0;
   return {
     blush:y>=.215?(gauss(x,-.076,.031)+gauss(x,.076,.031))*

@@ -79,7 +79,8 @@ class TestRealExpressionGLB(unittest.TestCase):
         self.assertLess(min(y('blink')),-.004)
         self.assertGreater(max(y('blink')),.003)
         self.assertGreater(max(y('smile')),.0036)
-        self.assertGreater(max(y('laugh')),max(y('smile')))
+        # Laughter opens the lower lip rather than lifting the whole chin.
+        self.assertLess(min(y('laugh')),min(y('smile'))-.004)
         self.assertLess(min(y('angry')),-.002)
         self.assertGreater(max(y('sad')),.003)
         self.assertLess(min(y('mouthOpen')),-.006)
@@ -95,6 +96,13 @@ class TestRealExpressionGLB(unittest.TestCase):
         g=self.g
         expected=['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE']
         self.assertEqual(self.skin['extras']['facialExpressionRig']['oralCavityMeshNames'],expected)
+        self.assertTrue(self.skin['extras']['facialExpressionRig']['oralPartsInSkinLocalSpace'])
+        skin_node=next(n for n in g['nodes'] if n.get('mesh')==0)
+        for name in expected:
+            oral_node=next(n for n in g['nodes'] if n.get('name')==name)
+            for transform in ('translation','rotation','scale','matrix'):
+                self.assertEqual(oral_node.get(transform),skin_node.get(transform),
+                                 name+' must share the actual transformed face origin')
         for name in expected:
             mesh=next(m for m in g['meshes'] if m['name']==name)
             self.assertEqual(len(mesh['primitives'][0]['targets']),11)
@@ -110,8 +118,8 @@ class TestRealExpressionGLB(unittest.TestCase):
             if name==expected[0]:
                 h=lambda v:max(t[1] for t in v)-min(t[1] for t in v)
                 w=lambda v:max(t[0] for t in v)-min(t[0] for t in v)
-                self.assertGreater(h(a),.030)
-                self.assertGreater(h(mouth),.025)
+                self.assertGreater(h(a),.019)
+                self.assertGreater(h(mouth),.016)
                 self.assertLess(h(i),.015)
                 self.assertLess(w(u),w(i)*.60)
                 # Outer rim conforms to the local curved lip rather than moving
@@ -131,21 +139,63 @@ class TestRealExpressionGLB(unittest.TestCase):
                           if p[1]<.160 and abs(p[0])<.075]
             self.assertLess(max(chin_stretch),.0007,expression)
             recess=[d[2] for p,d in zip(self.pos,delta)
-                    if abs(p[0])<.020 and .192<p[1]<.202 and p[2]>.120]
+                    if abs(p[0])<.020 and .228<p[1]<.236 and p[2]>.120]
             self.assertGreater(len(recess),0,expression)
             self.assertLess(min(recess),-.006,expression)
         opened=vector(g,self.b,self.prim['targets'][NAMES.index('mouthOpen')]['POSITION'])
         upper=[d[1] for p,d in zip(self.pos,opened)
-               if abs(p[0])<.025 and .205<p[1]<.213 and p[2]>.120]
+               if abs(p[0])<.025 and .236<p[1]<.245 and p[2]>.120]
         lower=[d[1] for p,d in zip(self.pos,opened)
-               if abs(p[0])<.025 and .182<p[1]<.190 and p[2]>.120]
+               if abs(p[0])<.025 and .218<p[1]<.228 and p[2]>.120]
         self.assertGreater(len(upper),0)
         self.assertGreater(len(lower),0)
         self.assertGreater(max(upper),.002)
         self.assertLess(min(lower),-.006)
         self.assertTrue(self.skin['extras']['facialExpressionRig']['skinMouthCenterInwardOnOpening'])
-        self.assertIn('recessed_oral_well',
+        self.assertIn('real_aperture',
                       self.skin['extras']['facialExpressionRig']['mouthShapeVersion'])
+
+    def test_real_mouth_aperture_and_sagittal_chin_clearance(self):
+        profile=self.skin['extras']['sagittalChinProfile']
+        self.assertEqual(profile['version'],'female-v121-sagittal-guard-20261123')
+        self.assertLessEqual(profile['chinAfterZ'],
+                             profile['lipFrontZ']-.0164)
+        self.assertLessEqual(profile['chinAfterZ'],profile['chinBeforeZ'])
+        lip=[z for x,y,z in self.pos
+             if abs(x)<.042 and .217<y<.249]
+        chin=[z for x,y,z in self.pos
+              if abs(x)<.055 and .160<y<.204]
+        self.assertGreater(len(lip),12)
+        self.assertGreater(len(chin),12)
+        self.assertGreater(max(lip)-max(chin),.0163)
+        aperture=self.skin['extras']['facialExpressionRig']['splitMouthSeal']
+        self.assertTrue(aperture['openingFromRealTopology'])
+        self.assertTrue(aperture['noChinOrNeckTrianglesDetached'])
+        self.assertGreaterEqual(aperture['detachedSkinTriangles'],8)
+        self.assertGreaterEqual(aperture['sealVertices'],10)
+        skin_idx=self.g['accessors'][self.prim['indices']]
+        self.assertEqual(skin_idx['count'],25920*3)
+        # Removed triangles are degenerate, retained only for fixed index
+        # buffer length; a second primitive has the exact neutral skin patch.
+        index_view=self.g['bufferViews'][skin_idx['bufferView']]
+        offset=index_view.get('byteOffset',0)+skin_idx.get('byteOffset',0)
+        count=skin_idx['count']
+        raw=struct.unpack_from('<'+'I'*count,self.b,offset)
+        degenerate=sum(raw[i]==raw[i+1]==raw[i+2]
+                       for i in range(0,count,3))
+        self.assertGreaterEqual(degenerate,aperture['detachedSkinTriangles'])
+        cavity=next(m for m in self.g['meshes']
+                    if m['name']=='V121_ORAL_CAVITY')
+        self.assertEqual(len(cavity['primitives']),2)
+        seal=cavity['primitives'][1]
+        self.assertEqual(seal['material'],self.prim['material'])
+        for att in ('POSITION','NORMAL','TEXCOORD_0','COLOR_0'):
+            self.assertIn(att,seal['attributes'])
+        self.assertEqual(len(seal['targets']),11)
+        pos=vector(self.g,self.b,seal['attributes']['POSITION'])
+        mouth_delta=vector(self.g,self.b,seal['targets'][NAMES.index('mouthOpen')]['POSITION'])
+        self.assertLess(min(v[2] for v in mouth_delta),-.016)
+        self.assertTrue(all(.230<v[1]<.235 and abs(v[0])<.037 for v in pos))
 
     def test_real_brows_closer_to_upper_eye(self):
         brow=next(m for m in self.g['meshes']
@@ -165,7 +215,7 @@ class TestRealExpressionGLB(unittest.TestCase):
         cheek=[rgb for (x,y,z),rgb in zip(self.pos,colors)
                if .058<abs(x)<.092 and .235<y<.281 and z>.075]
         lip=[rgb for (x,y,z),rgb in zip(self.pos,colors)
-             if abs(x)<.025 and .178<y<.218 and z>.075]
+             if abs(x)<.025 and .216<y<.249 and z>.075]
         chin=[rgb for (x,y,z),rgb in zip(self.pos,colors)
               if abs(x)<.045 and .110<y<.158 and z>.01]
         self.assertGreater(len(cheek),30)

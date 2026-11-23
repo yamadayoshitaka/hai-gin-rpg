@@ -18,8 +18,10 @@ export function attachV121Expressions({neutral,faceTune,onChange=()=>{}}){
       eyeballs.push({mesh,baseScale:mesh.scale.clone()});
     }
   });
-  if(meshes.length!==9||eyeballs.length!==2)
-    throw Error('v121 expressive GLB must have 9 morphed meshes (skin, eye details, oral cavity) and 2 intact globes');
+  // The cavity now has two GLB primitives: the dark interior and a real
+  // detachable rest-pose skin seal. GLTFLoader exposes each as one mesh.
+  if(meshes.length!==10||eyeballs.length!==2)
+    throw Error('v121 expressive GLB must have 10 morphable primitives including its oral seal, and 2 intact globes');
   const current=Object.fromEntries(V121_EXPRESSIONS.map(n=>[n,0]));
   let mode='neutral',modeSince=performance.now(),last=performance.now();
   const segment=[

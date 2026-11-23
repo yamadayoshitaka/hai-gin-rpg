@@ -91,8 +91,8 @@ def sculpt(p):
     under_eye=gauss(y,.285,.017)*gauss(ax,.053,.028)*front
     lower_cheek=gauss(y,.217,.057)*gauss(ax,.088,.040)*side
     jaw=gauss(y,.157,.049)*gauss(ax,.084,.053)*side
-    chin=gauss(y,.135,.033)*gauss(ax,.030,.038)*front
-    chin_corners=gauss(y,.152,.032)*gauss(ax,.057,.027)*front
+    chin=gauss(y,.180,.027)*gauss(ax,.036,.041)*front
+    chin_corners=gauss(y,.182,.029)*gauss(ax,.058,.028)*front
     # A gentler nose dorsum-to-tip contour in strict profile, with a
     # restrained alar width and protected real nostril rim.
     bridge=gauss(y,.285,.038)*gauss(ax,.022,.015)*front
@@ -101,24 +101,27 @@ def sculpt(p):
     # Upper and lower vermilion must remain separate from the chin surface.
     lips_f=smooth(z,.095,.143)
     lip_width=gauss(x,0,.037)
-    upper=gauss(y,.209,.0075)*lip_width*lips_f
-    lower=gauss(y,.184,.0090)*lip_width*lips_f
-    cupid=gauss(y,.217,.006)*gauss(ax,.011,.007)*lips_f
-    corners=gauss(y,.197,.012)*gauss(ax,.042,.014)*lips_f
+    upper=gauss(y,.240,.0075)*lip_width*lips_f
+    lower=gauss(y,.223,.0090)*lip_width*lips_f
+    cupid=gauss(y,.244,.006)*gauss(ax,.011,.007)*lips_f
+    corners=gauss(y,.232,.012)*gauss(ax,.042,.014)*lips_f
     nx=x*(1-.029*temple-.026*frontal+.008*lower_cheek
           -.055*jaw-.025*chin_corners-.055*ala-.028*bridge)
     # Retract the frontmost menton and shorten its lower outline together.
     # A feathered jaw-to-submental bridge prevents a shelf above the neck;
     # the masks are absent at the vermilion and at the cervical base.
-    chin_profile=gauss(y,.132,.030)*gauss(ax,.035,.047)*front
-    submental=(gauss(y,.108,.032)*gauss(ax,.065,.057)*side*
-                smooth(y,.065,.101))
-    ny=y+.0065*chin+.0010*submental+.0006*jaw-.00045*frontal+.0006*under_eye
+    # Preserve lower cheek fullness: the chin fairing fades away before
+    # lateral jaw/cheek x >= .085, otherwise the contour looks hollow.
+    chin_profile=(gauss(y,.184,.028)*gauss(ax,.040,.050)*front*
+                  (1.-smooth(y,.211,.223))*(1.-smooth(ax,.053,.085)))
+    submental=(gauss(y,.153,.030)*gauss(ax,.065,.057)*side*
+                smooth(y,.090,.131))
+    ny=y+.0055*chin+.0008*submental+.0006*jaw-.00045*frontal+.0006*under_eye
     nz=(z-.0031*malar+.0018*under_eye
-        +.0014*lower_cheek+.0013*jaw
-        -.0110*chin_profile-.0020*submental
+        +.0017*lower_cheek+.0013*jaw
+        -.0145*chin_profile-.0030*submental
         -.0036*tip-.0013*ala-.0009*bridge
-        +.0037*upper+.0045*lower+.0010*cupid
+        +.0015*upper+.0018*lower+.0006*cupid
         -.0007*corners)
     return (nx,ny,nz),{
       'temple':temple,'malar':malar,'jaw':jaw,'tip':tip,

@@ -138,7 +138,7 @@ import {attachV121FaceSliders} from './face-v121-parametric-sliders.js';
 import {attachV121Expressions,V121_EXPRESSIONS} from './face-v121-expression-player.js';
 import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-chin-lip-open-v3-20261123';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-native-mouth-aperture-chin-20261123';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},faceTune=null,expressionPlayer=null,expressionClips=[],faceMakeup=null;
 const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
@@ -310,7 +310,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;$('exportStructure').disabled=false;
- update('status','顔 v121：化粧を5パターンで切替可能。口の開閉・5母音を口腔・歯・舌を含む実3Dメッシュで再生できます。');
+ update('status','顔 v121：実メッシュの顎輪郭と開口部を刷新。口腔・歯・舌は顔と同一座標で表示し、5母音と発話に対応します。');
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
  const draw=(now=0)=>{

@@ -49,6 +49,9 @@ def add_float(g,b,rows,shape='VEC3'):
     if shape=='VEC3':
         content=b''.join(struct.pack('<fff',*v) for v in rows)
         count=len(rows)
+    elif shape=='VEC2':
+        content=b''.join(struct.pack('<ff',*v) for v in rows)
+        count=len(rows)
     else:
         content=b''.join(struct.pack('<f',v) for v in rows)
         count=len(rows)
@@ -86,9 +89,9 @@ def deformation(name,x,y,z,part):
     cheek=bell(ax,.066,.039)*bell(y,.260,.035)*front
     # Actual lip bands rather than a whole-jaw deformation.
     lip_span=bell(x,0,.035)*mouth_front
-    upper=bell(y,.2085,.008)*lip_span
-    lower=bell(y,.1870,.009)*lip_span
-    corner=bell(ax,.043,.013)*bell(y,.197,.014)*mouth_front
+    upper=bell(y,.2400,.008)*lip_span
+    lower=bell(y,.2235,.009)*lip_span
+    corner=bell(ax,.043,.013)*bell(y,.232,.014)*mouth_front
     top_lid=bell(y,.320,.008)*eye
     lower_lid=bell(y,.296,.008)*eye
     if name=='blink':
@@ -110,7 +113,7 @@ def deformation(name,x,y,z,part):
                 -.0007*corner)
     # Recess the central mouth surface while the upper and lower lip rings
     # separate. Chin and cervical tissue remain motionless.
-    center=bell(x,0,.027)*bell(y,.197,.008)*mouth_front if part=='skin' else 0.
+    center=bell(x,0,.027)*bell(y,.232,.008)*mouth_front if part=='skin' else 0.
     if name=='mouthOpen':
         return (sign*.0027*corner,.0052*upper-.0108*lower,
                 -.0145*center-.0007*lower)
@@ -134,14 +137,18 @@ def deformation(name,x,y,z,part):
 
 def append_oral_parts(g,b,head_xyz):
     """Real PBR 3D oral cavity, teeth, tongue: neutral hidden; visemes visible."""
-    front=[p for p in head_xyz if abs(p[0])<.056 and .170<p[1]<.224 and p[2]>.09]
+    front=[p for p in head_xyz if abs(p[0])<.056 and .209<p[1]<.259 and p[2]>.09]
     if len(front)<50:raise ValueError('Cannot locate lip surface for mouth cavity')
     def surface(x,y):
         nearest=sorted(front,key=lambda p:(p[0]-x)**2+(p[1]-y)**2)[:6]
         return max(p[2] for p in nearest)
-    styles={'smile':(.036,.0055),'laugh':(.039,.014),
-       'mouthOpen':(.030,.015),'vowelA':(.030,.019),'vowelI':(.040,.005),
-       'vowelU':(.016,.010),'vowelE':(.037,.010),'vowelO':(.021,.016)}
+    # Anatomical mouth width is materially smaller than the full lower
+    # face.  Previous preview used a 60-mm-wide flat ellipse resembling a
+    # painted cartoon disc. Width and height below are half-extents in GLB
+    # LOCAL head space; the teeth/tongue sit behind lip skin, not in front.
+    styles={'smile':(.025,.0030),'laugh':(.024,.010),
+       'mouthOpen':(.021,.010),'vowelA':(.019,.012),'vowelI':(.026,.0030),
+       'vowelU':(.012,.007),'vowelE':(.024,.0055),'vowelO':(.014,.0095)}
     def pack_indices(seq):
         raw=b''.join(struct.pack('<I',v) for v in seq)
         while len(b)%4:b.append(0)
@@ -159,13 +166,30 @@ def append_oral_parts(g,b,head_xyz):
       ('V121_ORAL_UPPER_TEETH',[.90,.85,.76,1.]),
       ('V121_ORAL_TONGUE',[.56,.19,.23,1.])):
         if kind.endswith('CAVITY'):
-            poly=[(math.cos(j*math.tau/24),math.sin(j*math.tau/24))
-                  for j in range(24)]
-            inds=[q for j in range(1,23) for q in (0,j,j+1)]
+            # Taper the aperture at both lip corners (not a circular disc).
+            poly=[(math.cos(j*math.tau/32),
+                   math.sin(j*math.tau/32)*
+                   (1.-.48*abs(math.cos(j*math.tau/32))))
+                  for j in range(32)]
+            inds=[q for j in range(1,31) for q in (0,j,j+1)]
+        elif kind.endswith('TEETH'):
+            # Six distinct small off-white teeth, avoiding the former single
+            # uninterrupted rectangular bar across the mouth.
+            poly=[];inds=[]
+            for tooth in range(6):
+                left=-.93+tooth*.31
+                right=left+.275
+                start=len(poly)
+                poly.extend(((left,-1.),(right,-1.),(right,.65),(left,.65)))
+                inds.extend((start,start+1,start+2,
+                             start,start+2,start+3))
         else:
-            poly=[(-1.,-1.),(1.,-1.),(1.,1.),(-1.,1.)]
-            inds=[0,1,2,0,2,3]
-        rest=[(xx*.0002,.197+yy*.00008,surface(0,.197)-.014)
+            # Rounded tongue patch recessed into the lower cavity.
+            poly=[(.75*math.cos(j*math.tau/20),
+                   -.50+.36*math.sin(j*math.tau/20))
+                  for j in range(20)]
+            inds=[q for j in range(1,19) for q in (0,j,j+1)]
+        rest=[(xx*.0002,.232+yy*.00008,surface(0,.232)-.028)
               for xx,yy in poly]
         mat=len(g['materials'])
         g['materials'].append({'name':kind+'_PBR','doubleSided':True,
@@ -181,15 +205,15 @@ def append_oral_parts(g,b,head_xyz):
             dst=[]
             for xx,yy in poly:
                 if kind.endswith('CAVITY'):
-                    x=xx*width;y=.197+yy*height
+                    x=xx*width;y=.232+yy*height
                     # Dark cavity recessed behind separated lip edges.
-                    dz=-.0035-.0025*abs(yy)
+                    dz=-.0105-.0010*abs(yy)
                 elif kind.endswith('TEETH'):
-                    x=xx*width*.69;y=.197+height*(.51+.12*yy)
-                    dz=.0008
+                    x=xx*width*.69;y=.232+height*(.47+.12*yy)
+                    dz=-.0058
                 else:
-                    x=xx*width*.55;y=.197-height*(.53-.13*yy)
-                    dz=.0012
+                    x=xx*width*.55;y=.232-height*(.53-.13*yy)
+                    dz=-.0050
                 z=surface(x,y)+dz
                 dst.append((x,y,z))
             targets.append({'POSITION':add_float(g,b,[
@@ -203,10 +227,139 @@ def append_oral_parts(g,b,head_xyz):
             'weights':[0.]*len(NAMES),
             'extras':{'targetNames':list(NAMES),'v121OralPart':True}})
         node_id=len(g['nodes'])
-        g['nodes'].append({'name':kind,'mesh':mesh_id})
+        # Coordinates above are in the native head mesh's LOCAL space.
+        # The original head node is translated by about -0.207 in Y and
+        # scaled to 0.9. Without copying its transform, teeth and tongue
+        # float above the face instead of showing inside its opening.
+        head_node=next(n for n in g['nodes'] if n.get('mesh')==0)
+        placement={key:head_node[key] for key in
+                   ('translation','rotation','scale','matrix') if key in head_node}
+        g['nodes'].append({'name':kind,'mesh':mesh_id,**placement})
         nodes.append(node_id)
     g['scenes'][g.get('scene',0)].setdefault('nodes',[]).extend(nodes)
     return nodes
+
+
+
+def read_indices(g,b,index):
+    a=g['accessors'][index]
+    view=g['bufferViews'][a['bufferView']]
+    if a['type']!='SCALAR' or a['componentType'] not in (5123,5125):
+        raise ValueError('Unexpected v121 skin index format')
+    fmt='H' if a['componentType']==5123 else 'I'
+    width=struct.calcsize(fmt)
+    off=view.get('byteOffset',0)+a.get('byteOffset',0)
+    step=view.get('byteStride',width)
+    return [struct.unpack_from('<'+fmt,b,off+i*step)[0]
+            for i in range(a['count'])]
+
+
+def read_uv(g,b,index):
+    a=g['accessors'][index]
+    view=g['bufferViews'][a['bufferView']]
+    if a['componentType']!=5126 or a['type']!='VEC2':
+        raise ValueError('Expected v121 float UV coordinates')
+    off=view.get('byteOffset',0)+a.get('byteOffset',0)
+    step=view.get('byteStride',8)
+    return [struct.unpack_from('<ff',b,off+i*step)
+            for i in range(a['count'])]
+
+
+def store_indices(g,b,indices):
+    while len(b)%4:b.append(0)
+    off=len(b)
+    b.extend(b''.join(struct.pack('<I',v) for v in indices))
+    view=len(g['bufferViews'])
+    g['bufferViews'].append({'buffer':0,'byteOffset':off,
+                             'byteLength':len(indices)*4,'target':34963})
+    index=len(g['accessors'])
+    g['accessors'].append({'bufferView':view,'componentType':5125,
+                           'count':len(indices),'type':'SCALAR',
+                           'min':[min(indices)],'max':[max(indices)]})
+    return index
+
+
+def split_native_mouth_seal(g,b,head):
+    """Create a genuine opening with a closed-rest skin seal.
+
+    A mouth painted over the unbroken facial surface can never display a
+    cavity.  Only the small central oral face triangles become separately
+    morphable skin, with matching POSITION/NORMAL/UV/COLOR and skin material.
+    The main vertex IDs and index count stay stable (replaced triangles are
+    degenerate and cannot render).  The rest seal occupies the precise
+    original faces: opening is invisible at neutral, but the seal retreats
+    behind the oral cavity on phonemes, exposing the real aperture.
+    """
+    p=head['primitives'][0]
+    xyz=vertices(g,b,p['attributes']['POSITION'])
+    normal=vertices(g,b,p['attributes']['NORMAL'])
+    color=vertices(g,b,p['attributes']['COLOR_0'])
+    uv=read_uv(g,b,p['attributes']['TEXCOORD_0'])
+    indices=read_indices(g,b,p['indices'])
+    if len(xyz)!=13455 or len(indices)!=25920*3:
+        raise ValueError('Only fixed female v121 skin can be split')
+    triangles=[indices[i:i+3] for i in range(0,len(indices),3)]
+    # Only split the lip-to-lip seam, not the actual upper/lower
+    # vermilion ridges or the cheek-adjacent skin.
+    inside=lambda v:(abs(v[0])<.024 and .2308<v[1]<.2345
+                      and v[2]>.115)
+    to_split=[i for i,t in enumerate(triangles)
+              if all(inside(xyz[k]) for k in t)]
+    if not 8<=len(to_split)<=600:
+        raise ValueError('Unsafe aperture topology: %d face triangles'%
+                         len(to_split))
+    mouth_ids=sorted({k for i in to_split for k in triangles[i]})
+    local={k:i for i,k in enumerate(mouth_ids)}
+    skin_indices=list(indices)
+    seal_indices=[]
+    for i in to_split:
+        tri=triangles[i]
+        seal_indices.extend(local[k] for k in tri)
+        # Preserve index-buffer length and all original vertex identifiers.
+        skin_indices[3*i:3*i+3]=[tri[0]]*3
+    p['indices']=store_indices(g,b,skin_indices)
+    base=[xyz[k] for k in mouth_ids]
+    targets=[]
+    for name in NAMES:
+        result=[]
+        amplitude={
+            'mouthOpen':.042,'vowelA':.048,'vowelI':.019,
+            'vowelU':.031,'vowelE':.028,'vowelO':.041,
+            'laugh':.031,'smile':.011
+        }.get(name,0.)
+        for x,y,z in base:
+            dx,dy,dz=deformation(name,x,y,z,'skin')
+            # Keep skin in place at the outer aperture rim; the original
+            # broader seal recession exposed jagged triangles beside lips.
+            taper=(1.-fade(abs(x),.016,.024))*(
+                fade(y,.228,.231)*(1.-fade(y,.234,.237)))
+            result.append((dx,dy,dz-amplitude*taper))
+        targets.append({'POSITION':add_float(g,b,result)})
+    seal_prim={
+        'attributes':{
+            'POSITION':add_float(g,b,base),
+            'NORMAL':add_float(g,b,[normal[k] for k in mouth_ids]),
+            'TEXCOORD_0':add_float(g,b,[uv[k] for k in mouth_ids],'VEC2'),
+            'COLOR_0':add_float(g,b,[color[k] for k in mouth_ids])},
+        'indices':store_indices(g,b,seal_indices),
+        'material':p['material'],
+        'targets':targets
+    }
+    # Attaching the skin seal to an existing oral node means the 11 meshes,
+    # 9 animated nodes, original controls and 2 baked clips remain compatible.
+    cavity=next(m for m in g['meshes'] if m['name']=='V121_ORAL_CAVITY')
+    cavity['primitives'].append(seal_prim)
+    return {
+        'version':'female-v121-split-lip-seal-v4',
+        'detachedSkinTriangles':len(to_split),
+        'sealVertices':len(mouth_ids),
+        'sealAttachedTo':'V121_ORAL_CAVITY',
+        'neutralAppearanceIdentical':True,
+        'skinVertexIdsPreserved':13455,
+        'skinIndexCountPreserved':len(skin_indices),
+        'openingFromRealTopology':True,
+        'noChinOrNeckTrianglesDetached':True
+    }
 
 
 def animation(g,b,name,times,frames,nodes):
@@ -253,6 +406,7 @@ def build(path):
         nodes.extend(j for j,node in enumerate(g['nodes']) if node.get('mesh')==i)
     if len(nodes)!=6:raise ValueError('Expected skin and five cosmetic morph nodes')
     nodes.extend(append_oral_parts(g,b,vertices(g,b,head['primitives'][0]['attributes']['POSITION'])))
+    aperture=split_native_mouth_seal(g,b,head)
     base={}
     blink=[
         (0.00,{}),(.12,{'blink':.3}),(.20,{'blink':1.}),
@@ -278,10 +432,13 @@ def build(path):
         'preservesSkinVertexIDs':13455,
         'eyeGlobesRemainIndependent':True,
         'oralCavityMeshNames':['V121_ORAL_CAVITY','V121_ORAL_UPPER_TEETH','V121_ORAL_TONGUE'],
-        'mouthShapeVersion':'independent_vermilion_recessed_oral_well_v3',
+        'mouthShapeVersion':'independent_vermilion_real_aperture_v4',
          'skinMouthCenterInwardOnOpening':True,
         'jawNeckStationary':True,
-        'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue'}
+        'oralCavityPreview':'native_glb_morphed_oral_cavity_teeth_tongue',
+        'oralPartsInSkinLocalSpace':True,
+        'mouthCenterLocalY':.232,
+        'splitMouthSeal':aperture}
     if 'referenceFeatureSculpt' in meta:
         meta['referenceFeatureSculpt']['facialExpressionAnimations']=True
     if 'naturalFoldCleanup' in meta:

@@ -37,7 +37,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(await page.locator('#wire').getAttribute('aria-pressed'),'true');
   await page.locator('#wire').click();
   mkdirSync('qa/screenshots/face-v121',{recursive:true});
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-front.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-front.png'});
   // The default is a softly pigmented natural look; each swatch changes
   // actual GLB vertex colours without tinting the chin.
   assert.equal(await page.locator('html').getAttribute('data-v121-makeup'),'natural');
@@ -49,18 +49,18 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   // Photograph the upper/lower lip separation from front, 45° and profile.
   await page.locator('[data-expression="mouthOpen"]').click();
   await page.waitForTimeout(400);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-mouth-open-front.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-mouth-open-front.png'});
   await page.locator('[data-camera="threeQuarter"]').click();
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-mouth-open-45.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-mouth-open-45.png'});
   await page.locator('[data-camera="side"]').click();
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-mouth-open-side.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-mouth-open-side.png'});
   await page.locator('[data-camera="front"]').click();
   await page.locator('[data-expression="vowelA"]').click();
   await page.waitForTimeout(350);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-vowel-A.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-vowel-A.png'});
   await page.locator('[data-expression="talk"]').click();
   await page.waitForTimeout(400);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-talking.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-talking.png'});
   // Real open-mouth/phoneme options must be selectable individually.
   for(const vowel of ['vowelA','vowelI','vowelU','vowelE','vowelO']){
     await page.locator('[data-expression="'+vowel+'"]').click();
@@ -72,7 +72,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('[data-expression="smile"]').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-expression-mode'),'smile');
   await page.waitForTimeout(800);
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-smile-animated.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-smile-animated.png'});
   await page.locator('[data-expression="angry"]').click();
   await page.waitForTimeout(800);
   // Mode/camera validated below; omit redundant screenshot neutral-face-angry-animated on software WebGL.
@@ -95,7 +95,7 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.locator('[data-camera="threeQuarter"]').click();
   // Mode/camera validated below; omit redundant screenshot neutral-face-three-quarter on software WebGL.
   await page.locator('[data-camera="side"]').click();
-  await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-side.png'});
+  await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/neutral-face-side.png'});
   await page.locator('[data-camera="front"]').click();
   assert.equal(await page.locator('html').getAttribute('data-v121-preset'),'reference');
   assert.equal(await page.locator('html').getAttribute('data-v121-reference'),
