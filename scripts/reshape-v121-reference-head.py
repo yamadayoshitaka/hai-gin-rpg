@@ -124,8 +124,11 @@ def sculpt(p):
     ny=(y+.0055*chin+.0008*submental+.0006*jaw
         -.00045*frontal+.0006*under_eye
         +.00072*upper_lid-.00040*lower_lid)
-    nz=(z-.0031*malar+.0018*under_eye
-        +.0017*lower_cheek+.0013*jaw
+    # v17 kept an inherited 3.1-mm negative malar trench below the
+    # cheekbone. The screenshot shows this as a sharp hollow from cheek
+    # toward the mouth. Support the lateral midface instead of carving it.
+    nz=(z-.00035*malar+.0018*under_eye
+        +.00225*lower_cheek+.0013*jaw
         -.0102*chin_profile-.0030*submental
         -.0036*tip-.0015*ala-.0013*bridge-.00055*root
         +.0015*upper+.00075*lower+.0006*cupid
