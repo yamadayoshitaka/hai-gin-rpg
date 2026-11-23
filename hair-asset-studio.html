@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>灰銀のレゾナンス｜独立ヘアアセット・スタジオ</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#e6f0fb;background:#0d1725}
+*{box-sizing:border-box}body{margin:0}header{padding:14px 18px;border-bottom:1px solid #3d5a72;background:#16283c}
+h1{margin:0;font-size:22px;letter-spacing:.02em}h2{font-size:16px;margin:0 0 10px}
+a{color:#abdafa}.muted{color:#acc2d6;font-size:12px;line-height:1.5}
+main{max-width:1270px;margin:0 auto;padding:12px;display:grid;grid-template-columns:280px minmax(0,1fr) 290px;gap:12px}
+.panel{background:#172a40;border:1px solid #405a74;border-radius:12px;padding:12px;min-width:0}
+.catalog{display:grid;gap:7px;max-height:69vh;overflow:auto}
+.catalog button{display:flex;align-items:center;gap:11px;text-align:left}
+.iconHair{border:1px solid #9d876d;border-radius:8px;width:36px;height:40px;flex:0 0 36px;display:grid;place-items:center;background:#354354;font-size:22px;color:#cbb18d}
+button,.action{font:inherit;color:#f5faff;min-height:43px;border:1px solid #61829d;border-radius:8px;padding:8px 10px;background:#26455f;cursor:pointer}
+button[aria-pressed=true],button:focus-visible,input:focus-visible{border-color:#c2dfbf;outline:2px solid #69b6a5}
+.controls{display:flex;flex-wrap:wrap;gap:6px}.controls button{flex:1;white-space:nowrap}
+#viewport{position:relative;height:min(70vh,580px);min-height:330px;border-radius:9px;overflow:hidden;background:radial-gradient(ellipse at center,#304050,#0a1624)}
+#viewport canvas{width:100%;height:100%;display:block;touch-action:none}
+.viewerInfo{position:absolute;left:8px;top:8px;pointer-events:none;background:#071827bb;padding:8px;border-radius:7px;font-size:12px;max-width:75%}
+label{display:block;color:#d5e5f1;font-size:13px;margin:11px 0}label span{float:right;color:#f5e7c1}
+input[type=range],input[type=color]{display:block;width:100%;min-height:28px;margin-top:6px;accent-color:#79c7b1}
+input[type=color]{height:38px}
+.pill{display:flex;align-items:center;gap:8px;padding:6px 3px;font-size:13px}
+.pill input{width:18px;height:18px}
+.panel p{line-height:1.6}
+#status{min-height:38px;color:#cdebcf}
+#parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;font-size:12px}
+#parts .part{border-radius:7px;padding:8px;border:1px solid #64768b;display:flex;justify-content:space-between;gap:4px}
+#parts input{accent-color:#99d8cc}
+footer{max-width:1270px;margin:auto;padding:7px 18px 28px;color:#c5d5e3;font-size:12px}
+@media(max-width:1000px){main{grid-template-columns:190px minmax(0,1fr)}.settings{grid-column:1/-1}.catalog{max-height:56vh}}
+@media(max-width:670px){main{grid-template-columns:1fr}.catalog{grid-template-columns:repeat(2,minmax(0,1fr));max-height:240px}
+#viewport{height:46vh;min-height:305px}.settings{grid-column:auto}}
+</style></head><body>
+<header><h1>独立ヘアアセット・スタジオ</h1>
+<div class="muted">髪は顔v121のスキンヘッドから独立。男女別の実GLBを頭部に自動フィットし、パーツ単位で確認・動作検証します。</div>
+<div class="muted"><a href="./face-neutral-v121.html">顔v121（スキンヘッド）</a> ｜ <a href="./face-mesh-studio.html">顔編集</a> ｜ <a href="./character-face-catalog.html">顔・髪管理一覧</a></div></header>
+<main>
+<section class="panel"><h2>男女別ヘアカタログ</h2>
+<div class="controls" role="group" aria-label="性別"><button id="female" aria-pressed="true">女性 12</button><button id="male" aria-pressed="false">男性 14</button></div>
+<p class="muted">26種類の3Dメッシュ。カタログの番号は元GLBの識別子で、髪型名を未検証のまま割り当てません。</p>
+<div class="catalog" id="catalog" aria-label="3D髪型一覧"></div></section>
+<section class="panel">
+<div class="controls"><button id="front">正面</button><button id="side">側面</button><button id="back">背面</button><button id="reset">視点リセット</button></div>
+<div id="viewport"><div class="viewerInfo" id="viewerInfo">頭部ベース：独立ダミー<br>髪メッシュ：読込中</div></div>
+<p class="muted">ドラッグで360度回転、ピンチで拡大。色分け＋分解表示は頭頂／前髪／左右横髪／後ろ髪のジオメトリ単位で切り替えます。</p>
+<div class="controls"><button id="breakdown" aria-pressed="false">部位を色分け</button><button id="explode" aria-pressed="false">部位を分解</button><button id="source">元のGLB</button></div>
+<div id="status" role="status" aria-live="polite">髪を読み込み中…</div>
+<div id="parts" aria-label="髪メッシュのパーツ表示"></div>
+</section>
+<section class="panel settings"><h2>自動フィット・揺れの検証</h2>
+<p class="muted">頭の寸法を変更しても、髪の根元を合わせ直します。顔自体のメッシュは一切更新しません。</p>
+<label>頭の幅 <span id="widthVal"></span><input id="width" type="range" min=".14" max=".28" step=".005" value=".205"></label>
+<label>頭の高さ <span id="heightVal"></span><input id="height" type="range" min=".17" max=".32" step=".005" value=".235"></label>
+<label>頭の奥行き <span id="depthVal"></span><input id="depth" type="range" min=".14" max=".28" step=".005" value=".205"></label>
+<label>髪色<input id="color" type="color" value="#c5a36f"></label>
+<h2>頭部・身体の動き</h2>
+<div class="controls"><button data-motion="idle" aria-pressed="true">静止</button><button data-motion="walk" aria-pressed="false">歩行</button><button data-motion="run" aria-pressed="false">走行</button><button data-motion="turn" aria-pressed="false">旋回</button></div>
+<label>風・揺れの強さ <span id="windVal">0</span><input id="wind" type="range" min="0" max="3" step=".1" value="0"></label>
+<p class="muted">根元は頭と一緒に動き、長い毛先ほどばね減衰で遅れて戻ります。動作中の髪の揺れはこのプレビュー用で、ゲーム本体への適用には更新ループへの接続が必要です。</p>
+<button id="save" style="width:100%">現在の組み合わせをJSON保存</button>
+<p class="muted">出力は髪型ID・髪色・頭サイズ・動作設定です。元の3Dメッシュはライセンス表記付きGLBとして別管理します。</p></section>
+</main>
+<footer>素材：Vincent Freelance ／ CC BY 4.0。<a href="./assets/characters/hair-fitted-v1/ATTRIBUTION.md">著作者・出典・改変履歴</a>を確認してください。髪型資料の写真はゲームへ取り込みません。</footer>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {INDEPENDENT_HAIR_CATALOG,HAIR_SECTIONS,createHairSpring}
+ from './src/independent-hair-library-v1.js?v=1';
+import {buildIndependentHairMesh} from './src/independent-hair-mesh-v1.js?v=1';
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#182736');
+const pivot=new THREE.Group();scene.add(pivot);
+const camera=new THREE.PerspectiveCamera(38,1,.015,10);
+const viewport=$('viewport');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+viewport.append(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=.10;controls.minDistance=.28;controls.maxDistance=1.8;
+controls.target.set(0,-.045,0);camera.position.set(.045,.03,.78);controls.update();
+scene.add(new THREE.HemisphereLight(0xd5eaff,0x32302c,2.2));
+const light=new THREE.DirectionalLight(0xffe7d0,3.0);light.position.set(1.1,1.6,2);scene.add(light);
+const rim=new THREE.DirectionalLight(0xb5d4ff,1.7);rim.position.set(-1,1,-1);scene.add(rim);
+const skinMaterial=new THREE.MeshStandardMaterial({color:0xd9b7a2,roughness:.85});
+const head=new THREE.Group();pivot.add(head);
+const face=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),skinMaterial);head.add(face);
+const ears=[];
+for(const sign of [-1,1]){
+ const e=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),skinMaterial);
+ e.position.set(sign*.108,0,.002);e.scale.set(.023,.038,.015);head.add(e);ears.push(e);
+}
+const nose=new THREE.Mesh(new THREE.ConeGeometry(.018,.055,12),skinMaterial);
+nose.rotation.x=Math.PI/2;nose.position.set(0,-.018,.105);head.add(nose);
+function headSize(){return {width:+$('width').value,height:+$('height').value,depth:+$('depth').value};}
+function updateHead(){
+ const h=headSize();
+ face.position.y=.01;face.scale.set(h.width*.50,h.height*.50,h.depth*.50);
+ for(let i=0;i<2;i++){ears[i].position.x=(i===0?-1:1)*h.width*.53;
+  ears[i].scale.set(h.width*.11,h.height*.16,h.depth*.075);}
+ nose.position.z=h.depth*.51;
+ for(const key of ['width','height','depth'])$(key+'Val').textContent=(h[key]*100).toFixed(1)+' cm';
+ current?.fitToHead(h);
+ updateStats();
+}
+let sex='female',current=null,selection=0,selected=INDEPENDENT_HAIR_CATALOG.female[0];
+let motion='idle',timer=0,last=performance.now(),swayTime=0;
+const spring=createHairSpring(),loader=new GLTFLoader();
+function resize(){
+ const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);
+ renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(viewport);resize();
+function updateStats(){
+ const model=current;
+ if(!model)return;
+ const f=model.root.userData.fit,scale=f.scale;
+ $('viewerInfo').textContent='髪: '+selected.name+'（実GLB）\n'+
+  'フィット倍率: '+scale.map(v=>v.toFixed(2)).join(' / ')+
+  '\nパーツ：頭頂 / 前髪 / 左右 / 後髪';
+}
+function makePartControls(){
+ const root=$('parts');root.replaceChildren();if(!current)return;
+ for(const part of HAIR_SECTIONS){
+  const wrapper=document.createElement('label');wrapper.className='part';
+  const box=document.createElement('input');box.type='checkbox';box.checked=true;
+  box.onchange=()=>current?.setSectionVisible(part.id,box.checked);
+  const name=document.createElement('span');name.textContent=
+   part.name+' ('+Math.round(current.sectionCounts[part.id]||0)+')';
+  wrapper.append(box,name);root.append(wrapper);
+ }
+}
+async function select(item){
+ selected=item;const request=++selection;
+ document.querySelectorAll('[data-hair]').forEach(b=>
+  b.setAttribute('aria-pressed',String(b.dataset.hair===item.id)));
+ $('status').textContent=item.name+' の髪メッシュを読込中…';
+ try{
+  const gltf=await loader.loadAsync(item.path);
+  if(request!==selection)return;
+  const next=buildIndependentHairMesh(THREE,gltf.scene,
+   {headSize:headSize(),color:$('color').value});
+  const old=current;current=next;pivot.add(next.root);old?.dispose();
+  next.setSectionColors($('breakdown').getAttribute('aria-pressed')==='true');
+  next.setExploded($('explode').getAttribute('aria-pressed')==='true');
+  spring.reset();makePartControls();updateStats();
+  $('source').onclick=()=>{window.open(item.path,'_blank','noopener')};
+  $('status').textContent=item.name+'：独立した髪GLBを表示中（元の顔モデルは変更なし）';
+ }catch(error){if(request===selection)$('status').textContent='GLB読込エラー：'+error.message;}
+}
+function list(){
+ const root=$('catalog');root.replaceChildren();
+ for(const item of INDEPENDENT_HAIR_CATALOG[sex]){
+  const b=document.createElement('button');b.type='button';
+  b.dataset.hair=item.id;b.setAttribute('aria-pressed',String(item.id===selected.id));
+  const icon=document.createElement('span');icon.className='iconHair';icon.textContent='♜';
+  const text=document.createElement('span');text.textContent=item.name;
+  b.append(icon,text);b.onclick=()=>select(item);root.append(b);
+ }
+}
+for(const g of ['female','male'])$(g).onclick=()=>{
+ sex=g;for(const id of ['female','male'])$(id).setAttribute('aria-pressed',String(id===sex));
+ selected=INDEPENDENT_HAIR_CATALOG[sex][0];list();select(selected);
+};
+for(const key of ['width','height','depth'])$(key).oninput=updateHead;
+$('color').oninput=()=>current?.setColor($('color').value);
+for(const key of ['breakdown','explode'])$(key).onclick=()=>{
+ const pressed=$(key).getAttribute('aria-pressed')!=='true';
+ $(key).setAttribute('aria-pressed',String(pressed));
+ if(key==='breakdown')current?.setSectionColors(pressed);
+ else current?.setExploded(pressed);
+};
+function orient(x,y,z){camera.position.set(x,y,z);controls.target.set(0,-.045,0);controls.update();}
+$('front').onclick=()=>orient(0,.03,.78);
+$('side').onclick=()=>orient(.78,.03,0);
+$('back').onclick=()=>orient(0,.03,-.78);
+$('reset').onclick=()=>orient(.045,.03,.78);
+document.querySelectorAll('[data-motion]').forEach(b=>b.onclick=()=>{
+ motion=b.dataset.motion;timer=0;spring.reset();
+ for(const x of document.querySelectorAll('[data-motion]'))
+  x.setAttribute('aria-pressed',String(x===b));
+});
+$('wind').oninput=()=>$('windVal').textContent=$('wind').value;
+$('save').onclick=()=>{
+ const data={schema:'hai-gin-independent-hair-v1',sex,asset:selected.id,glb:selected.path,
+  head:headSize(),color:$('color').value,motion,wind:+$('wind').value,
+  license:'Vincent Freelance / CC BY 4.0'};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='hair-'+selected.id+'.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+function frame(now){
+ requestAnimationFrame(frame);
+ const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;timer+=dt;
+ let vx=0,vz=0,turn=0;
+ if(motion==='walk'||motion==='run'){
+  const speed=motion==='run'?2.8:1.3;
+  pivot.position.y=Math.sin(timer*(motion==='run'?13:8))*(motion==='run'?.009:.004);
+  pivot.rotation.z=Math.sin(timer*3)*.022;
+  vx=Math.sin(timer*3)*speed;vz=speed*.6;
+ }else if(motion==='turn'){
+  pivot.rotation.y+=dt*1.25;turn=1.25;vx=.4;
+ }else{pivot.position.y=0;pivot.rotation.z=0;}
+ if(motion!=='turn')pivot.rotation.y*=Math.max(0,1-dt*5);
+ if(motion==='idle'){pivot.position.y=0;pivot.rotation.z=0;}
+ // Keep the scalp on the head; only the free hair lengths receive secondary motion.
+ swayTime+=dt;
+ if(swayTime>=1/30){
+  const w=+$('wind').value;
+  const d=spring.step({dt:swayTime,velocityX:vx,velocityZ:vz,turnSpeed:turn,
+   wind:Math.sin(timer*1.6)*w});
+  current?.deformTips(d.x,d.z);swayTime=0;
+ }
+ controls.update();renderer.render(scene,camera);
+}
+updateHead();list();select(selected);requestAnimationFrame(frame);
+</script></body></html>
