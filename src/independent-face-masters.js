@@ -499,11 +499,12 @@ export function makeIndependentFaceMaster(sourceRoot,gender,{femaleControls={},m
  // from the immutable indexed CC0 donor, after the legacy Gaussian passes
  // but before any mouth/orbital rig or skin shader samples this geometry.
  // It does NOT subdivide: original 3490 vertices, indices and UVs remain.
- const referencePortrait=enableV117ReferencePortrait?
+ const referencePortrait=enableV117ReferencePortrait&&cheekContourMode==='v105'?
   sculptV117ReferencePortrait(geometry,{
    gender,ageBand:demo.ageBand,bodyType:demo.bodyType,
    donorPositions:originalPoints,donorBox:b,controls
-  }):{applied:false,reason:'reference-comparison-disabled'};
+  }):{applied:false,reason:cheekContourMode==='v105'?
+  'reference-comparison-disabled':'legacy-cheek-comparison-preserved'};
  p.needsUpdate=true;
  geometry.computeVertexNormals();
  geometry.computeBoundingBox();geometry.computeBoundingSphere();
