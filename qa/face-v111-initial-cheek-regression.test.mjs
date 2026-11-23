@@ -181,7 +181,7 @@ test('v111 studio holds face invisible until initial wigs are built and requires
  assert.ok(hidden>=0&&hidden<wig&&wig<maleWig&&maleWig<show);
  assert.ok(!init.slice(hidden,show).includes('await new Promise(resolve=>requestAnimationFrame'),
   'Incomplete model must never be painted while hair is still building');
- assert.match(init,/dataset\.faceMeshReady='v117'/);
+ assert.match(init,/dataset\.faceMeshReady='v(?:117|119)'/);
  assert.match(html,/20261123-v115-eye-liner-lashes/);
  const source=readFileSync(new URL('../src/independent-face-masters.js',import.meta.url),'utf8');
  assert.match(source,/face-feature-meshes\.js\?v=20261123-v115-eye-liner-lashes/);
