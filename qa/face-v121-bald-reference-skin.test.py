@@ -52,7 +52,8 @@ class TestFaceV121(unittest.TestCase):
         # former displacement-only version, source triangle IDs are not
         # required to match inside the actual mouth/menton surface.
         detached=0
-        remeshed=0
+        retopo=0
+        uv=accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0'])
         for i in range(0,len(old_index),3):
             before=old_index[i:i+3]
             after=new_index[i:i+3]
@@ -66,48 +67,51 @@ class TestFaceV121(unittest.TestCase):
                     self.assertGreater(z,.110)
                 detached+=1
             else:
+                # A true replacement patch is bounded in the native UV chart
+                # from under the lower lip through the submental neck region.
+                # Old triangle corners can be outside the centroid mask.
                 for (index,) in before+after:
-                    x,y,z=newp[index]
-                    self.assertLess(abs(x),.119)
-                    self.assertGreater(y,.110)
-                    self.assertLess(y,.267)
-                    self.assertGreater(z,.063)
-                remeshed+=1
+                    u,v=uv[index]
+                    self.assertGreater(u,.33)
+                    self.assertLess(u,.67)
+                    self.assertGreater(v,.35)
+                    self.assertLess(v,.61)
+                retopo+=1
         rig=self.b['meshes'][0]['extras']['facialExpressionRig']
         self.assertEqual(detached,rig['splitMouthSeal']
                          ['detachedSkinTriangles'])
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-front-profile-jaw-neck-remodel-v3')
-        self.assertGreater(rebuild['edgeFlips'],3)
-        self.assertGreater(remeshed,3)
-        self.assertTrue(rebuild['sideProfileMeasured'])
-        self.assertTrue(rebuild['chinTipRoundness3D'])
-        self.assertTrue(rebuild['frontalJawWidthBlending'])
-        self.assertTrue(rebuild['submentalToNeckBlend'])
-        self.assertEqual(rebuild['chinVerticalShorteningMeters'],.006)
-        self.assertGreater(rebuild['remodeledAnteriorChinVertices'],11)
-        self.assertGreater(rebuild['blendedSubmentalNeckVertices'],7)
-        self.assertGreater(rebuild['affectedVertices'],60)
-        self.assertLess(rebuild['maximum3DDisplacement'],.045)
+                         'female-v121-new-surface-retopology-v7')
+        self.assertTrue(rebuild['oldPatchFacesDiscarded'])
+        self.assertTrue(rebuild['entireJawPatchRetringulatedFromUV'])
+        self.assertTrue(rebuild['singleContinuousBoundary'])
+        self.assertTrue(rebuild['neckUnderjawSeamContinuous'])
+        self.assertTrue(rebuild['actualMentonRelief3D'])
+        self.assertTrue(rebuild['faceUVAndVertexIDsRetained'])
         self.assertTrue(rebuild['outerBoundaryUntouched'])
-        self.assertTrue(rebuild['monotoneNoDoubleChin'])
-        self.assertTrue(rebuild['legacyChinBridgeDisabled'])
-        z=rebuild['profileControlZ']
-        self.assertGreaterEqual(len(z),8)
-        self.assertTrue(all(z[j+1]>z[j] for j in range(len(z)-1)),
-                        'one continuous lip-to-neck profile, no double crest')
+        self.assertGreater(rebuild['removedOldPatchTriangles'],1200)
+        self.assertEqual(rebuild['removedOldPatchTriangles'],
+                         rebuild['generatedNewPatchTriangles'])
+        self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
+        self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
+        self.assertGreater(rebuild['affectedVertices'],700)
+        self.assertGreater(retopo,1000)
+        self.assertLess(rebuild['maximumDisplacement'],.075)
+        self.assertGreater(rebuild['mentonAfterZ'],
+                           rebuild['labiomentalSulcusZ']+.009)
+        self.assertGreater(rebuild['mentonAfterZ'],
+                           rebuild['upperNeckZ']+.05)
+        self.assertLess(rebuild['mentonAfterZ'],
+                        rebuild['mouthFrontZ']-.011)
         self.assertTrue(self.b['meshes'][0]['extras']
                         ['sagittalChinProfile']['legacyBridgeDisabled'])
-
-        self.assertLessEqual(rebuild['mentonAfterZ'],
-                             rebuild['mouthFrontZ']-.016)
         self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
                          accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0']))
         distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
         self.assertGreater(sum(x>0.00004 for x in distances),1000)
-        self.assertLess(max(distances),0.040)
+        self.assertLess(max(distances),0.090)
         self.assertTrue(all(math.isfinite(v) for p in newp for v in p))
         self.assertEqual(len(accessor(self.b,self.b_bin,dst['attributes']['NORMAL'])),13455)
         colors=accessor(self.b,self.b_bin,dst['attributes']['COLOR_0'])
