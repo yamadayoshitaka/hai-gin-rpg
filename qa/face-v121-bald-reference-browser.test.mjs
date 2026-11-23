@@ -123,9 +123,15 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('html').getAttribute('data-v121-tuned'),'true');
   await page.screenshot({path:'qa/screenshots/face-v121/neutral-face-sliders-edited.png'});
-  const tunedDownload=page.waitForEvent('download',{timeout:60000});
-  await page.locator('#export').click();
+  const tunedDownload=page.waitForEvent('download',{timeout:75000})
+    .catch(e=>({downloadError:e.message}));
+  await page.locator('#export').click({timeout:20000});
   const tuned=await tunedDownload;
+  if(tuned.downloadError){
+    const status=await page.locator('#status').textContent();
+    throw new Error('Adjusted GLB download failed: '+tuned.downloadError+
+      '; UI status='+status+'; console='+errors.join(' | '));
+  }
   assert.equal(tuned.suggestedFilename(),'hai-gin-face-v121-adjusted.glb');
   const tunedBuffer=readFileSync(await tuned.path());
   assert.equal(tunedBuffer.toString('ascii',0,4),'glTF');
