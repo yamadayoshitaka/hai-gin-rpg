@@ -79,14 +79,14 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(detached,20)
         rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
         self.assertEqual(rebuild['version'],
-                         'female-v121-unified-anatomical-jaw-surface-v5')
+                         'female-v121-anchored-anatomical-jaw-surface-v6')
         self.assertGreater(rebuild['edgeFlips'],3)
         self.assertGreater(remeshed,3)
         self.assertTrue(rebuild['sourceOldChinDepthNotReused'])
         self.assertTrue(rebuild['actualMentonRelief3D'])
         self.assertTrue(rebuild['hasLabiomentalSulcus'])
         self.assertTrue(rebuild['frontalJawRoundnessByEllipse'])
-        self.assertTrue(rebuild['underchinSheetContinuouslyBlended'])
+        self.assertTrue(rebuild['underchinSurfaceProtected'])
         self.assertTrue(rebuild['neckSeamPreserved'])
         self.assertTrue(rebuild['vermilionBoundaryPreserved'])
         self.assertGreater(rebuild['remodeledAnteriorChinVertices'],39)
