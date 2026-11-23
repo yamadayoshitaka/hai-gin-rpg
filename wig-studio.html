@@ -94,7 +94,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=5';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,buildFittedScalpCap,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=6';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -118,11 +118,17 @@ const loader=new GLTFLoader();
 const exporter=new GLTFExporter();
 const STYLES=new Map(PUBLIC_WIG_SOURCES.map(s=>[s.id,s]));
 const ORIGIN='https://raw.githubusercontent.com/kblood/CharacterCreator/master/output/';
-let head=null,wig=null,wigContent=null,rawBox=null,rawCrown=null,fringe=null,headWire=null,activeId='long01',token=0;
+let head=null,wig=null,wigContent=null,rawBox=null,rawCrown=null,fringe=null,scalpCap=null,headWire=null,activeId='long01',token=0;
 let nativeMats=[],viewCenter=new THREE.Vector3(),viewRadius=.6,rawMode='',geometryAudit=null;
 function setStatus(message,error=false){
  $('status').textContent=message;
  $('status').style.color=error?'#ffd0c8':'#dbeeea';
+}
+function removeScalpCap(){
+ if(!scalpCap)return;
+ wig?.remove(scalpCap);
+ scalpCap.userData?.dispose?.();
+ scalpCap=null;
 }
 function removeFringe(){
  if(!fringe)return;
@@ -141,6 +147,7 @@ function updateHeadWire(){
 }
 function clearWig(){
  removeFringe();
+ removeScalpCap();
  if(!wig)return;
  scene.remove(wig);
  wig.traverse(node=>{
@@ -152,7 +159,7 @@ function clearWig(){
    if(material?.userData?.wigOwned)material.dispose();
   }
  });
- wig=null;wigContent=null;rawBox=null;rawCrown=null;fringe=null;nativeMats=[];
+ wig=null;wigContent=null;rawBox=null;rawCrown=null;fringe=null;scalpCap=null;nativeMats=[];
  $('export').disabled=true;
 }
 function colorWig(){
@@ -166,6 +173,9 @@ function colorWig(){
  }
  if(fringe){
   fringe.traverse(m=>{if(m.material?.color)m.material.color.set(tint)});
+ }
+ if(scalpCap){
+  scalpCap.traverse(m=>{if(m.material?.color)m.material.color.set(tint)});
  }
 }
 function installMaterials(gltfRoot){
@@ -227,6 +237,7 @@ function updateFit(){
   '\n頭皮の横幅・奥行：'+(fit.headWidth*1000).toFixed(1)+' / '+(fit.headDepth*1000).toFixed(1)+' mm'+
   '\nウィッグ頂部の横幅・奥行：'+(fit.capWidth*1000).toFixed(1)+' / '+(fit.capDepth*1000).toFixed(1)+' mm'+
   '\n頭部へのカバー率（横 / 奥）：'+(fit.coverageX*100).toFixed(0)+'% / '+(fit.coverageZ*100).toFixed(0)+'%'+
+  '\n共通座標：v121実メッシュ / 髪キャップ：'+(scalpCap?.userData?.triangleCount||0)+'三角形'+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
   '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
   '\nモーフデータを除外：'+(geometryAudit?.droppedMorphTargets||0)+'項目'+
@@ -289,6 +300,9 @@ async function loadWig(style,sourceFile){
  wigContent.name='imported-CC0-'+descriptor.id;
  wig.add(wigContent);
  installMaterials(wigContent);
+ // All three hairstyles share the actual v121 scalp coordinate frame.
+ scalpCap=buildFittedScalpCap(THREE,head,{color:$('color').value});
+ wig.add(scalpCap);
  scene.add(wig);
  rawMode=used+' / '+descriptor.id;
  updateFit();
@@ -296,7 +310,7 @@ async function loadWig(style,sourceFile){
  frameView('front');
  $('export').disabled=false;
  $('wip').hidden=true;
- setStatus(descriptor.label+'：骨格変形を除外した独立した髪メッシュだけを読み込みました。ワイヤーはチェック時のみ表示します。全身骨格は表示しません。');
+ setStatus(descriptor.label+'：v121の共通座標で装着しました。頭皮の露出を髪色キャップで覆い、青いワイヤーはプレビュー専用です。');
 }
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
  frameView(button.dataset.view==='reset'?'front':button.dataset.view);
@@ -328,7 +342,7 @@ $('export').addEventListener('click',()=>{
   a.href=url;a.download='hai-gin-wig-'+activeId+'-fitted.glb';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1500);
   $('export').disabled=false;
-  setStatus('ウィッグだけのGLBを出力しました。頭と顔は含まれません。');
+  setStatus('ウィッグ・前髪・髪色キャップをGLBに出力しました。顔と水色ワイヤーは含まれません。');
  },err=>{
   $('export').disabled=false;setStatus('GLB書き出しに失敗：'+err.message,true);
  },{binary:true,onlyVisible:true,embedImages:true});
