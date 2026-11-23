@@ -155,6 +155,10 @@ window.__haiGinAssetRelayReady = new Promise(function (resolve) {
 """.replace("__COMMIT__", commit_sha)
     changed = 0
     for html in out.rglob("*.html"):
+        # The opt-in cache reset page must never install the very Service
+        # Worker it is currently removing. Ordinary game pages still do.
+        if html.name == "hair-cache-reset.html":
+            continue
         contents = html.read_text(encoding="utf-8")
         if 'id="pages-asset-relay-bootstrap"' in contents:
             continue
