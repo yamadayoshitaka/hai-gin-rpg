@@ -3,12 +3,12 @@
  * deficit from the player's wallet. A preview never spends gold or moves troops.
  */
 import {ensureSortiePlan,sortieTeams,sortieLevel,sortiePlanningLimit,
- SORTIE_FORMATIONS} from './three-team-sortie.js?v=formation-job-20261123';
+ SORTIE_FORMATIONS} from './three-team-sortie.js?v=formation-3jobs-20261123';
 import {FORMATION_ENTRY_REQUIREMENTS,formationTemplate} from './sortie-formation-template-rules.js';
-import {FORMATION_ROLES,ROLE_JOBS,formationMinimumForRole} from './sortie-formation-logic.js?v=formation-job-20261123';
+import {FORMATION_ROLES,ROLE_JOBS,formationMinimumForRole} from './sortie-formation-logic.js?v=formation-3jobs-20261123';
 import {JOBS} from './story-campaign.js';
 import {trainingHireCapacity,hireTownSoldiers} from './game-core-flow.js';
-import {chooseInnFormation,inspectInnFormation} from './inn-formation-rules.js?v=formation-job-20261123';
+import {chooseInnFormation,inspectInnFormation} from './inn-formation-rules.js?v=formation-3jobs-20261123';
 
 const grade={N:0,R:1,SR:2,SSR:3,UR:4};
 const asCount=n=>Math.max(0,Math.trunc(Number(n)||0));

@@ -149,7 +149,7 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 .forgePanel b{font-size:14px;color:#ffe0a2}.forgePanel small{font-size:11px;color:#d4e0e7}
 #panel .forgePanel button{background:#79552c;border-color:#d9ba7d;min-height:42px}
 </style>
-<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=formation-job-20261123"></head><body class="town-loading">
+<link rel="stylesheet" href="./src/town-tavern-gacha.css?v=20261116a"><link rel="stylesheet" href="./src/tactical-command-ui.css?v=2.1"><link rel="stylesheet" href="./src/battle-ui-refinement.css?v=2.4"><link rel="stylesheet" href="./src/three-team-sortie-ui.css?v=formation-3jobs-20261123"></head><body class="town-loading">
 <main id="townScene" aria-label="町の施設を選択">
 <img id="townArtwork" src="./assets/town/royal-town-hub-v1.webp" alt="城、教会、軍訓練所、鍛冶屋、酒場、道具屋が並ぶ王都" fetchpriority="high">
 <div id="townFacilityPins">
@@ -183,14 +183,14 @@ header nav button,header nav a{min-width:0;padding:7px 2px;white-space:nowrap;fo
 <section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt"><img id="eventSceneImage" alt="物語の現在の1コマ" hidden><div id="eventSheetMissing" role="status">漫画原画を制作・確認中</div></div><h1>レヴナの町</h1><div id="eventSpeakerRow"><img id="eventPortrait" hidden alt="話者の顔"><div id="eventSpeaker" aria-live="polite">語り手</div></div><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice" type="button" aria-label="漫画の音声のオン・オフ">音声 ON</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">物語を閉じて町へ進む</button></div></section>
 <script type="module">
 import {armyGroups,armyGroupFor,setArmyGroup,captainCandidates,armyCaptain,setArmyCaptain,captainBonus} from './src/army-groups.js';
-import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=formation-job-20261123';
-import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=formation-job-20261123';
-import {purchaseAndArrangeTrainingFormation} from './src/training-formation-purchase.js?v=formation-job-20261123';
+import {renderThreeTeamPlanner} from './src/three-team-sortie-ui.js?v=formation-3jobs-20261123';
+import {renderInnFormationWizard} from './src/inn-formation-wizard.js?v=formation-3jobs-20261123';
+import {purchaseAndArrangeTrainingFormation} from './src/training-formation-purchase.js?v=formation-3jobs-20261123';
 import {setInnTeamItem} from './src/inn-team-items.js';
-import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=formation-job-20261123';
+import {selectInnRosterJob,setInnRosterCount,chooseInnFormation} from './src/inn-formation-rules.js?v=formation-3jobs-20261123';
 import {registerBattlePlan,selectBattlePlan,allBattlePlans} from './src/battle-plan-recommendations.js?v=20261116';
-import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions,sortiePlanningStage} from './src/three-team-sortie.js?v=formation-job-20261123';
-import {autoComposeThreeTeams} from './src/three-team-auto-composition.js?v=formation-job-20261123';
+import {ensureSortiePlan,setSortieCount,setSortieCaptain,setSortieFormation,setSortieGridCell,setSortieOrder,setSortieTactics,setSortieDivisions,sortiePlanningStage} from './src/three-team-sortie.js?v=formation-3jobs-20261123';
+import {autoComposeThreeTeams} from './src/three-team-auto-composition.js?v=formation-3jobs-20261123';
 
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {STORY_KEY_PEOPLE} from './src/story-cinematic.js';

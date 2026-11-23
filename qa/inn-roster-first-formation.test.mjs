@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createNewGame,equipSquadItem} from '../src/game-core-flow.js';
-import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieFormationStatus,sortiePlanningLimit,SORTIE_FORMATIONS,setSortieFormation} from '../src/three-team-sortie.js';
+import {ensureSortiePlan,sortieTeams,sortieTeamCount,sortieFormationStatus,sortiePlanningLimit,SORTIE_FORMATIONS,setSortieFormation,sortieFormationBuff} from '../src/three-team-sortie.js';
 import {selectInnRosterJob,setInnRosterCount,chooseInnFormation,inspectInnFormation} from '../src/inn-formation-rules.js';
 import {renderInnFormationWizard} from '../src/inn-formation-wizard.js';
 
@@ -102,24 +102,43 @@ const jobSnapshot=()=>({
  captainId:selected.sortiePlan.teams[0].captainId
 });
 const originalRoster=jobSnapshot();
-assert.equal(inspectInnFormation(selected,1,'support').eligible,true,'monk and mage match rear formation');
+assert.equal(inspectInnFormation(selected,1,'support').eligible,false,
+ 'a two-job monk/mage roster cannot activate any named formation');
+for(const id of Object.keys(SORTIE_FORMATIONS))
+ assert.equal(inspectInnFormation(selected,1,id).eligible,false,id+' needs three jobs');
+setSortieFormation(selected,1,'support');
+assert.equal(selected.sortiePlan.teams[0].formation,'free',
+ 'ineligible named formation falls back to free with the exact two jobs');
+assert.deepEqual(jobSnapshot(),originalRoster);
+assert.deepEqual(sortieFormationBuff(selected,1),{
+ attack:0,defense:0,mobility:0,magic:0,healing:0
+},'free one/two-job layouts have zero formation buffs');
+
+// Add the missing guard/front job; do not change the existing jobs or headcounts.
+const expanded=selected.sortiePlan.teams[0];
+expanded.slots[2]='103';expanded.counts['103']=3;expanded.divisions['103']=1;
+const threeRoster=jobSnapshot();
+assert.equal(inspectInnFormation(selected,1,'support').eligible,true,
+ 'monk, mage and knight fulfill all three rear-formation roles');
 setSortieFormation(selected,1,'support');
 assert.equal(selected.sortiePlan.teams[0].formation,'support');
-assert.deepEqual(jobSnapshot(),originalRoster,'eligible formation cannot modify jobs, counts or captain');
+assert.deepEqual(jobSnapshot(),threeRoster,'eligible formation preserves all jobs, counts and captain');
 assert.equal(sortieFormationStatus(selected,1).valid,true);
+assert.deepEqual(sortieFormationBuff(selected,1),{
+ attack:0,defense:.06,mobility:.04,magic:.20,healing:.10
+},'all rear-formation buffs are available only for a valid three-job formation');
 setSortieFormation(selected,1,'attack');
 assert.equal(selected.sortiePlan.teams[0].formation,'free',
- 'missing front-line class falls back to free, never swapping the monk');
-assert.deepEqual(jobSnapshot(),originalRoster);
+ 'no scout means attack formation must not substitute the monk');
+assert.deepEqual(jobSnapshot(),threeRoster);
 setSortieFormation(selected,1,'balanced');
-assert.equal(selected.sortiePlan.teams[0].formation,'free',
- 'three-job preset cannot activate with only two chosen jobs');
-assert.deepEqual(jobSnapshot(),originalRoster);
-setSortieFormation(selected,1,'support');
+assert.equal(selected.sortiePlan.teams[0].formation,'balanced',
+ 'three matching front/support/ranged jobs can use balanced');
+assert.deepEqual(jobSnapshot(),threeRoster);
 selected.sortiePlan.teams[0].formation='attack'; // invalid saved preset
 ensureSortiePlan(selected);
 assert.equal(selected.sortiePlan.teams[0].formation,'free','load incompatible saved formation as free');
-assert.deepEqual(jobSnapshot(),originalRoster,'loading must never recruit or replace another job');
+assert.deepEqual(jobSnapshot(),threeRoster,'loading must never recruit or replace another job');
 assert.match(renderInnFormationWizard({game:selected,view:'formation',teamId:1}),
  /data-inn-wizard-formation="free"/);
 assert.match(renderInnFormationWizard({game:selected,view:'roster',teamId:1,rosterPreviewId:'attack'}),

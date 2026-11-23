@@ -5,10 +5,10 @@
 import {
  ensureSortiePlan,sortieTeams,sortieTeamCount,sortiePlanningLimit,sortieLevel,
  SORTIE_FORMATIONS,SORTIE_FORMATION_CELLS
-} from './three-team-sortie.js?v=formation-job-20261123';
-import {FORMATION_ROLES,ROLE_NAMES,ROLE_JOBS} from './sortie-formation-logic.js?v=formation-job-20261123';
+} from './three-team-sortie.js?v=formation-3jobs-20261123';
+import {FORMATION_ROLES,ROLE_NAMES,ROLE_JOBS} from './sortie-formation-logic.js?v=formation-3jobs-20261123';
 import {FORMATION_ENTRY_REQUIREMENTS,FORMATION_BATTLE_PURPOSES} from './sortie-formation-template-rules.js';
-import {inspectInnFormation} from './inn-formation-rules.js?v=formation-job-20261123';
+import {inspectInnFormation} from './inn-formation-rules.js?v=formation-3jobs-20261123';
 import {trainingSoldierStock,inspectTrainingFormationPurchase} from './training-formation-purchase.js';
 import {TOWN_SHOP,squadEquipmentBonus,trainingHireCapacity,squadEquipmentUsers} from './game-core-flow.js';
 import {INN_CONSUMABLES,teamItemStock,innTeamItemsSummary} from './inn-team-items.js';
@@ -25,6 +25,11 @@ const stageByStep={hire:0,teamPick:0,roster:1,rosterQuote:1,rosterPick:1,equipme
 const purpose=id=>FORMATION_BATTLE_PURPOSES[id]||{purpose:'汎用隊列',movement:'隊列を維持'};
 const formationTargetJobs=id=>(FORMATION_ROLES[id]||[]).slice(0,SORTIE_FORMATIONS[id]?.slots||0)
  .map(role=>(ROLE_NAMES[role]||role)+'：'+(ROLE_JOBS[role]||[]).join('・')).join(' ／ ');
+const formationBuffLabel=id=>{
+ const f=SORTIE_FORMATIONS[id];if(!f)return '陣形バフなし';
+ return [['攻撃',f.attack],['防御',f.defense],['移動',f.mobility],['魔法',f.magic],['回復',f.healing]]
+  .filter(([,v])=>Number(v)!==0).map(([name,v])=>name+(v>0?'+':'')+Math.round(v*100)+'%').join('／');
+};
 // The preview represents this team's occupied job slots, not a fictional
 // three-job template. The manoeuvre may still have three chronological phases.
 const renderTeamFormationPreview=(id,game,team)=>{
@@ -88,12 +93,12 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    '第'+team.id+'隊の編成内訳')+'</strong>'+
   '<span>'+(view==='teamPick'?'編成する隊を選ぶか、兵士を雇用してください。酒場のガチャも利用できます。':
    view==='hire'?'所持金で希望のジョブと人数を指定して雇用します。軍資金は使用しません。':
-   view==='roster'?'最大3ジョブ。陣形の動きは下で確認できます。武器・防具は「次へ」で設定します。':
+   view==='roster'?'通常陣形は異なる3ジョブ必須。自由陣形のみ1〜3ジョブ。武器・防具は「次へ」で設定します。':
    view==='rosterQuote'?'在庫兵・追加雇用・支払額を確認して、陣形へ一括配置します。':
    view==='equipment'?'武器と防具はジョブごとの装備です。変更・解除ができます。':
    view==='items'?'道具屋で買ったアイテムを隊に分配します。共有在庫を超えて配布できません。':
    view==='leader'?'この隊に配属したジョブの代表からリーダーを選びます。':
-   view==='formation'?'人数・レアリティ・職業・軍師Lv.を満たす陣形のみ選べます。戦闘中も陣形の目的に沿って動きます。':
+   view==='formation'?'通常陣形は異なる3ジョブ必須。条件達成時のみ陣形バフが戦闘に適用されます。自由陣形は1〜3ジョブでバフなし。':
    view==='review'?'隊員・装備・リーダー・陣形を確認して保存します。':
    '選択した内容は前の画面に戻っても残ります。')+'</span></div>';
  let body='',back=null,next=null;
@@ -190,7 +195,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
     (preview?
      '<div class="trainingFormationDemo" aria-label="選択した陣形の動作と補充見積り">'+
       '<b>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</b>'+ 
-      '<small>対象ジョブ：'+esc(formationTargetJobs(previewId))+'</small>'+ 
+      '<small>必須3ジョブ：'+esc(formationTargetJobs(previewId))+'</small>'+ 
+      '<small>成立時バフ：'+esc(formationBuffLabel(previewId))+'</small>'+  
       '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
        renderTeamFormationPreview(previewId,game,team)+
       '</div>'+
@@ -214,7 +220,8 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
   const stock=trainingSoldierStock(game,team.id);
   body='<div class="trainingFormationDetail">'+
    '<strong>'+esc(preview.name)+'：'+esc(plan?.name||'基本隊列')+'</strong>'+ 
-   '<small>対象ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
+   '<small>必須3ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
+   '<small>成立時バフ：'+esc(formationBuffLabel(id))+'</small>'+  
    '<div class="trainingFormationAnimation" aria-label="陣形の動作アニメーション">'+
      renderTeamFormationPreview(id,game,team)+
    '</div>'+
@@ -323,23 +330,23 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    return button('data-inn-wizard-formation="'+id+'" '+(!elig.eligible?'disabled':''),
     '<span class="sortieWizardFormationTitle"><b>'+esc(f.name)+'</b></span>'+
     '<small>目的：'+esc(brief.purpose)+'</small>'+ 
-    '<small>対象ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
+    '<small>必須3ジョブ：'+esc(formationTargetJobs(id))+'</small>'+ 
     renderTeamFormationPreview(id,game,team)+
     '<small>動き：'+esc(brief.movement)+'</small>'+ 
     '<strong class="signatureName">★ 専用作戦：'+esc(signature?.name||'未設定')+'</strong>'+
     '<small class="signatureSummary">'+esc(signature?.summary||'')+'</small>'+ 
     '<small>追加作戦：'+esc(formationUnlockLabels(id).join('・')||'基本作戦のみ')+'</small>'+
     '<small>条件：Lv.'+f.level+'・'+esc(requirement(id))+'</small>'+
-    '<small class="sortieWizardFormationBonus">攻撃+'+Math.round((f.attack||0)*100)+'%／防御+'+Math.round((f.defense||0)*100)+'%</small>'+
+    '<small class="sortieWizardFormationBonus">成立時バフ：'+esc(formationBuffLabel(id))+'</small>'+ 
     '<small>'+(elig.eligible?'✓ 利用可能':'🔒 '+esc(elig.reason))+'</small>',team.formation===id);
   }).join('')+'</div>'+
    '<div class="sortieWizardPager">'+button('data-inn-wizard-formation-page="-1" '+(!page?'disabled':''),'◀ 前の陣形')+
    '<small>'+(page+1)+' / '+pages+'</small>'+
    button('data-inn-wizard-formation-page="1" '+(page>=pages-1?'disabled':''),'次の陣形 ▶')+'</div>'+
    '<div class="innWizardFreeFormation">'+
-    button('data-inn-wizard-formation="free"','自由陣形を選択（対象ジョブ不一致・条件不足でも編成を維持）',team.formation==='free')+
-    '<small>登録済みジョブ・人数・リーダーは変更しません。専用陣形補正なし。</small></div>'+
-   '<small class="innWizardInfo">陣形は配置済みジョブ・最低人数・レアリティで判定。成立しない場合は自由陣形のまま出撃します。</small>';
+    button('data-inn-wizard-formation="free"','自由陣形（1〜3ジョブ・陣形バフなし）',team.formation==='free')+
+    '<small>条件不足で自由陣形になっても、ジョブ・人数・リーダーは保持します。</small></div>'+ 
+   '<small class="innWizardInfo">通常陣形は3ジョブ揃った場合のみ成立し、固有バフが反映されます。</small>';
   back='leader';
  }else{
   const f=SORTIE_FORMATIONS[team.formation],brief=purpose(team.formation);
@@ -355,10 +362,7 @@ export function renderInnFormationWizard({game,view='teamPick',teamId=1,rosterSl
    '<div class="innWizardReviewSummary"><b>隊長：'+
    (members.find(s=>String(s.id)===String(team.captainId))?
      sourceLabel(members.find(s=>String(s.id)===String(team.captainId))):'未選択')+'</b>'+
-   '<small>陣形補正：攻撃+'+Math.round((f?.attack||0)*100)+
-   '%／防御+'+Math.round((f?.defense||0)*100)+
-   '%／移動'+Math.round((f?.mobility||0)*100)+'%／魔法+'+
-   Math.round((f?.magic||0)*100)+'%</small></div></div>'+
+   '<small>陣形補正：'+esc(formationBuffLabel(team.formation))+'</small></div></div>'+ 
    button('data-inn-wizard-save="1"','✓ この隊の編成を保存');
   back='formation';
  }

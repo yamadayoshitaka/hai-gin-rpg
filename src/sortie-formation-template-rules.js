@@ -1,12 +1,12 @@
-/** Fixed formation preset sizes and tier quotas. Quotas are ceilings, not required minima. */
+/** Every named formation requires exactly three job contingents; free allows one to three. Quotas are ceilings. */
 export const SORTIE_RARITIES=Object.freeze(['N','R','SR','SSR','UR']);
 const rule=(slots,maxTroops,N,R,SR,SSR,UR)=>Object.freeze({slots,maxTroops,rarityCaps:Object.freeze({N,R,SR,SSR,UR})});
 export const FORMATION_TEMPLATE_LIMITS=Object.freeze({
- attack:rule(2,30,30,12,6,3,1),balanced:rule(3,40,40,14,8,4,2),
- support:rule(2,28,28,12,8,4,2),wall:rule(2,36,36,16,10,6,2),
+ attack:rule(3,30,30,12,6,3,1),balanced:rule(3,40,40,14,8,4,2),
+ support:rule(3,28,28,12,8,4,2),wall:rule(3,36,36,16,10,6,2),
  spear:rule(3,40,40,16,12,6,2),arrow:rule(3,38,38,18,12,6,2),
  wedge:rule(3,42,42,20,12,8,3),pincer:rule(3,42,42,20,14,8,3),
- circle:rule(3,42,42,20,16,8,3),ambush:rule(2,40,40,24,16,10,4),
+ circle:rule(3,42,42,20,16,8,3),ambush:rule(3,40,40,24,16,10,4),
  cross:rule(3,44,44,26,18,12,4),fortress:rule(3,46,46,28,20,12,5),
  dragon:rule(3,48,48,30,22,14,6),constellation:rule(3,50,50,32,24,16,8),
  free:rule(3,50,50,40,30,20,10)
@@ -36,9 +36,9 @@ export function formationCapacityStatus(team,squads,stageLimit=50){
  * These are deployment minima; existing rarityCaps remain maxima.
  */
 export const FORMATION_ENTRY_REQUIREMENTS=Object.freeze({
- attack:{people:3,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
- balanced:{people:5,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
- support:{people:6,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ attack:{people:7,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ balanced:{people:7,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
+ support:{people:7,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
  wall:{people:8,rPlus:0,srPlus:0,ssrPlus:0,ur:0},
  spear:{people:10,rPlus:1,srPlus:0,ssrPlus:0,ur:0},
  arrow:{people:12,rPlus:1,srPlus:0,ssrPlus:0,ur:0},

@@ -1,4 +1,4 @@
-/** Each battle team fields two or three distinct job contingents. */
+/** Named formations need exactly three distinct jobs; free formations support one to three. */
 export const ROLE_JOBS=Object.freeze({
  front:['騎士','剣士','盾騎士','格闘家'],guard:['盾騎士','騎士','剣士'],
  scout:['忍者','シーフ'],ranged:['魔法使い','召喚士','弓使い'],
@@ -23,6 +23,8 @@ export function matchFormationRoleJobs(team,sources,formation,slotCount){
  const roles=FORMATION_ROLES[formation]?.slice(0,Number(slotCount)||0)||[];
  if(!roles.length||roles.length!==slots.length||new Set(slots).size!==slots.length)return null;
  const byId=new Map(sources.map(s=>[String(s.id),s]));
+ // Different source IDs with the same class still count as one job type.
+ if(new Set(slots.map(id=>byId.get(id)?.job)).size!==slots.length)return null;
  const match=(index,remaining)=>{
   if(index===roles.length)return [];
   const role=roles[index],minimum=formationMinimumForRole(role);
@@ -74,8 +76,9 @@ export function formationStatus(team,ownedSquads,positions,capacity=16){
  const roles=FORMATION_ROLES[team?.formation],cells=positions?.[team?.formation],ids=(team?.slots||[]).filter(Boolean);
  if(!roles||!cells||!ids.length||!Array.isArray(team.grid))
   return {id:'free',valid:false,reason:'自由配置：陣形未成立'};
- if(ids.length>3||ids.some(sid=>!cells.slice(0,3).some(cell=>String(team.grid[cell])===String(sid))))
-  return {id:'free',valid:false,reason:'陣形不成立：最大3ジョブの配置条件を確認してください'};
+ if(ids.length!==3||new Set(ids.map(id=>ownedSquads.find(s=>String(s.id)===String(id))?.job)).size!==3||
+  ids.some(sid=>!cells.slice(0,3).some(cell=>String(team.grid[cell])===String(sid))))
+  return {id:'free',valid:false,reason:'陣形不成立：通常陣形は異なる3ジョブが必須です'};
  const jobs=new Map(ownedSquads.map(s=>[String(s.id),s.job]));
  for(const sid of ids){
   const cell=team.grid.indexOf(String(sid)),rank=cells.slice(0,Math.min(3,Number(capacity)||3)).indexOf(cell);
