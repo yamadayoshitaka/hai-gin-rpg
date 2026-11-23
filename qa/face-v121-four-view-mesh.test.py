@@ -37,6 +37,8 @@ class FourViewSculptQA(unittest.TestCase):
         self.assertEqual(meta['triangleCount'],25920)
         self.assertTrue(meta['uvAndTriangleIndicesPreserved'])
         self.assertTrue(meta['skinheadPreserved'])
+        self.assertTrue(meta['chinShortenedAndRounded'])
+        self.assertIn('supported-lower-cheek',meta['frontProfileContourPass'])
         self.assertTrue(meta['referenceImageIsNot3DScan'])
         self.assertEqual(graph['accessors'][p['attributes']['POSITION']]['count'],13455)
         self.assertEqual(graph['accessors'][p['attributes']['NORMAL']]['count'],13455)
@@ -64,6 +66,12 @@ class FourViewSculptQA(unittest.TestCase):
         lower=(.008,.183,.143)
         self.assertGreater(transformed(upper)[2],upper[2]+.001)
         self.assertGreater(transformed(lower)[2],lower[2]+.001)
+        # A smooth profile needs cheek support beneath the cheekbone and
+        # a shorter, softly rounded chin, not a point or hollowed jaw.
+        lower_cheek=(.088,.217,.098)
+        self.assertGreater(transformed(lower_cheek)[2],lower_cheek[2]+.0006)
+        chin=(.030,.135,.138)
+        self.assertGreater(transformed(chin)[1],chin[1]+.003)
         # Lower neck is not pulled with the chin.
         neck=(.04,.04,.07)
         self.assertLess(math.dist(neck,transformed(neck)),.0002)
