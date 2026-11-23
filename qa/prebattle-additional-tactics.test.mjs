@@ -52,5 +52,5 @@ test('opening UI, runtime execution and enlarged no-scroll animation stay connec
  assert.doesNotMatch(inn,/trainingStockOverview/);
  assert.match(css,/height:clamp\(122px,21dvh,200px\)/);
  assert.match(css,/:has\(\.innWizardRosterPreview\)/);
- assert.match(town,/formation-job-20261123/);
+ assert.match(town,/formation-3jobs-20261123/);
 });
