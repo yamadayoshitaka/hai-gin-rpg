@@ -72,6 +72,9 @@ class V121SkinClean(unittest.TestCase):
             self.assertGreater(y,.179)
             self.assertLess(y,.215)
         self.assertTrue(meta['referenceFeatureSculpt']['lateralNasolabialPitRemoved'])
+        self.assertGreaterEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.009)
+        self.assertGreaterEqual(meta['referenceFeatureSculpt']['philtrumColumnsRelief'],.002)
+        self.assertTrue(meta['referenceFeatureSculpt']['parametricDepthControlSupported'])
         self.assertEqual(len(accessor(self.g,self.buffer,self.p['indices'])),25920*3)
         self.assertEqual(len(accessor(self.g,self.buffer,self.p['attributes']['NORMAL'])),13455)
 
