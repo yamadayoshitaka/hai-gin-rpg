@@ -6,7 +6,7 @@
 export const V121_MAKEUP_PRESETS=Object.freeze({
   bare:{label:'すっぴん',blush:0,lip:0,shadow:0,liner:.25,
     lipColor:[.01,.10,.13],shadowColor:[.24,.28,.32],brow:0x79695e,linerColor:0x59413b},
-  natural:{label:'ナチュラル',blush:.30,lip:.36,shadow:.18,liner:.43,
+  natural:{label:'ナチュラル',blush:.30,lip:.52,shadow:.18,liner:.43,
     lipColor:[.015,.14,.16],shadowColor:[.22,.27,.31],brow:0x65534c,linerColor:0x483632},
   pink:{label:'血色ピンク',blush:.48,lip:.58,shadow:.34,liner:.66,
     lipColor:[.015,.22,.22],shadowColor:[.22,.28,.33],brow:0x59483e,linerColor:0x3c292a},
@@ -29,7 +29,7 @@ export function v121VermilionBorders(x){
   const ax=Math.abs(x),corner=fade(ax,.029,.051);
   return {
     // The same two Cupid peaks / central notch as the real GLB sculpt.
-    upper:.2480+.0029*gauss(ax,.0115,.006)-.00105*gauss(ax,0,.0042)-.0147*corner,
+    upper:.2514+.0031*gauss(ax,.0115,.006)-.0011*gauss(ax,0,.0042)-.0175*corner,
     lower:.2152+.0149*corner
   };
 }
@@ -38,12 +38,12 @@ export function v121MakeupMasks(x,y,z){
   const {upper,lower}=v121VermilionBorders(x);
   // A defined, but feathered, border. No pigment on cheek, philtrum,
   // sublabial skin or jaw; corners shrink to the oral commissures.
-  const inside=ax<.054&&z>.119&&y>=.210&&y<=.254&&upper-lower>.001;
+  const inside=ax<.054&&z>.119&&y>=.210&&y<=.258&&upper-lower>.001;
   const lipSurface=inside?
     fade(y,lower-.0008,lower+.0024)*
     (1-fade(y,upper-.0024,upper+.0008))*
     (1-fade(ax,.037,.054))*gauss(x,0,.048)*fade(z,.119,.144):0;
-  const lipBands=.83*gauss(y,.240,.0087)+gauss(y,.2235,.0084);
+  const lipBands=1.12*gauss(y,.244,.0090)+.86*gauss(y,.2235,.0084);
   return {
     blush:y>=.215?(gauss(x,-.076,.031)+gauss(x,.076,.031))*
       gauss(y,.257,.028)*front:0,
