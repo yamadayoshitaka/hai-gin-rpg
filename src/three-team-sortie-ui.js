@@ -1,8 +1,8 @@
 import {
  SORTIE_FORMATIONS,SORTIE_GRID_CELLS,SORTIE_FORMATION_CELLS,sortieFormationStatus,sortieAllowedCells,sortieCellJobs,ensureSortiePlan,sortieTeams,sortieSquadCap,sortieLevel,sortieFormationBuff,unlockedSortieFormations,sortieDebuffTypes,
  sortieTeamCount,sortieTeamSquads,sortieAdjacentJobs,availableSortieOrders,sortiePlanningStage,sortiePlanningLimit,sortieTemplateCapacity
-} from './three-team-sortie.js';
-import {FORMATION_ROLES,ROLE_NAMES,FREE_FORMATION_NAME,formationJobMinimums,formationMinimumForRole} from './sortie-formation-logic.js';
+} from './three-team-sortie.js?v=formation-job-20261123';
+import {FORMATION_ROLES,ROLE_NAMES,FREE_FORMATION_NAME,formationJobMinimums,formationMinimumForRole} from './sortie-formation-logic.js?v=formation-job-20261123';
 import {SORTIE_RARITIES,rarityOf} from './sortie-formation-template-rules.js';
 import {STRATEGY_TREE,STRATEGY_METHODS,STORY_JOB_TO_STRATEGY_JOB} from './three-step-strategy-catalog.js';
 import {planStrategyDistribution} from './targeted-strategy-runtime.js';
