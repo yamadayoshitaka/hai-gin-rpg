@@ -109,14 +109,18 @@ def philtrum_relief(x,y,z):
     The groove is not drawn as a dark cosmetic line. Paired raised philtral
     columns create the light/shadow difference naturally from the 3D surface.
     """
-    if y<.205 or y>.247:
+    # Previous -0.0092 peak formed an oval *hole* in the upper-lip skin:
+    # its y mask cut off well before the septum and the paired high columns
+    # exaggerated the isolated depression. The actual philtrum is a LONG,
+    # gently shaded central channel, not a circular indentation.
+    if y<.201 or y>.255:
         return 0.
-    vertical=fade(y,.207,.217)*(1.-fade(y,.239,.247))
-    # Prior front gate was nearly zero on much of the actual upper lip,
-    # making the previous .0049 groove disappear in the Android render.
-    front=fade(z,.072,.124)
-    groove=-.0092*bell(x,0,.0072)*vertical*front
-    columns=.00235*(bell(x,-.0112,.0047)+bell(x,.0112,.0047))*vertical*front
+    # In the anatomical model, the subnasale lies near y=.250 and the
+    # upper vermilion edge near y=.205. Taper ONLY at those endpoints.
+    vertical=fade(y,.201,.213)*(1.-fade(y,.247,.255))
+    front=fade(z,.071,.116)
+    groove=-.0038*bell(x,0,.0057)*vertical*front
+    columns=.00095*(bell(x,-.0102,.0046)+bell(x,.0102,.0046))*vertical*front
     return groove+columns
 
 
@@ -157,13 +161,13 @@ def neutral_color(x,y,z):
     front=fade(z,.077,.122)
     ax=abs(x)
     cheek=(bell(x,-.075,.041)+bell(x,.075,.041))*bell(y,.256,.039)*front
-    lips=(.78*bell(y,.208,.009)+bell(y,.184,.010))*bell(x,0,.036)*fade(z,.109,.137)
+    lips=(.85*bell(y,.208,.009)+bell(y,.184,.010))*bell(x,0,.038)*fade(z,.082,.127)
     outer_eye=(bell(x,-.043,.023)+bell(x,.043,.023))*bell(y,.287,.013)*front
     # No dark horizontal vertex-colour bands near y 0.322..0.349,
     # and no blush/lip colour leakage into the chin (y < 0.17).
     return (clamp(.995-.009*lips),
-            clamp(.994-.016*cheek-.165*lips-.005*outer_eye),
-            clamp(.992-.022*cheek-.123*lips-.006*outer_eye))
+            clamp(.994-.016*cheek-.188*lips-.005*outer_eye),
+            clamp(.992-.022*cheek-.154*lips-.006*outer_eye))
 
 
 def smooth_chin(points,faces):
@@ -247,11 +251,13 @@ def finish(path):
         'version':'v121-nose-lips-lower-lashes-20261123',
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
-        'centralPhiltrumStart':[0.,.241],
-        'philtrumGrooveMasterDepth':.0092,
-        'philtrumColumnsRelief':.00235,
+        'centralPhiltrumStart':[0.,.252],
+        'philtrumGrooveMasterDepth':.0038,
+        'philtrumColumnsRelief':.00095,
+        'philtrumShape':'continuous_nose_base_to_vermilion_shallow_channel_v122fix',
+        'philtrumNoOvalPit':True,
         'parametricDepthControlSupported':True,
-        'centralPhiltrumEnd':[0.,.209],
+        'centralPhiltrumEnd':[0.,.204],
         'philtrumVertexIds':philtrum_ids,
         'lateralDimpleCorrectionVertexIds':dimple_filled_ids,
         'lateralNasolabialPitRemoved':True,
