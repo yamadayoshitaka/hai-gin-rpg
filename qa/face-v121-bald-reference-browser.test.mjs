@@ -58,7 +58,10 @@ test('Android-size v121 face renders and downloads an actual binary neutral GLB'
   assert.equal(gltf.meshes[0].extras.version,121);
   assert.equal(gltf.meshes[0].extras.hairIncluded,false);
   assert.equal(gltf.images.length,4,'PBR skin and eye atlas must be embedded');
-  assert.equal(gltf.meshes.length,3,'One skin and two UV-iris eye globes; no independent disks');
+  assert.equal(gltf.meshes.length,8,'One skin, two eye globes and five native cosmetic geometry meshes');
+  for(const part of ['V121_UPPER_EYELINER','V121_TAPERED_UPPER_EYELASHES','V121_FINE_LOWER_EYELASHES','V121_INDIVIDUAL_EYEBROW_FIBERS']){
+   assert.ok(gltf.meshes.some(m=>m.name===part),part+' must be actual GLB mesh');
+  }
   assert.equal(gltf.meshes[0].extras.eyeConstruction.irisAndPupilSeparateMeshes,false);
   assert.ok(gltf.meshes[0].primitives[0].attributes.COLOR_0!==undefined);
   assert.equal(gltf.materials[0].name,'V121_ANATOMICAL_SKIN_PBR_2048');
