@@ -31,7 +31,7 @@ class LipAndCheekV17(unittest.TestCase):
             ax=abs(x)
             corner=SCULPT['fade'](ax,.029,.051)
             bell=SCULPT['bell']
-            return .2514+.0031*bell(ax,.0115,.006)-.0011*bell(ax,0.,.0042)-.0175*corner
+            return .2495+.0028*bell(ax,.011,.0055)-.00075*bell(ax,0.,.004)-.0178*SCULPT['fade'](ax,.018,.045)
         self.assertGreater(upper(-.0115),upper(0.)+.002)
         self.assertGreater(upper(.0115),upper(0.)+.002)
         self.assertAlmostEqual(upper(-.0115),upper(.0115),places=9)
