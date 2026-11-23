@@ -63,8 +63,11 @@ function readMeshes(filename){
  }
  return result;
 }
-for(const name of ['female_hair_01_lod0.glb','female_hair_02_lod0.glb',
- 'female_hair_08_lod0.glb','male_hair_01_lod0.glb']){
+// Every shipped catalog asset must be examined, not a four-style sample.
+for(const name of [
+ ...Array.from({length:12},(_,i)=>'female_hair_'+String(i+1).padStart(2,'0')+'_lod0.glb'),
+ ...Array.from({length:14},(_,i)=>'male_hair_'+String(i+1).padStart(2,'0')+'_lod0.glb')
+]){
  test('cleanup preserves real hairstyle source '+name,()=>{
   const parts=readMeshes(name);
   let original=0,kept=0,removed=0;
@@ -79,3 +82,18 @@ for(const name of ['female_hair_01_lod0.glb','female_hair_02_lod0.glb',
   console.log('GLB geometry audit',name,{original,kept,removed});
  });
 }
+
+test('female 03 excludes the observed floating cluster below the right shoulder',()=>{
+ const [part]=readMeshes('female_hair_03_lod0.glb');
+ const result=cleanDetachedHairGeometry(part.geo);
+ const index=part.geo.getIndex(),position=part.geo.getAttribute('position');
+ let debris=0;
+ for(let i=0;i<index.count;i+=3){
+  const ids=[index.getX(i),index.getX(i+1),index.getX(i+2)];
+  const cx=ids.reduce((sum,id)=>sum+position.getX(id),0)/3;
+  const cy=ids.reduce((sum,id)=>sum+position.getY(id),0)/3;
+  if(cx>.118&&cy<-.225)debris++;
+ }
+ assert.equal(debris,0,'detached shards must not remain below the right side');
+ assert.ok(result.removedTriangles>0);
+});
