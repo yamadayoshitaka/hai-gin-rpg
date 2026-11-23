@@ -293,7 +293,10 @@ def finish(path):
             dimple_filled_ids.append(i)
         if abs(nx-x)>.00008 and .225<y<.280:
             nasal_vertices.append(i)
-        if abs(nz-z)>.00015 and .216<y<.252 and abs(x)<.058:
+        # Record the resulting (not source) vermilion coordinates. The
+        # Cupid peaks physically move up and the lower rim physically
+        # moves down, so original-Y bounds would mislabel skin/philtrum.
+        if abs(nz-z)>.00015 and .2152<ny<.2528 and abs(nx)<.058:
             lip_vertices.append(i)
     if len(nasal_vertices)<20 or len(lip_vertices)<30:
         raise ValueError('Nose and vermilion must have actual displaced vertices')
