@@ -45,91 +45,46 @@ class TestFaceV121(unittest.TestCase):
         newp=accessor(self.b,self.b_bin,dst['attributes']['POSITION'])
         self.assertEqual(len(oldp),13455)
         self.assertEqual(len(newp),len(oldp))
-        old_index=accessor(self.a,self.a_bin,src['indices'])
-        new_index=accessor(self.b,self.b_bin,dst['indices'])
-        self.assertEqual(len(old_index),len(new_index))
-        # Local lower-face edges are deliberately reconnected. Unlike the
-        # former displacement-only version, source triangle IDs are not
-        # required to match inside the actual mouth/menton surface.
-        detached=0
-        replaced_body=0
-        retopo=0
-        uv=accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0'])
-        for i in range(0,len(old_index),3):
-            before=old_index[i:i+3]
-            after=new_index[i:i+3]
-            if before==after:continue
-            if after[0]==after[1]==after[2]:
-                if newp[after[0][0]][1]<.170:
-                    replaced_body+=1
-                    continue
-                for (index,) in before:
-                    x,y,z=newp[index]
-                    self.assertLess(abs(x),.033)
-                    self.assertGreater(y,.230)
-                    self.assertLess(y,.235)
-                    self.assertGreater(z,.110)
-                detached+=1
-            else:
-                # A true replacement patch is bounded in the native UV chart
-                # from under the lower lip through the submental neck region.
-                # Old triangle corners can be outside the centroid mask.
-                for (index,) in before+after:
-                    u,v=uv[index]
-                    self.assertGreater(u,.33)
-                    self.assertLess(u,.67)
-                    self.assertGreater(v,.35)
-                    self.assertLess(v,.61)
-                retopo+=1
-        rig=self.b['meshes'][0]['extras']['facialExpressionRig']
-        self.assertEqual(detached,rig['splitMouthSeal']
-                         ['detachedSkinTriangles'])
-        self.assertGreater(detached,20)
-        self.assertGreater(replaced_body,1400)
-        self.assertGreater(self.b['meshes'][0]['extras']['neckBustRebuild']
-                           ['removedLegacyNeckShoulderTriangles'],1400)
+        original=accessor(self.a,self.a_bin,src['indices'])
+        current=accessor(self.b,self.b_bin,dst['indices'])
+        self.assertEqual(len(original),len(current))
+        meta=self.b['meshes'][0]['extras']['neckBustRebuild']
+        self.assertTrue(meta['entireOldLowerFaceRemoved'])
+        self.assertTrue(meta['oneContiguousGeneratedMouthChinNeckShoulderBust'])
+        self.assertEqual(meta['oldBodyTrianglesUsedInNewMesh'],0)
+        cut=meta['replacedFromY']
+        self.assertGreater(cut,.237)
+        self.assertLess(cut,.255)
+        retired=sum(1 for k in range(0,len(current),3)
+                    if current[k]==current[k+1]==current[k+2])
+        self.assertGreater(retired,meta['oldLowerFaceChinNeckBustTrianglesRetired'])
+        self.assertGreater(meta['oldLowerFaceChinNeckBustTrianglesRetired'],4000)
+        # This is the essential regression: no source chin, lips, throat,
+        # jaw or shoulder triangles can remain visible below the cut.
+        for k in range(0,len(current),3):
+            face=[t[0] for t in current[k:k+3]]
+            if len(set(face))!=3:continue
+            self.assertGreaterEqual(min(newp[i][1] for i in face),cut-1e-7)
         self.assertEqual(self.b['meshes'][-1]['name'],
-                         'V121_NEW_ANATOMICAL_CERVICAL_SHOULDERS_BUST')
-        rebuild=self.b['meshes'][0]['extras']['mouthChinRebuild']
-        self.assertEqual(rebuild['version'],
-                         'female-v121-new-surface-retopology-v8')
-        self.assertTrue(rebuild['oldPatchFacesDiscarded'])
-        self.assertTrue(rebuild['entireJawPatchRetringulatedFromUV'])
-        self.assertTrue(rebuild['singleContinuousBoundary'])
-        self.assertTrue(rebuild['neckUnderjawSeamContinuous'])
-        self.assertTrue(rebuild['actualMentonRelief3D'])
-        self.assertTrue(rebuild['faceUVAndVertexIDsRetained'])
-        self.assertTrue(rebuild['outerBoundaryUntouched'])
-        self.assertGreater(rebuild['removedOldPatchTriangles'],1200)
-        self.assertEqual(rebuild['removedOldPatchTriangles'],
-                         rebuild['generatedNewPatchTriangles'])
-        self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
-        self.assertGreater(rebuild['newXYZEdgeOptimizingFlips'],100)
-        self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.023)
-        self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
-        self.assertGreater(rebuild['affectedVertices'],700)
-        self.assertGreater(retopo,1000)
-        self.assertLess(rebuild['maximumDisplacement'],.075)
-        self.assertGreater(rebuild['mentonAfterZ'],
-                           rebuild['labiomentalSulcusZ']+.006)
-        self.assertGreater(rebuild['mentonAfterZ'],
-                           rebuild['upperNeckZ']+.042)
-        self.assertLess(rebuild['mentonAfterZ'],
-                        rebuild['mouthFrontZ']-.011)
-        self.assertTrue(self.b['meshes'][0]['extras']
-                        ['sagittalChinProfile']['legacyBridgeDisabled'])
+                         'V121_NEW_CONTIGUOUS_LOWER_FACE_LIPS_CHIN_NECK_BUST')
+        replacement=self.b['meshes'][-1]['primitives'][0]
+        positions=accessor(self.b,self.b_bin,replacement['attributes']['POSITION'])
+        self.assertEqual(len(positions),meta['freshVisibleSurfaceVertices'])
+        self.assertGreater(len(positions),1000)
+        self.assertGreater(len(self.b['meshes'][-1]['primitives'][0]['targets']),10)
+        self.assertLess(min(p[1] for p in positions),-.07)
+        self.assertTrue(all(math.isfinite(v) for p in positions for v in p))
+        # Retain indexed upper-face UV and 11 native expression channels.
         self.assertEqual(accessor(self.a,self.a_bin,src['attributes']['TEXCOORD_0']),
                          accessor(self.b,self.b_bin,dst['attributes']['TEXCOORD_0']))
-        distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
-        self.assertGreater(sum(x>0.00004 for x in distances),1000)
-        self.assertLess(max(distances),0.090)
-        self.assertTrue(all(math.isfinite(v) for p in newp for v in p))
+        self.assertEqual(len(dst['targets']),11)
         self.assertEqual(len(accessor(self.b,self.b_bin,dst['attributes']['NORMAL'])),13455)
+        distances=[math.dist(a,b) for a,b in zip(oldp,newp)]
+        self.assertGreater(sum(d>.00004 for d in distances),1000)
+        self.assertTrue(all(math.isfinite(v) for p in newp for v in p))
         colors=accessor(self.b,self.b_bin,dst['attributes']['COLOR_0'])
-        self.assertEqual(len(colors),13455)
         self.assertGreater(len(set(tuple(round(v,2) for v in c) for c in colors)),10)
-        print('v121 actual changed vertices:',sum(x>0.00004 for x in distances),
-              'max displacement:',max(distances))
+
 
     def test_skinhead_and_future_expression_safety(self):
         src=self.a['meshes'][0]['extras']
