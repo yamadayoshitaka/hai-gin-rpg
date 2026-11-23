@@ -94,7 +94,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,buildFittedScalpCap,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=6';
+import {measureRealHead,calculateWigFit,buildReferenceFringe,createRealHeadWireframe,buildFittedScalpCap,measureWigCrown,PUBLIC_WIG_SOURCES,extractUnskinnedWig} from './src/wig-glb-fit-v1.js?v=7';
 
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();
@@ -201,7 +201,8 @@ function updateFit(){
   widthRatio:Number($('width').value)/100,
   forward:Number($('forward').value)/1000,
   vertical:Number($('vertical').value)/1000,
-  crown:rawCrown
+  crown:rawCrown,
+  style:activeId
  };
  const fit=calculateWigFit(rawBox,head,opts);
  wigContent.scale.setScalar(fit.scale);
@@ -233,10 +234,12 @@ function updateFit(){
  $('assetLog').textContent='装着先：v121の実頭部 '+head.vertices+'頂点'+
   '\n髪の元モデル：'+rawMode+
   '\n頭への拡大率：'+fit.scale.toFixed(3)+
+  '\n髪型別フィット：'+fit.fitStyle+' / '+(fit.fitMode==='balanced-crown'?'輪郭維持・幅奥行均衡':'ボブ基準（従来サイズ）')+
   '\n元の長さ：'+(fit.sourceHeight*fit.scale).toFixed(3)+' m'+
   '\n頭皮の横幅・奥行：'+(fit.headWidth*1000).toFixed(1)+' / '+(fit.headDepth*1000).toFixed(1)+' mm'+
   '\nウィッグ頂部の横幅・奥行：'+(fit.capWidth*1000).toFixed(1)+' / '+(fit.capDepth*1000).toFixed(1)+' mm'+
-  '\n頭部へのカバー率（横 / 奥）：'+(fit.coverageX*100).toFixed(0)+'% / '+(fit.coverageZ*100).toFixed(0)+'%'+
+  '\n外側の髪のカバー率（横 / 奥）：'+(fit.coverageX*100).toFixed(0)+'% / '+(fit.coverageZ*100).toFixed(0)+'%'+
+  '\n頭頂部の隙間はv121髪色キャップで補完'+
   '\n共通座標：v121実メッシュ / 髪キャップ：'+(scalpCap?.userData?.triangleCount||0)+'三角形'+
   '\n元GLBのスキン付き髪メッシュ：'+(geometryAudit?.sourceSkinnedMeshes||0)+'個 → スキン無し髪メッシュ：'+(geometryAudit?.staticMeshes||0)+'個'+
   '\n全身骨格を除去：'+(geometryAudit?.droppedSkeletons||0)+'ノード'+
@@ -310,7 +313,7 @@ async function loadWig(style,sourceFile){
  frameView('front');
  $('export').disabled=false;
  $('wip').hidden=true;
- setStatus(descriptor.label+'：v121の共通座標で装着しました。頭皮の露出を髪色キャップで覆い、青いワイヤーはプレビュー専用です。');
+ setStatus(descriptor.label+'：v121共通座標で装着。'+(activeId==='bob01'?'確認済みボブのサイズを維持しました。':'過剰拡大を抑える髪型別補正を適用しました。')+'隙間は髪色キャップで補完します。');
 }
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
  frameView(button.dataset.view==='reset'?'front':button.dataset.view);
