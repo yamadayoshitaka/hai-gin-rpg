@@ -79,26 +79,60 @@ export function cleanDetachedHairGeometry(geometry,{
    }
   }
  }
- const big=[],small=[];
+ // Explicitly disabling the fragment thresholds must keep all disconnected
+ // authoring cards, as in the legacy cleanup API.
+ const contentMin=[Infinity,Infinity,Infinity],
+  contentMax=[-Infinity,-Infinity,-Infinity];
+ for(const component of components.values())for(let i=0;i<3;i++){
+  contentMin[i]=Math.min(contentMin[i],component.min[i]);
+  contentMax[i]=Math.max(contentMax[i],component.max[i]);
+ }
+ const contentDiagonal=Math.hypot(...contentMax.map((x,i)=>x-contentMin[i]));
+ if(fragmentMaxTriangles>=triangleCount&&fragmentMaxDiagonal>=contentDiagonal&&
+    triangles.length===triangleCount)
+  return {geometry,removedTriangles:0,removedComponents:0,
+   keptTriangles:triangleCount};
+ // Anchor detection is based on the crown, NOT triangle count alone.
+ // Real CC BY hair GLBs consist of hundreds of disconnected cards. A
+ // detached 30-50 mm fragment below the neck can be larger than 18 triangles
+ // (or have a >44 mm diagonal), so the old "big component = always good"
+ // rule allowed visible debris to survive.
+ const allTop=Math.max(...[...components.values()].map(c=>c.max[1]));
+ const allBottom=Math.min(...[...components.values()].map(c=>c.min[1]));
+ const rootBand=Math.min(.085,Math.max(.055,(allTop-allBottom)*.40));
+ const anchors=[],others=[];
  for(const component of components.values()){
   const diagonal=Math.hypot(...component.max.map((x,i)=>x-component.min[i]));
-  // A thin, long, two-triangle hair card is NOT garbage.
-  if(component.triangles.length>fragmentMaxTriangles||diagonal>fragmentMaxDiagonal)
-   big.push(component);
-  else small.push(component);
+  component.diagonal=diagonal;
+  component.rooted=component.max[1]>=allTop-rootBand &&
+   (component.triangles.length>=5||diagonal>.043);
+  // Hair cards can extend below the shoulders without intersecting each
+  // other. Preserve substantial full-length locks even when unconnected.
+  component.longLock=diagonal>.12 &&
+   component.max[1]>allTop-.25 &&
+   component.triangles.length>=2;
+  if(component.rooted||component.longLock)anchors.push(component);
+  else others.push(component);
  }
+ // In extremely sparse authoring, never guess that all separate cards are
+ // debris. Keep the conservative v1 behaviour instead.
+ const safeAnchors=anchors.reduce((n,c)=>n+c.triangles.length,0)>=
+  Math.max(2,Math.ceil(triangles.length*.035));
  const mainBuckets=new Map();
- for(const component of big)for(const t of component.triangles){
+ if(safeAnchors)for(const component of anchors)for(const t of component.triangles){
   const key=cellKey(t.x,t.y,t.z);
   if(!mainBuckets.has(key))mainBuckets.set(key,[]);
   mainBuckets.get(key).push(t);
  }
  const closeToMain=(component)=>{
-  // When ALL hair cards are tiny there is no reliable main component.
-  if(!big.length)return true;
-  const limit=isolationDistance*isolationDistance,scan=Math.ceil(isolationDistance/CELL);
+  if(!safeAnchors)return true;
+  // Do not chain detached shards together: only crown-rooted or genuine
+  // long cards are eligible to attract neighboring fragments.
+  const limit=isolationDistance*isolationDistance,
+   scan=Math.ceil(isolationDistance/CELL);
   for(const t of component.triangles){
-   const cx=Math.floor(t.x/CELL),cy=Math.floor(t.y/CELL),cz=Math.floor(t.z/CELL);
+   const cx=Math.floor(t.x/CELL),cy=Math.floor(t.y/CELL),
+    cz=Math.floor(t.z/CELL);
    for(let dx=-scan;dx<=scan;dx++)
     for(let dy=-scan;dy<=scan;dy++)
      for(let dz=-scan;dz<=scan;dz++){
@@ -112,9 +146,11 @@ export function cleanDetachedHairGeometry(geometry,{
   return false;
  };
  const keep=new Set(),removed=[];
- for(const component of big)for(const t of component.triangles)keep.add(t);
- for(const component of small){
-  if(closeToMain(component))for(const t of component.triangles)keep.add(t);
+ for(const component of anchors)
+  for(const t of component.triangles)keep.add(t);
+ for(const component of others){
+  if(closeToMain(component))
+   for(const t of component.triangles)keep.add(t);
   else removed.push(component);
  }
  if(keep.size===triangleCount){
