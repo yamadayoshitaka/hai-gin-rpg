@@ -29,5 +29,5 @@ for cut in (.105,.115,.125,.135,.145,.155):
  border={key for key in keep if key in drop}
  verts={v for key in border for v in key}
  degree=collections.Counter(v for a,b in border for v in (a,b))
- print('ANATOMY_CUT',json.dumps(dict(cut=cut,removed=len(removed),edges=len(border),vertices=len(verts),degrees=collections.Counter(degree.values()),xMax=round(max((abs(pts[v][0]) for v in verts),default=0),5),yMin=round(min((pts[v][1] for v in verts),default=0),5),yMax=round(max((pts[v][1] for v in verts),default=0),5))))
+ print('ANATOMY_CUT',json.dumps(dict(cut=cut,endpointCoords=[tuple(round(t,5) for t in pts[v]) for v,n in degree.items() if n==1],removed=len(removed),edges=len(border),vertices=len(verts),degrees=collections.Counter(degree.values()),xMax=round(max((abs(pts[v][0]) for v in verts),default=0),5),yMin=round(min((pts[v][1] for v in verts),default=0),5),yMax=round(max((pts[v][1] for v in verts),default=0),5))))
 print('ANATOMY_DONE')
