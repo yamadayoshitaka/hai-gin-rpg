@@ -9,7 +9,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('both armies and every wide lane cross toward far bank without reentering the near bank',()=>{
  const center=116,row=100;
- for(const fromSide of [-1,1])for(const laneOffset of [-4,-2,0,2,4]){
+ for(const fromSide of [-1,1])for(const laneOffset of [-4,-3,-2,-1,0,1,2,3,4]){
   const opts={center,row,fromSide,laneOffset};
   const laneZ=row+laneOffset;
   // Before entry: stage on the exact selected lane.
