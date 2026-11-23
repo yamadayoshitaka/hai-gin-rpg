@@ -37,6 +37,20 @@ export function enemyOrderRefreshSeconds(previous,friendlyAlive,opponentAlive){
  const ratio=Math.max(0,Number(friendlyAlive)||0)/Math.max(1,Number(opponentAlive)||0);
  return previous==='defend'&&ratio>=1.5?20:120;
 }
+/** Hostile combat intent cannot be replaced by treasure exploration.
+ * A guarding squad immediately counterattacks if live opponents enter its
+ * local perimeter; depleted squads may still retreat for survival. */
+export function enemyContactResponse(previous,chosen,own=[],opponents=[],radius=9){
+ const ready=own.filter(u=>u?.alive!==false&&(u?.hp??0)>0&&!u.isStrategist);
+ const active=opponents.filter(u=>u?.alive!==false&&(u?.hp??0)>0&&!u.isStrategist);
+ const inContact=ready.some(u=>active.some(v=>
+  Math.hypot((u.x??u.cell?.x??0)-(v.x??v.cell?.x??0),
+   (u.z??u.cell?.z??0)-(v.z??v.cell?.z??0))<=radius));
+ if(chosen==='explore')chosen='charge';
+ const counter=inContact&&['defend','hold'].includes(previous);
+ if(counter&&chosen!=='retreat')chosen='charge';
+ return {mode:chosen,inContact,counter};
+}
 export function chooseEnemyOrder(own=[],opponents=[],previous='charge',context={}){
  const living=own.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
  const hostile=opponents.filter(u=>u.alive!==false&&(u.hp??0)>0&&!u.isStrategist);
