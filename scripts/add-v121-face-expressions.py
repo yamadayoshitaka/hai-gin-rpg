@@ -316,9 +316,9 @@ def split_native_mouth_seal(g,b,head):
     local={k:i for i,k in enumerate(mouth_ids)}
     skin_indices=list(indices)
     base=[xyz[k] for k in mouth_ids]
-    seal_normals=seal_normals
-    seal_uv=seal_uv
-    seal_color=seal_color
+    seal_normals=[normal[k] for k in mouth_ids]
+    seal_uv=[uv[k] for k in mouth_ids]
+    seal_color=[color[k] for k in mouth_ids]
     mids={}
     def midpoint(a,c):
         key=(min(a,c),max(a,c))
@@ -361,9 +361,9 @@ def split_native_mouth_seal(g,b,head):
     seal_prim={
         'attributes':{
             'POSITION':add_float(g,b,base),
-            'NORMAL':add_float(g,b,[normal[k] for k in mouth_ids]),
-            'TEXCOORD_0':add_float(g,b,[uv[k] for k in mouth_ids],'VEC2'),
-            'COLOR_0':add_float(g,b,[color[k] for k in mouth_ids])},
+            'NORMAL':add_float(g,b,seal_normals),
+            'TEXCOORD_0':add_float(g,b,seal_uv,'VEC2'),
+            'COLOR_0':add_float(g,b,seal_color)},
         'indices':store_indices(g,b,seal_indices),
         'material':p['material'],
         'targets':targets
