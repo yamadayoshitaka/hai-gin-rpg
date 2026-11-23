@@ -10,7 +10,7 @@ tri=[int(t[0]) for t in h['accessor'](g,b,p['indices'])]
 def q(values, frac):
  s=sorted(values)
  return round(s[min(len(s)-1,int(frac*(len(s)-1)))],5) if s else None
-print('ANATOMY_BOUNDING',json.dumps({axis:[(round(min(t[i] for t in pts),5),round(max(t[i] for t in pts),5)) for i in range(3)],meshes:[v['name'] for v in g['meshes']]}))
+print('ANATOMY_BOUNDING',json.dumps({'axis':[(round(min(t[i] for t in pts),5),round(max(t[i] for t in pts),5)) for i in range(3)],'meshes':[v['name'] for v in g['meshes']]}))
 for y0,y1 in [(-.30,-.15),(-.15,-.08),(-.08,0),(0,.025),(.025,.050),(.050,.075),(.075,.095),(.095,.115),(.115,.135),(.135,.155),(.155,.175),(.175,.195),(.195,.215),(.215,.235),(.235,.255),(.255,.275)]:
  rows=[(p,u) for p,u in zip(pts,uv) if y0<=p[1]<y1]
  front=[(p,u) for p,u in rows if abs(p[0])<.015 and p[2]>.0]
