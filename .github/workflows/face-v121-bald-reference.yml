@@ -10,6 +10,7 @@ on:
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
       - 'scripts/rebuild-v121-mouth-chin.py'
+      - 'qa/inspect-v121-neck-bust.py'
       - 'qa/face-v121-natural-folds-cleanup.test.py'
       - 'qa/face-v121-lower-lashes-nose-lips.test.py'
       - 'qa/face-v121-eye-detail-real-glb.test.py'
@@ -49,6 +50,8 @@ jobs:
           retention-days: 10
       - name: Build bald female UV-eye reference PBR skin and fixed face topology
         run: python3 scripts/build-neutral-face-v121.py
+      - name: Inspect jaw, cervical and bust geometry before replacement
+        run: python3 qa/inspect-v121-neck-bust.py assets/generated/neutral-face-v121.glb
       - name: Verify actual v121 geometry, index order, PNG textures and no hair/animation
         run: |
           python3 qa/face-v121-bald-reference-skin.test.py
@@ -84,6 +87,8 @@ jobs:
         run: |
           python3 scripts/build-neutral-face-v120.py
           python3 scripts/build-neutral-face-v121.py
+      - name: Inspect regenerated jaw and neck for mobile comparison
+        run: python3 qa/inspect-v121-neck-bust.py assets/generated/neutral-face-v121.glb
       - name: Serve v121 3D viewer
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v121-server.log 2>&1 &
