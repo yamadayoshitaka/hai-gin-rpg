@@ -30,7 +30,7 @@ export function planSkirmishDeployment(actors,{
     slots.push({actor:members[slots.length],x:cx,z:cz});
    }
  }
- return slots.length===members.length?slots:null;
+ return slots.length===members.length?rearCommanderSlots(slots,team):null;
 }
 
 /**
@@ -82,5 +82,17 @@ export function planSkirmishGroupDeployment(actors,{
    planned.push({actor:original.get(slot.actor),x:slot.x,z:slot.z});
   }
  }
- return planned;
+ return rearCommanderSlots(planned,team);
+}
+
+// Reassign already legal reserved cells atomically: no overlap or wall clipping.
+export function rearCommanderSlots(slots,team=0){
+ const sign=team===0?1:-1;
+ const commanders=slots.filter(s=>s.actor.isStrategist||s.actor.isPlayerHero);
+ for(const commander of commanders){
+  const rear=slots.filter(s=>!s.actor.isStrategist&&!s.actor.isPlayerHero&&
+   (commander.x-s.x)*sign>0).sort((a,b)=>(a.x-b.x)*sign||Math.abs(a.z-commander.z)-Math.abs(b.z-commander.z))[0];
+  if(rear){const actor=commander.actor;commander.actor=rear.actor;rear.actor=actor;}
+ }
+ return slots;
 }

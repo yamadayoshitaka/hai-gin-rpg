@@ -1,3 +1,4 @@
+import {rearCommanderSlots} from '../src/battle-realtime-deployment.js';
 import {solidInteriorPart,furnitureFootprintCells,strategistRearIntent} from '../src/battle-interior-collision.js';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -108,6 +109,14 @@ assert.equal(strategistRearIntent({home:{x:2,z:2},position:{x:2,z:2}}).phase,'ho
 const evade=strategistRearIntent({home:{x:2,z:2},position:{x:2,z:2},threat:{x:5,z:2}});
 assert.equal(evade.phase,'evade');assert.ok(evade.goal.x<2);
 assert.match(battle,/furnitureBlocks\(key\)/);
-assert.match(battle,/if\(a\.isStrategist\)\{/);
+assert.match(battle,/if\(a\.isStrategist\|\|a\.isPlayerHero\)\{/);
 assert.match(battle,/d>range\|\|routeOccludedByTerrain/);
 assert.match(mass,/strategistRearIntent\(/);
+
+for(const team of [0,1]){
+ const general={isStrategist:true},soldier={};
+ const front=team===0?20:10,rear=team===0?10:20;
+ const slots=rearCommanderSlots([{actor:general,x:front,z:5},{actor:soldier,x:rear,z:5}],team);
+ assert.equal(slots.find(s=>s.actor===general).x,rear);
+}
+assert.match(battle,/a\._highGroundReturnAnchor=anchor\.clone\(\)/);
