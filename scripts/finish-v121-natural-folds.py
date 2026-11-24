@@ -222,8 +222,8 @@ def nose_and_lips(x,y,z):
            fade(y,.2322,.2368)*(1.-fade(y,.247,.254)))
     lower=(bell(y,.2260,.0064)*horizontal*lip_front*
            fade(y,.217,.223)*(1.-fade(y,.229,.233)))
-    cupids=bell(ax,.0095,.0054)*bell(y,.243,.0058)*lip_front*
-           (1.-fade(ax,.034,.047))
+    cupids=(bell(ax,.0095,.0054)*bell(y,.243,.0058)*lip_front*
+            (1.-fade(ax,.034,.047)))
     seam=bell(y,.232,.0028)*horizontal*lip_front
 
     # Physically shorten the nose-to-upper-lip interval, rather than merely
