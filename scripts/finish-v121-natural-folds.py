@@ -42,7 +42,7 @@ def vermilion_outline(x,y,z):
     corner=fade(ax,.017,.038)
     # Narrow Cupid's bow and lift the lower rim towards the oral seam.
     # Keep both real raised Cupid peaks and a distinct central notch.
-    upper=.2439+.0022*bell(ax,.0095,.005)-.00055*bell(ax,0.,.0038)-.0125*corner
+    upper=.2460+.0022*bell(ax,.0095,.005)-.00055*bell(ax,0.,.0038)-.0125*corner
     lower=.2235+.0094*corner
     if upper-lower<=.001:
         return 0.,upper,lower
@@ -234,7 +234,7 @@ def nose_and_lips(x,y,z):
     # Pull the upper lip 2 mm further towards the nasal base at its center.
     # The narrow mouth-seal Y band (~.232) is still hard-faded to zero;
     # changing that seam would break real 3D mouth aperture topology.
-    lip_lift=(.00215*bell(y,.240,.0080)*horizontal*lip_front*
+    lip_lift=(.00320*bell(y,.240,.0080)*horizontal*lip_front*
               fade(y,.235,.239)*(1.-fade(y,.247,.254)))
     # Expand the real lip boundary vertically; do not move the resting
     # oral-seal band or make a second ridge beneath the lower vermilion.
@@ -451,7 +451,7 @@ def finish(path):
         'noSecondSubLabialRidge':True,
         'outerCheekTrenchSoftened':True,
         'shallowInnerNasolabialFoldSculpted':True,
-        'upperLipRaisedTowardNoseMillimeters':2.15,
+        'upperLipRaisedTowardNoseMillimeters':3.20,
         'philtrumLongitudinalCoverage':[.248,.273],
         'philtrumReal3DGrooveNotMakeup':True,
         'oralMouthSealProtected':True,
