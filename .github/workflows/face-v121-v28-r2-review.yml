@@ -1,4 +1,4 @@
-name: Face v121 v28 R2 - review only (no deployment)
+name: Face v121 v28 R4 - review only (no deployment)
 on:
   push:
     branches: [review/v121-v28-r2-no-deploy]
@@ -53,6 +53,8 @@ jobs:
           assert all(abs(math.sqrt(sum(v*v for v in n))-1)<.002 for n in normals)
           f=g1['meshes'][0]['extras']['mouthChinRebuild']['v28R2Fairing']
           assert f['rmsAfter']<f['rmsBefore']
+          assert f['philtrumSampleRatio']<=.80
+          assert f['revision']=='R4'
           pairs=Q['surface_pairs'](old,new,indices,[x/1000 for x in range(-18,19,3)],[y/1000 for y in range(224,242,3)],.125)
           import statistics
           assert len(pairs)>=12
@@ -99,14 +101,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v121-v28-r2-approval-images
+          name: v121-v28-r4-approval-images
           path: qa/screenshots/face-v121/v28-r2/
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v121-v28-r2-review-glb
+          name: v121-v28-r4-review-glb
           path: assets/generated/neutral-face-v121.glb
           if-no-files-found: ignore
           retention-days: 14

@@ -63,6 +63,18 @@ export function v121MakeupMasks(x,y,z){
   };
 }
 
+// Invert R4 vertical deformation so cosmetics stay on the same lip.
+function preR4Y(x,y,z){
+  const weight=(1-fade(Math.abs(x),.034,.095))*fade(z,.025,.090);
+  let lo=y-.0141,hi=y+.0001;
+  for(let i=0;i<28;i++){
+    const m=(lo+hi)/2;
+    const mapped=m+weight*.014*fade(m,.150,.212)*(1-fade(m,.241,.279));
+    if(mapped<y)lo=m;else hi=m;
+  }
+  return (lo+hi)/2;
+}
+
 export function attachV121Makeup({neutral,face,onChange=()=>{}}){
   const color=face.geometry.getAttribute('color');
   const position=face.geometry.getAttribute('position');
@@ -82,7 +94,7 @@ export function attachV121Makeup({neutral,face,onChange=()=>{}}){
   // The pigments stay anchored to the anatomical lip bands, not a floating
   // cosmetic disc or a face-wide re-colour.
   const masks=Array.from({length:color.count},(_,i)=>
-    v121MakeupMasks(localXYZ[3*i],localXYZ[3*i+1],localXYZ[3*i+2]));
+    v121MakeupMasks(localXYZ[3*i],preR4Y(localXYZ[3*i],localXYZ[3*i+1],localXYZ[3*i+2]),localXYZ[3*i+2]));
 
   const originalMaterials=new Map(cosmetic.map(part=>
     [part,part.material.color.clone()]));

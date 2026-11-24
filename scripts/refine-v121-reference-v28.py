@@ -11,7 +11,15 @@ def lip(p):
     # Retract the whole muzzle, not just the coloured lip surface.
     muzzle=(1-fade(a,.032,.060))*fade(z,.105,.138)*fade(y,.183,.217)*(1-fade(y,.248,.261))
     return (x,y-(y-.232)*(.40*upper-.55*lower)*w,
-            z+(.00035*bell(y,.225,.004)*lower-.00105*bell(y,.238,.004)*upper)*w-.0062*muzzle)
+            z+(.00035*bell(y,.225,.004)*lower-.00105*bell(y,.238,.004)*upper)*w-.0090*muzzle)
+def shorten_philtrum(p):
+    # A monotone vertical deformation moves the complete mouth and oral
+    # geometry together. Y is up; no lipstick-only relocation.
+    x,y,z=p
+    weight=(1-fade(abs(x),.034,.095))*fade(z,.025,.090)
+    lift=.014*fade(y,.150,.212)*(1-fade(y,.241,.279))
+    return (x,y+weight*lift,z)
+
 def eye(p):
     x,y,z=p;a=abs(x);s=1 if x>=0 else -1
     w=fade(a,.010,.019)*(1-fade(a,.062,.076))*fade(y,.282,.296)*(1-fade(y,.324,.335))*fade(z,.090,.118)
@@ -23,7 +31,7 @@ def subnasal(p):
     column=fade(y,.246,.251)*(1-fade(y,.265,.273))*fade(z,.110,.140)
     # A shallow vertical philtral channel with gently rounded columns.
     relief=column*(-.00045*bell(a,0,.0045)+.00024*bell(a,.0075,.004))
-    return (x*(1-.20*w),y+.0012*w*bell(a,0,.018),z-.0015*w+relief)
+    return (x*(1-.20*w),y-.0008*w*bell(a,0,.018),z-.0020*w+relief)
 
 def face_warp(p):
     # Gaussian tails must never alter the protected scalp/side vertices.
@@ -43,9 +51,9 @@ def face_warp(p):
     # Lower cheek support is distinct from the excess suborbital bulge.
     uppercheek=bell(a,.051,.023)*fade(a,.020,.034)*(1-fade(a,.086,.105))*fade(y,.252,.270)*(1-fade(y,.290,.302))*fade(z,.087,.126)
     orbit_tip=bell(a,.062,.009)*bell(y,.300,.009)*fade(a,.050,.059)*(1-fade(a,.073,.086))*fade(z,.089,.119)
-    target=(x+(1 if x>=0 else -1)*(.0009*cheek-.0008*orbit-.0007*orbit_tip)-.125*x*bridge-.040*x*rim,
-            y-.0030*rim-.0015*tip,
-            z+.0008*cheek-.0010*orbit-.0018*uppercheek-.0005*orbit_tip+.0013*ridge+.0005*rim+.0003*tip)
+    target=(x+(1 if x>=0 else -1)*(.0009*cheek-.0008*orbit-.0007*orbit_tip)-.150*x*bridge-.095*x*rim,
+            y-.0050*rim-.0030*tip,
+            z+.0003*cheek-.0014*orbit-.0030*uppercheek-.0008*orbit_tip+.0009*ridge-.0018*rim-.0012*tip)
     return tuple(a+gate*(b-a) for a,b in zip(p,subnasal(target)))
 def fair_weight(p):
     x,y,z=p;a=abs(x)
@@ -103,12 +111,12 @@ def fair_surface(old,base,faces):
         a=abs(x);w=fair_weight(old[i])
         # Feather across a broad collar; full replacement in cheek core.
         # Do not let the broad fit cross vermilion, alar rim, or eyelids.
-        w*=fade(a,.028,.040)*(1-fade(y,.279,.291))
+        w*=fade(a,.025,.039)*(1-fade(y,.281,.295))
         if w<=.02:continue
         target=sum(t*c for t,c in zip(basis(a,y),coeff[1 if x>=0 else -1]))
         # A common low-order surface fills troughs AND cuts bulges. Limit
         # exceptional excursions near transition boundaries, not the core.
-        dz=max(-.007,min(.007,target-z))
+        dz=max(-.009,min(.009,target-z))
         out[i]=(x,y,z+w*dz)
         near[i]=(w,0,())
         targets[i]=(w,target)
@@ -248,7 +256,17 @@ def apply(path):
             faces=[tuple(idx[i:i+3]) for i in range(0,len(idx),3)]
             if mi==0:
                 new,near,report=fair_surface(old,new,faces)
+                before_lift=list(new)
+                new=[shorten_philtrum(q) for q in new]
                 new=[p if p[1]>=.335 or abs(p[0])>=.125 else q for p,q in zip(old,new)]
+                # Matched material samples from upper vermilion and nasal base.
+                lip_ids=[i for i,(x,y,z) in enumerate(before_lift) if abs(x)<.014 and .237<y<.243 and z>.125]
+                nose_ids=[i for i,(x,y,z) in enumerate(before_lift) if abs(x)<.014 and .265<y<.278 and z>.135]
+                if not lip_ids or not nose_ids:raise ValueError('Missing philtrum landmark samples')
+                gap=lambda ps: statistics.median(ps[i][1] for i in nose_ids)-statistics.median(ps[i][1] for i in lip_ids)
+                gap0,gap1=gap(before_lift),gap(new)
+                if gap0<=0 or gap1>gap0*.80:raise ValueError('Philtrum vertical shortening below 20 percent')
+                report.update({'philtrumBeforeM':gap0,'philtrumAfterM':gap1,'philtrumSampleRatio':gap1/gap0,'revision':'R4'})
                 skin_new,skin_faces=new,faces
                 # Verify the actual subnasal vertex coordinates were narrowed.
                 region=[i for i,(x,y,z) in enumerate(old) if .010<abs(x)<.032 and .252<y<.266 and z>.130]
@@ -260,7 +278,12 @@ def apply(path):
                 head['extras']['mouthChinRebuild']['v28R2Fairing']=report
                 nn=fair_normals(old,new,n,faces,near)
             else:
+                if name.startswith('V121_ORAL_'):
+                    new=[shorten_philtrum(q) for q in new]
                 nn=normal_delta(old,new,n,faces)
+            if mi==0 or name.startswith('V121_ORAL_'):
+                original_warp=warp
+                warp=lambda v:shorten_philtrum(original_warp(v))
             store(g,b,a['POSITION'],new);store(g,b,a['NORMAL'],nn)
             for t in p.get('targets',[]):
                 d=H['accessor'](g,b,t['POSITION'])
@@ -280,5 +303,5 @@ def apply(path):
     raw=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode();raw+=b' '*((-len(raw))%4)
     b+=b'\0'*((-len(b))%4)
     path.write_bytes(struct.pack('<4sII',b'glTF',2,28+len(raw)+len(b))+struct.pack('<I4s',len(raw),b'JSON')+raw+struct.pack('<I4s',len(b),b'BIN\0')+b)
-    print('v28 R3 anatomy, unchanged BIN size',size,head['extras']['mouthChinRebuild']['v28R2Fairing'])
+    print('v28 R4 anatomy, unchanged BIN size',size,head['extras']['mouthChinRebuild']['v28R2Fairing'])
 if __name__=='__main__':apply(pathlib.Path(sys.argv[1]))
