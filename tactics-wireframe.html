@@ -1118,6 +1118,8 @@ import {BattlePhaseProfiler} from './src/battle-phase-profiler.js?v=20261116-gpu
 import {shouldShowOverheadSquadCallouts,closestAliveBattleFocus} from './src/battle-zoom-visibility-policy.js?v=1';
 import {zoomedSquadMember} from './src/battle-zoom-squad-badge.js?v=20261116-zoom1';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=20261117-stable-hair2';
+import {createUpperFloorDecorationPlan} from './src/building-structure.js?v=4.6.28';
+import {solidInteriorPart,furnitureFootprintCells,strategistRearIntent} from './src/battle-interior-collision.js?v=20261124-r1';
 import {OBJECT_CATALOG,createCatalogObject} from './src/object-catalog.js?v=world60-physical-20261117';
 import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=20261119-rally-reserve2';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
@@ -3354,6 +3356,40 @@ for(const [id,px,pz,rotation=0] of townProps){
 // Ground-level AI must not walk through a physical spiral staircase.
  // During an authored floor journey the separate stair waypoint controller
  // walks on real 3D treads, so the solid centre post never becomes an A* goal.
+ const battleFurnitureOwners=new Map();
+ const upperFurnitureCells=new Map();
+ const addFurnitureBox=(set,box)=>{for(const c of furnitureFootprintCells(box,CELL,6,.26*CELL))
+  if(c.x>=0&&c.z>=0&&c.x<WORLD_SIZE&&c.z<WORLD_SIZE)set.add(cellKey(c.x,c.z));};
+ const registerGroundFurniture=(model,owner)=>{
+  const cells=new Set();model.updateMatrixWorld(true);
+  for(const name of ['interior_furniture','modular_furnishings']){
+   const group=model.getObjectByName(name);if(!group)continue;
+   // Modular parts are whole furniture items; never use one merged room AABB.
+   for(const item of group.children){
+    const box=new THREE.Box3().setFromObject(item);
+    if(!box.isEmpty()&&box.max.y-model.position.y>.15&&box.min.y-model.position.y<1.65)
+     addFurnitureBox(cells,{minX:box.min.x,maxX:box.max.x,minZ:box.min.z,maxZ:box.max.z});
+   }
+  }
+  for(const key of cells){if(!battleFurnitureOwners.has(key))battleFurnitureOwners.set(key,[]);battleFurnitureOwners.get(key).push(owner);}
+ };
+ for(const b of townInstances){
+  registerGroundFurniture(b.model,b.data);
+  if(!b.structure)continue;
+  const levels=new Map();
+  for(const plan of createUpperFloorDecorationPlan(b.structure)){
+   const cells=new Set(),floor=b.structure.floors.find(v=>v.index===plan.floor);
+   for(const part of plan.parts)if(solidInteriorPart(part,floor?.baseY??0)){
+    const p=b.model.position;
+    addFurnitureBox(cells,{minX:p.x+part.x-part.width/2,maxX:p.x+part.x+part.width/2,minZ:p.z+part.z-part.depth/2,maxZ:p.z+part.z+part.depth/2});
+   }
+   levels.set(plan.floor,cells);
+   if(plan.floor===1)for(const key of cells){if(!battleFurnitureOwners.has(key))battleFurnitureOwners.set(key,[]);battleFurnitureOwners.get(key).push(b.data);}
+  }
+  upperFurnitureCells.set(b,levels);
+ }
+ if(selectedStage.huts){registerGroundFurniture(hutModel,0);registerGroundFurniture(secondHut,1);}
+ const furnitureBlocks=(key)=>battleFurnitureOwners.get(key)?.some(owner=>typeof owner==='number'?!destroyedHuts.has(owner):!destroyedTownBuildings.has(owner))||false;
  const solidStairCells=new Set();
  for(const building of townInstances){
   if(destroyedTownBuildings.has(building.data))continue;
@@ -3365,10 +3401,10 @@ for(const [id,px,pz,rotation=0] of townProps){
  }
  console.info('[Navigation] solid prop collision cells:',solidPropCells.size,
   ' spiral stair cells:',solidStairCells.size);
-function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE||!insideStage(selectedStage,x,z))return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(solidStairCells.has(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;const ninjaOnWater=unit?.jobId==='ninja'&&isWaterCell(x,z);if(bridgeByCell.get(key)?.destroyed)return ninjaOnWater;return ninjaOnWater||bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
+function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE||!insideStage(selectedStage,x,z))return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(solidStairCells.has(key)||furnitureBlocks(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;const ninjaOnWater=unit?.jobId==='ninja'&&isWaterCell(x,z);if(bridgeByCell.get(key)?.destroyed)return ninjaOnWater;return ninjaOnWater||bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
 function worldPassableMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)map[z*WORLD_SIZE+x]=traversableCell(x,z)?1:0;return map}
 function worldWaterMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)if(isWaterCell(x,z))map[z*WORLD_SIZE+x]=1;return map}
-function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||solidStairCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
+function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||solidStairCells.has(key)||furnitureBlocks(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
  const mountInteriorMask=createMountInteriorMask(WORLD_SIZE,WORLD_SIZE,townInstances,[hutBounds,secondHutBounds]);
  const combatWalkableMap=worldPassableMap();
  const combatWaterMap=worldWaterMap();
@@ -4601,7 +4637,8 @@ function recoverBlockedActor(a,goal){
     const x=a.cell.x+dx,z=a.cell.z+dz;
     if(availableCell(x,z,a))legal.push({x,z});
   }
-  const route=stableActorRouteStep(a,target);
+  const reachableGoal=nearestWalkableApproach(target,a);
+  const route=reachableGoal?stableActorRouteStep(a,reachableGoal):{next:null};
   if(route.next&&startCellMove(a,route.next.x,route.next.z))return true;
   if(route.state?.search)return false;
   // When an otherwise clear corridor is occupied for several seconds,
@@ -4801,7 +4838,7 @@ function moveActor(a,goal,dt,stop,{preciseGoal=false}={}){
   // ground-distance field. No teleport, fence clipping, or one-cell
   // backwards/forwards loop; each step still reserves its real collision tile.
   // Both sides use the same routing policy, including enemy counterattacks.
-  if(!preciseGoal&&currentSkirmishDirective(a)?.mode==='charge'&&
+  if(!preciseGoal&&!a.isStrategist&&!['hold','defend','retreat','move','mission','explore'].includes(currentSkirmishDirective(a)?.mode||desiredOrder(a))&&
      a.healTargetSquadId==null&&
      (goalOccluded||a.blockedSince!=null)){
    const attackStep=sharedSkirmishAssaultStep(a);
@@ -5285,7 +5322,26 @@ function upperFloorTarget(a,slot,range,healing=false){
  return best;
 }
 function moveUpperFloorSoldier(a,target,dt){
- const p=a.root.position,dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
+ const p=a.root.position,b=a.floorTravel?.building;
+ const blocked=upperFurnitureCells.get(b)?.get(a.indoorFloor);
+ const floor=b?.structure?.floors?.find(f=>f.index===a.indoorFloor);
+ if(blocked&&floor){
+  const walkable=(x,z)=>{const w=cellPosition(x,z),c=b.model.position;
+   return Math.abs(w.x-c.x)<floor.footprint.width/2-.45&&Math.abs(w.z-c.z)<floor.footprint.depth/2-.45&&!blocked.has(cellKey(x,z));};
+  const goal=gridFromWorld(target),start=gridFromWorld(p);
+  if(!walkable(goal.x,goal.z))return false;
+  if(!a._upperFurnitureStep&&!sameNavigationCell(start,goal)){
+   const result=stableGridNext(a._upperFurnitureRoute,start,goal,{walkable,now:elapsed,maxExpanded:4000});
+   a._upperFurnitureRoute=result.state;if(!result.next)return false;
+   a._upperFurnitureStep=cellPosition(result.next.x,result.next.z);
+  }
+  if(a._upperFurnitureStep){
+   const step=a._upperFurnitureStep,dx=step.x-p.x,dz=step.z-p.z,d=Math.hypot(dx,dz);
+   if(d>.06){const amount=Math.min(d,Math.max(.8,a.speed*CELL*.60)*dt);p.x+=dx/d*amount;p.z+=dz/d*amount;a.root.rotation.y=Math.atan2(dx,dz);a.poseMoving=true;a.lastMovedAt=elapsed;if(a.character)requestMotion(a,'walk');return false;}
+   a._upperFurnitureStep=null;return false;
+  }
+ }
+ const dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
  if(d<.55){a.poseMoving=false;if(a.character)requestMotion(a,'idle');return true}
  const amount=Math.min(d,Math.max(.8,a.speed*CELL*.60)*dt);
  p.x+=dx/d*amount;p.z+=dz/d*amount;
@@ -5394,11 +5450,7 @@ function updateUnitFloorTravel(a,dt){
    if(d>.90){
     // Do not cross a locked chamber or traverse multiple castle rooms
     // through walls. Follow the established floor route for progression.
-    const amount=Math.min(d,a.speed*CELL*.29*dt);
-    p.x+=dx/d*amount;p.z+=dz/d*amount;
-    a.root.rotation.y=Math.atan2(dx,dz);
-    a.poseMoving=true;a.lastMovedAt=elapsed;
-    if(a.character)requestMotion(a,'walk');
+    moveUpperFloorSoldier(a,{x:targetX,z:targetZ},dt);
     return true;
    }
    if(roomItemRegistry.pickup(loot.id,a.id)){
@@ -6002,6 +6054,17 @@ function tickAI(dt){
    }
   }
  for(const a of actors){if(a.hp<=0)continue;
+  if(a.isStrategist){
+   // A commander stays at the deployment rear; never enters soldier attack AI.
+   if(a.nextCell){moveActor(a,a.root.position,dt,0,{preciseGoal:true});continue;}
+   const p=a.root.position,enemy=nearestEnemy(a,18*CELL);
+   const intent=strategistRearIntent({home:a.home,position:p,threat:enemy?.root.position,safeDistance:12*CELL});
+   if(intent.phase!=='hold'){
+    const goal=cellPosition(Math.max(1,Math.min(WORLD_SIZE-2,gridFromWorld(intent.goal).x)),Math.max(1,Math.min(WORLD_SIZE-2,gridFromWorld(intent.goal).z)));
+    if(intent.phase!=='evade'||!enemy||Math.hypot(goal.x-enemy.root.position.x,goal.z-enemy.root.position.z)>Math.hypot(p.x-enemy.root.position.x,p.z-enemy.root.position.z))moveActor(a,goal,.16,CELL*.8,{preciseGoal:true});
+   }else a.poseMoving=false;
+   continue;
+  }
   // Automatic upstairs scouting is lower priority than a hostile soldier
   // within striking distance. The old unconditional floorTravel 'continue'
   // made both sides walk past adjacent living enemies without fighting.
@@ -6317,11 +6380,11 @@ function tickAI(dt){
  if(nearbyCounter&&enemy)goal=enemy.root.position;
  if(order==='hold'&&!nearbyCounter){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
- if(d>range||((hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143))&&!hutShotClear(p,goal))){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
+ if(d>range||routeOccludedByTerrain(a.cell,gridFromWorld(goal),a)||((hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143))&&!hutShotClear(p,goal))){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
   if(a.attackTimer>0)continue;
   if(a.jobId==='summoner'){a.attackTimer=.5;continue;}
- const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&hutShotClear(p,b.root.position)&&hutShotClear(b.root.position,p)) || enemy;
- if(target.root.position.distanceToSquared(p)>range*range)continue;
+ const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&!routeOccludedByTerrain(a.cell,b.cell,a)&&hutShotClear(p,b.root.position)&&hutShotClear(b.root.position,p)) || enemy;
+ if(!target||target.root.position.distanceToSquared(p)>range*range||routeOccludedByTerrain(a.cell,gridFromWorld(target.root.position),a))continue;
  if(!hutShotClear(p,target.root.position)||!hutShotClear(target.root.position,p))continue;
  battleAudio.cue(a.job.role==='support'?'magic':'attack',a);
  a.attackTimer=a.job.cooldown*1.02;if(a.character){a.attackPoseUntil=elapsed+1.0;requestMotion(a,'attack')}

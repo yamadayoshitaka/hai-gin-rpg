@@ -7,6 +7,7 @@ import {applySquadHeal} from './room-item-registry.js?v=20261119-rally-reserve2'
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.49';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
+import {strategistRearIntent} from './battle-interior-collision.js?v=20261124-r1';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
@@ -1656,20 +1657,17 @@ export class MassBattleGridSimulation {
       if(u.isStrategist){
         // Follow the unit-centre from behind, never initiate any attack or
         // cast. If a hostile closes in, evade farther into the rear rank.
-        const group=u.team*this.squadCount+u.squadId;
-        const memberCount=Math.max(1,formationCount[group]);
-        const rear=u.team===0?-6:6;
-        let targetX=formationX[group]/memberCount+rear;
-        const targetZ=formationZ[group]/memberCount;
-        let danger=Infinity;
+        u._strategistHome??={x:u.x,z:u.z};
+        let danger=Infinity,threat=null;
         for(const enemy of this.units){
           // Enemy search is bounded to a cheap distance comparison; do not
           // pathfind every commander as an independent A* agent.
           if(!enemy.alive||enemy.team===u.team)continue;
           const d=(enemy.x-u.x)**2+(enemy.z-u.z)**2;
-          if(d<danger)danger=d;
+          if(d<danger){danger=d;threat=enemy;}
         }
-        if(danger<36)targetX+=rear;
+        const intent=strategistRearIntent({home:u._strategistHome,position:u,threat});
+        const targetX=intent.goal.x,targetZ=intent.goal.z;
         // Emergency UR strategist escape is not restricted to a 12-cell
         // radius. Pick a safe, unoccupied tile ANYWHERE in its own half.
         if(u.rarity==='UR'&&!u.strategistWarpUsed&&danger<=9){
@@ -1677,6 +1675,7 @@ export class MassBattleGridSimulation {
             walkable:this.walkable,occupied,units:this.units,objects:this.objects});
           if(landing&&this.warpStrategist(u.id,landing.x,landing.z))continue;
         }
+        if(intent.phase==='hold'){u.action='hold';u.vx=u.vz=0;continue;}
         let next=null,best=Math.hypot(u.x-targetX,u.z-targetZ);
         for(const [dx,dz] of NEIGHBORS){
           const x=u.x+dx,z=u.z+dz;

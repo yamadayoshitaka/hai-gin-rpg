@@ -1,3 +1,4 @@
+import {solidInteriorPart,furnitureFootprintCells,strategistRearIntent} from '../src/battle-interior-collision.js';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundRoofGoal,highGroundBaitActive} from '../src/formation-driven-ai.js';
@@ -80,7 +81,7 @@ assert.match(battle,/monsterId=team===1&&i<6&&previewMonsterId/);
 assert.match(battle,/formationType:storyUnit\?\.formationType/);
 assert.match(mass,/formationCombatIntent\(\{/);
 assert.match(battle,/highGroundShieldIntent\(\{/);
-assert.match(battle,/!preciseGoal&&currentSkirmishDirective/);
+assert.match(battle,/!preciseGoal&&!a\.isStrategist/);
 assert.match(battle,/moveActor\(a,anchor,\.18,CELL\*4,\{preciseGoal:true\}\)/);
 assert.match(battle,/enemy\._highGroundBaitId=a\.id/);
 assert.match(mass,/target\._highGroundBaitId=u\.id/);
@@ -99,3 +100,14 @@ assert.match(mass,/if\(route\.kind==='interior'\)continue/);
 assert.match(mass,/this\._releaseHighGroundUnit\(u\);return false/);
 assert.doesNotMatch(stage,/orders\[key\]='hold'/);
 console.log('PASS: symmetric formation intent, 3-job high-ground fire, real indoor exits and visible skeleton squad');
+
+assert.equal(solidInteriorPart({name:'table_top',y:1.17,height:.19},0),true);
+assert.equal(solidInteriorPart({name:'woven_rug',y:.18,height:.055},0),false);
+assert.deepEqual(furnitureFootprintCells({minX:4.7,maxX:5.2,minZ:1.8,maxZ:2.2},1,0,.26),[{x:5,z:2}]);
+assert.equal(strategistRearIntent({home:{x:2,z:2},position:{x:2,z:2}}).phase,'hold');
+const evade=strategistRearIntent({home:{x:2,z:2},position:{x:2,z:2},threat:{x:5,z:2}});
+assert.equal(evade.phase,'evade');assert.ok(evade.goal.x<2);
+assert.match(battle,/furnitureBlocks\(key\)/);
+assert.match(battle,/if\(a\.isStrategist\)\{/);
+assert.match(battle,/d>range\|\|routeOccludedByTerrain/);
+assert.match(mass,/strategistRearIntent\(/);
