@@ -1166,7 +1166,7 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v=battle-catalog-parity-20261123';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
-import {formationCombatIntent,isHighGroundFiringJob} from './src/formation-driven-ai.js?v=formation-ai-v1-20261124';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent} from './src/formation-driven-ai.js?v=formation-ai-v2-20261124';
 import {reachableRoomExit,reachableFormationWaypoint,sharedRoomExitFlow,sharedRoomExitStep} from './src/formation-ai-indoor-route.js?v=castle-exit-relief-v3-20261124';
 import {buildSkirmishAssaultFlow,nextSkirmishAssaultStep} from './src/battle-skirmish-assault-flow.js?v=skirmish-assault-r1-20261124';
 import {createRegisteredBattleMonster}
@@ -5617,7 +5617,13 @@ function updateUpperFloorRangedCombat(a,dt){
  // Movement-only high ground must not attack; assault waits for the selected storey.
  if(travel.manualHighGroundTarget&&(!travel.manualHighGroundAttack||
     (a.indoorFloor??1)<Number(travel.manualHighGroundGoal||1)))return;
- const healing=a.job.role==='support'||a.job.damage<=0;
+ const summoning=a.jobId==='summoner';
+ const healing=!summoning&&(a.job.role==='support'||a.job.damage<=0);
+ if(summoning&&a._pendingCast){
+  skirmishActions?.tryAutoAction(a,null,actors);
+  if(a._pendingCast){a.attackPoseUntil=elapsed+.24;if(a.character)requestMotion(a,'skill');}
+  return;
+ }
  // Local opponents on the SAME upper level were completely filtered out by
  // the external window targeting, even within a sword's reach.
  const localEnemy=healing?null:nearestSkirmishEnemy(a,actors,{
@@ -5628,7 +5634,7 @@ function updateUpperFloorRangedCombat(a,dt){
  if(travel.phase==='upstairs'&&!travel.windowReady&&!localEnemy)return;
  const throwingRange=a.jobId==='ninja'?10:a.jobId==='thief'?6:a.job.range/CELL;
  const stats=elevatedRangedStats(a,{range:throwingRange,damage:a.job.damage});
- if(!stats.eligible&&!healing&&!localEnemy)return;
+ if(!stats.eligible&&!healing&&!localEnemy&&!summoning)return;
  a.attackTimer=Math.max(0,a.attackTimer-dt);
  if(a.attackTimer>0)return;
  const slot=travel.phase==='roof'?null:travel.windowSlot;
@@ -5636,6 +5642,16 @@ function updateUpperFloorRangedCombat(a,dt){
   healing?Math.max(8*CELL,a.job.range*2):stats.range*CELL,healing);
  if(!target)return;
  a.x=gridFromWorld(a.root.position).x;a.z=gridFromWorld(a.root.position).z;
+ if(summoning){
+  // Summons use the actual runtime (MP, chant, creature lifecycle), never
+  // the generic upper-floor projectile or free healing branch.
+  if(skirmishActions?.tryAutoAction(a,target,actors)){
+   a.attackTimer=.95;a.attackPoseUntil=elapsed+.9;
+   if(a.character)requestMotion(a,'skill');
+   travel.windowAttackCount=(travel.windowAttackCount??0)+1;
+  }
+  return;
+ }
  a.attackTimer=Math.max(.85,a.job.cooldown);
  a.root.rotation.y=Math.atan2(target.root.position.x-a.root.position.x,target.root.position.z-a.root.position.z);
  if(a.character){a.attackPoseUntil=elapsed+.9;requestMotion(a,healing?'skill':'attack')}
@@ -6023,6 +6039,28 @@ function tickAI(dt){
   });
   const order=combatIntent.order;
   let enemy=nearestEnemy(a);const p=a.root.position;
+  // The high-ground formation's ground guard uses its own squad's real
+  // staircase as a bait post; don't pull defenders from other formations.
+  if(a.jobId==='shield'&&a.formationType==='highground'&&
+     !['hold','retreat','move','mission','explore'].includes(squadDirective?.mode)){
+   const posts=actors.filter(v=>v.hp>0&&v.team===a.team&&String(v.squadId)===String(a.squadId)&&
+    v.formationType==='highground'&&isHighGroundFiringJob(v.jobId)&&v.floorTravel?.formationHighGround);
+   const post=posts.find(v=>(v.indoorFloor??1)>1&&['upstairs','roof'].includes(v.floorTravel.phase))||posts[0];
+   if(post&&!destroyedTownBuildings.has(post.floorTravel.building.data)){
+    const anchor=staircaseEntranceWorld(post.floorTravel.building);
+    const ready=posts.some(v=>v.floorTravel.building===post.floorTravel.building&&
+     (v.indoorFloor??1)>1&&['upstairs','roof'].includes(v.floorTravel.phase));
+    const dist=(u,v)=>Math.hypot(u.x-v.x,u.z-v.z)/CELL;
+    const intent=highGroundShieldIntent({assigned:true,ready,
+     anchorDistance:dist(p,anchor),enemyDistance:enemy?dist(p,enemy.root.position):Infinity,
+     enemyAnchorDistance:enemy?dist(anchor,enemy.root.position):Infinity,
+     healthRatio:a.hp/Math.max(1,a.maxHp),luring:a._highGroundLuring});
+    a._highGroundLuring=intent.luring;
+    if(intent.phase==='return'){moveActor(a,anchor,.16,CELL*4);continue;}
+    if(intent.phase==='approach'&&enemy){moveActor(a,enemy.root.position,.16,CELL*2.5);continue;}
+    if(intent.phase==='guard'&&(!enemy||dist(p,enemy.root.position)>a.job.range/CELL))continue;
+   }else a._highGroundLuring=false;
+  }
   const healingTargetId=a.team===0&&a.jobId==='priest'?skirmishHealingRequests.get(String(a.squadId)):null;
   if(healingTargetId!=null){
    const wounded=actors.filter(b=>b.team===0&&b.hp>0&&b.hp<b.maxHp&&String(b.squadId)===healingTargetId)
