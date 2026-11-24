@@ -11,6 +11,7 @@ on:
       - 'qa/face-v121-wig-selection.test.mjs'
       - 'qa/face-v121-makeup-contour.test.mjs'
       - 'qa/face-v121-lip-cheek-v17.test.py'
+      - 'qa/face-v121-v21-lip-philtrum-geometry.test.py'
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
       - 'scripts/rebuild-v121-mouth-chin.py'
@@ -64,6 +65,7 @@ jobs:
           python3 qa/face-v121-lower-face-v12.test.py
           python3 qa/face-v121-lip-bow-reference-v14.test.py
           python3 qa/face-v121-lip-cheek-v17.test.py
+          python3 qa/face-v121-v21-lip-philtrum-geometry.test.py
           node --test qa/face-v121-wig-selection.test.mjs
           node --test qa/face-v121-makeup-contour.test.mjs
       - uses: actions/upload-artifact@v4
