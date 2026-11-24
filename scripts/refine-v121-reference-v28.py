@@ -16,9 +16,12 @@ def shorten_philtrum(p):
     # A monotone vertical deformation moves the complete mouth and oral
     # geometry together. Y is up; no lipstick-only relocation.
     x,y,z=p
-    weight=(1-fade(abs(x),.034,.095))*fade(z,.025,.090)
-    lift=.014*fade(y,.150,.212)*(1-fade(y,.241,.279))
-    return (x,y+weight*lift,z)
+    # Carry the chin upward by the same 14 mm as the mouth, and blend
+    # toward the neck rather than leaving a long chin below the raised mouth.
+    weight=(1-fade(abs(x),.045,.118))*fade(z,.015,.075)
+    lift=.014*fade(y,.065,.135)*(1-fade(y,.241,.285))
+    chin=fade(y,.082,.137)*(1-fade(y,.170,.208))*(1-fade(abs(x),.025,.067))*fade(z,.035,.095)
+    return (x,y+weight*lift,z-.0030*chin)
 
 def eye(p):
     x,y,z=p;a=abs(x);s=1 if x>=0 else -1
@@ -32,6 +35,23 @@ def subnasal(p):
     # A shallow vertical philtral channel with gently rounded columns.
     relief=column*(-.00045*bell(a,0,.0045)+.00024*bell(a,.0075,.004))
     return (x*(1-.20*w),y-.0008*w*bell(a,0,.018),z-.0020*w+relief)
+
+def nasal_reference(p):
+    # Original female bald reference, frontal and profile: narrow straight
+    # dorsum, rounded projecting lobule, downward-facing nostril aperture.
+    x,y,z=p;a=abs(x)
+    gate=(1-fade(a,.028,.052))*fade(y,.247,.257)*(1-fade(y,.302,.321))*fade(z,.093,.129)
+    # Rotate the lower nasal complex as a connected volume. Rotation (not
+    # closing holes or painting them) turns the aperture toward the underside.
+    r=(1-fade(a,.018,.039))*fade(y,.249,.260)*(1-fade(y,.279,.300))*fade(z,.112,.144)
+    theta=.19*r
+    u=y-.278;v=z-.132
+    yy=.278+math.cos(theta)*u-math.sin(theta)*v
+    zz=.132+math.sin(theta)*u+math.cos(theta)*v
+    dorsal=bell(a,.012,.011)*fade(y,.280,.294)*(1-fade(y,.313,.326))
+    ala=bell(a,.022,.010)*bell(y,.268,.012)
+    lobule=bell(a,0,.012)*bell(y,.276,.011)*fade(z,.136,.157)
+    return (x*(1-gate*(.09*dorsal+.08*ala)),yy,zz+gate*.0018*lobule)
 
 def face_warp(p):
     # Gaussian tails must never alter the protected scalp/side vertices.
@@ -51,10 +71,10 @@ def face_warp(p):
     # Lower cheek support is distinct from the excess suborbital bulge.
     uppercheek=bell(a,.051,.023)*fade(a,.020,.034)*(1-fade(a,.086,.105))*fade(y,.252,.270)*(1-fade(y,.290,.302))*fade(z,.087,.126)
     orbit_tip=bell(a,.062,.009)*bell(y,.300,.009)*fade(a,.050,.059)*(1-fade(a,.073,.086))*fade(z,.089,.119)
-    target=(x+(1 if x>=0 else -1)*(.0009*cheek-.0008*orbit-.0007*orbit_tip)-.150*x*bridge-.095*x*rim,
-            y-.0050*rim-.0030*tip,
-            z+.0003*cheek-.0014*orbit-.0030*uppercheek-.0008*orbit_tip+.0009*ridge-.0018*rim-.0012*tip)
-    return tuple(a+gate*(b-a) for a,b in zip(p,subnasal(target)))
+    target=(x+(1 if x>=0 else -1)*(.0009*cheek-.0008*orbit-.0007*orbit_tip)-.110*x*bridge-.040*x*rim,
+            y-.0010*rim-.0005*tip,
+            z+.0003*cheek-.0014*orbit-.0030*uppercheek-.0008*orbit_tip+.0009*ridge+.0005*rim+.0005*tip)
+    return tuple(a+gate*(b-a) for a,b in zip(p,nasal_reference(subnasal(target))))
 def fair_weight(p):
     x,y,z=p;a=abs(x)
     # Broad skin-only blend; exclude eyelid rims, nostril and actual lip seam.
@@ -116,8 +136,8 @@ def fair_surface(old,base,faces):
         target=sum(t*c for t,c in zip(basis(a,y),coeff[1 if x>=0 else -1]))
         # A common low-order surface fills troughs AND cuts bulges. Limit
         # exceptional excursions near transition boundaries, not the core.
-        dz=max(-.009,min(.009,target-z))
-        out[i]=(x,y,z+w*dz)
+        dz=max(-.006,min(.006,target-z))
+        out[i]=(x,y,z+.65*w*dz)
         near[i]=(w,0,())
         targets[i]=(w,target)
     for ids in groups.values():
@@ -142,6 +162,66 @@ def fair_surface(old,base,faces):
     return out,near,{'samples':len(near),'rmsBefore':initial,'rmsAfter':final,
                      'method':'area-weighted robust bicubic cheek reconstruction',
                      'suspectTriangles':bad,'patchSamples':{str(s):len(rs) for s,rs in rows.items()}}
+
+def topology_fair(old,points,faces):
+    # Weld geometrically coincident UV duplicates for the solver only.
+    # Original render indices, oral boundary loops and UVs remain intact.
+    groups=collections.defaultdict(list)
+    for i,p in enumerate(old):groups[tuple(round(v,7) for v in p)].append(i)
+    ids=list(groups.values());rep={i:k for k,ls in enumerate(ids) for i in ls}
+    pos=[tuple(sum(points[i][d] for i in ls)/len(ls) for d in range(3)) for ls in ids]
+    adj=[set() for _ in ids];edges=collections.Counter()
+    for a,b,c in faces:
+        for i,j in ((rep[a],rep[b]),(rep[b],rep[c]),(rep[c],rep[a])):
+            if i==j:continue
+            adj[i].add(j);adj[j].add(i);edges[tuple(sorted((i,j)))]+=1
+    boundary={i for e,n in edges.items() if n!=2 for i in e}
+    norm=H['normals'](points,faces)
+    nn=[unit(tuple(sum(norm[i][d] for i in ls) for d in range(3))) for ls in ids]
+    weights=[]
+    for k,ls in enumerate(ids):
+        x,y,z=old[ls[0]];a=abs(x)
+        # Protect eyelid, actual lips, nostril rims and open mesh boundaries.
+        cheek=fade(a,.031,.047)*(1-fade(a,.101,.123))*fade(y,.150,.185)*(1-fade(y,.282,.301))*fade(z,.048,.090)
+        chin=(1-fade(a,.055,.092))*fade(y,.105,.145)*(1-fade(y,.186,.208))*fade(z,.040,.085)
+        w=max(cheek,chin*.70)
+        if k in boundary or y>=.335 or abs(x)>=.125:w=0.
+        weights.append(w)
+    start=list(pos);pairs={}
+    for k,ns in enumerate(adj):
+        if weights[k]<.01:continue
+        good=[j for j in ns if math.dist(start[k],start[j])<.018 and sum(a*b for a,b in zip(nn[k],nn[j]))>.25]
+        if len(good)>=3:
+            pairs[k]=[(j,1/max(.0015,math.dist(start[k],start[j]))) for j in good]
+    # Connectivity-aware normal-direction curvature fairing with pinned
+    # feature boundaries and an explicit bounded surface displacement.
+    for _ in range(16):
+        nxt=list(pos)
+        for k,ns in pairs.items():
+            sw=sum(w for _,w in ns);p=pos[k]
+            mean=tuple(sum(pos[j][d]*w for j,w in ns)/sw for d in range(3))
+            delta=sum((a-b)*n for a,b,n in zip(mean,p,nn[k]))
+            prior=sum((a-b)*n for a,b,n in zip(p,start[k],nn[k]))
+            step=max(-.00040,min(.00040,.48*weights[k]*delta-.06*prior))
+            limit=.004*weights[k]
+            step=max(-limit-prior,min(limit-prior,step))
+            nxt[k]=tuple(a+step*n for a,n in zip(p,nn[k]))
+        pos=nxt
+    out=list(points)
+    for k,ls in enumerate(ids):
+        if k in pairs:
+            for i in ls:out[i]=pos[k]
+    # Detect suspect triangles after all deformation stages, not before.
+    def cross(p,q,r):
+        u=[q[d]-p[d] for d in range(3)];v=[r[d]-p[d] for d in range(3)]
+        return (u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])
+    bad=0
+    for tri in faces:
+        if not any(rep[i] in pairs for i in tri):continue
+        a=cross(*(points[i] for i in tri));b=cross(*(out[i] for i in tri))
+        la=math.sqrt(sum(t*t for t in a));lb=math.sqrt(sum(t*t for t in b))
+        if la>1e-10 and (lb<.12*la or sum(x*y for x,y in zip(a,b))<0):bad+=1
+    return out,{'weldedGroups':len(ids),'activeVertices':len(pairs),'protectedBoundaryVertices':len(boundary),'newSuspectTriangles':bad}
 
 def fair_normals(old,new,n,faces,near):
     # Normals are derived from reconstructed geometry, not smoothed to
@@ -258,6 +338,8 @@ def apply(path):
                 new,near,report=fair_surface(old,new,faces)
                 before_lift=list(new)
                 new=[shorten_philtrum(q) for q in new]
+                new,topology_report=topology_fair(old,new,faces)
+                report['topologyAwareFairing']=topology_report
                 new=[p if p[1]>=.335 or abs(p[0])>=.125 else q for p,q in zip(old,new)]
                 # Matched material samples from upper vermilion and nasal base.
                 lip_ids=[i for i,(x,y,z) in enumerate(before_lift) if abs(x)<.014 and .237<y<.243 and z>.125]
@@ -266,7 +348,7 @@ def apply(path):
                 gap=lambda ps: statistics.median(ps[i][1] for i in nose_ids)-statistics.median(ps[i][1] for i in lip_ids)
                 gap0,gap1=gap(before_lift),gap(new)
                 if gap0<=0 or gap1>gap0*.80:raise ValueError('Philtrum vertical shortening below 20 percent')
-                report.update({'philtrumBeforeM':gap0,'philtrumAfterM':gap1,'philtrumSampleRatio':gap1/gap0,'revision':'R4'})
+                report.update({'philtrumBeforeM':gap0,'philtrumAfterM':gap1,'philtrumSampleRatio':gap1/gap0,'revision':'R5'})
                 skin_new,skin_faces=new,faces
                 # Verify the actual subnasal vertex coordinates were narrowed.
                 region=[i for i,(x,y,z) in enumerate(old) if .010<abs(x)<.032 and .252<y<.266 and z>.130]
@@ -303,5 +385,5 @@ def apply(path):
     raw=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode();raw+=b' '*((-len(raw))%4)
     b+=b'\0'*((-len(b))%4)
     path.write_bytes(struct.pack('<4sII',b'glTF',2,28+len(raw)+len(b))+struct.pack('<I4s',len(raw),b'JSON')+raw+struct.pack('<I4s',len(b),b'BIN\0')+b)
-    print('v28 R4 anatomy, unchanged BIN size',size,head['extras']['mouthChinRebuild']['v28R2Fairing'])
+    print('v28 R5 anatomy, unchanged BIN size',size,head['extras']['mouthChinRebuild']['v28R2Fairing'])
 if __name__=='__main__':apply(pathlib.Path(sys.argv[1]))

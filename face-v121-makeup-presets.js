@@ -65,11 +65,11 @@ export function v121MakeupMasks(x,y,z){
 
 // Invert R4 vertical deformation so cosmetics stay on the same lip.
 function preR4Y(x,y,z){
-  const weight=(1-fade(Math.abs(x),.034,.095))*fade(z,.025,.090);
+  const weight=(1-fade(Math.abs(x),.045,.118))*fade(z,.015,.075);
   let lo=y-.0141,hi=y+.0001;
   for(let i=0;i<28;i++){
     const m=(lo+hi)/2;
-    const mapped=m+weight*.014*fade(m,.150,.212)*(1-fade(m,.241,.279));
+    const mapped=m+weight*.014*fade(m,.065,.135)*(1-fade(m,.241,.285));
     if(mapped<y)lo=m;else hi=m;
   }
   return (lo+hi)/2;
