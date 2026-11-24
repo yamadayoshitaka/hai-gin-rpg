@@ -47,7 +47,7 @@ def repair_grooves(old,xyz,near,faces):
         a=abs(x)
         side=fade(a,.036,.040)*(1-fade(a,.068,.078))*fade(y,.216,.221)*(1-fade(y,.243,.250))
         below=(1-fade(a,.020,.029))*fade(y,.200,.207)*(1-fade(y,.220,.223))
-        w=max(side,below)*fade(d,.080,.108)
+        w=max(side*fade(d,.023,.044),below*fade(d,.080,.108))
         if w>.001 and S['region'](old[i])==0:active[i]=w
     groups=collections.defaultdict(list)
     for i,v in enumerate(old):groups[v].append(i)
@@ -74,7 +74,7 @@ def repair_grooves(old,xyz,near,faces):
                 err=depth-target
                 for i,w in coeff.items():
                     if weights.get(i,0.)<=0:continue
-                    value=max(base[i]-.0018,min(base[i]+.0018,z[i]-.82*err*w*weights[i]/den))
+                    value=max(base[i]-.0022,min(base[i]+.0022,z[i]-.82*err*w*weights[i]/den))
                     for j in members[i]:z[j]=value
 
     return [(x,y,z[i]) for i,(x,y,_) in enumerate(xyz)]
@@ -106,6 +106,10 @@ def apply(path):
     # Refit the actual skin grooves after broad contour displacement.
     xyz=repair_grooves(old,xyz,skinnear,faces)
     active={i:(max(*fields(v),oral_weight(v),lip_weight(v)),.01,[]) for i,v in enumerate(old) if max(*fields(v),oral_weight(v),lip_weight(v))>.015}
+    # Include the actual deep lateral ray vertices modified by the solver.
+    for i,(a,b0) in enumerate(zip(old,xyz)):
+        if math.dist(a,b0)>.00005 and i not in active:
+            active[i]=(.6,.01,[])
     newnorm=S['regularize_normals'](old,xyz,n,faces,active)
     p['attributes']['POSITION']=H['add_vec3'](g,b,xyz)
     p['attributes']['NORMAL']=H['add_vec3'](g,b,newnorm)
