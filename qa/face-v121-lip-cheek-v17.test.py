@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v18 anatomical upper lip relief and supported cheek regression."""
+"""v19 structural upper lip relief and supported cheek regression."""
 import json
 import pathlib
 import runpy
@@ -63,7 +63,7 @@ class LipAndCheekV17(unittest.TestCase):
         self.assertLess(groove(0.,.259,.150),-.001)
         upper=sculpt(0.,.240,.150)[2]-.150
         lower=sculpt(0.,.224,.150)[2]-.150
-        self.assertGreater(upper,.0055,'upper lip must protrude visibly')
+        self.assertGreater(upper,.0064,'upper lip must protrude visibly')
         self.assertGreater(upper,lower+.0008,
                            'upper lip must not disappear behind lower')
         self.assertLess(abs(sculpt(0.,.202,.150)[2]-.150),.0003)
@@ -76,7 +76,7 @@ class LipAndCheekV17(unittest.TestCase):
         meta=gltf['meshes'][0]['extras']
         sculpt=meta['referenceFeatureSculpt']
         self.assertEqual(sculpt['version'],
-                         'v121-convex-upper-vermilion-soft-cheeks-v18-20261124')
+                         'v121-convex-upper-vermilion-soft-cheeks-v19-20261124')
         for field in ('anatomicalVermilionBorderRealGeometry',
                       'upperCupidBowBorderAndLowerRimDefined',
                       'lipCornerTaperedToOralCommissure',
@@ -91,6 +91,9 @@ class LipAndCheekV17(unittest.TestCase):
         self.assertTrue(meta['mouthChinRebuild']['noSecondaryUnderlipLine'])
         self.assertTrue(meta['mouthChinRebuild']['noBroadInvertedUnderlipNormals'])
         self.assertGreater(meta['mouthChinRebuild']['repairedExteriorLipNormals'],50)
+        self.assertGreater(meta['mouthChinRebuild']['upperVermilionLocalEdgeFlips'],0,
+                           'upper lip must receive real connectivity edits')
+        self.assertTrue(meta['mouthChinRebuild']['upperVermilionRetopologyExcludesMouthSeal'])
         from statistics import median
         n=struct.unpack_from('<I',raw,12)[0]
         offset=28+n
