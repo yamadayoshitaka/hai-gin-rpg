@@ -80,6 +80,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 </div>
 <div class="controls">
 <button type="button" data-camera="front" aria-pressed="true">正面</button>
+<button type="button" data-camera="mouthClose" aria-pressed="false">口元を拡大</button>
 <button type="button" data-camera="eyeClose" aria-pressed="false">目元を拡大</button>
 <button type="button" data-camera="threeQuarter" aria-pressed="false">斜め45°</button>
 <button type="button" data-camera="side" aria-pressed="false">横顔</button>
@@ -117,7 +118,7 @@ import {measureRealHead,calculateWigFit,measureWigCrown,
  buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES}
  from './src/wig-glb-fit-v1.js?v=8';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-tapered-lips-v22-20261124';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-smooth-skin-v23-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 let wigRoot=null,wigHead=null,wigRequestId=0;
 const WIG_STORE_KEY='hai-gin-v121-selected-wig';
@@ -132,6 +133,14 @@ function view(kind='front'){
   // This permits checking individual upper/lower lash tips on a phone.
   eyeClose:[.029,.070,.205]
  };
+ if(kind==='mouthClose'&&face){
+  neutral.updateMatrixWorld(true);
+  const target=face.localToWorld(new THREE.Vector3(0,.232,.145));
+  camera.position.copy(target).add(new THREE.Vector3(0,0,.17));
+  orbit.target.copy(target);orbit.update();
+  document.querySelectorAll('[data-camera]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.camera===kind)));
+  return;
+ }
  if(!positions[kind])return;
  camera.position.set(...positions[kind]);
  orbit.target.set(...(kind==='eyeClose'?[.029,.070,.075]:[0,0,0]));
@@ -371,7 +380,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121 v22：上下唇の中央の厚みとM字を維持し、両口角へ向かって実メッシュの高さと突出を縮小。口周辺と顎の局所的な凹凸を平滑化し、人中の連続した溝を維持。スライダー・表情はオフです。');
+ update('status','女性v121 v23：口角外側・唇表面・下唇下・頬・顎の実メッシュを局所曲面フィットし法線を再計算。唇の境界・人中・鼻・顎輪郭を保護。スライダー・表情はオフです。');
  void selectWig(restoreWigChoice());
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
