@@ -113,6 +113,18 @@ jobs:
           git worktree remove --force /tmp/v121-v24-qa
       - name: Build bald female UV-eye reference PBR skin and fixed face topology
         run: python3 scripts/build-neutral-face-v121.py
+      - name: Rebuild immutable published v25 GLB baseline
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin e204c9baf49ad568ae0c91413f78121e2508d969
+          git worktree add --detach /tmp/v121-v25-qa e204c9baf49ad568ae0c91413f78121e2508d969
+          (
+            cd /tmp/v121-v25-qa
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v25-qa/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v25.glb
+          git worktree remove --force /tmp/v121-v25-qa
       - name: Verify actual v121 geometry, index order, PNG textures and no hair/animation
         run: |
           python3 qa/face-v121-bald-reference-skin.test.py
@@ -198,6 +210,18 @@ jobs:
           )
           cp /tmp/v121-v24-visual/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v24.glb
           git worktree remove --force /tmp/v121-v24-visual
+      - name: Rebuild immutable published v25 GLB baseline
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin e204c9baf49ad568ae0c91413f78121e2508d969
+          git worktree add --detach /tmp/v121-v25-visual e204c9baf49ad568ae0c91413f78121e2508d969
+          (
+            cd /tmp/v121-v25-visual
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v25-visual/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v25.glb
+          git worktree remove --force /tmp/v121-v25-visual
       - name: Serve v121 3D viewer
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v121-server.log 2>&1 &

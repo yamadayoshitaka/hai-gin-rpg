@@ -290,9 +290,5 @@ if __name__=='__main__':
     subprocess.run([sys.executable,'scripts/fair-v121-skin-v23.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/fair-v121-skin-v24.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/fair-v121-skin-v25.py',str(args.out)],check=True)
-    # Preserve the exact preceding stage for historical regression assertions.
-    if pathlib.Path('qa/baselines').is_dir():
-        import shutil
-        shutil.copyfile(args.out,'qa/baselines/face-v121-v25.glb')
     subprocess.run([sys.executable,'scripts/refine-v121-lips-v26.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/add-v121-face-expressions.py',str(args.out)],check=True)

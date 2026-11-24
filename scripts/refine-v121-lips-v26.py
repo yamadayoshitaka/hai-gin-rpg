@@ -11,7 +11,7 @@ def borders(x):
 
 def upper_weight(p):
     x,y,z=p
-    return (1-fade(abs(x),.018,.038))*fade(z,.119,.139)*fade(y,.234,.237)*(1-fade(y,.246,.253))
+    return (1-fade(abs(x),.018,.038))*fade(z,.119,.139)*fade(y,.2345,.2375)*(1-fade(y,.246,.253))
 
 def below_weight(p):
     x,y,z=p
@@ -22,9 +22,12 @@ def sculpt(p):
     w=upper_weight(p)
     # Compress the actual upper-lip boundary vertically, leaving the mouth
     # seal, lower rim, nasal base and eyes untouched.
-    shift=min(.0038,.30*max(0.,y-.234))*w
+    shift=min(.0038,.30*max(0.,y-.2345))*w
+    # Strictly preserve the aperture classifier used by the expression baker.
+    # No vertex above the seam can cross its .2345 upper boundary.
     # Lift only the broad sublabial skin, avoiding a second narrow ridge.
     support=.00065*below_weight(p)*bell(y,.208,.010)
+    if .2308<y<.2345:return p
     return (x,y-shift,z+support)
 
 def lip_amount(x,y,z):
@@ -47,6 +50,9 @@ def apply(path):
     idx=[v[0] for v in H['accessor'](g,b,p['indices'])]
     faces=[tuple(idx[i:i+3]) for i in range(0,len(idx),3)]
     xyz=[sculpt(v) for v in old]
+    inside=lambda v:abs(v[0])<.024 and .2308<v[1]<.2345 and v[2]>.115
+    if any(inside(a)!=inside(b0) for a,b0 in zip(old,xyz)):
+        raise ValueError('v26 changed the expression seam membership')
     active={i:(max(upper_weight(v),below_weight(v)),.01,[]) for i,v in enumerate(old) if max(upper_weight(v),below_weight(v))>.015}
     out=S['regularize_normals'](old,xyz,n,faces,active)
     # Exterior skin only. The dark oral aperture remains a thin seam.

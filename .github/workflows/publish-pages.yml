@@ -210,7 +210,19 @@ jobs:
           )
           cp /tmp/v121-v24-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v24.glb
           git worktree remove --force /tmp/v121-v24-release
-      - name: Block publication on actual v121 v25 geometry regressions
+      - name: Rebuild immutable published v25 GLB baseline
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin e204c9baf49ad568ae0c91413f78121e2508d969
+          git worktree add --detach /tmp/v121-v25-release e204c9baf49ad568ae0c91413f78121e2508d969
+          (
+            cd /tmp/v121-v25-release
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v25-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v25.glb
+          git worktree remove --force /tmp/v121-v25-release
+      - name: Block publication on actual v121 v26 geometry regressions
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin 7fa3ed27adac344c46a2076f813a1f723693075b
