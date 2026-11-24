@@ -232,22 +232,30 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
   route.push(world(rimX+(plan.ladderX-rimX)*t,feetY,
    rimZ+(plan.ladderZ-rimZ)*t));
  }
- const steps=Math.max(1,Math.ceil((plan.finishY-feetY)/.27));
- for(let step=1;step<=steps;step++){
-  const t=step/steps;
-  route.push(world(plan.ladderX,feetY+(plan.finishY-feetY)*t,plan.ladderZ));
+ // Feet stand beside the rungs, not through their centre. The ladder
+ // occupies the hatch; remain on its approach side until stepping onto roof.
+ const ladderOffset=.32;
+ route.push(world(plan.ladderX,feetY,plan.ladderZ+ladderOffset));
+ const rungCount=Math.max(2,Math.floor((plan.finishY-feetY)/.38));
+ for(let step=1;step<=rungCount;step++){
+  const t=step/(rungCount+1);
+  route.push({...world(plan.ladderX,feetY+(plan.finishY-feetY)*t,plan.ladderZ+ladderOffset),ladder:true});
  }
+ route.push({...world(plan.ladderX,plan.finishY,plan.ladderZ+ladderOffset),ladder:true});
+ // Walk out of the hatch before traversing the roof, including flat castles.
+ const hatchExitZ=Math.min(plan.roofHalfDepth-.4,plan.ladderZ+1.15);
+ route.push(world(plan.ladderX,plan.roofY(plan.ladderX),hatchExitZ));
  const rooftopSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutX-plan.ladderX)/.48));
  for(let step=1;step<=rooftopSteps;step++){
   const t=step/rooftopSteps,x=plan.ladderX+(plan.lookoutX-plan.ladderX)*t;
-  route.push(world(x,plan.roofY(x),plan.ladderZ));
+  route.push(world(x,plan.roofY(x),hatchExitZ));
  }
  // Traverse along the roof ridge toward the front-facing, supported slope.
  // Keeping the original negative stair z left the actor behind the roof in
  // the mobile camera, which looked like unaided flight.
- const frontSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutZ-plan.ladderZ)/.48));
+ const frontSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutZ-hatchExitZ)/.48));
  for(let step=1;step<=frontSteps;step++){
-  const t=step/frontSteps,z=plan.ladderZ+(plan.lookoutZ-plan.ladderZ)*t;
+  const t=step/frontSteps,z=hatchExitZ+(plan.lookoutZ-hatchExitZ)*t;
   route.push(world(plan.lookoutX,plan.roofY(plan.lookoutX),z));
  }
  return route;
