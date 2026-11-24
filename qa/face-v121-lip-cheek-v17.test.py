@@ -96,7 +96,18 @@ class LipAndCheekV17(unittest.TestCase):
         self.assertTrue(meta['mouthChinRebuild']['upperVermilionRetopologyExcludesMouthSeal'])
         self.assertAlmostEqual(sculpt['lipSizeDefaultRelativeToV19Maximum'],.68)
         self.assertFalse(sculpt['lipSizeSliderEnabled'])
+        self.assertTrue(sculpt['mouthWidthReducedRealMesh'])
+        self.assertAlmostEqual(sculpt['mouthWidthDefaultScale'],.82)
         self.assertLess(sculpt['upperLipConvexityMillimeters'],5.0)
+        # The whole real oral seal narrows instead of retaining the old
+        # wide v19 opening behind a small painted vermilion mask.
+        narrow=SCULPT['nose_and_lips'](.055,.232,.150)
+        self.assertLess(narrow[0],.049)
+        self.assertGreater(narrow[0],.040)
+        self.assertAlmostEqual(SCULPT['nose_and_lips'](.080,.232,.150)[0],
+                               .080,delta=.0002)
+        self.assertAlmostEqual(SCULPT['nose_and_lips'](.030,.260,.150)[0],
+                               .030,delta=.0001)
         from statistics import median
         n=struct.unpack_from('<I',raw,12)[0]
         offset=28+n
