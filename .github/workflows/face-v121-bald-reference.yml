@@ -12,6 +12,7 @@ on:
       - 'qa/face-v121-makeup-contour.test.mjs'
       - 'qa/face-v121-lip-cheek-v17.test.py'
       - 'qa/face-v121-v21-lip-philtrum-geometry.test.py'
+      - 'qa/face-v121-v21-visual-regression.test.mjs'
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
       - 'scripts/rebuild-v121-mouth-chin.py'
