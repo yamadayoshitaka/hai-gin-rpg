@@ -11,7 +11,8 @@ function scalpFiberMap(){
  if(fiberMap||typeof document==='undefined')return fiberMap;
  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
  const context=canvas.getContext('2d');if(!context)return null;
- context.fillStyle='#e8ddd0';context.fillRect(0,0,512,512);
+ // Neutral luminance lets the material's selected hair tint reach every root.
+ context.fillStyle='#ffffff';context.fillRect(0,0,512,512);
  // Fine, directional roots instead of a single smooth plastic scalp shell.
  // Deterministic strokes keep screenshot-diff tests stable between builds.
  for(let i=0;i<3800;i++){
@@ -19,7 +20,7 @@ function scalpFiberMap(){
   const x=u*512,y=v*512,len=16+(i%37),swing=Math.sin(i*.81)*3;
   context.beginPath();context.moveTo(x,y);context.quadraticCurveTo(x+swing*.5,y+len*.5,x+swing,y+len);
   context.lineWidth=i%7===0?1.3:.55;
-  context.strokeStyle=i%4===0?'rgba(60,49,43,.29)':i%3===0?'rgba(255,250,237,.40)':'rgba(118,92,72,.18)';
+  context.strokeStyle=i%4===0?'rgba(35,35,35,.29)':i%3===0?'rgba(255,255,255,.40)':'rgba(112,112,112,.18)';
   context.stroke();
  }
  fiberMap=new THREE.CanvasTexture(canvas);fiberMap.colorSpace=THREE.SRGBColorSpace;
