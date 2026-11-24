@@ -4,7 +4,7 @@ import {v121MakeupMasks,v121VermilionBorders,V121_MAKEUP_PRESETS}
   from '../face-v121-makeup-presets.js';
 
 test('v121 pigments stay on real upper and lower vermilion, not chin or jaw',()=>{
-  const upper=v121MakeupMasks(0,.240,.150);
+  const upper=v121MakeupMasks(0,.2375,.150);
   const lower=v121MakeupMasks(0,.228,.150);
   const chin=v121MakeupMasks(0,.140,.155);
   const jaw=v121MakeupMasks(.080,.157,.128);
@@ -60,11 +60,11 @@ test('v20 smaller Cupid M and curved bottom edge make a bounded tapered lip mask
   assert.ok(corner.lower>center.lower+.008,'lower rim converges to corner');
   assert.ok(v121MakeupMasks(.048,.231,.150).lip<
             v121MakeupMasks(0,.231,.150).lip*.5,'lip pigment tapers');
-  assert.ok(v121MakeupMasks(.011,.246,.150).lip>.09,
+  assert.ok(v121MakeupMasks(.011,.2425,.150).lip>.09,
             'lifted Cupid peaks must not render as unpigmented skin');
-  assert.ok(v121MakeupMasks(0,.240,.150).lip>.75,
+  assert.ok(v121MakeupMasks(0,.2375,.150).lip>.75,
             'upper vermilion is visibly within the pigment mask');
-  assert.ok(center.upper-center.lower<.025,'neutral lips must shrink from v19 max height');
+  assert.ok(center.upper-center.lower<.020,'neutral lips must shrink from v19 max height');
   for(const coord of [[0,.254,.150],[0,.209,.150],
                        [.060,.230,.150],[.038,.253,.150],
                        [0,.208,.153]]){
@@ -72,3 +72,5 @@ test('v20 smaller Cupid M and curved bottom edge make a bounded tapered lip mask
       'no painted second lip or skin spill at '+coord.join(','));
   }
 });
+
+test('v26 smaller upper lip excludes old oversized border',()=>{assert.equal(v121MakeupMasks(0,.246,.150).lip,0);assert.ok(v121VermilionBorders(0).upper<.243);});

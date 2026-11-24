@@ -19,6 +19,8 @@ on:
       - 'scripts/fair-v121-skin-v23.py'
       - 'scripts/fair-v121-skin-v24.py'
       - 'scripts/fair-v121-skin-v25.py'
+      - 'scripts/refine-v121-lips-v26.py'
+      - 'qa/face-v121-v26-lips.test.py'
       - 'qa/face-v121-v25-contour.test.py'
       - 'qa/face-v121-v24-cheek.test.py'
       - 'qa/face-v121-v23-skin.test.py'
@@ -126,6 +128,7 @@ jobs:
           V23_MODEL=qa/baselines/face-v121-v23.glb python3 qa/face-v121-v23-skin.test.py
           V24_MODEL=qa/baselines/face-v121-v24.glb python3 qa/face-v121-v24-cheek.test.py
           python3 qa/face-v121-v25-contour.test.py
+          python3 qa/face-v121-v26-lips.test.py
           node --test qa/face-v121-wig-selection.test.mjs
           node --test qa/face-v121-makeup-contour.test.mjs
       - uses: actions/upload-artifact@v4
@@ -156,6 +159,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Bake actual v121 GLB
         run: |
+          mkdir -p qa/baselines
           python3 scripts/build-neutral-face-v120.py
           python3 scripts/build-neutral-face-v121.py
       - name: Rebuild immutable v22 GLB baseline and retain source SHA
@@ -208,7 +212,7 @@ jobs:
           name: v121-bald-front-quarter-side-webgl
           path: |
             qa/screenshots/face-v121/**/*.png
-            qa/screenshots/face-v121/v25/evidence.json
+            qa/screenshots/face-v121/v26/evidence.json
             qa/screenshots/face-v121/*.glb
           if-no-files-found: ignore
           retention-days: 10

@@ -22,7 +22,7 @@ def contour_sections(p,idx,sign):
 class RealV25(unittest.TestCase):
     def test_v25(self):
         _,a0,i0=Q['read'](ROOT/'qa/baselines/face-v121-v24.glb')
-        g,a,i=Q['read'](Q['PATH']);p0,p=a0['POSITION'],a['POSITION']
+        g,a,i=Q['read'](ROOT/'qa/baselines/face-v121-v25.glb');p0,p=a0['POSITION'],a['POSITION']
         self.assertEqual(i,i0)
         self.assertEqual(a0['TEXCOORD_0'],a['TEXCOORD_0'])
         self.assertTrue(all(math.isfinite(v) for q in p+a['NORMAL'] for v in q))

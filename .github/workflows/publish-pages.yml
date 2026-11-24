@@ -225,8 +225,10 @@ jobs:
           V23_MODEL=qa/baselines/face-v121-v23.glb python3 qa/face-v121-v23-skin.test.py
           V24_MODEL=qa/baselines/face-v121-v24.glb python3 qa/face-v121-v24-cheek.test.py
           python3 qa/face-v121-v25-contour.test.py
+          python3 qa/face-v121-v26-lips.test.py
+          node --test qa/face-v121-makeup-contour.test.mjs
           git worktree remove --force /tmp/v121-v20-release
-          rm -f qa/baselines/face-v121-v20.glb qa/baselines/face-v121-v22.glb qa/baselines/face-v121-v23.glb qa/baselines/face-v121-v24.glb
+          rm -f qa/baselines/face-v121-v20.glb qa/baselines/face-v121-v22.glb qa/baselines/face-v121-v23.glb qa/baselines/face-v121-v24.glb qa/baselines/face-v121-v25.glb
       - name: Verify approved chapter-one art relay and preserve v121 local GLB
         run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
@@ -302,8 +304,9 @@ jobs:
           assert x['referenceMakeup']['version']=='v121-natural-reference-size-lips-v20-20261124'
           assert len(x['naturalFoldCleanup']['nasolabialLeftVertexIds'])>8
           assert len(x['naturalFoldCleanup']['nasolabialRightVertexIds'])>8
-          assert 'continuous-contour-v25' in pathlib.Path('pages-dist/face-neutral-v121.html').read_text()
+          assert 'lip-underlip-v26' in pathlib.Path('pages-dist/face-neutral-v121.html').read_text()
           assert x['mouthChinRebuild']['v25ContinuousContour']['version']=='v25'
+          assert x['mouthChinRebuild']['v26LipAndUnderlip']['version']=='v26'
           assert x['mouthChinRebuild']['v24CheekContour']['version']=='v24'
           assert x['mouthChinRebuild']['v23SkinFairing']['version']=='v23'
           assert x['mouthChinRebuild']['v23SkinFairing']['rmsAfter']<x['mouthChinRebuild']['v23SkinFairing']['rmsBefore']
@@ -574,8 +577,8 @@ jobs:
           root="https://yamadayoshitaka.github.io/hai-gin-rpg"
           for attempt in $(seq 1 18); do
             if curl -fsSL --connect-timeout 8 --max-time 25 -H 'Cache-Control: no-cache' "$root/face-neutral-v121.html?verify=${GITHUB_SHA:0:12}-$attempt" -o /tmp/v121-public.html &&
-               curl -fsSL --connect-timeout 8 --max-time 60 -H 'Cache-Control: no-cache' "$root/assets/generated/neutral-face-v121.glb?v=121-continuous-contour-v25-20261124&verify=${GITHUB_SHA:0:12}-$attempt" -o /tmp/v121-public.glb &&
-               grep -Fq '121-continuous-contour-v25-20261124' /tmp/v121-public.html &&
+               curl -fsSL --connect-timeout 8 --max-time 60 -H 'Cache-Control: no-cache' "$root/assets/generated/neutral-face-v121.glb?v=121-lip-underlip-v26-20261124&verify=${GITHUB_SHA:0:12}-$attempt" -o /tmp/v121-public.glb &&
+               grep -Fq '121-lip-underlip-v26-20261124' /tmp/v121-public.html &&
                cmp -s /tmp/v121-public.glb pages-dist/assets/generated/neutral-face-v121.glb; then
               sha256sum /tmp/v121-public.glb
               echo 'PASS: live v25 face HTML and byte-identical tested GLB'
