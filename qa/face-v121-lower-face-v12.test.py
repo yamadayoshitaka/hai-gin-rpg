@@ -32,11 +32,16 @@ class LowerFaceProfileQA(unittest.TestCase):
         self.assertTrue(meta['lowerLipDepthRetracted'])
         self.assertTrue(meta['shallowLabiomentalSulcus'])
         self.assertTrue(meta['lowerVermilionHeightReduced'])
-        self.assertLess(delta_z(.224),-.003)
+        # v19 retracts the lower vermilion less aggressively to avoid a
+        # dark double-lip shelf. Check anatomical depth ORDER, not the
+        # obsolete v12 3-mm recession at a single point.
+        self.assertLess(delta_z(.224),-.002)
         self.assertGreater(delta_z(.240),-.001)
-        self.assertLess(delta_z(.202),delta_z(.173)-.0007)
-        # No second lip-like ridge may form below the actual lower lip.
-        self.assertLess(delta_z(.211),delta_z(.188)+.0004)
+        self.assertLess(delta_z(.202),delta_z(.173)-.0002)
+        # The shallow labiomental hollow must continuously rise toward the
+        # true vermilion, without a second projected band underneath.
+        self.assertLess(delta_z(.204),delta_z(.211))
+        self.assertLess(delta_z(.211),delta_z(.224))
         self.assertGreater(delta_y(.216),0.)
         self.assertLess(delta_y(.216),.0015)
         self.assertTrue(meta['secondaryUnderlipRidgeRemoved'])
