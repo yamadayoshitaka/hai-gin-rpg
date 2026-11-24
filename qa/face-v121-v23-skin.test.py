@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compare generated v23 GLB to immutable v22; no metadata-only acceptance."""
+import os
 import collections
 import json
 import math
@@ -39,7 +40,7 @@ class RealV23(unittest.TestCase):
         baseline=ROOT/'qa/baselines/face-v121-v22.glb'
         self.assertTrue(baseline.is_file(),'immutable v22 GLB required')
         _,a0,i0=Q['read'](baseline)
-        g,a,i=Q['read'](Q['PATH'])
+        g,a,i=Q['read'](pathlib.Path(os.environ.get('V23_MODEL',str(Q['PATH']))))
         p0,p=a0['POSITION'],a['POSITION']
         self.assertEqual(len(p),len(p0))
         self.assertEqual(a0['TEXCOORD_0'],a['TEXCOORD_0'])

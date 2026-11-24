@@ -17,6 +17,8 @@ on:
       - 'scripts/finish-v121-natural-folds.py'
       - 'scripts/rebuild-v121-mouth-chin.py'
       - 'scripts/fair-v121-skin-v23.py'
+      - 'scripts/fair-v121-skin-v24.py'
+      - 'qa/face-v121-v24-cheek.test.py'
       - 'qa/face-v121-v23-skin.test.py'
       - 'qa/face-v121-natural-folds-cleanup.test.py'
       - 'qa/face-v121-lower-lashes-nose-lips.test.py'
@@ -81,6 +83,18 @@ jobs:
           )
           cp /tmp/v121-v22-qa/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v22.glb
           git worktree remove --force /tmp/v121-v22-qa
+      - name: Rebuild immutable v23 GLB baseline
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin ba9f4f68bcbff8d113add88220111981d0b9131a
+          git worktree add --detach /tmp/v121-v23-qa ba9f4f68bcbff8d113add88220111981d0b9131a
+          (
+            cd /tmp/v121-v23-qa
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v23-qa/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v23.glb
+          git worktree remove --force /tmp/v121-v23-qa
       - name: Build bald female UV-eye reference PBR skin and fixed face topology
         run: python3 scripts/build-neutral-face-v121.py
       - name: Verify actual v121 geometry, index order, PNG textures and no hair/animation
@@ -95,7 +109,8 @@ jobs:
           python3 qa/face-v121-lip-bow-reference-v14.test.py
           python3 qa/face-v121-lip-cheek-v17.test.py
           python3 qa/face-v121-v21-lip-philtrum-geometry.test.py
-          python3 qa/face-v121-v23-skin.test.py
+          V23_MODEL=qa/baselines/face-v121-v23.glb python3 qa/face-v121-v23-skin.test.py
+          python3 qa/face-v121-v24-cheek.test.py
           node --test qa/face-v121-wig-selection.test.mjs
           node --test qa/face-v121-makeup-contour.test.mjs
       - uses: actions/upload-artifact@v4
@@ -105,6 +120,7 @@ jobs:
           path: |
             assets/generated/neutral-face-v121.glb
             qa/baselines/face-v121-v22.glb
+            qa/baselines/face-v121-v23.glb
           retention-days: 10
   mobile-webgl:
     runs-on: ubuntu-24.04
@@ -138,6 +154,18 @@ jobs:
           )
           cp /tmp/v121-v22-visual/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v22.glb
           git worktree remove --force /tmp/v121-v22-visual
+      - name: Rebuild immutable v23 GLB baseline
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin ba9f4f68bcbff8d113add88220111981d0b9131a
+          git worktree add --detach /tmp/v121-v23-visual ba9f4f68bcbff8d113add88220111981d0b9131a
+          (
+            cd /tmp/v121-v23-visual
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v23-visual/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v23.glb
+          git worktree remove --force /tmp/v121-v23-visual
       - name: Serve v121 3D viewer
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v121-server.log 2>&1 &
@@ -152,7 +180,7 @@ jobs:
           name: v121-bald-front-quarter-side-webgl
           path: |
             qa/screenshots/face-v121/**/*.png
-            qa/screenshots/face-v121/v23/evidence.json
+            qa/screenshots/face-v121/v24/evidence.json
             qa/screenshots/face-v121/*.glb
           if-no-files-found: ignore
           retention-days: 10
