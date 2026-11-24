@@ -160,3 +160,18 @@ while(field[cell.z*w+cell.x]>0&&steps<100){
 assert.ok(passedFence&&steps<100&&field[cell.z*w+cell.x]===0);
 assert.match(battle,/moveActor\(a,goal,0,stop,\{preciseGoal\}\)/);
 console.log('PASS: land stages bypass imaginary bridges and real fence route reaches enemy');
+
+// A baited enemy can cross the whole map and a distant bridge before arriving.
+for(const distance of [49,100,160,231,327]){
+ assert.equal(highGroundBaitActive({distance,now:180,until:Infinity,maxDistance:Infinity,order:'charge'}),true);
+ assert.equal(highGroundBaitActive({distance,now:180,until:Infinity,maxDistance:Infinity,order:'retreat'}),false);
+}
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:1,enemyDistance:220,enemyAnchorDistance:220}).phase,'approach');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:220,enemyDistance:4,contact:true}).phase,'return');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:100,enemyDistance:90,luring:true}).phase,'return');
+assert.match(battle,/maxDistance:Infinity,now:elapsed/);
+assert.match(mass,/maxDistance:Infinity,now:this.time/);
+assert.match(battle,/enemy\._highGroundBaitUntil=Infinity/);
+assert.match(mass,/target\._highGroundBaitUntil=Infinity/);
+assert.match(battle,/applyLadderPose\(a\)/);
+console.log('PASS: long-range bait lock and physical ladder integration');
