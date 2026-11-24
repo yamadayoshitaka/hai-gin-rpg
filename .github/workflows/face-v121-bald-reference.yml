@@ -52,6 +52,17 @@ jobs:
           name: v121-before-eye-uv-refresh-backup
           path: assets/generated/backups/neutral-face-v121-before-refresh.glb
           retention-days: 10
+      - name: Freeze actual v20 GLB from original main commit
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin 7fa3ed27adac344c46a2076f813a1f723693075b
+          git worktree add --detach /tmp/v121-v20 7fa3ed27adac344c46a2076f813a1f723693075b
+          (
+            cd /tmp/v121-v20
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v20/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v20.glb
       - name: Build bald female UV-eye reference PBR skin and fixed face topology
         run: python3 scripts/build-neutral-face-v121.py
       - name: Verify actual v121 geometry, index order, PNG textures and no hair/animation
