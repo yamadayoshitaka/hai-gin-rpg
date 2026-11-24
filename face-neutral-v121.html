@@ -76,6 +76,7 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <button type="button" data-wig="long01" aria-pressed="false">ロング</button>
 <button type="button" data-wig="ponytail01" aria-pressed="false">ポニーテール</button>
 </div>
+<button type="button" id="v121-scalp-toggle" aria-pressed="true" disabled>髪の下の頭皮を取り外す：ON</button>
 <p id="v121-wig-status" role="status">髪型：なし。選択状態はこの端末に保存します。</p>
 </div>
 <div class="controls">
@@ -115,12 +116,22 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {attachV121Makeup,V121_MAKEUP_PRESETS} from './face-v121-makeup-presets.js';
 import {measureRealHead,calculateWigFit,measureWigCrown,
- buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES}
- from './src/wig-glb-fit-v1.js?v=8';
+ buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES,scalpIndexWithoutCovered}
+ from './src/wig-glb-fit-v1.js?v=9';
 const $=id=>document.getElementById(id);
 const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-compact-mouth-v27-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 let wigRoot=null,wigHead=null,wigRequestId=0;
+let fullScalpIndex=null,hideCoveredScalp=true;
+function applyScalpVisibility(){
+ if(!face||!fullScalpIndex)return;
+ const ids=wigRoot?.userData.scalpCap?.userData.coveredTriangleIds||[];
+ const hide=hideCoveredScalp&&ids.length>0;
+ face.geometry.setIndex(hide?new THREE.BufferAttribute(scalpIndexWithoutCovered(fullScalpIndex.array,ids),1):fullScalpIndex);
+ const btn=$('v121-scalp-toggle');btn.disabled=!wigRoot;btn.setAttribute('aria-pressed',String(hideCoveredScalp));
+ btn.textContent='髪の下の頭皮を取り外す：'+(hideCoveredScalp?'ON':'OFF');
+ document.documentElement.dataset.v121ScalpRemoved=String(hide?ids.length:0);
+}
 const WIG_STORE_KEY='hai-gin-v121-selected-wig';
 const WIG_SOURCE_ROOT='https://raw.githubusercontent.com/kblood/CharacterCreator/master/output/';
 const WIG_CATALOG=new Map(PUBLIC_WIG_SOURCES.map(s=>[s.id,s]));
@@ -173,6 +184,7 @@ function removeCurrentWig(){
  });
  wigRoot.userData.scalpCap?.userData?.dispose?.();
  wigRoot=null;
+ applyScalpVisibility();
 }
 async function selectWig(requested){
  const style=WIG_CATALOG.has(requested)?requested:'none';
@@ -233,10 +245,13 @@ async function selectWig(requested){
   }
   wigRoot=root;
   scene.add(wigRoot);
+  applyScalpVisibility();
   saveWigChoice(style);
-  update('v121-wig-status',descriptor.label+'を頭部に装着しました。頭サイズに自動フィット済み。');
+  update('v121-wig-status',descriptor.label+'を頭部に装着しました。覆われる頭皮のみ取り外し可能です。');
  }catch(error){
   console.error('v121ウィッグ装着エラー',error);
+  removeCurrentWig();
+  applyScalpVisibility();
   update('v121-wig-status','ウィッグ装着失敗：'+error.message);
  }
 }
@@ -268,6 +283,8 @@ async function exportGLB(){
   const visibility=[];
   neutral.traverse(o=>{if(o.isMesh){visibility.push([o,o.visible]);o.visible=true;}});
   neutral.userData.v121MakeupPreset=faceMakeup?.current()||'bare';
+  // Face-only download must include the complete master scalp even with a wig.
+  face.geometry.setIndex(fullScalpIndex);
   try{
    const binary=await new Promise((resolve,reject)=>
     new GLTFExporter().parse(neutral,resolve,reject,
@@ -277,7 +294,7 @@ async function exportGLB(){
    saveBlob(new Blob([binary],{type:'model/gltf-binary'}),
      'hai-gin-face-v121-adjusted.glb');
    update('status','調整した位置・大きさを実際のGLBに保存しました');
-  }finally{visibility.forEach(([o,visible])=>o.visible=visible);}
+  }finally{visibility.forEach(([o,visible])=>o.visible=visible);applyScalpVisibility();}
  }catch(e){update('status','GLB保存失敗：'+e.message);console.error(e);}
  finally{button.disabled=false;}
 }
@@ -336,6 +353,9 @@ async function init(){
  };
  scene.add(neutral);
  wigHead=measureRealHead(THREE,neutral);
+ fullScalpIndex=face.geometry.getIndex();
+ $('v121-scalp-toggle').addEventListener('click',()=>{hideCoveredScalp=!hideCoveredScalp;applyScalpVisibility();});
+ applyScalpVisibility();
  document.querySelectorAll('[data-wig]').forEach(btn=>btn.addEventListener('click',()=>{
   void selectWig(btn.dataset.wig);
  }));

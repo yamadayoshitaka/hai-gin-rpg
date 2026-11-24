@@ -26,7 +26,7 @@ test('wig swap releases existing meshes, ignores stale requests, and persists se
  assert.match(html,/wigRoot\.userData\.scalpCap\?\.userData\?\.dispose/);
 });
 test('face above nasal base stays isolated and expressions/sliders remain disabled',()=>{
- assert.match(html,/sourceURL=.*continuous-contour-v25/);
+ assert.match(html,/sourceURL=.*compact-mouth-v27/);
  assert.doesNotMatch(html,/import .*face-v121-expression-player/);
  assert.doesNotMatch(html,/import .*face-v121-parametric-sliders/);
  assert.doesNotMatch(html,/<div id="v121-tuning"/);
@@ -36,4 +36,14 @@ test('face above nasal base stays isolated and expressions/sliders remain disabl
  const check=spawnSync(process.execPath,['--input-type=module','--check'],
   {input:script[1],encoding:'utf8'});
  assert.equal(check.status,0,check.stderr);
+});
+
+import {scalpIndexWithoutCovered} from '../src/wig-glb-fit-v1.js';
+test('scalp removal is reversible and leaves non-covered faces and original index unchanged',()=>{
+ const master=new Uint32Array([0,1,2,2,3,4,5,6,7]);
+ const masked=scalpIndexWithoutCovered(master,[1]);
+ assert.deepEqual([...masked],[0,1,2,5,6,7]);
+ assert.deepEqual([...master],[0,1,2,2,3,4,5,6,7]);
+ assert.match(html,/face\.geometry\.setIndex\(fullScalpIndex\)/);
+ assert.match(html,/applyScalpVisibility\(\)/);
 });

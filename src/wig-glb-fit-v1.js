@@ -344,7 +344,7 @@ export function buildFittedScalpCap(THREE,head,{
  const src=world,p=src.getAttribute('position'),normals=src.getAttribute('normal');
  if(!p){world.dispose();throw Error('v121頭部の頂点データがありません');}
  const ind=src.getIndex(),n=Math.floor((ind?ind.count:p.count)/3);
- const positions=[],uvs=[],tints=[],smoothNormals=[];
+ const positions=[],uvs=[],tints=[],smoothNormals=[],coveredTriangleIds=[];
  const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
  const v=new THREE.Vector3(),normal=new THREE.Vector3();
  const headCenterY=head.top-.12;
@@ -373,6 +373,8 @@ export function buildFittedScalpCap(THREE,head,{
   const verts=[a,b,c],ids=[ai,bi,ci];
   if(isLong&&verts.some(q=>q.z<rearCutZ))continue;
   if(verts.some(q=>q.y<floorAt(q.x,q.z)))continue;
+  // Only these exact skin faces have a replacement hair-cap surface.
+  coveredTriangleIds.push(i);
   for(let j=0;j<3;j++){
    const q=verts[j],id=ids[j];
    // Long: slightly INSET from the head surface and behind the real wig.
@@ -412,6 +414,7 @@ export function buildFittedScalpCap(THREE,head,{
  group.add(mesh);
  group.userData.dispose=()=>{geo.dispose();mat.dispose();texture?.dispose();};
  group.userData.triangleCount=positions.length/9;
+ group.userData.coveredTriangleIds=coveredTriangleIds;
  group.userData.style=style;
  group.userData.rearCutZ=isLong?rearCutZ:null;
  group.userData.longBackFacesExcluded=isLong;
@@ -524,4 +527,15 @@ export function extractUnskinnedWig(THREE,gltfRoot){
    bounds.x<.03||bounds.x>.65||bounds.y<.04||bounds.y>1.4)
   throw Error('ウィッグGLBの元の大きさが不正です');
  return {root,bounds:native,audit};
+}
+
+/** Return a new index buffer without the covered scalp; never mutate master. */
+export function scalpIndexWithoutCovered(index,coveredTriangleIds){
+ const blocked=new Set(coveredTriangleIds);
+ const output=[];
+ for(let i=0;i<index.length;i+=3){
+  if(blocked.has(i/3))continue;
+  output.push(index[i],index[i+1],index[i+2]);
+ }
+ return new index.constructor(output);
 }
