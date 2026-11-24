@@ -48,7 +48,7 @@ test('v121 blush is cheek-localized and all preset lipstick stays natural',()=>{
   assert.equal(V121_MAKEUP_PRESETS.bare.lip,0);
 });
 
-test('v18 lifted Cupid M and curved bottom edge make a bounded tapered lip mask',()=>{
+test('v19 lifted Cupid M and curved bottom edge make a bounded tapered lip mask',()=>{
   const center=v121VermilionBorders(0);
   const left=v121VermilionBorders(-.0115);
   const right=v121VermilionBorders(.0115);
