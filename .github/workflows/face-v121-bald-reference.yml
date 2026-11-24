@@ -11,6 +11,8 @@ on:
       - 'qa/face-v121-wig-selection.test.mjs'
       - 'qa/face-v121-makeup-contour.test.mjs'
       - 'qa/face-v121-lip-cheek-v17.test.py'
+      - 'qa/face-v121-v21-lip-philtrum-geometry.test.py'
+      - 'qa/face-v121-v21-visual-regression.test.mjs'
       - 'scripts/add-v121-anatomical-eye-details.py'
       - 'scripts/finish-v121-natural-folds.py'
       - 'scripts/rebuild-v121-mouth-chin.py'
@@ -32,6 +34,9 @@ on:
       - 'scripts/prepare-pages-site.py'
   push:
     branches: [feature/face-v121-bald-reference-skin]
+concurrency:
+  group: face-v121-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   pbr-face:
     runs-on: ubuntu-latest
@@ -51,6 +56,17 @@ jobs:
           name: v121-before-eye-uv-refresh-backup
           path: assets/generated/backups/neutral-face-v121-before-refresh.glb
           retention-days: 10
+      - name: Freeze actual v20 GLB from original main commit
+        run: |
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin 7fa3ed27adac344c46a2076f813a1f723693075b
+          git worktree add --detach /tmp/v121-v20 7fa3ed27adac344c46a2076f813a1f723693075b
+          (
+            cd /tmp/v121-v20
+            python3 scripts/build-neutral-face-v120.py
+            python3 scripts/build-neutral-face-v121.py
+          )
+          cp /tmp/v121-v20/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v20.glb
       - name: Build bald female UV-eye reference PBR skin and fixed face topology
         run: python3 scripts/build-neutral-face-v121.py
       - name: Verify actual v121 geometry, index order, PNG textures and no hair/animation
@@ -64,6 +80,7 @@ jobs:
           python3 qa/face-v121-lower-face-v12.test.py
           python3 qa/face-v121-lip-bow-reference-v14.test.py
           python3 qa/face-v121-lip-cheek-v17.test.py
+          python3 qa/face-v121-v21-lip-philtrum-geometry.test.py
           node --test qa/face-v121-wig-selection.test.mjs
           node --test qa/face-v121-makeup-contour.test.mjs
       - uses: actions/upload-artifact@v4
@@ -97,13 +114,16 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/face-v121-server.log 2>&1 &
           sleep 2
       - name: Mobile WebGL, side/profile and GLB download smoke
-        run: node --test qa/face-v121-bald-reference-browser.test.mjs
+        run: |
+          node --test qa/face-v121-bald-reference-browser.test.mjs
+          node --test qa/face-v121-v21-visual-regression.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: v121-bald-front-quarter-side-webgl
           path: |
-            qa/screenshots/face-v121/*.png
+            qa/screenshots/face-v121/**/*.png
+            qa/screenshots/face-v121/v21/evidence.json
             qa/screenshots/face-v121/*.glb
           if-no-files-found: ignore
           retention-days: 10

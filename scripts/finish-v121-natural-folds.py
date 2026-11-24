@@ -39,16 +39,16 @@ def vermilion_outline(x,y,z):
     # this neutral preset is approximately 0.68 in lip span/volume.
     if ax>=.047 or z<=.119 or y<.219 or y>.252:
         return 0.,0.,0.
-    corner=fade(ax,.017,.038)
+    corner=fade(ax,.014,.034)
     # Narrow Cupid's bow and lift the lower rim towards the oral seam.
     # Keep both real raised Cupid peaks and a distinct central notch.
-    upper=.2460+.0022*bell(ax,.0095,.005)-.00055*bell(ax,0.,.0038)-.0125*corner
-    lower=.2235+.0094*corner
+    upper=.232+(.2460+.0022*bell(ax,.0095,.005)-.00055*bell(ax,0.,.0038)-.232)*(1.-corner)
+    lower=.232+(.2235-.232)*(1.-corner)
     if upper-lower<=.001:
         return 0.,upper,lower
     inside=(fade(y,lower-.0005,lower+.0015)*
             (1.-fade(y,upper-.0015,upper+.0005)))
-    width=(1.-fade(ax,.026,.042))*bell(x,0.,.029)
+    width=(1.-fade(ax,.024,.036))*bell(x,0.,.029)
     return clamp(inside*width*fade(z,.127,.144)),upper,lower
 
 
@@ -170,10 +170,10 @@ def philtrum_relief(x,y,z):
     # The former philtrum started on the UPPER LIP at Y=.243 and its
     # 3.8-mm depression cancelled the lip's forward volume. End the central
     # channel above the lifted Cupid border: skin groove, not lip cavity.
-    vertical=fade(y,.248,.255)*(1.-fade(y,.264,.273))
+    vertical=fade(y,.249,.255)*(1.-fade(y,.265,.273))
     front=fade(z,.071,.116)
-    groove=-.0038*bell(x,0,.0050)*vertical*front
-    columns=.00095*(bell(x,-.0098,.0046)+bell(x,.0098,.0046))*vertical*front
+    groove=-.0028*bell(x,0,.0046)*vertical*front
+    columns=.00068*(bell(x,-.0090,.0044)+bell(x,.0090,.0044))*vertical*front
     return groove+columns
 
 
@@ -211,9 +211,9 @@ def nose_and_lips(x,y,z):
     bridge=bell(x,0.,.012)*bell(y,.282,.030)*fade(z,.087,.138)
     # Keep a narrow central dorsal ridge rather than a blunt nasal button.
     # The narrow lift is balanced by a gentle alar/tip retraction in profile.
-    central_ridge=(bell(x,0.,.009)*bell(y,.274,.018)*
+    central_ridge=(bell(x,0.,.008)*bell(y,.281,.023)*
                    fade(z,.118,.151)*nasal)
-    nz=z-.00305*tip-.00152*ala+.00085*bridge+.00115*central_ridge
+    nz=z-.00305*tip-.00152*ala+.00085*bridge+.00155*central_ridge
 
     # Mouth corners fall off continuously to zero, while the central lip
     # retains volume. A narrower bottom boundary restores the reference's
@@ -475,8 +475,8 @@ def finish(path):
         'nostrilWingVerticesAdjusted':nasal_vertices,
         'lipVermilionVerticesAdjusted':lip_vertices,
         'centralPhiltrumStart':[0.,.264],
-        'philtrumGrooveMasterDepth':.0038,
-        'philtrumColumnsRelief':.00095,
+        'philtrumGrooveMasterDepth':.0028,
+        'philtrumColumnsRelief':.00068,
         'philtrumShape':'continuous_nose_base_to_upper_vermilion_v19_channel',
         'philtrumNoOvalPit':True,
         'parametricDepthControlSupported':True,

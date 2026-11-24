@@ -410,6 +410,180 @@ def fair_exterior_oral_surface(points,uv,faces):
     return xyz,len(changed)
 
 
+def sculpt_v21_lip_philtrum(points):
+    """Keep the small mouth, but restore actual upper vermilion volume."""
+    result=[]
+    changed=0
+    for x,y,z in points:
+        ax=abs(x)
+        front=fade(z,.119,.137)
+        dz=dy=0.
+        if .2345<y<.250 and ax<.040:
+            taper=(1.-fade(ax,.020,.038))*front
+            vertical=fade(y,.2345,.238)*(1.-fade(y,.247,.250))
+            dz+=.00115*bell(y,.241,.0045)*vertical*taper
+            dy+=.00075*bell(ax,.010,.004)*bell(y,.246,.0035)*taper
+            dz+=.00040*bell(ax,.010,.004)*bell(y,.246,.0035)*taper
+        if abs(dz)+abs(dy)>1e-7:changed+=1
+        result.append((x,y+dy,z+dz))
+    if changed<50:
+        raise ValueError('v21 upper lip sculpt did not reach actual vertices')
+    return result,changed
+
+
+def taper_and_fair_v22(points,faces):
+    """Real lip corner convergence and bounded local skin fairing.
+
+    Decrease upper/lower height and projection on both sides, not the
+    central volume. Keep the original seam band and all vertex identities.
+    Fit local planes to neighboring skin in XYZ to remove small corrugations
+    without shrinking the whole face or blending across the mouth opening.
+    """
+    xyz=[]
+    tapered=0
+    for x,y,z in points:
+        ax=abs(x)
+        side=fade(ax,.014,.033)*(1.-fade(ax,.038,.053))
+        skin=fade(z,.111,.133)
+        band=fade(y,.214,.224)*(1.-fade(y,.248,.253))
+        seal=fade(abs(y-.232),.002,.005)
+        w=side*skin*band*seal
+        dy=-.64*(y-.232)*w
+        dz=-.0011*w
+        xyz.append((x,y+dy,z+dz))
+        if abs(dy)>.0001:tapered+=1
+    # Neighborhoods are built from actual local positions, not UVs or
+    # long remeshed diagonals. Same-position vertices get identical results.
+    base=list(xyz)
+    cell=.005
+    buckets=collections.defaultdict(list)
+    for i,p in enumerate(base):
+        if .135<p[1]<.255 and abs(p[0])<.090 and p[2]>.085:
+            buckets[tuple(math.floor(v/cell) for v in p)].append(i)
+    neighbors={}
+    weights={}
+    for i,(x,y,z) in enumerate(base):
+        ax=abs(x)
+        if not (.145<y<.250 and ax<.080 and z>.090):continue
+        w=(fade(y,.145,.165)*(1.-fade(y,.247,.250))*
+           (1.-fade(ax,.065,.080))*fade(z,.090,.115))
+        # Do not blur the Cupid peaks, the mouth opening, or the philtrum.
+        w*=fade(abs(y-.232),.0025,.005)
+        w*=1.-.90*(1.-fade(ax,.013,.021))*bell(y,.242,.005)
+        if w<.015:continue
+        key=tuple(math.floor(v/cell) for v in (x,y,z))
+        nearby=[]
+        for dx in (-1,0,1):
+            for dy in (-1,0,1):
+                for dz in (-1,0,1):
+                    for k in buckets.get((key[0]+dx,key[1]+dy,key[2]+dz),()):
+                        px,py,pz=base[k]
+                        if abs(y-.232)<.016 and (y-.232)*(py-.232)<=0:continue
+                        dist=math.dist((x,y,z),(px,py,pz))
+                        if .00001<dist<.0058 and abs(pz-z)<.004:
+                            nearby.append((k,px-x,py-y,math.exp(-.5*(dist/.0028)**2)))
+        if len(nearby)>=5:
+            neighbors[i]=nearby
+            weights[i]=w
+    def residual(i,pts):
+        q=neighbors[i]
+        total=sum(w for _,_,_,w in q)
+        mx=sum(dx*w for _,dx,_,w in q)/total
+        my=sum(dy*w for _,_,dy,w in q)/total
+        mz=sum(pts[k][2]*w for k,_,_,w in q)/total
+        xx=sum(w*(dx-mx)**2 for _,dx,_,w in q)
+        yy=sum(w*(dy-my)**2 for _,_,dy,w in q)
+        xy=sum(w*(dx-mx)*(dy-my) for _,dx,dy,w in q)
+        xz=sum(w*(dx-mx)*(pts[k][2]-mz) for k,dx,_,w in q)
+        yz=sum(w*(dy-my)*(pts[k][2]-mz) for k,_,dy,w in q)
+        det=xx*yy-xy*xy
+        if det<1e-14:return 0.
+        sx=(xz*yy-yz*xy)/det
+        sy=(yz*xx-xz*xy)/det
+        return mz-sx*mx-sy*my-pts[i][2]
+    def roughness(pts):
+        return math.sqrt(sum(weights[i]*residual(i,pts)**2 for i in neighbors)/
+                         max(1e-10,sum(weights.values())))
+    initial=roughness(xyz)
+    for _ in range(5):
+        out=list(xyz)
+        for i in neighbors:
+            x,y,z=xyz[i]
+            correction=max(-.00025,min(.00025,.55*weights[i]*residual(i,xyz)))
+            limit=.00030 if abs(x)<.020 and .236<y<.248 else .0010
+            nz=max(base[i][2]-limit,min(base[i][2]+limit,z+correction))
+            out[i]=(x,y,nz)
+        xyz=out
+    final=roughness(xyz)
+    if tapered<30 or final>initial+1e-9:
+        raise ValueError('v22 lip taper/skin fairing failed')
+    print('v22 local skin RMS (m)',initial,'->',final,'tapered',tapered)
+    return xyz,{'taperedVertices':tapered,'skinRmsBefore':initial,
+                'skinRmsAfter':final,'fairingVertices':len(neighbors)}
+
+
+def sculpt_v21_channel(points,faces):
+    """Fit the exterior philtrum using actual triangle intersections.
+
+    The .263 section includes the convex nasal base and must transition into
+    the nose rather than be carved into a deep groove. The central skin
+    channel between the Cupid border and nasal base is .254-.259. Use a
+    continuous, bounded displacement field, with no change to x/y, oral
+    seal, nose dorsum, eye sockets, or the separate cosmetic meshes.
+    """
+    heights=(.254,.255,.257,.259)
+    # Precompute XY ray weights; only Z changes during the solver.
+    rays={}
+    for y in heights:
+        for x in (-.010,0.,.010):
+            hits=[]
+            for ia,ib,ic in faces:
+                a,b,c=points[ia],points[ib],points[ic]
+                if not min(a[0],b[0],c[0])<=x<=max(a[0],b[0],c[0]):continue
+                if not min(a[1],b[1],c[1])<=y<=max(a[1],b[1],c[1]):continue
+                ux,uy=b[0]-a[0],b[1]-a[1]
+                vx,vy=c[0]-a[0],c[1]-a[1]
+                det=ux*vy-uy*vx
+                if abs(det)<1e-12:continue
+                dx,dy=x-a[0],y-a[1]
+                u=(dx*vy-dy*vx)/det
+                v=(ux*dy-uy*dx)/det
+                if min(u,v,1-u-v)<-1e-7:continue
+                hits.append((ia,ib,ic,1-u-v,u,v))
+            if not hits:raise ValueError('Missing philtrum surface ray')
+            rays[x,y]=hits
+    def depth(zs,x,y):
+        return max(zs[a]*wa+zs[b]*wb+zs[c]*wc
+                   for a,b,c,wa,wb,wc in rays[x,y])
+    def gaps(zs):
+        return [(depth(zs,-.010,y)+depth(zs,.010,y))/2-depth(zs,0.,y)
+                for y in heights]
+    base=[p[2] for p in points]
+    zs=base[:]
+    initial=gaps(zs)
+    for _ in range(12):
+        current=gaps(zs)
+        # A natural shallow relief is sufficient. Do not deepen an existing
+        # groove, and avoid isolated holes by interpolating the whole channel.
+        errors=[(.00115-d if d<.00115 else .0026-d if d>.0026 else 0.)
+                for d in current]
+        if max(map(abs,errors))<.00008:break
+        knots=[(.250,0.)]+list(zip(heights,errors))+[(.264,0.)]
+        for i,(x,y,z) in enumerate(points):
+            if not (.250<y<.264 and abs(x)<.010 and z>.119):continue
+            lateral=1.-fade(abs(x),.0045,.0095)
+            front=fade(z,.119,.132)
+            delta=-.85*profile(y,knots)*lateral*front
+            # A small positive correction may soften a pre-existing pit.
+            zs[i]=max(base[i]-.0050,min(base[i]+.0018,zs[i]+delta))
+    final=gaps(zs)
+    print('v21 channel solver sections (m):',initial,'->',final)
+    if min(final)<.0002 or max(final)>.0035:
+        raise ValueError('v21 channel did not reach safe continuous relief: '+str(final))
+    result=[(x,y,zs[i]) for i,(x,y,z) in enumerate(points)]
+    return result,sum(abs(a-b)>1e-7 for a,b in zip(base,zs))
+
+
 def retopologize_upper_vermilion(points,uv,faces):
     """Conservative real-3D upper-lip triangle optimization.
 
@@ -541,7 +715,10 @@ def rebuild(path):
     faces,replacement=replacement_triangulation(uv,old,xyz)
     xyz,fair_count=relax_labiomental_shading(xyz,faces)
     xyz,vermilion_fair_count=fair_exterior_oral_surface(xyz,uv,faces)
+    xyz,v21_changed=sculpt_v21_lip_philtrum(xyz)
     faces,upper_lip_flips=retopologize_upper_vermilion(xyz,uv,faces)
+    xyz,v22=taper_and_fair_v22(xyz,faces)
+    xyz,channel_count=sculpt_v21_channel(xyz,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
@@ -551,6 +728,9 @@ def rebuild(path):
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
         'vermilionSurfaceFairingVertices':vermilion_fair_count,
+        'v21ExteriorSculptVertices':v21_changed,
+        'v21ChannelSculptVertices':channel_count,
+        'v22CornerAndSkin':v22,
         'upperVermilionLocalEdgeFlips':upper_lip_flips,
         'upperVermilionRetopologyExcludesMouthSeal':True,
         'repairedExteriorLipNormals':normal_fix_count,
