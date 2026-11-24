@@ -67,14 +67,14 @@ class TestFaceV121(unittest.TestCase):
                     self.assertGreater(z,.110)
                 detached+=1
             else:
-                # A true replacement patch is bounded in the native UV chart
-                # from under the lower lip through the submental neck region.
+                # Lower jaw retopology plus v19 upper-vermilion diagonal flips
+                # remain inside the native central-face UV chart.
                 # Old triangle corners can be outside the centroid mask.
                 for (index,) in before+after:
                     u,v=uv[index]
                     self.assertGreater(u,.33)
                     self.assertLess(u,.67)
-                    self.assertGreater(v,.35)
+                    self.assertGreater(v,.33)
                     self.assertLess(v,.61)
                 retopo+=1
         rig=self.b['meshes'][0]['extras']['facialExpressionRig']
@@ -100,6 +100,7 @@ class TestFaceV121(unittest.TestCase):
                          rebuild['generatedNewPatchTriangles'])
         self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
         self.assertGreater(rebuild['newXYZEdgeOptimizingFlips'],100)
+        self.assertGreater(rebuild['upperVermilionLocalEdgeFlips'],0)
         self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.030)
         self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
         self.assertGreater(rebuild['affectedVertices'],180)
