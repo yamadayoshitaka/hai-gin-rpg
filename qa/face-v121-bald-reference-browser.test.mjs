@@ -17,7 +17,7 @@ test('Android v121 neutral GLB front/quarter/side, makeup and disabled expressio
   page.on('console',message=>{
    if(message.type()==='error')errors.push('console '+message.text());
   });
-  await page.goto('http://127.0.0.1:8765/face-neutral-v121.html?v=121-natural-lips-v20',
+  await page.goto('http://127.0.0.1:8765/face-neutral-v121.html?v=121-smooth-skin-v23',
    {waitUntil:'domcontentloaded',timeout:25000});
   try{
    await page.waitForFunction(
@@ -35,11 +35,11 @@ test('Android v121 neutral GLB front/quarter/side, makeup and disabled expressio
   assert.equal(await page.locator('[data-wig]').count(),4);
   assert.equal(await page.locator('[data-wig="none"]').getAttribute('aria-pressed'),'true');
   mkdirSync('qa/screenshots/face-v121',{recursive:true});
-  for(const angle of ['front','threeQuarter','side']){
+  for(const angle of ['front','threeQuarter','side','mouthClose']){
    await page.locator('[data-camera="'+angle+'"]').click();
    assert.equal(await page.locator('[data-camera="'+angle+'"]').getAttribute('aria-pressed'),'true');
    await page.locator('#viewport').screenshot({
-    path:'qa/screenshots/face-v121/neutral-face-'+angle+'-v20.png'});
+    path:'qa/screenshots/face-v121/neutral-face-'+angle+'-v23.png'});
   }
   for(const preset of ['brown','glamorous','natural','pink','bare']){
    await page.locator('[data-makeup="'+preset+'"]').click();
@@ -62,7 +62,7 @@ test('Android v121 neutral GLB front/quarter/side, makeup and disabled expressio
   assert.equal(json.meshes[0].extras.mouthChinRebuild.noseAndUpperFaceHardLocked,true);
   assert.ok(json.accessors.some(a=>a.count===13455));
   assert.equal(json.images.length,4);
-  copyFileSync(file,'qa/screenshots/face-v121/neutral-face-v121-v20.glb');
+  copyFileSync(file,'qa/screenshots/face-v121/neutral-face-v121-v23.glb');
   assert.deepEqual(errors,[],'No runtime WebGL errors');
  }finally{await browser.close();}
 });

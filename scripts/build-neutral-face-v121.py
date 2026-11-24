@@ -287,4 +287,5 @@ if __name__=='__main__':
     subprocess.run([sys.executable,'scripts/add-v121-anatomical-eye-details.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/finish-v121-natural-folds.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/rebuild-v121-mouth-chin.py',str(args.out)],check=True)
+    subprocess.run([sys.executable,'scripts/fair-v121-skin-v23.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/add-v121-face-expressions.py',str(args.out)],check=True)
