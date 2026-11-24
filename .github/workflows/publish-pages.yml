@@ -289,7 +289,16 @@ jobs:
           assert 'V121_UPPER_EYELINER' in [m['name'] for m in obj['meshes']]
           assert obj['meshes'][0]['extras']['naturalFoldCleanup']['removedLegacyBrowLidBand'] is True
           assert len(obj['meshes'][0]['extras']['referenceFeatureSculpt']['lipVermilionVerticesAdjusted'])>30
-          assert 0.0037<=obj['meshes'][0]['extras']['referenceFeatureSculpt']['philtrumGrooveMasterDepth']<=0.0040
+          # The legacy sculpt coefficient is not the final surface depth.
+          # Validate the actual packaged GLB with the same ray-based QA as CI.
+          import runpy
+          qa=runpy.run_path('qa/face-v121-v21-lip-philtrum-geometry.test.py')
+          public_model=pathlib.Path('pages-dist/assets/generated/neutral-face-v121.glb')
+          _,attrs,indices=qa['read'](public_model)
+          relief=qa['channel_sections'](attrs['POSITION'],indices)
+          assert min(relief)>.0002 and max(relief)<.0035, ('Invalid real philtrum depth',relief)
+          assert public_model.read_bytes()==pathlib.Path('assets/generated/neutral-face-v121.glb').read_bytes(), 'Published GLB differs from tested GLB'
+          print('PASS actual packaged philtrum cross sections (m):',relief)
           assert obj['meshes'][0]['extras']['referenceFeatureSculpt']['philtrumNoOvalPit'] is True
           assert obj['meshes'][0]['extras']['eyeConstruction']['irisAndPupilSeparateMeshes'] is False
           print('PASS baked v121 bald PBR skin:',len(blob),'bytes')
