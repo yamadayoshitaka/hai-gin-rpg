@@ -23,7 +23,20 @@ class V28(unittest.TestCase):
         rim=[j for j,(x,y,z) in enumerate(old) if .016<abs(x)<.027 and .264<y<.272 and z>.136]
         self.assertTrue(rim)
         self.assertLess(statistics.median(new[j][1]-old[j][1] for j in rim),0)
+        muzzle=[j for j,(x,y,z) in enumerate(old) if abs(x)<.024 and .222<y<.242 and z>.138]
+        self.assertGreater(len(muzzle),10)
+        self.assertLess(statistics.median(new[j][2]-old[j][2] for j in muzzle),-.001)
         g0,b0=H['read_glb'](prev);g1,b1=H['read_glb'](Q['PATH'])
+        for part in ('EYEBROW_FIBERS',):
+            def brow_positions(g,b):
+                m=next(m for m in g['meshes'] if part in m['name'])
+                p=m['primitives'][0]
+                return H['accessor'](g,b,p['attributes']['POSITION'])
+            b_old,b_new=brow_positions(g0,b0),brow_positions(g1,b1)
+            self.assertEqual(len(b_old),len(b_new))
+            self.assertEqual(len(b_new),272*8)
+            self.assertTrue(all(math.isfinite(z) for p in b_new for z in p))
+            self.assertGreater(sum(math.dist(a,b)>.0001 for a,b in zip(b_old,b_new)),len(b_new)//2)
         self.assertEqual(len(b0),len(b1))
         for part,limit in [('UPPER_EYELASHES',.95),('LOWER_EYELASHES',.75)]:
             def get(g,b):

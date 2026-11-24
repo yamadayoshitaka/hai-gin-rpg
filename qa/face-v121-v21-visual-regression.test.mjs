@@ -14,7 +14,7 @@ test('v28 WebGL fixed-camera visual evidence (manual quality approval required)'
   await page.waitForFunction(()=>document.documentElement.dataset.neutralFaceReady==='v121',{timeout:60000});
   mkdirSync('qa/screenshots/face-v121/v28',{recursive:true});
   const evidence=[];
-  for(const angle of ['front','threeQuarter','side','mouthClose']){
+  for(const angle of ['front','leftQuarter','threeQuarter','side','rightSide','below','above','eyeClose','noseClose','mouthClose','browClose']){
    await page.locator('[data-camera="'+angle+'"]').click();
    await page.waitForTimeout(500);
    const file='qa/screenshots/face-v121/v28/'+angle+'.png';
@@ -34,7 +34,7 @@ test('v28 WebGL fixed-camera visual evidence (manual quality approval required)'
   await page.route('**/assets/generated/neutral-face-v121.glb?*',route=>route.fulfill({path:'qa/baselines/face-v121-v27.glb',contentType:'model/gltf-binary'}));
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.documentElement.dataset.neutralFaceReady==='v121',{timeout:60000});
-  for(const angle of ['front','threeQuarter','side','mouthClose']){
+  for(const angle of ['front','leftQuarter','threeQuarter','side','rightSide','below','above','eyeClose','noseClose','mouthClose','browClose']){
    await page.locator('[data-camera="'+angle+'"]').click();
    await page.waitForTimeout(500);
    const bytes=await page.locator('#viewport').screenshot({path:'qa/screenshots/face-v121/v28/baseline-v27-'+angle+'.png'});

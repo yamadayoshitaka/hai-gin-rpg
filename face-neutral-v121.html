@@ -83,7 +83,13 @@ dd,dt{margin:0}dd{color:#a9eeda;font-variant-numeric:tabular-nums}
 <button type="button" data-camera="front" aria-pressed="true">正面</button>
 <button type="button" data-camera="mouthClose" aria-pressed="false">口元を拡大</button>
 <button type="button" data-camera="eyeClose" aria-pressed="false">目元を拡大</button>
-<button type="button" data-camera="threeQuarter" aria-pressed="false">斜め45°</button>
+<button type="button" data-camera="threeQuarter" aria-pressed="false">右45°</button>
+<button type="button" data-camera="leftQuarter" aria-pressed="false">左45°</button>
+<button type="button" data-camera="rightSide" aria-pressed="false">右側面</button>
+<button type="button" data-camera="below" aria-pressed="false">斜め下</button>
+<button type="button" data-camera="above" aria-pressed="false">斜め上</button>
+<button type="button" data-camera="noseClose" aria-pressed="false">鼻拡大</button>
+<button type="button" data-camera="browClose" aria-pressed="false">眉拡大</button>
 <button type="button" data-camera="side" aria-pressed="false">横顔</button>
 <button type="button" data-camera="back" aria-pressed="false">後頭部</button>
 <button id="wire" type="button" aria-pressed="false">輪郭・ワイヤー表示</button>
@@ -139,14 +145,16 @@ const update=(id,val)=>$(id).textContent=String(val);
 function view(kind='front'){
  const positions={
   front:[0,0,.66],threeQuarter:[.40,0,.52],
-  side:[-.66,0,0],back:[0,0,-.66],
+  side:[-.66,0,0],rightSide:[.66,0,0],back:[0,0,-.66],
+  leftQuarter:[-.40,0,.52],below:[.20,-.28,.56],above:[.20,.28,.56],
   // Camera looks at the actual right eye in the transformed GLB head.
   // This permits checking individual upper/lower lash tips on a phone.
   eyeClose:[.029,.070,.205]
  };
- if(kind==='mouthClose'&&face){
+ if(['mouthClose','noseClose','browClose'].includes(kind)&&face){
   neutral.updateMatrixWorld(true);
-  const target=face.localToWorld(new THREE.Vector3(0,.232,.145));
+  const coords={mouthClose:[0,.232,.145],noseClose:[0,.273,.155],browClose:[.035,.335,.125]};
+  const target=face.localToWorld(new THREE.Vector3(...coords[kind]));
   camera.position.copy(target).add(new THREE.Vector3(0,0,.17));
   orbit.target.copy(target);orbit.update();
   document.querySelectorAll('[data-camera]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.camera===kind)));
@@ -400,7 +408,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121 v28：見本基準で頬の凹み・目周辺の突起・目の形とまつ毛のカールを調整。上唇を薄く、下唇を厚くし、鼻筋を細く小鼻を丸く修正。スライダー・表情はオフです。');
+ update('status','女性v121 v28再修正：上頬の突出と頬下の凹みを分離して調整、口元の前突を低減。目元・まつ毛・眉毛の実メッシュを再調整。スライダー・表情はオフです。');
  void selectWig(restoreWigChoice());
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
