@@ -16,6 +16,13 @@ class V28(unittest.TestCase):
             ids=[j for j,(x,y,z) in enumerate(old) if .052<s*x<.080 and .222<y<.255 and z>.095]
             self.assertGreater(len(ids),10)
             self.assertGreater(statistics.median(new[j][2]-old[j][2] for j in ids),.001)
+        for lo,hi,sign in ((.236,.241,-1),(.222,.227,-1)):
+            ids=[j for j,(x,y,z) in enumerate(old) if abs(x)<.020 and lo<y<hi and z>.138]
+            self.assertGreater(len(ids),10)
+            self.assertLess(statistics.median(new[j][1]-old[j][1] for j in ids),-.0003)
+        rim=[j for j,(x,y,z) in enumerate(old) if .016<abs(x)<.027 and .264<y<.272 and z>.136]
+        self.assertTrue(rim)
+        self.assertLess(statistics.median(new[j][1]-old[j][1] for j in rim),0)
         g0,b0=H['read_glb'](prev);g1,b1=H['read_glb'](Q['PATH'])
         self.assertEqual(len(b0),len(b1))
         for part,limit in [('UPPER_EYELASHES',.95),('LOWER_EYELASHES',.75)]:
@@ -23,7 +30,9 @@ class V28(unittest.TestCase):
                 m=next(m for m in g['meshes'] if part in m['name']);p=m['primitives'][0]
                 return H['accessor'](g,b,p['attributes']['POSITION'])
             x,y=get(g0,b0),get(g1,b1)
-            ratios=[math.dist(y[j],y[j+36])/math.dist(x[j],x[j+36]) for j in range(0,(82 if part.startswith('UPPER') else 44)*42,42)]
+            starts=list(range(0,82*42,42)) if part.startswith('UPPER') else [eye_id*(22*42+66)+j*42 for eye_id in range(2) for j in range(22)]
+            ratios=[math.dist(y[j],y[j+36])/math.dist(x[j],x[j+36]) for j in starts]
+            self.assertEqual(len(x),len(y))
             self.assertLess(statistics.median(ratios),limit)
         self.assertEqual(g['meshes'][0]['extras']['mouthChinRebuild']['v28ReferenceAnatomy']['version'],'v28')
 if __name__=='__main__':unittest.main()

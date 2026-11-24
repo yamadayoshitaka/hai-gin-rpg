@@ -38,9 +38,11 @@ def normal_delta(old,new,n,faces):
         out[i]=unit(tuple(a+max(-.45,min(.45,c-b)) for a,b,c in zip(n[i],n0[i],n1[i])))
     return out
 def lashes(old,upper):
-    out=list(old);count=82 if upper else 44
-    for strand in range(count):
-        start=strand*42
+    out=list(old)
+    # Lower eyelid has 66 waterline vertices interleaved after each eye.
+    # Keep both waterlines intact and reshape only the actual 42-vertex hairs.
+    starts=list(range(0,82*42,42)) if upper else [eye_id*(22*42+66)+j*42 for eye_id in range(2) for j in range(22)]
+    for start in starts:
         root=tuple(sum(old[start+j][k] for j in range(6))/6 for k in range(3))
         s=1 if root[0]>=0 else -1
         t=fade(abs(root[0]),.029,.058)
