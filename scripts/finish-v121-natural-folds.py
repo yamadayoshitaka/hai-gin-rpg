@@ -34,19 +34,21 @@ def vermilion_outline(x,y,z):
     or a second ridge underneath the lower lip.
     """
     ax=abs(x)
-    if ax>=.054 or z<=.119 or y<.210 or y>.258:
+    # v20 neutral lips are smaller than the oversize v19 reference.
+    # The old v19 outline corresponds to a future lip-size slider MAX (1.0);
+    # this neutral preset is approximately 0.68 in lip span/volume.
+    if ax>=.047 or z<=.119 or y<.219 or y>.252:
         return 0.,0.,0.
-    corner=fade(ax,.018,.045)
-    # The upper border must taper IMMEDIATELY after the Cupid peaks.
-    # The previous flat central plateau painted the philtrum and cheek
-    # like a moustache. Narrow the footprint to the true convex lip patch.
-    upper=.2495+.0028*bell(ax,.011,.0055)-.00075*bell(ax,0.,.004)-.0178*corner
-    lower=.2175+.0120*corner
+    corner=fade(ax,.017,.038)
+    # Narrow Cupid's bow and lift the lower rim towards the oral seam.
+    # Keep both real raised Cupid peaks and a distinct central notch.
+    upper=.2439+.0022*bell(ax,.0095,.005)-.00055*bell(ax,0.,.0038)-.0125*corner
+    lower=.2235+.0094*corner
     if upper-lower<=.001:
         return 0.,upper,lower
-    inside=(fade(y,lower-.0008,lower+.0024)*
-            (1.-fade(y,upper-.0024,upper+.0008)))
-    width=(1.-fade(ax,.032,.051))*bell(x,0.,.036)
+    inside=(fade(y,lower-.0005,lower+.0015)*
+            (1.-fade(y,upper-.0015,upper+.0005)))
+    width=(1.-fade(ax,.026,.042))*bell(x,0.,.029)
     return clamp(inside*width*fade(z,.127,.144)),upper,lower
 
 
@@ -209,15 +211,19 @@ def nose_and_lips(x,y,z):
     # retains volume. A narrower bottom boundary restores the reference's
     # convex lower-lip surface without creating an infra-labial shelf.
     lip_front=fade(z,.103,.137)
-    horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
+    # v19's neutral shape is the MAX-size reference; 0.68 is the new
+    # sculpted neutral default. Retain the 3D cupid silhouette, not its
+    # excessive horizontal spread into the cheeks.
+    horizontal=bell(x,0,.030)*(1.-fade(ax,.036,.048))
     # Separate convex upper and lower VERMILION surfaces on real skin vertices.
     # The mouth seal at y=.232 and its two contour loops are excluded from
     # either volume; otherwise the region reads as a single duck-bill ridge.
-    upper=(bell(y,.2410,.0080)*horizontal*lip_front*
-           fade(y,.2322,.2370)*(1.-fade(y,.251,.260)))
-    lower=(bell(y,.2230,.0078)*horizontal*lip_front*
-           fade(y,.213,.220)*(1.-fade(y,.229,.233)))
-    cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
+    upper=(bell(y,.2400,.0062)*horizontal*lip_front*
+           fade(y,.2322,.2368)*(1.-fade(y,.247,.254)))
+    lower=(bell(y,.2260,.0064)*horizontal*lip_front*
+           fade(y,.217,.223)*(1.-fade(y,.229,.233)))
+    cupids=bell(ax,.0095,.0054)*bell(y,.243,.0058)*lip_front*
+           (1.-fade(ax,.034,.047))
     seam=bell(y,.232,.0028)*horizontal*lip_front
 
     # Physically shorten the nose-to-upper-lip interval, rather than merely
@@ -228,17 +234,17 @@ def nose_and_lips(x,y,z):
     # Pull the upper lip 2 mm further towards the nasal base at its center.
     # The narrow mouth-seal Y band (~.232) is still hard-faded to zero;
     # changing that seam would break real 3D mouth aperture topology.
-    lip_lift=(.00415*bell(y,.240,.010)*horizontal*lip_front*
-              fade(y,.235,.240)*(1.-fade(y,.250,.259)))
+    lip_lift=(.00215*bell(y,.240,.0080)*horizontal*lip_front*
+              fade(y,.235,.239)*(1.-fade(y,.247,.254)))
     # Expand the real lip boundary vertically; do not move the resting
     # oral-seal band or make a second ridge beneath the lower vermilion.
-    bottom_rim=.00165*bell(y,.216,.0055)*horizontal*lip_front
-    upper_rim=(.00095*bell(y,.246,.0045)*horizontal*lip_front*
-               fade(y,.237,.242))
-    # Two peaks and a central dip make an actual M-shaped Cupid's bow.
-    peaks=(bell(x,-.011,.005)+bell(x,.011,.005))
-    bow_lift=.00160*peaks*bell(y,.245,.0045)*lip_front
-    central_notch=.00086*bell(x,0,.0042)*bell(y,.245,.0045)*lip_front
+    bottom_rim=.00075*bell(y,.219,.0045)*horizontal*lip_front
+    upper_rim=(.00050*bell(y,.243,.0042)*horizontal*lip_front*
+               fade(y,.237,.240))
+    # The smaller upper vermilion still needs the two genuine M peaks.
+    peaks=(bell(x,-.0095,.0045)+bell(x,.0095,.0045))
+    bow_lift=.00100*peaks*bell(y,.243,.0045)*lip_front
+    central_notch=.00055*bell(x,0,.0037)*bell(y,.243,.0045)*lip_front
     ny=y+lip_lift+upper_rim-bottom_rim+bow_lift-central_notch
 
     # Increase upper/lower vermilion projection, not the adjacent chin.
@@ -248,7 +254,7 @@ def nose_and_lips(x,y,z):
     # Keep the actual seam and mouth-corner end loops fixed.
     # A visible upper-lip convexity must survive bare-skin rendering,
     # independent of lipstick. Reduce the lower projection to avoid a bill.
-    nz+=(.00680*upper+.00390*lower+.00165*cupids-.00035*seam)
+    nz+=(.00440*upper+.00265*lower+.00080*cupids-.00025*seam)
     # Keep a single center groove between the columella and Cupid's bow;
     # the two philtral columns remain soft and do not cross the upper lip.
     nz+=philtrum_relief(nx,y,nz)
@@ -257,8 +263,8 @@ def nose_and_lips(x,y,z):
     # or under the lower lip: no doubled contour or horizontal shadow band.
     skin_lip,upper_edge,lower_edge=vermilion_outline(nx,ny,nz)
     if skin_lip>0.:
-        nz+=skin_lip*(.00055*bell(ny,upper_edge-.0020,.0015)+
-                      .00032*bell(ny,lower_edge+.0019,.0015))
+        nz+=skin_lip*(.00038*bell(ny,upper_edge-.0015,.0012)+
+                      .00020*bell(ny,lower_edge+.0016,.0012))
     return (nx,ny,nz)
 
 
@@ -278,7 +284,7 @@ def neutral_color(x,y,z):
     # The very same M-bow and inward-tapering lip border gates pigment.
     # Outside the actual vermilion no lipstick can extend onto cheek/chin.
     lip_surface,_,_=vermilion_outline(x,y,z)
-    vermilion=1.02*bell(y,.241,.0085)+.86*bell(y,.2235,.0084)
+    vermilion=1.03*bell(y,.239,.0068)+.86*bell(y,.227,.0065)
     lips=clamp(vermilion*lip_surface)
     # Soft brown-beige upper eyelid shadow, bounded below the actual brows.
     shadow=(bell(x,-.044,.025)+bell(x,.044,.025))*bell(y,.318,.005)*front
@@ -415,7 +421,7 @@ def finish(path):
         elif name=='V121_INDIVIDUAL_EYEBROW_FIBERS_PBR':
             pbr['baseColorFactor']=[.38,.29,.235,1.]
     meta['referenceMakeup']={
-        'version':'v121-visible-upper-lip-v19-20261124',
+        'version':'v121-natural-reference-size-lips-v20-20261124',
         'skinPalette':'warm-natural-ivory',
         'cheekBlush':'subtle-peach-rose',
         'lips':'soft-rose-pink-vertex-gradient',
@@ -424,7 +430,7 @@ def finish(path):
         'skinPBR':True,
         'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
-        'version':'v121-convex-upper-vermilion-soft-cheeks-v19-20261124',
+        'version':'v121-natural-reference-lips-v20-20261124',
         'narrowerNasalWingsAndHeadRealMesh':True,
         'centralNasalDorsumRidgeRealMesh':True,
         'upperLowerVermilionFullnessRealMesh':True,
@@ -432,7 +438,11 @@ def finish(path):
         'anatomicalVermilionBorderRealGeometry':True,
         'upperVermilionRepositionedWithinBorder':True,
         'philtrumExcludedFromUpperLipGeometry':True,
-        'upperLipConvexityMillimeters':6.80,
+        'upperLipConvexityMillimeters':4.40,
+        'lipSizeDefaultRelativeToV19Maximum':.68,
+        'lipSizeFormerV19Maximum':1.0,
+        'lipSizeSliderEnabled':False,
+        'lipReductionChangesActualVertices':True,
         'upperAndLowerVermilionSeparatedRealMesh':True,
         'oralSeamTopologyExcludedFromLipProjection':True,
         'outerCheekVolumetricFairing':True,
@@ -441,7 +451,7 @@ def finish(path):
         'noSecondSubLabialRidge':True,
         'outerCheekTrenchSoftened':True,
         'shallowInnerNasolabialFoldSculpted':True,
-        'upperLipRaisedTowardNoseMillimeters':4.15,
+        'upperLipRaisedTowardNoseMillimeters':2.15,
         'philtrumLongitudinalCoverage':[.248,.273],
         'philtrumReal3DGrooveNotMakeup':True,
         'oralMouthSealProtected':True,
@@ -467,7 +477,7 @@ def finish(path):
         'preservesEyeAndMouthTopology':True,
         'facialExpressionAnimations':False}
     meta['naturalFoldCleanup']={
-        'version':'v121-soft-supported-cheeks-20261124-v19',
+        'version':'v121-soft-supported-cheeks-20261124-v20',
         'technique':'native indexed skin vertex sculpt and corrected neutral vertex colors',
         'removedLegacyBrowLidBand':True,
         'removedChinTintLeakage':True,
@@ -480,7 +490,7 @@ def finish(path):
         'additionalFoldRegions':['central-philtrum','infraorbital','inner-nasolabial'],
         'surfaceDeformationOnly':True,
         'expressionAnimationImplemented':False}
-    g['asset']['generator']='HaiGin v121 v19 separated real upper/lower vermilion and softened cheeks'
+    g['asset']['generator']='HaiGin v121 v20 neutral lips reduced to 0.68 former v19 maximal dimensions'
     g['buffers'][0]['byteLength']=len(b)
     json_bytes=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode('utf8')
     json_bytes+=b' '*((-len(json_bytes))%4)
