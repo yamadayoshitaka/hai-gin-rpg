@@ -1,5 +1,6 @@
 import {solidInteriorPart,furnitureFootprintCells,strategistRearIntent} from '../src/battle-interior-collision.js';
 import assert from 'node:assert/strict';
+import {buildSkirmishAssaultFlow,nextSkirmishAssaultStep} from '../src/battle-skirmish-assault-flow.js';
 import {readFileSync} from 'node:fs';
 import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundRoofGoal,highGroundBaitActive} from '../src/formation-driven-ai.js';
 import {reachableRoomExit} from '../src/formation-ai-indoor-route.js';
@@ -129,3 +130,33 @@ assert.match(battle,/holding:waiting,contact/);
 assert.match(battle,/follower\._highGroundBaitId=a\.id/);
 assert.match(battle,/baitDistance>a\.job\.range\/CELL\|\|blocked/);
 assert.match(battle,/moveActor\(a,a\._baitChaseGoal\.pos/);
+
+// Execute the real browser bridge controller on a land stage. No bridge,
+// navigation, or river coordinate globals may be needed on this branch.
+const bridgeStart=battle.indexOf('function crossingWaypoint(actor,worldGoal){');
+const bridgeEnd=battle.indexOf('function recoverBlockedActor(a,goal){',bridgeStart);
+assert.ok(bridgeStart>=0&&bridgeEnd>bridgeStart);
+const landCrossing=new Function('stageHasRiver',battle.slice(bridgeStart,bridgeEnd)+';return crossingWaypoint;')(false);
+for(const jobId of ['knight','shield','archer','summoner','ninja']){
+ const actor={jobId,cell:{x:90,z:100},crossing:{bridge:{row:100}}};
+ assert.equal(landCrossing(actor,{x:140,z:100}),null,'no imaginary river on land: '+jobId);
+ assert.equal(actor.crossing,null);
+}
+// Route around a long fence, including movement away from the enemy along
+// the fence and eventual passage at the only genuine opening.
+const w=24,h=24,passable=new Uint8Array(w*h).fill(1);
+for(let z=0;z<21;z++)passable[z*w+12]=0;
+const target={x:18,z:5};
+const field=buildSkirmishAssaultFlow(w,h,passable,[target]);
+let cell={x:8,z:5},steps=0,passedFence=false;
+while(field[cell.z*w+cell.x]>0&&steps<100){
+ const next=nextSkirmishAssaultStep(cell,field,w,h,passable,(x,z)=>!!passable[z*w+x]);
+ assert.ok(next,'must advance around a real fence');
+ assert.ok(field[next.z*w+next.x]<field[cell.z*w+cell.x]);
+ assert.equal(passable[next.z*w+next.x],1);
+ if(next.x>12)passedFence=true;
+ cell=next;steps++;
+}
+assert.ok(passedFence&&steps<100&&field[cell.z*w+cell.x]===0);
+assert.match(battle,/moveActor\(a,goal,0,stop,\{preciseGoal\}\)/);
+console.log('PASS: land stages bypass imaginary bridges and real fence route reaches enemy');
