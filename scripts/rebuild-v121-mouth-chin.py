@@ -410,6 +410,48 @@ def fair_exterior_oral_surface(points,uv,faces):
     return xyz,len(changed)
 
 
+def sculpt_v21_lip_philtrum(points):
+    """Final exterior sculpt in metres, after oral fairing, before normals.
+
+    Use paired lateral skin samples at the SAME height to shape a continuous
+    central channel. This avoids measuring the nose tip against the upper lip.
+    Preserve the seam, lower lip, nose tip and eye meshes.
+    """
+    side_samples=[p for p in points if .250<p[1]<.271 and
+                  .008<abs(p[0])<.014 and p[2]>.115]
+    result=[]
+    changed=0
+    for x,y,z in points:
+        ax=abs(x)
+        front=fade(z,.119,.137)
+        dz=dy=0.
+        if .250<y<.270 and ax<.020 and front>0:
+            samples=[]
+            for sign in (-1,1):
+                band=[q[2] for q in side_samples
+                      if sign*q[0]>0 and abs(q[1]-y)<.002]
+                if band:
+                    samples.append(max(band))
+            if len(samples)==2:
+                target=sum(samples)/2-.00085
+                vertical=fade(y,.250,.254)*(1.-fade(y,.264,.270))
+                central=1.-fade(ax,.0035,.010)
+                dz-=min(.0065,max(0.,z-target))*vertical*central*front
+                dz+=.00065*bell(ax,.010,.0035)*vertical*front
+        if .2345<y<.250 and ax<.040:
+            taper=(1.-fade(ax,.020,.038))*front
+            vertical=fade(y,.2345,.238)*(1.-fade(y,.247,.250))
+            dz+=.00115*bell(y,.241,.0045)*vertical*taper
+            # Two physical Cupid peaks; central notch is left lower.
+            dy+=.00075*bell(ax,.010,.004)*bell(y,.246,.0035)*taper
+            dz+=.00040*bell(ax,.010,.004)*bell(y,.246,.0035)*taper
+        if abs(dz)+abs(dy)>1e-7:changed+=1
+        result.append((x,y+dy,z+dz))
+    if changed<50:
+        raise ValueError('v21 exterior lip/philtrum sculpt did not reach real vertices')
+    return result,changed
+
+
 def retopologize_upper_vermilion(points,uv,faces):
     """Conservative real-3D upper-lip triangle optimization.
 
@@ -541,6 +583,7 @@ def rebuild(path):
     faces,replacement=replacement_triangulation(uv,old,xyz)
     xyz,fair_count=relax_labiomental_shading(xyz,faces)
     xyz,vermilion_fair_count=fair_exterior_oral_surface(xyz,uv,faces)
+    xyz,v21_changed=sculpt_v21_lip_philtrum(xyz)
     faces,upper_lip_flips=retopologize_upper_vermilion(xyz,uv,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
@@ -551,6 +594,7 @@ def rebuild(path):
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
         'vermilionSurfaceFairingVertices':vermilion_fair_count,
+        'v21ExteriorSculptVertices':v21_changed,
         'upperVermilionLocalEdgeFlips':upper_lip_flips,
         'upperVermilionRetopologyExcludesMouthSeal':True,
         'repairedExteriorLipNormals':normal_fix_count,
