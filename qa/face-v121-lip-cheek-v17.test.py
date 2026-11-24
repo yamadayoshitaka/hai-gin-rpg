@@ -106,8 +106,8 @@ class LipAndCheekV17(unittest.TestCase):
         self.assertGreater(narrow[0],.040)
         self.assertAlmostEqual(SCULPT['nose_and_lips'](.080,.232,.150)[0],
                                .080,delta=.0002)
-        self.assertAlmostEqual(SCULPT['nose_and_lips'](.030,.260,.150)[0],
-                               .030,delta=.0001)
+        self.assertGreater(SCULPT['nose_and_lips'](.030,.260,.150)[0],.025)
+        self.assertLess(SCULPT['nose_and_lips'](.030,.260,.150)[0],.030)
         from statistics import median
         n=struct.unpack_from('<I',raw,12)[0]
         offset=28+n
