@@ -117,7 +117,7 @@ import {measureRealHead,calculateWigFit,measureWigCrown,
  buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES}
  from './src/wig-glb-fit-v1.js?v=8';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-upper-lip-structural-v19-20261124';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-natural-lips-v20-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 let wigRoot=null,wigHead=null,wigRequestId=0;
 const WIG_STORE_KEY='hai-gin-v121-selected-wig';
@@ -371,7 +371,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121 v19：上唇・下唇の形状差を実メッシュで強調し、上唇の実体積とM字を補強。M字の唇上縁と自然な色の境界を一致させ、頬の外側の線と下唇の下の帯状影を弱めました。鼻・人中・Vライン顎は維持し、スライダー・表情はオフです。');
+ update('status','女性v121 v20：見本に合わせ唇の幅・高さ・突出を実3Dメッシュから縮小。v19の大きさを将来スライダーの最大値相当とし、標準は約68％。上唇M字と下唇の立体感、口角への自然な収束を保持しました。鼻・人中・Vライン顎は維持し、スライダー・表情はオフです。');
  void selectWig(restoreWigChoice());
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
