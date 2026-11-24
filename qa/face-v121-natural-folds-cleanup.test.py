@@ -49,7 +49,7 @@ class V121SkinClean(unittest.TestCase):
         self.assertEqual(len(self.g['meshes']),11)
         self.assertIn('eyeConstruction',meta)
         self.assertIn('eyelidFiberUpgrade',meta)
-        self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-soft-supported-cheeks-20261124-v18')
+        self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-soft-supported-cheeks-20261124-v19')
         self.assertTrue(meta['naturalFoldCleanup']['surfaceDeformationOnly'])
         self.assertTrue(meta['naturalFoldCleanup']['removedLegacyBrowLidBand'])
         self.assertTrue(meta['naturalFoldCleanup']['removedChinTintLeakage'])
