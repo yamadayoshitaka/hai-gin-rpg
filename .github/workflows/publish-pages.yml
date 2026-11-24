@@ -263,6 +263,8 @@ jobs:
           assert x['referenceFeatureSculpt']['lipSizeDefaultRelativeToV19Maximum']==.68
           assert x['referenceFeatureSculpt']['lipSizeFormerV19Maximum']==1.0
           assert x['referenceFeatureSculpt']['lipSizeSliderEnabled'] is False
+          assert x['referenceFeatureSculpt']['mouthWidthReducedRealMesh'] is True
+          assert x['referenceFeatureSculpt']['mouthWidthDefaultScale']==.82
           assert len(obj['images'])==4 and 'normalTexture' in obj['materials'][0]
           assert len(obj['animations'])==2 and len(obj['meshes'][0]['primitives'][0]['targets'])==11
           assert obj['meshes'][0]['extras']['referenceMakeup']['skinPBR'] is True
