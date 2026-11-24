@@ -235,7 +235,7 @@ def nose_and_lips(x,y,z):
     # The narrow mouth-seal Y band (~.232) is still hard-faded to zero;
     # changing that seam would break real 3D mouth aperture topology.
     lip_lift=(.00320*bell(y,.240,.0080)*horizontal*lip_front*
-              fade(y,.235,.239)*(1.-fade(y,.247,.254)))
+              fade(y,.235,.239)*(1.-fade(y,.242,.248)))
     # Expand the real lip boundary vertically; do not move the resting
     # oral-seal band or make a second ridge beneath the lower vermilion.
     bottom_rim=.00075*bell(y,.219,.0045)*horizontal*lip_front
