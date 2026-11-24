@@ -118,7 +118,7 @@ import {measureRealHead,calculateWigFit,measureWigCrown,
  buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES}
  from './src/wig-glb-fit-v1.js?v=8';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-lip-underlip-v26-20261124';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-compact-mouth-v27-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 let wigRoot=null,wigHead=null,wigRequestId=0;
 const WIG_STORE_KEY='hai-gin-v121-selected-wig';
@@ -380,7 +380,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121 v26：上唇の縦厚みを実メッシュで縮小し、下唇直下の黒い陰影を局所的な形状・法線修正で軽減。目・鼻・口の閉じ線を維持。スライダー・表情はオフです。');
+ update('status','女性v121 v27：口全体の幅12％・高さ10％を縮小し、口角周辺と45度の頬・顎の連続曲面を実メッシュと法線で調整。目・鼻を維持。スライダー・表情はオフです。');
  void selectWig(restoreWigChoice());
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;

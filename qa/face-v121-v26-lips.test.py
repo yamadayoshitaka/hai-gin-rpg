@@ -5,7 +5,7 @@ Q=runpy.run_path(str(ROOT/'qa/face-v121-v21-lip-philtrum-geometry.test.py'))
 class RealV26(unittest.TestCase):
     def test_real_lip_and_shading(self):
         _,old,idx0=Q['read'](ROOT/'qa/baselines/face-v121-v25.glb')
-        g,new,idx=Q['read'](Q['PATH'])
+        g,new,idx=Q['read'](ROOT/'qa/baselines/face-v121-v26.glb')
         a,b=old['POSITION'],new['POSITION']
         self.assertEqual(idx,idx0)
         self.assertEqual(old['TEXCOORD_0'],new['TEXCOORD_0'])

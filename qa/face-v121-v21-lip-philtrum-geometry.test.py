@@ -75,8 +75,10 @@ def channel_sections(points,idx):
 class RealGeometry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.g,cls.a,cls.idx=read(PATH)
-        cls.m=metric(PATH)
+        import os
+        current=pathlib.Path(os.environ.get('V21_MODEL',str(PATH)))
+        cls.g,cls.a,cls.idx=read(current)
+        cls.m=metric(current)
         print('v21 actual GLB metrics:',json.dumps(cls.m,indent=2))
         baseline=ROOT/'qa/baselines/face-v121-v20.glb'
         if baseline.exists():

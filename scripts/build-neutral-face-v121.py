@@ -292,3 +292,4 @@ if __name__=='__main__':
     subprocess.run([sys.executable,'scripts/fair-v121-skin-v25.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/refine-v121-lips-v26.py',str(args.out)],check=True)
     subprocess.run([sys.executable,'scripts/add-v121-face-expressions.py',str(args.out)],check=True)
+    subprocess.run([sys.executable,'scripts/refine-v121-mouth-v27.py',str(args.out)],check=True)

@@ -25,7 +25,7 @@ const clamp=x=>Math.max(0,Math.min(1,x));
  * nor cheek blush is permitted to run onto the jaw or underside of the head.
  * Exported for independent regression checks on anatomically critical points.
  */
-export function v121VermilionBorders(x){
+function v26VermilionBorders(x){
   const ax=Math.abs(x),corner=fade(ax,.014,.034);
   return {
     // The same two Cupid peaks / central notch as the real GLB sculpt.
@@ -33,23 +33,28 @@ export function v121VermilionBorders(x){
     lower:.232+(.2235-.232)*(1-corner)
   };
 }
+export function v121VermilionBorders(x){
+  const {upper,lower}=v26VermilionBorders(x/.88);
+  return {upper:.232+(upper-.232)*.90,lower:.232+(lower-.232)*.90};
+}
 export function v121MakeupMasks(x,y,z){
   const ax=Math.abs(x),front=fade(z,.084,.132);
-  const {upper,lower}=v121VermilionBorders(x);
+  const lx=x/.88,ly=.232+(y-.232)/.90,la=Math.abs(lx);
+  const {upper,lower}=v26VermilionBorders(lx);
   // A defined, but feathered, border. No pigment on cheek, philtrum,
   // sublabial skin or jaw; corners shrink to the oral commissures.
   // The old v19 lip dimensions are future maximum, not the neutral default.
   // Geometry and all five makeup presets follow this smaller real boundary.
-  const inside=ax<.047&&z>.119&&y>=.219&&y<=.252&&upper-lower>.001;
+  const inside=la<.047&&z>.119&&ly>=.219&&ly<=.252&&upper-lower>.001;
   const lipSurface=inside?
-    fade(y,lower-.0005,lower+.0015)*
-    (1-fade(y,upper-.0012,upper+.0004))*
-    (1-fade(ax,.024,.036))*gauss(x,0,.029)*fade(z,.127,.144):0;
-  const lipBands=1.03*gauss(y,.2375,.0053)+.86*gauss(y,.227,.0065);
+    fade(ly,lower-.0005,lower+.0015)*
+    (1-fade(ly,upper-.0012,upper+.0004))*
+    (1-fade(la,.024,.036))*gauss(lx,0,.029)*fade(z,.127,.144):0;
+  const lipBands=1.03*gauss(ly,.2375,.0053)+.86*gauss(ly,.227,.0065);
   return {
     blush:y>=.215?(gauss(x,-.076,.031)+gauss(x,.076,.031))*
       gauss(y,.257,.028)*front:0,
-    lip:clamp(lipBands*gauss(x,0,.028)*lipSurface),
+    lip:clamp(lipBands*gauss(lx,0,.028)*lipSurface),
     shadow:(gauss(x,-.044,.026)+gauss(x,.044,.026))*
       gauss(y,.323,.008)*fade(z,.090,.128),
     liner:(gauss(x,-.043,.024)+gauss(x,.043,.024))*
