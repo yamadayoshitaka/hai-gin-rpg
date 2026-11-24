@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v19 structural upper lip relief and supported cheek regression."""
+"""v20 smaller reference-shaped lip relief and supported cheek regression."""
 import json
 import pathlib
 import runpy
@@ -16,7 +16,7 @@ class LipAndCheekV17(unittest.TestCase):
         outline=SCULPT['vermilion_outline']
         center=outline(0.,.240,.150)[0]
         self.assertGreater(center,.85)
-        self.assertGreater(outline(0.,.224,.150)[0],.85)
+        self.assertGreater(outline(0.,.228,.150)[0],.85)
         self.assertLess(outline(.048,.232,.150)[0],center*.5)
         for point in ((0.,.254,.150),(0.,.208,.150),
                       (.060,.231,.150),(0.,.225,.090),
@@ -31,7 +31,7 @@ class LipAndCheekV17(unittest.TestCase):
             ax=abs(x)
             corner=SCULPT['fade'](ax,.029,.051)
             bell=SCULPT['bell']
-            return .2495+.0028*bell(ax,.011,.0055)-.00075*bell(ax,0.,.004)-.0178*SCULPT['fade'](ax,.018,.045)
+            return .2460+.0022*bell(ax,.0095,.005)-.00055*bell(ax,0.,.0038)-.0125*SCULPT['fade'](ax,.017,.038)
         self.assertGreater(upper(-.0115),upper(0.)+.002)
         self.assertGreater(upper(.0115),upper(0.)+.002)
         self.assertAlmostEqual(upper(-.0115),upper(.0115),places=9)
@@ -40,7 +40,7 @@ class LipAndCheekV17(unittest.TestCase):
         sculpt=SCULPT['nose_and_lips']
         # Actual Z-position is changed on true lip vertices, not on chin.
         self.assertGreater(sculpt(0.,.240,.150)[2]-.150,.0015)
-        self.assertGreater(sculpt(0.,.224,.150)[2]-.150,.0036)
+        self.assertGreater(sculpt(0.,.224,.150)[2]-.150,.0020)
         self.assertLess(abs(sculpt(0.,.200,.150)[2]-.150),.0003)
         self.assertLess(abs(sculpt(.060,.232,.150)[2]-.150),.0003)
 
@@ -63,7 +63,7 @@ class LipAndCheekV17(unittest.TestCase):
         self.assertLess(groove(0.,.259,.150),-.001)
         upper=sculpt(0.,.240,.150)[2]-.150
         lower=sculpt(0.,.224,.150)[2]-.150
-        self.assertGreater(upper,.0064,'upper lip must protrude visibly')
+        self.assertGreater(upper,.0040,'natural-sized upper lip must protrude visibly')
         self.assertGreater(upper,lower+.0008,
                            'upper lip must not disappear behind lower')
         self.assertLess(abs(sculpt(0.,.202,.150)[2]-.150),.0003)
@@ -76,7 +76,7 @@ class LipAndCheekV17(unittest.TestCase):
         meta=gltf['meshes'][0]['extras']
         sculpt=meta['referenceFeatureSculpt']
         self.assertEqual(sculpt['version'],
-                         'v121-convex-upper-vermilion-soft-cheeks-v19-20261124')
+                         'v121-natural-reference-lips-v20-20261124')
         for field in ('anatomicalVermilionBorderRealGeometry',
                       'upperCupidBowBorderAndLowerRimDefined',
                       'lipCornerTaperedToOralCommissure',
@@ -94,6 +94,20 @@ class LipAndCheekV17(unittest.TestCase):
         self.assertGreater(meta['mouthChinRebuild']['upperVermilionLocalEdgeFlips'],0,
                            'upper lip must receive real connectivity edits')
         self.assertTrue(meta['mouthChinRebuild']['upperVermilionRetopologyExcludesMouthSeal'])
+        self.assertAlmostEqual(sculpt['lipSizeDefaultRelativeToV19Maximum'],.68)
+        self.assertFalse(sculpt['lipSizeSliderEnabled'])
+        self.assertTrue(sculpt['mouthWidthReducedRealMesh'])
+        self.assertAlmostEqual(sculpt['mouthWidthDefaultScale'],.82)
+        self.assertLess(sculpt['upperLipConvexityMillimeters'],5.0)
+        # The whole real oral seal narrows instead of retaining the old
+        # wide v19 opening behind a small painted vermilion mask.
+        narrow=SCULPT['nose_and_lips'](.055,.232,.150)
+        self.assertLess(narrow[0],.049)
+        self.assertGreater(narrow[0],.040)
+        self.assertAlmostEqual(SCULPT['nose_and_lips'](.080,.232,.150)[0],
+                               .080,delta=.0002)
+        self.assertGreater(SCULPT['nose_and_lips'](.030,.260,.150)[0],.023)
+        self.assertLess(SCULPT['nose_and_lips'](.030,.260,.150)[0],.030)
         from statistics import median
         n=struct.unpack_from('<I',raw,12)[0]
         offset=28+n
