@@ -4513,12 +4513,13 @@ function sharedSkirmishAssaultStep(actor){
  const key=actor.team+':'+(actor.jobId==='ninja'?'water':'ground');
  let record=skirmishAssaultFlowCache.get(key);
  if(!record||elapsed-record.createdAt>=1.5){
-  const passable=actor.jobId==='ninja'
-   ?new Uint8Array(combatWalkableMap):combatWalkableMap;
-  if(actor.jobId==='ninja')for(let index=0;index<passable.length;index++){
-   if(!combatWaterMap[index])continue;
+  const passable=new Uint8Array(WORLD_SIZE*WORLD_SIZE);
+  // Rebuild from the live terrain, not the battle-start snapshot:
+  // destroyed walls, changed doors and solid objects must agree with movement.
+  for(let index=0;index<passable.length;index++){
    const x=index%WORLD_SIZE,z=Math.floor(index/WORLD_SIZE);
-   if(traversableCell(x,z,actor))passable[index]=1;
+   passable[index]=traversableCell(x,z,actor)&&
+    (!skirmishObjectOccupancy||skirmishObjectOccupancy[index]!==-2)?1:0;
   }
   const targets=actors.filter(other=>other.team!==actor.team&&other.hp>0&&
    !other.defeated&&(other.indoorFloor??1)===1&&other.cell)
@@ -4533,6 +4534,10 @@ function sharedSkirmishAssaultStep(actor){
 // Cross-river orders are routed through a surviving bridge, not straight into water.
 // Bridge navigation: preserve a single crossing until the opposite bank is reached.
 function crossingWaypoint(actor,worldGoal){
+ // The x=116 river centre is a real barrier ONLY on river stages.
+ // On snowy town/castle maps it previously trapped every cross-map charge
+ // at an imaginary bank, before ordinary obstacle routing could run.
+ if(!stageHasRiver){actor.crossing=null;return null;}
  if(actor.jobId==='ninja')return null; // 水上歩行：橋の通行制限に縛られない。
  const target=gridFromWorld(worldGoal),current=actor.cell;
  const riverX=z=>116+Math.round(5*Math.sin(z*.055));
@@ -4911,7 +4916,7 @@ function moveActor(a,goal,dt,stop,{preciseGoal=false}={}){
    // Reserve the following tile immediately rather than spending the next
    // 50ms AI tick in an unwanted run->idle->run gap. A zero-dt call does
    // route choice only; it cannot skip distance or cross a cell in one frame.
-   if(!paused&&!finished&&!a.floorTravel)moveActor(a,goal,0,stop);
+   if(!paused&&!finished&&!a.floorTravel&&goal!==p)moveActor(a,goal,0,stop,{preciseGoal});
   }
 }
  function emitCombatEvents(events){
