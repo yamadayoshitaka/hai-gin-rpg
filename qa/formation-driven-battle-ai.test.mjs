@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {formationCombatIntent,isHighGroundFiringJob} from '../src/formation-driven-ai.js';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent} from '../src/formation-driven-ai.js';
 import {reachableRoomExit} from '../src/formation-ai-indoor-route.js';
 import {FORMATION_ROLES} from '../src/sortie-formation-logic.js';
 import {FORMATION_TEMPLATE_LIMITS} from '../src/sortie-formation-template-rules.js';
@@ -23,6 +23,15 @@ assert.equal(formationCombatIntent({formation:'highground',jobId:'mage'}).seekHi
 assert.equal(formationCombatIntent({formation:'highground',jobId:'shield'}).seekHighGround,false);
 assert.equal(formationCombatIntent({formation:'highground',jobId:'archer',indoors:true}).seekHighGround,false);
 assert.equal(isHighGroundFiringJob('priest'),false);
+assert.equal(isHighGroundFiringJob('summoner'),true);
+assert.equal(formationCombatIntent({formation:'highground',jobId:'summoner'}).seekHighGround,true);
+assert.equal(formationCombatIntent({formation:'highground',jobId:'summoner'}).role,'highground-summon');
+assert.equal(highGroundShieldIntent({assigned:false}).phase,'fallback');
+assert.equal(highGroundShieldIntent({assigned:true,ready:false,anchorDistance:8,enemyDistance:3}).phase,'return');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:3,enemyDistance:12,enemyAnchorDistance:14}).phase,'approach');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:10,enemyDistance:3,enemyAnchorDistance:12}).phase,'return');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:3,enemyDistance:2,enemyAnchorDistance:4,luring:true}).phase,'guard');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:8,healthRatio:.2}).phase,'return');
 
 const room={minX:2,maxX:8,minZ:2,maxZ:8};
 const tiles=new Set();
@@ -49,6 +58,11 @@ assert.match(battle,/reachableRoomExit\(a\.cell,bounds,/);
 assert.match(battle,/monsterId=team===1&&i<6&&previewMonsterId/);
 assert.match(battle,/formationType:storyUnit\?\.formationType/);
 assert.match(mass,/formationCombatIntent\(\{/);
+assert.match(battle,/highGroundShieldIntent\(\{/);
+assert.match(mass,/highGroundShieldIntent\(\{/);
+assert.match(mass,/formationRolesOnly:best\.formationType==='highground'/);
+assert.match(battle,/summoning&&a\._pendingCast/);
+assert.match(mass,/u\.jobId==='summoner'&&u\._pendingCast/);
 assert.match(mass,/if\(route\.kind==='interior'\)continue/);
 assert.match(mass,/this\._releaseHighGroundUnit\(u\);return false/);
 assert.doesNotMatch(stage,/orders\[key\]='hold'/);

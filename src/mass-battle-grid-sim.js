@@ -11,7 +11,7 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
-import {formationCombatIntent,isHighGroundFiringJob} from './formation-driven-ai.js';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent} from './formation-driven-ai.js?v=formation-ai-v2-20261124';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
@@ -297,11 +297,11 @@ export class MassBattleGridSimulation {
   /** One order authorizes the *entire* squad, never an arbitrary scout.
    * Every surviving member must share a traversable stair route. If the
    * complete squad cannot reach it, reject instead of silently splitting. */
-  orderSquadHighGround(squadId,routeIndex,team=0,{manualHold=true}={}){
+  orderSquadHighGround(squadId,routeIndex,team=0,{manualHold=true,formationRolesOnly=false}={}){
     const id=String(squadId),index=Number(routeIndex),route=this.highGroundRoutes[index];
     if(!route||!this._highGroundRouteAlive(route)||
       !['interior','window','roof'].includes(route.kind))return false;
-    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0);
+    const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0&&(!formationRolesOnly||isHighGroundFiringJob(u.jobId)));
     if(!members.length)return false;
     const key=route.buildingIndex+':'+team,claimed=this._highGroundClaims.get(key);
     if(claimed!=null&&String(claimed)!==id)return false;
@@ -309,12 +309,12 @@ export class MassBattleGridSimulation {
     if(!flow||members.some(u=>u.mountId||
       (u.highGroundRouteIndex>=0&&u.highGroundRouteIndex!==index)||
       (u.highGroundRouteIndex<0&&flow[u.z*this.width+u.x]>=0x3fffffff)))return false;
-    if(team===0){
+    if(!formationRolesOnly&&team===0){
       this.autoStrategySquads.delete(id);this.squadDestinations.delete(id);
       this.squadFlows.delete(id);this.squadMissions.delete(id);
       this.squadHealTargets.delete(id);this.clearSquadExploration(id,team);
       this.squadCommands.set(id,'move');
-    }else this.enemySquadCommands.set(id,'move');
+    }else if(!formationRolesOnly)this.enemySquadCommands.set(id,'move');
     for(const unit of members){
       if(unit.highGroundRouteIndex===index){
         // Switching a selected rooftop from wait to attack must also affect
@@ -326,7 +326,7 @@ export class MassBattleGridSimulation {
       unit.highGroundT=0;unit.highGroundFloor=1;unit.highGroundManualHold=manualHold;
       unit.tacticalOrder=null;unit.tacticalOrderUntil=0;
     }
-    if(team===0&&members.every(u=>u.highGroundPhase===2))
+    if(!formationRolesOnly&&team===0&&members.every(u=>u.highGroundPhase===2))
       this.squadCommands.set(id,manualHold?'hold':'charge');
     this._highGroundClaims.set(key,id);
     return true;
@@ -388,7 +388,7 @@ export class MassBattleGridSimulation {
             this.squadMissions.has(String(u.squadId))))||
           u.highGroundRouteIndex>=0||u.hp<u.maxHp*.35)continue;
         if(route.kind==='roof'?
-          !(u.jobId==='ninja'&&['attack','ambush','highground'].includes(u.formationType)):
+          !(u.jobId==='ninja'&&['attack','ambush'].includes(u.formationType)||u.formationType==='highground'&&isHighGroundFiringJob(u.jobId)):
           !(isHighGroundFiringJob(u.jobId)&&
             ['highground','support','balanced'].includes(u.formationType)))continue;
         const standingOrder=(u.team===0?this.squadCommands:this.enemySquadCommands)
@@ -406,7 +406,7 @@ export class MassBattleGridSimulation {
       }
       if(best){
         // Automatic rooftop tactics are squad-level too, not one-person detours.
-        this.orderSquadHighGround(best.squadId,index,best.team,{manualHold:false});
+        this.orderSquadHighGround(best.squadId,index,best.team,{manualHold:false,formationRolesOnly:best.formationType==='highground'});
       }
     }
   }
@@ -599,6 +599,9 @@ export class MassBattleGridSimulation {
         }
         u.action='hold';u.vx=0;u.vz=0;return true;
       }
+      if(u.jobId==='summoner'&&u._pendingCast){
+        this.actions.tryAutoAction(u,null,this.units);u.vx=0;u.vz=0;return true;
+      }
       const job=JOBS[u.jobIndex],bay=route.window;
       const range=(u.jobId==='ninja'?Math.max(6,job.range):job.range)*
         Math.min(8,2**(route.level-1));
@@ -614,6 +617,12 @@ export class MassBattleGridSimulation {
           if(d>=distance||!(sameFloor||!upper&&this._windowCanSee(route,target)))continue;
           nearest=target;distance=d;
         }
+      }
+      if(u.jobId==='summoner'){
+        if(nearest&&this.actions.tryAutoAction(u,nearest,this.units)){
+          u.cooldown=Math.max(u.cooldown,.35);u.action='skill';
+        }else u.action='idle';
+        u.vx=0;u.vz=0;return true;
       }
       if(nearest){
         const damage=Math.max(1,Math.round(job.damage*Math.min(8,2**(route.level-1))));
@@ -1603,6 +1612,22 @@ export class MassBattleGridSimulation {
       soldier.strategistDefenseMultiplier=aura.defense;
     }
     this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors:this._combatSectors,walkable:this.walkable});
+    const formationPosts=new Map();
+    for(const u of this.units){
+      if(!u.alive||u.formationType!=='highground'||!isHighGroundFiringJob(u.jobId)||u.highGroundRouteIndex<0||u.highGroundManualHold||u.highGroundPhase===3)continue;
+      const route=this.highGroundRoutes[u.highGroundRouteIndex];
+      if(!route||!this._highGroundRouteAlive(route))continue;
+      const key=u.team+':'+String(u.squadId),ready=u.highGroundPhase===2&&u.highGroundFloor>1;
+      if(!formationPosts.has(key)||ready&&!formationPosts.get(key).ready)formationPosts.set(key,{route,index:u.highGroundRouteIndex,ready,team:u.team});
+    }
+    for(const post of formationPosts.values()){
+      let best=24*24;
+      for(const enemy of this.units){
+        if(!enemy.alive||enemy.team===post.team||enemy.highGroundFloor>1)continue;
+        const d=(enemy.x-post.route.access.x)**2+(enemy.z-post.route.access.z)**2;
+        if(d<best){best=d;post.enemy=enemy;}
+      }
+    }
     // Dedicated defensive mode: gradually build resistance, regenerate
     // missing HP, and leave true large-area healing to nearby priests.
     // The same update runs inside the worker, independent of rendering.
@@ -1773,6 +1798,41 @@ export class MassBattleGridSimulation {
         this.actions.tryAutoAction(u,nearest,this.units);
         u.action='skill';u.vx=0;u.vz=0;
         continue;
+      }
+      if(u.jobId==='shield'&&u.formationType==='highground'&&!personalOrderActive&&!mission&&
+         !this.explorationOrders.has(u.team+':'+String(u.squadId))&&
+         !(u.team===0&&this.squadDestinations.has(String(u.squadId)))&&
+         !['hold','retreat','move'].includes((u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId)))){
+        const post=formationPosts.get(u.team+':'+String(u.squadId));
+        if(post){
+          const anchor=post.route.access,target=nearest||post.enemy;
+          const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+          const intent=highGroundShieldIntent({assigned:true,ready:post.ready,
+            anchorDistance:dist(u,anchor),enemyDistance:target?dist(u,target):Infinity,
+            enemyAnchorDistance:target?dist(anchor,target):Infinity,
+            healthRatio:u.hp/Math.max(1,u.maxHp),luring:u._highGroundLuring});
+          u._highGroundLuring=intent.luring;
+          if(intent.phase==='return'||intent.phase==='approach'){
+            const flow=intent.phase==='return'?this._highGroundFlows[post.index]:this._pursuitFlow(target,u.jobId);
+            let next=null,bestFlow=flow?.[u.z*this.width+u.x]??Infinity;
+            if(flow)for(const [dx,dz] of NEIGHBORS){
+              const x=u.x+dx,z=u.z+dz,index=z*this.width+x;
+              if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1||
+                 !massDiagonalClear(u.x,u.z,dx,dz,this.width,this.walkable,occupied))continue;
+              if(flow[index]<bestFlow){bestFlow=flow[index];next={x,z};}
+            }
+            if(next&&this._prepareMountedEntry(u,next.x,next.z)){
+              reserve(next.z*this.width+next.x,u.id);
+              u.fromX=u.x;u.fromZ=u.z;u.vx=next.x-u.x;u.vz=next.z-u.z;
+              u.facingX=u.vx;u.facingZ=u.vz;u.x=next.x;u.z=next.z;
+              u.moveDuration=massStepDuration(job.speed,u.vx,u.vz,{scale:MASS_MOVEMENT_SCALE});
+              u.moveElapsed=0;u.action='walk';continue;
+            }
+          }
+          if(intent.phase!=='fallback'&&(!nearest||best>job.range**2)){
+            u.vx=0;u.vz=0;u.action='hold';continue;
+          }
+        }else u._highGroundLuring=false;
       }
       if(mission&&!['eliminate_squad','eliminate_commander'].includes(mission.type)){
         const structure=this.actions.objects.find(o=>o.alive&&o.id===mission.targetId);

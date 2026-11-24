@@ -60,7 +60,7 @@ export const FORMATION_BATTLE_PURPOSES=Object.freeze({
  wall:{purpose:'盾役が先頭で突破を防ぐ',movement:'防御線維持・低速進軍'},
  spear:{purpose:'前列を揃えて敵の突進を迎撃',movement:'縦列を保ち槍衾を形成'},
  arrow:{purpose:'射撃部隊を中核に挟撃射線を確保',movement:'遠隔優先・側面展開'},
- highground:{purpose:'盾役が通路を守り、遠距離2隊が実際の階段から高所の射撃位置へ移動',movement:'高所探索→窓・屋根から攻撃。高所が無ければ地上で射撃'},
+ highground:{purpose:'遠隔・召喚役が高所を確保し、盾役が敵を建物付近に誘導',movement:'高所確保→誘導→足止め→集中攻撃・召喚。高所が無ければ地上で連携'},
  wedge:{purpose:'先頭の攻撃力を集中して敵陣を突破',movement:'楔形で中央突破'},
  pincer:{purpose:'左右の遊撃部隊で敵を包み込む',movement:'両翼展開・側面包囲'},
  circle:{purpose:'全方向から味方の中心を守る',movement:'防衛円環を維持'},
