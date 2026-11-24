@@ -365,6 +365,51 @@ def relax_labiomental_shading(points,faces):
 
 
 
+
+def fair_exterior_oral_surface(points,uv,faces):
+    """Smooth triangular bumps on the *real* exposed lip surface.
+
+    The inherited mouth has dense vertices and UV seams. Constrain each
+    neighbor by XY, Z and same UV island, protect the lip seal and Cupid
+    peaks, then relax only Z. This avoids vertical comb-like lip shading
+    while keeping both vermilion bands and their anatomical outlines.
+    """
+    adjacent=[set() for _ in points]
+    for a,b,c in faces:
+        adjacent[a].update((b,c))
+        adjacent[b].update((a,c))
+        adjacent[c].update((a,b))
+    xyz=list(points)
+    changed=set()
+    for _ in range(6):
+        next_xyz=list(xyz)
+        for i,(x,y,z) in enumerate(xyz):
+            ax=abs(x)
+            if not (.211<y<.254 and ax<.054 and z>.123):continue
+            # Do not smooth the oral aperture or mix upper and lower lips.
+            lip=(bell(y,.241,.009)+.8*bell(y,.222,.009))
+            weight=(.30*lip*fade(z,.123,.140)*
+                    (1.-fade(ax,.040,.056)))
+            weight*=1.-bell(y,.232,.0022)
+            weight*=1.-.65*bell(ax,.011,.005)*bell(y,.247,.004)
+            if weight<.008:continue
+            near=[]
+            for j in adjacent[i]:
+                px,py,pz=xyz[j]
+                if (abs(px-x)<.007 and abs(py-y)<.007 and
+                    abs(pz-z)<.006 and pz>.122 and
+                    abs(uv[i][0]-uv[j][0])<.024 and
+                    abs(uv[i][1]-uv[j][1])<.024):
+                    near.append(pz)
+            if len(near)<3:continue
+            dz=max(-.00035,min(.00035,weight*(sum(near)/len(near)-z)))
+            if abs(dz)>1e-7:
+                next_xyz[i]=(x,y,z+dz)
+                changed.add(i)
+        xyz=next_xyz
+    return xyz,len(changed)
+
+
 def retopologize_upper_vermilion(points,uv,faces):
     """Conservative real-3D upper-lip triangle optimization.
 
@@ -377,7 +422,9 @@ def retopologize_upper_vermilion(points,uv,faces):
     changes=0
     def inside(i):
         x,y,z=points[i]
-        return abs(x)<.045 and .237<y<.2545 and z>.126
+        u,v=uv[i]
+        return (abs(x)<.045 and .237<y<.2545 and z>.126 and
+                .33<u<.67 and .323<v<.61)
     def zcross(a,b,c):
         u=[points[b][k]-points[a][k] for k in range(3)]
         v=[points[c][k]-points[a][k] for k in range(3)]
@@ -440,18 +487,18 @@ def repair_outer_lip_normals(xyz, raw):
     changed=0
     for (x,y,z),(nx,ny,nz) in zip(xyz,raw):
         ax=abs(x)
-        if not (.206<y<.251 and ax<.055 and z>.123 and nz<.72):
+        if not (.198<y<.254 and ax<.056 and z>.117 and nz<.82):
             adjusted.append((nx,ny,nz))
             continue
-        weight=(fade(y,.206,.215)*(1.-fade(y,.244,.251))*
-                fade(z,.123,.138)*(1.-fade(ax,.035,.055)))
+        weight=(fade(y,.198,.208)*(1.-fade(y,.247,.254))*
+                fade(z,.117,.136)*(1.-fade(ax,.038,.056)))
         # The real mouth seal must remain a single dark LINE, not a filled bar.
         weight*=1.-math.exp(-.5*((y-.232)/.0015)**2)
         blend=.93*weight
         if blend<.015:
             adjusted.append((nx,ny,nz))
             continue
-        target=(nx*.45,ny*.55,.78)
+        target=(nx*.35,ny*.45,.86)
         length=math.sqrt(sum(t*t for t in target))
         target=tuple(t/length for t in target)
         new=(nx*(1.-blend)+target[0]*blend,
@@ -493,6 +540,7 @@ def rebuild(path):
     xyz,shape=new_lower_face_geometry(pts,uv)
     faces,replacement=replacement_triangulation(uv,old,xyz)
     xyz,fair_count=relax_labiomental_shading(xyz,faces)
+    xyz,vermilion_fair_count=fair_exterior_oral_surface(xyz,uv,faces)
     faces,upper_lip_flips=retopologize_upper_vermilion(xyz,uv,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
@@ -502,6 +550,7 @@ def rebuild(path):
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
+        'vermilionSurfaceFairingVertices':vermilion_fair_count,
         'upperVermilionLocalEdgeFlips':upper_lip_flips,
         'upperVermilionRetopologyExcludesMouthSeal':True,
         'repairedExteriorLipNormals':normal_fix_count,
