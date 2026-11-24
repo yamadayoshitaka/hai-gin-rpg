@@ -198,6 +198,14 @@ def nose_and_lips(x,y,z):
     # without treating dark nostril pixels as a 2D texture. The nostril rim
     # and adjoining cheeks fade to the untouched source outside the masks.
     nx=x*(1.-.145*wing-.092*nose_head)
+    # Reduce the actual oral seam and lip commissure WIDTH as well as the
+    # vermilion bulges. The v19 seam is too long and leaves a wide dark bar
+    # even after reducing lipstick. Smoothly fade the X contraction into
+    # adjacent cheek skin; keep nostrils and the nose base outside this mask.
+    oral_width_gate=(bell(y,.231,.015)*fade(y,.207,.220)*
+                     (1.-fade(y,.247,.256))*fade(z,.112,.138)*
+                     (1.-fade(ax,.054,.075)))
+    nx-=.18*x*oral_width_gate
     tip=bell(x,0.,.017)*bell(y,.251,.016)*fade(z,.122,.154)*nasal
     ala=bell(ax,.027,.011)*bell(y,.252,.016)*nose_front*(1.-fade(ax,.043,.054))
     bridge=bell(x,0.,.012)*bell(y,.282,.030)*fade(z,.087,.138)
@@ -443,6 +451,9 @@ def finish(path):
         'lipSizeFormerV19Maximum':1.0,
         'lipSizeSliderEnabled':False,
         'lipReductionChangesActualVertices':True,
+        'mouthWidthReducedRealMesh':True,
+        'mouthWidthDefaultScale':.82,
+        'mouthSealVertexIndicesRetained':True,
         'upperAndLowerVermilionSeparatedRealMesh':True,
         'oralSeamTopologyExcludedFromLipProjection':True,
         'outerCheekVolumetricFairing':True,
