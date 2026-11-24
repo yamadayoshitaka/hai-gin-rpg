@@ -132,6 +132,20 @@ class RealGeometry(unittest.TestCase):
         self.assertTrue(seam)
         self.assertLess(max(seam),.0003,'closed seam must stay stable')
 
+    def test_v22_corner_convergence_actual_vertices(self):
+        before=self.base_attrs['POSITION'];after=self.a['POSITION']
+        for sign in (-1,1):
+            for low,high in ((.224,.229),(.236,.246)):
+                side=[abs(a[1]-.232)-abs(b[1]-.232) for a,b in zip(before,after)
+                      if .025<sign*a[0]<.038 and low<a[1]<high and a[2]>.125]
+                self.assertGreater(len(side),3)
+                self.assertGreater(median(side),.0003,
+                    'both vermilion bands must converge on both sides in actual XYZ')
+        meta=self.g['meshes'][0]['extras']['mouthChinRebuild']['v22CornerAndSkin']
+        self.assertGreater(meta['fairingVertices'],50)
+        self.assertLess(meta['skinRmsAfter'],meta['skinRmsBefore'])
+        print('v22 skin fairing:',meta)
+
     def test_v20_baseline_is_required(self):
         self.assertIsNotNone(self.base,'Frozen v20 GLB baseline missing; do not approve release')
         self.assertLessEqual(self.m['lip_x_span'],self.base['lip_x_span']*1.02)
