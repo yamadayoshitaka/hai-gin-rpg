@@ -26,11 +26,11 @@ const clamp=x=>Math.max(0,Math.min(1,x));
  * Exported for independent regression checks on anatomically critical points.
  */
 export function v121VermilionBorders(x){
-  const ax=Math.abs(x),corner=fade(ax,.018,.045);
+  const ax=Math.abs(x),corner=fade(ax,.017,.038);
   return {
     // The same two Cupid peaks / central notch as the real GLB sculpt.
-    upper:.2495+.0028*gauss(ax,.011,.0055)-.00075*gauss(ax,0,.004)-.0178*corner,
-    lower:.2175+.0120*corner
+    upper:.2460+.0022*gauss(ax,.0095,.005)-.00055*gauss(ax,0,.0038)-.0125*corner,
+    lower:.2235+.0094*corner
   };
 }
 export function v121MakeupMasks(x,y,z){
@@ -38,16 +38,18 @@ export function v121MakeupMasks(x,y,z){
   const {upper,lower}=v121VermilionBorders(x);
   // A defined, but feathered, border. No pigment on cheek, philtrum,
   // sublabial skin or jaw; corners shrink to the oral commissures.
-  const inside=ax<.054&&z>.119&&y>=.210&&y<=.258&&upper-lower>.001;
+  // The old v19 lip dimensions are future maximum, not the neutral default.
+  // Geometry and all five makeup presets follow this smaller real boundary.
+  const inside=ax<.047&&z>.119&&y>=.219&&y<=.252&&upper-lower>.001;
   const lipSurface=inside?
-    fade(y,lower-.0008,lower+.0024)*
-    (1-fade(y,upper-.0024,upper+.0008))*
-    (1-fade(ax,.032,.051))*gauss(x,0,.036)*fade(z,.127,.144):0;
-  const lipBands=1.02*gauss(y,.241,.0085)+.86*gauss(y,.2235,.0084);
+    fade(y,lower-.0005,lower+.0015)*
+    (1-fade(y,upper-.0015,upper+.0005))*
+    (1-fade(ax,.026,.042))*gauss(x,0,.029)*fade(z,.127,.144):0;
+  const lipBands=1.03*gauss(y,.239,.0068)+.86*gauss(y,.227,.0065);
   return {
     blush:y>=.215?(gauss(x,-.076,.031)+gauss(x,.076,.031))*
       gauss(y,.257,.028)*front:0,
-    lip:clamp(lipBands*gauss(x,0,.033)*lipSurface),
+    lip:clamp(lipBands*gauss(x,0,.028)*lipSurface),
     shadow:(gauss(x,-.044,.026)+gauss(x,.044,.026))*
       gauss(y,.323,.008)*fade(z,.090,.128),
     liner:(gauss(x,-.043,.024)+gauss(x,.043,.024))*
