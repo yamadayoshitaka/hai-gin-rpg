@@ -142,9 +142,9 @@ def fold_displacement(x,y,z):
                fade(ax,.023,.033)*(1.-fade(ax,.062,.072))*front)
     # Replace the prior narrow 2.8-mm pit fill with soft cheek-wide support,
     # so it cannot read as an extra edge near the mouth corners.
-    lateral_fair=(.00220*bell(ax,.071,.030)*bell(y,.245,.045)*
+    lateral_fair=(.00265*bell(ax,.071,.032)*bell(y,.245,.049)*
                   fade(y,.200,.221)*front)
-    corner_fair=(.00115*bell(ax,.050,.018)*bell(y,.233,.023)*
+    corner_fair=(.00140*bell(ax,.050,.020)*bell(y,.233,.025)*
                  front*(1.-fade(ax,.070,.090)))
     return under_eye+lateral_fair+corner_fair+nasolabial_relief(x,y,z)
 
@@ -210,9 +210,13 @@ def nose_and_lips(x,y,z):
     # convex lower-lip surface without creating an infra-labial shelf.
     lip_front=fade(z,.103,.137)
     horizontal=bell(x,0,.038)*(1.-fade(ax,.044,.056))
-    upper=bell(y,.2400,.0072)*horizontal*lip_front
-    lower=(bell(y,.2235,.0080)*horizontal*lip_front*
-           fade(y,.213,.221)*(1.-fade(y,.230,.239)))
+    # Separate convex upper and lower VERMILION surfaces on real skin vertices.
+    # The mouth seal at y=.232 and its two contour loops are excluded from
+    # either volume; otherwise the region reads as a single duck-bill ridge.
+    upper=(bell(y,.2410,.0080)*horizontal*lip_front*
+           fade(y,.2322,.2370)*(1.-fade(y,.251,.260)))
+    lower=(bell(y,.2230,.0078)*horizontal*lip_front*
+           fade(y,.213,.220)*(1.-fade(y,.229,.233)))
     cupids=bell(ax,.012,.0065)*bell(y,.245,.007)*lip_front
     seam=bell(y,.232,.0028)*horizontal*lip_front
 
@@ -242,7 +246,9 @@ def nose_and_lips(x,y,z):
     # Give the upper vermilion its own convex front: it must not disappear
     # into the philtrum, nor sit behind the fuller lower lip in profile.
     # Keep the actual seam and mouth-corner end loops fixed.
-    nz+=(.00590*upper+.00445*lower+.00145*cupids-.00025*seam)
+    # A visible upper-lip convexity must survive bare-skin rendering,
+    # independent of lipstick. Reduce the lower projection to avoid a bill.
+    nz+=(.00680*upper+.00390*lower+.00165*cupids-.00035*seam)
     # Keep a single center groove between the columella and Cupid's bow;
     # the two philtral columns remain soft and do not cross the upper lip.
     nz+=philtrum_relief(nx,y,nz)
@@ -409,7 +415,7 @@ def finish(path):
         elif name=='V121_INDIVIDUAL_EYEBROW_FIBERS_PBR':
             pbr['baseColorFactor']=[.38,.29,.235,1.]
     meta['referenceMakeup']={
-        'version':'v121-visible-upper-lip-v18-20261124',
+        'version':'v121-visible-upper-lip-v19-20261124',
         'skinPalette':'warm-natural-ivory',
         'cheekBlush':'subtle-peach-rose',
         'lips':'soft-rose-pink-vertex-gradient',
@@ -418,7 +424,7 @@ def finish(path):
         'skinPBR':True,
         'noSeparateFloatingDecals':True}
     meta['referenceFeatureSculpt']={
-        'version':'v121-convex-upper-vermilion-soft-cheeks-v18-20261124',
+        'version':'v121-convex-upper-vermilion-soft-cheeks-v19-20261124',
         'narrowerNasalWingsAndHeadRealMesh':True,
         'centralNasalDorsumRidgeRealMesh':True,
         'upperLowerVermilionFullnessRealMesh':True,
@@ -426,7 +432,9 @@ def finish(path):
         'anatomicalVermilionBorderRealGeometry':True,
         'upperVermilionRepositionedWithinBorder':True,
         'philtrumExcludedFromUpperLipGeometry':True,
-        'upperLipConvexityMillimeters':5.90,
+        'upperLipConvexityMillimeters':6.80,
+        'upperAndLowerVermilionSeparatedRealMesh':True,
+        'oralSeamTopologyExcludedFromLipProjection':True,
         'outerCheekVolumetricFairing':True,
         'upperCupidBowBorderAndLowerRimDefined':True,
         'lipCornerTaperedToOralCommissure':True,
@@ -446,7 +454,7 @@ def finish(path):
         'centralPhiltrumStart':[0.,.264],
         'philtrumGrooveMasterDepth':.0038,
         'philtrumColumnsRelief':.00095,
-        'philtrumShape':'continuous_nose_base_to_upper_vermilion_v18_channel',
+        'philtrumShape':'continuous_nose_base_to_upper_vermilion_v19_channel',
         'philtrumNoOvalPit':True,
         'parametricDepthControlSupported':True,
         'centralPhiltrumEnd':[0.,.248],
@@ -459,7 +467,7 @@ def finish(path):
         'preservesEyeAndMouthTopology':True,
         'facialExpressionAnimations':False}
     meta['naturalFoldCleanup']={
-        'version':'v121-soft-supported-cheeks-20261124-v18',
+        'version':'v121-soft-supported-cheeks-20261124-v19',
         'technique':'native indexed skin vertex sculpt and corrected neutral vertex colors',
         'removedLegacyBrowLidBand':True,
         'removedChinTintLeakage':True,
@@ -472,7 +480,7 @@ def finish(path):
         'additionalFoldRegions':['central-philtrum','infraorbital','inner-nasolabial'],
         'surfaceDeformationOnly':True,
         'expressionAnimationImplemented':False}
-    g['asset']['generator']='HaiGin v121 v18 restored convex upper lip and smooth supported cheeks'
+    g['asset']['generator']='HaiGin v121 v19 separated real upper/lower vermilion and softened cheeks'
     g['buffers'][0]['byteLength']=len(b)
     json_bytes=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode('utf8')
     json_bytes+=b' '*((-len(json_bytes))%4)
