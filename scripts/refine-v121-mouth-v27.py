@@ -62,8 +62,37 @@ def warp_normal(p,n):
         cols.append(tuple((x-y)/(2*eps) for x,y in zip(warp(a),warp(b))))
     v=S['solve']([list(c) for c in cols],list(n))
     return unit(v) if v else n
+def replace_vec3(g,b,index,values):
+    """Update a dedicated float accessor in place, preserving exact v27
+    geometry while avoiding shipping unused v26 position/morph copies."""
+    a=g['accessors'][index];vi=a['bufferView'];v=g['bufferViews'][vi]
+    if a['componentType']!=5126 or a['type']!='VEC3' or a['count']!=len(values):
+        raise ValueError('Unexpected v27 accessor format')
+    if a.get('sparse') or a.get('byteOffset',0)!=0 or v.get('byteStride',12)!=12 or v['byteLength']!=12*len(values):
+        raise ValueError('Expected dedicated tightly packed VEC3')
+    if sum(t.get('bufferView')==vi for t in g['accessors'])!=1:
+        raise ValueError('Cannot overwrite shared accessor buffer view')
+    # Check primitive and animation references too, not only buffer views.
+    refs=0
+    for mesh in g['meshes']:
+        for prim in mesh['primitives']:
+            refs+=sum(i==index for i in prim['attributes'].values())
+            refs+=int(prim.get('indices')==index)
+            refs+=sum(i==index for target in prim.get('targets',[]) for i in target.values())
+    for animation in g.get('animations',[]):
+        for sampler in animation['samplers']:
+            refs+=int(sampler['input']==index)+int(sampler['output']==index)
+    if refs!=1:raise ValueError('Cannot overwrite shared mesh accessor')
+    content=b''.join(struct.pack('<fff',*q) for q in values)
+    offset=v.get('byteOffset',0)
+    b[offset:offset+len(content)]=content
+    a['min']=[min(q[k] for q in values) for k in range(3)]
+    a['max']=[max(q[k] for q in values) for k in range(3)]
+    return index
+
 def apply(path):
     g,b=H['read_glb'](path);head=g['meshes'][0]
+    original_bin_size=len(b)
     for mi,m in enumerate(g['meshes']):
         if mi!=0 and not m['name'].startswith('V121_ORAL_'):continue
         for pi,p in enumerate(m['primitives']):
@@ -109,8 +138,8 @@ def apply(path):
                         nn=unit(tuple(sum(wn[i][k] for i in ids) for k in range(3)))
                         for i in ids:new[i]=mean;wn[i]=nn
                 head['extras']['mouthChinRebuild']['v27CompactMouth']={'version':'v27','widthScale':.88,'heightScale':.90,'skinFairingVertices':len(active),'mouthSealTopologyPreserved':True}
-            attrs['POSITION']=H['add_vec3'](g,b,new)
-            attrs['NORMAL']=H['add_vec3'](g,b,wn)
+            attrs['POSITION']=replace_vec3(g,b,attrs['POSITION'],new)
+            attrs['NORMAL']=replace_vec3(g,b,attrs['NORMAL'],wn)
             # Keep existing neutral pigment attached to the deformed surface.
             # Transform actual morph displacement vectors consistently.
             for target in p.get('targets',[]):
@@ -120,7 +149,9 @@ def apply(path):
                 for v,w,d in zip(old,warped,delta):
                     dst=warp(tuple(a+c for a,c in zip(v,d)))
                     vals.append(tuple(a-c for a,c in zip(dst,w)))
-                target['POSITION']=H['add_vec3'](g,b,vals)
+                target['POSITION']=replace_vec3(g,b,target['POSITION'],vals)
+    if len(b)!=original_bin_size:raise ValueError('v27 introduced duplicate binary data')
+    print('v27 binary size unchanged:',len(b))
     g['buffers'][0]['byteLength']=len(b)
     raw=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode()
     raw+=b' '*((-len(raw))%4);b+=b'\0'*((-len(b))%4)
