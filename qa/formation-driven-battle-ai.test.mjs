@@ -55,6 +55,19 @@ assert.equal(highGroundBaitActive({distance:12,now:8,until:30,order:'charge'}),t
 assert.equal(highGroundBaitActive({distance:12,now:30,until:30}),false);
 assert.equal(highGroundBaitActive({distance:12,now:8,until:30,order:'hold'}),false);
 assert.equal(highGroundBaitActive({distance:12,now:8,until:30,alive:false}),false);
+// A shield must not turn around immediately after reaching its firing post.
+let phase=highGroundShieldIntent({assigned:true,ready:true,anchorDistance:20,enemyDistance:3,enemyAnchorDistance:22,contact:false});
+assert.equal(phase.phase,'approach','a wall is not bait contact');
+phase=highGroundShieldIntent({assigned:true,ready:true,anchorDistance:20,enemyDistance:3,contact:true});
+assert.equal(phase.phase,'return');
+for(const distance of [17,12,8,5,4]){
+ phase=highGroundShieldIntent({assigned:true,ready:true,anchorDistance:distance,enemyDistance:12,luring:phase.luring,holding:true});
+ assert.equal(phase.phase,distance>5?'return':'guard');
+}
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:4,enemyDistance:20,holding:true}).phase,'guard');
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:4,enemyDistance:20,holding:false}).phase,'approach');
+assert.equal(highGroundBaitActive({distance:40,now:20,until:45,maxDistance:48}),true);
+assert.equal(highGroundBaitActive({distance:49,now:20,until:45,maxDistance:48}),false);
 const room={minX:2,maxX:8,minZ:2,maxZ:8};
 const tiles=new Set();
 for(let x=3;x<=7;x++)for(let z=3;z<=7;z++)tiles.add(x+','+z);
@@ -111,3 +124,8 @@ assert.match(battle,/furnitureBlocks\(key\)/);
 assert.match(battle,/if\(a\.isStrategist\)\{/);
 assert.match(battle,/d>range\|\|routeOccludedByTerrain/);
 assert.match(mass,/strategistRearIntent\(/);
+
+assert.match(battle,/holding:waiting,contact/);
+assert.match(battle,/follower\._highGroundBaitId=a\.id/);
+assert.match(battle,/baitDistance>a\.job\.range\/CELL\|\|blocked/);
+assert.match(battle,/moveActor\(a,a\._baitChaseGoal\.pos/);
