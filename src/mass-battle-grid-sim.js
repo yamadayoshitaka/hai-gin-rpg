@@ -11,7 +11,7 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
-import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent} from './formation-driven-ai.js?v=formation-ai-v2-20261124';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey} from './formation-driven-ai.js?v=formation-ai-v3-20261124';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
@@ -374,7 +374,7 @@ export class MassBattleGridSimulation {
       return route.kind===desired?0:route.kind==='interior'?1:route.kind==='window'?2:3;
     };
     const candidates=this.highGroundRoutes.slice().sort((a,b)=>
-      a.buildingIndex-b.buildingIndex||rank(a)-rank(b));
+      Number(b.kind==='roof')-Number(a.kind==='roof')||a.buildingIndex-b.buildingIndex||rank(a)-rank(b));
     for(const route of candidates){
       // Indoor exploration is a manual objective, never an automatic
       // combat patrol: the old AI left whole squads standing in rooms.
@@ -1617,7 +1617,7 @@ export class MassBattleGridSimulation {
       if(!u.alive||u.formationType!=='highground'||!isHighGroundFiringJob(u.jobId)||u.highGroundRouteIndex<0||u.highGroundManualHold||u.highGroundPhase===3)continue;
       const route=this.highGroundRoutes[u.highGroundRouteIndex];
       if(!route||!this._highGroundRouteAlive(route))continue;
-      const key=u.team+':'+String(u.squadId),ready=u.highGroundPhase===2&&u.highGroundFloor>1;
+      const key=highGroundGroupKey(u),ready=u.highGroundPhase===2&&u.highGroundFloor>1;
       if(!formationPosts.has(key)||ready&&!formationPosts.get(key).ready)formationPosts.set(key,{route,index:u.highGroundRouteIndex,ready,team:u.team});
     }
     for(const post of formationPosts.values()){
@@ -1803,7 +1803,7 @@ export class MassBattleGridSimulation {
          !this.explorationOrders.has(u.team+':'+String(u.squadId))&&
          !(u.team===0&&this.squadDestinations.has(String(u.squadId)))&&
          !['hold','retreat','move'].includes((u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId)))){
-        const post=formationPosts.get(u.team+':'+String(u.squadId));
+        const post=formationPosts.get(highGroundGroupKey(u));
         if(post){
           const anchor=post.route.access,target=nearest||post.enemy;
           const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);

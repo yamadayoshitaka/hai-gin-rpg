@@ -1166,7 +1166,7 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v=battle-catalog-parity-20261123';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
-import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent} from './src/formation-driven-ai.js?v=formation-ai-v2-20261124';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundRoofGoal} from './src/formation-driven-ai.js?v=formation-ai-v3-20261124';
 import {reachableRoomExit,reachableFormationWaypoint,sharedRoomExitFlow,sharedRoomExitStep} from './src/formation-ai-indoor-route.js?v=castle-exit-relief-v3-20261124';
 import {buildSkirmishAssaultFlow,nextSkirmishAssaultStep} from './src/battle-skirmish-assault-flow.js?v=skirmish-assault-r1-20261124';
 import {createRegisteredBattleMonster}
@@ -5060,7 +5060,7 @@ function staircaseEntranceWorld(b){
  const cell=floorTravelEntryPoint(b),x=(cell.x-6)*CELL,z=(cell.z-6)*CELL;
  return new THREE.Vector3(x,terrainY(x,z),z);
 }
-function accessibleStairBuilding(a){
+function accessibleStairBuilding(a,{preferRoof=false,preferred=null}={}){
  const permissions=storyRequest?['royal-visitor']:[];
  const mount=mountedCreatureOf(a);
  const insertion=shouldUseMountedRoofInsertion({
@@ -5078,7 +5078,9 @@ function accessibleStairBuilding(a){
     evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed;
   return allowed;
  });
+ if(preferred&&possibilities.includes(preferred))return preferred;
  return possibilities.sort((left,right)=>{
+  if(preferRoof){const roof=b=>Number(Boolean(roofAccessPlan(b.structure)));const d=roof(right)-roof(left);if(d)return d;}
   const distance=b=>{const p=staircaseEntranceWorld(b);return Math.hypot(p.x-a.root.position.x,p.z-a.root.position.z)};
   return distance(left)-distance(right);
  })[0]??null;
@@ -5295,7 +5297,7 @@ function moveUpperFloorSoldier(a,target,dt){
 function selectUpperFloorWindow(a,travel){
  const slots=travel.windowSlots??=buildingWindowFiringPositions(
   travel.building.structure,travel.building.model.position,a.indoorFloor,{cellSize:CELL});
- const healing=a.job.role==='support'||a.job.damage<=0;
+ const healing=a.jobId!=='summoner'&&(a.job.role==='support'||a.job.damage<=0);
  const throwingRange=a.jobId==='ninja'?10:a.jobId==='thief'?6:a.job.range/CELL;
  const range=healing?Math.max(8*CELL,a.job.range*2):
   elevatedRangedStats(a,{range:throwingRange,damage:a.job.damage}).range*CELL;
@@ -5333,6 +5335,18 @@ function updateUnitFloorTravel(a,dt){
   }
  }
  if(travel.phase==='upstairs'){
+  // Formation deployment owns the whole staircase sequence. Do not
+  // stop at 2F, collect loot, or let generic assault cancel the roof route.
+  if(travel.formationHighGround&&a.indoorFloor<travel.formationRoofGoal&&
+    elapsed-(travel.arrivedAt??elapsed)>.35){
+   const goal=travel.formationRoofGoal,building=travel.building;
+   if(requestUnitFloor(a,1,building,{forceStairs:true})){
+    a.floorTravel.formationHighGround=true;
+    a.floorTravel.formationRoofGoal=goal;
+    a.floorTravel.manualHighGroundAttack=true;
+   }else travel.formationRoofGoal=a.indoorFloor;
+   return true;
+  }
   // Continue to the selected castle level instead of stopping at floor 2.
   if(travel.manualHighGroundTarget&&a.indoorFloor<travel.manualHighGroundGoal&&
     elapsed-(travel.arrivedAt??elapsed)>.8){
@@ -5373,7 +5387,7 @@ function updateUnitFloorTravel(a,dt){
   const reachableLoot=loot&&(!roomsOnFloor.length||roomsOnFloor.length===1||
    Math.hypot(a.root.position.x-travel.building.model.position.x-loot.x,
      a.root.position.z-travel.building.model.position.z-loot.z)<=2.8);
-  if(reachableLoot){
+  if(reachableLoot&&!travel.formationHighGround){
    const p=a.root.position,targetX=travel.building.model.position.x+loot.x,
     targetZ=travel.building.model.position.z+loot.z;
    const dx=targetX-p.x,dz=targetZ-p.z,d=Math.hypot(dx,dz);
@@ -5615,6 +5629,7 @@ function updateUpperFloorRangedCombat(a,dt){
  const travel=a.floorTravel;
  if(!travel||!['upstairs','roof'].includes(travel.phase)||a.hp<=0)return;
  // Movement-only high ground must not attack; assault waits for the selected storey.
+ if(travel.formationHighGround&&a.indoorFloor<travel.formationRoofGoal)return;
  if(travel.manualHighGroundTarget&&(!travel.manualHighGroundAttack||
     (a.indoorFloor??1)<Number(travel.manualHighGroundGoal||1)))return;
  const summoning=a.jobId==='summoner';
@@ -5902,31 +5917,39 @@ function pursueEnemyOnAnotherFloor(a){
 // collision-checked stairs. This is a team-neutral doctrine; unlike the old
 // wandering floor scouts it never steals fighters from other formations.
 let lastFormationHighGroundScan=-Infinity;
+function formationHighGroundReady(u){
+ const t=u.floorTravel;
+ return Boolean(t?.formationHighGround&&u.indoorFloor>=t.formationRoofGoal&&
+  (t.phase==='roof'||t.phase==='upstairs'&&t.windowReady));
+}
 function runFormationHighGroundAI(){
- if(massSim||elapsed-lastFormationHighGroundScan<2.5)return;
+ if(massSim||elapsed-lastFormationHighGroundScan<.8)return;
  lastFormationHighGroundScan=elapsed;
- if(actors.filter(u=>u.hp>0&&u.floorTravel).length>=5)return;
- const eligible=actors.filter(u=>u.hp>0&&!u.nextCell&&!u.floorTravel&&
+ const moving=u=>u.hp>0&&u.floorTravel&&['approach','toStair','climb'].includes(u.floorTravel.phase);
+ if(actors.filter(moving).length>=8)return;
+ const eligible=actors.filter(u=>u.hp>0&&!u.floorTravel&&!u._pendingCast&&
   (u.indoorFloor??1)===1&&u.formationType==='highground'&&
   isHighGroundFiringJob(u.jobId)&&
   !['hold','defend','retreat','move','mission','explore'].includes(
    currentSkirmishDirective(u)?.mode)&&elapsed>=(u._formationHighGroundRetry??0))
   .sort((a,b)=>a.team-b.team||a.id-b.id);
  for(const actor of eligible){
-  const building=accessibleStairBuilding(actor);
-  if(!building)continue;
-  const entrance=staircaseEntranceWorld(building);
-  if(Math.hypot(actor.root.position.x-entrance.x,
-    actor.root.position.z-entrance.z)>32*CELL)continue;
-  if(actors.filter(other=>other.hp>0&&
-    other.floorTravel?.building===building).length>=2)continue;
+  const group=highGroundGroupKey(actor);
+  const peer=actors.find(v=>v.hp>0&&highGroundGroupKey(v)===group&&v.floorTravel?.formationHighGround&&
+   !destroyedTownBuildings.has(v.floorTravel.building.data));
+  const building=accessibleStairBuilding(actor,{preferRoof:true,preferred:peer?.floorTravel.building});
+  if(!building){actor._formationHighGroundRetry=elapsed+4;continue;}
+  if(actors.filter(other=>moving(other)&&other.floorTravel.building===building).length>=3)continue;
+  const goal=highGroundRoofGoal(building.structure,Boolean(roofAccessPlan(building.structure)));
+  if(!goal)continue;
   if(requestUnitFloor(actor,1,building,{forceStairs:true})){
-   actor._formationHighGroundRetry=elapsed+14;
+   actor._formationHighGroundRetry=elapsed+8;
    actor.floorTravel.formationHighGround=true;
+   actor.floorTravel.formationRoofGoal=goal;
    actor.floorTravel.manualHighGroundAttack=true;
    break;
   }
-  actor._formationHighGroundRetry=elapsed+5;
+  actor._formationHighGroundRetry=elapsed+4;
  }
 }
 function tickAI(dt){
@@ -5982,7 +6005,7 @@ function tickAI(dt){
   // Automatic upstairs scouting is lower priority than a hostile soldier
   // within striking distance. The old unconditional floorTravel 'continue'
   // made both sides walk past adjacent living enemies without fighting.
-  if(a.floorTravel&&!a.floorTravel.manualHighGroundTarget&&
+  if(a.floorTravel&&!a.floorTravel.manualHighGroundTarget&&!a.floorTravel.formationHighGround&&
      ['approach','toStair'].includes(a.floorTravel.phase)){
    const near=nearestEnemy(a,CELL*3.3),p=a.root.position,q=near?.root?.position;
    if(near&&q&&hutShotClear(p,q)&&hutShotClear(q,p)){
@@ -5994,11 +6017,11 @@ function tickAI(dt){
     if(a===automaticFloorGuide)automaticFloorGuide=null;
    }
   }
-  if(!a.nextCell)pursueEnemyOnAnotherFloor(a);
+  if(!a.nextCell&&!a.floorTravel?.formationHighGround&&a.formationType!=='highground')pursueEnemyOnAnotherFloor(a);
   // A fresh elimination order is stronger than an old upper-floor hold.
   // When no enemy can be attacked on the current level, take the real stairs
   // toward the surviving ground targets instead of staying on an empty floor.
-  if(a.team===0&&a.floorTravel&&['upstairs','roof'].includes(a.floorTravel.phase)&&
+  if(a.team===0&&a.floorTravel&&!a.floorTravel.formationHighGround&&['upstairs','roof'].includes(a.floorTravel.phase)&&
      currentSkirmishDirective(a)?.mode==='charge'&&
      elapsed>=(a._assaultFloorRetryAt??0)){
    const sameLevelEnemy=actors.some(other=>other.team!==a.team&&other.hp>0&&
@@ -6043,13 +6066,12 @@ function tickAI(dt){
   // staircase as a bait post; don't pull defenders from other formations.
   if(a.jobId==='shield'&&a.formationType==='highground'&&
      !['hold','retreat','move','mission','explore'].includes(squadDirective?.mode)){
-   const posts=actors.filter(v=>v.hp>0&&v.team===a.team&&String(v.squadId)===String(a.squadId)&&
+   const posts=actors.filter(v=>v.hp>0&&highGroundGroupKey(v)===highGroundGroupKey(a)&&
     v.formationType==='highground'&&isHighGroundFiringJob(v.jobId)&&v.floorTravel?.formationHighGround);
-   const post=posts.find(v=>(v.indoorFloor??1)>1&&['upstairs','roof'].includes(v.floorTravel.phase))||posts[0];
+   const post=posts.find(formationHighGroundReady)||posts[0];
    if(post&&!destroyedTownBuildings.has(post.floorTravel.building.data)){
     const anchor=staircaseEntranceWorld(post.floorTravel.building);
-    const ready=posts.some(v=>v.floorTravel.building===post.floorTravel.building&&
-     (v.indoorFloor??1)>1&&['upstairs','roof'].includes(v.floorTravel.phase));
+    const ready=posts.some(v=>v.floorTravel.building===post.floorTravel.building&&formationHighGroundReady(v));
     const dist=(u,v)=>Math.hypot(u.x-v.x,u.z-v.z)/CELL;
     const intent=highGroundShieldIntent({assigned:true,ready,
      anchorDistance:dist(p,anchor),enemyDistance:enemy?dist(p,enemy.root.position):Infinity,
@@ -8844,6 +8866,13 @@ function issueFormationSignature({groupId,squadIds:requested=[],automaticOpening
   return '軍師の状態または命令間隔により発令できません。';
  const centers=members.map(id=>({id,point:squadCenter(id,0)})).filter(x=>x.point);
  if(!centers.length)return '部隊位置を取得できません。';
+ if(formation.formation==='highground'&&!massSim){
+  // High-ground uses real terrain targets, not the two flat preview waypoints.
+  for(const id of members)issueTargetedPlatoon(id,'charge');
+  log('★ 第'+group+'隊：屋上確保と盾役の誘導を開始');
+  battleDialogue.push({key:'highground:'+group+':'+Math.round(elapsed*10),speaker:'軍師',kind:'info',priority:80,text:'第'+group+'隊：屋上を確保し、盾役が敵を誘導します。'});
+  return true;
+ }
  const center={x:centers.reduce((n,u)=>n+u.point.x,0)/centers.length,
   z:centers.reduce((n,u)=>n+u.point.z,0)/centers.length};
  const enemies=enemySquadIds.map(id=>({id,point:squadCenter(id,1)})).filter(u=>u.point);

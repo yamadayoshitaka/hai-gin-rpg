@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent} from '../src/formation-driven-ai.js';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundRoofGoal} from '../src/formation-driven-ai.js';
 import {reachableRoomExit} from '../src/formation-ai-indoor-route.js';
 import {FORMATION_ROLES} from '../src/sortie-formation-logic.js';
 import {FORMATION_TEMPLATE_LIMITS} from '../src/sortie-formation-template-rules.js';
@@ -33,6 +33,16 @@ assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:10,
 assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:3,enemyDistance:2,enemyAnchorDistance:4,luring:true}).phase,'guard');
 assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:8,healthRatio:.2}).phase,'return');
 
+// Physical job subdivisions share one army group, not one squad id.
+assert.equal(highGroundGroupKey({team:0,armyGroupId:3,squadId:8}),highGroundGroupKey({team:0,armyGroupId:3,squadId:9}));
+assert.notEqual(highGroundGroupKey({team:0,armyGroupId:3}),highGroundGroupKey({team:1,armyGroupId:3}));
+assert.equal(highGroundGroupKey({team:1,squadId:4}),'1:4');
+assert.equal(highGroundRoofGoal({floors:[{},{}]},true),3);
+assert.equal(highGroundRoofGoal({floors:[{},{},{}]},true),4);
+assert.equal(highGroundRoofGoal({floors:[{},{}]},false),2);
+assert.equal(highGroundRoofGoal({floors:[{}]},true),0);
+assert.equal(highGroundShieldIntent({assigned:true,ready:true,anchorDistance:12,enemyDistance:Infinity,luring:true}).phase,'return');
+
 const room={minX:2,maxX:8,minZ:2,maxZ:8};
 const tiles=new Set();
 for(let x=3;x<=7;x++)for(let z=3;z<=7;z++)tiles.add(x+','+z);
@@ -60,6 +70,12 @@ assert.match(battle,/formationType:storyUnit\?\.formationType/);
 assert.match(mass,/formationCombatIntent\(\{/);
 assert.match(battle,/highGroundShieldIntent\(\{/);
 assert.match(mass,/highGroundShieldIntent\(\{/);
+assert.match(battle,/highGroundGroupKey\(v\)===highGroundGroupKey\(a\)/);
+assert.match(battle,/a\.indoorFloor<travel\.formationRoofGoal/);
+assert.match(battle,/a\.floorTravel\.formationRoofGoal=goal/);
+assert.match(battle,/formation\.formation==='highground'&&!massSim/);
+assert.match(battle,/!a\.floorTravel\.formationHighGround&&\['upstairs','roof'\]/);
+assert.match(mass,/formationPosts\.get\(highGroundGroupKey\(u\)\)/);
 assert.match(mass,/formationRolesOnly:best\.formationType==='highground'/);
 assert.match(battle,/summoning&&a\._pendingCast/);
 assert.match(mass,/u\.jobId==='summoner'&&u\._pendingCast/);
