@@ -4,7 +4,7 @@
  * navigation and attack cooldowns remain the authoritative engines.
  * This replaces the old unbounded "balanced -> idle" fallback.
  */
-export const FORMATION_AI_REVISION='symmetric-formation-v2-20261124';
+export const FORMATION_AI_REVISION='symmetric-formation-v3-20261124';
 const ATTACK_FORMATIONS=new Set(['attack','wedge','pincer','ambush','dragon','constellation','spear','cross']);
 const RANGED=new Set(['archer','mage']);
 export const isHighGroundFiringJob=jobId=>RANGED.has(String(jobId||'').toLowerCase())||String(jobId||'').toLowerCase()==='summoner';
@@ -49,11 +49,21 @@ export function formationCombatIntent({
 export function highGroundShieldIntent({ready=false,assigned=false,anchorDistance=Infinity,enemyDistance=Infinity,enemyAnchorDistance=Infinity,healthRatio=1,luring=false}={}){
  if(!assigned)return {phase:'fallback',luring:false};
  if(!ready||healthRatio<.35)return {phase:anchorDistance>5?'return':'guard',luring:false};
- if(enemyDistance<=4||luring&&enemyAnchorDistance>6&&Number.isFinite(enemyDistance)){
+ if(luring||enemyDistance<=4){
   return {phase:anchorDistance>5?'return':'guard',luring:anchorDistance>5};
  }
  if(enemyAnchorDistance<=6)return {phase:anchorDistance>5?'return':'guard',luring:false};
- if(anchorDistance>18)return {phase:'return',luring:false};
+ if(anchorDistance>24)return {phase:'return',luring:true};
  if(!Number.isFinite(enemyDistance))return {phase:anchorDistance>5?'return':'guard',luring:false};
  return {phase:'approach',luring:false};
+}
+
+/** Three-job story formations use physical subdivision ids for commands,
+ * but their coordinated doctrine must be keyed by the actual army group. */
+export function highGroundGroupKey(unit){
+ return String(unit.team)+':'+String(unit.armyGroupId??unit.squadId);
+}
+export function highGroundRoofGoal(building,hasRoof){
+ const floors=building?.floors?.length??0;
+ return floors>1?floors+(hasRoof?1:0):0;
 }
