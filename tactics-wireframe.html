@@ -926,7 +926,7 @@ import {japaneseBattleObjectName} from './src/battle-target-japanese-flow.js?v=2
 import {COMMAND_RALLY_EFFECTS,commanderTargetLimit,reinforcementSlots,REINFORCEMENT_ITEMS} from './src/battle-command-doctrine.js?v=20261119-rally-reserve1';
 import {battleJobSpecialActions} from './src/battle-job-special-actions.js?v=20261120-specialjob-confirm4';
 import {buildBattleSquadLeaderPins} from './src/battle-squad-leader-pins.js?v=20261119-leader-pins1';
-import {planSkirmishDeployment,planSkirmishGroupDeployment} from './src/battle-realtime-deployment.js?v=20261121-three-team-initial3';
+import {planSkirmishDeployment,planSkirmishGroupDeployment,rearCommanderSlots} from './src/battle-realtime-deployment.js?v=20261124-rear4';
 import {createBattleRpgSquadHud} from './src/battle-rpg-squad-hud.js?v=20261122-three-team-events1';
 import {makeBattleRpgStatusRows,aggregateBattleRpgTeams,resolveBattleThreeTeamGroups} from './src/battle-rpg-squad-source.js?v=20261122-contact-cell-frontline2';
 import {battleStageType,battleStageObjective} from './src/battle-stage-identity.js';
@@ -6054,7 +6054,7 @@ function tickAI(dt){
    }
   }
  for(const a of actors){if(a.hp<=0)continue;
-  if(a.isStrategist){
+  if(a.isStrategist||a.isPlayerHero){
    // A commander stays at the deployment rear; never enters soldier attack AI.
    if(a.nextCell){moveActor(a,a.root.position,dt,0,{preciseGoal:true});continue;}
    const p=a.root.position,enemy=nearestEnemy(a,18*CELL);
@@ -6136,15 +6136,26 @@ function tickAI(dt){
    const posts=actors.filter(v=>v.hp>0&&highGroundGroupKey(v)===highGroundGroupKey(a)&&
     v.formationType==='highground'&&isHighGroundFiringJob(v.jobId)&&v.floorTravel?.formationHighGround);
    const post=posts.find(formationHighGroundReady)||posts[0];
+   if(a._highGroundLuring&&a._highGroundReturnAnchor){
+    const anchor=a._highGroundReturnAnchor;
+    if(Math.hypot(p.x-anchor.x,p.z-anchor.z)>CELL*4){moveActor(a,anchor,.18,CELL*4,{preciseGoal:true});continue;}
+    a._highGroundLuring=false;a._highGroundReturnAnchor=null;a._highGroundGuardUntil=elapsed+8;
+   }
    if(post&&!destroyedTownBuildings.has(post.floorTravel.building.data)){
-    const anchor=staircaseEntranceWorld(post.floorTravel.building);
-    const ready=posts.some(v=>v.floorTravel.building===post.floorTravel.building&&formationHighGroundReady(v));
+    const building=post.floorTravel.building;
+    const entrance=staircaseEntranceWorld(building);
+    const outside=gridFromWorld({x:entrance.x,z:(building.data.z+building.data.d/2+3-6)*CELL});
+    const safe=nearestWalkableApproach(outside,a);
+    const anchor=safe?cellPosition(safe.x,safe.z):entrance;
+    const ready=posts.some(v=>v.floorTravel.building===building&&formationHighGroundReady(v));
+    if(elapsed<(a._highGroundGuardUntil??0)&&(!enemy||Math.hypot(p.x-enemy.root.position.x,p.z-enemy.root.position.z)>a.job.range))continue;
     const dist=(u,v)=>Math.hypot(u.x-v.x,u.z-v.z)/CELL;
     const intent=highGroundShieldIntent({assigned:true,ready,
      anchorDistance:dist(p,anchor),enemyDistance:enemy?dist(p,enemy.root.position):Infinity,
      enemyAnchorDistance:enemy?dist(anchor,enemy.root.position):Infinity,
      healthRatio:a.hp/Math.max(1,a.maxHp),luring:a._highGroundLuring});
     a._highGroundLuring=intent.luring;
+    if(intent.luring)a._highGroundReturnAnchor=anchor.clone();
     if(ready&&enemy&&(enemy.indoorFloor??1)===1&&dist(p,enemy.root.position)<=6&&hutShotClear(p,enemy.root.position)&&hutShotClear(enemy.root.position,p)){
      enemy._highGroundBaitId=a.id;enemy._highGroundBaitUntil=elapsed+30;
     }
@@ -11735,6 +11746,18 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   return true;
  },
  onStart:({initialPlans={}}={})=>{
+  if(!massSim){
+   for(const team of [0,1]){
+    const live=actors.filter(a=>a.team===team&&a.hp>0&&!a.defeated);
+    const groups=new Map();for(const a of live){const key=String(a.armyGroupId??a.squadId);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(a);}
+    for(const members of groups.values()){
+     if(!members.some(a=>a.isStrategist||a.isPlayerHero))continue;
+     const slots=rearCommanderSlots(members.map(actor=>({actor,x:actor.cell.x,z:actor.cell.z})),team);
+     for(const a of members)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
+     for(const {actor,x,z} of slots){actor.cell={x,z};actor.nextCell=null;const pos=cellPosition(x,z);actor.root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);actor.home.copy(actor.root.position);occupiedCells.set(cellKey(x,z),actor);const mount=mountedCreatureOf(actor);if(mount){mount.x=x;mount.z=z;}}
+    }
+   }
+  }
   // All enemies start with a real combat command; adaptive AI may amend it.
   for(const sid of enemySquadIds)
    if(!startingSquadOrders.has(squadOrderKey(1,sid)))
