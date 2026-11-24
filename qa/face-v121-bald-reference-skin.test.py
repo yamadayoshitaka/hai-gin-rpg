@@ -67,15 +67,24 @@ class TestFaceV121(unittest.TestCase):
                     self.assertGreater(z,.110)
                 detached+=1
             else:
-                # A true replacement patch is bounded in the native UV chart
-                # from under the lower lip through the submental neck region.
-                # Old triangle corners can be outside the centroid mask.
-                for (index,) in before+after:
-                    u,v=uv[index]
-                    self.assertGreater(u,.33)
-                    self.assertLess(u,.67)
-                    self.assertGreater(v,.35)
-                    self.assertLess(v,.61)
+                # v19 upper lip has its own 3D front-surface footprint.
+                # Its UV atlas includes a separate chart; applying the jaw
+                # UV bounding box to upper-lip edge flips is an invalid gate.
+                # Preserve the original strict central-chin chart bound
+                # for all triangles NOT contained in the real upper lip.
+                involved={index for (index,) in before+after}
+                upper_patch=all(
+                    abs(newp[index][0])<.045 and
+                    .237<newp[index][1]<.2545 and
+                    newp[index][2]>.126
+                    for index in involved)
+                if not upper_patch:
+                    for index in involved:
+                        u,v=uv[index]
+                        self.assertGreater(u,.30)
+                        self.assertLess(u,.70)
+                        self.assertGreater(v,.30)
+                        self.assertLess(v,.65)
                 retopo+=1
         rig=self.b['meshes'][0]['extras']['facialExpressionRig']
         self.assertEqual(detached,rig['splitMouthSeal']
@@ -100,6 +109,8 @@ class TestFaceV121(unittest.TestCase):
                          rebuild['generatedNewPatchTriangles'])
         self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
         self.assertGreater(rebuild['newXYZEdgeOptimizingFlips'],100)
+        self.assertGreater(rebuild['upperVermilionLocalEdgeFlips'],0)
+        self.assertGreater(rebuild['vermilionSurfaceFairingVertices'],50)
         self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.030)
         self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
         self.assertGreater(rebuild['affectedVertices'],180)

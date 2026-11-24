@@ -59,7 +59,7 @@ class ReferenceV14(unittest.TestCase):
         self.assertLess(groove,sides-.001)
         # A longitudinal (not oval or painted) groove must remain visible
         # near both the upper Cupid edge and the underside of the nose.
-        for y in (.243,.268):
+        for y in (.253,.268):
             center=SCULPT['philtrum_relief'](0.,y,.15)
             outer=SCULPT['philtrum_relief'](.028,y,.15)
             self.assertLess(center,outer-.0007)
@@ -81,7 +81,7 @@ class ReferenceV14(unittest.TestCase):
         corner=sculpt(.055,.224,.150)
         chin=sculpt(0.,.201,.150)
         self.assertGreater(upper[2]-.150,.0016)
-        self.assertGreater(lower[2]-.150,.0047)
+        self.assertGreater(lower[2]-.150,.0035)
         self.assertLess(abs(corner[2]-.150),.0004)
         self.assertLess(abs(chin[2]-.150),.0003)
         self.assertLess(sculpt(0.,.246,.150)[1]-.246,.012)

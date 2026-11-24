@@ -77,15 +77,15 @@ def new_lower_face_geometry(points,uv):
         (.102,-.0006),
         (.126,-.0018),
         (.149,-.0032),
-        (.173,-.0050),
-        (.188,-.0058),
-        (.198,-.0062),
-        (.204,-.0063),  # single very shallow labiomental sulcus
-        (.211,-.0059),  # never rise into a second lower-lip ridge
-        (.218,-.0047),  # soften transition into fuller true vermilion
-        (.224,-.0046),  # preserve natural lower-lip volume without extra ridge
-        (.228,-.0030),
-        (.234,-.0005),  # keep the closed mouth seam and upper lip
+        (.173,-.0032),
+        (.188,-.0043),
+        (.198,-.0037),
+        (.204,-.0036),  # subtle, wide skin-only sulcus without a charcoal ledge
+        (.211,-.00325), # smooth rise toward the true lower vermilion
+        (.218,-.00285),
+        (.224,-.00240), # no independent ridge below the lip
+        (.228,-.00165),
+        (.234,-.0005),  # keep the closed oral seam and entire upper lip
         (.245, .0000),
         (.255, .0000),
     )
@@ -96,7 +96,10 @@ def new_lower_face_geometry(points,uv):
             result.append((x,y,z))
             continue
         front=fade(z,.063,.119)
-        middle=bell(x,0.,.061)
+        # Keep sagittal mouth/chin fairing on the FRONT lower face. The
+        # old 61-mm falloff bent cheeks as far as the commissures and
+        # reinforced a long lateral crease in front/quarter views.
+        middle=bell(x,0.,.046)*(1.-fade(abs(x),.053,.078))
         lip_zone=fade(z,.101,.131)*bell(x,0.,.042)
         dz=profile(y,sagittal)*middle*front
         # Narrow the LOWER vermilion by lifting only its bottom boundary.
@@ -361,6 +364,152 @@ def relax_labiomental_shading(points,faces):
     return xyz,len(moved)
 
 
+
+
+def fair_exterior_oral_surface(points,uv,faces):
+    """Smooth triangular bumps on the *real* exposed lip surface.
+
+    The inherited mouth has dense vertices and UV seams. Constrain each
+    neighbor by XY, Z and same UV island, protect the lip seal and Cupid
+    peaks, then relax only Z. This avoids vertical comb-like lip shading
+    while keeping both vermilion bands and their anatomical outlines.
+    """
+    adjacent=[set() for _ in points]
+    for a,b,c in faces:
+        adjacent[a].update((b,c))
+        adjacent[b].update((a,c))
+        adjacent[c].update((a,b))
+    xyz=list(points)
+    changed=set()
+    for _ in range(6):
+        next_xyz=list(xyz)
+        for i,(x,y,z) in enumerate(xyz):
+            ax=abs(x)
+            if not (.211<y<.254 and ax<.054 and z>.123):continue
+            # Do not smooth the oral aperture or mix upper and lower lips.
+            lip=(bell(y,.241,.009)+.8*bell(y,.222,.009))
+            weight=(.30*lip*fade(z,.123,.140)*
+                    (1.-fade(ax,.040,.056)))
+            weight*=1.-bell(y,.232,.0022)
+            weight*=1.-.65*bell(ax,.011,.005)*bell(y,.247,.004)
+            if weight<.008:continue
+            near=[]
+            for j in adjacent[i]:
+                px,py,pz=xyz[j]
+                if (abs(px-x)<.007 and abs(py-y)<.007 and
+                    abs(pz-z)<.006 and pz>.122 and
+                    abs(uv[i][0]-uv[j][0])<.024 and
+                    abs(uv[i][1]-uv[j][1])<.024):
+                    near.append(pz)
+            if len(near)<3:continue
+            dz=max(-.00035,min(.00035,weight*(sum(near)/len(near)-z)))
+            if abs(dz)>1e-7:
+                next_xyz[i]=(x,y,z+dz)
+                changed.add(i)
+        xyz=next_xyz
+    return xyz,len(changed)
+
+
+def retopologize_upper_vermilion(points,uv,faces):
+    """Conservative real-3D upper-lip triangle optimization.
+
+    Only exchange internal diagonals of a front-facing, UV-consistent
+    quadrilateral lying fully above the mouth seal. Never move vertex IDs,
+    the seal, makeup UVs or the outside rim. This makes the sculpted upper
+    vermilion a regular surface rather than one long diagonal/shading wedge.
+    """
+    mesh=list(faces)
+    changes=0
+    def inside(i):
+        x,y,z=points[i]
+        u,v=uv[i]
+        return (abs(x)<.045 and .237<y<.2545 and z>.126 and
+                .33<u<.67 and .323<v<.61)
+    def zcross(a,b,c):
+        u=[points[b][k]-points[a][k] for k in range(3)]
+        v=[points[c][k]-points[a][k] for k in range(3)]
+        return u[0]*v[1]-u[1]*v[0]
+    def quality(a,b,c):
+        pa,pb,pc=(points[i] for i in (a,b,c))
+        u=[pb[k]-pa[k] for k in range(3)]
+        v=[pc[k]-pa[k] for k in range(3)]
+        cross=(u[1]*v[2]-u[2]*v[1],
+               u[2]*v[0]-u[0]*v[2],
+               u[0]*v[1]-u[1]*v[0])
+        twice_area=math.sqrt(sum(k*k for k in cross))
+        length2=sum(math.dist(p,q)**2 for p,q in
+                    ((pa,pb),(pb,pc),(pc,pa)))
+        return twice_area/max(length2,1e-14)
+    for _ in range(8):
+        adjacency=collections.defaultdict(list)
+        for index,(a,b,c) in enumerate(mesh):
+            if not all(inside(v) for v in (a,b,c)):continue
+            for x,y,z in ((a,b,c),(b,c,a),(c,a,b)):
+                adjacency[tuple(sorted((x,y)))].append((index,x,y,z))
+        used=set()
+        pass_count=0
+        for entries in adjacency.values():
+            if len(entries)!=2:continue
+            (i,a,b,c),(j,bb,aa,d)=entries
+            if i in used or j in used or a!=aa or b!=bb:continue
+            if not inside(d) or len({a,b,c,d})!=4:continue
+            direction=1 if area(uv[a],uv[b],uv[c])>0 else -1
+            if min(direction*area(uv[c],uv[d],uv[b]),
+                   direction*area(uv[d],uv[c],uv[a]))<1e-10:
+                continue
+            # Do not join non-neighboring folds in depth, flip an
+            # inverted surface or introduce a long diagonal.
+            if zcross(a,b,c)<=0 or zcross(b,a,d)<=0:continue
+            if zcross(c,d,b)<=0 or zcross(d,c,a)<=0:continue
+            if math.dist(points[c],points[d])>.012:continue
+            old=min(quality(a,b,c),quality(b,a,d))
+            new=min(quality(c,d,b),quality(d,c,a))
+            if new<=old*1.005:continue
+            mesh[i]=(c,d,b)
+            mesh[j]=(d,c,a)
+            used.update((i,j))
+            pass_count+=1
+        changes+=pass_count
+        if not pass_count:break
+    return mesh,changes
+
+
+def repair_outer_lip_normals(xyz, raw):
+    """Repair inward-facing front skin normals next to the closed mouth.
+
+    The inherited jaw UV remesh can average back-facing lip/inner-oral
+    triangles into the actual front skin (N.z below zero). This rendered a
+    wide charcoal bar beneath the lip despite a geometrically soft sulcus.
+    Blend only exterior front-facing cheek/lip surface toward an outward
+    normal, while preserving the thin actual oral seam and nose/eyes.
+    """
+    adjusted=[]
+    changed=0
+    for (x,y,z),(nx,ny,nz) in zip(xyz,raw):
+        ax=abs(x)
+        if not (.198<y<.254 and ax<.056 and z>.117 and nz<.82):
+            adjusted.append((nx,ny,nz))
+            continue
+        weight=(fade(y,.198,.208)*(1.-fade(y,.247,.254))*
+                fade(z,.117,.136)*(1.-fade(ax,.038,.056)))
+        # The real mouth seal must remain a single dark LINE, not a filled bar.
+        weight*=1.-math.exp(-.5*((y-.232)/.0015)**2)
+        blend=.93*weight
+        if blend<.015:
+            adjusted.append((nx,ny,nz))
+            continue
+        target=(nx*.35,ny*.45,.86)
+        length=math.sqrt(sum(t*t for t in target))
+        target=tuple(t/length for t in target)
+        new=(nx*(1.-blend)+target[0]*blend,
+             ny*(1.-blend)+target[1]*blend,
+             nz*(1.-blend)+target[2]*blend)
+        length=math.sqrt(sum(t*t for t in new))
+        adjusted.append(tuple(t/length for t in new))
+        changed+=1
+    return adjusted,changed
+
+
 def write_indices(g,b,indices):
     while len(b)%4:b.append(0)
     offset=len(b)
@@ -391,13 +540,21 @@ def rebuild(path):
     xyz,shape=new_lower_face_geometry(pts,uv)
     faces,replacement=replacement_triangulation(uv,old,xyz)
     xyz,fair_count=relax_labiomental_shading(xyz,faces)
+    xyz,vermilion_fair_count=fair_exterior_oral_surface(xyz,uv,faces)
+    faces,upper_lip_flips=retopologize_upper_vermilion(xyz,uv,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
-    prim['attributes']['NORMAL']=add_vec3(g,b,normals(xyz,faces))
+    safe_normals,normal_fix_count=repair_outer_lip_normals(xyz,normals(xyz,faces))
+    prim['attributes']['NORMAL']=add_vec3(g,b,safe_normals)
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
+        'vermilionSurfaceFairingVertices':vermilion_fair_count,
+        'upperVermilionLocalEdgeFlips':upper_lip_flips,
+        'upperVermilionRetopologyExcludesMouthSeal':True,
+        'repairedExteriorLipNormals':normal_fix_count,
+        'noBroadInvertedUnderlipNormals':True,
         'noSecondaryUnderlipLine':True,
         'realGeometryNotMaterialOnly':True,
         'sourceSkinVerticesRetained':len(xyz),

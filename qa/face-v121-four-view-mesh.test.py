@@ -48,9 +48,11 @@ class FourViewSculptQA(unittest.TestCase):
     def test_changes_are_real_3d_not_just_cosmetic_or_slider(self):
         def transformed(point):
             return SCULPT.sculpt(point)[0]
-        # Side-profile cheekbone should recede, not swell outward.
+        # v17's old cheekbone recession formed the angular/creased
+        # lower-cheek appearance in front/quarter views. v18 must keep
+        # supported smooth malar volume, not a scooped depression.
         cheek=(.075,.267,.125)
-        self.assertLess(transformed(cheek)[2],cheek[2]-.001)
+        self.assertGreater(transformed(cheek)[2],cheek[2]+.0008)
         # Jaw and brow-side forehead form a softer feminine ovoid.
         jaw=(.087,.156,.101)
         self.assertLess(transformed(jaw)[0],jaw[0]-.001)

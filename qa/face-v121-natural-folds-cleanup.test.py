@@ -49,7 +49,7 @@ class V121SkinClean(unittest.TestCase):
         self.assertEqual(len(self.g['meshes']),11)
         self.assertIn('eyeConstruction',meta)
         self.assertIn('eyelidFiberUpgrade',meta)
-        self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-inner-nasolabial-20261124-v17')
+        self.assertEqual(meta['naturalFoldCleanup']['version'],'v121-soft-supported-cheeks-20261124-v19')
         self.assertTrue(meta['naturalFoldCleanup']['surfaceDeformationOnly'])
         self.assertTrue(meta['naturalFoldCleanup']['removedLegacyBrowLidBand'])
         self.assertTrue(meta['naturalFoldCleanup']['removedChinTintLeakage'])
@@ -72,8 +72,8 @@ class V121SkinClean(unittest.TestCase):
         for ix in center:
             x,y,z=self.xyz[ix]
             self.assertLess(abs(x),.011)
-            self.assertGreater(y,.241)
-            self.assertLess(y,.262)
+            self.assertGreater(y,.251)
+            self.assertLess(y,.268)
         for ix in corrected:
             x,y,z=self.xyz[ix]
             self.assertGreater(abs(x),.025)
@@ -85,11 +85,11 @@ class V121SkinClean(unittest.TestCase):
         self.assertLessEqual(meta['referenceFeatureSculpt']['philtrumGrooveMasterDepth'],.004)
         self.assertGreater(meta['referenceFeatureSculpt']['philtrumColumnsRelief'],.0008)
         self.assertTrue(meta['referenceFeatureSculpt']['philtrumNoOvalPit'])
-        self.assertIn('continuous_nose_base_to_vermilion',meta['referenceFeatureSculpt']['philtrumShape'])
+        self.assertIn('continuous_nose_base_to_upper_vermilion',meta['referenceFeatureSculpt']['philtrumShape'])
         self.assertGreater(meta['referenceFeatureSculpt']['centralPhiltrumStart'][1],.259)
-        self.assertLess(meta['referenceFeatureSculpt']['centralPhiltrumEnd'][1],.241)
+        self.assertLess(meta['referenceFeatureSculpt']['centralPhiltrumEnd'][1],.251)
         # The depression is continuous through the middle of the philtrum.
-        for low,high in ((.242,.249),(.249,.255),(.255,.262)):
+        for low,high in ((.253,.257),(.257,.261),(.261,.266)):
             self.assertGreater(sum(1 for i in center if low<=self.xyz[i][1]<high),
                                0, f'central philtrum groove missing in y band {low}..{high}')
         self.assertTrue(meta['referenceFeatureSculpt']['parametricDepthControlSupported'])
