@@ -19,7 +19,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    # Playwright 1.58 supports Noble; ubuntu-latest has moved to 26.04.
+    runs-on: ubuntu-24.04
     # Preflight tests, asset optimization, artifact upload and public CDN checks
     # share this job. Allow enough time for all of them; deploy-pages itself
     # retains its separate action-level timeout.
