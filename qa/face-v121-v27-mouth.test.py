@@ -6,7 +6,7 @@ H=runpy.run_path(str(ROOT/'scripts/finish-v121-natural-folds.py'))
 class V27(unittest.TestCase):
     def test_real_mesh(self):
         prev=ROOT/'qa/baselines/face-v121-v26.glb'
-        _,a0,i0=Q['read'](prev);g,a,i=Q['read'](Q['PATH'])
+        _,a0,i0=Q['read'](prev);g,a,i=Q['read'](ROOT/'qa/baselines/face-v121-v27.glb')
         old,new=a0['POSITION'],a['POSITION']
         self.assertEqual(i,i0)
         self.assertEqual(a0['TEXCOORD_0'],a['TEXCOORD_0'])
@@ -23,7 +23,7 @@ class V27(unittest.TestCase):
         meta=g['meshes'][0]['extras']['mouthChinRebuild']['v27CompactMouth']
         self.assertGreater(meta['skinFairingVertices'],100)
         # The seal has identical topology and remains affinely aligned to the skin.
-        g0,b0=H['read_glb'](prev);g1,b1=H['read_glb'](Q['PATH'])
+        g0,b0=H['read_glb'](prev);g1,b1=H['read_glb'](ROOT/'qa/baselines/face-v121-v27.glb')
         def seal(g,b):
             m=next(m for m in g['meshes'] if m['name']=='V121_ORAL_CAVITY')
             p=m['primitives'][1]

@@ -35,11 +35,11 @@ function v26VermilionBorders(x){
 }
 export function v121VermilionBorders(x){
   const {upper,lower}=v26VermilionBorders(x/.88);
-  return {upper:.232+(upper-.232)*.90,lower:.232+(lower-.232)*.90};
+  return {upper:.232+(upper-.232)*.90*.80,lower:.232+(lower-.232)*.90*1.18};
 }
 export function v121MakeupMasks(x,y,z){
   const ax=Math.abs(x),front=fade(z,.084,.132);
-  const lx=x/.88,ly=.232+(y-.232)/.90,la=Math.abs(lx);
+  const lx=x/.88,ly=.232+(y-.232)/(.90*(y>=.232?.80:1.18)),la=Math.abs(lx);
   const {upper,lower}=v26VermilionBorders(lx);
   // A defined, but feathered, border. No pigment on cheek, philtrum,
   // sublabial skin or jaw; corners shrink to the oral commissures.
