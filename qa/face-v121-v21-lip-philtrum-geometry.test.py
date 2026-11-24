@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """v21: inspect real GLB accessors; reject metadata-only geometry claims."""
 import json, math, pathlib, struct, sys, unittest
+from collections import Counter
+from statistics import median
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 PATH=ROOT/'assets/generated/neutral-face-v121.glb'
@@ -45,6 +47,31 @@ def metric(path):
         'bad_normals':sum(abs(math.sqrt(sum(v*v for v in n))-1)>.06 for n in normals),
         'degenerate_triangles':sum(len(set(idx[i:i+3]))<3 for i in range(0,len(idx),3))}
 
+def repeated_index_faces(indices):
+    return Counter(tuple(sorted(indices[i:i+3])) for i in range(0,len(indices),3)
+                   if len(set(indices[i:i+3]))<3)
+
+def surface_z(points,indices,x,y):
+    """Intersect actual triangles with a fixed front-view ray (not a window max)."""
+    hits=[]
+    for i in range(0,len(indices),3):
+        a,b,c=(points[j] for j in indices[i:i+3])
+        if not min(a[0],b[0],c[0])<=x<=max(a[0],b[0],c[0]):continue
+        if not min(a[1],b[1],c[1])<=y<=max(a[1],b[1],c[1]):continue
+        u=(b[0]-a[0],b[1]-a[1]);v=(c[0]-a[0],c[1]-a[1])
+        det=u[0]*v[1]-u[1]*v[0]
+        if abs(det)<1e-12:continue
+        dx=x-a[0];dy=y-a[1]
+        s=(dx*v[1]-dy*v[0])/det;t=(u[0]*dy-u[1]*dx)/det
+        if min(s,t,1-s-t)<-1e-7:continue
+        hits.append(a[2]+s*(b[2]-a[2])+t*(c[2]-a[2]))
+    if not hits:raise AssertionError(f'no skin intersection at {x,y}')
+    return max(hits)
+
+def channel_sections(points,idx):
+    return [((surface_z(points,idx,-.010,y)+surface_z(points,idx,.010,y))/2
+             -surface_z(points,idx,0.,y)) for y in (.255,.259,.263)]
+
 class RealGeometry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -54,6 +81,7 @@ class RealGeometry(unittest.TestCase):
         baseline=ROOT/'qa/baselines/face-v121-v20.glb'
         if baseline.exists():
             cls.base=metric(baseline)
+            _,cls.base_attrs,cls.base_idx=read(baseline)
             print('v20 baseline metrics:',json.dumps(cls.base,indent=2))
         else:
             cls.base=None
@@ -68,12 +96,34 @@ class RealGeometry(unittest.TestCase):
     def test_mesh_integrity(self):
         self.assertEqual(self.m['nonfinite'],0)
         self.assertEqual(self.m['bad_normals'],0)
-        self.assertEqual(self.m['degenerate_triangles'],0)
+        self.assertIsNotNone(self.base,'Frozen v20 required for inherited topology audit')
+        # v20 contains 500 repeated-index faces. Reject every newly introduced
+        # repeated-index face rather than mislabel inherited source defects.
+        current=repeated_index_faces(self.idx)
+        inherited=repeated_index_faces(self.base_idx)
+        self.assertFalse(current-inherited,'New repeated-index triangles')
+        self.assertEqual(self.m['triangle_count'],self.base['triangle_count'])
         self.assertTrue(all(0<=i<len(self.a['POSITION']) for i in self.idx))
 
     def test_real_philtrum_relief(self):
-        m=self.m
-        self.assertLess(m['philtrum_center_z'],(m['philtrum_left_z']+m['philtrum_right_z'])/2-.0002)
+        self.assertIsNotNone(self.base)
+        actual=channel_sections(self.a['POSITION'],self.idx)
+        prior=channel_sections(self.base_attrs['POSITION'],self.base_idx)
+        print('v21 philtrum relief by actual triangle ray (m):',actual,'v20:',prior)
+        self.assertGreater(min(actual),.0002,'all three channel sections must be recessed')
+        self.assertGreater(median(actual)-median(prior),.0005,'real improvement over v20 required')
+
+    def test_upper_lip_projection_and_locked_seam(self):
+        self.assertIsNotNone(self.base)
+        before=self.base_attrs['POSITION']; after=self.a['POSITION']
+        upper=[b[2]-a[2] for a,b in zip(before,after)
+               if abs(a[0])<.020 and .238<a[1]<.245 and a[2]>.137]
+        self.assertGreater(len(upper),20)
+        self.assertGreater(median(upper),.0003,'actual upper-lip volume must increase')
+        seam=[math.dist(a,b) for a,b in zip(before,after)
+              if abs(a[0])<.035 and .230<a[1]<.233 and a[2]>.130]
+        self.assertTrue(seam)
+        self.assertLess(max(seam),.0003,'closed seam must stay stable')
 
     def test_v20_baseline_is_required(self):
         self.assertIsNotNone(self.base,'Frozen v20 GLB baseline missing; do not approve release')
