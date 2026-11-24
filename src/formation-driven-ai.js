@@ -4,7 +4,7 @@
  * navigation and attack cooldowns remain the authoritative engines.
  * This replaces the old unbounded "balanced -> idle" fallback.
  */
-export const FORMATION_AI_REVISION='symmetric-formation-v3-20261124';
+export const FORMATION_AI_REVISION='symmetric-formation-v4-20261124';
 const ATTACK_FORMATIONS=new Set(['attack','wedge','pincer','ambush','dragon','constellation','spear','cross']);
 const RANGED=new Set(['archer','mage']);
 export const isHighGroundFiringJob=jobId=>RANGED.has(String(jobId||'').toLowerCase())||String(jobId||'').toLowerCase()==='summoner';
@@ -48,12 +48,12 @@ export function formationCombatIntent({
  * are in grid cells. Never start baiting before an upper-floor ally arrives. */
 export function highGroundShieldIntent({ready=false,assigned=false,anchorDistance=Infinity,enemyDistance=Infinity,enemyAnchorDistance=Infinity,healthRatio=1,luring=false}={}){
  if(!assigned)return {phase:'fallback',luring:false};
+ if(luring)return {phase:anchorDistance>5?'return':'guard',luring:anchorDistance>5};
  if(!ready||healthRatio<.35)return {phase:anchorDistance>5?'return':'guard',luring:false};
- if(luring||enemyDistance<=4){
+ if(enemyDistance<=6){
   return {phase:anchorDistance>5?'return':'guard',luring:anchorDistance>5};
  }
  if(enemyAnchorDistance<=6)return {phase:anchorDistance>5?'return':'guard',luring:false};
- if(anchorDistance>24)return {phase:'return',luring:true};
  if(!Number.isFinite(enemyDistance))return {phase:anchorDistance>5?'return':'guard',luring:false};
  return {phase:'approach',luring:false};
 }
@@ -66,4 +66,8 @@ export function highGroundGroupKey(unit){
 export function highGroundRoofGoal(building,hasRoof){
  const floors=building?.floors?.length??0;
  return floors>1?floors+(hasRoof?1:0):0;
+}
+
+export function highGroundBaitActive({alive=true,ground=true,enemy=true,distance=Infinity,now=0,until=0,order=null}={}){
+ return alive&&ground&&enemy&&distance<=32&&now<until&&!['hold','retreat','move','mission','explore'].includes(order);
 }

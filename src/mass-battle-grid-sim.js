@@ -11,7 +11,7 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
-import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey} from './formation-driven-ai.js?v=formation-ai-v3-20261124';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundBaitActive} from './formation-driven-ai.js?v=formation-ai-v4-20261124';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
@@ -1621,7 +1621,7 @@ export class MassBattleGridSimulation {
       if(!formationPosts.has(key)||ready&&!formationPosts.get(key).ready)formationPosts.set(key,{route,index:u.highGroundRouteIndex,ready,team:u.team});
     }
     for(const post of formationPosts.values()){
-      let best=24*24;
+      let best=Infinity;
       for(const enemy of this.units){
         if(!enemy.alive||enemy.team===post.team||enemy.highGroundFloor>1)continue;
         const d=(enemy.x-post.route.access.x)**2+(enemy.z-post.route.access.z)**2;
@@ -1783,6 +1783,13 @@ export class MassBattleGridSimulation {
       // A soldier directly beside a living opponent protects itself before
       // following a mission farther away. Mission focus wins outside contact.
       if(missionNearest&&(!nearest||best>4)){nearest=missionNearest;best=missionBest;}
+      const bait=u._highGroundBaitId!=null?this.units[u._highGroundBaitId]:null;
+      const baitD=bait?Math.hypot(u.x-bait.x,u.z-bait.z):Infinity;
+      const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.alive&&bait.hp>0,ground:bait.highGroundRouteIndex<0,enemy:bait.team!==u.team,distance:baitD,now:this.time,until:u._highGroundBaitUntil,order:mission?'mission':personalOrderActive?u.tacticalOrder:(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId))})&&!this.explorationOrders.has(u.team+':'+String(u.squadId)));
+      if(chaseBait){
+       if(this._canSee(u,bait)){nearest=bait;best=baitD*baitD;}
+       else {hiddenEnemy=bait;nearest=null;best=reach*reach;}
+      }else u._highGroundBaitId=null;
       // Expose the opponent actually acquired by this agent to the command HUD.
       // -1 means no acquired squad (do not misreport the closest squad as a lock).
       u.currentTargetSquadId=nearest?.squadId!=null&&nearest.team!==u.team
@@ -1812,6 +1819,9 @@ export class MassBattleGridSimulation {
             enemyAnchorDistance:target?dist(anchor,target):Infinity,
             healthRatio:u.hp/Math.max(1,u.maxHp),luring:u._highGroundLuring});
           u._highGroundLuring=intent.luring;
+          if(post.ready&&target&&target.alive&&target.squadId!=null&&target.highGroundRouteIndex<0&&dist(u,target)<=6&&this._canSee(u,target)){
+            target._highGroundBaitId=u.id;target._highGroundBaitUntil=this.time+30;
+          }
           if(intent.phase==='return'||intent.phase==='approach'){
             const flow=intent.phase==='return'?this._highGroundFlows[post.index]:this._pursuitFlow(target,u.jobId);
             let next=null,bestFlow=flow?.[u.z*this.width+u.x]??Infinity;
@@ -1829,7 +1839,7 @@ export class MassBattleGridSimulation {
               u.moveElapsed=0;u.action='walk';continue;
             }
           }
-          if(intent.phase!=='fallback'&&(!nearest||best>job.range**2)){
+          if(intent.phase==='return'||intent.phase==='approach'||(intent.phase!=='fallback'&&(!nearest||best>job.range**2))){
             u.vx=0;u.vz=0;u.action='hold';continue;
           }
         }else u._highGroundLuring=false;
@@ -1939,7 +1949,7 @@ export class MassBattleGridSimulation {
       });
       const allyCover=guarding&&order==='defend'&&this.live[1-u.team]>0&&
         this._engagedAllyNear(u,heads,nextIds,10);
-      if(guarding&&!triageNeedsMovement&&!closeThreat&&!allyCover){
+      if(guarding&&!chaseBait&&!triageNeedsMovement&&!closeThreat&&!allyCover){
         u.action='hold';u.vx=0;u.vz=0;u.blockedTicks=0;continue;
       }
       const isNinja=u.jobId==='ninja';
@@ -1964,6 +1974,7 @@ export class MassBattleGridSimulation {
         this.live[1-u.team]>0;
       const pursuing=(!reachable||resumeCombat||closeThreat||allyCover)&&!supporting&&order!=='retreat'&&remembered&&
         Math.hypot(u.x-remembered.x,u.z-remembered.z)<26;
+      const baitFlow=chaseBait?this._pursuitFlow(bait,u.jobId):null;
       const targetFlow=pursuing?this._pursuitFlow(remembered,u.jobId):null;
       const chaseFlow=targetFlow&&targetFlow[cell]<0x3fffffff?targetFlow:null;
       const missionSquad=mission&&['eliminate_squad','eliminate_commander'].includes(mission.type)?
@@ -1977,7 +1988,7 @@ export class MassBattleGridSimulation {
       const healingRoute=triageNeedsMovement?this._pursuitFlow(triageTarget,u.jobId):null;
       const triageFlow=healingRoute&&healingRoute[cell]<0x3fffffff?healingRoute:null;
       const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
-        triageFlow|| (reachable&&!allyCover&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
+        triageFlow||(baitFlow&&baitFlow[cell]<0x3fffffff?baitFlow:null)|| (reachable&&!allyCover&&!(resumeCombat&&(chaseFlow||globalChase))?assignedFlow:
         supporting?this.supportFlow:chaseFlow||(globalChase?enemyFlow:
         reachable?assignedFlow:defaultFlow));
       if(!highFlow&&reachable&&flow===assignedFlow&&flow[cell]===0&&
