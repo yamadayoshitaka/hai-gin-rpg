@@ -4,7 +4,7 @@
  * navigation and attack cooldowns remain the authoritative engines.
  * This replaces the old unbounded "balanced -> idle" fallback.
  */
-export const FORMATION_AI_REVISION='symmetric-formation-v5-20261124';
+export const FORMATION_AI_REVISION='symmetric-formation-v6-20261125';
 const ATTACK_FORMATIONS=new Set(['attack','wedge','pincer','ambush','dragon','constellation','spear','cross']);
 const RANGED=new Set(['archer','mage']);
 export const isHighGroundFiringJob=jobId=>RANGED.has(String(jobId||'').toLowerCase())||String(jobId||'').toLowerCase()==='summoner';
