@@ -70,6 +70,6 @@ test('both real-time and Worker entrypoints use updated anti-wander logic',()=>{
  assert.match(source,/if\(here===0&&!nearest&&!taskNeedsApproach\)/);
  // Standard BFS moves must improve distance; deliberately authorized high-ground moves may bypass this guard.
  assert.match(source,/if\(rawFlow>=here&&!higherStep\)continue/);
- assert.match(worker,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
- assert.match(page,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
+ assert.match(worker,/mass-battle-grid-sim\.js\?v=20261125-global-bait/);
+ assert.match(page,/mass-battle-grid-sim\.js\?v=20261125-global-bait/);
 });

@@ -12,7 +12,7 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture,shouldCounterNearbyThreat} from './battle-defensive-doctrine.js?v=20261122-close-threat1';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js?v=20261122-cell-pingpong2';
-import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundBaitActive} from './formation-driven-ai.js?v=formation-ai-v4-20261124';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundBaitActive} from './formation-driven-ai.js?v=formation-ai-v6-20261125';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
@@ -1784,7 +1784,7 @@ export class MassBattleGridSimulation {
       if(missionNearest&&(!nearest||best>4)){nearest=missionNearest;best=missionBest;}
       const bait=u._highGroundBaitId!=null?this.units[u._highGroundBaitId]:null;
       const baitD=bait?Math.hypot(u.x-bait.x,u.z-bait.z):Infinity;
-      const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.alive&&bait.hp>0,ground:bait.highGroundRouteIndex<0,enemy:bait.team!==u.team,distance:baitD,now:this.time,until:u._highGroundBaitUntil,order:mission?'mission':personalOrderActive?u.tacticalOrder:(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId))})&&!this.explorationOrders.has(u.team+':'+String(u.squadId)));
+      const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.alive&&bait.hp>0,ground:bait.highGroundRouteIndex<0,enemy:bait.team!==u.team,distance:baitD,maxDistance:Infinity,now:this.time,until:u._highGroundBaitUntil,order:mission?'mission':personalOrderActive?u.tacticalOrder:(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId))})&&!this.explorationOrders.has(u.team+':'+String(u.squadId)));
       if(chaseBait){
        if(this._canSee(u,bait)){nearest=bait;best=baitD*baitD;}
        else {hiddenEnemy=bait;nearest=null;best=reach*reach;}
@@ -1811,15 +1811,22 @@ export class MassBattleGridSimulation {
          !['hold','retreat','move'].includes((u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId)))){
         const post=formationPosts.get(highGroundGroupKey(u));
         if(post){
-          const anchor=post.route.access,target=nearest||post.enemy;
+          const anchor=post.route.access;
+          const locked=this.units[u._baitEnemyId];
+          const target=locked?.alive&&locked.hp>0&&locked.team!==u.team&&locked.highGroundRouteIndex<0?locked:(nearest?.squadId!=null&&nearest.highGroundRouteIndex<0?nearest:post.enemy);
+          u._baitEnemyId=target?.id;
           const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+          const contact=Boolean(target&&target.alive&&target.squadId!=null&&target.highGroundRouteIndex<0&&dist(u,target)<=6&&this._canSee(u,target));
+          const waiting=(u._baitGuardUntil??0)>this.time||this.units.some(v=>v.alive&&v._highGroundBaitId===u.id);
+          const wasReturning=u._highGroundLuring;
           const intent=highGroundShieldIntent({assigned:true,ready:post.ready,
             anchorDistance:dist(u,anchor),enemyDistance:target?dist(u,target):Infinity,
             enemyAnchorDistance:target?dist(anchor,target):Infinity,
-            healthRatio:u.hp/Math.max(1,u.maxHp),luring:u._highGroundLuring});
+            healthRatio:u.hp/Math.max(1,u.maxHp),luring:u._highGroundLuring,holding:waiting,contact});
+          if(wasReturning&&intent.phase==='guard')u._baitGuardUntil=this.time+10;
           u._highGroundLuring=intent.luring;
-          if(post.ready&&target&&target.alive&&target.squadId!=null&&target.highGroundRouteIndex<0&&dist(u,target)<=6&&this._canSee(u,target)){
-            target._highGroundBaitId=u.id;target._highGroundBaitUntil=this.time+30;
+          if(post.ready&&contact){
+            target._highGroundBaitId=u.id;target._highGroundBaitUntil=Infinity;
           }
           if(intent.phase==='return'||intent.phase==='approach'){
             const flow=intent.phase==='return'?this._highGroundFlows[post.index]:this._pursuitFlow(target,u.jobId);
