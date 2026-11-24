@@ -1,0 +1,112 @@
+name: Face v121 v28 R2 - review only (no deployment)
+on:
+  push:
+    branches: [review/v121-v28-r2-no-deploy]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: v121-v28-r2-review
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build real revised and original v28 GLBs
+        run: |
+          python -m pip install --disable-pip-version-check Pillow==11.3.0
+          python3 -m py_compile scripts/refine-v121-reference-v28.py
+          python3 scripts/build-neutral-face-v120.py
+          python3 scripts/build-neutral-face-v121.py
+          mkdir -p qa/baselines
+          git fetch --no-tags --depth=1 origin 374a21b75876f0d0f0abaa57e7d1a14fda4e2404
+          git worktree add --detach /tmp/v121-v28-original 374a21b75876f0d0f0abaa57e7d1a14fda4e2404
+          (cd /tmp/v121-v28-original && python3 scripts/build-neutral-face-v120.py && python3 scripts/build-neutral-face-v121.py)
+          cp /tmp/v121-v28-original/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v28.glb
+      - name: Validate revised mesh and preserve source topology
+        run: |
+          python3 - <<'PY'
+          import pathlib,runpy,math,hashlib,json
+          H=runpy.run_path('scripts/finish-v121-natural-folds.py')
+          Q=runpy.run_path('qa/face-v121-v28-reference.test.py')
+          p0=pathlib.Path('qa/baselines/face-v121-v28.glb')
+          p1=pathlib.Path('assets/generated/neutral-face-v121.glb')
+          g0,b0=H['read_glb'](p0);g1,b1=H['read_glb'](p1)
+          assert len(b0)==len(b1)
+          a0=g0['meshes'][0]['primitives'][0];a1=g1['meshes'][0]['primitives'][0]
+          old=H['accessor'](g0,b0,a0['attributes']['POSITION'])
+          new=H['accessor'](g1,b1,a1['attributes']['POSITION'])
+          indices=[v[0] for v in H['accessor'](g0,b0,a0['indices'])]
+          assert indices==[v[0] for v in H['accessor'](g1,b1,a1['indices'])]
+          assert H['accessor'](g0,b0,a0['attributes']['TEXCOORD_0'])==H['accessor'](g1,b1,a1['attributes']['TEXCOORD_0'])
+          assert all(a==b for a,b in zip(old,new) if a[1]>=.335 or abs(a[0])>=.125)
+          normals=H['accessor'](g1,b1,a1['attributes']['NORMAL'])
+          assert all(math.isfinite(v) for p in new+normals for v in p)
+          assert all(abs(math.sqrt(sum(v*v for v in n))-1)<.002 for n in normals)
+          f=g1['meshes'][0]['extras']['mouthChinRebuild']['v28R2Fairing']
+          assert f['rmsAfter']<f['rmsBefore']
+          pairs=Q['surface_pairs'](old,new,indices,[x/1000 for x in range(-18,19,3)],[y/1000 for y in range(224,242,3)],.125)
+          import statistics
+          assert len(pairs)>=12
+          retract=statistics.median(a[2]-b[2] for a,b in pairs)
+          assert retract>.0005, retract
+          pathlib.Path('qa/screenshots/face-v121/v28-r2').mkdir(parents=True,exist_ok=True)
+          pathlib.Path('qa/screenshots/face-v121/v28-r2/mesh-report.json').write_text(json.dumps({'approved':False,'model_sha256':hashlib.sha256(p1.read_bytes()).hexdigest(),'baseline_sha256':hashlib.sha256(p0.read_bytes()).hexdigest(),'median_muzzle_retraction_m':retract,'fairing':f},indent=2))
+          PY
+      - name: Capture matched actual WebGL views (not AI illustrations)
+        if: success() || failure()
+        run: |
+          test -s assets/generated/neutral-face-v121.glb
+          test -s qa/baselines/face-v121-v28.glb
+          npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
+          npx playwright install --with-deps chromium
+          sed -e 's|face-v121/v28/|face-v121/v28-r2/|g' -e "s|face-v121/v28'|face-v121/v28-r2'|g" -e 's|face-v121-v27.glb|face-v121-v28.glb|g' -e 's|baseline-v27|baseline-v28|g' -e "s|baseline:'v27'|baseline:'v28'|g" qa/face-v121-v21-visual-regression.test.mjs > qa/face-v121-v28-r2-render.test.mjs
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/v121-review-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          sleep 2
+          node --test qa/face-v121-v28-r2-render.test.mjs
+      - name: Create eight-view contact sheet
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from PIL import Image,ImageOps,ImageDraw
+          from pathlib import Path
+          root=Path('qa/screenshots/face-v121/v28-r2')
+          views=['front','leftQuarter','threeQuarter','side','rightSide','below','noseClose','mouthClose']
+          labels=['FRONT','LEFT 45','RIGHT 45','LEFT PROFILE','RIGHT PROFILE','BELOW','NOSE','MOUTH']
+          if not all((root/(v+'.png')).exists() for v in views): raise SystemExit('Eight real render views not available')
+          for prefix,name in [('', 'revised-eight-views.png'),('baseline-v28-','original-v28-eight-views.png')]:
+              sheet=Image.new('RGB',(1600,1680),'#222831')
+              draw=ImageDraw.Draw(sheet)
+              for i,(v,label) in enumerate(zip(views,labels)):
+                  src=root/(prefix+v+'.png')
+                  if not src.exists():raise SystemExit('Missing '+str(src))
+                  im=ImageOps.contain(Image.open(src).convert('RGB'),(390,790))
+                  x=i%4*400;y=i//4*840
+                  draw.text((x+12,y+12),label,fill='white')
+                  sheet.paste(im,(x+(400-im.width)//2,y+40+(790-im.height)//2))
+              sheet.save(root/name)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v121-v28-r2-approval-images
+          path: qa/screenshots/face-v121/v28-r2/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v121-v28-r2-review-glb
+          path: assets/generated/neutral-face-v121.glb
+          if-no-files-found: ignore
+          retention-days: 14
