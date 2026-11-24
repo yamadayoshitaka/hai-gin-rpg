@@ -118,7 +118,7 @@ import {measureRealHead,calculateWigFit,measureWigCrown,
  buildFittedScalpCap,extractUnskinnedWig,PUBLIC_WIG_SOURCES}
  from './src/wig-glb-fit-v1.js?v=8';
 const $=id=>document.getElementById(id);
-const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-rounded-cheeks-v24-20261124';
+const sourceURL='./assets/generated/neutral-face-v121.glb?v=121-continuous-contour-v25-20261124';
 let renderer,scene,camera,orbit,face,wire,neutral,eyeNodes=[],rigMap={},metrics={},expressionClips=[],faceMakeup=null;
 let wigRoot=null,wigHead=null,wigRequestId=0;
 const WIG_STORE_KEY='hai-gin-v121-selected-wig';
@@ -380,7 +380,7 @@ async function init(){
   mouthCount:metrics.mouthRegionVertices.toLocaleString('ja-JP')
  }))update(id,value);
  $('export').disabled=false;
- update('status','女性v121 v24：頬骨の前方・外側への突出を抑え、下側の頬を支える曲面へ修正。口角・下唇下の溝をさらに低減し、上唇の法線を平滑化。鼻・人中・唇の中央を保護。スライダー・表情はオフです。');
+ update('status','女性v121 v25：頬骨から頬・顎までの連続曲面を絞り、鼻頭側面を細く調整。口角・下唇下の溝を絶対深さで制約し、上唇表面を実メッシュで平滑化。目・人中・唇の境界を保護。スライダー・表情はオフです。');
  void selectWig(restoreWigChoice());
  document.documentElement.dataset.neutralFaceReady='v121';
  let lastFrame=0;
