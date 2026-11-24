@@ -10,6 +10,8 @@ def fields(p):
     # Smooth broad cheek-volume reduction rather than a second isolated
     # dimple below the zygoma. Mouth and eye landmarks are hard protected.
     w*=1-fade(y,.223,.230)*(1-fade(a,.036,.045))
+    # Keep the oral transition from acquiring a new steep lateral shelf.
+    w*=1-.30*bell(y,.232,.016)*(1-fade(a,.047,.069))
     body=w*bell(y,.248,.052)*bell(a,.070,.039)
     crest=w*bell(y,.274,.018)*bell(a,.075,.020)
     jaw=fade(a,.017,.033)*(1-fade(a,.077,.105))*fade(y,.115,.160)*(1-fade(y,.192,.213))*fade(z,.025,.074)*bell(y,.175,.031)
@@ -36,26 +38,45 @@ def repair_grooves(old,xyz,near,faces):
     # XYZ changes to x have already been applied. Recompute true front-ray
     # barycentric samples on that geometry. Apply an absolute depth target,
     # not only a relative improvement from a visibly imperfect baseline.
-    constraints=S['groove_constraints'](xyz,faces)
     base=[p[2] for p in xyz]; z=list(base)
-    active={i:w for i,(w,r,q) in near.items() if S['region'](old[i])==0}
+    # A ray can intersect a vertex excluded from the MLS neighborhood
+    # (sparse skin or a UV seam). Include all eligible surface skin vertices,
+    # not only points with nine neighbors. Preserve true lip and philtrum.
+    active={}
+    for i,(x,y,d) in enumerate(xyz):
+        a=abs(x)
+        side=fade(a,.036,.040)*(1-fade(a,.068,.078))*fade(y,.216,.221)*(1-fade(y,.243,.250))
+        below=(1-fade(a,.020,.029))*fade(y,.200,.207)*(1-fade(y,.220,.223))
+        w=max(side,below)*fade(d,.080,.108)
+        if w>.001 and S['region'](old[i])==0:active[i]=w
     groups=collections.defaultdict(list)
     for i,v in enumerate(old):groups[v].append(i)
-    for _ in range(28):
+    # Re-evaluate the actual outermost intersection after displacement:
+    # triangles can exchange depth order in the inherited folded topology.
+    # Solve shared coincident vertices as a single variable.
+    owner={i:ids[0] for ids in groups.values() for i in ids}
+    members={ids[0]:ids for ids in groups.values()}
+    weights={i:max(active.get(j,0.) for j in ids) for i,ids in members.items()}
+    for _ in range(5):
+        current=[(x,y,z[i]) for i,(x,y,d) in enumerate(xyz)]
+        constraints=S['groove_constraints'](current,faces)
+        merged=[]
         for coeff,relative in constraints:
-            target=min(.00010,relative*.75)
-            depth=sum(z[i]*w for i,w in coeff.items())
-            if depth<=target:continue
-            den=sum(w*w*active.get(i,0.) for i,w in coeff.items())
-            if den<1e-10:continue
-            err=depth-target
-            for i,w in coeff.items():
-                if i not in active:continue
-                z[i]=max(base[i]-.0009,min(base[i]+.0009,z[i]-.85*err*w*active[i]/den))
-        for ids in groups.values():
-            if len(ids)>1:
-                avg=sum(z[i] for i in ids)/len(ids)
-                for i in ids:z[i]=avg
+            c=collections.defaultdict(float)
+            for i,w in coeff.items():c[owner[i]]+=w
+            merged.append((c,min(.000022,relative*.65)))
+        for _ in range(28):
+            for coeff,target in merged:
+                depth=sum(z[i]*w for i,w in coeff.items())
+                if depth<=target:continue
+                den=sum(w*w*weights.get(i,0.) for i,w in coeff.items())
+                if den<1e-10:continue
+                err=depth-target
+                for i,w in coeff.items():
+                    if weights.get(i,0.)<=0:continue
+                    value=max(base[i]-.0018,min(base[i]+.0018,z[i]-.82*err*w*weights[i]/den))
+                    for j in members[i]:z[j]=value
+
     return [(x,y,z[i]) for i,(x,y,_) in enumerate(xyz)]
 
 def apply(path):
@@ -89,7 +110,7 @@ def apply(path):
     p['attributes']['POSITION']=H['add_vec3'](g,b,xyz)
     p['attributes']['NORMAL']=H['add_vec3'](g,b,newnorm)
     p['attributes']['COLOR_0']=H['add_vec3'](g,b,[H['neutral_color'](*v) for v in xyz])
-    m['extras']['mouthChinRebuild']['v25ContinuousContour']={'version':'v25','movedVertices':sum(a!=b for a,b in zip(old,xyz)),'absoluteGrooveTargetMeters':.00010,'cheekAndJawRealXYZ':True,'lipSurfaceOnlyFairing':True,'eyeGeometryLocked':True}
+    m['extras']['mouthChinRebuild']['v25ContinuousContour']={'version':'v25','movedVertices':sum(a!=b for a,b in zip(old,xyz)),'absoluteGrooveTargetMeters':.000022,'cheekAndJawRealXYZ':True,'lipSurfaceOnlyFairing':True,'eyeGeometryLocked':True}
     g['buffers'][0]['byteLength']=len(b)
     raw=json.dumps(g,ensure_ascii=False,separators=(',',':')).encode()
     raw+=b' '*((-len(raw))%4);b+=b'\0'*((-len(b))%4)
