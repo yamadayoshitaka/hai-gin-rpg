@@ -62,8 +62,8 @@ test('both Worker and browser battle use the collision-aware monotonic nav',()=>
  assert.match(simSource,/requireEscape:true/);
  assert.match(simSource,/escape=true;break;/);
  assert.match(recovery,/if\(reverse\)continue;/);
- assert.match(worker,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
- assert.match(page,/mass-battle-grid-sim\.js\?v=20261122-cell-pingpong2/);
+ assert.match(worker,/mass-battle-grid-sim\.js\?v=20261125-global-bait/);
+ assert.match(page,/mass-battle-grid-sim\.js\?v=20261125-global-bait/);
  assert.match(page,/battle-movement-recovery\.js\?v=20261122-cell-pingpong2/);
  assert.match(page,/neighbors:exitCandidates,maxWorsening:1,requireEscape:true/,
   'skirmish crowded doors must verify a second-step escape');
