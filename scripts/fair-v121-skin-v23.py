@@ -103,6 +103,104 @@ def unit(v):
     d=math.sqrt(sum(x*x for x in v))
     return tuple(x/d for x in v) if d>1e-12 else (0.,0.,1.)
 
+def groove_constraints(points,faces):
+    """Actual front surface rays, with fixed XY barycentric coefficients."""
+    def ray(x,y):
+        hits=[]
+        for ia,ib,ic in faces:
+            a,b,c=points[ia],points[ib],points[ic]
+            if not min(a[0],b[0],c[0])<=x<=max(a[0],b[0],c[0]):continue
+            if not min(a[1],b[1],c[1])<=y<=max(a[1],b[1],c[1]):continue
+            ux,uy=b[0]-a[0],b[1]-a[1]
+            vx,vy=c[0]-a[0],c[1]-a[1]
+            det=ux*vy-uy*vx
+            if abs(det)<1e-12:continue
+            dx,dy=x-a[0],y-a[1]
+            u,v=(dx*vy-dy*vx)/det,(ux*dy-uy*dx)/det
+            if min(u,v,1-u-v)>=-1e-7:
+                hits.append(((ia,1-u-v),(ib,u),(ic,v)))
+        if not hits:raise ValueError('Missing skin ray')
+        return max(hits,key=lambda q:sum(points[i][2]*w for i,w in q))
+    samples=[]
+    for sign in (-1,1):
+        for y in (.224,.232,.240):
+            for x in (.042,.050,.058):
+                samples.append([(sign*(x+d),y) for d in (-.003,0,.003)])
+    for x in (-.015,0.,.015):
+        for y in (.210,.215,.220):
+            samples.append([(x,y+d) for d in (-.002,0,.002)])
+    out=[]
+    for a,b,c in samples:
+        coeff=collections.defaultdict(float)
+        for p,k in ((a,.5),(b,-1.),(c,.5)):
+            for i,w in ray(*p):coeff[i]+=k*w
+        depth=sum(points[i][2]*w for i,w in coeff.items())
+        out.append((dict(coeff),max(0.,depth)*.55))
+    return out
+
+def regularize_displacement(old,xyz,near,faces,groups):
+    """Constrain genuine skin trenches without introducing a second ridge."""
+    constraints=groove_constraints(old,faces)
+    base=[p[2] for p in old]
+    z=[p[2] for p in xyz]
+    # Keep Cupid, seam and central vermilion fixed while filling skin pits.
+    active={i:w for i,(w,r,q) in near.items() if region(old[i])==0}
+    for _ in range(18):
+        for coeff,target in constraints:
+            depth=sum(z[i]*w for i,w in coeff.items())
+            if depth<=target:continue
+            den=sum(w*w*active.get(i,0.) for i,w in coeff.items())
+            if den<1e-10:continue
+            err=depth-target
+            for i,w in coeff.items():
+                if i not in active:continue
+                d=-.8*err*w*active[i]/den
+                z[i]=max(base[i]-.0025,min(base[i]+.0025,z[i]+d))
+        for ids in groups.values():
+            if len(ids)>1:
+                avg=sum(z[i] for i in ids)/len(ids)
+                for i in ids:z[i]=avg
+    return [(x,y,z[i]) for i,(x,y,_) in enumerate(old)]
+
+def regularize_normals(old,xyz,original,faces,near):
+    """Use differential geometric normals, then diffuse the angular field
+    along short exterior mesh edges; reject any increase in angular energy."""
+    n0=H['normals'](old,faces); n1=H['normals'](xyz,faces)
+    adj=[set() for _ in old]
+    for a,b,c in faces:
+        for i,j in ((a,b),(b,c),(c,a)):
+            if i==j or math.dist(old[i],old[j])>=.008:continue
+            if region(old[i])!=region(old[j]):continue
+            if old[i][2]<.09 or old[j][2]<.09:continue
+            adj[i].add(j);adj[j].add(i)
+    # Baseline and current audit use identical edge selection.
+    def energy(v,p):
+        e=[math.acos(max(-1.,min(1.,sum(a*b for a,b in zip(v[i],v[j])))))**2
+           for i,q in enumerate(adj) for j in q if i<j
+           and weight(p[i])>.5 and weight(p[j])>.5
+           and region(p[i])==region(p[j])==0 and math.dist(p[i],p[j])<.008]
+        return math.sqrt(sum(e)/max(1,len(e)))
+    out=list(original)
+    for i,(w,r,q) in near.items():
+        # Apply the real geometric normal change to the existing outward
+        # normal field, without fitting an unstable slope at a thin triangle.
+        delta=tuple(b-a for a,b in zip(n0[i],n1[i]))
+        out[i]=unit(tuple(a+max(-.12,min(.12,d))*w*.5 for a,d in zip(original[i],delta)))
+    best=list(out);best_score=energy(best,xyz)
+    for _ in range(24):
+        nxt=list(out)
+        for i,(w,r,q) in near.items():
+            ns=[j for j in adj[i] if sum(a*b for a,b in zip(out[i],out[j]))>.35]
+            if len(ns)<2:continue
+            mean=unit(tuple(sum(out[j][k] for j in ns) for k in range(3)))
+            blend=.48*w
+            nxt[i]=unit(tuple(a*(1-blend)+b*blend for a,b in zip(out[i],mean)))
+        out=nxt
+        score=energy(out,xyz)
+        if score<best_score:best,best_score=list(out),score
+    print('v23 normal angular energy',energy(original,old),'->',best_score)
+    return best
+
 def apply(path):
     g,b=H['read_glb'](path)
     mesh=g['meshes'][0];p=mesh['primitives'][0]
@@ -134,27 +232,10 @@ def apply(path):
         if len(ids)>1:
             z=sum(xyz[i][2] for i in ids)/len(ids)
             for i in ids:xyz[i]=(old[i][0],old[i][1],z)
+    xyz=regularize_displacement(old,xyz,near,faces,groups)
     final=rms(xyz,near)
     if not final<initial:raise ValueError('v23 surface residual did not improve')
-    # Recalculate local area-weighted normals, then use fitted geometric
-    # tangents to regularize thin triangles and duplicated UV boundary normals.
-    calculated=H['normals'](xyz,faces)
-    out=list(normals)
-    for i,(w,r,q) in near.items():
-        c=fit(xyz,i,q)
-        if c is None:continue
-        tangent=unit((-c[1]/r,-c[2]/r,1.))
-        # Do not blend from the rear oral surface into exposed skin.
-        n=calculated[i]
-        if n[2]<0:n=tangent
-        target=unit(tuple(.30*a+.70*d for a,d in zip(n,tangent)))
-        blend=min(1.,w*1.7)
-        out[i]=unit(tuple((1-blend)*a+blend*d for a,d in zip(normals[i],target)))
-    for ids in groups.values():
-        active=[i for i in ids if i in near]
-        if len(active)>1:
-            n=unit(tuple(sum(out[i][k] for i in active) for k in range(3)))
-            for i in active:out[i]=n
+    out=regularize_normals(old,xyz,normals,faces,near)
     p['attributes']['POSITION']=H['add_vec3'](g,b,xyz)
     p['attributes']['NORMAL']=H['add_vec3'](g,b,out)
     p['attributes']['COLOR_0']=H['add_vec3'](g,b,[H['neutral_color'](*v) for v in xyz])
