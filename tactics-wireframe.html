@@ -918,7 +918,7 @@ import {signatureStrategyFor,formationSignatureWaypoints} from './src/formation-
 import {brokenFormationGroups} from './src/battle-formation-integrity.js';
 import {createBattleThreeGroupPanel} from './src/battle-three-group-panel.js';
 import {threeGroupOverview} from './src/battle-three-group-hierarchy.js';
-import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261122-map-pan-stable2';
+import {createRealtimeBattleCommands} from './src/battle-realtime-commands.js?v=20261125-optional-height1';
 import {parseExplorationDestination,explorationDestination,buildingFloorChoices} from './src/battle-exploration-floor.js?v=20261121-floor1';
 import {battleFormationEligibility,battleFormationRegroupTargets} from './src/battle-formation-orders.js?v=20261121-formation-change-v1';
 import {battleThreeTeamRadarSquads,createBattleThreeTeamEventTracker} from './src/battle-center-radar.js?v=20261122-three-team-events1';
@@ -1138,7 +1138,7 @@ import {createBattleUpperBodyAccent} from './src/character-system/battle-upper-b
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {battleSquadJob,engineBattleJobNameForSquad,displayBattleJobName} from './src/battle-job-squads.js?v=20261119-job-teams';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261125-global-bait';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261125-optional-height1';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=20261125-roof3';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
@@ -1149,7 +1149,7 @@ import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=2026
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261125-global-bait';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261125-optional-height1';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=20261119-overlap1';
@@ -5999,6 +5999,9 @@ function pursueEnemyOnAnotherFloor(a){
 // collision-checked stairs. This is a team-neutral doctrine; unlike the old
 // wandering floor scouts it never steals fighters from other formations.
 let lastFormationHighGroundScan=-Infinity;
+// A formation is a roster/shape, never permission to start a special tactic.
+const explicitHighGroundGroups=new Set();
+const explicitHighGroundActive=u=>explicitHighGroundGroups.has(highGroundGroupKey(u));
 function formationHighGroundReady(u){
  const t=u.floorTravel;
  return Boolean(t?.formationHighGround&&u.indoorFloor>=t.formationRoofGoal&&
@@ -6010,7 +6013,7 @@ function runFormationHighGroundAI(){
  const moving=u=>u.hp>0&&u.floorTravel&&['approach','toStair','climb'].includes(u.floorTravel.phase);
  if(actors.filter(moving).length>=8)return;
  const eligible=actors.filter(u=>u.hp>0&&!u.floorTravel&&!u._pendingCast&&
-  (u.indoorFloor??1)===1&&u.formationType==='highground'&&
+  (u.indoorFloor??1)===1&&explicitHighGroundActive(u)&&u.formationType==='highground'&&
   isHighGroundFiringJob(u.jobId)&&
   !['hold','defend','retreat','move','mission','explore'].includes(
    currentSkirmishDirective(u)?.mode)&&elapsed>=(u._formationHighGroundRetry??0))
@@ -6110,7 +6113,7 @@ function tickAI(dt){
     if(a===automaticFloorGuide)automaticFloorGuide=null;
    }
   }
-  if(!a.nextCell&&!a.floorTravel?.formationHighGround&&a.formationType!=='highground')pursueEnemyOnAnotherFloor(a);
+  if(!a.nextCell&&!a.floorTravel?.formationHighGround&&!explicitHighGroundActive(a))pursueEnemyOnAnotherFloor(a);
   // A fresh elimination order is stronger than an old upper-floor hold.
   // When no enemy can be attacked on the current level, take the real stairs
   // toward the surviving ground targets instead of staying on an empty floor.
@@ -6130,7 +6133,16 @@ function tickAI(dt){
     a._assaultFloorRetryAt=elapsed+(started?3:6);
    }
   }
-  if(a.floorTravel){updateUnitFloorTravel(a,dt);updateUpperFloorRangedCombat(a,dt);continue}
+  if(a._leaveHighGround){
+   const t=a.floorTravel;
+   if(!t)a._leaveHighGround=false;
+   else if((a.indoorFloor??1)===1&&['approach','toStair'].includes(t.phase)){
+    releaseGrappleRope(t);a.floorTravel=null;a._leaveHighGround=false;a.thinkTimer=0;
+   }else if((a.indoorFloor??1)>1&&['upstairs','roof'].includes(t.phase)){
+    if(requestUnitFloor(a,-1,t.building,{forceStairs:true}))a.floorTravel.manualHighGroundAttack=false;
+   }
+  }
+  if(a.floorTravel){updateUnitFloorTravel(a,dt);if(!a._leaveHighGround)updateUpperFloorRangedCombat(a,dt);continue}
   if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
   a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  // The 50v50 caster stays rooted and keeps chanting until completion.
@@ -6157,14 +6169,14 @@ function tickAI(dt){
   let enemy=nearestEnemy(a);const p=a.root.position;
   const bait=a._highGroundBaitId!=null?actors.find(v=>v.id===a._highGroundBaitId):null;
    const baitDistance=bait?Math.hypot(p.x-bait.root.position.x,p.z-bait.root.position.z)/CELL:Infinity;
-   const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.hp>0,ground:(bait.indoorFloor??1)===1&&!bait.floorTravel,enemy:bait.team!==a.team,distance:baitDistance,maxDistance:Infinity,now:elapsed,until:a._highGroundBaitUntil,order:squadDirective?.mode||order}));
+   const chaseBait=Boolean(bait&&explicitHighGroundActive(bait)&&highGroundBaitActive({alive:bait.hp>0,ground:(bait.indoorFloor??1)===1&&!bait.floorTravel,enemy:bait.team!==a.team,distance:baitDistance,maxDistance:Infinity,now:elapsed,until:a._highGroundBaitUntil,order:squadDirective?.mode||order}));
    if(chaseBait){enemy=bait;order='charge';}else a._highGroundBaitId=null;
    // The high-ground formation's ground guard uses its own squad's real
   // staircase as a bait post; don't pull defenders from other formations.
-  if(a.jobId==='shield'&&a.formationType==='highground'&&
+  if(a.jobId==='shield'&&explicitHighGroundActive(a)&&a.formationType==='highground'&&
      !['hold','retreat','move','mission','explore'].includes(squadDirective?.mode)){
    const posts=actors.filter(v=>v.hp>0&&highGroundGroupKey(v)===highGroundGroupKey(a)&&
-    v.formationType==='highground'&&isHighGroundFiringJob(v.jobId)&&v.floorTravel?.formationHighGround);
+    explicitHighGroundActive(v)&&v.formationType==='highground'&&isHighGroundFiringJob(v.jobId)&&v.floorTravel?.formationHighGround);
    const previousPost=a._baitPost;
    const post=posts.find(v=>v.floorTravel.building===previousPost&&formationHighGroundReady(v))||
     posts.find(formationHighGroundReady)||posts[0];
@@ -8284,8 +8296,20 @@ function issueIndividualSquadOrder(mode,point=null,silent=false,{retainEnemyQueu
  if(!retainEnemyQueue)targetedEnemyQueues.delete(String(id));
  // Each order applies to the ENTIRE squad, not a selected soldier subset.
  // Clear obsolete partial-squad orders from any existing battle state.
- if(!massSim)for(const u of actors){
-  if(u.team===0&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
+ if(!massSim){
+  const selected=actors.find(u=>u.team===0&&String(u.squadId)===String(id));
+  const groupKey=selected&&highGroundGroupKey(selected);
+  if(groupKey)explicitHighGroundGroups.delete(groupKey);
+  for(const u of actors){
+   if(u.team===0&&String(u.squadId)===String(id)){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
+   if(u.team===0&&groupKey&&highGroundGroupKey(u)===groupKey){
+    u._highGroundLuring=false;u._baitPost=null;u._baitAnchor=null;u._baitEnemyId=null;u._baitGuardUntil=0;
+    if(u.floorTravel?.formationHighGround||String(u.squadId)===String(id)&&u.floorTravel?.manualHighGroundTargetId){
+     u._leaveHighGround=true;u.floorTravel.formationHighGround=false;u.floorTravel.manualHighGroundTarget=false;
+     u.floorTravel.manualHighGroundAttack=false;u._manualHighGroundAttack=false;
+    }
+   }
+  }
  }
  markRibbonOrderIssued(id);
  if(mode==='clear')squadOrderRegistry.delete(id);
@@ -9015,9 +9039,22 @@ function issueFormationSignature({groupId,squadIds:requested=[],automaticOpening
   return '軍師の状態または命令間隔により発令できません。';
  const centers=members.map(id=>({id,point:squadCenter(id,0)})).filter(x=>x.point);
  if(!centers.length)return '部隊位置を取得できません。';
- if(formation.formation==='highground'&&!massSim){
-  // High-ground uses real terrain targets, not the two flat preview waypoints.
-  for(const id of members)issueTargetedPlatoon(id,'charge');
+ if(formation.formation==='highground'){
+   const firing=members.filter(id=>squadRoster.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false&&isHighGroundFiringJob(u.jobId)));
+   if(!firing.length)return '高所攻撃が可能な遠距離・召喚役がいません。';
+   if(massSim){
+    let applied=0;
+    for(const id of firing){
+     const center=squadCenter(id,0);if(!center)continue;
+     const targets=realtimeSpecialTargets(id,'high_ground').filter(t=>t.available).sort((a,b)=>Math.hypot(a.x-center.x,a.z-center.z)-Math.hypot(b.x-center.x,b.z-center.z));
+     if(targets.length&&issueRealtimeSpecial(id,'high_ground',targets[0].id,false,'attack'))applied++;
+    }
+    if(!applied)return '利用可能な高所がありません。基本戦術を継続します。';
+   }else{
+    if(!actors.some(u=>u.team===0&&members.includes(String(u.squadId))&&u.hp>0&&isHighGroundFiringJob(u.jobId)&&accessibleStairBuilding(u,{preferRoof:true})))return '利用可能な高所がありません。基本戦術を継続します。';
+    for(const id of members)issueTargetedPlatoon(id,'charge');
+    for(const u of actors)if(u.team===0&&members.includes(String(u.squadId))){u._leaveHighGround=false;explicitHighGroundGroups.add(highGroundGroupKey(u));}
+   }
   log('★ 第'+group+'隊：屋上確保と盾役の誘導を開始');
   battleDialogue.push({key:'highground:'+group+':'+Math.round(elapsed*10),speaker:'軍師',kind:'info',priority:80,text:'第'+group+'隊：屋上を確保し、盾役が敵を誘導します。'});
   return true;
@@ -11720,9 +11757,10 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    spear:'槍衾陣形',arrow:'弓月陣形',wedge:'楔形陣形',pincer:'包囲陣形',
    circle:'円環陣形',ambush:'伏兵陣形',cross:'十字陣形',fortress:'鉄壁陣形',
    dragon:'龍牙陣形',constellation:'星鐘陣形',free:'自由陣形'};
-  return {strategy:THREE_TEAM_BATTLE?null:byOrder[saved.order]||'assault',formation:names[saved.formation]||'標準陣形',captain:saved.captain||null,
+  return {strategy:THREE_TEAM_BATTLE?null:byOrder[saved.order]||'assault',formation:formationId==='highground'?'高所陣形':names[saved.formation]||'標準陣形',captain:saved.captain||null,
    formationActive:saved.formationActive!==false,
-   allowedStrategies:[...(strategies.length?strategies:['assault','defense','balanced']),...advanced],
+   allowedStrategies:[...(strategies.length?strategies:['assault','defense','balanced']),...advanced,
+     ...(formationActive&&formationId==='highground'&&squadRoster.some(u=>u.team===0&&ids.includes(String(u.squadId))&&u.hp>0&&u.alive!==false&&isHighGroundFiringJob(u.jobId))?['highground_attack']:[])],
    reason:!formationActive?'陣形補正なし':''};
  },
  getRadarEnemies:()=>THREE_TEAM_BATTLE?battleThreeTeamRadarSquads(
@@ -11818,8 +11856,9 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
   pendingOpeningFormationGroups.clear();
   for(const group of [1,2,3]){
    const state=storyRequest?.formationIntegrity?.[String(group)];
-   if(THREE_TEAM_BATTLE&&state?.active&&state.formation!=='free')
-    pendingOpeningFormationGroups.add(String(group));
+   if(THREE_TEAM_BATTLE&&state?.active&&state.formation!=='free'&&
+      (state.formation==='highground'?initialPlans[String(group)]==='highground_attack':!initialPlans[String(group)]))
+     pendingOpeningFormationGroups.add(String(group));
   }
   // Execute actual extra tactics, not just an opening-screen label.
   const applyOpeningAdditional=(group,members,id)=>{
@@ -11873,6 +11912,8 @@ realtimeCommandUI=!TOWN_MODE?createRealtimeBattleCommands({
    const saved=storyRequest?.initialTeamPlans?.[String(group)];
    let strategy=initialPlans[String(group)]||
     ({charge:'assault',defend:'defense',hold:'balanced',explore:'explore'}[saved?.order])||'assault';
+    // High-ground is optional; ordinary ground assault is its fallback.
+    if(strategy==='highground_attack')strategy='assault';
    if(STRATEGY_METHODS[strategy]){
     if(applyOpeningAdditional(group,members,strategy))continue;
     log('第'+group+'隊：追加作戦の対象を実行できないため基本バランス作戦に切替');

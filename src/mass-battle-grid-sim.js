@@ -1534,7 +1534,8 @@ export class MassBattleGridSimulation {
     this._pursuitBuildsThisTick=0;this._enemyBuildsPerTeam.fill(0);
     if(this.tickCount%30===0){
       this._refreshSquadObjectives();this._applyGlobalStrategy();
-      this._assignHighGroundUnits();this._assignUpperFloorPursuits();
+      // Optional rooftop deployment requires a player-issued high-ground order.
+      this._assignUpperFloorPursuits();
     }
     this.battleStarted=true;
     const occupied=this._occupancy;
@@ -1615,7 +1616,7 @@ export class MassBattleGridSimulation {
     this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors:this._combatSectors,walkable:this.walkable});
     const formationPosts=new Map();
     for(const u of this.units){
-      if(!u.alive||u.formationType!=='highground'||!isHighGroundFiringJob(u.jobId)||u.highGroundRouteIndex<0||u.highGroundManualHold||u.highGroundPhase===3)continue;
+      if(!u.alive||u.formationType!=='highground'||!isHighGroundFiringJob(u.jobId)||u.highGroundRouteIndex<0||u.highGroundManualHold||u.highGroundPhase===3||u.upperPursuitTargetId>=0)continue;
       const route=this.highGroundRoutes[u.highGroundRouteIndex];
       if(!route||!this._highGroundRouteAlive(route))continue;
       const key=highGroundGroupKey(u),ready=u.highGroundPhase===2&&u.highGroundFloor>1;
@@ -1784,7 +1785,7 @@ export class MassBattleGridSimulation {
       if(missionNearest&&(!nearest||best>4)){nearest=missionNearest;best=missionBest;}
       const bait=u._highGroundBaitId!=null?this.units[u._highGroundBaitId]:null;
       const baitD=bait?Math.hypot(u.x-bait.x,u.z-bait.z):Infinity;
-      const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.alive&&bait.hp>0,ground:bait.highGroundRouteIndex<0,enemy:bait.team!==u.team,distance:baitD,maxDistance:Infinity,now:this.time,until:u._highGroundBaitUntil,order:mission?'mission':personalOrderActive?u.tacticalOrder:(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId))})&&!this.explorationOrders.has(u.team+':'+String(u.squadId)));
+      const chaseBait=Boolean(bait&&formationPosts.has(highGroundGroupKey(bait))&&highGroundBaitActive({alive:bait.alive&&bait.hp>0,ground:bait.highGroundRouteIndex<0,enemy:bait.team!==u.team,distance:baitD,maxDistance:Infinity,now:this.time,until:u._highGroundBaitUntil,order:mission?'mission':personalOrderActive?u.tacticalOrder:(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId))})&&!this.explorationOrders.has(u.team+':'+String(u.squadId)));
       if(chaseBait){
        if(this._canSee(u,bait)){nearest=bait;best=baitD*baitD;}
        else {hiddenEnemy=bait;nearest=null;best=reach*reach;}
@@ -1901,7 +1902,7 @@ export class MassBattleGridSimulation {
       // No optional high-ground repositioning while an enemy is already
       // in physical contact. This must hold for 100 and 1000 per side.
       const immediateThreat=nearest&&best<=Math.min(4,job.range*job.range);
-      if(nearest&&!immediateThreat&&u.formationType==='highground'&&
+      if(nearest&&!immediateThreat&&formationPosts.has(highGroundGroupKey(u))&&u.formationType==='highground'&&
          this.elevationMap&&isHeightTactician(u.jobId)){
         const highNeighbors=[];
         for(const [dx,dz] of NEIGHBORS){

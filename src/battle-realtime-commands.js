@@ -19,7 +19,7 @@ import {findBattleMapPin,formatBattleMapPercent,stableBattleMapPins,stableBattle
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const PREBATTLE_FORMATION_IDS=Object.freeze({
  '前進陣形':'attack','標準陣形':'balanced','後衛陣形':'support','防壁陣形':'wall',
- '槍衾陣形':'spear','弓月陣形':'arrow','楔形陣形':'wedge','包囲陣形':'pincer',
+ '槍衾陣形':'spear','弓月陣形':'arrow','高所陣形':'highground','楔形陣形':'wedge','包囲陣形':'pincer',
  '円環陣形':'circle','伏兵陣形':'ambush','十字陣形':'cross','鉄壁陣形':'fortress',
  '龍牙陣形':'dragon','星鐘陣形':'constellation','自由陣形':'free'
 });
@@ -27,7 +27,7 @@ const formationPreviewId=plan=>String(plan?.formationId||
  PREBATTLE_FORMATION_IDS[plan?.formation]||plan?.formation||'balanced');
 const PREBATTLE_TACTIC_NAMES=Object.freeze({
  assault:'殲滅',defense:'守備',balanced:'バランス',explore:'探索',
- ...ADVANCED_FORMATION_TACTICS
+ ...ADVANCED_FORMATION_TACTICS,highground_attack:'高所攻撃（任意作戦）'
 });
 const escapePrebattle=value=>String(value??'').replace(/[&<>"']/g,ch=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -352,12 +352,12 @@ export function createRealtimeBattleCommands({
    // The Android native picker is populated from the team's *actual* live
    // capabilities; selecting an additional tactic now issues that tactic.
    const basic=Object.keys(BASIC_OPENING_TACTICS).filter(id=>allowed.includes(id));
-   const advanced=Object.keys(ADVANCED_FORMATION_TACTICS).filter(id=>allowed.includes(id));
+   const advanced=[...Object.keys(ADVANCED_FORMATION_TACTICS),'highground_attack'].filter(id=>allowed.includes(id));
    chooser.innerHTML='<option value="">作戦を選択してください</option>'+
     '<optgroup label="基本作戦">'+basic.map(id=>
       '<option value="'+id+'">'+escapePrebattle(BASIC_OPENING_TACTICS[id])+'</option>').join('')+'</optgroup>'+
     (advanced.length?'<optgroup label="陣形・ジョブの追加作戦">'+advanced.map(id=>
-      '<option value="'+id+'">★ '+escapePrebattle(ADVANCED_FORMATION_TACTICS[id])+'</option>').join('')+'</optgroup>':'');
+      '<option value="'+id+'">★ '+escapePrebattle(PREBATTLE_TACTIC_NAMES[id])+'</option>').join('')+'</optgroup>':'');
    let strategy=initialTeamPlans.get(key);
    if(!allowed.includes(strategy)){
     strategy=requirePrebattleChoices?'':allowed.includes(defaults.strategy)?defaults.strategy:allowed[0];
