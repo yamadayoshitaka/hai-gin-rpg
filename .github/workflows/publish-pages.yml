@@ -174,7 +174,7 @@ jobs:
         run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
       - name: Bake v121 UV globe eyes and 2048px embedded PBR skin
         run: python3 scripts/build-neutral-face-v121.py --out assets/generated/neutral-face-v121.glb
-      - name: Block publication on actual v121 v21 geometry regressions
+      - name: Block publication on actual v121 v22 geometry regressions
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin 7fa3ed27adac344c46a2076f813a1f723693075b
@@ -263,7 +263,9 @@ jobs:
           assert x['referenceMakeup']['version']=='v121-natural-reference-size-lips-v20-20261124'
           assert len(x['naturalFoldCleanup']['nasolabialLeftVertexIds'])>8
           assert len(x['naturalFoldCleanup']['nasolabialRightVertexIds'])>8
-          assert 'natural-lips-v20' in pathlib.Path('pages-dist/face-neutral-v121.html').read_text()
+          assert 'tapered-lips-v22' in pathlib.Path('pages-dist/face-neutral-v121.html').read_text()
+          assert x['mouthChinRebuild']['v22CornerAndSkin']['taperedVertices'] > 30
+          assert x['mouthChinRebuild']['v22CornerAndSkin']['skinRmsAfter'] < x['mouthChinRebuild']['v22CornerAndSkin']['skinRmsBefore']
           assert x['referenceFeatureSculpt']['nasalTipAndAlarNarrowed'] is True
           assert x['referenceFeatureSculpt']['philtrumDistanceShortenedByGeometry'] is True
           assert x['referenceFeatureSculpt']['philtrumReal3DGrooveNotMakeup'] is True
