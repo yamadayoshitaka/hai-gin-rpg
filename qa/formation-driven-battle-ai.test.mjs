@@ -81,7 +81,7 @@ assert.match(battle,/monsterId=team===1&&i<6&&previewMonsterId/);
 assert.match(battle,/formationType:storyUnit\?\.formationType/);
 assert.match(mass,/formationCombatIntent\(\{/);
 assert.match(battle,/highGroundShieldIntent\(\{/);
-assert.match(battle,/!preciseGoal&&currentSkirmishDirective/);
+assert.match(battle,/!preciseGoal&&!a\.isStrategist/);
 assert.match(battle,/moveActor\(a,anchor,\.18,CELL\*4,\{preciseGoal:true\}\)/);
 assert.match(battle,/enemy\._highGroundBaitId=a\.id/);
 assert.match(mass,/target\._highGroundBaitId=u\.id/);
