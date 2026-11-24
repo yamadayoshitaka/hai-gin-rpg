@@ -79,12 +79,12 @@ def new_lower_face_geometry(points,uv):
         (.149,-.0032),
         (.173,-.0032),
         (.188,-.0043),
-        (.198,-.0047),
-        (.204,-.0048),  # wide, shallow skin-only sulcus, not a dark shelf
-        (.211,-.0044),  # continuous normal transition below lower lip
-        (.218,-.0037),
-        (.224,-.00335), # actual lower vermilion stays round, no second lip
-        (.228,-.00235),
+        (.198,-.0037),
+        (.204,-.0036),  # subtle, wide skin-only sulcus without a charcoal ledge
+        (.211,-.00325), # smooth rise toward the true lower vermilion
+        (.218,-.00285),
+        (.224,-.00240), # no independent ridge below the lip
+        (.228,-.00165),
         (.234,-.0005),  # keep the closed oral seam and entire upper lip
         (.245, .0000),
         (.255, .0000),
@@ -364,6 +364,69 @@ def relax_labiomental_shading(points,faces):
     return xyz,len(moved)
 
 
+
+def retopologize_upper_vermilion(points,uv,faces):
+    """Conservative real-3D upper-lip triangle optimization.
+
+    Only exchange internal diagonals of a front-facing, UV-consistent
+    quadrilateral lying fully above the mouth seal. Never move vertex IDs,
+    the seal, makeup UVs or the outside rim. This makes the sculpted upper
+    vermilion a regular surface rather than one long diagonal/shading wedge.
+    """
+    mesh=list(faces)
+    changes=0
+    def inside(i):
+        x,y,z=points[i]
+        return abs(x)<.045 and .237<y<.2545 and z>.126
+    def zcross(a,b,c):
+        u=[points[b][k]-points[a][k] for k in range(3)]
+        v=[points[c][k]-points[a][k] for k in range(3)]
+        return u[0]*v[1]-u[1]*v[0]
+    def quality(a,b,c):
+        pa,pb,pc=(points[i] for i in (a,b,c))
+        u=[pb[k]-pa[k] for k in range(3)]
+        v=[pc[k]-pa[k] for k in range(3)]
+        cross=(u[1]*v[2]-u[2]*v[1],
+               u[2]*v[0]-u[0]*v[2],
+               u[0]*v[1]-u[1]*v[0])
+        twice_area=math.sqrt(sum(k*k for k in cross))
+        length2=sum(math.dist(p,q)**2 for p,q in
+                    ((pa,pb),(pb,pc),(pc,pa)))
+        return twice_area/max(length2,1e-14)
+    for _ in range(8):
+        adjacency=collections.defaultdict(list)
+        for index,(a,b,c) in enumerate(mesh):
+            if not all(inside(v) for v in (a,b,c)):continue
+            for x,y,z in ((a,b,c),(b,c,a),(c,a,b)):
+                adjacency[tuple(sorted((x,y)))].append((index,x,y,z))
+        used=set()
+        pass_count=0
+        for entries in adjacency.values():
+            if len(entries)!=2:continue
+            (i,a,b,c),(j,bb,aa,d)=entries
+            if i in used or j in used or a!=aa or b!=bb:continue
+            if not inside(d) or len({a,b,c,d})!=4:continue
+            direction=1 if area(uv[a],uv[b],uv[c])>0 else -1
+            if min(direction*area(uv[c],uv[d],uv[b]),
+                   direction*area(uv[d],uv[c],uv[a]))<1e-10:
+                continue
+            # Do not join non-neighboring folds in depth, flip an
+            # inverted surface or introduce a long diagonal.
+            if zcross(a,b,c)<=0 or zcross(b,a,d)<=0:continue
+            if zcross(c,d,b)<=0 or zcross(d,c,a)<=0:continue
+            if math.dist(points[c],points[d])>.012:continue
+            old=min(quality(a,b,c),quality(b,a,d))
+            new=min(quality(c,d,b),quality(d,c,a))
+            if new<=old*1.005:continue
+            mesh[i]=(c,d,b)
+            mesh[j]=(d,c,a)
+            used.update((i,j))
+            pass_count+=1
+        changes+=pass_count
+        if not pass_count:break
+    return mesh,changes
+
+
 def repair_outer_lip_normals(xyz, raw):
     """Repair inward-facing front skin normals next to the closed mouth.
 
@@ -430,6 +493,7 @@ def rebuild(path):
     xyz,shape=new_lower_face_geometry(pts,uv)
     faces,replacement=replacement_triangulation(uv,old,xyz)
     xyz,fair_count=relax_labiomental_shading(xyz,faces)
+    faces,upper_lip_flips=retopologize_upper_vermilion(xyz,uv,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
@@ -438,6 +502,8 @@ def rebuild(path):
     prim['indices']=write_indices(g,b,[i for t in faces for i in t])
     info['mouthChinRebuild']={**shape,**replacement,
         'labiomentalFairingVertices':fair_count,
+        'upperVermilionLocalEdgeFlips':upper_lip_flips,
+        'upperVermilionRetopologyExcludesMouthSeal':True,
         'repairedExteriorLipNormals':normal_fix_count,
         'noBroadInvertedUnderlipNormals':True,
         'noSecondaryUnderlipLine':True,
