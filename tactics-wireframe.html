@@ -1168,7 +1168,7 @@ import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {MONSTER_CATALOG,resolveMonsterGameSpec} from './src/monster-catalog.js?v=battle-catalog-parity-20261123';
 import {battleUnitDisplayName} from './src/battle-unit-display-identity.js?v=monster-display-20261117';
-import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundRoofGoal,highGroundBaitActive} from './src/formation-driven-ai.js?v=formation-ai-v5-20261124';
+import {formationCombatIntent,isHighGroundFiringJob,highGroundShieldIntent,highGroundGroupKey,highGroundRoofGoal,highGroundBaitActive} from './src/formation-driven-ai.js?v=formation-ai-v6-20261125';
 import {reachableRoomExit,reachableFormationWaypoint,sharedRoomExitFlow,sharedRoomExitStep} from './src/formation-ai-indoor-route.js?v=castle-exit-relief-v3-20261124';
 import {buildSkirmishAssaultFlow,nextSkirmishAssaultStep} from './src/battle-skirmish-assault-flow.js?v=skirmish-assault-r1-20261124';
 import {createRegisteredBattleMonster}
@@ -5170,7 +5170,7 @@ function requestUnitFloor(a,direction,buildingOverride=null,{forceStairs=false}=
    {cellSize:CELL}):null;
  const phase=from===1?'approach':'climb';
  a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,
-  viaGrapple:grappling,viaMount:mountedRoof,dismountAt:mounted?.dismountAt??null,
+  viaGrapple:grappling,viaMount:mountedRoof,viaLadder:viaRoof&&!grappling&&!mountedRoof,dismountAt:mounted?.dismountAt??null,
   dismounted:!mountedRoof,grappleWindow:grapple?.windowSlot??null,
   stairStage:stairStage?new THREE.Vector3(stairStage.x,
     terrainY(stairStage.x,stairStage.z),stairStage.z):null,
@@ -5398,8 +5398,7 @@ function updateUnitFloorTravel(a,dt){
  if(travel.phase==='upstairs'){
   // Formation deployment owns the whole staircase sequence. Do not
   // stop at 2F, collect loot, or let generic assault cancel the roof route.
-  if(travel.formationHighGround&&a.indoorFloor<travel.formationRoofGoal&&
-    elapsed-(travel.arrivedAt??elapsed)>.35){
+  if(travel.formationHighGround&&a.indoorFloor<travel.formationRoofGoal){
    const goal=travel.formationRoofGoal,building=travel.building;
    if(requestUnitFloor(a,1,building,{forceStairs:true})){
     a.floorTravel.formationHighGround=true;
@@ -5549,11 +5548,13 @@ function updateUnitFloorTravel(a,dt){
   while(distanceBudget>0&&travel.step<stopAt){
    const point=travel.waypoints[travel.step];
    const dx=point.x-p.x,dy=point.y-p.y,dz=point.z-p.z;
+   travel.onLadder=Boolean(travel.viaLadder&&point.ladder);
    const remaining=Math.hypot(dx,dy,dz);
    if(remaining<.015){p.set(point.x,point.y,point.z);travel.step++;continue}
    const amount=Math.min(remaining,distanceBudget);
    p.x+=dx/remaining*amount;p.y+=dy/remaining*amount;p.z+=dz/remaining*amount;
    if(Math.hypot(dx,dz)>.001)a.root.rotation.y=Math.atan2(dx,dz);
+   else if(travel.viaLadder&&Math.abs(dy)>.001)a.root.rotation.y=Math.PI;
    distanceBudget-=amount;
    if(amount>=remaining-.015)travel.step++;
   }
@@ -5596,6 +5597,7 @@ function updateUnitFloorTravel(a,dt){
    requestMotion(a,travel.viaGrapple?'skill':travel.viaMount?'jump':'walk',true);
   }
   if(travel.step===travel.waypoints.length){
+   travel.onLadder=false;
    a.indoorFloor=travel.toFloor;
    if(a.indoorFloor===1){
     const landing=gridFromWorld(p),cell=freeCellNear(landing.x,landing.z,a);
@@ -6128,12 +6130,12 @@ function tickAI(dt){
    attackRange:a.job.range/CELL,healthRatio:a.hp/Math.max(1,a.maxHp),
    indoors:(a.indoorFloor??1)>1
   });
-  const order=combatIntent.order;
+  let order=combatIntent.order;
   let enemy=nearestEnemy(a);const p=a.root.position;
   const bait=a._highGroundBaitId!=null?actors.find(v=>v.id===a._highGroundBaitId):null;
    const baitDistance=bait?Math.hypot(p.x-bait.root.position.x,p.z-bait.root.position.z)/CELL:Infinity;
-   const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.hp>0,ground:(bait.indoorFloor??1)===1&&!bait.floorTravel,enemy:bait.team!==a.team,distance:baitDistance,maxDistance:48,now:elapsed,until:a._highGroundBaitUntil,order:squadDirective?.mode||order}));
-   if(chaseBait)enemy=bait;else a._highGroundBaitId=null;
+   const chaseBait=Boolean(bait&&highGroundBaitActive({alive:bait.hp>0,ground:(bait.indoorFloor??1)===1&&!bait.floorTravel,enemy:bait.team!==a.team,distance:baitDistance,maxDistance:Infinity,now:elapsed,until:a._highGroundBaitUntil,order:squadDirective?.mode||order}));
+   if(chaseBait){enemy=bait;order='charge';}else a._highGroundBaitId=null;
    // The high-ground formation's ground guard uses its own squad's real
   // staircase as a bait post; don't pull defenders from other formations.
   if(a.jobId==='shield'&&a.formationType==='highground'&&
@@ -6163,8 +6165,12 @@ function tickAI(dt){
     const ready=posts.some(v=>v.floorTravel.building===post.floorTravel.building&&formationHighGroundReady(v));
     const dist=(u,v)=>Math.hypot(u.x-v.x,u.z-v.z)/CELL;
     const lockedTarget=actors.find(v=>v.id===a._baitEnemyId&&v.hp>0&&!v.isStrategist&&(v.indoorFloor??1)===1);
-    if(lockedTarget&&dist(p,lockedTarget.root.position)<=45)enemy=lockedTarget;
-    else a._baitEnemyId=enemy?.id;
+    if(lockedTarget&&lockedTarget.team!==a.team)enemy=lockedTarget;
+    else {
+     enemy=actors.filter(v=>v.team!==a.team&&v.hp>0&&!v.isStrategist&&(v.indoorFloor??1)===1&&!v.floorTravel)
+      .sort((l,r)=>dist(p,l.root.position)-dist(p,r.root.position))[0]??null;
+     a._baitEnemyId=enemy?.id;
+    }
     const contact=Boolean(enemy&&(enemy.indoorFloor??1)===1&&dist(p,enemy.root.position)<=6&&
       !routeOccludedByTerrain(a.cell,enemy.cell,a)&&hutShotClear(p,enemy.root.position)&&hutShotClear(enemy.root.position,p));
     const wasReturning=a._highGroundLuring;
@@ -6176,13 +6182,13 @@ function tickAI(dt){
     if(wasReturning&&intent.phase==='guard')a._baitGuardUntil=elapsed+10;
     a._highGroundLuring=intent.luring;
     if(ready&&contact){
-     enemy._highGroundBaitId=a.id;enemy._highGroundBaitUntil=elapsed+45;
+     enemy._highGroundBaitId=a.id;enemy._highGroundBaitUntil=Infinity;
      for(const follower of actors){
       if(follower===enemy||follower.team!==enemy.team||follower.hp<=0||follower.isStrategist||
        follower.jobId==='priest'||(follower.indoorFloor??1)!==1||
        highGroundGroupKey(follower)!==highGroundGroupKey(enemy)||dist(follower.root.position,enemy.root.position)>12)continue;
       if(follower._highGroundBaitId!=null&&follower._highGroundBaitId!==a.id&&elapsed<follower._highGroundBaitUntil)continue;
-      follower._highGroundBaitId=a.id;follower._highGroundBaitUntil=elapsed+45;
+      follower._highGroundBaitId=a.id;follower._highGroundBaitUntil=Infinity;
      }
     }
     if(intent.phase==='return'){moveActor(a,anchor,.18,CELL*4,{preciseGoal:true});continue;}
