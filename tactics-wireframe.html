@@ -936,7 +936,7 @@ import {layoutSquadCallouts,squadCalloutLeader} from './src/battle-squad-callout
 import {overviewPinLabel,placeOverviewSquadPins,recommendOverviewGroupPlans} from './src/battle-overview-squad-pins.js?v=20261117-map-pins2';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.69';
 import {updateDefensivePosture,resolveDefensiveGuardIntent,shouldCounterNearbyThreat} from './src/battle-defensive-doctrine.js?v=20261122-close-threat1';
-import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=20261122-cell-pingpong2';
+import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=20261125-global-bait';
 import {findStableGridPath,stableGridNext,incrementalStableGridNext,createGridRoutingBudget,sameNavigationCell} from './src/battle-stable-grid-route.js?v=20261116-routebudget';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.45';
 import {sortSquadRibbon,squadRibbonStatus,ORDER_COOLDOWN_SECONDS} from './src/battle-command-roster.js?v=4.6.69';
@@ -1125,7 +1125,7 @@ import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-r
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
 import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.44';
 import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.36';
-import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-22-ninja-window';
+import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-23-ladder-contact';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=20261116-fps-toggle-raised-report';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
@@ -1139,7 +1139,7 @@ import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {battleSquadJob,engineBattleJobNameForSquad,displayBattleJobName} from './src/battle-job-squads.js?v=20261119-job-teams';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=20261122-cell-pingpong2';
-import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=20261120-roof2';
+import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=20261125-roof3';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
@@ -1149,7 +1149,7 @@ import {indexBattleDecisionUnits} from './src/battle-ai-decision-index.js?v=2026
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=20261117-ground-walk-yaw1';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=20261117-dense1';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261122-anti-wander1';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=20261125-global-bait';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=20261116-p95';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=20261116-vfxvisibility2';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=20261119-overlap1';
@@ -5373,6 +5373,28 @@ function selectUpperFloorWindow(a,travel){
  }
  return best;
 }
+// Restore the animated skeleton before each mixer update; the ladder overlay
+// is applied only while the feet are following physical rung waypoints.
+function restoreLadderPose(a){
+ for(const entry of a._ladderPose??[])if(entry.applied){entry.bone.quaternion.copy(entry.before);entry.applied=false;}
+}
+function applyLadderPose(a){
+ if(!a.floorTravel?.onLadder||!a.character?.model)return;
+ if(!a._ladderPose){
+  const names=['upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','thigh_l','thigh_r','calf_l','calf_r'];
+  a._ladderPose=names.map(name=>({name,bone:a.character.model.getObjectByName(name)})).filter(e=>e.bone?.isBone).map(e=>({...e,before:e.bone.quaternion.clone(),applied:false}));
+ }
+ const phase=a.root.position.y/.38*Math.PI;
+ const swing=Math.sin(phase);
+ for(const e of a._ladderPose){
+  e.before.copy(e.bone.quaternion);e.applied=true;
+  const left=e.name.endsWith('_l'),sign=left?1:-1,step=swing*sign;
+  if(e.name.startsWith('upperarm')){e.bone.rotateZ(-sign*.80);e.bone.rotateX(-.65+step*.28);}
+  else if(e.name.startsWith('lowerarm'))e.bone.rotateX(-.55+step*.18);
+  else if(e.name.startsWith('thigh'))e.bone.rotateX(-.32+step*.26);
+  else if(e.name.startsWith('calf'))e.bone.rotateX(.35+Math.max(0,step)*.30);
+ }
+}
 function updateUnitFloorTravel(a,dt){
  const travel=a.floorTravel;if(!travel)return false;
  if(travel.phase==='approach'||travel.phase==='toStair'){
@@ -5549,12 +5571,13 @@ function updateUnitFloorTravel(a,dt){
    const point=travel.waypoints[travel.step];
    const dx=point.x-p.x,dy=point.y-p.y,dz=point.z-p.z;
    travel.onLadder=Boolean(travel.viaLadder&&point.ladder);
+   travel.onRoofSurface=Boolean(travel.viaLadder&&point.roofSurface);
    const remaining=Math.hypot(dx,dy,dz);
    if(remaining<.015){p.set(point.x,point.y,point.z);travel.step++;continue}
    const amount=Math.min(remaining,distanceBudget);
    p.x+=dx/remaining*amount;p.y+=dy/remaining*amount;p.z+=dz/remaining*amount;
-   if(Math.hypot(dx,dz)>.001)a.root.rotation.y=Math.atan2(dx,dz);
-   else if(travel.viaLadder&&Math.abs(dy)>.001)a.root.rotation.y=Math.PI;
+   if(travel.onLadder)a.root.rotation.y=Math.PI;
+   else if(Math.hypot(dx,dz)>.001)a.root.rotation.y=Math.atan2(dx,dz);
    distanceBudget-=amount;
    if(amount>=remaining-.015)travel.step++;
   }
@@ -12728,7 +12751,7 @@ function updateTownInteriorVisibility(){
   // inside the castle footprint without making every distant roof disappear.
   const occupants=actors.filter(a=>!a.defeated&&a.floorTravel?.building===b);
   const massHigh=massHighByBuilding.get(townInstances.indexOf(b));
-  const rooftopOccupants=occupants.filter(a=>a.floorTravel.phase==='roof');
+  const rooftopOccupants=occupants.filter(a=>a.floorTravel.phase==='roof'||a.floorTravel.onRoofSurface);
   const targeted=cameraGoalFocuses().some(point=>Math.abs(point.x/CELL+6-b.data.x)<b.data.w/2&&
     Math.abs(point.z/CELL+6-b.data.z)<b.data.d/2);
   const selectedInside=(selected&&!selected.defeated&&selected.indoorFloor>1&&
@@ -13116,7 +13139,7 @@ function animate(){
      const travelled=Math.hypot(skirmishVisual.x-px,skirmishVisual.z-pz);
      a.lastGaitX=skirmishVisual.x;a.lastGaitZ=skirmishVisual.z;
      if(travelled>0&&travelled<CELL*1.5)a.gaitSteps=(a.gaitSteps||0)+travelled/CELL;
-     a.character.syncLocomotionPhase(Math.PI*(a.gaitSteps||0));
+     a.character.syncLocomotionPhase(a.floorTravel?.onLadder?Math.PI*a.root.position.y/.38:Math.PI*(a.gaitSteps||0));
      if(a.floorTravel?.phase==='climb'&&a.floorTravel.viaGrapple)requestMotion(a,'skill',true);
      else if(a.floorTravel?.phase==='climb'&&a.floorTravel.viaMount)
       requestMotion(a,a.mountId?'idle':'jump',true);
@@ -13131,7 +13154,7 @@ function animate(){
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
-    if(visual.update){a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);
+    if(visual.update){restoreLadderPose(a);a.character.update(paused&&!finished?0:visual.delta*cinematicPlaybackScale);
       a.masterHead?.update(visual.delta);
       applyCreatureRidingPose(a);
       // A moving fighter keeps their distance-synchronised feet; the arms
@@ -13166,6 +13189,7 @@ function animate(){
         moving:true,mounted:false
        });
       }
+      applyLadderPose(a);
       a.outfit?.sync();
      }
     if(skirmishVisual){
