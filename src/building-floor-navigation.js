@@ -244,11 +244,11 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
  route.push({...world(plan.ladderX,plan.finishY,plan.ladderZ+ladderOffset),ladder:true});
  // Walk out of the hatch before traversing the roof, including flat castles.
  const hatchExitZ=Math.min(plan.roofHalfDepth-.4,plan.ladderZ+1.15);
- route.push(world(plan.ladderX,plan.roofY(plan.ladderX),hatchExitZ));
+ route.push({...world(plan.ladderX,plan.roofY(plan.ladderX),hatchExitZ),roofSurface:true});
  const rooftopSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutX-plan.ladderX)/.48));
  for(let step=1;step<=rooftopSteps;step++){
   const t=step/rooftopSteps,x=plan.ladderX+(plan.lookoutX-plan.ladderX)*t;
-  route.push(world(x,plan.roofY(x),hatchExitZ));
+  route.push({...world(x,plan.roofY(x),hatchExitZ),roofSurface:true});
  }
  // Traverse along the roof ridge toward the front-facing, supported slope.
  // Keeping the original negative stair z left the actor behind the roof in
@@ -256,7 +256,7 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
  const frontSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutZ-hatchExitZ)/.48));
  for(let step=1;step<=frontSteps;step++){
   const t=step/frontSteps,z=hatchExitZ+(plan.lookoutZ-hatchExitZ)*t;
-  route.push(world(plan.lookoutX,plan.roofY(plan.lookoutX),z));
+  route.push({...world(plan.lookoutX,plan.roofY(plan.lookoutX),z),roofSurface:true});
  }
  return route;
 }
