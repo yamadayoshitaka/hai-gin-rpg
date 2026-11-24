@@ -389,7 +389,9 @@ def finish(path):
             philtrum_ids.append(i)
         if dz>.00020 and .218<ny<.251 and .025<abs(nx)<.067:
             dimple_filled_ids.append(i)
-        if abs(nx-x)>.00008 and .225<y<.280:
+        # The new oral-width correction is not a nostril adjustment:
+        # keep nasal landmark IDs strictly in the nasal region.
+        if abs(nx-x)>.00008 and .245<y<.280 and abs(nx)<.055:
             nasal_vertices.append(i)
         # Record the resulting (not source) vermilion coordinates. The
         # Cupid peaks physically move up and the lower rim physically
