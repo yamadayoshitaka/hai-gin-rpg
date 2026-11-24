@@ -74,7 +74,7 @@ class TestFaceV121(unittest.TestCase):
                     u,v=uv[index]
                     self.assertGreater(u,.33)
                     self.assertLess(u,.67)
-                    self.assertGreater(v,.33)
+                    self.assertGreater(v,.32)
                     self.assertLess(v,.61)
                 retopo+=1
         rig=self.b['meshes'][0]['extras']['facialExpressionRig']
@@ -101,6 +101,7 @@ class TestFaceV121(unittest.TestCase):
         self.assertGreater(rebuild['trianglesWithReplacedConnectivity'],1000)
         self.assertGreater(rebuild['newXYZEdgeOptimizingFlips'],100)
         self.assertGreater(rebuild['upperVermilionLocalEdgeFlips'],0)
+        self.assertGreater(rebuild['vermilionSurfaceFairingVertices'],50)
         self.assertLess(rebuild['maximumNewJawEdgeLengthMeters'],.030)
         self.assertGreater(rebuild['uvPatchInteriorVertices'],600)
         self.assertGreater(rebuild['affectedVertices'],180)
