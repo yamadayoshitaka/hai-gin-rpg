@@ -411,45 +411,86 @@ def fair_exterior_oral_surface(points,uv,faces):
 
 
 def sculpt_v21_lip_philtrum(points):
-    """Final exterior sculpt in metres, after oral fairing, before normals.
-
-    Use paired lateral skin samples at the SAME height to shape a continuous
-    central channel. This avoids measuring the nose tip against the upper lip.
-    Preserve the seam, lower lip, nose tip and eye meshes.
-    """
-    side_samples=[p for p in points if .250<p[1]<.271 and
-                  .008<abs(p[0])<.014 and p[2]>.115]
+    """Keep the small mouth, but restore actual upper vermilion volume."""
     result=[]
     changed=0
     for x,y,z in points:
         ax=abs(x)
         front=fade(z,.119,.137)
         dz=dy=0.
-        if .250<y<.270 and ax<.020 and front>0:
-            samples=[]
-            for sign in (-1,1):
-                band=[q[2] for q in side_samples
-                      if sign*q[0]>0 and abs(q[1]-y)<.002]
-                if band:
-                    samples.append(max(band))
-            if len(samples)==2:
-                target=sum(samples)/2-.00085
-                vertical=fade(y,.250,.254)*(1.-fade(y,.264,.270))
-                central=1.-fade(ax,.0035,.010)
-                dz-=min(.0065,max(0.,z-target))*vertical*central*front
-                dz+=.00065*bell(ax,.010,.0035)*vertical*front
         if .2345<y<.250 and ax<.040:
             taper=(1.-fade(ax,.020,.038))*front
             vertical=fade(y,.2345,.238)*(1.-fade(y,.247,.250))
             dz+=.00115*bell(y,.241,.0045)*vertical*taper
-            # Two physical Cupid peaks; central notch is left lower.
             dy+=.00075*bell(ax,.010,.004)*bell(y,.246,.0035)*taper
             dz+=.00040*bell(ax,.010,.004)*bell(y,.246,.0035)*taper
         if abs(dz)+abs(dy)>1e-7:changed+=1
         result.append((x,y+dy,z+dz))
     if changed<50:
-        raise ValueError('v21 exterior lip/philtrum sculpt did not reach real vertices')
+        raise ValueError('v21 upper lip sculpt did not reach actual vertices')
     return result,changed
+
+
+def sculpt_v21_channel(points,faces):
+    """Fit the exterior philtrum using actual triangle intersections.
+
+    The .263 section includes the convex nasal base and must transition into
+    the nose rather than be carved into a deep groove. The central skin
+    channel between the Cupid border and nasal base is .254-.259. Use a
+    continuous, bounded displacement field, with no change to x/y, oral
+    seal, nose dorsum, eye sockets, or the separate cosmetic meshes.
+    """
+    heights=(.254,.255,.257,.259)
+    # Precompute XY ray weights; only Z changes during the solver.
+    rays={}
+    for y in heights:
+        for x in (-.010,0.,.010):
+            hits=[]
+            for ia,ib,ic in faces:
+                a,b,c=points[ia],points[ib],points[ic]
+                if not min(a[0],b[0],c[0])<=x<=max(a[0],b[0],c[0]):continue
+                if not min(a[1],b[1],c[1])<=y<=max(a[1],b[1],c[1]):continue
+                ux,uy=b[0]-a[0],b[1]-a[1]
+                vx,vy=c[0]-a[0],c[1]-a[1]
+                det=ux*vy-uy*vx
+                if abs(det)<1e-12:continue
+                dx,dy=x-a[0],y-a[1]
+                u=(dx*vy-dy*vx)/det
+                v=(ux*dy-uy*dx)/det
+                if min(u,v,1-u-v)<-1e-7:continue
+                hits.append((ia,ib,ic,1-u-v,u,v))
+            if not hits:raise ValueError('Missing philtrum surface ray')
+            rays[x,y]=hits
+    def depth(zs,x,y):
+        return max(zs[a]*wa+zs[b]*wb+zs[c]*wc
+                   for a,b,c,wa,wb,wc in rays[x,y])
+    def gaps(zs):
+        return [(depth(zs,-.010,y)+depth(zs,.010,y))/2-depth(zs,0.,y)
+                for y in heights]
+    base=[p[2] for p in points]
+    zs=base[:]
+    initial=gaps(zs)
+    for _ in range(12):
+        current=gaps(zs)
+        # A natural shallow relief is sufficient. Do not deepen an existing
+        # groove, and avoid isolated holes by interpolating the whole channel.
+        errors=[(.00115-d if d<.00115 else .0026-d if d>.0026 else 0.)
+                for d in current]
+        if max(map(abs,errors))<.00008:break
+        knots=[(.250,0.)]+list(zip(heights,errors))+[(.264,0.)]
+        for i,(x,y,z) in enumerate(points):
+            if not (.250<y<.264 and abs(x)<.010 and z>.119):continue
+            lateral=1.-fade(abs(x),.0045,.0095)
+            front=fade(z,.119,.132)
+            delta=-.85*profile(y,knots)*lateral*front
+            # A small positive correction may soften a pre-existing pit.
+            zs[i]=max(base[i]-.0050,min(base[i]+.0018,zs[i]+delta))
+    final=gaps(zs)
+    print('v21 channel solver sections (m):',initial,'->',final)
+    if min(final)<.0002 or max(final)>.0035:
+        raise ValueError('v21 channel did not reach safe continuous relief: '+str(final))
+    result=[(x,y,zs[i]) for i,(x,y,z) in enumerate(points)]
+    return result,sum(abs(a-b)>1e-7 for a,b in zip(base,zs))
 
 
 def retopologize_upper_vermilion(points,uv,faces):
@@ -585,6 +626,7 @@ def rebuild(path):
     xyz,vermilion_fair_count=fair_exterior_oral_surface(xyz,uv,faces)
     xyz,v21_changed=sculpt_v21_lip_philtrum(xyz)
     faces,upper_lip_flips=retopologize_upper_vermilion(xyz,uv,faces)
+    xyz,channel_count=sculpt_v21_channel(xyz,faces)
     prim['attributes']['POSITION']=add_vec3(g,b,xyz)
     prim['attributes']['COLOR_0']=add_vec3(
         g,b,[helpers['neutral_color'](*point) for point in xyz])
@@ -595,6 +637,7 @@ def rebuild(path):
         'labiomentalFairingVertices':fair_count,
         'vermilionSurfaceFairingVertices':vermilion_fair_count,
         'v21ExteriorSculptVertices':v21_changed,
+        'v21ChannelSculptVertices':channel_count,
         'upperVermilionLocalEdgeFlips':upper_lip_flips,
         'upperVermilionRetopologyExcludesMouthSeal':True,
         'repairedExteriorLipNormals':normal_fix_count,

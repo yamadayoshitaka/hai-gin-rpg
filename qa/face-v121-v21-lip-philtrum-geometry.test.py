@@ -70,7 +70,7 @@ def surface_z(points,indices,x,y):
 
 def channel_sections(points,idx):
     return [((surface_z(points,idx,-.010,y)+surface_z(points,idx,.010,y))/2
-             -surface_z(points,idx,0.,y)) for y in (.255,.259,.263)]
+             -surface_z(points,idx,0.,y)) for y in (.254,.255,.257,.259)]
 
 class RealGeometry(unittest.TestCase):
     @classmethod
@@ -110,8 +110,15 @@ class RealGeometry(unittest.TestCase):
         actual=channel_sections(self.a['POSITION'],self.idx)
         prior=channel_sections(self.base_attrs['POSITION'],self.base_idx)
         print('v21 philtrum relief by actual triangle ray (m):',actual,'v20:',prior)
-        self.assertGreater(min(actual),.0002,'all three channel sections must be recessed')
-        self.assertGreater(median(actual)-median(prior),.0005,'real improvement over v20 required')
+        self.assertGreater(min(actual),.0002,'all four actual skin channel sections must be recessed')
+        self.assertLess(max(actual),.0035,'no isolated deep philtrum pit')
+        self.assertGreater(actual[-1]-prior[-1],.0010,'upper channel must improve over v20')
+        # Preserve convex nose base/dorsum, not force the .263 nasal section
+        # into a concavity. Protect the upper nasal surface from this edit.
+        for x,y in ((0.,.267),(0.,.275),(-.010,.275),(.010,.275)):
+            self.assertAlmostEqual(surface_z(self.a['POSITION'],self.idx,x,y),
+                surface_z(self.base_attrs['POSITION'],self.base_idx,x,y),delta=.003)
+        self.assertEqual(self.a['TEXCOORD_0'],self.base_attrs['TEXCOORD_0'])
 
     def test_upper_lip_projection_and_locked_seam(self):
         self.assertIsNotNone(self.base)

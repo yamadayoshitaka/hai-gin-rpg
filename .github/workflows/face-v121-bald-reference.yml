@@ -34,6 +34,9 @@ on:
       - 'scripts/prepare-pages-site.py'
   push:
     branches: [feature/face-v121-bald-reference-skin]
+concurrency:
+  group: face-v121-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   pbr-face:
     runs-on: ubuntu-latest
