@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Actual v24 vs frozen v23: both cheekbones and oral skin."""
-import math,json,pathlib,runpy,statistics,unittest
+import os,math,json,pathlib,runpy,statistics,unittest
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 Q=runpy.run_path(str(ROOT/'qa/face-v121-v21-lip-philtrum-geometry.test.py'))
 V=runpy.run_path(str(ROOT/'qa/face-v121-v23-skin.test.py'))
@@ -8,7 +8,7 @@ S=runpy.run_path(str(ROOT/'scripts/fair-v121-skin-v24.py'))
 class RealV24(unittest.TestCase):
     def test_v24(self):
         _,a0,i0=Q['read'](ROOT/'qa/baselines/face-v121-v23.glb')
-        g,a,i=Q['read'](Q['PATH'])
+        g,a,i=Q['read'](pathlib.Path(os.environ.get('V24_MODEL',str(Q['PATH']))))
         p0,p=a0['POSITION'],a['POSITION']
         self.assertEqual(i,i0)
         self.assertEqual(a0['TEXCOORD_0'],a['TEXCOORD_0'])
