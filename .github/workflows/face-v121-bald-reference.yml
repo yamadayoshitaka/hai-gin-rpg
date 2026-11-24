@@ -119,7 +119,8 @@ jobs:
         with:
           name: v121-bald-front-quarter-side-webgl
           path: |
-            qa/screenshots/face-v121/*.png
+            qa/screenshots/face-v121/**/*.png
+            qa/screenshots/face-v121/v21/evidence.json
             qa/screenshots/face-v121/*.glb
           if-no-files-found: ignore
           retention-days: 10
