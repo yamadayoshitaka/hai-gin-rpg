@@ -290,6 +290,50 @@ jobs:
         run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+      - name: Retrieve R53 review-only male candidate artifact
+        id: r53_review_download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: r53-male-review-package
+          run-id: 45613089085
+          github-token: ${{ github.token }}
+          path: /tmp/r53-male-review
+      - name: Verify and stage isolated R53 review files
+        if: steps.r53_review_download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,shutil,struct
+          from pathlib import Path
+          src=Path('/tmp/r53-male-review')
+          report=json.loads((src/'male-candidate-audit.json').read_text())
+          ids=[f'male_face_{i:02d}' for i in range(1,11)]
+          records={r['id']:r for r in report['faces']}
+          assert set(records)==set(ids)
+          for ident in ids:
+              r=records[ident]
+              b=(src/(ident+'.glb')).read_bytes()
+              assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b)
+              assert hashlib.sha256(b).hexdigest()==r['sha256']
+              assert r['sourceSex']=='male' and r['new_face_flips']==0 and r['neck_anchor_error_m']==0
+              assert r['visualApproved'] is False
+          assert len({r['geometry_sha256'] for r in records.values()})==10
+          names=['index.html','male-candidate-audit.json']
+          names += ['male_'+tag+'_contact.png' for tag in ('front','side','45')]
+          for ident in ids:
+              names.append(ident+'.glb')
+              names += [ident+'_'+tag+'.png' for tag in ('front','side','45')]
+          for n in names:
+              assert (src/n).is_file(), n
+              if n.endswith('.png'):
+                  assert (src/n).read_bytes()[:8]==b'\x89PNG\r\n\x1a\n'
+          out=Path('pages-dist/preview/r53-male')
+          out.mkdir(parents=True,exist_ok=True)
+          for n in names:
+              shutil.copy2(src/n,out/n)
+          print('R53 review-only assets staged; no production character adoption')
+          PY
       - name: Import verified open-licensed wig GLBs from public MakeHuman source
         run: python3 scripts/import-cc0-wigs.py --out pages-dist/assets/wigs/cc0
       - name: Verify new wig-only studio and CC0 source models are in the public artifact

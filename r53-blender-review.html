@@ -1,14 +1,38 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R53 | Blender基準モデル確認（開発版）</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>R53 | 男女20体試作モデル比較</title>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#131820;color:#e8edf3;font:16px system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:16px}h1{font-size:1.45rem;margin:0 0 8px}p{line-height:1.6}a{color:#9dd1ff}section{background:#202834;border:1px solid #465262;border-radius:12px;padding:14px;margin-top:14px}.notice{border-left:4px solid #e4b167;padding-left:12px}.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}article{min-width:0}model-viewer{display:block;width:100%;height:440px;background:#343c48;border-radius:8px}h2{font-size:1.12rem}h3{font-size:1rem}small{color:#b9c5d2}li{margin:8px 0}@media(max-width:600px){model-viewer{height:360px}}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#131820;color:#e8edf3;font:16px system-ui,sans-serif}main{max-width:960px;margin:auto;padding:16px}h1{font-size:1.4rem}p{line-height:1.6}a{color:#9dd1ff}section{background:#202834;border:1px solid #465262;border-radius:12px;padding:14px;margin-top:14px}.notice{border-left:4px solid #e4b167;padding-left:12px}model-viewer{display:block;width:100%;height:440px;background:#343c48;border-radius:8px}button,select,input{font:inherit;margin:4px;padding:8px;background:#2b3a4e;color:#fff;border:1px solid #607184;border-radius:6px}button[aria-pressed=true]{background:#356477}button:disabled{opacity:.45}.choices{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.choices button{min-width:0;margin:0}.choices img{width:100%;display:block}.sheet{width:100%}small{color:#bac8d8}@media(max-width:600px){model-viewer{height:360px}.choices{grid-template-columns:repeat(5,1fr)}.choices button{font-size:12px;padding:3px}}
 </style></head><body><main>
-<h1>灰銀のレゾナンス | R53 Blender基準モデル確認</h1>
-<p class="notice"><strong>開発用プレビュー・正式版未完成</strong><br>この画面は既存の男女別MakeHuman骨格GLBを表示します。新規の固定顔20体ではありません。既存の人物工房、登録データ、本編には変更を加えません。</p>
-<section><h2>男女別基準モデル（実GLB）</h2><p><small>ドラッグで回転、ピンチで拡大縮小。基準モデルの材質・体型・骨格確認用です。</small></p>
-<div class="models"><article><h3>女性 R36</h3><model-viewer src="https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/60e998136ff609d28bda81039c4338a5bf18bcea/assets/character-review/HM08_adult_female_R36_review.glb" alt="女性R36基準骨格" camera-controls touch-action="pan-y" shadow-intensity="0" exposure="1" interaction-prompt="none"></model-viewer></article>
-<article><h3>男性 R41</h3><model-viewer src="https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/60e998136ff609d28bda81039c4338a5bf18bcea/assets/character-review/HM08_male-adult_R41.glb" alt="男性R41基準骨格" camera-controls touch-action="pan-y" shadow-intensity="0" exposure="1" interaction-prompt="none"></model-viewer></article></div>
-<p><small>モデルが表示されない場合は以下の実行成果物からBlenderファイルを取得してください。</small></p></section>
-<section><h2>Blender実行結果</h2><ul><li>Blender 4.0.2・男女基準モデル読み込み：成功</li><li>基準モデルの5方向レンダリング・GLB往復検査：CI成功</li><li>R20顔GLBのGitHub転送：未完了</li><li>完成済み固定顔：女性0/10、男性0/10</li><li>全モデルの視覚品質判定・正式版反映：未完了</li></ul><p><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45603392359">最新のBlender実行結果</a> | <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45603392359/artifacts/15016946191">実レンダリング・採寸・GLB往復出力ZIP</a> | <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/tree/r53-fixed-face-review">R53開発ブランチ</a></p></section>
-<p><a href="face-precision-r18.html?v=3.32">現行人物編集工房へ戻る</a></p></main></body></html>
+<h1>灰銀のレゾナンス | R53 男女20体試作モデル比較</h1>
+<p class="notice"><strong>試作確認専用・正式版ではありません。</strong><br>男女各10体の生成済みGLBを比較する画面です。既存工房・セーブデータ・ゲーム本編には変更を加えません。男性は表情と肌材質が未完成。女性はR3試作で、顎下と目元の品質が未合格です。</p>
+<section><h2>固定顔モデル選択</h2>
+<button id="male" type="button" aria-pressed="true">男性10体</button><button id="female" type="button" aria-pressed="false">女性10体</button>
+<div id="local" hidden><label>女性R3のGLBを選択（複数可） <input id="femaleFiles" type="file" multiple accept=".glb"></label><p><small>女性試作ZIPを展開して female_face_01.glb ～ female_face_10.glb を選択してください。ファイルは端末内だけで読み込まれ、送信されません。</small></p></div>
+<p id="status" role="status">男性比較データの取得中…</p><div class="choices" id="choices"></div>
+<model-viewer id="viewer" alt="R53試作頭部" camera-controls touch-action="pan-y" shadow-intensity="0" exposure="1" interaction-prompt="none"></model-viewer>
+<div><button id="front">正面</button><button id="side">側面</button><button id="quarter">斜め</button></div>
+<p><small>ドラッグで回転、ピンチで拡大縮小。表情や髪の適合はこの比較画面では検証していません。</small></p>
+</section>
+<section><h2>実レンダリング比較</h2><p><a href="preview/r53-male/index.html">男性10体・全方向の実画像とGLB</a> ｜ <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45613089085/artifacts/15021071807">比較ZIP</a></p><img class="sheet" src="preview/r53-male/male_front_contact.png" alt="男性10体の正面レンダリング一覧" loading="lazy"></section>
+<section><h2>検証結果</h2><p>男女20体の試作生成済み。男性10体は新規面反転0件、首の接続座標維持。正式品質合格0/20体。</p>
+<p><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45611457354">Blender生成結果</a> ｜ <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45612978408">ブラウザ安全性テスト</a> ｜ <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/tree/r53-fixed-face-review">R53開発ブランチ</a></p></section>
+<p><a href="face-precision-r18.html?v=3.32">現行人物編集工房へ戻る</a></p>
+<script type="module">
+const $=id=>document.getElementById(id),viewer=$('viewer'),folder='preview/r53-male/';
+const femaleFiles=new Map(),maleFiles=new Map();let sex='male',current=null,localUrl=null,request=0;
+function clear(){request++;viewer.removeAttribute('src');if(localUrl){URL.revokeObjectURL(localUrl);localUrl=null}current=null}
+function render(){const grid=$('choices');grid.replaceChildren();for(let i=1;i<=10;i++){const id=sex+'_face_'+String(i).padStart(2,'0'),b=document.createElement('button');b.type='button';b.dataset.id=id;b.setAttribute('aria-pressed',String(current===id));b.disabled=!(sex==='male'?maleFiles.has(id):femaleFiles.has(id));if(sex==='male'&&maleFiles.has(id)){const img=document.createElement('img');img.src=folder+id+'_front.png';img.alt='';img.loading='lazy';b.append(img)}b.append((sex==='male'?'男':'女')+String(i).padStart(2,'0'));b.onclick=()=>select(id);grid.append(b)}}
+async function select(id){clear();const n=request;current=id;render();$('status').textContent=id+' 読み込み中…';try{
+ if(sex==='male'){const item=maleFiles.get(id);if(!item)throw Error('男性GLB未配信');const r=await fetch(folder+id+'.glb');if(!r.ok)throw Error('HTTP '+r.status);const b=await r.arrayBuffer();const h=new DataView(b);if(b.byteLength<20||h.getUint32(0,true)!==0x46546c67||h.getUint32(8,true)!==b.byteLength)throw Error('GLB不正');const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',b)),x=>x.toString(16).padStart(2,'0')).join('');if(digest!==item.sha256)throw Error('SHA256不一致');if(n!==request)return;localUrl=URL.createObjectURL(new Blob([b],{type:'model/gltf-binary'}));}
+ else{const f=femaleFiles.get(id);if(!f)throw Error('端末GLB未選択');localUrl=URL.createObjectURL(f)}
+ if(n!==request)return;viewer.src=localUrl;$('status').textContent=id+' 試作モデル（品質未合格）';
+ }catch(e){if(n===request)$('status').textContent='読込失敗：'+e.message}}
+function setSex(s){clear();sex=s;$('male').setAttribute('aria-pressed',String(s==='male'));$('female').setAttribute('aria-pressed',String(s==='female'));$('local').hidden=s!=='female';render();$('status').textContent=s==='male'?(maleFiles.size?'男性試作10体から選択':'男性比較ファイル未配信'):'女性GLBを端末から選択してください'}
+$('male').onclick=()=>setSex('male');$('female').onclick=()=>setSex('female');
+$('femaleFiles').onchange=async e=>{for(const f of e.target.files){const id=f.name.replace(/\.glb$/i,'');if(!/^female_face_(0[1-9]|10)$/.test(id))continue;const h=new DataView(await f.slice(0,20).arrayBuffer());if(h.byteLength===20&&h.getUint32(0,true)===0x46546c67&&h.getUint32(8,true)===f.size)femaleFiles.set(id,f)}render();$('status').textContent='女性試作 '+femaleFiles.size+'/10体を選択可能';};
+$('front').onclick=()=>{viewer.cameraOrbit='0deg 90deg auto'};$('side').onclick=()=>{viewer.cameraOrbit='90deg 90deg auto'};$('quarter').onclick=()=>{viewer.cameraOrbit='45deg 90deg auto'};
+viewer.addEventListener('error',()=>{$('status').textContent='3D表示エラー：GLBまたはWebGL環境を確認してください'});
+try{const r=await fetch(folder+'male-candidate-audit.json',{cache:'no-cache'});if(!r.ok)throw Error('HTTP '+r.status);const doc=await r.json();if(doc.faces?.length!==10)throw Error('男性10体が揃っていません');for(const f of doc.faces){if(!/^male_face_(0[1-9]|10)$/.test(f.id)||f.sourceSex!=='male'||f.visualApproved!==false||!/^[0-9a-f]{64}$/.test(f.sha256))throw Error('試作データ不正');maleFiles.set(f.id,f)}if(maleFiles.size!==10)throw Error('重複モデル');if(sex==='male'){render();$('status').textContent='男性試作10体から選択';}}
+catch(e){maleFiles.clear();if(sex==='male'){$('status').textContent='男性比較ファイル未配信：'+e.message;render()}}
+</script></main></body></html>
