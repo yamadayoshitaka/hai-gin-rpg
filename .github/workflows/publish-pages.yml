@@ -334,6 +334,12 @@ jobs:
               shutil.copy2(src/n,out/n)
           print('R53 review-only assets staged; no production character adoption')
           PY
+      - name: Verify R53 shared female ZIP loader
+        run: |
+          node --check src/r53-female-pack.mjs
+          node qa/r53-female-pack.test.mjs
+          test -s pages-dist/src/r53-female-pack.mjs
+          test -s pages-dist/r53-expression-review.html
       - name: Retrieve R53 expression-study models
         id: r53_expression_download
         continue-on-error: true

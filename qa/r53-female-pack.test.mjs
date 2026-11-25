@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {openFemalePack} from '../src/r53-female-pack.mjs';
+import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+const path=join(tmpdir(),'r53-female-test-'+process.pid+'.zip');
+execFileSync('python3',['-c', 'import zipfile,struct,sys; z=zipfile.ZipFile(sys.argv[1],"w",zipfile.ZIP_DEFLATED); [z.writestr("female_face_%02d.glb"%i,struct.pack("<4sIIII",b"glTF",2,20,0,0x4e4f534a)) for i in range(1,11)]; z.close()',path]);
+const fake=await openFemalePack(new Blob([readFileSync(path)]));
+assert.equal(fake.size,10);
+await assert.rejects(fake.get('female_face_01').arrayBuffer(),/一致しません/);
+await assert.rejects(openFemalePack(new Blob(['not zip'])),/サイズ/);
+console.log('ZIP indexing, deflate, and rejection of wrong GLB hashes passed');
