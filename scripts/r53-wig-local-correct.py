@@ -18,7 +18,25 @@ def tri(o):
 def normals(P,T):
     q=P[T];return np.cross(q[:,1]-q[:,0],q[:,2]-q[:,0])
 def surface(P,T):
-    return BVHTree.FromPolygons([Vector(p) for p in P],[tuple(t) for t in T],all_triangles=True)
+    # Blender's C API expects Python ints, not NumPy scalar objects.
+    P=np.asarray(P,dtype=np.float64);T=np.asarray(T)
+    if P.ndim!=2 or P.shape[1]!=3 or not len(P) or not np.isfinite(P).all():
+        raise ValueError('invalid BVH vertices')
+    if T.ndim!=2 or T.shape[1]!=3 or not len(T) or not np.issubdtype(T.dtype,np.integer):
+        raise ValueError('invalid BVH triangles')
+    if T.min()<0 or T.max()>=len(P):
+        raise ValueError(f'actual triangle index out of range: {T.min()}..{T.max()} / {len(P)}')
+    vertices=[Vector(tuple(float(x) for x in p)) for p in P]
+    triangles=[tuple(int(v) for v in t) for t in T]
+    tree=BVHTree.FromPolygons(vertices,triangles,all_triangles=True)
+    if tree is None:raise RuntimeError('BVH construction failed')
+    return tree
+# Exercise exactly the same conversion path on a tiny known triangle before
+# importing any production asset. Reject incorrect nearest-surface results.
+probe_tree=surface(np.array([[0.,0.,0.],[1.,0.,0.],[0.,1.,0.]]),np.array([[0,1,2]],dtype=np.int32))
+hit=probe_tree.find_nearest(Vector((.25,.25,.1)))
+if hit[0] is None or abs(hit[3]-.1)>1e-5:raise RuntimeError('BVH preflight failed')
+print('R53 BVH preflight passed',flush=True)
 def distances(tree,P):
     d=[];n=[];absd=[]
     for p in P:
@@ -54,6 +72,7 @@ body=bodylist[0];rig=next(m.object for m in body.modifiers if m.type=='ARMATURE'
 P=pts(body);T=tri(body);top=P[:,2].max()
 # Match the previous diagnostic head region and also examine whole-body proximity.
 headT=T[np.min(P[T,2],axis=1)>top-.27]
+print('R53 body BVH input',ident,len(P),len(headT),len(T),int(T.min()),int(T.max()),flush=True)
 tree=surface(P,headT);full=surface(P,T)
 before=set(bpy.context.scene.objects)
 bpy.ops.import_scene.gltf(filepath=str(wfile));bpy.context.view_layer.update()

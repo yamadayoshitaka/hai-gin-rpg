@@ -46,12 +46,15 @@ jobs:
           MESA_GLTHREAD: 'false'
           ID: ${{ matrix.id }}
         run: |
+          set -o pipefail
+          mkdir -p review/r53-attempts
           for attempt in 1 2 3; do
             rm -rf review/r53-local
             mkdir -p review/r53-local
             cp /tmp/r53-wigs/ATTRIBUTION.md review/r53-local/
-            if xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-wig-local-correct.py -- /tmp/r53-bodies /tmp/r53-wigs review/r53-local "$ID"; then exit 0; fi
+            if xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-wig-local-correct.py -- /tmp/r53-bodies /tmp/r53-wigs review/r53-local "$ID" 2>&1 | tee "review/r53-attempts/attempt-$attempt.log"; then cp review/r53-attempts/*.log review/r53-local/; exit 0; fi
           done
+          cp review/r53-attempts/*.log review/r53-local/
           exit 1
       - uses: actions/upload-artifact@v4
         if: always()
