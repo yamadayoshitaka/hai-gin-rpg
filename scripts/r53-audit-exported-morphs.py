@@ -9,13 +9,26 @@ report=json.loads((src/"male-motion-audit.json").read_text())
 names=["jawOpen","viseme_A","viseme_I","viseme_U","viseme_E","viseme_O","smile","blink_L","blink_R","browRaise","browFrown"]
 cases=[(n,{n:1}) for n in names]+[("blinkBoth",{"blink_L":1,"blink_R":1}),("smileBlink",{"smile":.65,"blink_L":1,"blink_R":1}),("openRaise",{"jawOpen":.65,"browRaise":.5}),("run",{"jawOpen":.5,"browFrown":.35}),("wave",{"smile":.7,"browRaise":.35})]
 def unpack(g,b,i):
-    a=g["accessors"][i];v=g["bufferViews"][a["bufferView"]]
+    a=g["accessors"][i]
     dt=np.dtype({5126:"<f4",5125:"<u4",5123:"<u2",5121:"u1"}[a["componentType"]])
     n={"SCALAR":1,"VEC2":2,"VEC3":3,"VEC4":4}[a["type"]]
-    if a.get("sparse"):raise ValueError("Sparse accessor unsupported by audit")
-    off=v.get("byteOffset",0)+a.get("byteOffset",0)
-    stride=v.get("byteStride",dt.itemsize*n)
-    return np.ndarray((a["count"],n),dtype=dt,buffer=b,offset=off,strides=(stride,dt.itemsize)).copy()
+    if "bufferView" in a:
+        v=g["bufferViews"][a["bufferView"]]
+        off=v.get("byteOffset",0)+a.get("byteOffset",0)
+        stride=v.get("byteStride",dt.itemsize*n)
+        data=np.ndarray((a["count"],n),dtype=dt,buffer=b,offset=off,strides=(stride,dt.itemsize)).copy()
+    else:
+        data=np.zeros((a["count"],n),dtype=dt)
+    if a.get("sparse"):
+        sparse=a["sparse"];count=sparse["count"]
+        idx=sparse["indices"];val=sparse["values"]
+        iv=g["bufferViews"][idx["bufferView"]];vv=g["bufferViews"][val["bufferView"]]
+        it=np.dtype({5121:"u1",5123:"<u2",5125:"<u4"}[idx["componentType"]])
+        indices=np.frombuffer(b,dtype=it,count=count,offset=iv.get("byteOffset",0)+idx.get("byteOffset",0))
+        values=np.frombuffer(b,dtype=dt,count=count*n,offset=vv.get("byteOffset",0)+val.get("byteOffset",0)).reshape(count,n)
+        if len(indices) and (int(indices.max())>=a["count"] or np.any(np.diff(indices.astype(np.int64))<=0)):raise ValueError("Invalid sparse indices")
+        data[indices]=values
+    return data
 def normals(p,t):
     q=p[t];return np.cross(q[:,1]-q[:,0],q[:,2]-q[:,0])
 result=[]
