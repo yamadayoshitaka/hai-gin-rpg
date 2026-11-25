@@ -1,5 +1,5 @@
-// R53-R5: exact, locally stored, unapproved female models. No network upload.
-const hashes = [
+// R53-R6/R5: exact, locally stored, unapproved female models. No network upload.
+const hashesR5 = [
 'd64570bb74ef72d14a07df87254ea8236f5a01a005f7788cffa0765607f9eea6',
 'cf6ea081a003b9721e3368316221bb2e2a9dea4445203f60531c962b04e51294',
 '3eb852f0b55002e072e11d9b971c87a8f0ee1476d0a76540e6d62a49834a4149',
@@ -10,13 +10,16 @@ const hashes = [
 'eaf645b60ea5730c3566da13f92c5c8d31bcf71f3131610977ff3f316d1f60b2',
 'f1f8cd4504272ddae65914260e634865f96e98ce51968150dce69ec57849687f',
 '2f11c9b8b5a8882a1e10ad7b05310072c7f81c1f3e03c3ed98aff31103188646'];
-const ids=hashes.map((_,i)=>'female_face_'+String(i+1).padStart(2,'0'));
-const expected=new Map(ids.map((id,i)=>[id,hashes[i]]));
-const DB='hai-gin-r53-female-preview',KEY='R53-R5-complete',STORE='packs';
+const hashesR6=["d64570bb74ef72d14a07df87254ea8236f5a01a005f7788cffa0765607f9eea6","9300cc0073eb5374b25b8e07e565f47e628a922affdc49cdc3c33a51ad087ef4","80ad68974715f683dcfb7a122951b3c4f7480842dd648a997d34a4ccd7b8fd64","5ac70e1470e2298155346c038d24061b80b184edcf3440c800f80e01e187d68a","c6ebfd9ce9507780c06a53d02a564c9cf14c682ffb25ac631addc821d8307bc0","5f10a120c5c759e7aefe1ba4f04866cdd162b3ef692546b26f196c553ba40604","117f2ae0e37f93ff0eb0aa8149b3d2bf6c743692dc2ca1ca7a3ecba0166a82ea","c613fabd720eff6f11e0e012d5770ab113cc20138d78092853f5aa99d4d57ca8","1d8a65502c854ef7792a533ff191ee6b306b5472508a19c1d47af9273624f405","04396dd15da294b73e5fd11c2604202fec960114fdc117f05b9b6708b3883c9a"];
+const ids=hashesR6.map((_,i)=>'female_face_'+String(i+1).padStart(2,'0'));
+const DB='hai-gin-r53-female-preview',KEY='R53-R6-complete',OLD_KEY='R53-R5-complete',STORE='packs';
 const view=async(blob,start,end)=>new DataView(await blob.slice(start,end).arrayBuffer());
 const require=(ok,message)=>{if(!ok)throw Error(message)};
-export async function openFemalePack(blob){
- require(blob instanceof Blob&&blob.size>=22&&blob.size<=200_000_000,'R5 ZIPのサイズが不正です');
+export async function openFemalePack(blob,revision='R6'){
+ require(revision==='R5'||revision==='R6','未知のバージョン');
+ const hashes=revision==='R6'?hashesR6:hashesR5;
+ const expected=new Map(ids.map((id,i)=>[id,hashes[i]]));
+ require(blob instanceof Blob&&blob.size>=22&&blob.size<=200_000_000,'女性ZIPのサイズが不正です');
  const start=Math.max(0,blob.size-65557),tail=await view(blob,start,blob.size);
  let end=-1;for(let i=tail.byteLength-22;i>=0;i--){if(tail.getUint32(i,true)===0x06054b50&&i+22+tail.getUint16(i+20,true)===tail.byteLength){end=i;break}}
  require(end>=0,'ZIPの終端がありません');
@@ -43,18 +46,18 @@ export async function openFemalePack(blob){
     require(pos===length,'ZIP展開サイズ不一致');b=output.buffer;
    }
    const g=new DataView(b);require(b.byteLength===length&&g.getUint32(0,true)===0x46546c67&&g.getUint32(4,true)===2&&g.getUint32(8,true)===length,'GLBデータ不正');
-   const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',b)),x=>x.toString(16).padStart(2,'0')).join('');require(digest===expected.get(id),'R5のGLBと一致しません：'+id);return b;
+   const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',b)),x=>x.toString(16).padStart(2,'0')).join('');require(digest===expected.get(id),revision+'のGLBと一致しません：'+id);return b;
   }});
  }
- require(entries.size===10,'R5女性10体入りの完全版ZIPを選択してください（'+entries.size+'/10体）');return entries;
+ require(entries.size===10,revision+'女性10体入りの完全版ZIPを選択してください（'+entries.size+'/10体）');return entries;
 }
 function database(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('保存領域が使用中です'))})}
 async function cache(mode,op){const db=await database();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,mode),r=op(tx.objectStore(STORE));tx.oncomplete=()=>resolve(r.result);tx.onerror=()=>reject(tx.error||r.error);tx.onabort=()=>reject(tx.error||Error('保存が中断されました'))})}finally{db.close()}}
 export function bindFemalePack(container,models,onChange){
  const box=document.createElement('div'),label=document.createElement('label'),input=document.createElement('input'),message=document.createElement('p'),remove=document.createElement('button');
- label.textContent='女性R5完全版ZIP（初回のみ選択） ';input.type='file';input.accept='.zip,application/zip';input.id='r53FemaleZip';label.append(input);message.setAttribute('role','status');message.id='r53FemalePackStatus';message.textContent='女性GLBは端末に保存する方式です。ZIPは展開不要。';remove.type='button';remove.textContent='女性ZIPの端末登録を解除';remove.disabled=true;box.append(label,message,remove);container.prepend(box);
+ label.textContent='女性R6完全版ZIP（目元修正版） ';input.type='file';input.accept='.zip,application/zip';input.id='r53FemaleZip';label.append(input);message.setAttribute('role','status');message.id='r53FemalePackStatus';message.textContent='女性GLBは端末に保存する方式です。ZIPは展開不要。';remove.type='button';remove.textContent='女性ZIPの端末登録を解除';remove.disabled=true;box.append(label,message,remove);container.prepend(box);
  let epoch=0;function install(entries){for(const [id,f]of entries)models.set(id,f);remove.disabled=false;onChange()}
- input.onchange=async()=>{const file=input.files[0];if(!file)return;const n=++epoch;input.disabled=true;remove.disabled=true;message.textContent='ZIPの10体を確認中…';try{const entries=await openFemalePack(file);if(n!==epoch)return;install(entries);message.textContent='女性10体を選択できます。端末へ保存中…';try{await cache('readwrite',s=>s.put(file,KEY));if(n===epoch)message.textContent='女性10体登録済み。次回も自動で読み込みます。'}catch(e){if(n===epoch)message.textContent='女性10体は今回選択できます。端末保存不可：'+e.message}}catch(e){if(n===epoch)message.textContent='ZIP読込失敗：'+e.message}finally{if(n===epoch){input.disabled=false;remove.disabled=!models.size;input.value=''}}};
- remove.onclick=async()=>{const n=++epoch;input.disabled=true;remove.disabled=true;try{await cache('readwrite',s=>s.delete(KEY));if(n!==epoch)return;for(const id of ids)models.delete(id);onChange();message.textContent='女性ZIPの登録を解除しました。'}catch(e){if(n===epoch)message.textContent='解除失敗：'+e.message}finally{if(n===epoch){input.disabled=false;remove.disabled=!models.size}}};
- (async()=>{const n=epoch;try{const blob=await cache('readonly',s=>s.get(KEY));if(!blob||n!==epoch)return;const entries=await openFemalePack(blob);if(n!==epoch)return;install(entries);message.textContent='保存済みの女性R5 10体を読み込みました。'}catch(e){if(n===epoch)message.textContent='女性ZIPを初回選択してください。保存済みデータを読めません：'+e.message}})();
+ input.onchange=async()=>{const file=input.files[0];if(!file)return;const n=++epoch;input.disabled=true;remove.disabled=true;message.textContent='ZIPの10体を確認中…';try{const entries=await openFemalePack(file,'R6');for(const [id,entry] of entries){message.textContent='R6 検証中：'+id;await entry.arrayBuffer()}if(n!==epoch)return;install(entries);message.textContent='女性10体を選択できます。端末へ保存中…';try{await cache('readwrite',s=>s.put(file,KEY));if(n===epoch)message.textContent='女性R6 10体登録済み。次回も自動で読み込みます。'}catch(e){if(n===epoch)message.textContent='女性10体は今回選択できます。端末保存不可：'+e.message}}catch(e){if(n===epoch)message.textContent='ZIP読込失敗：'+e.message}finally{if(n===epoch){input.disabled=false;remove.disabled=!models.size;input.value=''}}};
+ remove.onclick=async()=>{const n=++epoch;input.disabled=true;remove.disabled=true;try{await cache('readwrite',s=>s.delete(KEY));await cache('readwrite',s=>s.delete(OLD_KEY));if(n!==epoch)return;for(const id of ids)models.delete(id);onChange();message.textContent='女性ZIPの登録を解除しました。'}catch(e){if(n===epoch)message.textContent='解除失敗：'+e.message}finally{if(n===epoch){input.disabled=false;remove.disabled=!models.size}}};
+ (async()=>{const n=epoch;try{let blob=await cache('readonly',s=>s.get(KEY)),revision='R6';if(!blob){blob=await cache('readonly',s=>s.get(OLD_KEY));revision='R5'}if(!blob||n!==epoch)return;const entries=await openFemalePack(blob,revision);if(n!==epoch)return;install(entries);message.textContent='保存済みの女性'+revision+' 10体を読み込みました。'+(revision==='R5'?'目元修正版R6は新しいZIPを登録してください。':'')}catch(e){if(n===epoch)message.textContent='女性ZIPを初回選択してください。保存済みデータを読めません：'+e.message}})();
 }
