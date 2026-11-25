@@ -75,8 +75,8 @@ for sex,age,filename,source_sha in donors:
     welded_tri=weld[tri]
     edges=np.unique(np.sort(np.concatenate((welded_tri[:,[0,1]],welded_tri[:,[1,2]],welded_tri[:,[2,0]])),axis=1),axis=0)
     edges=edges[edges[:,0]!=edges[:,1]]
-    u=np.concatenate((edges[:,0],edges[:,1]));v=np.concatenate((edges[:,1],edges[:,0]))
-    degree=np.maximum(1,np.bincount(u,minlength=weld_count))
+    edge_from=np.concatenate((edges[:,0],edges[:,1]));edge_to=np.concatenate((edges[:,1],edges[:,0]))
+    degree=np.maximum(1,np.bincount(edge_from,minlength=weld_count))
     protected=np.zeros(weld_count,dtype=bool)
     protected[weld[h>=.94]]=True
     def corrected_displacement(D):
@@ -97,7 +97,7 @@ for sex,age,filename,source_sha in donors:
             # Smooth the attenuation into a two-ring neighborhood, never
             # re-increase a previously reduced vertex.
             for _ in range(2):
-                avg=np.bincount(u,weights=target[v],minlength=weld_count)/degree
+                avg=np.bincount(edge_from,weights=target[edge_to],minlength=weld_count)/degree
                 target=np.minimum(target,.58*target+.42*avg)
             alpha=np.minimum(alpha,target)
         raise RuntimeError("Local body correction failed "+str(int(bad.sum())))
