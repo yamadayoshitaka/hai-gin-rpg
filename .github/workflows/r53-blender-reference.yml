@@ -1,0 +1,41 @@
+name: R53 Blender reference audit
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-blender-reference-audit.py'
+      - '.github/workflows/r53-blender-reference.yml'
+      - 'assets/face-r53/source/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Blender and software OpenGL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender xvfb libgl1-mesa-dri xauth
+          blender --version
+      - name: Audit separate male and female reference anatomy
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          mkdir -p review/r53
+          blender --version > review/r53/blender-version.txt
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-reference-audit.py -- assets/character-review/HM08_adult_female_R36_review.glb review/r53/female-donor body
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-reference-audit.py -- assets/character-review/HM08_male-adult_R41.glb review/r53/male-donor body
+          if test -f assets/face-r53/source/R20_reference_face.glb; then
+            xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-reference-audit.py -- assets/face-r53/source/R20_reference_face.glb review/r53/R20 head
+          else
+            echo 'R20 source not in GitHub; donor audit only, no R53 release' | tee review/r53/R20-source-missing.txt
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-blender-reference-audit
+          path: review/r53/
+          if-no-files-found: error
