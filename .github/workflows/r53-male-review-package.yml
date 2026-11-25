@@ -1,0 +1,32 @@
+name: R53 male candidate comparison
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-male-review-package.py'
+      - '.github/workflows/r53-male-review-package.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  comparison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-blender-reference-audit
+          run-id: 45611457354
+          github-token: ${{ github.token }}
+          path: /tmp/r53-source
+      - name: Verify and package actual candidate renders
+        run: |
+          python3 -m pip install Pillow
+          python3 scripts/r53-male-review-package.py /tmp/r53-source/male-candidates review/r53-male
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-male-review-package
+          path: review/r53-male
+          if-no-files-found: error
