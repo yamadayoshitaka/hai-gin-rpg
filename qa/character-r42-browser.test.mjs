@@ -9,7 +9,7 @@ const base='http://127.0.0.1:8766/';
 const donorDir=resolve(root,'assets/character-review');
 const adult='HM08_adult_female_R36_review.glb';
 const output='qa/screenshots/character-r42';
-test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout:360000},async()=>{
+test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout:720000},async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
   const page=await browser.newPage({viewport:{width:412,height:915},deviceScaleFactor:1,isMobile:true,hasTouch:true,acceptDownloads:true});
@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.22',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.24',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -51,6 +51,29 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal(fixtureJson.meshes.find(m=>m.name==='R8_SKIN')?.primitives[0].targets?.length,11,'fixture must include named skin and eleven morph slots');
   await page.locator('#file').setInputFiles({name:'R42-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
   try{await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});}catch(e){const status=await page.locator('#status').textContent();await page.screenshot({path:output+'/face-load-failure.png'});throw new Error('Face fixture load failed: '+status+'; page errors: '+errors.join('; '),{cause:e});}
+  // Old revisions are removed only when a newer version of that style exists.
+  await page.evaluate(async()=>{
+   const db=await new Promise((ok,no)=>{const q=indexedDB.open('hai-gin-wig-library-v1',1);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)});
+   await new Promise((ok,no)=>{const tx=db.transaction('wigs','readwrite'),st=tx.objectStore('wigs');for(const id of ['ボブ R23','R35 ボブ・連続毛並みテクスチャ','ショート R23','R38 ショート（比較試作）','ロング R23','独自髪型'])st.put({id,savedAt:1});tx.oncomplete=ok;tx.onerror=()=>no(tx.error)});db.close();
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Array.from(document.getElementById('hairStyle').options).some(o=>o.value==='wig:R38 ショート（比較試作）'));
+  const kept=await page.locator('#hairStyle option').evaluateAll(os=>os.map(o=>o.value));
+  assert.ok(kept.includes('wig:R35 ボブ・連続毛並みテクスチャ')&&kept.includes('wig:ロング R23')&&kept.includes('wig:独自髪型'));
+  assert.ok(!kept.includes('wig:ボブ R23')&&!kept.includes('wig:ショート R23')&&!kept.includes('bob'));
+  await page.locator('#file').setInputFiles({name:'R45-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
+  await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});
+  // Register actual loaded compatible GLB once, then twenty reproducible settings.
+  await page.locator('#modelName').fill('女性 R20 QA fixture');
+  await page.locator('#registerModel').click();
+  await page.waitForFunction(()=>document.getElementById('storeStatus').textContent.includes('登録しました'));
+  await page.locator('#seedBases').click();
+  await page.waitForFunction(()=>Array.from(document.getElementById('modelList').options).filter(o=>o.value.startsWith('標準ベース ')).length===20);
+  assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('標準ベース 女性')).length),10);
+  assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('標準ベース 男性')).length),10);
+  assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('__r45_base_')).length),0);
+  await page.locator('#seedBases').click();
+  await page.waitForFunction(()=>document.getElementById('baseSeedStatus').textContent.includes('新規 0 件'));
   // Face aging must affect real skin vertices in face-only mode, and be reversible.
   const ageStats=()=>page.locator('#profileStatus').evaluate(e=>({age:e.dataset.faceAge,count:+e.dataset.ageVertexCount,max:+e.dataset.ageMaxMm}));
   await page.locator('#motionAge').selectOption('20');
@@ -69,6 +92,8 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal((await ageStats()).count,0);
   await page.locator('#stage').screenshot({path:output+'/age20-body.png'});
   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
+  assert.equal(await page.locator('#bodyAdvanced').evaluate(e=>e.open),false,'donor override must start collapsed');
+  await page.locator('#bodyAdvanced > summary').click();
   const evidence=[];
   for(const key of ['female-adult','male-adult','female-senior','male-senior','female-child','male-child']){
    await page.locator('#bodySource').selectOption(key);
@@ -77,6 +102,28 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    assert.ok(!status.includes('失敗'),status);
    const file=output+'/'+key+'.png';await page.locator('#stage').screenshot({path:file});evidence.push({key,status,file});
   }
+  await page.locator('#bodySource').selectOption('auto');
+  for(const sex of ['female','male']){
+   await page.locator('#motionSex').selectOption(sex);
+   for(const age of ['child','teen','20','30','40','50','60','70','80']){
+    await page.locator('#motionAge').selectOption(age);
+    await page.waitForFunction(([sex,age])=>{const key=sex==='female'?(age==='child'?'女児':+age>=60?'高齢女性':'成人女性'):(age==='child'?'男児':+age>=60?'高齢男性':'成人男性');return !document.getElementById('bodyExport').disabled&&document.getElementById('bodyStatus').textContent.includes(key)&&document.getElementById('profileStatus').dataset.faceAge===age},[sex,age],{timeout:60000});
+    for(const build of ['normal','slim','full','verySlim']){await page.locator('#bodyBuild').selectOption(build);await page.waitForTimeout(150);assert.ok(await page.locator('#bodyMode').isChecked());}
+    await page.locator('#bodyBuild').selectOption('normal');
+    if(['20','40','60','80'].includes(age)){
+     await page.waitForTimeout(250);
+     const seam=await page.locator('#bodyStatus').evaluate(e=>({n:+e.dataset.seamSamples,dot:+e.dataset.seamNormalDot,center:+e.dataset.neckCenterErrorMm}));
+     assert.ok(seam.n>=96&&seam.dot>.99&&seam.center<1,'seam boundary normals must match: '+JSON.stringify(seam));
+     for(const [label,view] of [['正面','front'],['45°','diagonal'],['側面','side'],['背面','back']]){
+       await page.locator('#angles').getByRole('button',{name:label,exact:true}).click();await page.waitForTimeout(150);
+       await page.locator('#stage').screenshot({path:output+'/r44-'+sex+'-'+age+'-'+view+'.png'});
+     }
+     await page.locator('#angles').getByRole('button',{name:'正面',exact:true}).click();
+    }
+   }
+  }
+  await page.locator('#motionSex').selectOption('female');
+  await page.locator('#motionAge').selectOption('20');
   await page.locator('#bodySource').selectOption('female-adult');
   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
   await page.locator('#goAction').click();
