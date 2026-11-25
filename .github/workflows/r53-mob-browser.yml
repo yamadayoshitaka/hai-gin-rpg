@@ -1,0 +1,66 @@
+name: R53 mob browser review and LOD workload audit
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-mob-browser-pack.py'
+      - 'review-tools/r53-mob/**'
+      - '.github/workflows/r53-mob-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+            review-tools/r53-mob
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-assembled-*
+          run-id: 45715987693
+          github-token: ${{ github.token }}
+          path: /tmp/r53-assembled
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-lod-mob_*
+          run-id: 45721246173
+          github-token: ${{ github.token }}
+          path: /tmp/r53-lod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare offline browser review package
+        run: |
+          python3 scripts/r53-mob-browser-pack.py /tmp/r53-assembled /tmp/r53-lod data/r53-mob-sculpt-plan.json review/site
+          cp review-tools/r53-mob/index.html review-tools/r53-mob/viewer.mjs review/site/
+          npm install --no-save --ignore-scripts three@0.180.0 playwright@1.56.1
+          mkdir -p review/site/vendor/three
+          cp -r node_modules/three/build node_modules/three/examples review/site/vendor/three/
+          cp node_modules/three/LICENSE review/site/vendor/three/
+          npx playwright install --with-deps chromium
+      - name: Check all 60 real GLBs and measure software-rendered workload
+        run: |
+          cp review-tools/r53-mob/browser-test.mjs ./r53-browser-test.mjs
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory review/site >/tmp/r53-http.log 2>&1 &
+          node r53-browser-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-browser-evidence
+          path: |
+            browser-report.json
+            review-browser.png
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: r53-mob-offline-review
+          path: review/site/
+          retention-days: 30
