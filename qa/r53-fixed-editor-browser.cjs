@@ -62,7 +62,7 @@ async function inventory(page){
   await page.locator('#fixedFaceGrid button').first().click();
   await page.waitForFunction(()=>document.getElementById('fixedFaceStatus').textContent.includes('404'));
   assert.equal(await page.locator('#fixedFaceGrid button[aria-pressed=true]').count(),0);
-  await page.locator('#motionSex').evaluate(el=>{el.value='male';el.dispatchEvent(new Event('change',{bubbles:true})});
+  await page.locator('#motionSex').evaluate(el=>{el.value='male';el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.waitForFunction(()=>document.querySelectorAll('#fixedFaceGrid button[data-fixed-face^=male]').length===10);
   await page.locator('#fixedFaceGrid button').last().click();
   await page.waitForFunction(()=>document.getElementById('fixedFaceStatus').textContent.includes('male_face_10'));
