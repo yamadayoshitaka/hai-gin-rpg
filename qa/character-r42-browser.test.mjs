@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.25',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.26',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -77,7 +77,20 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('標準ベース 男性')).length),10);
   assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('__r45_base_')).length),0);
   await page.locator('#seedBases').click();
-  await page.waitForFunction(()=>document.getElementById('baseSeedStatus').textContent.includes('新規 0 件'));
+  await page.waitForFunction(()=>document.getElementById('baseSeedStatus').textContent.includes('新規・更新 0 件'));
+  const ids=await page.locator('#modelList option').evaluateAll(os=>os.map(o=>o.value).filter(v=>v.startsWith('標準ベース ')));
+  // Compare a representative pair per sex on the actual displayed geometry.
+  for(const [label,key] of [['女性02','female:1'],['女性03','female:2'],['男性02','male:1'],['男性03','male:2']]){
+   await page.locator('#modelList').selectOption('標準ベース '+label);
+   await page.waitForFunction(key=>document.getElementById('profileStatus').dataset.identity===key,key,{timeout:60000});
+   const d=await page.locator('#profileStatus').evaluate(e=>({rms:+e.dataset.identityRmsMm,max:+e.dataset.identityMaxMm}));
+   assert.ok(d.rms>2&&d.max>5,'identity geometry must differ: '+JSON.stringify(d));
+   for(const [name,view] of [['正面','front'],['側面','side']]){await page.locator('#angles').getByRole('button',{name,exact:true}).click();await page.waitForTimeout(150);await page.locator('#stage').screenshot({path:output+'/r47-'+key.replace(':','-')+'-'+view+'.png'});}
+  }
+  assert.equal(ids.length,20);
+  await page.locator('#modelList').selectOption('R39_jaw_lateral_review');
+  await page.waitForFunction(()=>document.getElementById('profileStatus').dataset.identity==='',undefined,{timeout:60000});
+  await page.locator('#angles').getByRole('button',{name:'正面',exact:true}).click();
   // Face aging must affect real skin vertices in face-only mode, and be reversible.
   const ageStats=()=>page.locator('#profileStatus').evaluate(e=>({age:e.dataset.faceAge,count:+e.dataset.ageVertexCount,max:+e.dataset.ageMaxMm}));
   await page.locator('#motionAge').selectOption('20');
