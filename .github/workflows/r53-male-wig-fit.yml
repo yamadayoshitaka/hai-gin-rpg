@@ -4,19 +4,21 @@ on:
     branches: [r53-fixed-face-review]
     paths:
       - 'scripts/r53-male-wig-fit.py'
+      - 'scripts/r53-male-wig-recovery-audit.py'
       - '.github/workflows/r53-male-wig-fit.yml'
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: 'Rebuild all ten from current source rather than reuse the prior nine'
+        type: boolean
+        default: true
 permissions:
   contents: read
   actions: read
 jobs:
   fit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        group: [first, second]
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
@@ -32,19 +34,57 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
-      - name: Measure real scalp and crown, fit existing licensed wigs
+          sudo apt-get install -y blender python3-numpy python3-pil xvfb libgl1-mesa-dri xauth
+      - name: Determine whether the previous verified outputs are reusable
+        id: reuse
+        env:
+          FRESH: ${{ inputs.fresh }}
+        run: |
+          # Only this recovery revision can reuse the exact prior fitting algorithm.
+          # Future code changes default to a fresh run.
+          if [ "$FRESH" != true ] && [ "$(git log -1 --format=%s)" = 'R53: isolate crashed wig render and recover only missing verified candidates' ]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        if: steps.reuse.outputs.enabled == 'true'
+        with:
+          pattern: r53-male-wig-*
+          run-id: 45640015788
+          github-token: ${{ github.token }}
+          path: /tmp/r53-prior
+      - name: Verify and preserve completed models
+        run: |
+          mkdir -p /tmp/r53-prior review/r53-wigs /tmp/r53-verified
+          python3 scripts/r53-male-wig-recovery-audit.py prepare /tmp/r53-prior /tmp/r53-bodies assets/characters/hair-fitted-v1 /tmp/r53-verified/reused
+      - name: Recover only missing IDs in separate Blender processes
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-          GROUP: ${{ matrix.group }}
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
         run: |
-          mkdir -p review/r53-wigs
-          cp assets/characters/hair-fitted-v1/ATTRIBUTION.md review/r53-wigs/
-          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-male-wig-fit.py -- /tmp/r53-bodies assets/characters/hair-fitted-v1 review/r53-wigs "$GROUP"
+          set -u
+          while read -r id; do
+            [ -n "$id" ] || continue
+            d="/tmp/r53-verified/id-$id"
+            for attempt in 1 2 3; do
+              rm -rf "$d"
+              mkdir -p "$d"
+              if xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-male-wig-fit.py -- /tmp/r53-bodies assets/characters/hair-fitted-v1 "$d" "$id"; then
+                break
+              fi
+              echo "::warning::Blender ID $id attempt $attempt failed; retry in a new process"
+            done
+          done < /tmp/r53-verified/reused/missing.txt
+      - name: Verify all ten GLBs and all 150 renders
+        if: always()
+        run: |
+          python3 scripts/r53-male-wig-recovery-audit.py final /tmp/r53-verified /tmp/r53-bodies assets/characters/hair-fitted-v1 review/r53-wigs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: r53-male-wig-${{ matrix.group }}
+          name: r53-male-wig-recovered
           path: review/r53-wigs/
           if-no-files-found: error
           retention-days: 30

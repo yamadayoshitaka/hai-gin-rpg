@@ -29,10 +29,12 @@ for m in bodies.glob('*/integration.json'):
 if len(records)!=10:raise RuntimeError('expected ten integrated male assets')
 styles=sorted(hairs.glob('male_hair_*_lod0.glb'))
 if len(styles)!=14:raise RuntimeError('expected fourteen source male hair styles')
+selected={int(v) for v in args[3].split(',')}
+if not selected or not selected.issubset(set(range(1,11))):raise RuntimeError('invalid requested IDs')
 results=[];failures=[]
 for folder,rec in sorted(records,key=lambda x:x[1]['id']):
     ident=rec['id'];i=int(ident[-2:])
-    if (i<=5)!=(args[3]=='first'):continue
+    if i not in selected:continue
     try:
         p=folder/(ident+'.glb')
         if sha(p)!=rec['sha256']:raise RuntimeError('integrated body hash mismatch')
@@ -106,4 +108,4 @@ for folder,rec in sorted(records,key=lambda x:x[1]['id']):
     except Exception as e:
         failures.append({'id':ident,'error':str(e)});print('R53 WIG ERROR',failures[-1],flush=True)
     finally:(out/'wig-fit-report.json').write_text(json.dumps({'models':results,'failures':failures},indent=2))
-if failures or len(results)!=5:raise RuntimeError('partial wig fit')
+if failures or len(results)!=len(selected):raise RuntimeError('partial wig fit')
