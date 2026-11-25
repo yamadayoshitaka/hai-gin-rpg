@@ -61,21 +61,30 @@ def add(snames,tnames,required=True):
     if a and b:
         if any(x[1]==b.name for x in mapping):raise RuntimeError('duplicate target joint '+b.name)
         mapping.append((a.name,b.name))
-add(['pelvis','hips'],['pelvis','hips'])
-add(['spine_01'],['spine01','spine_01','spine'])
-add(['spine_02'],['spine02','spine_02'],False)
-add(['spine_03'],['spine03','spine_03','chest'],False)
-add(['neck_01'],['neck01','neck'],False)
+# Actual HM08 rig names from pilot log 139333706008.
+# The common body root carries both hemipelves; rotate it once.
+add(['pelvis'],['root'])
+for side in ('L','R'):
+    b=rig.data.bones.get('pelvis.'+side)
+    if b is None or 'root' not in [p.name for p in b.parent_recursive]:
+        raise RuntimeError('invalid HM08 pelvis hierarchy '+side)
+def by_height(arm,prefix,count):
+    bones=[b for b in arm.data.bones if re.fullmatch(prefix+r'[0-9]+',b.name.lower().replace('_',''))]
+    if len(bones)!=count:raise RuntimeError('unexpected chain '+str([b.name for b in bones]))
+    return sorted(bones,key=lambda b:(arm.matrix_world@b.head_local).z)
+ss=by_height(src,'spine',3);ts=by_height(rig,'spine',5)
+for a,b in zip(ss,[ts[0],ts[2],ts[4]]):add([a.name],[b.name])
+add([by_height(src,'neck',1)[0].name],[by_height(rig,'neck',3)[0].name])
 add(['head'],['head'])
 for side in ('l','r'):
-    for sn,tn in [('clavicle',['clavicle','shoulder']),('upperarm',['upperarm01','upperarm']),('lowerarm',['lowerarm01','lowerarm','forearm']),('hand',['hand','wrist']),('thigh',['upperleg01','upperleg','thigh']),('calf',['lowerleg01','lowerleg','calf','shin']),('foot',['foot']),('ball',['toe','toe01','ball'])]:
-        ta=[v+sep+side for v in tn for sep in ('.','_','')]
-        add([sn+'_'+side],ta,sn not in ('clavicle','ball'))
-    for f in ('thumb','index','middle','ring','pinky'):
-        for j in (1,2,3):
-            ta=[f'{prefix}{num}{sep}{side}' for prefix in ([f,'little'] if f=='pinky' else [f]) for num in (f'{j:02d}',str(j),f'_{j:02d}') for sep in ('.','_','')]
-            add([f'{f}_{j:02d}_{side}'],ta,False)
-if len(mapping)<15:raise RuntimeError('insufficient primary mapping')
+    S=side.upper()
+    for sn,tn in [('clavicle','clavicle'),('upperarm','upperarm01'),('lowerarm','lowerarm01'),('hand','wrist'),('thigh','upperleg01'),('calf','lowerleg01'),('foot','foot')]:
+        add([sn+'_'+side],[tn+'.'+S])
+    for toe in range(1,6):add(['ball_'+side],[f'toe{toe}-1.{S}'])
+    for finger,f in enumerate(('thumb','index','middle','ring','pinky'),1):
+        for j in (1,2,3):add([f'{f}_{j:02d}_{side}'],[f'finger{finger}-{j}.{S}'])
+print('R53 verified joint map',json.dumps(mapping),flush=True)
+if len(mapping)!=60:raise RuntimeError('expected 60 mapped target joints, found '+str(len(mapping)))
 # Conjugate local motion by source/target rest-world rotation, with no
 # translation except existing root bind transform. This remains a candidate
 # for human review of axis convention, T/A pose, hands and foot contacts.
@@ -108,6 +117,11 @@ for name in clips:
         row={}
         for a,b in mapping:
             q=src.pose.bones[a].matrix_basis.to_quaternion();x=transforms[b];v=x@q@x.inverted()
+            if b=='root':
+                rest=(src.matrix_world@src.data.bones[a].matrix_local).to_quaternion()
+                posed=(src.matrix_world@src.pose.bones[a].matrix).to_quaternion()
+                target=(rig.matrix_world@rig.data.bones[b].matrix_local).to_quaternion()
+                v=target.inverted()@posed@rest.inverted()@target
             row[b]=Quaternion().slerp(v,strength)
         values.append(row)
     samples[name]=(act.name,lo,hi,duration,values)
@@ -172,7 +186,13 @@ for name,act,frames in actions:
     tr=rig.animation_data.nla_tracks.new();tr.name='R53_'+name;st=tr.strips.new('R53_'+name,1,act)
 bpy.ops.object.select_all(action='DESELECT');body.select_set(True);rig.select_set(True);bpy.context.view_layer.objects.active=body
 dest=out/(ident+'_motion.glb')
-bpy.ops.export_scene.gltf(filepath=str(dest),export_format='GLB',use_selection=True,export_skins=True,export_animations=True,export_nla_strips=True,export_morph=True)
+opts=dict(filepath=str(dest),export_format='GLB',use_selection=True,export_skins=True,export_animations=True,export_morph=True)
+props=bpy.ops.export_scene.gltf.get_rna_type().properties
+if 'export_animation_mode' in props and 'NLA_TRACKS' in props['export_animation_mode'].enum_items.keys():
+    opts['export_animation_mode']='NLA_TRACKS'
+elif 'export_nla_strips' in props:opts['export_nla_strips']=True
+else:raise RuntimeError('unsupported NLA export mode')
+bpy.ops.export_scene.gltf(**opts)
 raw=dest.read_bytes();n=int.from_bytes(raw[12:16],'little');g=json.loads(raw[20:20+n]);exported=[a.get('name','') for a in g.get('animations',[])]
 if not g.get('skins') or not all(any(name.lower() in e.lower() for e in exported) for name in clips):raise RuntimeError('missing exported clip '+str(exported))
 if ident.startswith('male_continuous_'):
