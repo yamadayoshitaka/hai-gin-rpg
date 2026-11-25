@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.27',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.28',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -51,6 +51,10 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal(fixtureJson.meshes.find(m=>m.name==='R8_SKIN')?.primitives[0].targets?.length,11,'fixture must include named skin and eleven morph slots');
   await page.locator('#file').setInputFiles({name:'R42-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
   try{await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});}catch(e){const status=await page.locator('#status').textContent();await page.screenshot({path:output+'/face-load-failure.png'});throw new Error('Face fixture load failed: '+status+'; page errors: '+errors.join('; '),{cause:e});}
+  await page.locator('#hairStyle').selectOption('bob');
+  await page.waitForFunction(()=>document.getElementById('status').textContent.includes('ボブ装着完了'),undefined,{timeout:60000});
+  await page.locator('#stage').screenshot({path:output+'/r48-builtin-bob.png'});
+  await page.locator('#hairStyle').selectOption('none');
   // Old revisions are removed only when a newer version of that style exists.
   await page.evaluate(async()=>{
    const db=await new Promise((ok,no)=>{const q=indexedDB.open('hai-gin-wig-library-v1',1);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)});
@@ -99,6 +103,15 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    const neck=await page.locator('#profileStatus').evaluate(e=>({count:+e.dataset.neckAnchorCount,mm:+e.dataset.neckAnchorMm}));
    assert.ok(neck.count>0&&neck.mm<.001,'face width must not alter neck anchor: '+JSON.stringify(neck));
   }
+  for(const [tab,key] of [['目・眉','eyeY'],['口','mouthY'],['鼻','noseY']]){
+   await page.locator('#tabs').getByRole('button',{name:tab,exact:true}).click();
+   await page.locator('#s-'+key).evaluate(e=>{e.value='80';e.dispatchEvent(new Event('input',{bubbles:true}))});
+   await page.waitForFunction(()=>+document.getElementById('profileStatus').dataset.identityMaxMm>0.1,undefined,{timeout:10000});
+   assert.ok(+(await page.locator('#profileStatus').getAttribute('data-neck-anchor-mm'))<.001);
+   await page.locator('#resetPart').click();
+   await page.waitForFunction(()=>+document.getElementById('profileStatus').dataset.identityMaxMm<.001,undefined,{timeout:10000});
+  }
+  await page.locator('#tabs').getByRole('button',{name:'輪郭',exact:true}).click();
   // Use a minimal valid GLB rather than the metadata-only cleanup records.
   const wig=await page.evaluate(async()=>{const T=await import('three'),{GLTFExporter}=await import('three/addons/exporters/GLTFExporter.js');const g=new T.SphereGeometry(.083,16,12,0,Math.PI*2,0,Math.PI*.68);g.translate(0,.065,0);const m=new T.Mesh(g,new T.MeshStandardMaterial({color:0x684336}));m.name='qa_wig';const b=new Uint8Array(await new GLTFExporter().parseAsync(m,{binary:true}));let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode(...b.subarray(i,i+8192));return btoa(s)});
   await page.locator('#wigFile').setInputFiles({name:'R99 ボブ.glb',mimeType:'model/gltf-binary',buffer:Buffer.from(wig,'base64')});
