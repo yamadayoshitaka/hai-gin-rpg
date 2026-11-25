@@ -24,9 +24,9 @@ def material(name,rough):
     mat.node_tree.links.new(color.outputs["Color"],bs.inputs["Base Color"])
     return mat
 def components(P,edges):
-    # Coincident split vertices are grouped for analysis only; topology unchanged.
-    _,mapping=np.unique(np.round(P,6),axis=0,return_inverse=True)
-    count=int(mapping.max())+1; parent=list(range(count))
+    # Preserve indexed topology. Coincident points may belong to different anatomical parts.
+    mapping=np.arange(len(P),dtype=np.int64)
+    count=len(P); parent=list(range(count))
     def root(i):
         while parent[i]!=i:
             parent[i]=parent[parent[i]];i=parent[i]
@@ -34,8 +34,9 @@ def components(P,edges):
     for u,v in edges:
         a,b=root(int(mapping[u])),root(int(mapping[v]))
         if a!=b:parent[b]=a
-    labels=np.array([root(int(i)) for i in mapping])
-    return [np.flatnonzero(labels==c) for c in np.unique(labels)]
+    buckets={}
+    for i in mapping:buckets.setdefault(root(int(i)),[]).append(int(i))
+    return [np.asarray(v,dtype=np.int64) for v in buckets.values()]
 results=[]
 for i,ident in enumerate(ids):
     file=src/(ident+".glb")
@@ -57,6 +58,7 @@ for i,ident in enumerate(ids):
     for g in groups:
         lo=P[g].min(0);hi=P[g].max(0);c=(lo+hi)/2
         info.append((g,lo,hi,c))
+    print('R53 indexed components',ident,[(len(g),lo.tolist(),hi.tolist()) for g,lo,hi,c in info if len(g)>100],flush=True)
     eyes=[]
     for sign in [-1,1]:
         hit=[(g,lo,hi,c) for g,lo,hi,c in info if len(g)>100
