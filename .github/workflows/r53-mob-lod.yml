@@ -1,0 +1,75 @@
+name: R53 assembled mob LOD surface and animation audit
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-mob-lod.py'
+      - 'scripts/r53-mob-lod-inventory.py'
+      - '.github/workflows/r53-mob-lod.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  lod:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        id: [mob_male_01, mob_male_02, mob_male_03, mob_male_04, mob_male_05, mob_male_06, mob_male_07, mob_male_08, mob_male_09, mob_male_10, mob_female_01, mob_female_02, mob_female_03, mob_female_04, mob_female_05, mob_female_06, mob_female_07, mob_female_08, mob_female_09, mob_female_10]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - name: Syntax preflight
+        run: python3 -m py_compile scripts/r53-mob-lod.py scripts/r53-mob-lod-inventory.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-assembled-${{ matrix.id }}
+          run-id: 45715987693
+          github-token: ${{ github.token }}
+          path: /tmp/r53-assembled
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Generate LOD and compare 30 actual action poses per level
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/lod
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-lod.py -- /tmp/r53-assembled review/lod "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-lod-${{ matrix.id }}
+          path: review/lod/
+          if-no-files-found: warn
+  inventory:
+    needs: lod
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-lod-*
+          path: review/shards
+      - name: Verify 40 LOD meshes and all pose evidence
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-mob-lod-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-lod-summary
+          path: review/summary/
+          if-no-files-found: error
