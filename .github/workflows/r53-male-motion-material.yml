@@ -1,0 +1,44 @@
+name: R53 male motion material refinement
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-male-motion-material-study.py'
+      - '.github/workflows/r53-male-motion-material.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: r53-male-motion-material
+  cancel-in-progress: true
+jobs:
+  refine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-male-review-package
+          run-id: 45613089085
+          github-token: ${{ github.token }}
+          path: /tmp/r53-source
+      - name: Install Blender and NumPy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          blender -b --python-exit-code 1 --python-expr 'import numpy; print(numpy.__version__)'
+      - name: Bake all male facial motion and material studies and render evidence
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          mkdir -p review/r53-male-motion
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-male-motion-material-study.py -- /tmp/r53-source review/r53-male-motion
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-male-motion-material-review
+          path: review/r53-male-motion/
+          if-no-files-found: error
+          retention-days: 30
