@@ -89,7 +89,18 @@ def normals(P,T):
 # that bind to its actual armature are garment inputs.
 declared={n['name'] for n in g['nodes'] if 'mesh' in n and 'skin' in n and 'hood' not in n['name'].lower()}
 def source_node_name(o):
-    return o.name if o.name in declared else re.sub(r'\.[0-9]{3}
+    if o.name in declared:return o.name
+    prefix,sep,suffix=o.name.rpartition('.')
+    return prefix if sep and len(suffix)==3 and suffix.isdigit() else o.name
+candidates=[o for o in srcobjs if o.type=='MESH' and source_node_name(o) in declared and
+            any(m.type=='ARMATURE' and m.object==src for m in o.modifiers)]
+found={source_node_name(o) for o in candidates}
+ignored=[o.name for o in srcobjs if o.type=='MESH' and o not in candidates]
+print('R53 source garment nodes',sorted(found),'excluded',ignored,flush=True)
+if found!=declared or len(candidates)!=len(declared):
+    raise RuntimeError('declared garment mismatch: missing '+str(sorted(declared-found))+' duplicate count '+str(len(candidates)-len(found)))
+garments=[];reports=[]
+for o in candidates:
     # Drop embedded bare-skin material polygons while retaining authored UVs.
     M=o.matrix_world.copy();mesh=o.data;bm=bmesh.new();bm.from_mesh(mesh)
     skin=[f for f in bm.faces if 'regular' in (mesh.materials[f.material_index].name.lower() if f.material_index<len(mesh.materials) and mesh.materials[f.material_index] else '')]

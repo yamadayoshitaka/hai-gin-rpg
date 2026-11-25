@@ -20,6 +20,8 @@ jobs:
           sparse-checkout: |
             scripts
             assets/characters/quaternius-outfits
+      - name: Validate Python syntax before expensive build
+        run: python3 -m py_compile scripts/r53-garment-fit.py scripts/r53-garment-inventory.py
       - uses: actions/download-artifact@v4
         with:
           name: r53-age90-male-middle
