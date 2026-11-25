@@ -1,0 +1,50 @@
+name: R53 male wig G0 G1 fit studies
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-male-wig-fit.py'
+      - '.github/workflows/r53-male-wig-fit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  fit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [first, second]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/hair-fitted-v1
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-continuous-*
+          run-id: 45639464687
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Measure real scalp and crown, fit existing licensed wigs
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GROUP: ${{ matrix.group }}
+        run: |
+          mkdir -p review/r53-wigs
+          cp assets/characters/hair-fitted-v1/ATTRIBUTION.md review/r53-wigs/
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-male-wig-fit.py -- /tmp/r53-bodies assets/characters/hair-fitted-v1 review/r53-wigs "$GROUP"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-male-wig-${{ matrix.group }}
+          path: review/r53-wigs/
+          if-no-files-found: error
+          retention-days: 30
