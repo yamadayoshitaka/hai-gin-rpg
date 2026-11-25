@@ -70,6 +70,20 @@ test('both real-time and Worker entrypoints use updated anti-wander logic',()=>{
  assert.match(source,/if\(here===0&&!nearest&&!taskNeedsApproach\)/);
  // Standard BFS moves must improve distance; deliberately authorized high-ground moves may bypass this guard.
  assert.match(source,/if\(rawFlow>=here&&!higherStep\)continue/);
- assert.match(worker,/mass-battle-grid-sim\.js\?v=20261125-global-bait/);
- assert.match(page,/mass-battle-grid-sim\.js\?v=20261125-global-bait/);
+ assert.match(worker,/mass-battle-grid-sim\.js\?v=20261125-optional-height1/);
+ assert.match(page,/mass-battle-grid-sim\.js\?v=20261125-optional-height1/);
+});
+
+// Ground orders must not trigger optional roof deployment on either engine.
+test('high-ground is an explicit tactic, not an automatic formation override',()=>{
+ const page=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/battle-realtime-commands.js',import.meta.url),'utf8');
+ assert.match(page,/explicitHighGroundActive\(u\)&&u\.formationType==='highground'/);
+ assert.match(page,/explicitHighGroundActive\(a\)&&a\.formationType==='highground'/);
+ assert.match(page,/explicitHighGroundGroups\.delete\(groupKey\)/);
+ assert.match(page,/initialPlans\[String\(group\)\]==='highground_attack'/);
+ assert.doesNotMatch(source,/this\._assignHighGroundUnits\(\);/);
+ assert.match(source,/this\._cancelSquadHighGround\(id,team\)/);
+ assert.match(ui,/highground_attack:'高所攻撃（任意作戦）'/);
 });
