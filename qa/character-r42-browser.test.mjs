@@ -9,7 +9,7 @@ const base='http://127.0.0.1:8766/';
 const donorDir=resolve(root,'assets/character-review');
 const adult='HM08_adult_female_R36_review.glb';
 const output='qa/screenshots/character-r42';
-test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout:360000},async()=>{
+test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout:720000},async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
   const page=await browser.newPage({viewport:{width:412,height:915},deviceScaleFactor:1,isMobile:true,hasTouch:true,acceptDownloads:true});
@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.22',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.23',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -69,6 +69,8 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal((await ageStats()).count,0);
   await page.locator('#stage').screenshot({path:output+'/age20-body.png'});
   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
+  assert.equal(await page.locator('#bodyAdvanced').evaluate(e=>e.open),false,'donor override must start collapsed');
+  await page.locator('#bodyAdvanced > summary').click();
   const evidence=[];
   for(const key of ['female-adult','male-adult','female-senior','male-senior','female-child','male-child']){
    await page.locator('#bodySource').selectOption(key);
@@ -77,6 +79,19 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    assert.ok(!status.includes('失敗'),status);
    const file=output+'/'+key+'.png';await page.locator('#stage').screenshot({path:file});evidence.push({key,status,file});
   }
+  await page.locator('#bodySource').selectOption('auto');
+  for(const sex of ['female','male']){
+   await page.locator('#motionSex').selectOption(sex);
+   for(const age of ['child','teen','20','30','40','50','60','70','80']){
+    await page.locator('#motionAge').selectOption(age);
+    await page.waitForFunction(([sex,age])=>{const key=sex==='female'?(age==='child'?'女児':+age>=60?'高齢女性':'成人女性'):(age==='child'?'男児':+age>=60?'高齢男性':'成人男性');return !document.getElementById('bodyExport').disabled&&document.getElementById('bodyStatus').textContent.includes(key)&&document.getElementById('profileStatus').dataset.faceAge===age},[sex,age],{timeout:60000});
+    for(const build of ['normal','slim','full','verySlim']){await page.locator('#bodyBuild').selectOption(build);await page.waitForTimeout(150);assert.ok(await page.locator('#bodyMode').isChecked());}
+    await page.locator('#bodyBuild').selectOption('normal');
+    if(['20','40','60','80'].includes(age)){await page.waitForTimeout(200);await page.locator('#stage').screenshot({path:output+'/r44-'+sex+'-'+age+'.png'});}
+   }
+  }
+  await page.locator('#motionSex').selectOption('female');
+  await page.locator('#motionAge').selectOption('20');
   await page.locator('#bodySource').selectOption('female-adult');
   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
   await page.locator('#goAction').click();
