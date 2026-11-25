@@ -4,6 +4,10 @@ on:
     branches: [r53-fixed-face-review]
     paths:
       - 'assets/face-r53/**'
+      - 'assets/character-r53-final/**'
+      - 'data/r53-cast-reference-map.json'
+      - 'data/r53-mob-roster.json'
+      - 'scripts/r53-final42-audit.py'
       - 'face-precision-r18.html'
       - 'qa/r53-fixed-faces.test.mjs'
       - 'qa/r53-fixed-editor-browser.cjs'
@@ -71,19 +75,52 @@ jobs:
           name: r53-release-browser-evidence
           path: qa-screenshots/r53-fixed-preflight/
           if-no-files-found: ignore
+  cast42-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Audit all original cast and mob identities independently
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-image-audit.py review/r53-cast
+          python3 scripts/r53-cast-roster-audit.py review/r53-cast
+          node qa/r53-mob-roster.test.mjs
+      - name: Reuse thirty previously generated Blender body studies
+        uses: actions/download-artifact@v4
+        with:
+          name: r53-body-build-review
+          run-id: 45634718785
+          github-token: ${{ github.token }}
+          path: review/r53-body
+      - name: Audit 42 final identities and nine-age five-build evidence
+        if: always()
+        run: python3 scripts/r53-final42-audit.py --strict --body-dir review/r53-body
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-final42-evidence
+          path: |
+            review/r53-42/
+            review/r53-cast/
+          if-no-files-found: error
   release-gate:
     if: always()
-    needs: [asset-validation, editor-validation]
+    needs: [asset-validation, editor-validation, cast42-validation]
     runs-on: ubuntu-24.04
     steps:
       - name: Require both independent validations to succeed
         env:
           ASSETS: ${{ needs.asset-validation.result }}
           EDITOR: ${{ needs.editor-validation.result }}
+          CAST42: ${{ needs.cast42-validation.result }}
         run: |
           printf 'Asset validation: %s\nEditor validation: %s\n' "$ASSETS" "$EDITOR"
-          if [ "$ASSETS" != success ] || [ "$EDITOR" != success ]; then
-            echo '::error::R53 release blocked. Both validation jobs must succeed; no bypass or candidate promotion.'
+          if [ "$ASSETS" != success ] || [ "$EDITOR" != success ] || [ "$CAST42" != success ]; then
+            echo '::error::R53 release blocked. All three validation jobs must succeed; no bypass or candidate promotion.'
             exit 1
           fi
-          echo 'Both checks passed. No automatic production adoption; actual visual approval and normal Pages deployment remain required.'
+          echo 'All three checks passed. No automatic production adoption; actual visual approval and normal Pages deployment remain required.'
