@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R53 | Blender基準モデル確認（開発版）</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#131820;color:#e8edf3;font:16px system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:16px}h1{font-size:1.45rem;margin:0 0 8px}p{line-height:1.6}a{color:#9dd1ff}section{background:#202834;border:1px solid #465262;border-radius:12px;padding:14px;margin-top:14px}.notice{border-left:4px solid #e4b167;padding-left:12px}.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}article{min-width:0}model-viewer{display:block;width:100%;height:440px;background:#343c48;border-radius:8px}h2{font-size:1.12rem}h3{font-size:1rem}small{color:#b9c5d2}li{margin:8px 0}@media(max-width:600px){model-viewer{height:360px}}
+</style></head><body><main>
+<h1>灰銀のレゾナンス | R53 Blender基準モデル確認</h1>
+<p class="notice"><strong>開発用プレビュー・正式版未完成</strong><br>この画面は既存の男女別MakeHuman骨格GLBを表示します。新規の固定顔20体ではありません。既存の人物工房、登録データ、本編には変更を加えません。</p>
+<section><h2>男女別基準モデル（実GLB）</h2><p><small>ドラッグで回転、ピンチで拡大縮小。基準モデルの材質・体型・骨格確認用です。</small></p>
+<div class="models"><article><h3>女性 R36</h3><model-viewer src="https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/60e998136ff609d28bda81039c4338a5bf18bcea/assets/character-review/HM08_adult_female_R36_review.glb" alt="女性R36基準骨格" camera-controls touch-action="pan-y" shadow-intensity="0" exposure="1" interaction-prompt="none"></model-viewer></article>
+<article><h3>男性 R41</h3><model-viewer src="https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/60e998136ff609d28bda81039c4338a5bf18bcea/assets/character-review/HM08_male-adult_R41.glb" alt="男性R41基準骨格" camera-controls touch-action="pan-y" shadow-intensity="0" exposure="1" interaction-prompt="none"></model-viewer></article></div>
+<p><small>モデルが表示されない場合は以下の実行成果物からBlenderファイルを取得してください。</small></p></section>
+<section><h2>Blender実行結果</h2><ul><li>Blender 4.0.2・男女基準モデル読み込み：成功</li><li>基準モデルの5方向レンダリング・GLB往復検査：CI成功</li><li>R20顔GLBのGitHub転送：未完了</li><li>完成済み固定顔：女性0/10、男性0/10</li><li>全モデルの視覚品質判定・正式版反映：未完了</li></ul><p><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45603392359">最新のBlender実行結果</a> | <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/runs/45603392359/artifacts/15016946191">実レンダリング・採寸・GLB往復出力ZIP</a> | <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/tree/r53-fixed-face-review">R53開発ブランチ</a></p></section>
+<p><a href="face-precision-r18.html?v=3.32">現行人物編集工房へ戻る</a></p></main></body></html>
