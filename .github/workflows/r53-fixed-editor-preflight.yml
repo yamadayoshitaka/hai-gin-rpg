@@ -6,6 +6,7 @@ on:
       - 'face-precision-r18.html'
       - 'src/r53-fixed-face-catalog.mjs'
       - 'qa/r53-fixed-faces.test.mjs'
+      - 'qa/r53-fixed-editor-browser.cjs'
       - 'assets/face-r53/**'
       - '.github/workflows/r53-fixed-editor-preflight.yml'
   workflow_dispatch:
@@ -30,6 +31,21 @@ jobs:
           node --check /tmp/r53-editor.mjs
           node --check src/r53-fixed-face-catalog.mjs
           node --test --test-name-pattern='catalog rejects|custom record|network failure' qa/r53-fixed-faces.test.mjs
+      - name: Mobile browser safety regression
+        run: |
+          npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/r53-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          sleep 2
+          node qa/r53-fixed-editor-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-browser-preflight
+          path: qa-screenshots/r53-fixed-preflight/
+          if-no-files-found: ignore
       - name: Release readiness (never deploy from this job)
         run: |
           if test -f assets/face-r53/catalog.json; then
