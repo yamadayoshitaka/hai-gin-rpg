@@ -12,20 +12,50 @@ on:
 permissions:
   contents: read
 jobs:
-  release-gate:
+  asset-validation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Inventory required release files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, sys
+          root = Path('assets/face-r53')
+          ids = [f'{sex}_face_{i:02d}' for sex in ('female','male') for i in range(1,11)]
+          expected = ['catalog.json','quality-review.json']
+          expected += [f'{i}.{ext}' for i in ids for ext in ('glb','png')]
+          expected += [n+'.png' for n in ('female-front','female-side','male-front','male-side','all-45','all-hair','neck-closeup')]
+          missing = [n for n in expected if not (root/n).is_file() or (root/n).stat().st_size == 0]
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write(f'## R53 release asset inventory\n\nPresent: {len(expected)-len(missing)}/{len(expected)} required files.\n\n')
+              for n in missing: f.write(f'- Missing: `assets/face-r53/{n}`\n')
+              if missing: f.write('\n**Release blocked — unfinished assets.** Browser validation runs independently.\n')
+          if missing:
+              print(f'::error::R53 release blocked: {len(missing)} required asset/evidence files missing. See job summary.')
+              sys.exit(1)
+          PY
       - name: Require actual 20 final meshes and signed visual evidence
         run: node --test qa/r53-fixed-faces.test.mjs
-      - name: Verify editor syntax
+  editor-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify editor and browser test syntax
         run: |
           python3 -c 'import re; from pathlib import Path; s=Path("face-precision-r18.html").read_text(); Path("/tmp/r53-editor.mjs").write_text("\n".join(re.findall(r"<script type=\"module\">(.*?)</script>",s,re.S)))'
+          test -s /tmp/r53-editor.mjs
           node --check /tmp/r53-editor.mjs
+          node --check qa/r53-fixed-editor-browser.cjs
+          node --test --test-name-pattern='catalog rejects|custom record|network failure' qa/r53-fixed-faces.test.mjs
       - name: Browser regression for failure paths and storage
         run: |
           npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
@@ -35,5 +65,25 @@ jobs:
           trap 'kill "$server" || true' EXIT
           sleep 2
           node qa/r53-fixed-editor-browser.cjs
-      - name: Record scope
-        run: echo 'Gate passed for provided release evidence and browser safety. Human visual inspection and normal Pages release remain separate; no automatic adoption of candidates.'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-release-browser-evidence
+          path: qa-screenshots/r53-fixed-preflight/
+          if-no-files-found: ignore
+  release-gate:
+    if: always()
+    needs: [asset-validation, editor-validation]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require both independent validations to succeed
+        env:
+          ASSETS: ${{ needs.asset-validation.result }}
+          EDITOR: ${{ needs.editor-validation.result }}
+        run: |
+          printf 'Asset validation: %s\nEditor validation: %s\n' "$ASSETS" "$EDITOR"
+          if [ "$ASSETS" != success ] || [ "$EDITOR" != success ]; then
+            echo '::error::R53 release blocked. Both validation jobs must succeed; no bypass or candidate promotion.'
+            exit 1
+          fi
+          echo 'Both checks passed. No automatic production adoption; actual visual approval and normal Pages deployment remain required.'
