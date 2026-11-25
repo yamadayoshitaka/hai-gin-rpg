@@ -9,14 +9,36 @@ out=Path(sys.argv[sys.argv.index("--")+2]).resolve()
 out.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(source))
+bpy.context.view_layer.update()
 meshes=[o for o in bpy.context.scene.objects if o.type=="MESH"]
-if len(meshes)!=1: raise RuntimeError("Expected single male anatomical donor")
-o=meshes[0]
-if not any(o.type=="ARMATURE" for o in bpy.context.scene.objects): raise RuntimeError("No source armature")
+def rigs(obj):
+    return [m.object for m in obj.modifiers if m.type=="ARMATURE" and m.object is not None]
+print("Imported mesh inventory:",[(o.name,o.data.name,len(o.data.vertices),[r.name for r in rigs(o)]) for o in meshes])
+# Blender's glTF importer may create extra meshes for bone display shapes.
+# Require a skinned mesh with the known anatomical donor name, not a display helper.
+named=[o for o in meshes if ("hm08_male-adult" in o.name.lower() or "anatomicalbody" in o.data.name.lower()) and rigs(o) and len(o.data.vertices)>1000]
+if len(named)!=1:
+    skinned=[o for o in meshes if rigs(o) and len(o.data.vertices)>1000]
+    if len(named)==0 and len(skinned)==1:
+        named=skinned
+    else:
+        raise RuntimeError("Cannot uniquely identify the R41 male anatomical mesh")
+o=named[0]
+armatures=rigs(o)
+if len(armatures)!=1: raise RuntimeError("Expected one source armature")
+rig=armatures[0]
+# Verify donor identity via its GLB bytes, not just a similar object name.
+raw=source.read_bytes()
+git_blob=hashlib.sha1(("blob "+str(len(raw))+"\0").encode()+raw).hexdigest()
+if git_blob!="a30287190e5175fa52933ef97e0a92715cbf155a":
+    raise RuntimeError("Unexpected R41 male source hash")
+print("Selected donor:",o.name,o.data.name,len(o.data.vertices),rig.name)
+
 # R41 measured height 1.760 m. Retain lower neck above the shoulder flare.
 cut=1.515
 points=[o.matrix_world@v.co for v in o.data.vertices]
 if abs(max(p.z for p in points)-1.76)>.005: raise RuntimeError("Unexpected male donor scale")
+bpy.ops.object.select_all(action="DESELECT")
 bpy.context.view_layer.objects.active=o
 o.select_set(True)
 bm=bmesh.new();bm.from_mesh(o.data)
@@ -44,6 +66,10 @@ report=dict(source=source.name,source_sha256=hashlib.sha256(source.read_bytes())
   missing=["high precision eye and oral meshes","11 expression morphs","final skin PBR","individual sculpt","body seam fitting"])
 (out/"male-reference.json").write_text(json.dumps(report,indent=2))
 bpy.ops.wm.save_as_mainfile(filepath=str(out/"male_anatomy_reference.blend"))
+bpy.ops.object.select_all(action="DESELECT")
+o.select_set(True)
+rig.select_set(True)
+bpy.context.view_layer.objects.active=o
 bpy.ops.export_scene.gltf(filepath=str(out/"male_anatomy_reference.glb"),export_format="GLB",
-  export_animations=False,export_skins=True,export_morph=True)
+  use_selection=True,export_animations=False,export_skins=True,export_morph=True)
 print("Male head/neck reference:",report)
