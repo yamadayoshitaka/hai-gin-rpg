@@ -1,0 +1,141 @@
+name: R53 mob shared-rig assembly review
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-mob-assemble.py'
+      - 'scripts/r53-mob-assembly-inventory.py'
+      - '.github/workflows/r53-mob-assembly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sources:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - name: Require all prior independent asset inventories
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh run watch 45714757052 --exit-status --interval 30
+          gh run watch 45715276616 --exit-status --interval 30
+          gh run watch 45715457809 --exit-status --interval 30
+  assemble:
+    needs: sources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - id: mob_female_01
+            style: Peasant
+          - id: mob_female_02
+            style: Ranger
+          - id: mob_female_03
+            style: Peasant
+          - id: mob_female_04
+            style: Peasant
+          - id: mob_female_05
+            style: Peasant
+          - id: mob_female_06
+            style: Peasant
+          - id: mob_female_07
+            style: Ranger
+          - id: mob_female_08
+            style: Peasant
+          - id: mob_female_09
+            style: Peasant
+          - id: mob_female_10
+            style: Ranger
+          - id: mob_male_01
+            style: Peasant
+          - id: mob_male_02
+            style: Ranger
+          - id: mob_male_03
+            style: Peasant
+          - id: mob_male_04
+            style: Peasant
+          - id: mob_male_05
+            style: Peasant
+          - id: mob_male_06
+            style: Peasant
+          - id: mob_male_07
+            style: Ranger
+          - id: mob_male_08
+            style: Peasant
+          - id: mob_male_09
+            style: Peasant
+          - id: mob_male_10
+            style: Ranger
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - name: Syntax preflight
+        run: python3 -m py_compile scripts/r53-mob-assemble.py scripts/r53-mob-assembly-inventory.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-motion-${{ matrix.id }}
+          run-id: 45715276616
+          github-token: ${{ github.token }}
+          path: /tmp/r53-motion
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-wig-${{ matrix.id }}
+          run-id: 45714757052
+          github-token: ${{ github.token }}
+          path: /tmp/r53-wig
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-garment-checked-${{ matrix.id }}
+          run-id: 45715457809
+          github-token: ${{ github.token }}
+          path: /tmp/r53-garment
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Assemble rigged mesh, clothing, head-bound hair, expressions and actions
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+          STYLE: ${{ matrix.style }}
+        run: |
+          mkdir -p review/assembly
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-assemble.py -- /tmp/r53-motion /tmp/r53-wig /tmp/r53-garment review/assembly "$ID" "$STYLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-assembled-${{ matrix.id }}
+          path: review/assembly/
+          if-no-files-found: warn
+  inventory:
+    needs: assemble
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-assembled-*
+          path: review/shards
+      - name: Verify twenty shared-rig candidates
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-mob-assembly-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-assembly-summary
+          path: review/summary/
+          if-no-files-found: error
