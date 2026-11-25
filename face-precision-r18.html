@@ -299,8 +299,7 @@ function installChoiceButtons(select,label,filterable=false){
  const grid=document.createElement('div');grid.className='choice-grid';host.append(grid);
  let optionsKey='',buttons=new Map();
  function refresh(){
-  const opts=Array.from(select.options);const key=JSON.stringify(opts.map(o=>[o.value,o.textContent,o.disabled]));const query=filter.value.trim().toLocaleLowerCase();const rebuild=key!==optionsKey||query!==grid.dataset.query;
-  filter.hidden=!filterable||opts.length<=8;
+  const opts=Array.from(select.options);const key=JSON.stringify(opts.map(o=>[o.value,o.textContent,o.disabled]));filter.hidden=!filterable||opts.length<=8;if(filter.hidden)filter.value='';const query=filter.value.trim().toLocaleLowerCase();const rebuild=key!==optionsKey||query!==grid.dataset.query;
   if(rebuild){optionsKey=key;grid.dataset.query=query;grid.replaceChildren();buttons=new Map();for(const o of opts){if(query&&!o.textContent.toLocaleLowerCase().includes(query))continue;const b=document.createElement('button');b.type='button';b.textContent=o.textContent;b.dataset.value=o.value;b.addEventListener('click',()=>{if(select.disabled||o.disabled)return;select.value=o.value;select.dispatchEvent(new Event('change',{bubbles:true}));refresh()});grid.append(b);buttons.set(o.value,b)}if(!buttons.size){const e=document.createElement('small');e.className='choice-empty';e.textContent='一致する項目がありません';grid.append(e)}}
   const selected=select.selectedOptions[0];const msg='選択中：'+(selected?.textContent||'未選択');if(current.textContent!==msg)current.textContent=msg;
   for(const o of opts){const b=buttons.get(o.value);if(!b)continue;b.disabled=select.disabled||o.disabled;b.setAttribute('aria-pressed',String(select.value===o.value))}
@@ -308,7 +307,7 @@ function installChoiceButtons(select,label,filterable=false){
  filter.addEventListener('input',refresh);select.addEventListener('change',refresh);new MutationObserver(refresh).observe(select,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['disabled','label','selected','value']});refresh();return refresh
 }
 const choiceRefresh=[['modelList','顔モデル',true],['hairStyle','髪型',true],['exp','表情',false],['bodyMotion','動作',false]].map(([id,label,search])=>installChoiceButtons($(id),label,search));
-let choiceFrame=0;function syncChoiceButtons(){if(document.hidden)return;for(const refresh of choiceRefresh)refresh()}
+function syncChoiceButtons(){if(document.hidden)return;for(const refresh of choiceRefresh)refresh()}
 setInterval(syncChoiceButtons,250);
 
 window.dispatchEvent(new Event('face-editor-ready'));status.textContent='顔モデルを選択してください';restoreHandoff();refreshModels().catch(e=>storageStatus('保存領域を利用できません：'+(e.message||e.name)));
