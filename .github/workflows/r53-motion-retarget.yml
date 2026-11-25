@@ -1,0 +1,85 @@
+name: R53 real animation retarget candidates
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-motion-retarget.py'
+      - 'scripts/r53-motion-inventory.py'
+      - '.github/workflows/r53-motion-retarget.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  retarget:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        id: [male_under10_normal, male_30s_normal, male_70s_normal, female_under10_normal, female_30s_normal, female_70s_normal, male_continuous_01, male_continuous_02, male_continuous_03, male_continuous_04, male_continuous_05, male_continuous_06, male_continuous_07, male_continuous_08, male_continuous_09, male_continuous_10]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/animations
+      - uses: actions/download-artifact@v4
+        if: startsWith(matrix.id, 'male_continuous_')
+        with:
+          pattern: r53-continuous-*
+          run-id: 45639464687
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - uses: actions/download-artifact@v4
+        if: "!startsWith(matrix.id, 'male_continuous_')"
+        with:
+          pattern: r53-age90-*
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Retarget four real animation clips, export and render
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/motion
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-motion-retarget.py -- assets/animations/UAL1_Standard.glb /tmp/r53-bodies review/motion "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-motion-${{ matrix.id }}
+          path: review/motion/
+          if-no-files-found: warn
+          retention-days: 30
+  inventory:
+    needs: retarget
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-motion-*
+          path: review/shards
+      - name: Verify real motion candidates
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-motion-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-motion-summary
+          path: review/summary/
+          if-no-files-found: error
+          retention-days: 30
