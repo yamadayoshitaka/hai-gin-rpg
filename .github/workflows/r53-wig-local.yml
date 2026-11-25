@@ -1,0 +1,86 @@
+name: R53 local wig interference correction
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-wig-local-correct.py'
+      - 'scripts/r53-wig-local-audit.py'
+      - '.github/workflows/r53-wig-local.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  correct:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        id: [1,2,3,4,5,6,7,8,9,10]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-continuous-*
+          run-id: 45639464687
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-male-wig-recovered
+          run-id: 45642393260
+          github-token: ${{ github.token }}
+          path: /tmp/r53-wigs
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy python3-pil xvfb libgl1-mesa-dri xauth
+      - name: Local correction and actual head pose probes
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          for attempt in 1 2 3; do
+            rm -rf review/r53-local
+            mkdir -p review/r53-local
+            cp /tmp/r53-wigs/ATTRIBUTION.md review/r53-local/
+            if xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-wig-local-correct.py -- /tmp/r53-bodies /tmp/r53-wigs review/r53-local "$ID"; then exit 0; fi
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-local-wig-${{ matrix.id }}
+          path: review/r53-local/
+          if-no-files-found: error
+          retention-days: 30
+  inventory:
+    needs: correct
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-local-wig-*
+          path: review/shards
+      - name: Compare and verify ten candidates
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-wig-local-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-local-summary
+          path: review/summary/
+          if-no-files-found: error
+          retention-days: 30
