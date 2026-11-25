@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.28',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.29',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -121,6 +121,11 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    await page.waitForFunction(label=>document.getElementById('storeStatus').textContent.includes('標準ベース '+label+'」を読み込みました'),label,{timeout:60000});
    await page.locator('#hairStyle').selectOption('wig:R99 ボブ');
    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('ウィッグ装着完了'),undefined,{timeout:60000});
+   await page.waitForFunction(()=>document.getElementById('hairInfo').dataset.autoFit==='R49',undefined,{timeout:10000});
+   const before=+(await page.locator('#hairInfo').getAttribute('data-head-top-mm'));
+   await page.locator('#s-forehead').evaluate(e=>{e.value='100';e.dispatchEvent(new Event('input',{bubbles:true}))});
+   await page.waitForFunction(before=>Math.abs(+document.getElementById('hairInfo').dataset.headTopMm-before)>.2,before,{timeout:10000});
+   await page.locator('#s-forehead').evaluate(e=>{e.value='0';e.dispatchEvent(new Event('input',{bubbles:true}))});
    await page.locator('#stage').screenshot({path:output+'/r48-bob-'+label+'.png'});
   }
   await page.locator('#modelList').selectOption('R39_jaw_lateral_review');
@@ -165,6 +170,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
     if(['20','40','60','80'].includes(age)){
      await page.waitForTimeout(250);
      const seam=await page.locator('#bodyStatus').evaluate(e=>({n:+e.dataset.seamSamples,dot:+e.dataset.seamNormalDot,center:+e.dataset.neckCenterErrorMm}));
+     assert.ok(+(await page.locator('#bodyStatus').getAttribute('data-collar-split-vertices'))>0,'shirt neckline must be geometrically cut');
      assert.ok(seam.n>=96&&seam.dot>.99&&seam.center<1,'seam boundary normals must match: '+JSON.stringify(seam));
      for(const [label,view] of [['正面','front'],['45°','diagonal'],['側面','side'],['背面','back']]){
        await page.locator('#angles').getByRole('button',{name:label,exact:true}).click();await page.waitForTimeout(150);
