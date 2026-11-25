@@ -1,0 +1,120 @@
+name: R53 independent generic mob geometry studies
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-mob-sculpt.py'
+      - 'scripts/r53-mob-sculpt-audit.py'
+      - 'data/r53-mob-sculpt-plan.json'
+      - '.github/workflows/r53-mob-sculpt.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sculpt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include:
+          - id: mob_female_01
+            shard: female-middle
+          - id: mob_female_02
+            shard: female-early
+          - id: mob_female_03
+            shard: female-middle
+          - id: mob_female_04
+            shard: female-middle
+          - id: mob_female_05
+            shard: female-middle
+          - id: mob_female_06
+            shard: female-middle
+          - id: mob_female_07
+            shard: female-early
+          - id: mob_female_08
+            shard: female-late
+          - id: mob_female_09
+            shard: female-late
+          - id: mob_female_10
+            shard: female-middle
+          - id: mob_male_01
+            shard: male-middle
+          - id: mob_male_02
+            shard: male-early
+          - id: mob_male_03
+            shard: male-middle
+          - id: mob_male_04
+            shard: male-middle
+          - id: mob_male_05
+            shard: male-middle
+          - id: mob_male_06
+            shard: male-middle
+          - id: mob_male_07
+            shard: male-early
+          - id: mob_male_08
+            shard: male-late
+          - id: mob_male_09
+            shard: male-late
+          - id: mob_male_10
+            shard: male-middle
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - name: Syntax preflight
+        run: python3 -m py_compile scripts/r53-mob-sculpt.py scripts/r53-mob-sculpt-audit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-age90-${{ matrix.shard }}
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Bake distinct mob mesh and render eleven views
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/mob
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-sculpt.py -- /tmp/r53-bodies data/r53-mob-sculpt-plan.json review/mob "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-study-${{ matrix.id }}
+          path: review/mob/
+          if-no-files-found: warn
+  inventory:
+    needs: sculpt
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-study-*
+          path: review/shards
+      - name: Verify distinct geometry and all render evidence
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-mob-sculpt-audit.py review/shards data/r53-mob-sculpt-plan.json review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-sculpt-summary
+          path: review/summary/
+          if-no-files-found: error
