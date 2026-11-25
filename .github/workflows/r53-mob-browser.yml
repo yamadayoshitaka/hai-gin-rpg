@@ -47,6 +47,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Check all 60 real GLBs and measure software-rendered workload
         run: |
+          node --check review-tools/r53-mob/viewer.mjs
+          node --check review-tools/r53-mob/browser-test.mjs
           cp review-tools/r53-mob/browser-test.mjs ./r53-browser-test.mjs
           python3 -m http.server 8765 --bind 127.0.0.1 --directory review/site >/tmp/r53-http.log 2>&1 &
           node r53-browser-test.mjs
