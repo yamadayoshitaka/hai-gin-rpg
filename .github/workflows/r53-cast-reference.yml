@@ -2,7 +2,7 @@ name: R53 cast image reference audit
 on:
   push:
     branches: [r53-fixed-face-review]
-    paths: ['data/r53-cast-reference-map.json','scripts/r53-cast-image-audit.py','.github/workflows/r53-cast-reference.yml']
+    paths: ['data/r53-cast-reference-map.json','scripts/r53-cast-image-audit.py','scripts/r53-cast-roster-audit.py','.github/workflows/r53-cast-reference.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,6 +14,7 @@ jobs:
       - run: |
           python3 -m pip install pillow
           python3 scripts/r53-cast-image-audit.py review/r53-cast
+          python3 scripts/r53-cast-roster-audit.py review/r53-cast
       - uses: actions/upload-artifact@v4
         with:
           name: r53-cast-landmark-reference
