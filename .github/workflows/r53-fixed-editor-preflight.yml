@@ -1,0 +1,39 @@
+name: R53 fixed face editor preflight
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'face-precision-r18.html'
+      - 'src/r53-fixed-face-catalog.mjs'
+      - 'qa/r53-fixed-faces.test.mjs'
+      - 'assets/face-r53/**'
+      - '.github/workflows/r53-fixed-editor-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r53-editor-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify module syntax and fixed asset contract
+        run: |
+          python3 -c 'import re; from pathlib import Path; s=Path("face-precision-r18.html").read_text(); Path("/tmp/r53-editor.mjs").write_text("\n".join(re.findall(r"<script type=\"module\">(.*?)</script>",s,re.S)))'
+          test -s /tmp/r53-editor.mjs
+          node --check /tmp/r53-editor.mjs
+          node --check src/r53-fixed-face-catalog.mjs
+          node --test --test-name-pattern='catalog rejects|custom record|network failure' qa/r53-fixed-faces.test.mjs
+      - name: Release readiness (never deploy from this job)
+        run: |
+          if test -f assets/face-r53/catalog.json; then
+            node --test qa/r53-fixed-faces.test.mjs
+          else
+            echo '::warning::R53 is not release-ready: 20 independently sculpted assets and visual evidence absent. Preflight is not full QA.'
+          fi
