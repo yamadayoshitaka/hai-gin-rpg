@@ -1,0 +1,101 @@
+name: R53 named cast original-reference review and male studies
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'data/r53-cast-study-plan.json'
+      - 'scripts/r53-cast-study.py'
+      - 'scripts/r53-cast-source-review.py'
+      - 'scripts/r53-cast-study-inventory.py'
+      - '.github/workflows/r53-cast-study.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  references:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+            assets/story/characters
+            assets/story/panels
+            assets/story-cinema/cast
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-source-review.py . data/r53-cast-study-plan.json review/references
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-source-review
+          path: review/references/
+          if-no-files-found: error
+  sculpt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: commander-male
+            shard: male-early
+          - id: garan
+            shard: male-late
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - run: python3 -m py_compile scripts/r53-cast-study.py scripts/r53-cast-source-review.py scripts/r53-cast-study-inventory.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-age90-${{ matrix.shard }}
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Generate provisional named male rigged body and eleven views
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/study
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-study.py -- /tmp/r53-bodies data/r53-cast-study-plan.json review/study "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-study-${{ matrix.id }}
+          path: review/study/
+          if-no-files-found: warn
+  inventory:
+    needs: [references, sculpt]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-source-review
+          path: review/references
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-study-*
+          path: review/studies
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-study-inventory.py review/references review/studies data/r53-cast-study-plan.json review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-study-summary
+          path: review/summary/
+          if-no-files-found: error
