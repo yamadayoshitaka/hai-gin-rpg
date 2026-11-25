@@ -84,8 +84,125 @@ def metrics(Q,tree):
     return {'penetrationProxy':float(np.mean(d<-.003)),'deepPenetrationProxy':float(np.mean(d<-.015)),'medianClearance_m':float(np.median(d)),'maxDepth_m':float(d.min())}
 def normals(P,T):
     q=P[T];return np.cross(q[:,1]-q[:,0],q[:,2]-q[:,0])
+# The glTF importer can create mesh-type bone display/custom shapes
+# (e.g. Icosphere.001). Only the source glTF's declared skinned nodes
+# that bind to its actual armature are garment inputs.
+declared={n['name'] for n in g['nodes'] if 'mesh' in n and 'skin' in n and 'hood' not in n['name'].lower()}
+def source_node_name(o):
+    return o.name if o.name in declared else re.sub(r'\.[0-9]{3}
+    # Drop embedded bare-skin material polygons while retaining authored UVs.
+    M=o.matrix_world.copy();mesh=o.data;bm=bmesh.new();bm.from_mesh(mesh)
+    skin=[f for f in bm.faces if 'regular' in (mesh.materials[f.material_index].name.lower() if f.material_index<len(mesh.materials) and mesh.materials[f.material_index] else '')]
+    if skin:bmesh.ops.delete(bm,geom=skin,context='FACES')
+    loose=[v for v in bm.verts if not v.link_faces]
+    if loose:bmesh.ops.delete(bm,geom=loose,context='VERTS')
+    bm.to_mesh(mesh);bm.free();mesh.update()
+    if not len(mesh.polygons):
+        print('R53 skin-only source node removed',o.name,flush=True);continue
+    print('R53 garment part',o.name,'vertices',len(mesh.vertices),'faces',len(mesh.polygons),'groups',len(o.vertex_groups),flush=True)
+    Q=points(o);TT=triangles(o)
+    groups=[g.name for g in o.vertex_groups]
+    weights=[];fitted=[]
+    for v,p in zip(mesh.vertices,Q):
+        row={};q=Vector((0,0,0));total=0
+        for wg in v.groups:
+            if wg.weight<1e-6:continue
+            name=groups[wg.group]
+            if name not in anchors:raise RuntimeError('unmapped garment weight '+name)
+            tn,A,C,rot,k=anchors[name];wt=float(wg.weight)
+            q+=(C+rot@(Vector(p)-A)*k)*wt;row[tn]=row.get(tn,0)+wt;total+=wt
+        if total<1e-6:raise RuntimeError('unweighted garment vertex '+o.name)
+        fitted.append(tuple(q/total));weights.append({n:w/total for n,w in row.items()})
+    F=np.array(fitted);base=F.copy();N=normals(F,TT);area=np.linalg.norm(N,axis=1);valid=area>1e-12
+    before=metrics(F,tree)
+    # Shared displacement across split UV seams; retain local triangle winding
+    # and avoid collapsing existing garment folds while reducing skin intrusion.
+    _,w=np.unique(np.round(F,6),axis=0,return_inverse=True);counts=np.bincount(w);nv=len(counts)
+    W=np.column_stack([np.bincount(w,weights=F[:,k])/counts for k in range(3)])
+    edges=np.unique(np.sort(np.concatenate((w[TT[:,[0,1]]],w[TT[:,[1,2]]],w[TT[:,[2,0]]])),axis=1),axis=0)
+    edges=edges[edges[:,0]!=edges[:,1]];e0=np.r_[edges[:,0],edges[:,1]];e1=np.r_[edges[:,1],edges[:,0]]
+    deg=np.maximum(1,np.bincount(e0,minlength=nv))
+    def smooth(A):return np.column_stack([np.bincount(e0,weights=A[e1,k],minlength=nv)/deg for k in range(3)])
+    def score(m):return m['penetrationProxy']+2*m['deepPenetrationProxy']
+    D=np.zeros_like(W);best=before;accepted=0
+    for it in range(18):
+        A=np.zeros_like(D)
+        for j,p in enumerate(W+D):
+            q,n,idx,dist=tree.find_nearest(Vector(p));d=(Vector(p)-q).dot(n)
+            if d<.004 and dist<.08:A[j]=np.array(n)*min(.006,.004-d)
+        if not np.any(A):break
+        A=.6*A+.4*smooth(A)
+        for _ in range(2):A=.75*A+.25*smooth(A)
+        ok=False
+        for fac in (1,.5,.25,.1,.03):
+            C=D+fac*A;C*=np.minimum(1,.045/np.maximum(np.linalg.norm(C,axis=1),1e-12))[:,None]
+            H=base+C[w];nn=normals(H,TT)
+            if np.any((np.einsum('ij,ij->i',nn,N)<0)&valid) or np.any((np.linalg.norm(nn,axis=1)<area*.03)&valid):continue
+            m=metrics(H,tree)
+            if score(m)<score(best)-1e-7:
+                D=C;best=m;accepted+=1;ok=True;break
+        if not ok:break
+    F=base+D[w]
+    # Replace source bind only. The original body and original garment source
+    # remain unchanged; all target bones and UV layers stay in the output.
+    o.parent=None;o.matrix_world=Matrix.Identity(4)
+    for mod in list(o.modifiers):o.modifiers.remove(mod)
+    for v,p in zip(mesh.vertices,F):v.co=Vector(p)
+    mesh.update();o.vertex_groups.clear()
+    names=sorted({n for row in weights for n in row})
+    gg={n:o.vertex_groups.new(name=n) for n in names}
+    for i,row in enumerate(weights):
+        for n,wt in row.items():gg[n].add([i],wt,'REPLACE')
+    mod=o.modifiers.new('R53 target rig','ARMATURE');mod.object=rig
+    o.name='R53_'+o.name;garments.append(o)
+    reports.append({'part':o.name,'sourceSkinFacesRemoved':len(skin),'vertices':len(F),'triangles':len(TT),'uvLayers':[u.name for u in mesh.uv_layers],
+                    'mappedBones':names,'before':before,'after':best,'acceptedIterations':accepted,
+                    'maxLocalDisplacement_m':float(np.max(np.linalg.norm(D,axis=1)))})
+if len(garments)<3:raise RuntimeError('insufficient garment parts')
+for o in srcobjs:
+    if o not in garments and o.name in bpy.data.objects:bpy.data.objects.remove(o,do_unlink=True)
+bpy.context.view_layer.update()
+if not np.array_equal(points(body),P):raise RuntimeError('source body modified')
+scene=bpy.context.scene;scene.render.engine='BLENDER_WORKBENCH';scene.render.resolution_x=480;scene.render.resolution_y=640;scene.render.resolution_percentage=100
+scene.render.image_settings.file_format='PNG';sh=scene.display.shading;sh.light='STUDIO';sh.color_type='TEXTURE';sh.show_cavity=True
+bpy.ops.object.camera_add();cam=bpy.context.object;cam.data.type='ORTHO';cam.data.ortho_scale=height*1.4;scene.camera=cam
+center=Vector((P.min(0)+P.max(0))/2)
+def render(tag,d):
+    cam.location=center+Vector(d)*height*3;cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler()
+    scene.render.filepath=str(out/(tag+'.png'));bpy.ops.render.render(write_still=True)
+for tag,d in [('front',(0,-1,0)),('side',(1,0,0)),('rear',(0,1,0)),('threequarter',(1,-1,0))]:render(tag,d)
+def evaluated(o):
+    dep=bpy.context.evaluated_depsgraph_get();e=o.evaluated_get(dep);m=e.to_mesh()
+    try:return np.array([e.matrix_world@v.co for v in m.vertices])
+    finally:e.to_mesh_clear()
+poses=[]
+for joint,axis,degs in [('upperarm01.L',0,25),('lowerleg01.R',0,25)]:
+    p=rig.pose.bones[joint];p.rotation_mode='XYZ';p.rotation_euler[axis]=math.radians(degs);bpy.context.view_layer.update()
+    B=evaluated(body);bt=bvh(B,T)
+    poses.append({'joint':joint,'degrees':degs,'parts':[{'name':o.name,**metrics(evaluated(o),bt)} for o in garments]})
+    render('pose_'+joint.replace('.','_'),(1,-1,0))
+    p.rotation_euler=(0,0,0);bpy.context.view_layer.update()
+# Separate skinned garment, not combined nude or source rig.
+bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
+for o in garments:o.select_set(True)
+bpy.context.view_layer.objects.active=garments[0]
+dest=out/(ident+'_'+style+'_garment.glb')
+bpy.ops.export_scene.gltf(filepath=str(dest),export_format='GLB',use_selection=True,export_skins=True,export_animations=False)
+raw=dest.read_bytes();n=int.from_bytes(raw[12:16],'little');g=json.loads(raw[20:20+n])
+if not g.get('skins') or not all('JOINTS_0' in p['attributes'] and 'WEIGHTS_0' in p['attributes'] for m in g['meshes'] for p in m['primitives']):raise RuntimeError('garment skin export missing')
+if not any('TEXCOORD_0' in p['attributes'] for m in g['meshes'] for p in m['primitives']):raise RuntimeError('garment UV missing')
+report={'id':ident,'style':style,'bodySHA256':rec['sha256'],'sourceFilesSHA256':provenance,'source':'repository Quaternius outfits','declaredSourceGarments':sorted(declared),'ignoredSourceMeshes':ignored,'sha256':sha(dest),'parts':reports,'poseProbes':poses,'bodyModified':False,'bodyMaskApplied':False,'collisionApproved':False,'visualApproved':False,'classification':'unapproved fitted garment candidate'}
+(out/'garment-report.json').write_text(json.dumps(report,indent=2));print('R53 GARMENT',json.dumps(report),flush=True)
+,'',o.name)
+candidates=[o for o in srcobjs if o.type=='MESH' and source_node_name(o) in declared and
+            any(m.type=='ARMATURE' and m.object==src for m in o.modifiers)]
+found={source_node_name(o) for o in candidates}
+ignored=[o.name for o in srcobjs if o.type=='MESH' and o not in candidates]
+print('R53 source garment nodes',sorted(found),'excluded',ignored,flush=True)
+if found!=declared or len(candidates)!=len(declared):
+    raise RuntimeError('declared garment mismatch: missing '+str(sorted(declared-found))+' duplicate count '+str(len(candidates)-len(found)))
 garments=[];reports=[]
-for o in [x for x in srcobjs if x.type=='MESH' and 'hood' not in x.name.lower()]:
+for o in candidates:
     # Drop embedded bare-skin material polygons while retaining authored UVs.
     M=o.matrix_world.copy();mesh=o.data;bm=bmesh.new();bm.from_mesh(mesh)
     skin=[f for f in bm.faces if 'regular' in (mesh.materials[f.material_index].name.lower() if f.material_index<len(mesh.materials) and mesh.materials[f.material_index] else '')]
