@@ -1,0 +1,51 @@
+{
+  "revision": "R41",
+  "source": "MakeHuman HM08 CC0",
+  "sourceCommit": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "targetPolicy": "Asian macro target and universal average target; illustrative fixed heights, not measured demographics",
+  "vertices": 14517,
+  "triangles": 26756,
+  "bones": 163,
+  "degenerate": 0,
+  "models": [
+    {
+      "id": "male-adult",
+      "blob": "a30287190e5175fa52933ef97e0a92715cbf155a",
+      "height": 1.76,
+      "target": "8cd3ef3e9ddb06ee2d166f75f9ac10871251f938",
+      "file": "HM08_male-adult_R41.glb"
+    },
+    {
+      "id": "female-senior",
+      "blob": "36be6e03ace38d947302e8f6f95a7d30691abf20",
+      "height": 1.6,
+      "target": "a2afe59829cd0caa66c3eea160f2f05d15890e23",
+      "file": "HM08_female-senior_R41.glb"
+    },
+    {
+      "id": "female-child",
+      "blob": "03ee6b250b77ea30707e092cee57276aa33b0b6d",
+      "height": 1.25,
+      "target": "260bf0ccffd331a597e2abd761ebc552fdc9b249",
+      "file": "HM08_female-child_R41.glb"
+    },
+    {
+      "id": "male-senior",
+      "blob": "5cae2c3b55e9c2cc22d3c8de5abf760d1936aecf",
+      "height": 1.71,
+      "target": "d327b85e0b3de07b113cf4fc756f410668880359",
+      "file": "HM08_male-senior_R41.glb"
+    },
+    {
+      "id": "male-child",
+      "blob": "e058e1bc4f8b3027e0d1dd1e757accc26cd48b5d",
+      "height": 1.28,
+      "target": "7d56f395d9133e226e8be25d88b1cd64e991bdbb",
+      "file": "HM08_male-child_R41.glb"
+    }
+  ],
+  "limits": [
+    "not age-specific facial art",
+    "motion and visual checks pending"
+  ]
+}
