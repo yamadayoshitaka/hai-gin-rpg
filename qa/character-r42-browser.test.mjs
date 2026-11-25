@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.30',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.31',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -122,7 +122,9 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(label.startsWith('男性')){
     assert.ok(!(await page.locator('#hairStyle option').evaluateAll(os=>os.map(o=>o.value))).includes('wig:R99 ボブ'));
     await page.locator('#hairStyle').selectOption('male-short');
-    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('男性用ウィッグ装着完了'),undefined,{timeout:60000});
+    await page.waitForFunction(()=>/男性用ウィッグ装着完了|髪型生成失敗/.test(document.getElementById('status').textContent),undefined,{timeout:15000});
+    assert.ok((await page.locator('#status').textContent()).includes('男性用ウィッグ装着完了'),await page.locator('#hairInfo').textContent());
+    assert.ok(+(await page.locator('#hairInfo').getAttribute('data-scalp-faces'))>10);
     assert.equal(await page.locator('#hairInfo').getAttribute('data-scalp-ray-misses'),'0');
     assert.ok(+(await page.locator('#hairInfo').getAttribute('data-scalp-clearance-mm'))>=2);
     await page.locator('#stage').screenshot({path:output+'/r50-male-short.png'});
@@ -185,6 +187,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
      await page.waitForTimeout(250);
      const seam=await page.locator('#bodyStatus').evaluate(e=>({n:+e.dataset.seamSamples,dot:+e.dataset.seamNormalDot,center:+e.dataset.neckCenterErrorMm}));
      assert.ok(+(await page.locator('#bodyStatus').getAttribute('data-collar-split-vertices'))>0,'shirt neckline must be geometrically cut');
+     assert.ok(+(await page.locator('#bodyStatus').getAttribute('data-head-scale'))<=1.02,'head must not enlarge to fit neck');
      assert.ok(seam.n>=96&&seam.dot>.99&&seam.center<1,'seam boundary normals must match: '+JSON.stringify(seam));
      for(const [label,view] of [['正面','front'],['45°','diagonal'],['側面','side'],['背面','back']]){
        await page.locator('#angles').getByRole('button',{name:label,exact:true}).click();await page.waitForTimeout(150);
