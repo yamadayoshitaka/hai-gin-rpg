@@ -1,0 +1,71 @@
+name: R53 age90 base LOD measurements pose probes
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-age90-lod.py'
+      - 'scripts/r53-age90-lod-inventory.py'
+      - '.github/workflows/r53-age90-lod.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        sex: [female, male]
+        band: [early, middle, late]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-age90-${{ matrix.sex }}-${{ matrix.band }}
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-age90
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Generate body LOD1/2, measure actual mesh and test skinning
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          mkdir -p review/r53-lod
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-age90-lod.py -- /tmp/r53-age90 review/r53-lod
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-base-lod-${{ matrix.sex }}-${{ matrix.band }}
+          path: review/r53-lod/
+          if-no-files-found: error
+          retention-days: 30
+  inventory:
+    needs: generate
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-base-lod-*
+          path: review/shards
+      - name: Verify complete inventory and retain missing asset list
+        if: always()
+        run: python3 scripts/r53-age90-lod-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-base-lod-summary
+          path: review/summary/
+          if-no-files-found: error
+          retention-days: 30
