@@ -1,0 +1,36 @@
+name: Character Blender reference review
+on:
+  push:
+    branches: [character-v3.13-action-regression-20261125]
+    paths:
+      - '.github/workflows/character-blender-reference-review.yml'
+      - 'scripts/build-hm08-reference-review.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Blender and software rendering
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender xvfb libgl1-mesa-dri
+          blender --version
+      - name: Fetch exact CC0 HM08 source
+        run: |
+          mkdir -p /tmp/hm08
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/3dobjs/base.obj' -o /tmp/hm08/base.obj
+          test "$(git hash-object /tmp/hm08/base.obj)" = d26635e9326e3cca30778fd7b9c00062b03cce09
+      - name: Build and render reference (not production)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a blender --background --python-exit-code 1 --python scripts/build-hm08-reference-review.py -- /tmp/hm08/base.obj "$PWD/character-review"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hm08-reference-review
+          path: character-review/
+          if-no-files-found: warn
