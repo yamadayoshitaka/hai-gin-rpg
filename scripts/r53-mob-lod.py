@@ -105,16 +105,16 @@ sourceSamples=source_pose_data(body,rig,others,ad,acts,reset)
 sc,render=scene_camera(body)
 render('lod0_front',(0,-1,0));render('lod0_side',(1,0,0))
 levels=[];prior=sum(v['triangles'] for v in orig.values())
-for level,hr,cr in [('lod1',.72,.65),('lod2',.40,.35)]:
+def candidate(level,hr,cr,prior,overrides):
     body,rig,others,ad,acts,reset=load(p);checkrig(rig0,sig(rig))
     decisions=[]
     for o in others:
         S=refP[o.name];TT=refT[o.name];old=orig[o.name]
         # Protect very small accessories and retain UV/material seams as far
         # as collapse decimation permits. Fail closed on surface drift.
-        ratio=hr if o.name.startswith('R53_Hair_') else cr
-        if old['triangles']<80:
-            decisions.append({'part':o.name,'ratio':1.,'reason':'small part retained'});continue
+        ratio=overrides.get(o.name,hr if o.name.startswith('R53_Hair_') else cr)
+        if ratio>=.999 or old['triangles']<80:
+            decisions.append({'part':o.name,'ratio':1.,'reason':'original part retained by retry or small-part guard'});continue
         bpy.ops.object.select_all(action='DESELECT');o.select_set(True);bpy.context.view_layer.objects.active=o
         backup=o.data.copy()
         mod=o.modifiers.new('R53 '+level,'DECIMATE');mod.decimate_type='COLLAPSE';mod.ratio=ratio
@@ -155,8 +155,8 @@ for level,hr,cr in [('lod1',.72,.65),('lod2',.40,.35)]:
     total=sum(v['triangles'] for v in finalStats.values())
     # Conservative fallbacks may legitimately prevent further reduction.
     # Reject rather than label an unchanged or larger asset as a lower LOD.
-    if total>=prior:raise RuntimeError('LOD triangle count not descending '+level+' '+str([prior,total,decisions]))
-    prior=total
+    if total>=prior:
+        return None,{'reason':'LOD triangle count not descending','total':total,'prior':prior,'parts':[],'decisions':decisions}
     sc,render=scene_camera(body)
     render(level+'_front',(0,-1,0));render(level+'_side',(1,0,0))
     ad.action=acts['Walk_Loop'];lo,hi=map(float,ad.action.frame_range);f=(lo+hi)/2
@@ -181,14 +181,47 @@ for level,hr,cr in [('lod1',.72,.65),('lod2',.40,.35)]:
     rt={o.name:stats(o,r2) for o in [b2]+o2}
     if sum(v['triangles'] for v in rt.values())!=total:raise RuntimeError('roundtrip triangle regression')
     # Roundtrip poses must remain valid; report surface and penetration changes.
-    rtSamples=source_pose_data(b2,r2,o2,ad2,acts2,reset2);worst=0.;reg=0.
+    rtSamples=source_pose_data(b2,r2,o2,ad2,acts2,reset2);worst=0.;reg=0.;partErrors={}
     for k,ss in rtSamples.items():
         for n,(B,BT,bm) in ss.items():
             A,AT,am=sourceSamples[k][n]
-            worst=max(worst,distance(A,tree(B,BT))['p95_m'],distance(B,tree(A,AT))['p95_m'])
-            reg=max(reg,bm['penetrationProxy']-am['penetrationProxy'],bm['deepPenetrationProxy']-am['deepPenetrationProxy'])
-    if worst>(.012 if level=='lod1' else .022)+.001 or reg>.026:raise RuntimeError('roundtrip posed surface regression')
-    levels.append({'level':level,'sha256':sha(dest),'bytes':dest.stat().st_size,'triangles':total,'vertices':sum(v['vertices'] for v in rt.values()),'parts':rt,'decisions':decisions,'roundTrip':True,'poseSamples':len(rtSamples),'posedP95Max_m':worst,'penetrationRegressionMax':reg})
-    print('R53 MOB LOD',ident,level,total,'of',sum(v['triangles'] for v in orig.values()),flush=True)
+            drift=max(distance(A,tree(B,BT))['p95_m'],distance(B,tree(A,AT))['p95_m'])
+            regression=max(0.,bm['penetrationProxy']-am['penetrationProxy'],bm['deepPenetrationProxy']-am['deepPenetrationProxy'])
+            worst=max(worst,drift);reg=max(reg,regression)
+            q=partErrors.setdefault(n,{'part':n,'posedP95Max_m':0.,'penetrationRegressionMax':0.})
+            q['posedP95Max_m']=max(q['posedP95Max_m'],drift);q['penetrationRegressionMax']=max(q['penetrationRegressionMax'],regression)
+    rejected=[v for v in partErrors.values() if v['posedP95Max_m']>(.012 if level=='lod1' else .022)+.001 or v['penetrationRegressionMax']>.026]
+    if rejected:
+        return None,{'reason':'roundtrip posed surface regression','parts':rejected,'decisions':decisions,'total':total}
+    accepted=({'level':level,'sha256':sha(dest),'bytes':dest.stat().st_size,'triangles':total,'vertices':sum(v['vertices'] for v in rt.values()),'parts':rt,'decisions':decisions,'roundTrip':True,'poseSamples':len(rtSamples),'posedP95Max_m':worst,'penetrationRegressionMax':reg})
+    return accepted,None
+# Keep passing outputs from each level; retry only failing parts with smaller
+# reductions, then isolate changed parts. The original numerical gates remain.
+for level,hr,cr in [('lod1',.72,.65),('lod2',.40,.35)]:
+    overrides={};attempts=[];accepted=None
+    # Retain parts whose previous level required a full rollback as a starting
+    # point only if the same part is rejected again at this level.
+    for attempt in range(6):
+        accepted,err=candidate(level,hr,cr,prior,overrides)
+        if accepted is not None:break
+        attempts.append({'attempt':attempt+1,**err})
+        print('R53 LOD RETRY',ident,level,json.dumps(err),flush=True)
+        if not err['parts']:
+            # Try a different subset: reduce all remaining nonproblematic parts
+            # more aggressively only when ordering was the sole failing gate.
+            for d in err['decisions']:
+                if d['ratio']<1.:overrides[d['part']]=max(.18,d['ratio']*.72)
+            continue
+        for q in err['parts']:
+            n=q['part'];old=overrides.get(n,hr if n.startswith('R53_Hair_') else cr)
+            overrides[n]=min(1.,old+(1.-old)*.65) if attempt<2 else 1.
+    if accepted is None:
+        # Never present a failed file as a valid LOD.
+        (out/(ident+'_'+level+'.glb')).unlink(missing_ok=True)
+        (out/'retry-diagnostics.json').write_text(json.dumps({'id':ident,'level':level,'attempts':attempts},indent=2))
+        raise RuntimeError('all quality-preserving LOD retries failed '+level)
+    accepted['retryAttempts']=attempts;levels.append(accepted);prior=accepted['triangles']
+    print('R53 MOB LOD',ident,level,prior,'of',sum(v['triangles'] for v in orig.values()),flush=True)
+
 result={'id':ident,'sourceSHA256':rec['sha256'],'lod0':{'triangles':sum(v['triangles'] for v in orig.values()),'vertices':sum(v['vertices'] for v in orig.values()),'bytes':p.stat().st_size,'parts':orig},'levels':levels,'bodyMorphTopologyPreserved':True,'morphCount':len(names),'clipCount':len(clips),'visualApproved':False,'mobileFPSApproved':False,'productionApproved':False}
 (out/'mob-lod-report.json').write_text(json.dumps(result,indent=2))
