@@ -87,7 +87,16 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
     await page.waitForFunction(([sex,age])=>{const key=sex==='female'?(age==='child'?'女児':+age>=60?'高齢女性':'成人女性'):(age==='child'?'男児':+age>=60?'高齢男性':'成人男性');return !document.getElementById('bodyExport').disabled&&document.getElementById('bodyStatus').textContent.includes(key)&&document.getElementById('profileStatus').dataset.faceAge===age},[sex,age],{timeout:60000});
     for(const build of ['normal','slim','full','verySlim']){await page.locator('#bodyBuild').selectOption(build);await page.waitForTimeout(150);assert.ok(await page.locator('#bodyMode').isChecked());}
     await page.locator('#bodyBuild').selectOption('normal');
-    if(['20','40','60','80'].includes(age)){await page.waitForTimeout(200);await page.locator('#stage').screenshot({path:output+'/r44-'+sex+'-'+age+'.png'});}
+    if(['20','40','60','80'].includes(age)){
+     await page.waitForTimeout(250);
+     const seam=await page.locator('#bodyStatus').evaluate(e=>({n:+e.dataset.seamSamples,dot:+e.dataset.seamNormalDot}));
+     assert.ok(seam.n>=96&&seam.dot>.99,'seam boundary normals must match: '+JSON.stringify(seam));
+     for(const [label,view] of [['正面','front'],['45°','diagonal'],['側面','side'],['背面','back']]){
+       await page.locator('#angles').getByRole('button',{name:label,exact:true}).click();await page.waitForTimeout(150);
+       await page.locator('#stage').screenshot({path:output+'/r44-'+sex+'-'+age+'-'+view+'.png'});
+     }
+     await page.locator('#angles').getByRole('button',{name:'正面',exact:true}).click();
+    }
    }
   }
   await page.locator('#motionSex').selectOption('female');
