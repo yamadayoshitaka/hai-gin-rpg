@@ -108,16 +108,29 @@ for i in ids:
             if np.quantile(md,.95)>.012:raise RuntimeError('motion surface alignment insufficient')
             A[head]=mapped*smooth(1.535,1.554,P[head,2])[:,None]
             A=weld(A);A[~head]=0
-            f=1.
-            for _ in range(16):
-                G=F+A*f;fl,co=verify(F,G,T)
-                if not fl and not co:break
-                f*=.8
+            # Repair only defective triangle neighbourhoods.
+            W=w[T];edges=np.unique(np.sort(np.concatenate((W[:,[0,1]],W[:,[1,2]],W[:,[2,0]])),axis=1),axis=0)
+            edges=edges[edges[:,0]!=edges[:,1]]
+            e0=np.concatenate((edges[:,0],edges[:,1]));e1=np.concatenate((edges[:,1],edges[:,0]))
+            degree=np.maximum(1,np.bincount(e0,minlength=len(count)))
+            alpha=np.ones(len(count));N=normals(F,T);area=np.linalg.norm(N,axis=1);valid=area>1e-11
+            for it in range(120):
+                G=F+A*alpha[w,None]
+                NN=normals(G,T)
+                bad=((np.einsum('ij,ij->i',N,NN)<0)|(np.linalg.norm(NN,axis=1)<area*.02))&valid
+                if not bad.any():break
+                seeds=np.unique(W[bad]);target=alpha.copy();target[seeds]*=.72
+                for _ in range(2):
+                    avg=np.bincount(e0,weights=target[e1],minlength=len(count))/degree
+                    target=np.minimum(target,.58*target+.42*avg)
+                alpha=np.minimum(alpha,target)
+            fl,co=verify(F,G,T);mag=np.linalg.norm(A,axis=1);active=mag>1e-5
+            f=float(np.average(alpha[w][active],weights=mag[active])) if active.any() else 0.
             peak=float(np.max(np.linalg.norm(G-F,axis=1)))
-            if fl or co or f<.65 or peak<.0001:raise RuntimeError('unsafe/ineffective morph '+n)
+            if fl or co or f<.65 or peak<.0001:raise RuntimeError('unsafe/ineffective morph '+n+' factor='+str(f))
             key=body.shape_key_add(name=n);key.data.foreach_set('co',np.asarray([inv@Vector(p) for p in G],np.float32).ravel());key.value=0
-            all_delta[n]=A*f
-            morph_audit.append({'name':n,'peak_m':peak,'factor':f,'flips':fl,'collapsed':co})
+            all_delta[n]=G-F
+            morph_audit.append({'name':n,'peak_m':peak,'factor':f,'flips':fl,'collapsed':co,'localCorrectionIterations':it,'attenuatedVertices':int(np.sum(alpha[w]<.99))})
         combos=[]
         for ns in [('smile','blink_L','blink_R'),('jawOpen','browRaise'),('viseme_A','blink_L'),('browFrown','viseme_U')]:
             G=F+sum((all_delta[n] for n in ns),np.zeros_like(F))
