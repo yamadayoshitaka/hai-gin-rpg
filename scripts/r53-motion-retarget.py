@@ -135,7 +135,7 @@ for name,(original,lo,hi,duration,rows) in samples.items():
     for frame,row in enumerate(rows,1):
         for b,q in row.items():
             q=q.copy()
-            if b in previous:q.make_compatible(previous[b])
+            if b in previous and q.dot(previous[b])<0:q.negate()
             previous[b]=q.copy()
             p=rig.pose.bones[b];p.rotation_quaternion=q;p.keyframe_insert(data_path='rotation_quaternion',frame=frame,group=b)
     for f in act.fcurves:
@@ -148,6 +148,11 @@ for name,(original,lo,hi,duration,rows) in samples.items():
         collapsed=int(np.sum((area(P)<area(base)*.02)&valid))
         checks.append({'frame':frame,'maxDisplacement_m':delta,'nearZeroTriangles':collapsed,'lowestPoint_m':float(P[:,2].min()),'highestPoint_m':float(P[:,2].max())})
     if max(c['maxDisplacement_m'] for c in checks)<.001 or max(c['maxDisplacement_m'] for c in checks)>2:raise RuntimeError('ineffective/unstable motion '+name)
+    scene.frame_set(1);first=evaluated();temporal=[]
+    for frame in sorted(set([max(2,len(rows)//4),max(2,len(rows)//2),max(2,len(rows)*3//4),len(rows)])):
+        scene.frame_set(frame);P=evaluated();temporal.append(float(np.max(np.linalg.norm(P-first,axis=1))))
+    if max(temporal)<.0005:raise RuntimeError('clip is static across time '+name)
+    print('R53 clip pose verified',ident,name,'frames',len(rows),'temporal variation',max(temporal),flush=True)
     # Render real posed meshes at two frames for manual inspection.
     scene.render.engine='BLENDER_WORKBENCH';scene.render.resolution_x=400;scene.render.resolution_y=560;scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';sh=scene.display.shading;sh.light='STUDIO';sh.color_type='SINGLE';sh.single_color=(.59,.51,.46);sh.show_cavity=True
@@ -160,7 +165,7 @@ for name,(original,lo,hi,duration,rows) in samples.items():
         for tag,direction in [('front',(0,-1,0)),('side',(1,0,0))]:
             cam.location=center+Vector(direction)*H*3;cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler()
             scene.render.filepath=str(out/f'{name}_{frame}_{tag}.png');bpy.ops.render.render(write_still=True)
-    report.append({'clip':name,'sourceAction':original,'sourceFrameRange':[lo,hi],'sourceDuration_s':duration,'targetFrames':len(rows),'sampleChecks':checks})
+    report.append({'clip':name,'sourceAction':original,'sourceFrameRange':[lo,hi],'sourceDuration_s':duration,'targetFrames':len(rows),'temporalVariation_m':max(temporal),'sampleChecks':checks})
     actions.append((name,act,len(rows)));rig.animation_data.action=None
 # Export named NLA clips and preserve existing expression morph targets.
 for name,act,frames in actions:
