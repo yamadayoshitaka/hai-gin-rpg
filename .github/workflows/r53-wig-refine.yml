@@ -1,0 +1,91 @@
+name: R53 residual wig correction and selection
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-wig-refine.py'
+      - 'scripts/r53-wig-select.py'
+      - '.github/workflows/r53-wig-refine.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  refine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [1,2,5,7]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-continuous-*
+          run-id: 45639464687
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-local-wig-*
+          run-id: 45645720539
+          github-token: ${{ github.token }}
+          path: /tmp/r53-prior
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Refine residual intersections without regressing previous geometry
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          for attempt in 1 2 3; do
+            rm -rf review/r53-refine
+            mkdir -p review/r53-refine
+            cp "/tmp/r53-prior/r53-local-wig-$ID/ATTRIBUTION.md" review/r53-refine/
+            if xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-wig-refine.py -- /tmp/r53-bodies /tmp/r53-prior review/r53-refine "$ID"; then exit 0; fi
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-wig-refine-${{ matrix.id }}
+          path: review/r53-refine/
+          if-no-files-found: error
+          retention-days: 30
+  select:
+    needs: refine
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-local-wig-*
+          run-id: 45645720539
+          github-token: ${{ github.token }}
+          path: /tmp/r53-prior
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-wig-refine-*
+          path: /tmp/r53-refined
+      - name: Select safe candidates and retain untouched originals
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-wig-select.py /tmp/r53-prior /tmp/r53-refined review/selected
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-wig-selected-ten
+          path: review/selected/
+          if-no-files-found: error
+          retention-days: 30
