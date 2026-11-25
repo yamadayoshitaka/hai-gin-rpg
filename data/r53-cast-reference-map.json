@@ -1,0 +1,271 @@
+{
+  "revision": "R53-R7-cast",
+  "classification": "manual approximate landmarks in original illustration pixel coordinates; not orthographic or final mesh measurements",
+  "keepFemale01Unchanged": true,
+  "assignmentStatus": "proposed slot mapping; existing R6 records not overwritten",
+  "sourcePriority": [
+    "dedicated character master",
+    "identified original story scene",
+    "provisional cast crop"
+  ],
+  "referenceViewsRequired": [
+    "front neutral",
+    "left profile neutral",
+    "right profile neutral",
+    "45 degree neutral"
+  ],
+  "policy": {
+    "doNotInferHiddenDepthAsMeasurement": true,
+    "distinctCharacterIdentity": true,
+    "adultFaceSlotsExcludeChild": true,
+    "doNotDeployUntilIntegrated": true,
+    "requireIndependentBakedGLB": true
+  },
+  "references": [
+    {
+      "id": "commander-female",
+      "label": "女性主人公・軍師",
+      "sex": "female",
+      "slot": "female_face_02",
+      "path": "assets/story/characters/commander/female-master.webp",
+      "blob": "c121413476ce285c646081e576931bf812a6cc01",
+      "size": [
+        640,
+        800
+      ],
+      "crop": [
+        75,
+        105,
+        385,
+        420
+      ],
+      "points": {
+        "eye_near": [
+          221,
+          239
+        ],
+        "eye_far": [
+          303,
+          255
+        ],
+        "nose_tip": [
+          309,
+          287
+        ],
+        "mouth_center": [
+          283,
+          315
+        ],
+        "chin": [
+          281,
+          370
+        ],
+        "ear_near": [
+          115,
+          312
+        ]
+      },
+      "note": "金髪・青い瞳。斜め上向きの原画。頭頂は髪で隠れている。",
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
+    },
+    {
+      "id": "commander-male",
+      "label": "男性主人公・軍師",
+      "sex": "male",
+      "slot": "male_face_01",
+      "path": "assets/story/panels/c01-s01-m01.webp",
+      "blob": "20897f8653fba5bb7e7b8b04ff0e4efd7264994e",
+      "size": [
+        960,
+        540
+      ],
+      "crop": [
+        240,
+        0,
+        480,
+        200
+      ],
+      "points": {
+        "eye_near": [
+          404,
+          72
+        ],
+        "nose_tip": [
+          450,
+          105
+        ],
+        "mouth_center": [
+          431,
+          135
+        ],
+        "chin": [
+          412,
+          175
+        ],
+        "ear_near": [
+          333,
+          110
+        ]
+      },
+      "note": "黒髪の青年。群像の左上の男性のみ。遠側の目は髪と向きの影響があるため測定しない。",
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
+    },
+    {
+      "id": "lucia",
+      "label": "リュシア・摂政",
+      "sex": "female",
+      "slot": "female_face_03",
+      "path": "assets/story/characters/lucia/master.webp",
+      "blob": "68fe790ac72812facec22bed7e04a1f5888568",
+      "size": [
+        768,
+        840
+      ],
+      "crop": [
+        180,
+        0,
+        540,
+        295
+      ],
+      "points": {
+        "eye_near": [
+          375,
+          136
+        ],
+        "eye_far": [
+          458,
+          156
+        ],
+        "nose_tip": [
+          449,
+          184
+        ],
+        "mouth_center": [
+          422,
+          206
+        ],
+        "chin": [
+          399,
+          258
+        ],
+        "ear_near": [
+          309,
+          169
+        ]
+      },
+      "note": "銀髪・落ち着いた細めの目。女性主人公と別ID。",
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
+    },
+    {
+      "id": "garan",
+      "label": "ガラン・老騎士",
+      "sex": "male",
+      "slot": "male_face_10",
+      "path": "assets/story-cinema/cast/garan.webp",
+      "blob": "bec7fae693f52e072e085014aa170ff701d3b4ec",
+      "size": [
+        480,
+        700
+      ],
+      "crop": [
+        125,
+        168,
+        326,
+        319
+      ],
+      "points": {
+        "eye_near": [
+          269,
+          231
+        ],
+        "nose_tip": [
+          304,
+          255
+        ],
+        "mouth_center": [
+          291,
+          274
+        ],
+        "chin": [
+          286,
+          304
+        ]
+      },
+      "note": "中央の灰髪の老騎士。左手前の人物を除外。髭の下の顎先は推定扱い。",
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
+    },
+    {
+      "id": "iris",
+      "label": "イリス・治癒師",
+      "sex": "female",
+      "slot": "female_face_04",
+      "path": "assets/story-cinema/cast/iris.webp",
+      "blob": "48aba1f03d53e2bb039192163fdf4f7089600df1",
+      "size": [
+        480,
+        700
+      ],
+      "crop": [
+        223,
+        160,
+        367,
+        312
+      ],
+      "points": {
+        "eye_near": [
+          325,
+          225
+        ],
+        "nose_tip": [
+          345,
+          250
+        ],
+        "mouth_center": [
+          334,
+          264
+        ],
+        "chin": [
+          323,
+          292
+        ]
+      },
+      "note": "右側の頭布を被った若い女性。左のガランを除外。",
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
+    }
+  ],
+  "pendingCast": [
+    "altea",
+    "edo",
+    "elne",
+    "fio",
+    "grad",
+    "kai",
+    "leon",
+    "meve",
+    "mina",
+    "noel",
+    "orphe",
+    "raizen",
+    "selika",
+    "shion",
+    "vald",
+    "vess",
+    "zahar"
+  ],
+  "pendingNote": "ミナは少女専用の年齢・体型モデルで扱う。その他は人物設定と個別原画を照合し、成人の男女10枠を超える場合は追加キャラクターとして別IDを保持する。"
+}

@@ -1,0 +1,22 @@
+name: R53 cast image reference audit
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths: ['data/r53-cast-reference-map.json','scripts/r53-cast-image-audit.py','.github/workflows/r53-cast-reference.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-image-audit.py review/r53-cast
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-landmark-reference
+          path: review/r53-cast/
+          if-no-files-found: error
+          retention-days: 30
