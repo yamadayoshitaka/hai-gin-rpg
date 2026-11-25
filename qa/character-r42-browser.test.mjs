@@ -51,6 +51,18 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal(fixtureJson.meshes.find(m=>m.name==='R8_SKIN')?.primitives[0].targets?.length,11,'fixture must include named skin and eleven morph slots');
   await page.locator('#file').setInputFiles({name:'R42-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
   try{await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});}catch(e){const status=await page.locator('#status').textContent();await page.screenshot({path:output+'/face-load-failure.png'});throw new Error('Face fixture load failed: '+status+'; page errors: '+errors.join('; '),{cause:e});}
+  // Old revisions are removed only when a newer version of that style exists.
+  await page.evaluate(async()=>{
+   const db=await new Promise((ok,no)=>{const q=indexedDB.open('hai-gin-wig-library-v1',1);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)});
+   await new Promise((ok,no)=>{const tx=db.transaction('wigs','readwrite'),st=tx.objectStore('wigs');for(const id of ['ボブ R23','R35 ボブ・連続毛並みテクスチャ','ショート R23','R38 ショート（比較試作）','ロング R23','独自髪型'])st.put({id,savedAt:1});tx.oncomplete=ok;tx.onerror=()=>no(tx.error)});db.close();
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Array.from(document.getElementById('hairStyle').options).some(o=>o.value==='wig:R38 ショート（比較試作）'));
+  const kept=await page.locator('#hairStyle option').evaluateAll(os=>os.map(o=>o.value));
+  assert.ok(kept.includes('wig:R35 ボブ・連続毛並みテクスチャ')&&kept.includes('wig:ロング R23')&&kept.includes('wig:独自髪型'));
+  assert.ok(!kept.includes('wig:ボブ R23')&&!kept.includes('wig:ショート R23')&&!kept.includes('bob'));
+  await page.locator('#file').setInputFiles({name:'R45-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
+  await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});
   // Register actual loaded compatible GLB once, then twenty reproducible settings.
   await page.locator('#modelName').fill('女性 R20 QA fixture');
   await page.locator('#registerModel').click();
