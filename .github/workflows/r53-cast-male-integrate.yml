@@ -1,0 +1,83 @@
+name: R53 named male hair action and outfit integration
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-cast-male-stage.py'
+      - 'scripts/r53-cast-male-inventory.py'
+      - '.github/workflows/r53-cast-male-integrate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, garan]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/animations
+            assets/characters/hair-fitted-v1
+            assets/characters/quaternius-outfits
+            docs/wig-production-standard-v1.md
+      - name: Compile adapters
+        run: python3 scripts/r53-cast-male-stage.py --check
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-study-${{ matrix.id }}
+          run-id: 45724672782
+          github-token: ${{ github.token }}
+          path: /tmp/cast
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Fit, animate, validate and assemble provisional named model
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/{wig,motion,first,second,third,assembly}
+          cp assets/characters/hair-fitted-v1/ATTRIBUTION.md review/wig/
+          run() { xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-male-stage.py -- "$@"; }
+          run wig /tmp/cast assets/characters/hair-fitted-v1 review/wig "$ID"
+          run motion assets/animations/UAL1_Standard.glb /tmp/cast review/motion "$ID"
+          run fit /tmp/cast assets/characters/quaternius-outfits review/first "$ID" Ranger
+          run refine /tmp/cast review/first review/second "$ID" Ranger
+          run third /tmp/cast review/second review/third "$ID" Ranger
+          run audit /tmp/cast review/third review/motion review/third "$ID" Ranger
+          run assemble review/motion review/wig review/third review/assembly "$ID" Ranger
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-male-integrated-${{ matrix.id }}
+          path: review/
+          if-no-files-found: warn
+  inventory:
+    needs: integrate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-male-integrated-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-male-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-male-integration-summary
+          path: review/summary/
+          if-no-files-found: error
