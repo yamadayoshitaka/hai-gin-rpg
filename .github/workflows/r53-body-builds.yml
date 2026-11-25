@@ -1,0 +1,61 @@
+name: R53 body builds and age matrix
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-blender-body-builds.py'
+      - '.github/workflows/r53-body-builds.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r53-body-builds
+  cancel-in-progress: true
+jobs:
+  body-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Blender and software renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy python3-pil xvfb libgl1-mesa-dri xauth
+          blender -b --python-exit-code 1 --python-expr 'import numpy; print(numpy.__version__)'
+      - name: Bake and verify all thirty body studies
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          mkdir -p review/r53-body
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-body-builds.py -- assets/character-review review/r53-body
+      - name: Assemble full-body adult comparison sheets
+        run: |
+          python3 - <<'PY'
+          from PIL import Image, ImageDraw
+          from pathlib import Path
+          import json,hashlib
+          p=Path('review/r53-body')
+          data=json.loads((p/'body-candidates.json').read_text())
+          assert len(data['models'])==30
+          for m in data['models']:
+              assert hashlib.sha256((p/(m['id']+'.glb')).read_bytes()).hexdigest()==m['sha256']
+              assert m['new_face_flips']==0 and m['collapsed']==0
+          for sex in ('female','male'):
+              for tag in ('front','side','45'):
+                  canvas=Image.new('RGB',(1500,415),(28,32,40))
+                  d=ImageDraw.Draw(canvas)
+                  for i,b in enumerate(('slim','normal','muscular','chubby','obese')):
+                      name=f'{sex}_adult_{b}'
+                      im=Image.open(p/(name+'_'+tag+'.png')).convert('RGB')
+                      im.thumbnail((300,384))
+                      canvas.paste(im,(i*300+(300-im.width)//2,0))
+                      d.text((i*300+12,394),b,fill=(245,245,245))
+                  canvas.save(p/f'{sex}_{tag}_build_comparison.png')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-body-build-review
+          path: review/r53-body/
+          if-no-files-found: error
+          retention-days: 30
