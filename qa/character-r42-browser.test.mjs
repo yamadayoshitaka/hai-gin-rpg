@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.26',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.27',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -91,6 +91,28 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   await page.locator('#modelList').selectOption('R39_jaw_lateral_review');
   await page.waitForFunction(()=>document.getElementById('profileStatus').dataset.identity==='',undefined,{timeout:60000});
   await page.locator('#angles').getByRole('button',{name:'正面',exact:true}).click();
+  // R48: full-range facial width must not move the neck attachment band.
+  await page.locator('#motionAge').selectOption('20');
+  for(const value of [-100,100,0]){
+   await page.locator('#s-faceWidth').evaluate((e,v)=>{e.value=String(v);e.dispatchEvent(new Event('input',{bubbles:true}))},value);
+   await page.waitForTimeout(180);
+   const neck=await page.locator('#profileStatus').evaluate(e=>({count:+e.dataset.neckAnchorCount,mm:+e.dataset.neckAnchorMm}));
+   assert.ok(neck.count>0&&neck.mm<.001,'face width must not alter neck anchor: '+JSON.stringify(neck));
+  }
+  // Use a minimal valid GLB rather than the metadata-only cleanup records.
+  const wig=await page.evaluate(async()=>{const T=await import('three'),{GLTFExporter}=await import('three/addons/exporters/GLTFExporter.js');const g=new T.SphereGeometry(.083,16,12,0,Math.PI*2,0,Math.PI*.68);g.translate(0,.065,0);const m=new T.Mesh(g,new T.MeshStandardMaterial({color:0x684336}));m.name='qa_wig';const b=new Uint8Array(await new GLTFExporter().parseAsync(m,{binary:true}));let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode(...b.subarray(i,i+8192));return btoa(s)});
+  await page.locator('#wigFile').setInputFiles({name:'R99 ボブ.glb',mimeType:'model/gltf-binary',buffer:Buffer.from(wig,'base64')});
+  await page.waitForFunction(()=>document.getElementById('status').textContent.includes('ウィッグ装着完了'),undefined,{timeout:60000});
+  for(const label of ['女性02','男性02']){
+   await page.locator('#modelList').selectOption('標準ベース '+label);
+   await page.waitForFunction(label=>document.getElementById('storeStatus').textContent.includes('標準ベース '+label+'」を読み込みました'),label,{timeout:60000});
+   await page.locator('#hairStyle').selectOption('wig:R99 ボブ');
+   await page.waitForFunction(()=>document.getElementById('status').textContent.includes('ウィッグ装着完了'),undefined,{timeout:60000});
+   await page.locator('#stage').screenshot({path:output+'/r48-bob-'+label+'.png'});
+  }
+  await page.locator('#modelList').selectOption('R39_jaw_lateral_review');
+  await page.waitForFunction(()=>document.getElementById('profileStatus').dataset.identity===''&&!document.getElementById('hairStyle').disabled,undefined,{timeout:60000});
+  await page.locator('#hairStyle').selectOption('none');
   // Face aging must affect real skin vertices in face-only mode, and be reversible.
   const ageStats=()=>page.locator('#profileStatus').evaluate(e=>({age:e.dataset.faceAge,count:+e.dataset.ageVertexCount,max:+e.dataset.ageMaxMm}));
   await page.locator('#motionAge').selectOption('20');
