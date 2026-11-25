@@ -334,6 +334,44 @@ jobs:
               shutil.copy2(src/n,out/n)
           print('R53 review-only assets staged; no production character adoption')
           PY
+      - name: Retrieve R53 expression-study models
+        id: r53_expression_download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: r53-male-motion-material-review
+          run-id: 45615500518
+          github-token: ${{ github.token }}
+          path: /tmp/r53-expression
+      - name: Verify and stage isolated expression-study GLBs
+        if: steps.r53_expression_download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,shutil,struct
+          from pathlib import Path
+          src=Path('/tmp/r53-expression')
+          report=json.loads((src/'male-motion-audit.json').read_text())
+          ids=[f'male_face_{i:02d}' for i in range(1,11)]
+          records={r['id']:r for r in report['faces']}
+          assert set(records)==set(ids)
+          names={'jawOpen','viseme_A','viseme_I','viseme_U','viseme_E','viseme_O','smile','blink_L','blink_R','browRaise','browFrown'}
+          for ident in ids:
+              r=records[ident]
+              b=(src/(ident+'.glb')).read_bytes()
+              assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b)
+              assert hashlib.sha256(b).hexdigest()==r['sha256']
+              assert r['sourceSex']=='male' and r['visualApproved'] is False
+              size=struct.unpack_from('<I',b,12)[0]
+              g=json.loads(b[20:20+size])
+              assert g.get('skins') and any(names<=set(m.get('extras',{}).get('targetNames',[])) for m in g['meshes'])
+          out=Path('pages-dist/preview/r53-expression')
+          out.mkdir(parents=True,exist_ok=True)
+          for ident in ids:
+              shutil.copy2(src/(ident+'.glb'),out/(ident+'.glb'))
+          shutil.copy2(src/'male-motion-audit.json',out/'male-motion-audit.json')
+          print('R53 expression-study preview staged, not production assets')
+          PY
       - name: Import verified open-licensed wig GLBs from public MakeHuman source
         run: python3 scripts/import-cc0-wigs.py --out pages-dist/assets/wigs/cc0
       - name: Verify new wig-only studio and CC0 source models are in the public artifact
