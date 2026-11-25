@@ -1,0 +1,61 @@
+name: R53 continuous head body integration
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-continuous-male-fit.py'
+      - '.github/workflows/r53-continuous-fit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  fit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - {name: first, ids: '1,2,3,4,5'}
+          - {name: second, ids: '6,7,8,9,10'}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-male-review-package
+          run-id: 45613089085
+          github-token: ${{ github.token }}
+          path: /tmp/r53-heads
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-male-motion-material-review
+          run-id: 45615500518
+          github-token: ${{ github.token }}
+          path: /tmp/r53-motion
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-age90-male-*
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Bake continuous face body and transferred expressions
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          IDS: ${{ matrix.group.ids }}
+        run: |
+          mkdir -p review/r53-continuous
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-continuous-male-fit.py -- /tmp/r53-heads /tmp/r53-motion /tmp/r53-bodies review/r53-continuous "$IDS"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-continuous-${{ matrix.group.name }}
+          path: review/r53-continuous/
+          if-no-files-found: error
+          retention-days: 30
