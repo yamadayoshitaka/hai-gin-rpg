@@ -1,0 +1,129 @@
+name: R53 nine-age and five-build motion candidates
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-age-motion.py'
+      - 'scripts/r53-age-motion-inventory.py'
+      - '.github/workflows/r53-age-motion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  retarget:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include:
+          - id: male_under10_normal
+            shard: male-early
+          - id: male_teens_normal
+            shard: male-early
+          - id: male_20s_normal
+            shard: male-early
+          - id: male_30s_normal
+            shard: male-middle
+          - id: male_40s_normal
+            shard: male-middle
+          - id: male_50s_normal
+            shard: male-middle
+          - id: male_60s_normal
+            shard: male-late
+          - id: male_70s_normal
+            shard: male-late
+          - id: male_80plus_normal
+            shard: male-late
+          - id: male_30s_slim
+            shard: male-middle
+          - id: male_30s_muscular
+            shard: male-middle
+          - id: male_30s_chubby
+            shard: male-middle
+          - id: male_30s_obese
+            shard: male-middle
+          - id: female_under10_normal
+            shard: female-early
+          - id: female_teens_normal
+            shard: female-early
+          - id: female_20s_normal
+            shard: female-early
+          - id: female_30s_normal
+            shard: female-middle
+          - id: female_40s_normal
+            shard: female-middle
+          - id: female_50s_normal
+            shard: female-middle
+          - id: female_60s_normal
+            shard: female-late
+          - id: female_70s_normal
+            shard: female-late
+          - id: female_80plus_normal
+            shard: female-late
+          - id: female_30s_slim
+            shard: female-middle
+          - id: female_30s_muscular
+            shard: female-middle
+          - id: female_30s_chubby
+            shard: female-middle
+          - id: female_30s_obese
+            shard: female-middle
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/animations
+      - name: Python syntax preflight
+        run: python3 -m py_compile scripts/r53-age-motion.py scripts/r53-age-motion-inventory.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-age90-${{ matrix.shard }}
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Retarget age and build motion, measure gait and render
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/motion
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-age-motion.py -- assets/animations/UAL1_Standard.glb /tmp/r53-bodies review/motion "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-age-motion-${{ matrix.id }}
+          path: review/motion/
+          if-no-files-found: warn
+  inventory:
+    needs: retarget
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-age-motion-*
+          path: review/shards
+      - name: Verify 26 motion candidates
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-age-motion-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-age-motion-summary
+          path: review/summary/
+          if-no-files-found: error
