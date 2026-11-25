@@ -1,0 +1,39 @@
+name: R53 complete release gate
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'assets/face-r53/**'
+      - 'face-precision-r18.html'
+      - 'qa/r53-fixed-faces.test.mjs'
+      - 'qa/r53-fixed-editor-browser.cjs'
+      - '.github/workflows/r53-complete-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require actual 20 final meshes and signed visual evidence
+        run: node --test qa/r53-fixed-faces.test.mjs
+      - name: Verify editor syntax
+        run: |
+          python3 -c 'import re; from pathlib import Path; s=Path("face-precision-r18.html").read_text(); Path("/tmp/r53-editor.mjs").write_text("\n".join(re.findall(r"<script type=\"module\">(.*?)</script>",s,re.S)))'
+          node --check /tmp/r53-editor.mjs
+      - name: Browser regression for failure paths and storage
+        run: |
+          npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/r53-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          sleep 2
+          node qa/r53-fixed-editor-browser.cjs
+      - name: Record scope
+        run: echo 'Gate passed for provided release evidence and browser safety. Human visual inspection and normal Pages release remain separate; no automatic adoption of candidates.'
