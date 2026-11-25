@@ -25,7 +25,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
   await page.goto(base+'face-precision-r18.html?v=3.20',{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,{timeout:60000});
+  await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
   const fixture=process.env.CHARACTER_FACE_FIXTURE?readFileSync(process.env.CHARACTER_FACE_FIXTURE):Buffer.from(await page.evaluate(async(base)=>{
@@ -40,26 +40,32 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    g.morphAttributes.position=names.map((n,k)=>{const a=new Float32Array(positions.length);for(let i=0;i<positions.length;i+=3)if(positions[i+1]>.03&&positions[i+2]>.06)a[i+1]=.0001*(k+1);const attr=new T.Float32BufferAttribute(a,3);attr.name=n;return attr});
    const group=new T.Group(),skin=new T.Mesh(g,new T.MeshStandardMaterial({color:0xc7a895}));skin.name='R8_SKIN';skin.updateMorphTargets();group.add(skin);
    for(let i=0;i<6;i++){const m=new T.Mesh(new T.BoxGeometry(.001,.001,.001),new T.MeshStandardMaterial({color:0xc7a895}));m.name='fixture_part_'+i;m.position.set(0,.07,0);group.add(m)}
-   const bin=await new GLTFExporter().parseAsync(group,{binary:true});let str='',bytes=new Uint8Array(bin);for(let i=0;i<bytes.length;i+=16384)str+=String.fromCharCode(...bytes.subarray(i,i+16384));return btoa(str);
+   const exporter=new GLTFExporter();
+   // Three r160 exports node names, but R18 also requires named mesh definitions.
+   exporter.register(()=>({writeMesh(mesh,def){def.name=mesh.name;}}));
+   const bin=await exporter.parseAsync(group,{binary:true});let str='',bytes=new Uint8Array(bin);for(let i=0;i<bytes.length;i+=16384)str+=String.fromCharCode(...bytes.subarray(i,i+16384));return btoa(str);
   },base),'base64');
   mkdirSync(output,{recursive:true});
+  const fixtureJson=JSON.parse(fixture.subarray(20,20+fixture.readUInt32LE(12)).toString());
+  assert.equal(fixtureJson.meshes.length,7,'fixture must contain seven mesh definitions');
+  assert.equal(fixtureJson.meshes.find(m=>m.name==='R8_SKIN')?.primitives[0].targets?.length,11,'fixture must include named skin and eleven morph slots');
   await page.locator('#file').setInputFiles({name:'R42-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
-  await page.waitForFunction(()=>!document.getElementById('goAction').disabled,{timeout:60000});
+  try{await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});}catch(e){const status=await page.locator('#status').textContent();await page.screenshot({path:output+'/face-load-failure.png'});throw new Error('Face fixture load failed: '+status+'; page errors: '+errors.join('; '),{cause:e});}
   await page.locator('#staticBody').check();
-  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,{timeout:60000});
+  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
   const evidence=[];
   for(const key of ['female-adult','male-adult','female-senior','male-senior','female-child','male-child']){
    await page.locator('#bodySource').selectOption(key);
-   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled&&document.getElementById('bodyMode').checked,{timeout:60000});
+   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled&&document.getElementById('bodyMode').checked,undefined,{timeout:60000});
    const status=await page.locator('#bodyStatus').textContent();
    assert.ok(!status.includes('失敗'),status);
    const file=output+'/'+key+'.png';await page.locator('#stage').screenshot({path:file});evidence.push({key,status,file});
   }
   await page.locator('#bodySource').selectOption('female-adult');
-  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,{timeout:60000});
+  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
   await page.locator('#goAction').click();
   await page.waitForURL('**/*screen=action');
-  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,{timeout:60000});
+  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
   for(const motion of ['idle','walk','run','wave','jump','crouch','turn','attack']){
    await page.locator('#bodyMotion').selectOption(motion);
    await page.waitForTimeout(400);
