@@ -1,0 +1,85 @@
+{
+  "classification": "provisional role-based garment choices, not final costume design",
+  "models": [
+    {
+      "id": "mob_female_01",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_02",
+      "style": "Ranger"
+    },
+    {
+      "id": "mob_female_03",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_04",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_05",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_06",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_07",
+      "style": "Ranger"
+    },
+    {
+      "id": "mob_female_08",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_09",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_female_10",
+      "style": "Ranger"
+    },
+    {
+      "id": "mob_male_01",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_02",
+      "style": "Ranger"
+    },
+    {
+      "id": "mob_male_03",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_04",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_05",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_06",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_07",
+      "style": "Ranger"
+    },
+    {
+      "id": "mob_male_08",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_09",
+      "style": "Peasant"
+    },
+    {
+      "id": "mob_male_10",
+      "style": "Ranger"
+    }
+  ]
+}

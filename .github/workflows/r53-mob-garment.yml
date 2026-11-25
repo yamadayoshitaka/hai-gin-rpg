@@ -1,0 +1,220 @@
+name: R53 mob garment fitting and individual motion audit
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-mob-garment-stage.py'
+      - 'scripts/r53-mob-garment-inventory.py'
+      - 'data/r53-mob-garment-plan.json'
+      - '.github/workflows/r53-mob-garment.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  motion_source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Require successful individual motion inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh run watch 45715276616 --exit-status --interval 30
+  fit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - id: mob_female_01
+            style: Peasant
+          - id: mob_female_02
+            style: Ranger
+          - id: mob_female_03
+            style: Peasant
+          - id: mob_female_04
+            style: Peasant
+          - id: mob_female_05
+            style: Peasant
+          - id: mob_female_06
+            style: Peasant
+          - id: mob_female_07
+            style: Ranger
+          - id: mob_female_08
+            style: Peasant
+          - id: mob_female_09
+            style: Peasant
+          - id: mob_female_10
+            style: Ranger
+          - id: mob_male_01
+            style: Peasant
+          - id: mob_male_02
+            style: Ranger
+          - id: mob_male_03
+            style: Peasant
+          - id: mob_male_04
+            style: Peasant
+          - id: mob_male_05
+            style: Peasant
+          - id: mob_male_06
+            style: Peasant
+          - id: mob_male_07
+            style: Ranger
+          - id: mob_male_08
+            style: Peasant
+          - id: mob_male_09
+            style: Peasant
+          - id: mob_male_10
+            style: Ranger
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/quaternius-outfits
+      - name: Compile adapted original fitting scripts
+        run: python3 scripts/r53-mob-garment-stage.py --check
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-study-${{ matrix.id }}
+          run-id: 45714187396
+          github-token: ${{ github.token }}
+          path: /tmp/r53-mob
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Three-stage actual garment fit
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+          STYLE: ${{ matrix.style }}
+        run: |
+          mkdir -p review/first review/second review/third
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-garment-stage.py -- fit /tmp/r53-mob assets/characters/quaternius-outfits review/first "$ID" "$STYLE"
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-garment-stage.py -- refine /tmp/r53-mob review/first review/second "$ID" "$STYLE"
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-garment-stage.py -- third /tmp/r53-mob review/second review/third "$ID" "$STYLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-garment-fit-${{ matrix.id }}
+          path: review/
+          if-no-files-found: warn
+  motion:
+    needs: [fit, motion_source]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - id: mob_female_01
+            style: Peasant
+          - id: mob_female_02
+            style: Ranger
+          - id: mob_female_03
+            style: Peasant
+          - id: mob_female_04
+            style: Peasant
+          - id: mob_female_05
+            style: Peasant
+          - id: mob_female_06
+            style: Peasant
+          - id: mob_female_07
+            style: Ranger
+          - id: mob_female_08
+            style: Peasant
+          - id: mob_female_09
+            style: Peasant
+          - id: mob_female_10
+            style: Ranger
+          - id: mob_male_01
+            style: Peasant
+          - id: mob_male_02
+            style: Ranger
+          - id: mob_male_03
+            style: Peasant
+          - id: mob_male_04
+            style: Peasant
+          - id: mob_male_05
+            style: Peasant
+          - id: mob_male_06
+            style: Peasant
+          - id: mob_male_07
+            style: Ranger
+          - id: mob_male_08
+            style: Peasant
+          - id: mob_male_09
+            style: Peasant
+          - id: mob_male_10
+            style: Ranger
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-study-${{ matrix.id }}
+          run-id: 45714187396
+          github-token: ${{ github.token }}
+          path: /tmp/r53-mob
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-motion-${{ matrix.id }}
+          run-id: 45715276616
+          github-token: ${{ github.token }}
+          path: /tmp/r53-motion
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-garment-fit-${{ matrix.id }}
+          path: review
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Sample actual individual action clips and generate mask candidate
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+          STYLE: ${{ matrix.style }}
+        run: |
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-garment-stage.py -- motion /tmp/r53-mob review/third /tmp/r53-motion review/third "$ID" "$STYLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-garment-checked-${{ matrix.id }}
+          path: review/third/
+          if-no-files-found: warn
+  inventory:
+    needs: [fit, motion, motion_source]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-garment-checked-*
+          path: review/shards
+      - name: Verify all individual garments and action evidence
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-mob-garment-inventory.py review/shards data/r53-mob-garment-plan.json review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-garment-summary
+          path: review/summary/
+          if-no-files-found: error
