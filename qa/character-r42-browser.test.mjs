@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.24',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.25',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -64,11 +64,15 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   await page.locator('#file').setInputFiles({name:'R45-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
   await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});
   // Register actual loaded compatible GLB once, then twenty reproducible settings.
-  await page.locator('#modelName').fill('女性 R20 QA fixture');
+  await page.locator('#modelName').fill('R39_jaw_lateral_review');
   await page.locator('#registerModel').click();
   await page.waitForFunction(()=>document.getElementById('storeStatus').textContent.includes('登録しました'));
-  await page.locator('#seedBases').click();
-  await page.waitForFunction(()=>Array.from(document.getElementById('modelList').options).filter(o=>o.value.startsWith('標準ベース ')).length===20);
+  // Reproduce R45 user state: only a generic R39 registration, no R20/female string.
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Array.from(document.getElementById('modelList').options).filter(o=>o.value.startsWith('標準ベース ')).length===20,{},{timeout:60000});
+  assert.ok(await page.locator('#modelList option').evaluateAll(os=>os.some(o=>o.value==='R39_jaw_lateral_review')));
+  await page.locator('#modelList').selectOption('R39_jaw_lateral_review');
+  await page.waitForFunction(()=>!document.getElementById('goAction').disabled&&document.getElementById('storeStatus').textContent.includes('読み込みました'),undefined,{timeout:60000});
   assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('標準ベース 女性')).length),10);
   assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('標準ベース 男性')).length),10);
   assert.equal(await page.locator('#modelList option').evaluateAll(os=>os.filter(o=>o.value.startsWith('__r45_base_')).length),0);
