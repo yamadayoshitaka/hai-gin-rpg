@@ -33,10 +33,13 @@ for a in bpy.data.actions:
 print('UAL actions',list(acts),flush=True)
 for tr in ad.nla_tracks:tr.mute=True
 def pick(name):
-    q=[a for n,a in acts.items() if n.lower()==name.lower() or n.lower().endswith('|'+name.lower()) or n.lower().endswith(' '+name.lower())]
-    if len(q)!=1:
-        q=[a for n,a in acts.items() if name.lower() in n.lower()]
-    if len(q)!=1:raise RuntimeError('missing/ambiguous source clip '+name+' '+str([a.name for a in q]))
+    # Blender glTF import appends the rig name to each UAL action.
+    # Match exact clip IDs only; never accept substring matches such as
+    # Swim_Idle_Loop or Sitting_Idle_Loop for the neutral standing idle.
+    expected={name.casefold(),(name+'_Armature').casefold(),(name+'|Armature').casefold()}
+    q=[a for n,a in acts.items() if n.casefold() in expected]
+    if len(q)!=1:raise RuntimeError('missing/ambiguous exact source clip '+name+' '+str([a.name for a in q]))
+    print('R53 selected source clip',name,q[0].name,flush=True)
     return q[0]
 clips=['Idle_Loop','Walk_Loop','Sprint_Loop','Sword_Attack']
 for name in clips:pick(name)
