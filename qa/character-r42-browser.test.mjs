@@ -9,7 +9,7 @@ const base='http://127.0.0.1:8766/';
 const donorDir=resolve(root,'assets/character-review');
 const adult='HM08_adult_female_R36_review.glb';
 const output='qa/screenshots/character-r42';
-test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout:240000},async()=>{
+test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout:360000},async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
   const page=await browser.newPage({viewport:{width:412,height:915},deviceScaleFactor:1,isMobile:true,hasTouch:true,acceptDownloads:true});
@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.21',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.22',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -51,7 +51,23 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   assert.equal(fixtureJson.meshes.find(m=>m.name==='R8_SKIN')?.primitives[0].targets?.length,11,'fixture must include named skin and eleven morph slots');
   await page.locator('#file').setInputFiles({name:'R42-compatibility-fixture.glb',mimeType:'model/gltf-binary',buffer:fixture});
   try{await page.waitForFunction(()=>!document.getElementById('goAction').disabled,undefined,{timeout:60000});}catch(e){const status=await page.locator('#status').textContent();await page.screenshot({path:output+'/face-load-failure.png'});throw new Error('Face fixture load failed: '+status+'; page errors: '+errors.join('; '),{cause:e});}
+  // Face aging must affect real skin vertices in face-only mode, and be reversible.
+  const ageStats=()=>page.locator('#profileStatus').evaluate(e=>({age:e.dataset.faceAge,count:+e.dataset.ageVertexCount,max:+e.dataset.ageMaxMm}));
+  await page.locator('#motionAge').selectOption('20');
+  await page.waitForFunction(()=>document.getElementById('profileStatus').dataset.faceAge==='20');
+  assert.equal((await ageStats()).count,0);
+  await page.locator('#stage').screenshot({path:output+'/age20-face.png'});
+  await page.locator('#motionAge').selectOption('80');
+  await page.waitForFunction(()=>document.getElementById('profileStatus').dataset.faceAge==='80');
+  const age80=await ageStats();assert.ok(age80.count>20&&age80.max>2,'80s face geometry must change: '+JSON.stringify(age80));
+  await page.locator('#stage').screenshot({path:output+'/age80-face.png'});
   await page.locator('#staticBody').check();
+  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled&&document.getElementById('bodyStatus').textContent.includes('高齢女性'),undefined,{timeout:60000});
+  await page.locator('#stage').screenshot({path:output+'/age80-body.png'});
+  await page.locator('#motionAge').selectOption('20');
+  await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled&&document.getElementById('bodyStatus').textContent.includes('成人女性'),undefined,{timeout:60000});
+  assert.equal((await ageStats()).count,0);
+  await page.locator('#stage').screenshot({path:output+'/age20-body.png'});
   await page.waitForFunction(()=>!document.getElementById('bodyExport').disabled,undefined,{timeout:60000});
   const evidence=[];
   for(const key of ['female-adult','male-adult','female-senior','male-senior','female-child','male-child']){
@@ -78,6 +94,6 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   const reload=await page.evaluate(async b64=>{const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');let skinned=0,morphs=0;gltf.scene.traverse(m=>{if(m.isSkinnedMesh)skinned++;if(m.morphTargetInfluences)morphs+=m.morphTargetInfluences.length});return {animations:gltf.animations.length,skinned,morphs}},bytes.toString('base64'));
   assert.equal(reload.animations,8);assert.ok(reload.skinned>0);assert.ok(reload.morphs>=11);
   assert.deepEqual(errors,[]);
-  writeFileSync(output+'/evidence.json',JSON.stringify({fixture:process.env.CHARACTER_FACE_FIXTURE?'provided face':'anatomical compatibility fixture, not R20',evidence,reload,visualQualityApproved:false},null,2));
+  writeFileSync(output+'/evidence.json',JSON.stringify({fixture:process.env.CHARACTER_FACE_FIXTURE?'provided face':'anatomical compatibility fixture, not R20',evidence,reload,age80,visualQualityApproved:false},null,2));
  }finally{await browser.close()}
 });
