@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.29',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.30',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -119,6 +119,20 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
   for(const label of ['女性02','男性02']){
    await page.locator('#modelList').selectOption('標準ベース '+label);
    await page.waitForFunction(label=>document.getElementById('storeStatus').textContent.includes('標準ベース '+label+'」を読み込みました'),label,{timeout:60000});
+   if(label.startsWith('男性')){
+    assert.ok(!(await page.locator('#hairStyle option').evaluateAll(os=>os.map(o=>o.value))).includes('wig:R99 ボブ'));
+    await page.locator('#hairStyle').selectOption('male-short');
+    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('男性用ウィッグ装着完了'),undefined,{timeout:60000});
+    assert.equal(await page.locator('#hairInfo').getAttribute('data-scalp-ray-misses'),'0');
+    assert.ok(+(await page.locator('#hairInfo').getAttribute('data-scalp-clearance-mm'))>=2);
+    await page.locator('#stage').screenshot({path:output+'/r50-male-short.png'});
+    for(const style of ['male-part','male-crop']){
+     await page.locator('#hairStyle').selectOption(style);
+     await page.waitForFunction(style=>document.getElementById('hairInfo').dataset.maleFit===style,style,{timeout:60000});
+     await page.locator('#stage').screenshot({path:output+'/r50-'+style+'.png'});
+    }
+    continue;
+   }
    await page.locator('#hairStyle').selectOption('wig:R99 ボブ');
    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('ウィッグ装着完了'),undefined,{timeout:60000});
    await page.waitForFunction(()=>document.getElementById('hairInfo').dataset.autoFit==='R49',undefined,{timeout:10000});
