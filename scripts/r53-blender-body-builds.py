@@ -67,6 +67,40 @@ for sex,age,filename,source_sha in donors:
                 axis/=L;R=P-A;radial=R-np.outer(R@axis,axis)
                 parts[name]=(weights[:,k],radial);limb+=weights[:,k]
     if len(parts)<8:raise RuntimeError("Anatomical limb bone mapping incomplete "+filename)
+    # Use shared displacement groups at UV-split vertices.  A local defect
+    # must not reduce the entire abdomen, arms and legs together.
+    _, weld = np.unique(np.round(P,6),axis=0,return_inverse=True)
+    weld_count=int(weld.max())+1
+    counts=np.bincount(weld,minlength=weld_count)
+    welded_tri=weld[tri]
+    edges=np.unique(np.sort(np.concatenate((welded_tri[:,[0,1]],welded_tri[:,[1,2]],welded_tri[:,[2,0]])),axis=1),axis=0)
+    edges=edges[edges[:,0]!=edges[:,1]]
+    u=np.concatenate((edges[:,0],edges[:,1]));v=np.concatenate((edges[:,1],edges[:,0]))
+    degree=np.maximum(1,np.bincount(u,minlength=weld_count))
+    protected=np.zeros(weld_count,dtype=bool)
+    protected[weld[h>=.94]]=True
+    def corrected_displacement(D):
+        field=np.column_stack([np.bincount(weld,weights=D[:,k],minlength=weld_count)/counts for k in range(3)])
+        field[protected]=0
+        alpha=np.ones(weld_count)
+        for it in range(120):
+            Q=P+(field*alpha[:,None])[weld]
+            nn=norm(Q,tri)
+            reversed_=(np.einsum("ij,ij->i",N,nn)<0)&valid
+            collapsed_=(np.linalg.norm(nn,axis=1)<area*.02)&valid
+            bad=reversed_|collapsed_
+            if not bad.any():
+                return Q,alpha[weld],it,int(reversed_.sum()),int(collapsed_.sum())
+            seeds=np.unique(welded_tri[bad])
+            target=alpha.copy()
+            target[seeds]*=.72
+            # Smooth the attenuation into a two-ring neighborhood, never
+            # re-increase a previously reduced vertex.
+            for _ in range(2):
+                avg=np.bincount(u,weights=target[v],minlength=weld_count)/degree
+                target=np.minimum(target,.58*target+.42*avg)
+            alpha=np.minimum(alpha,target)
+        raise RuntimeError("Local body correction failed "+str(int(bad.sum())))
     def proposal(v):
         waist,belly,hip,leg,arm,neckgain,chest=v
         # Sex-specific distribution: pelvis/thigh emphasis vs chest/abdomen.
@@ -98,15 +132,13 @@ for sex,age,filename,source_sha in donors:
     bpy.ops.object.camera_add();cam=bpy.context.object;cam.data.type="ORTHO";cam.data.ortho_scale=H*1.14;scene.camera=cam
     center=Vector((0,cy,z0+H*.5))
     for build,values in builds.items():
-        ident=f"{sex}_{age}_{build}";D=proposal(values);factor=1.
-        for _ in range(18):
-            Q=P+D*factor;nn=norm(Q,tri)
-            flips=int(np.sum((np.einsum("ij,ij->i",N,nn)<0)&valid))
-            collapse=int(np.sum((np.linalg.norm(nn,axis=1)<area*.02)&valid))
-            if flips==0 and collapse==0:break
-            factor*=.8
+        ident=f"{sex}_{age}_{build}";D=proposal(values)
+        Q,alpha,iterations,flips,collapse=corrected_displacement(D)
+        mag=np.linalg.norm(D,axis=1)
+        active=mag>1e-5
+        factor=float(np.average(alpha[active],weights=mag[active])) if active.any() else 1.
         if flips or collapse:raise RuntimeError("Body deformation invalid "+ident)
-        if build!="normal" and factor<.35:raise RuntimeError("Body effect too attenuated "+ident)
+        if build!="normal" and factor<.65:raise RuntimeError("Body effect too attenuated "+ident)
         for v,p in zip(mesh.vertices,Q):v.co=inv@Vector(p)
         mesh.update();bpy.context.view_layer.update()
         if bone_signature(rig)!=signatures or [u.name for u in mesh.uv_layers]!=uvs:raise RuntimeError("Rig or UV changed")
@@ -131,7 +163,7 @@ for sex,age,filename,source_sha in donors:
                 scene.render.filepath=str(out/(ident+"_"+tag+".png"));bpy.ops.render.render(write_still=True)
         rec=dict(id=ident,sex=sex,ageCohort=age,build=build,source_git_blob=source_sha,sha256=sha(dest),
                  height_m=float(H),vertices=len(P),triangles=len(tri),bones=len(signatures),new_face_flips=flips,collapsed=collapse,
-                 applied_factor=factor,waist_width_depth_before_m=before,waist_width_depth_after_m=after,
+                 applied_factor=factor,local_correction_iterations=iterations,locally_attenuated_vertices=int(np.sum(alpha<.99)),waist_width_depth_before_m=before,waist_width_depth_after_m=after,
                  visualApproved=False,faceIntegration=False,clothingFit=False,motionApproved=False)
         results.append(rec);print("R53 BODY",json.dumps(rec),flush=True)
 (out/"body-candidates.json").write_text(json.dumps(dict(revision="R53",classification="body studies only",models=results,
