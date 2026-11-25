@@ -45,6 +45,55 @@ report=dict(blender=bpy.app.version_string,source=source.name,
     visualApproved=False,classification="reference audit only")
 (out/"audit.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
 bpy.ops.wm.save_as_mainfile(filepath=str(out/"reference.blend"))
+
+# Export the imported reference without cameras/lights, before rendering.
+# Keep original donor files immutable and compare imported round-trip geometry.
+def scene_stats():
+    objs=[o for o in bpy.context.scene.objects if o.type=="MESH"]
+    points=[o.matrix_world @ v.co for o in objs for v in o.data.vertices]
+    if not points or not all(math.isfinite(v) for p in points for v in p):
+        raise RuntimeError("Invalid round-trip vertices")
+    triangles=0
+    for o in objs:
+        o.data.calc_loop_triangles()
+        triangles+=len(o.data.loop_triangles)
+    return dict(vertices=len(points),triangles=triangles,
+        bounds_m=[[min(p[i] for p in points) for i in range(3)],
+                  [max(p[i] for p in points) for i in range(3)]],
+        morphs=sorted({k.name for o in objs if o.data.shape_keys
+            for k in o.data.shape_keys.key_blocks if k != o.data.shape_keys.reference_key}),
+        bones=sum(len(o.data.bones) for o in bpy.context.scene.objects if o.type=="ARMATURE"))
+
+def neck_sections():
+    # Intersect actual surface triangles with horizontal planes. The donor
+    # samples are descriptive, not a validated head-to-body attachment seam.
+    levels=[hi.z-(hi.z-lo.z)*f for f in (.78,.84,.90,.96)]
+    rows=[]
+    for z in levels:
+        for o in meshes:
+            m=o.data
+            pts=[o.matrix_world @ v.co for v in m.vertices]
+            hits=[]
+            for tri in m.loop_triangles:
+                p=[pts[i] for i in tri.vertices]
+                for a,b in zip(p,p[1:]+p[:1]):
+                    if (a.z<=z<b.z) or (b.z<=z<a.z):
+                        hits.append(a+(b-a)*((z-a.z)/(b.z-a.z)))
+            if hits:
+                rows.append(dict(mesh=o.name,z_m=z,samples=len(hits),
+                    min_xy_m=[min(p[i] for p in hits) for i in range(2)],
+                    max_xy_m=[max(p[i] for p in hits) for i in range(2)],
+                    width_m=max(p.x for p in hits)-min(p.x for p in hits),
+                    depth_m=max(p.y for p in hits)-min(p.y for p in hits)))
+    return rows
+
+before=scene_stats()
+report["neck_region_sections"]=neck_sections()
+roundtrip=out/"reference_roundtrip.glb"
+bpy.ops.export_scene.gltf(filepath=str(roundtrip),export_format="GLB",
+    export_cameras=False,export_lights=False,export_animations=False,
+    export_morph=True,export_skins=True)
+
 scene=bpy.context.scene
 scene.render.engine="BLENDER_WORKBENCH"
 scene.render.resolution_x=640
@@ -74,4 +123,21 @@ for angle in [0,45,90,-90,180]:
     cam.rotation_euler=(center-cam.location).to_track_quat("-Z","Y").to_euler()
     scene.render.filepath=str(out/("view_%s.png"%angle))
     bpy.ops.render.render(write_still=True)
+
+# Run the round-trip in a fresh scene after the reference views were saved.
+bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.ops.import_scene.gltf(filepath=str(roundtrip))
+after=scene_stats()
+bounds_error=max(abs(a-b) for p,q in zip(before["bounds_m"],after["bounds_m"])
+                 for a,b in zip(p,q))
+checks=dict(triangles_preserved=before["triangles"]==after["triangles"],
+    morph_names_preserved=before["morphs"]==after["morphs"],
+    bone_count_preserved=before["bones"]==after["bones"],
+    bounds_preserved=bounds_error<=.0001)
+report["roundtrip"]=dict(before=before,after=after,bounds_error_m=bounds_error,
+    checks=checks,sha256=hashlib.sha256(roundtrip.read_bytes()).hexdigest())
+(out/"audit.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+if not all(checks.values()):
+    raise RuntimeError("Reference GLB round-trip failed: "+str(checks))
 print("R53 reference audit completed:",out)
+
