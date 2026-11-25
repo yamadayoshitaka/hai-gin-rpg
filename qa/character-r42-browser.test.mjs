@@ -24,7 +24,7 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    if(/^HM08_[a-zA-Z0-9_-]+\.glb$/.test(name)){try{await r.fulfill({path:resolve(donorDir,name),contentType:'model/gltf-binary',headers:{'Access-Control-Allow-Origin':'*'}})}catch{await r.abort()}}
    else await r.fulfill({status:404,body:'Fixture is loaded through the file picker'});
   });
-  await page.goto(base+'face-precision-r18.html?v=3.20',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'face-precision-r18.html?v=3.21',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('canvas')&&document.getElementById('hairAudit').onclick,undefined,{timeout:60000});
   // A compatibility fixture, not an R20 artistic model: the skin is extracted
   // from the same adult anatomical donor and has the required 11 morph slots.
@@ -70,9 +70,11 @@ test('R42 browser compatibility, six donors, action and GLB roundtrip', {timeout
    await page.locator('#bodyMotion').selectOption(motion);
    await page.waitForTimeout(400);
   }
-  const dl=page.waitForEvent('download',{timeout:120000});await page.locator('#bodyExport').click();
-  const downloaded=await dl,path=output+'/roundtrip.glb';await downloaded.saveAs(path);
-  const bytes=readFileSync(path);assert.equal(bytes.readUInt32LE(0),0x46546c67);assert.equal(bytes.readUInt32LE(8),bytes.length);const json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString());assert.equal(json.animations.length,8);assert.ok(json.skins.length);
+  const dl=page.waitForEvent('download',{timeout:120000});
+  const failure=page.waitForFunction(()=>document.getElementById('bodyStatus').textContent.includes('出力失敗'),undefined,{timeout:120000}).then(async()=>{throw Error(await page.locator('#bodyStatus').textContent())});
+  let downloaded;try{await page.locator('#bodyExport').click();downloaded=await Promise.race([dl,failure]);}catch(e){await page.screenshot({path:output+'/export-failure.png'});throw new Error('Animated GLB export: '+await page.locator('#bodyStatus').textContent()+'; '+e.message,{cause:e});}
+  const path=output+'/roundtrip.glb';await downloaded.saveAs(path);
+  const bytes=readFileSync(path);assert.equal(bytes.readUInt32LE(0),0x46546c67);assert.equal(bytes.readUInt32LE(8),bytes.length);const json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString());assert.equal(json.animations.length,8);assert.ok(json.skins.length);for(const clip of json.animations){assert.ok(clip.channels.some(c=>c.target.path==='weights'),clip.name+' must contain expression weight channels');assert.ok(clip.channels.some(c=>c.target.path==='rotation'),clip.name+' must contain skeletal rotation channels');}
   const reload=await page.evaluate(async b64=>{const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');let skinned=0,morphs=0;gltf.scene.traverse(m=>{if(m.isSkinnedMesh)skinned++;if(m.morphTargetInfluences)morphs+=m.morphTargetInfluences.length});return {animations:gltf.animations.length,skinned,morphs}},bytes.toString('base64'));
   assert.equal(reload.animations,8);assert.ok(reload.skinned>0);assert.ok(reload.morphs>=11);
   assert.deepEqual(errors,[]);
