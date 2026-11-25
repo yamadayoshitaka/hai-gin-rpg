@@ -1,0 +1,77 @@
+name: R53 mob expression and action integration candidates
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-mob-motion.py'
+      - 'scripts/r53-mob-motion-inventory.py'
+      - '.github/workflows/r53-mob-motion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        id: [mob_male_01, mob_male_02, mob_male_03, mob_male_04, mob_male_05, mob_male_06, mob_male_07, mob_male_08, mob_male_09, mob_male_10, mob_female_01, mob_female_02, mob_female_03, mob_female_04, mob_female_05, mob_female_06, mob_female_07, mob_female_08, mob_female_09, mob_female_10]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/animations
+      - name: Python syntax preflight
+        run: python3 -m py_compile scripts/r53-mob-motion.py scripts/r53-mob-motion-inventory.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-mob-study-${{ matrix.id }}
+          run-id: 45714187396
+          github-token: ${{ github.token }}
+          path: /tmp/r53-mob
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Bake expressions and retarget real action clips
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/motion
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-mob-motion.py -- assets/animations/UAL1_Standard.glb /tmp/r53-mob review/motion "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-motion-${{ matrix.id }}
+          path: review/motion/
+          if-no-files-found: warn
+  inventory:
+    needs: integrate
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-motion-*
+          path: review/shards
+      - name: Verify 20 model outputs and expression evidence
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-mob-motion-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-mob-motion-summary
+          path: review/summary/
+          if-no-files-found: error
