@@ -5,6 +5,8 @@ out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=True)
 data=json.loads(Path('data/r53-cast-reference-map.json').read_text())
 rows=data['castRoster']
 assert len(rows)==22 and len({r['id'] for r in rows})==22
+assert all(r['sourceVisualInspected'] and not r['allowFinalMeshFit'] for r in rows)
+assert all(r.get('sourceConflict') for r in rows if r['sourceVisualStatus']=='identity-conflict-hold')
 canvas=Image.new('RGB',(1320,((len(rows)+5)//6)*270),(24,30,38));d=ImageDraw.Draw(canvas)
 for i,r in enumerate(rows):
  p=Path(r['referencePath']);raw=p.read_bytes()
@@ -16,4 +18,5 @@ for i,r in enumerate(rows):
  r['referenceSHA256']=hashlib.sha256(raw).hexdigest()
 canvas.save(out/'all-22-original-references.jpg',quality=94)
 (out/'cast-roster-audit.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2))
-print('Verified 22 canonical actor reference files. Landmark and mesh approval remain separate.')
+(out/'source-conflicts.json').write_text(json.dumps(data['sourceConflicts'],ensure_ascii=False,indent=2))
+print('Verified 22 actor reference files; source visual conflicts held, '+str(len(data['references']))+' annotated; final mesh approval remains separate.')

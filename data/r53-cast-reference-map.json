@@ -246,12 +246,97 @@
       "camera": "non-orthographic",
       "visualApproved": false,
       "meshApplied": false
+    },
+    {
+      "id": "selika",
+      "label": "セリカ・皇女",
+      "sex": "female",
+      "slot": "cast_selika",
+      "crop": [
+        170,
+        25,
+        350,
+        215
+      ],
+      "points": {
+        "eye_near": [
+          288,
+          100
+        ],
+        "nose_tip": [
+          327,
+          120
+        ],
+        "mouth_center": [
+          320,
+          139
+        ],
+        "chin": [
+          304,
+          174
+        ],
+        "ear_near": [
+          239,
+          142
+        ]
+      },
+      "note": "セリカと読めるラベル付き原画の赤髪の皇女。斜め上向き、遠側の目は未計測。",
+      "path": "assets/story-cinema/cast/selika.webp",
+      "blob": "e02d9863022776e28b6e7668c3ee32750f5d33aa",
+      "size": [
+        480,
+        700
+      ],
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
+    },
+    {
+      "id": "elne",
+      "label": "エルネ・鐘守",
+      "sex": "female",
+      "slot": "cast_elne",
+      "crop": [
+        194,
+        0,
+        348,
+        152
+      ],
+      "points": {
+        "eye_near": [
+          287,
+          43
+        ],
+        "nose_tip": [
+          323,
+          52
+        ],
+        "mouth_center": [
+          315,
+          67
+        ],
+        "chin": [
+          303,
+          91
+        ]
+      },
+      "note": "エルネと読めるラベル付き原画右上の銀髪女性。強い上向き、頭頂と耳は髪で隠れる。",
+      "path": "assets/story-cinema/cast/elne.webp",
+      "blob": "069e913e77f6abb02560eb3b2399d6ffbfc89a0e",
+      "size": [
+        480,
+        700
+      ],
+      "landmarkConfidence": "approximate visual annotation",
+      "camera": "non-orthographic",
+      "visualApproved": false,
+      "meshApplied": false
     }
   ],
   "pendingCast": [
     "altea",
     "edo",
-    "elne",
     "fio",
     "grad",
     "kai",
@@ -261,13 +346,12 @@
     "noel",
     "orphe",
     "raizen",
-    "selika",
     "shion",
     "vald",
     "vess",
     "zahar"
   ],
-  "pendingNote": "ミナは少女専用の年齢・体型モデルで扱う。その他は人物設定と個別原画を照合し、成人の男女10枠を超える場合は追加キャラクターとして別IDを保持する。",
+  "pendingNote": "既存の原画を全22人分目視確認。重複疑いのある人物は専用の正面・側面画像が揃うまで造形への採用を保留。未採寸15人、採寸7人、正式承認0人。ミナは子供専用。",
   "castRoster": [
     {
       "id": "commander-male",
@@ -280,7 +364,11 @@
       "ageClass": "adult",
       "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "provisional-source-needs-individual-turnaround",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "commander-female",
@@ -293,7 +381,11 @@
       "ageClass": "adult",
       "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "dedicated-master-nonorthographic",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "lucia",
@@ -306,7 +398,11 @@
       "ageClass": null,
       "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "dedicated-master-nonorthographic",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "garan",
@@ -319,7 +415,11 @@
       "ageClass": "senior",
       "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "provisional-source-needs-individual-turnaround",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "iris",
@@ -332,7 +432,12 @@
       "ageClass": null,
       "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "頭布・書物を持つ同じ女性の切り出しに見える。少女ミナの独立基準を用意する。"
     },
     {
       "id": "shion",
@@ -345,7 +450,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "結い髪の黒いマスクの男性が同一原画に見える。オルフェの独立基準が必要。"
     },
     {
       "id": "kai",
@@ -358,7 +468,11 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "provisional-source-needs-individual-turnaround",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "leon",
@@ -371,7 +485,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
     },
     {
       "id": "fio",
@@ -384,7 +503,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
     },
     {
       "id": "edo",
@@ -397,7 +521,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
     },
     {
       "id": "mina",
@@ -410,7 +539,12 @@
       "ageClass": "child",
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "頭布・書物を持つ同じ女性の切り出しに見える。少女ミナの独立基準を用意する。"
     },
     {
       "id": "noel",
@@ -423,7 +557,11 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "provisional-source-needs-individual-turnaround",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "raizen",
@@ -436,7 +574,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
     },
     {
       "id": "vald",
@@ -449,7 +592,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
     },
     {
       "id": "selika",
@@ -460,9 +608,13 @@
       "referenceGitBlob": "e02d9863022776e28b6e7668c3ee32750f5d33aa",
       "sex": "female",
       "ageClass": null,
-      "landmarkStatus": "pending-visual-review",
+      "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "visible-name-identified-nonorthographic",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "zahar",
@@ -475,7 +627,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
     },
     {
       "id": "grad",
@@ -488,7 +645,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
     },
     {
       "id": "altea",
@@ -501,7 +663,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
     },
     {
       "id": "orphe",
@@ -514,7 +681,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "結い髪の黒いマスクの男性が同一原画に見える。オルフェの独立基準が必要。"
     },
     {
       "id": "meve",
@@ -527,7 +699,12 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
     },
     {
       "id": "elne",
@@ -538,9 +715,13 @@
       "referenceGitBlob": "069e913e77f6abb02560eb3b2399d6ffbfc89a0e",
       "sex": "female",
       "ageClass": null,
-      "landmarkStatus": "pending-visual-review",
+      "landmarkStatus": "annotated-approximate",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "visible-name-identified-nonorthographic",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false
     },
     {
       "id": "vess",
@@ -553,8 +734,59 @@
       "ageClass": null,
       "landmarkStatus": "pending-visual-review",
       "meshApplied": false,
-      "visualApproved": false
+      "visualApproved": false,
+      "sourceVisualInspected": true,
+      "sourceVisualStatus": "identity-conflict-hold",
+      "independentTurnaroundRequired": true,
+      "allowFinalMeshFit": false,
+      "sourceConflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
     }
   ],
-  "rosterPolicy": "全22人を独立IDで管理する。男女10体の汎用固定顔カタログとは別に登場人物専用モデルを追加できる。女性01を上書きしない。未確定の性別・年代・見えない部位を推測で確定しない。"
+  "rosterPolicy": "全22人を独立IDで管理する。男女10体の汎用固定顔カタログとは別に登場人物専用モデルを追加できる。女性01を上書きしない。未確定の性別・年代・見えない部位を推測で確定しない。",
+  "sourceConflicts": [
+    {
+      "ids": [
+        "grad",
+        "leon",
+        "raizen",
+        "vess"
+      ],
+      "kind": "overlapping-ensemble-crop",
+      "reason": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
+    },
+    {
+      "ids": [
+        "fio",
+        "meve",
+        "altea"
+      ],
+      "kind": "similar-or-overlapping-royal-portrait",
+      "reason": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
+    },
+    {
+      "ids": [
+        "iris",
+        "mina"
+      ],
+      "kind": "overlapping-ensemble-crop",
+      "reason": "頭布・書物を持つ同じ女性の切り出しに見える。少女ミナの独立基準を用意する。"
+    },
+    {
+      "ids": [
+        "shion",
+        "orphe"
+      ],
+      "kind": "overlapping-ensemble-crop",
+      "reason": "結い髪の黒いマスクの男性が同一原画に見える。オルフェの独立基準が必要。"
+    },
+    {
+      "ids": [
+        "vald",
+        "zahar",
+        "edo"
+      ],
+      "kind": "similar-or-overlapping-royal-portrait",
+      "reason": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
+    }
+  ]
 }
