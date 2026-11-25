@@ -1,0 +1,33 @@
+name: R53 exported facial expression audit
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-audit-exported-morphs.py'
+      - '.github/workflows/r53-exported-morph-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-male-motion-material-review
+          run-id: 45615500518
+          github-token: ${{ github.token }}
+          path: /tmp/r53-source
+      - name: Audit every exported facial morph and combined expression
+        run: |
+          python3 -m pip install numpy
+          python3 scripts/r53-audit-exported-morphs.py /tmp/r53-source review/r53-expression
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-exported-expression-audit
+          path: review/r53-expression/
+          if-no-files-found: error
