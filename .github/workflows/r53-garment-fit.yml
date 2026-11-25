@@ -1,0 +1,113 @@
+name: R53 garment fitting candidates
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-garment-fit.py'
+      - 'scripts/r53-garment-inventory.py'
+      - '.github/workflows/r53-garment-fit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/quaternius-outfits
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-age90-male-middle
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Fit actual garment meshes
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+        run: |
+          mkdir -p review/garment
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-garment-fit.py -- /tmp/r53-bodies assets/characters/quaternius-outfits review/garment male_30s_normal Peasant
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-garment-male_30s_normal-Peasant
+          path: review/garment/
+          if-no-files-found: warn
+  fit:
+    needs: pilot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [male_30s_normal, male_30s_obese, female_30s_normal, female_30s_obese]
+        style: [Peasant, Ranger]
+        exclude:
+          - id: male_30s_normal
+            style: Peasant
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/quaternius-outfits
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-age90-*-middle
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Fit actual garment meshes
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+          STYLE: ${{ matrix.style }}
+        run: |
+          mkdir -p review/garment
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-garment-fit.py -- /tmp/r53-bodies assets/characters/quaternius-outfits review/garment "$ID" "$STYLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-garment-${{ matrix.id }}-${{ matrix.style }}
+          path: review/garment/
+          if-no-files-found: warn
+  inventory:
+    needs: [pilot, fit]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-garment-*
+          path: review/shards
+      - name: Check all eight garment candidates
+        if: always()
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-garment-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-garment-summary
+          path: review/summary/
+          if-no-files-found: error
