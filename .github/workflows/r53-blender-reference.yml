@@ -4,6 +4,7 @@ on:
     branches: [r53-fixed-face-review]
     paths:
       - 'scripts/r53-blender-reference-audit.py'
+      - 'scripts/r53-blender-male-head-reference.py'
       - '.github/workflows/r53-blender-reference.yml'
       - 'assets/face-r53/source/**'
   workflow_dispatch:
@@ -32,6 +33,8 @@ jobs:
           blender --version > review/r53/blender-version.txt
           xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-reference-audit.py -- assets/character-review/HM08_adult_female_R36_review.glb review/r53/female-donor body
           xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-reference-audit.py -- assets/character-review/HM08_male-adult_R41.glb review/r53/male-donor body
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-male-head-reference.py -- assets/character-review/HM08_male-adult_R41.glb review/r53/male-head
+          xvfb-run -a blender -b --python-exit-code 1 --python scripts/r53-blender-reference-audit.py -- review/r53/male-head/male_anatomy_reference.glb review/r53/male-head-views head
           source_dir=assets/face-r53/source
           if test -f "$source_dir/R20_reference_face.glb.gz"; then
             gzip -dc "$source_dir/R20_reference_face.glb.gz" > /tmp/R20_reference_face.glb
