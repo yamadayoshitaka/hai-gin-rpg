@@ -396,7 +396,13 @@
         "断面・重心候補",
         "握り位置・角度"
       ],
-      "conceptReference": null,
+      "conceptReference": {
+        "id": "EQ-WS-001",
+        "path": "data/r53-equipment-concept-v2.json",
+        "pointCount": 274,
+        "sourceImageSHA256": "958c9b27d15f3efb3a62eddc1a2979c9049cd911fbb4c50a6ccbec2d5f4adfd9",
+        "status": "new candidate not replacing current GLB"
+      },
       "semanticFitApproved": false,
       "productionApproved": false
     },
@@ -414,7 +420,13 @@
         "継ぎ目・装飾",
         "固定位置・体表とのクリアランス"
       ],
-      "conceptReference": null,
+      "conceptReference": {
+        "id": "EQ-SH-001",
+        "path": "data/r53-equipment-concept-v2.json",
+        "pointCount": 241,
+        "sourceImageSHA256": "958c9b27d15f3efb3a62eddc1a2979c9049cd911fbb4c50a6ccbec2d5f4adfd9",
+        "status": "new candidate not replacing current GLB"
+      },
       "semanticFitApproved": false,
       "productionApproved": false
     },
@@ -435,5 +447,92 @@
       "semanticFitApproved": false,
       "productionApproved": false
     }
-  ]
+  ],
+  "designCandidates": {
+    "path": "data/r53-equipment-concept-v2.json",
+    "sourceImageSHA256": "958c9b27d15f3efb3a62eddc1a2979c9049cd911fbb4c50a6ccbec2d5f4adfd9",
+    "sourceImagesStoredInRepository": false,
+    "approval": false,
+    "items": [
+      {
+        "id": "EQ-WS-001",
+        "legacyId": "Sword_Bronze",
+        "pointCount": 274,
+        "viewCount": 9,
+        "status": "2D concept; not 3D generated or approved"
+      },
+      {
+        "id": "EQ-SH-001",
+        "legacyId": "Shield_Wooden",
+        "pointCount": 241,
+        "viewCount": 9,
+        "status": "2D concept; not 3D generated or approved"
+      }
+    ],
+    "additionalConcepts": [
+      {
+        "id": "AR-002",
+        "name": "肩防具",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AR-001",
+        "name": "胸衣・胴防具",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AR-003",
+        "name": "腕防具",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AR-006",
+        "name": "脚防具",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AR-007",
+        "name": "靴",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AC-001",
+        "name": "宝石ブローチ",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "IT-001",
+        "name": "ポーション瓶",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AC-002",
+        "name": "ポーチ",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      },
+      {
+        "id": "AC-003",
+        "name": "リボン",
+        "status": "overview concept only; individual multi-view annotation pending",
+        "pointCount": 0,
+        "physicalDimensionsMm": null
+      }
+    ]
+  }
 }
