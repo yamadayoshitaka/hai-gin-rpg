@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
    for(const mode of ['head','hair','studio','neck','full','expression']){
     await page.selectOption('#mode',mode);
     const vs=await page.locator('#view option').evaluateAll(a=>a.map(x=>x.value));
-    for(const v of vs){await page.selectOption('#view',v);await imageReady()}
+    if(mode==='expression'){await imageReady()}else for(const v of vs){await page.selectOption('#view',v);await imageReady()}
     if(mode==='expression')for(const e of ['jawOpen','smile','viseme_A','blink_L']){await page.selectOption('#expr',e);await imageReady()}
    }
    await page.selectOption('#mode','head');await page.selectOption('#baseline','original');await imageReady();
