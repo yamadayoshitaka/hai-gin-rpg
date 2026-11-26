@@ -403,22 +403,57 @@ for name in names:
     openingSearch=None
     if female and name in ('jawOpen','viseme_A','viseme_O','laugh'):
         xx=(Q[:,0]-eye[0])/gap;zz=(Q[:,2]-localCrease(xx))/gap;yy=(Q[:,1]-eye[1])/gap
-        wx=np.exp(-(xx/.33)**6);wz=np.exp(-(zz/.20)**4);wf=smooth01((-.04-yy)/.25)
-        split=np.tanh(zz/.035)
-        # Move opposing lips apart and retreat inner tissue independently.
-        L=np.zeros_like(Q);L[:,2]=gap*wx*wz*wf*split*(~mouthInner)
-        L[:,1]=gap*wx*wz*wf*mouthInner*.45
-        baseD=weld(D);bestD=baseD;best=oral_visibility(Q+baseD);attempts=[]
-        for k in (.025,.05,.075,.10,.14):
-            for scale0 in (.8,1.0):
-                cand=weld(baseD*scale0+L*k)
-                if defects(Q+cand).any():continue
-                met=oral_visibility(Q+cand)
-                attempts.append({'separation':k,'baseScale':scale0,**met})
-                score0=met['visibleLiningSamples']+2000*met['centerOpeningHeight_m']
-                if score0>best['visibleLiningSamples']+2000*best['centerOpeningHeight_m']:
-                    bestD=cand;best=met
-        D=bestD;openingSearch={'candidateCount':len(attempts),'selectedPreRepair':best,'attempts':attempts}
+        wx=np.exp(-(xx/.39)**6);wf=smooth01((-.02-yy)/.28)
+        # Independent lip separation field: all folded tissue follows the
+        # lip on its own side, not a mask that pins the inner lip to zero.
+        # Keep the exterior chin short and avoid the old frowning jaw hinge.
+        def repair_candidate(D):
+            D=weld(D);alpha=np.ones(len(cnt))
+            for it0 in range(120):
+                A0=Q+D*alpha[w,None];bad0=defects(A0)
+                if not bad0.any():return A0-Q,it0
+                seeds=np.unique(w[ST[bad0]]);t0=alpha.copy();t0[seeds]*=.72
+                avg0=np.bincount(e0,weights=t0[e1],minlength=len(cnt))/degree
+                alpha=np.minimum(alpha,.78*t0+.22*avg0)
+            return None,120
+        def candidate_metric(D):
+            m=oral_visibility(Q+D)
+            # Penalize deformation of the chin and nose, while prioritizing
+            # actual contiguous first-hit oral lining over mere recession.
+            chin0=(zz<-.28)&(zz>-.65)&(np.abs(xx)<.20)&(yy<0)
+            chinShift=float(np.max(np.abs(D[chin0,2]))) if chin0.any() else 0.
+            score0=m['visibleLiningSamples']+2500*m['centerOpeningHeight_m']-1800*max(0.,chinShift-.004)
+            return score0,{**m,'chinShift_m':chinShift}
+        baseD=weld(D);safe0,it0=repair_candidate(baseD)
+        if safe0 is None:safe0=np.zeros_like(Q)
+        bestD=safe0;bestScore,best=candidate_metric(bestD);attempts=[]
+        # Compare localized, graph-smoothed opposed-lip fields with and
+        # without inherited jaw motion. Search after topology repair.
+        # A slight crease-height offset compensates asymmetric contact lips.
+        for offset in (-.025,0.,.025):
+            zc=zz-offset
+            for width in (.18,.27):
+                wz=np.exp(-(zc/width)**4)
+                split=np.tanh(zc/.042)
+                for opening in (.045,.075,.115,.155,.20):
+                    L=np.zeros_like(Q)
+                    L[:,2]=gap*opening*wx*wz*wf*split*(.65+.35*(split<0))
+                    L[:,1]=gap*opening*.7*wx*wz*wf*mouthInner
+                    # Let the actual topological neighbors transition
+                    # smoothly; no artificial face-hole or painted slit.
+                    L=weld(L)
+                    for _ in range(2):
+                        ll=np.column_stack([np.bincount(w,weights=L[:,k])/cnt for k in range(3)])
+                        avg=np.column_stack([np.bincount(e0,weights=ll[e1,k],minlength=len(cnt))/degree for k in range(3)])
+                        L=(.83*ll+.17*avg)[w]
+                    for baseScale in (0.,.25,.6):
+                        cand,it0=repair_candidate(baseD*baseScale+L)
+                        if cand is None:continue
+                        score0,met=candidate_metric(cand)
+                        attempts.append({'creaseOffset':offset,'width':width,'separation':opening,'baseScale':baseScale,'repairIterations':it0,**met})
+                        if score0>bestScore:
+                            bestD=cand;bestScore=score0;best=met
+        D=bestD;openingSearch={'candidateCount':len(attempts),'selectedPreRepair':best,'attempts':attempts,'method':'topology-repaired opposed lip fields'}
     D=weld(D);alpha=np.ones(len(cnt))
     for it in range(120):
         A=Q+D*alpha[w,None];bad=defects(A)
@@ -822,7 +857,7 @@ def fitted_scalp_hair():
     n=160;rows=64;V=[];F=[];UV=[];clearance=[]
     def edge(a):
         f=max(0.,math.cos(a))
-        return .83+.47*(1-math.cos(a))+.17*math.sin(a)**2+.34*math.sin(a+.7)*f**2
+        return .90+.42*(1-math.cos(a))+.12*math.sin(a)**2+.25*math.sin(a+.7)*f**2
     def scalp(a,t):
         ang=.018+(edge(a)-.018)*t
         ray=Vector((math.sin(ang)*math.sin(a),-math.sin(ang)*math.cos(a),math.cos(ang)))
@@ -836,7 +871,7 @@ def fitted_scalp_hair():
             v=Vector((math.sin(ang)*math.sin(a1),-math.sin(ang)*math.cos(a1),math.cos(ang)))
             h,_,_,_=skinTree.ray_cast(c+v*.42,-v,.42)
             if h is not None:dist=max(dist,(h-c).dot(v)-.0015)
-        vol=.004+.0035*math.sin(math.pi*t*.85)**2
+        vol=.004+.0035*math.sin(math.pi*t*.85)**2+.003*math.sin(a)**4*smooth01((t-.65)/.35)
         return c+ray*(dist+vol),ray
     def sample(a,t):
         if t<=1:
@@ -860,6 +895,14 @@ def fitted_scalp_hair():
         q+=ray*(.00038*math.sin(29*a+5*t)*math.sin(math.pi*min(t,1.))**2)
         near,normal,_,d=skinTree.find_nearest(q)
         if near is not None and d<.025 and (q-near).dot(normal)<.0012:q=near+normal*.0014
+        # Ear protrusions must not punch through the side silhouette.
+        # Conform against the outer radial envelope at the final z-height.
+        if t>.70 and abs(math.sin(a))>.68 and q.z>eye[2]-.035:
+            horizontal=Vector((math.sin(a),-math.cos(a),0))
+            origin=Vector((c.x,c.y,q.z));h,_,_,_=skinTree.ray_cast(origin+horizontal*.40,-horizontal,.40)
+            if h is not None:
+                clearance=(q-h).dot(horizontal)
+                if clearance<.0025:q+=horizontal*(.0025-clearance)
         return q
     for j in range(rows+1):
         t=1.95*j/rows
@@ -873,16 +916,16 @@ def fitted_scalp_hair():
     # Fine overlay strips with very shallow relief follow the silhouette.
     # Their edges remain close to the continuous backing; no separate rods.
     groups=[]
-    for k in range(64):
-        a0=2*math.pi*k/64;start=len(V);sections=32
+    for k in range(48):
+        a0=2*math.pi*(k+.15*math.sin(k*2.37))/48;start=len(V);sections=32
         for j in range(sections):
-            t=.18+1.74*j/(sections-1);a=a0+.12*math.sin(t*1.7)*math.sin(a0+.5)
-            width=.042*(.35+.65*math.sin(math.pi*j/(sections-1))**.65)
+            t=.38+1.54*j/(sections-1);a=a0+.23*math.sin(t*1.7)*math.sin(a0+.5)
+            width=.049*(.35+.65*math.sin(math.pi*j/(sections-1))**.65)
             for side in (-1,0,1):
                 q=sample(a+side*width,t)
                 normal=Vector((math.sin(a),-math.cos(a),max(0.,1-t))).normalized()
                 q+=normal*(.00013+.00020*(1-abs(side))*math.sin(math.pi*j/(sections-1)))
-                V.append(tuple(q));UV.append(((k+(side*.42))/64,j/(sections-1)))
+                V.append(tuple(q));UV.append(((k+(side*.42))/48,j/(sections-1)))
         for j in range(sections-1):
             for k0 in range(2):
                 a=start+j*3+k0;F.append((a,a+3,a+4,a+1))
@@ -890,8 +933,8 @@ def fitted_scalp_hair():
     me=bpy.data.meshes.new('R53_ContinuousLayeredBob');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
     col=np.array([.105,.058,.033]);mat=bpy.data.materials.new('R53_ChestnutHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
-    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.64
-    if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.18
+    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.69
+    if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.11
     me.materials.append(mat);hu=me.uv_layers.new(name='R53_HairFlow')
     for p in me.polygons:
         p.use_smooth=True;ids=list(p.loop_indices);u0=[UV[me.loops[i].vertex_index][0] for i in ids];wrap=max(u0)-min(u0)>.5
@@ -900,7 +943,7 @@ def fitted_scalp_hair():
     yy,xx=np.mgrid[0:1024,0:2048];u=xx/2048;v=yy/1024
     strand=.82+.055*np.sin(2*math.pi*(u*317+.19*np.sin(v*8)))+.035*np.sin(2*math.pi*(u*503+v*.12))+.018*np.sin(2*math.pi*u*809)+.075*np.sin(2*math.pi*(u*19+.28*np.sin(v*4)))
     texlink(mat,bs,rgba_image('R53_BobStrands',strand[:,:,None]*col[None,None,:]),hu.name,'Base Color')
-    rough=np.clip(.55+.07*np.sin(2*math.pi*(u*317+.19*np.sin(v*8))),.42,.69)
+    rough=np.clip(.68+.045*np.sin(2*math.pi*(u*317+.19*np.sin(v*8))),.58,.78)
     texlink(mat,bs,rgba_image('R53_BobRoughness',rough,True),hu.name,'Roughness')
     headName=next((b.name for b in rig.data.bones if b.name.lower()=='head'),None)
     if headName is None:headName=next((b.name for b in rig.data.bones if b.name.lower().endswith('head')),None)
@@ -1012,6 +1055,7 @@ try:
                     if md0.name.startswith(('R53 edge bevel','R53 weld seams','R53 panel refinement','R53 rounded panel')):plate.modifiers.remove(md0)
                 plate.data=backup;armorStudy.append({'name':plate.name,'before':n0,'status':'retained-original','error':str(e)})
     assemblyReport['armorStudy']=armorStudy
+    assemblyReport['bodyMaterialReview']={'clothMeshes':len(cloth),'armorMeshes':len(plates),'note':'original fitted body and garments retained; PBR render evidence required'}
     assembleParts=[assembly]+[o for o in new if o!=hd]+[fittedHair]+[o for o in parts if o!=body and o not in hair]
     for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
     def full_render(tag,d,target,scale):
@@ -1024,6 +1068,22 @@ try:
     target=Vector((eye[0],eye[1],eye[2]-hh*1.1))
     for tag,d in [('neck_front',(0,-1,0)),('neck_side',(1,0,0)),('neck_rear',(0,1,0))]:full_render(tag,d,target,hh*5.0)
     for tag,d in [('full_front',(0,-1,0)),('full_side',(1,0,0)),('full_rear',(0,1,0)),('full_threequarter',(.66,-1,.03))]:full_render(tag,d,center,H*1.13)
+    # Full-body PBR studio renders: evaluate actual clothing and metal
+    # materials, not the legacy Workbench white-material diagnostic.
+    oldEngine=scene.render.engine;oldWorld=scene.world;fullLights=[]
+    try:
+        try:scene.render.engine='BLENDER_EEVEE_NEXT'
+        except Exception:scene.render.engine='BLENDER_EEVEE'
+        w0=bpy.data.worlds.new('R53_FullStudioWorld');w0.use_nodes=True
+        w0.node_tree.nodes['Background'].inputs[0].default_value=(.19,.19,.19,1);w0.node_tree.nodes['Background'].inputs[1].default_value=.55;scene.world=w0
+        for label,offset,power,size0 in [('key',(-1.8,-3.2,2.7),440,2.6),('fill',(2,-2,1),190,2.2),('rim',(0,2.5,2),320,1.8)]:
+            dat=bpy.data.lights.new('R53_Full_'+label,'AREA');dat.energy=power;dat.shape='DISK';dat.size=size0
+            ob0=bpy.data.objects.new('R53_Full_'+label,dat);bpy.context.collection.objects.link(ob0);ob0.location=center+Vector(offset);ob0.rotation_euler=(center-ob0.location).to_track_quat('-Z','Y').to_euler();fullLights.append(ob0)
+        for tag,d in [('pbr_full_front',(0,-1,0)),('pbr_full_threequarter',(.66,-1,.03)),('pbr_full_rear',(0,1,0))]:full_render(tag,d,center,H*1.13)
+        assemblyReport['fullPBRReview']={'status':'rendered','views':3}
+    finally:
+        for ob0 in fullLights:bpy.data.objects.remove(ob0,do_unlink=True)
+        scene.world=oldWorld;scene.render.engine=oldEngine
     # Sample actual skeletal clips for visual motion evidence. Restore rest
     # state before exporting; the existing NLA animation clips are preserved.
     motion=[]
