@@ -647,6 +647,28 @@ jobs:
             fi
           fi
           done
+      # Isolated review only: do not overwrite live models or game source.
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-hero-master-head-commander-*
+          run-id: 45748909583
+          github-token: ${{ github.token }}
+          path: /tmp/r53hero/new
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-hero-anatomy-commander-*
+          run-id: 45746728837
+          github-token: ${{ github.token }}
+          path: /tmp/r53hero/old
+      - name: Stage actual hero comparison renders and isolated mobile 3D viewer
+        run: |
+          python3 scripts/r53-hero-online-pack.py /tmp/r53hero pages-dist/preview/r53-hero
+          npm install --prefix /tmp/r53hero-deps --no-save --package-lock=false three@0.180.0
+          mkdir -p pages-dist/preview/r53-hero/vendor/three
+          cp -r /tmp/r53hero-deps/node_modules/three/build /tmp/r53hero-deps/node_modules/three/examples pages-dist/preview/r53-hero/vendor/three/
+          cp /tmp/r53hero-deps/node_modules/three/LICENSE pages-dist/preview/r53-hero/vendor/three/
+          python3 -m http.server 8768 --bind 127.0.0.1 --directory pages-dist >/tmp/r53hero-http.log 2>&1 &
+          node qa/r53-hero-online.cjs
       - uses: actions/configure-pages@v6
       # A re-run must not upload a second artifact with the same name.
       # Use a different name for each run attempt, not only each run ID.
@@ -877,4 +899,23 @@ jobs:
             sleep 5
           done
           echo '::error::Pages did not pass v119 face release verification. Check current HTML version, JS modules and Pages source SHA.'
+          exit 1
+
+      - name: Verify publicly accessible R53 hero review and exact image bytes
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://yamadayoshitaka.github.io/hai-gin-rpg/preview/r53-hero"
+          for attempt in $(seq 1 18); do
+            if curl -fsSL --max-time 30 "$root/index.html?verify=$GITHUB_SHA-$attempt" -o /tmp/r53-review.html &&
+               grep -Fq 'R53 主人公｜新旧顔比較' /tmp/r53-review.html &&
+               curl -fsSL --max-time 45 "$root/assets/commander-female/master_front.png?verify=$GITHUB_SHA-$attempt" -o /tmp/r53-review.png &&
+               cmp -s /tmp/r53-review.png pages-dist/preview/r53-hero/assets/commander-female/master_front.png; then
+              echo 'PASS public R53 hero image preview'
+              exit 0
+            fi
+            sleep 5
+          done
+          echo '::error::R53 preview not verified on public CDN'
           exit 1
