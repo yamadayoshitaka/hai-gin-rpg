@@ -793,10 +793,11 @@ for (kind,side),o in eyes.items():
         # the measured local iris surface projection, not a flat extra disk.
         lo=A.min(0);hi=A.max(0);c=(lo+hi)/2;ext=hi-lo
         size=512;Y,X=np.mgrid[0:size,0:size];xx=(X/(size-1)-.5)*2;yy=(Y/(size-1)-.5)*2;rad=np.sqrt(xx*xx+yy*yy);ang=np.arctan2(yy,xx)
-        rgb_ref=np.asarray(detail['colorSamples']['iris']['rgb'],dtype=float)/255.
+        rgb_ref=np.asarray(dreport['colorSamples']['iris']['rgb'],dtype=float)/255.
+        if rgb_ref.shape!=(3,) or not np.isfinite(rgb_ref).all() or np.any((rgb_ref<0)|(rgb_ref>1)):raise RuntimeError('invalid iris RGB in source ledger')
         col=np.where(rgb_ref<=.04045,rgb_ref/12.92,((rgb_ref+.055)/1.055)**2.4) if ident=='commander-female' else np.array([.18,.095,.043])
-        detail=.72+.18*np.sin(67*ang+19*rad)+.10*np.sin(113*ang-33*rad)
-        rgb=col*detail[:,:,None]*(.55+.45*np.sin(np.clip(rad,0,1)*np.pi))[:,:,None]
+        iris_pattern=.72+.18*np.sin(67*ang+19*rad)+.10*np.sin(113*ang-33*rad)
+        rgb=col*iris_pattern[:,:,None]*(.55+.45*np.sin(np.clip(rad,0,1)*np.pi))[:,:,None]
         pupil=np.clip((.32-rad)/.035,0,1);rgb=rgb*(1-pupil[:,:,None])+.006*pupil[:,:,None];rgb*=np.clip((1.04-rad)/.12,.20,1)[:,:,None]
         rgba=np.concatenate([np.clip(rgb,0,1),np.ones((size,size,1))],axis=2).astype(np.float32)
         im=bpy.data.images.new(m.name+'_map',width=size,height=size,alpha=True);im.pixels.foreach_set(rgba.ravel());im.update();im.pack()
@@ -1234,11 +1235,13 @@ def fitted_scalp_hair():
             horizontal=Vector((math.sin(a),-math.cos(a),0))
             origin=Vector((c.x,c.y,q.z));h,_,_,_=skinTree.ray_cast(origin+horizontal*.40,-horizontal,.40)
             if h is not None:
-                clearance=(q-h).dot(horizontal)
-                if clearance<.0025:q+=horizontal*(.0025-clearance)
+                radial_gap=(q-h).dot(horizontal)
+                if radial_gap<.0025:q+=horizontal*(.0025-radial_gap)
         return q
     # Outside-body envelope for hanging hair; hidden back depth is inferred.
-    clothingTree=tree([body]+cloth+plates)
+    # Use body and cloth only for the reusable wig envelope. Armor is
+    # checked separately in the assembled review, not baked into the wig.
+    clothingTree=tree([body]+cloth)
     def keepOutside(q,a):
         hit,normal,_,d=clothingTree.find_nearest(q)
         if hit is not None and d<.075 and (q-hit).dot(normal)<.005:
@@ -1366,7 +1369,13 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'nine-view concept ash blonde shoulder layers','referenceLengthRatio':designMetrics['hairDrop'],'rearDepthInferred':True,'frontBangVertices':bangCount,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
+    # Actual geometry evidence; report armor and garment contacts separately.
+    hair_contact={}
+    for label,oblist in [('body',[body]),('clothing',cloth),('armor',plates)]:
+        if oblist:
+            hair_contact[label]=metrics(np.array(V),tree(oblist))
+    ob['R53_hair_contact_proxy_json']=json.dumps(hair_contact)
+    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'nine-view concept ash blonde shoulder layers','referenceLengthRatio':designMetrics['hairDrop'],'rearDepthInferred':True,'contactByCategory':hair_contact,'frontBangVertices':bangCount,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
 # Render actual new scalp-fitted geometry in all five views, separately from old wig.
@@ -1451,7 +1460,7 @@ try:
     # Work on copies only; transfer vertex groups with Blender's bevel.
     if female:
         for plate in plates:
-            n0=len(plate.data.vertices);originalData=plate.data;backup=originalData.copy()
+            n0=len(plate.data.vertices);originalData=plate.data;backup=originalData.copy();originalCollision=metrics(pts(plate),baseTree)
             try:
                 if plate.data.shape_keys:raise RuntimeError('plate has morphs')
                 bpy.ops.object.select_all(action='DESELECT');plate.select_set(True);bpy.context.view_layer.objects.active=plate
@@ -1482,7 +1491,11 @@ try:
                     for md0 in list(plate.modifiers):
                         if md0.name.startswith('R53 panel curved surface'):plate.modifiers.remove(md0)
                     plate.data=roundedBackup;rounded=False
+                finalCollision=metrics(pts(plate),baseTree)
+                if score(finalCollision)>score(originalCollision)+.025:raise RuntimeError('total armor collision regression')
                 for pol in plate.data.polygons:pol.use_smooth=True
+                for slot in plate.material_slots:
+                    if slot.material:slot.material=slot.material.copy()
                 for mat in plate.data.materials:
                     if not mat or not mat.use_nodes:continue
                     node=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
@@ -1494,7 +1507,7 @@ try:
                         # retaining normal and roughness texture links.
                         for lk in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(lk)
                         node.inputs['Base Color'].default_value=(.52,.56,.62,1)
-                armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled','curvedPanelAccepted':rounded})
+                armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled','curvedPanelAccepted':rounded,'beforeCollision':originalCollision,'afterCollision':finalCollision})
             except Exception as e:
                 for md0 in list(plate.modifiers):
                     if md0.name.startswith(('R53 edge bevel','R53 weld seams','R53 panel refinement','R53 rounded panel')):plate.modifiers.remove(md0)
@@ -1596,6 +1609,45 @@ try:
     if len(ag.get('skins',[]))!=1 or not all(any(n.lower() in a.get('name','').lower() for a in ag.get('animations',[])) for n in clips):raise RuntimeError('assembled rig/clip inventory')
     if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for m in ag['meshes']):raise RuntimeError('assembled morph inventory')
     assemblyReport.update({'sha256':sha(adest),'meshCount':len(assembleParts),'exportInventoryVerified':True,'continuousNeckCandidate':True,'productionApproved':False})
+    # Export the actual current meshes individually, with the same rig
+    # and rest transforms. These are review candidates, not final equipment.
+    partDir=out/'current-modular-parts';partDir.mkdir(exist_ok=True)
+    manifest=[];partFailures=[]
+    def part_class(ob):
+        if ob==assembly:return 'body'
+        if ob==fittedHair:return 'hair'
+        if ob in cloth:return 'clothing'
+        if ob in plates:return 'armor'
+        if ob in eyes.values():return 'eye'
+        if ob in lashes:return 'lash'
+        if ob in brows:return 'brow'
+        if ob in oral:return 'oral'
+        low=ob.name.lower()
+        if 'sword' in low or 'shield' in low:return 'weapon'
+        return 'accessory'
+    def vec_matrix(m):return [[float(v) for v in row] for row in m]
+    rigSpec={'bones':[{'name':b.name,'parent':b.parent.name if b.parent else None,'restMatrix':vec_matrix(b.matrix_local),'head_m':list(b.head_local),'tail_m':list(b.tail_local)} for b in rig.data.bones],'rigWorldMatrix':vec_matrix(rig.matrix_world),'coordinateSystem':'Blender world, metres, Z up; exported GLB uses Y up'}
+    (partDir/'rig-rest.json').write_text(json.dumps(rigSpec,indent=2))
+    import re
+    for idx,ob in enumerate(assembleParts):
+        name=re.sub(r'[^A-Za-z0-9_.-]','_',ob.name)
+        partId=f'{idx:02d}_{name}';p=partDir/(partId+'.glb')
+        try:
+            bpy.ops.object.select_all(action='DESELECT');ob.select_set(True);rig.select_set(True);bpy.context.view_layer.objects.active=ob
+            bpy.ops.export_scene.gltf(**dict(opts,filepath=str(p)))
+            rr=p.read_bytes();gj=json.loads(rr[20:20+int.from_bytes(rr[12:16],'little')])
+            if len(gj.get('meshes',[]))!=1 or len(gj.get('skins',[]))!=1:raise RuntimeError('independent mesh/rig inventory')
+            A=pts(ob);lo=A.min(0);hi=A.max(0)
+            item={'id':partId,'name':ob.name,'category':part_class(ob),'file':p.name,'sha256':sha(p),'vertices':len(A),'faces':len(ob.data.polygons),'bounds_m':[lo.tolist(),hi.tolist()],'dimensions_m':(hi-lo).tolist(),'worldMatrix':vec_matrix(ob.matrix_world),'jointNames':list(g.name for g in ob.vertex_groups),'measurementKind':'actual rest mesh; not concept target','visualApproved':False,'productionApproved':False}
+            manifest.append(item)
+        except Exception as e:
+            partFailures.append({'id':partId,'error':str(e)})
+            if p.exists():p.unlink()
+    (partDir/'manifest.json').write_text(json.dumps({'parts':manifest,'failures':partFailures,'rig':'rig-rest.json','expectedCount':len(assembleParts),'exportedCount':len(manifest),'allExported':not partFailures,'visualApproved':False},indent=2))
+    assemblyReport['currentModularParts']={'manifest':str((partDir/'manifest.json').relative_to(out)),'exported':len(manifest),'expected':len(assembleParts),'failures':partFailures}
+    bpy.ops.object.select_all(action='DESELECT')
+    for ob in assembleParts+[rig]:ob.select_set(True)
+    bpy.context.view_layer.objects.active=assembly
     # Editable scene for manual review; this contains all source study
     # objects and the independent core, not a production-ready asset.
     try:
