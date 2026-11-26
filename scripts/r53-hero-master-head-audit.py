@@ -50,6 +50,9 @@ for i in ids:
     for v in nv['views']:
         with Image.open(a/'nine-view-review'/(v+'.png')) as im:im.verify()
     r['nineViewFit']=nv
+    de=json.loads((a/'detail-face-report.json').read_text())
+    if de['pointCount']<250 or len(de.get('actualEyeOpening',{}))!=2 or len(de.get('actualBrowRoots',{}))!=2:issues.append('detail face evidence incomplete')
+    r['detailFaceFit']=de
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)
 (out/'summary.json').write_text(json.dumps({'headCandidates':rows,'productionApproved':0,'allTechnicalCandidates':all(r['completionGate']['technicalCandidate'] for r in rows)},indent=2))

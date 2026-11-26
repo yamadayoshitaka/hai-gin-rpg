@@ -225,6 +225,25 @@ def sideDepth(k):
         ds.append(sgn*(p[k][0]-p['eye'][0])/h*abs(frontHeight('chin')))
     return float(np.mean(ds))
 designMetrics={'eyeWidth':frontWidth('eye_left_outer','eye_left_inner'),'browGap':float((fp['eye_left'][1]-fp['brow_left_mid'][1])/ipd),'noseWidth':frontWidth('nose_left','nose_right'),'lipWidth':frontWidth('lip_left','lip_right'),'lipHeight':float((fp['lower_lip'][1]-fp['upper_lip'][1])/ipd),'jawWidth':frontWidth('jaw_left','jaw_right'),'cheekWidth':frontWidth('cheek_left','cheek_right'),'noseHeight':frontHeight('nose_tip'),'mouthHeight':frontHeight('mouth'),'chinHeight':frontHeight('chin'),'noseProjection':sideDepth('nose_tip'),'mouthProjection':sideDepth('mouth'),'chinProjection':sideDepth('chin'),'hairDrop':float((fp['hair_right_end'][1]-fp['chin'][1])/ipd),'hairWidth':frontWidth('hair_left','hair_right')}
+detail=json.loads(Path('data/r53-female-detail-landmarks.json').read_text())
+df={k:np.asarray(v,float) for k,v in detail['views']['front'].items()}
+di=float(np.linalg.norm(df['irisR'][0]-df['irisL'][0]))
+def span(a):return float(np.ptp(a[:,0])/di)
+def angle(a,b):return float(np.degrees(np.arctan2(b[1]-a[1],b[0]-a[0])))
+def internal(a,b,c):
+    u=a-b;v=c-b
+    return float(np.degrees(np.arccos(np.clip(np.dot(u,v)/(np.linalg.norm(u)*np.linalg.norm(v)),-1,1))))
+dm={}
+for label in ('L','R'):
+    U0=df['eye'+label+'Upper'];L0=df['eye'+label+'Lower'];bu=df['brow'+label+'Top'];bl=df['brow'+label+'Bottom']
+    dm[label]={'eyeWidth':span(U0),'eyeHeight':float((L0[:,1].max()-U0[:,1].min())/di),'eyeTiltDeg':angle(U0[0],U0[-1]),'browWidth':span(bu),'browGap':float((U0[:,1].min()-bl[:,1].mean())/di),'browThickness':float(np.mean(bl[:,1]-bu[:,1])/di),'browCurve':((bu+bl)*.5).tolist(),'upperLashLength':float(np.median(np.linalg.norm(df['lash'+label+'Tips']-df['lash'+label+'Roots'],axis=1))/di),'lowerLashLength':float(np.median(np.linalg.norm(df['lowerLash'+label+'Tips']-df['lowerLash'+label+'Roots'],axis=1))/di),'underEyeWidth':span(df['underEye'+label]),'underEyeDrop':float((df['underEyeOuter'+label][:,1].mean()-df['iris'+label][0,1])/di)}
+dm['mouthWidth']=span(df['lipSeam']);dm['upperLipThickness']=float((df['lipSeam'][3,1]-df['lipTop'][3,1])/di);dm['lowerLipThickness']=float((df['lipBottom'][3,1]-df['lipSeam'][3,1])/di)
+dm['noseWidth']=span(df['noseAlar']);dm['philtrumLength']=float((df['philtrum'][-1,1]-df['philtrum'][0,1])/di)
+dm['profile']={}
+for v,sgn in (('left',-1),('right',1)):
+    q={k:np.asarray(a,float) for k,a in detail['views'][v].items()};norm=abs(q['chin'][0,1]-q['eye'][0,1])
+    dm['profile'][v]={'noseBridgeDeg':angle(q['noseRoot'][0],q['noseTip'][0]),'noseLipRelative':float(sgn*(q['upperLip'][0,0]-q['noseTip'][0,0])/norm),'noseChinRelative':float(sgn*(q['chin'][0,0]-q['noseTip'][0,0])/norm),'lowerLipRelative':float(sgn*(q['lowerLip'][0,0]-q['upperLip'][0,0])/norm),'jawContourAngleDeg':internal(q['jaw'][0],q['jaw'][4],q['jaw'][-1]),'jawChinToNeckSlopeDeg':angle(q['jaw'][0],q['neckJoin'][0]),'cheekShadingLandmarks':q['cheekShading'].tolist()}
+dreport={'pointCount':detail['pointCount'],'metrics':dm,'colorSamples':detail['colorSamples'],'sourceSHA256':detail['sourceSHA256'],'uncertainty':detail['uncertainty'],'applied':[],'visualApproved':False}
 nineReport={'sourceSHA256':nine['sha256'],'pointCount':nine['pointsCount'],'views':list(nv),'metrics':designMetrics,'synthetic':True,'calibratedOrthographic':False,'fitViews':['front','left','right'],'reviewOnlyViews':['rear','top','bottom','front_left_45','front_right_45','rear_left_45'],'fullBodyReference':False}
 # Calibrate a provisional weak-perspective camera from actual eye centers
 # and visible midline landmarks. Search yaw/pitch; the image is oblique,
@@ -278,6 +297,30 @@ if female:
     k0=float(np.clip(designMetrics['jawWidth']/max(measured,.01)-1,-.16,.12))
     fitD[:,0]+=k0*(Q0[:,0]-eye[0])*jaw
     Dprofile+=fitD
+    # Local nose alar/lip breadth and relative sagittal shape; preserve
+    # orbital centers, seam and mouth topology. Measure selected vertices,
+    # not arbitrary target counts.
+    local0=Q0+Dprofile
+    nmask=(np.abs(X)<.48)&(Z<-.48)&(Z>-.92)&(Y<-.10)
+    lmask=(np.abs(X)<.62)&(Z<- .91)&(Z>-1.32)&(Y<-.10)
+    def widthFactor(mask,target):
+        if mask.sum()<5:return 0.
+        return float(np.clip(target/max(float(np.ptp(local0[mask,0])/gap),.01)-1,-.12,.12))
+    nf=widthFactor(nmask,dm['noseWidth']);lf=widthFactor(lmask,dm['mouthWidth'])
+    fineD=np.zeros_like(Q0)
+    fineD[:,0]=(Q0[:,0]-eye[0])*(nf*ga(Z,-.73,.19)*ga(X,0,.40)+lf*ga(Z,-1.12,.16)*ga(X,0,.53))*front
+    ph=np.mean([v['noseLipRelative'] for v in dm['profile'].values()]);ch=np.mean([v['noseChinRelative'] for v in dm['profile'].values()])
+    height0=abs(designMetrics['chinHeight'])*gap
+    for idx,rel,spread in ((mouthI,ph,.24),(chinI,ch,.32)):
+        targetY=local0[noseI,1]-rel*height0
+        fineD[:,1]+=np.clip(targetY-local0[idx,1],-gap*.055,gap*.055)*np.exp(-(np.linalg.norm((local0-local0[idx])/gap,axis=1)/spread)**2)*front
+    # Cheek shading points are not depth; measure actual cheek surface
+    # and apply only a bounded smooth contour transition, not a fabricated target.
+    cheekIds=np.flatnonzero((np.abs(X)>.55)&(np.abs(X)<1.0)&(Z<-.28)&(Z>-.75)&(Y<-.1))
+    dreport['cheekDepthBeforeRange_m']=[float(local0[cheekIds,1].min()),float(local0[cheekIds,1].max())] if len(cheekIds) else None
+    fineD*=((1-orbital)**3*neckLock)[:,None];Dprofile+=fineD
+    dreport['applied']=['nose breadth proxy','lip breadth proxy','relative nose/lip/chin sagittal offsets']
+    dreport['shapeCorrection']={'noseWidthFactor':nf,'lipWidthFactor':lf,'maxDisplacement_m':float(np.linalg.norm(fineD,axis=1).max())}
     nineReport.update({'preFitMidlineRms_m':float(np.sqrt(np.mean(np.sum((baseAnchors-targets)**2,axis=1)))),'targetMidline_m':targets.tolist(),'appliedJawWidthFactor':k0,'appliedFeatures':['nose','mouth','chin','jaw'],'sourceJawWidthRatio':measured})
     referenceReport.update({'cameraYaw_rad':yaw0,'cameraPitch_rad':pitch0,'preFitRms_px':float(math.sqrt(err)),'fittedFeatures':['nose_tip','lip_center','chin'],'maxPortraitDisplacement_m':float(np.linalg.norm(fitD,axis=1).max()),'landmarkIndices':[noseI,mouthI,chinI]})
 # Guard against inverted or collapsed faces against the unchanged source.
@@ -296,6 +339,8 @@ if female:
     referenceReport['acceptedProfileScale']=profile_factor
     nineReport['postFitMidlineRms_m']=float(np.sqrt(np.mean(np.sum((Q[[noseI,mouthI,chinI]]-targets)**2,axis=1))))
     nineReport['profileScale']=profile_factor
+    dreport['profileScale']=profile_factor
+    dreport['cheekDepthAfterRange_m']=[float(Q[cheekIds,1].min()),float(Q[cheekIds,1].max())] if len(cheekIds) else None
 (out/'nine-view-fit-report.json').write_text(json.dumps(nineReport,indent=2))
 (out/'portrait-landmark-report.json').write_text(json.dumps(referenceReport,indent=2))
 profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True,'regions':['jaw','cheek','chin','nasalBridge','alar','philtrum','lip'],'neckLock':True,'femaleReferenceDepthFit':bool(female)}
@@ -364,6 +409,14 @@ if female:
     C=C*(1-.45*lipMask[:,:,None])+np.array([.53,.245,.22])*.45*lipMask[:,:,None]
     socket=field(.403,ev+.005,.042,.023)+field(.597,ev+.005,.042,.023)
     C-=socket[:,:,None]*np.array([.027,.039,.034])
+    # Sampled RGB difference includes the original lighting. Apply a small
+    # bounded fraction as albedo shading; do not mistake it for skin depth.
+    cs=detail['colorSamples'];diff=np.mean([np.array(cs[k+'_cheek']['rgb'])-np.array(cs[k+'_under_eye']['rgb']) for k in ('left','right')],axis=0)/255
+    for side0,u0 in (('L',.403),('R',.597)):
+        v0=ev-dm[side0]['underEyeDrop']*gap/height
+        mask=field(u0,v0,float(np.clip(dm[side0]['underEyeWidth']*.09,.025,.045)),.018)
+        C-=mask[:,:,None]*np.clip(diff*.24,0,.055)
+    dreport['applied'].append('bounded sampled under-eye colour gradient')
 im=rgba_image(ident+'_SkinAlbedo',C)
 texlink(skin,bs,im,uv.name,'Base Color')
 rough=np.clip(.54+.035*noise+.03*field(.5,mv,.06,.045)-.06*field(.5,ev-.03,.055,.16),.40,.70)
@@ -648,6 +701,9 @@ for side in ('L','R'):
         if i0 is not None and (s0 is None or di<ds-.00003) and (h0 is None or di<dh-.00003):visibleIris+=1
     eyeFit[side]['visibleIrisSamples']=visibleIris
     eyeFit[side]['visibleEyeSamples']=len(G)
+    if len(G):
+        dside='L' if np.mean(G[:,0])<eye[0] else 'R'
+        dreport.setdefault('actualEyeOpening',{})[dside]={'widthRatio':float(np.ptp(G[:,0])/gap),'heightRatio':float(np.ptp(G[:,1])/gap),'targetWidth':dm[dside]['eyeWidth'],'targetHeight':dm[dside]['eyeHeight']}
     if visibleIris<5:raise RuntimeError('iris remains occluded '+side)
     if len(G)<8:continue
     # Ray-derived upper/lower margins: find nearby actual skin triangles.
@@ -666,8 +722,13 @@ for side in ('L','R'):
             a,i=hit;ids=ST[i];b=bary(np.array(a),Q[ids]);wr0={}
             for j,t in zip(ids,b):
                 for n,v in wr[j].items():wr0[n]=wr0.get(n,0)+float(t)*v
-            length=(.0045 if ident=='commander-female' else .0030) if upper else .0018
-            origin=a+Vector((0,-.00015,0));direction=Vector((.10*np.sign(x-eye[0]),-.70,.70*sgn)).normalized()
+            dside='L' if x<eye[0] else 'R'
+            length=float(np.clip(dm[dside]['upperLashLength' if upper else 'lowerLashLength']*gap*1.35,.0012,.0058)) if female else (.0030 if upper else .0018)
+            # Vary sweep toward outer corner; 2D lengths are projected,
+            # so out-of-plane curvature is a design estimate.
+            frac=min(1.,abs(x-eye[0])/gap)
+            sweep=.15+.35*frac
+            origin=a+Vector((0,-.00015,0));direction=Vector((sweep*np.sign(x-eye[0]),-.70,.70*sgn)).normalized()
             u=direction.cross(Vector((1,0,0))).normalized();v=direction.cross(u).normalized();at=len(V)
             for t,rad in ((0,.00016),(.35,.00013),(.70,.000075),(1,.000015)):
                 c=origin+direction*length*t+Vector((0,-.0003*t*t,.0006*sgn*t*t))
@@ -695,9 +756,16 @@ for side in ('L','R'):
     V=[];F=[];RW=[];RD={n:[] for n in names};roots=[]
     for j in range(52):
         t=j/51
-        x=cx+sgn*ew*(-.51+1.10*t)
-        z=float(hi[2])+ez*((float(np.clip(designMetrics['browGap']*1.65,.30,.46)) if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
-        thick=(.0020 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
+        if female:
+            dside='L' if cx<eye[0] else 'R';curve=np.array(dm[dside]['browCurve'])
+            xp=curve[:,0];yp=curve[:,1];u0=t if sgn>0 else 1-t
+            k0=min(len(curve)-2,int(u0*(len(curve)-1)));f0=u0*(len(curve)-1)-k0
+            q0=(1-f0)*curve[k0]+f0*curve[k0+1];origin=df['iris'+dside][0]
+            x=cx+(q0[0]-origin[0])*gap/di
+            z=dstEye[side][2]-(q0[1]-origin[1])*gap/di
+            thick=float(np.clip(dm[dside]['browThickness']*gap*.5,.0008,.0022))*(.45+.55*math.sin(math.pi*t)**.6)
+        else:
+            x=cx+sgn*ew*(-.51+1.10*t);z=float(hi[2])+ez*(.13+.09*math.sin(math.pi*t)-.10*t);thick=.002*(.37+.63*math.sin(math.pi*t)**.6)
         for row in (-1,-.5,0,.5,1):
             zz=z+row*thick
             a,i,_=cast(skinTree,x,zz)
@@ -738,9 +806,13 @@ for side in ('L','R'):
     bind(ob,RW);ob.shape_key_add(name='Basis')
     for n in names:
         k=ob.shape_key_add(name=n);k.data.foreach_set('co',(np.array(V)+np.array(RD[n])).astype(np.float32).ravel())
+    dreport.setdefault('actualBrowRoots',{})[side]={'count':len(roots),'bounds_m':[np.min(roots,axis=0).tolist(),np.max(roots,axis=0).tolist()]}
     brows.append(ob);browReports.append({'side':side,'roots':len(roots),'vertices':len(V),'morphs':len(names),'visualApproved':False})
 
 
+dreport['applied']+=['projected upper/lower lash length','brow centerline and thickness']
+dreport['unresolved']=['exact eyelid curvature fit','individual lash 3D curl','cheek depth target','mandibular angle geometry fit','true lip border texture tracing']
+(out/'detail-face-report.json').write_text(json.dumps(dreport,indent=2))
 # Independent dental and tongue candidates. Fit behind the actual lips;
 # preserve the original skin topology and record ray-based visibility
 # rather than declaring that the mouth is production-ready.

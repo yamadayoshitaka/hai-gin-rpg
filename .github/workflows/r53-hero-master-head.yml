@@ -4,6 +4,7 @@ on:
     branches: [r53-fixed-face-review]
     paths:
       - 'data/r53-female-nine-view-design.json'
+      - 'data/r53-female-detail-landmarks.json'
       - 'scripts/r53-hero-master-head.py'
       - 'scripts/r53-hero-master-head-audit.py'
       - '.github/workflows/r53-hero-master-head.yml'
