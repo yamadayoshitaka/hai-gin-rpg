@@ -652,13 +652,20 @@ ocularPatchReport={}
 for label,c in eyeCent.items():
     sp=next(q for q in spec if q.get('lab')==label)
     up=np.asarray(sp['upper']);low=np.asarray(sp['lower'])
-    xmin=max(up[:,0].min(),low[:,0].min());xmax=min(up[:,0].max(),low[:,0].max())
-    def bounds(x):
-        a=smooth_interp(x,up[:,0],up[:,1]);b=smooth_interp(x,low[:,0],low[:,1])
-        return min(a,b),max(a,b)
-    # Use the actual final aperture ring for depth at the boundary,
-    # while maintaining the original eye ellipsoid curvature inside.
+    # Use the generated inner eyelid polygon, not the larger reference
+    # outer contour: the latter causes white slivers at oblique angles.
     rim=np.asarray([V[k] for k in actualRings['eye'+label]],float)
+    poly=rim[:,[0,2]];qpoly=np.roll(poly,-1,axis=0)
+    xmin=float(poly[:,0].min());xmax=float(poly[:,0].max())
+    def bounds(x):
+        x=float(np.clip(x,xmin+1e-8,xmax-1e-8))
+        x0,x1=poly[:,0],qpoly[:,0]
+        k=((x0<=x)&(x<x1))|((x1<=x)&(x<x0))
+        if not np.any(k):
+            z0=float(poly[np.argmin(abs(x0-x)),1]);return z0,z0
+        t=(x-x0[k])/(x1[k]-x0[k])
+        zs=poly[k,1]+t*(qpoly[k,1]-poly[k,1])
+        return float(zs.min()),float(zs.max())
     def surface(x,z):
         g=globe_surface(label,x,z)
         if g is None:g=c[1]-.025
@@ -676,29 +683,40 @@ for label,c in eyeCent.items():
     eyeObj=object_mesh('R54_EyeballVisible_'+label,ev,ef,[sclera])
     # Iris disk clipped to the same actual opening. No part of the
     # independent iris may project beyond the measured lid curves.
-    r=float(np.ptp(px(f['iris'+label])[:,0])/2)
-    iv=[(c[0],surface(c[0],c[2])-.003,c[2])];iff=[];imi=[];n=96
+    measuredIris=px(f['iris'+label])
+    r=float(np.ptp(measuredIris[:,0])/2)
+    rz=float(np.ptp(measuredIris[:,1])/2)
+    icx,icz=map(float,measuredIris[0])
+    # Visible projection is measured; pupil diameter is a design estimate.
+    pupilRatio=.34
+    iv=[(icx,surface(icx,icz)-.003,icz)];iff=[];imi=[];n=128
     caps=[]
     for k in range(n):
         a=2*math.pi*k/n;ca=math.cos(a);sa=math.sin(a)
         allowed=0.
-        for rr in np.linspace(0,r,161):
-            x=c[0]+rr*ca;z=c[2]+rr*sa
-            if not xmin+.0008<=x<=xmax-.0008:break
+        for rho in np.linspace(0,1,201):
+            x=icx+r*rho*ca;z=icz+rz*rho*sa
+            if not xmin+.0005<=x<=xmax-.0005:break
             a0,b0=bounds(x)
-            if not a0+.0008<=z<=b0-.0008:break
-            allowed=rr
+            if not a0+.0005<=z<=b0-.0005:break
+            allowed=rho
         caps.append(allowed)
-    for j in range(1,17):
+    # Preserve pupil proportions independently of iris clipping. Only
+    # the outer annulus adapts to the actual lid boundary.
+    nr=24;npupil=8
+    for j in range(1,nr+1):
         for k in range(n):
-            a=2*math.pi*k/n;rr=min(r*j/16,caps[k]*j/16)
-            x=c[0]+rr*math.cos(a);z=c[2]+rr*math.sin(a)
+            a=2*math.pi*k/n
+            cap=caps[k];pr=min(pupilRatio,cap*.85)
+            rho=pr*j/npupil if j<=npupil else pr+(cap-pr)*(j-npupil)/(nr-npupil)
+            x=icx+r*rho*math.cos(a);z=icz+rz*rho*math.sin(a)
             iv.append((x,surface(x,z)-.003,z))
     for k in range(n):iff.append((0,1+k,1+(k+1)%n));imi.append(0)
-    for j in range(15):
+    for j in range(nr-1):
         for k in range(n):
             a=1+j*n+k;b=1+j*n+(k+1)%n;iff.append((a,b,b+n,a+n))
-            imi.append(0 if j<5 else (6 if j>=13 else 1+(k*13+j*3)%5))
+            # A narrow limbal ring, radial fiber variation, and distinct pupil.
+            imi.append(0 if j<npupil-1 else (6 if j>=nr-3 and min(caps[k],caps[(k+1)%n])>.96 else 1+(k*13+j*3)%5))
     irisObj=object_mesh('R54_Iris_'+label,iv,iff,[pupil]+irisM,imi)
     # Check actual mesh vertex projection against opening.
     def outside(obj):
@@ -709,7 +727,7 @@ for label,c in eyeCent.items():
             err=max(xmin-x,x-xmax,lo0-z,z-hi0,0.)
             bad+=int(err>.001);maxerr=max(maxerr,err)
         return {'outsideVertices':bad,'maxOutsideDesignMm':maxerr*UNIT*1000}
-    ocularPatchReport[label]={'sclera':outside(eyeObj),'iris':outside(irisObj),'globeCenterIpd':c.tolist(),'globeRadiusIpd':eyeR.tolist(),'irisRadiusIpd':r,'method':'visible aperture patch and clipped iris; full eyeball rig required for dynamic use'}
+    ocularPatchReport[label]={'sclera':outside(eyeObj),'iris':outside(irisObj),'globeCenterIpd':c.tolist(),'globeRadiusIpd':eyeR.tolist(),'irisRadiusIpd':r,'irisVerticalRadiusIpd':rz,'irisCenterXZIpd':[icx,icz],'pupilRatioDesignEstimate':pupilRatio,'clippedDirectionCount':sum(t<.99 for t in caps),'method':'actual inner eyelid polygon, measured elliptical iris and independent pupil; full eyeball rig required for dynamic use'}
 (out/'ocular-patch-audit.json').write_text(json.dumps(ocularPatchReport,indent=2,allow_nan=False))
 def tube(name,points,r0,material):
     V0=[];F0=[];n=6
@@ -985,9 +1003,14 @@ for label,sgn in (('left',-1),('right',1)):
     focus=Vector(center0);cam.ortho_scale=.095
     render('ear_'+label+'_detail',(sgn,0,0))
     render('ear_'+label+'_threequarter',(sgn,-.48,.06))
+# Actual close-up JPGs of the new ocular geometry.
+for label,c0 in eyeCent.items():
+    focus=Vector((c0[0]*UNIT,-.025,c0[2]*UNIT));cam.ortho_scale=.055
+    render('eye_'+label+'_detail',(0,-1,0))
+    render('eye_'+label+'_oblique',(.46 if label=='R' else -.46,-1,.05))
 focus=oldFocus;cam.ortho_scale=oldScale
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v15','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'revisionNotes':['four independent vermilion relief rings using measured projected thickness','upper lip held, lower lip follows candidate jaw','measured shape-key separation audit','retains v14 craniofacial geometry'],'next':'visual comparison and dimension regression against v14, then oral cavity completion, blinking and neck interface; no automatic adoption'}
+report={'id':'R54-new-head-v16','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'revisionNotes':['sclera clipped to generated inner eyelid rather than outer reference contour','measured horizontal and vertical iris radii','pupil ring independent of outer iris clipping','four actual ocular detail JPGs','retains v15 mouth geometry and audit'],'next':'visual comparison and dimension regression against v15, then nose refinement, oral cavity completion, blinking and neck interface; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
