@@ -249,8 +249,13 @@ alarCurve=px(f['noseAlar']);noseCurve=px(f['nose']);philCurve=px(f['philtrum'])
 alarHalf=float(np.ptp(alarCurve[:,0])*.5);noseMid=float(np.mean(noseCurve[:,0]))
 alarZ=float(np.mean([alarCurve[0,1],alarCurve[-1,1]]))
 nostrilZ=float(np.mean(alarCurve[[2,6],1]));philMid=float(np.mean(philCurve[:,0]));philZ=float(np.mean(philCurve[:,1]))
+# Observed bilateral alar outline, inferred nostril depth and orientation.
+alarAnchors=[alarCurve[1:4],alarCurve[5:8]]
+alarCenters=[np.mean(p,axis=0) for p in alarAnchors]
+nostrilCenters=[alarCurve[2]*.65+alarCurve[3]*.35,alarCurve[6]*.65+alarCurve[5]*.35]
+philTop=float(philCurve[:,1].max());philBottom=float(philCurve[:,1].min())
 @lru_cache(maxsize=65536)
-def local_feature_width(z):return smooth_interp(z,[-1.65,-1.35,-1.10,-.85,-.68,-.45,-.25,.0,.42],[.35,.35,.32,.27,.15,.15,.14,.16,.30])
+def local_feature_width(z):return smooth_interp(z,[-1.65,-1.35,-1.10,-.85,-.68,-.57,-.45,-.25,.0,.42],[.35,.35,.32,.27,.13,.145,.112,.105,.125,.30])
 def surf(u,z,front=True):
     w=fitwidth(z,-1 if u<0 else 1);x=u*w
     q=max(0.,1-u*u)**.50
@@ -266,13 +271,24 @@ def surf(u,z,front=True):
         alar=alarHalf
         # Projected alar and philtrum anchors measured; relief is inferred.
         nx=x-noseMid;ax=abs(nx)
-        y-=.078*math.exp(-((ax-alar*.76)/(alar*.32))**2-((z-alarZ)/.115)**2)
-        y+=.044*math.exp(-((ax-alar*.54)/(alar*.19))**2-((z-nostrilZ)/.045)**2)
-        y-=.033*math.exp(-(nx/.088)**2-((z-(nostrilZ+.045))/.075)**2)
-        y-=.019*math.exp(-(nx/.032)**2-((z-nostrilZ)/.066)**2)
-        ph=x-philMid
-        y+=.014*math.exp(-(ph/.043)**2-((z-philZ)/.085)**2)
-        y-=.014*math.exp(-((abs(ph)-.053)/.035)**2-((z-philZ)/.096)**2)
+        # Each wing follows its own observed x/z anchor. Rounded relief
+        # is a geometric estimate, not a measured cavity or painted hole.
+        for ac,nc in zip(alarCenters,nostrilCenters):
+            y-=.052*math.exp(-((x-ac[0])/(alar*.36))**2-((z-ac[1]-.025)/.085)**2)
+            # Infer a downward-facing recess; keep its frontal height small.
+            dx=x-nc[0];dz=z-nc[1]+.012
+            y+=.048*math.exp(-(dx/(alar*.23))**2-((dz+.12*abs(dx))/.032)**2)
+        # The measured profile already supplies tip projection. Avoid
+        # adding a second excessive tip on top of that silhouette.
+        y-=.012*math.exp(-(nx/.072)**2-((z-(nostrilZ+.066))/.069)**2)
+        y-=.013*math.exp(-(nx/.038)**2-((z-nostrilZ)/.063)**2)
+        # The philtrum tapers into the measured Cupid's bow and nose base.
+        t=float(np.clip((philTop-z)/max(.001,philTop-philBottom),0.,1.))
+        paxis=float(smooth_interp(z,philCurve[:,1],philCurve[:,0]))
+        ph=x-paxis;fade=math.sin(math.pi*t)**1.4
+        ridgeWidth=.033+.024*t
+        y+=.017*fade*math.exp(-(ph/(.029+.010*t))**2)
+        y-=.011*fade*math.exp(-((abs(ph)-ridgeWidth)/.022)**2)
         # Broad cheekbone relief, smooth lower orbital transition.
         y-=.032*math.exp(-((abs(x)-.54)/.38)**2-((z+.39)/.48)**2)
         y+=.006*math.exp(-((abs(x)-.70)/.25)**2-((z+.81)/.38)**2)
@@ -625,6 +641,10 @@ dimReport['originalCharacterTargetRetained']='data/r54-dimensional-constraints.j
 dimReport['curveRegularization']={'widthSigmaIpd':.105,'anteriorSigmaIpd':.13,'posteriorSigmaIpd':.15,'widthMaxChangeDesignMm':float(np.max(np.abs(widthTable[1]-widthTable[2]))*UNIT*1000),'anteriorMaxChangeDesignMm':float(np.max(np.abs(antTable[1]-antTable[2]))*UNIT*1000),'posteriorMaxChangeDesignMm':float(np.max(np.abs(postTable[1]-postTable[2]))*UNIT*1000),'measuredChinHalfWidthIpd':chinHalf,'eyeGlobeRadiusIpd':eyeR.tolist(),'noseAnchorsIpd':{'axis':noseMid,'alarZ':alarZ,'nostrilZ':nostrilZ,'philtrumZ':philZ}}
 dimReport['allMeasuredWithinTolerance']=dimReport['allMeasuredWithinTolerance'] and all(x['withinTolerance'] and not x['missing'] for x in cranial.values())
 (out/'dimension-audit.json').write_text(json.dumps(dimReport,indent=2,allow_nan=False))
+# Measure the final mesh profile, not just the shape parameters.
+noseRows=[q for q in profile['left']['points'] if q['landmark'] in ('noseRoot','noseTip','noseBase')]
+noseAudit={'sideProfile':noseRows,'profileRmsDesignMm':stats([q['errorIpd'] for q in noseRows])['rmsDesignMm'],'alarTargetXZIpd':alarCurve.tolist(),'philtrumTargetXZIpd':philCurve.tolist(),'nostrilCenterXZIpd':[p.tolist() for p in nostrilCenters],'nostrilDepthAndOrientation':'inferred surface recess; not a true opening','visualApproved':False}
+(out/'nose-audit.json').write_text(json.dumps(noseAudit,indent=2,allow_nan=False))
 # Independent initial jaw shape key: hinge is an estimated external design
 # anchor. Not certified anatomical motion, no inherited morph transfer.
 head.shape_key_add(name='Basis');jaw=head.shape_key_add(name='jawOpen_candidate')
@@ -727,7 +747,7 @@ for label,c in eyeCent.items():
             err=max(xmin-x,x-xmax,lo0-z,z-hi0,0.)
             bad+=int(err>.001);maxerr=max(maxerr,err)
         return {'outsideVertices':bad,'maxOutsideDesignMm':maxerr*UNIT*1000}
-    ocularPatchReport[label]={'sclera':outside(eyeObj),'iris':outside(irisObj),'globeCenterIpd':c.tolist(),'globeRadiusIpd':eyeR.tolist(),'irisRadiusIpd':r,'irisVerticalRadiusIpd':rz,'irisCenterXZIpd':[icx,icz],'pupilRatioDesignEstimate':pupilRatio,'clippedDirectionCount':sum(t<.99 for t in caps),'method':'actual inner eyelid polygon, measured elliptical iris and independent pupil; full eyeball rig required for dynamic use'}
+    ocularPatchReport[label]={'sclera':outside(eyeObj),'iris':outside(irisObj),'globeCenterIpd':c.tolist(),'globeRadiusIpd':eyeR.tolist(),'irisRadiusIpd':r,'irisVerticalRadiusIpd':rz,'irisCenterXZIpd':[icx,icz],'pupilRatioDesignEstimate':pupilRatio,'clippedDirectionCount':int(sum(bool(t<.99) for t in caps)),'method':'actual inner eyelid polygon, measured elliptical iris and independent pupil; full eyeball rig required for dynamic use'}
 (out/'ocular-patch-audit.json').write_text(json.dumps(ocularPatchReport,indent=2,allow_nan=False))
 def tube(name,points,r0,material):
     V0=[];F0=[];n=6
@@ -1008,9 +1028,11 @@ for label,c0 in eyeCent.items():
     focus=Vector((c0[0]*UNIT,-.025,c0[2]*UNIT));cam.ortho_scale=.055
     render('eye_'+label+'_detail',(0,-1,0))
     render('eye_'+label+'_oblique',(.46 if label=='R' else -.46,-1,.05))
+focus=Vector((noseMid*UNIT,-.028,-.48*UNIT));cam.ortho_scale=.075
+for tag,axis in [('nose_front_detail',(0,-1,0)),('nose_profile_detail',(1,0,0)),('nose_oblique_detail',(.65,-1,-.12))]:render(tag,axis)
 focus=oldFocus;cam.ortho_scale=oldScale
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v16','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'revisionNotes':['sclera clipped to generated inner eyelid rather than outer reference contour','measured horizontal and vertical iris radii','pupil ring independent of outer iris clipping','four actual ocular detail JPGs','retains v15 mouth geometry and audit'],'next':'visual comparison and dimension regression against v15, then nose refinement, oral cavity completion, blinking and neck interface; no automatic adoption'}
+report={'id':'R54-new-head-v17','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','revisionNotes':['fix NumPy integer JSON serialization from v16','narrower nasal bridge using observed profile','bilateral observed alar anchors and inferred recesses','philtrum follows measured centerline and endpoints','three actual nose detail JPGs','retains v16 ocular geometry and v15 mouth geometry'],'next':'visual comparison and dimension regression against v15, then oral cavity completion, blinking and neck interface; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
