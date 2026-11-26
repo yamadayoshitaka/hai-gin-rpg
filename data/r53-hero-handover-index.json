@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v9",
+    "id": "R54-new-head-v10",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "v9 source committed; generation and review pending",
+    "status": "v10 source committed; actual generation and visual review pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -99,29 +99,31 @@
       "actual visual fit unverified"
     ],
     "previous": {
-      "run": 45831913614,
-      "artifact": 15123480241,
-      "sourceCommit": "6a1d53262be6eab1a45eef28820ff7eeb07d9c79",
+      "run": 45834426403,
+      "artifact": 15123358258,
+      "sourceCommit": "1b954ad345dd474d1e248799fd3d03142ae09757",
       "visualApproved": false,
       "dimensionsRmsDesignMm": {
-        "leftOutline": 3.08570826119496,
-        "rightOutline": 3.433398556699021,
-        "leftProfile": 1.4821935588610289,
-        "rightProfile": 0.8755600451775971,
-        "foreheadWidth": 6.419117679207682
+        "leftOutline": 2.996,
+        "rightOutline": 3.451,
+        "leftProfile": 1.491,
+        "rightProfile": 0.88,
+        "foreheadWidth": 1.246,
+        "posteriorDepth": 0.044
       },
       "issues": [
-        "horizontal cranial bands",
-        "orbital bulge",
-        "chin tip",
-        "wide posterior neck",
-        "ear and neck seams not welded"
+        "square cranium and pointed crown",
+        "original supplemental manual trace overestimated upper skull width",
+        "lashes/brows partially buried",
+        "mask-like face and chin cap",
+        "neck overlap not welded"
       ]
     },
-    "next": "review actual scalp continuity and orbital surface, forehead station error, ear and neck shape; no auto adoption",
+    "next": "compare v10 with original bald reference and v9; corrected pixel silhouette audit; verify actual eye/lash surface visibility and chin/neck shape; no production deployment",
     "dimensionalContract": "data/r54-dimensional-constraints.json",
     "earDesign": "data/r54-ear-design.json",
     "neckDesign": "data/r54-neck-design.json",
-    "supplementalScaffold": "data/r54-bald-reference-scaffold.json"
+    "supplementalScaffold": "data/r54-bald-reference-scaffold.json",
+    "pixelSilhouette": "data/r54-bald-pixel-silhouette.json"
   }
 }

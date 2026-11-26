@@ -866,5 +866,10 @@
     "apexZIpd": 1.88,
     "reason": "cropped head top; visible width at 1.427 must be preserved",
     "status": "unverified design estimate"
+  },
+  "supersededCranialTrace": {
+    "status": "superseded for forehead and posterior cranial outline; original retained",
+    "replacement": "data/r54-bald-pixel-silhouette.json",
+    "reason": "direct pixel extraction revealed manual crown width overestimate"
   }
 }
