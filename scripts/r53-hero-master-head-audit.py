@@ -83,6 +83,9 @@ for i in ids:
     if not de.get('materialFit',{}).get('lipTopUV'):issues.append('reference material mapping missing')
     for view in ('face_left','face_right','face_threequarter'):
         with Image.open(a/'face-detail-review'/(view+'.png')) as im:im.verify()
+    foundation=de.get('craniofacialFoundationFit',{})
+    if not foundation.get('applied'):issues.append('craniofacial foundation fit not improved')
+    elif foundation.get('afterRmsMm',100)>4:issues.append('craniofacial foundation still outside provisional 4mm width tolerance')
     r['detailFaceFit']=de
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)

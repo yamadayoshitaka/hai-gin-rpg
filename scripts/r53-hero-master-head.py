@@ -455,7 +455,99 @@ def fit_lower_outline(A):
          'unresolved':['true cheek depth absent from synthetic image','skeletal mandibular angle not determined by skin trace','posterior jaw and neck shape require independent reference'],
          'visualApproved':False}
     return best,rep
+# Rebuild the broad craniofacial envelope BEFORE localized feature fitting.
+# This is an external facial scaffold, not a measured internal skull.
+# Avoid fitting the neck silhouette as if it were the mandible.
+def fit_face_foundation(A):
+    pairs=np.unique(np.sort(np.concatenate((ST[:,[0,1]],ST[:,[1,2]],ST[:,[2,0]])),axis=1),axis=0)
+    ix,jx=pairs.T
+    oldEdge=np.linalg.norm(A[ix]-A[jx],axis=1)
+    validEdge=oldEdge>1e-6
+    c2=(df['irisL'][0]+df['irisR'][0])*.5
+    L=np.vstack((df['cheekL'],df['jawL']));R=np.vstack((df['cheekR'],df['jawR']))
+    # Anatomical stations use the front trace and projected jaw only.
+    # Lowest tip and neck join are intentionally separate constraints.
+    rowPx=np.linspace(228.,316.,16)
+    rowZ=eye[2]-(rowPx-c2[1])*gap/detailIPD
+    targetWidth=(np.interp(rowPx,R[:,1],R[:,0])-np.interp(rowPx,L[:,1],L[:,0]))*gap/detailIPD
+    # Approximate anterior/posterior partition using bilateral jaw traces.
+    # No hidden skull, ear canal or true mandibular bone is inferred.
+    side=[]
+    for view,sgn0 in (('left',1.),('right',-1.)):
+        d=detail['views'][view];p=np.asarray(d['jaw'],float);ep=np.asarray(d['eye'][0],float)
+        sc=abs(float(np.mean(df['chin'][:,1])-c2[1]))*gap/detailIPD/max(abs(p[0,1]-ep[1]),1.)
+        side.append({'view':view,'jawCurveRelativeEye_m':np.column_stack([(p[:,0]-ep[0])*sgn0*sc,-(p[:,1]-ep[1])*sc]).tolist()})
+    # Quantile of the front-most half of the section is more stable than
+    # the extremum of a posterior neck ring at chin level.
+    def stations(V):
+        widths=[];centers=[];depths=[]
+        for z in rowZ:
+            u=V[ix,2]-z;v=V[jx,2]-z;sel=u*v<0
+            P0=V[ix[sel]];P1=V[jx[sel]]
+            P0=P0+(P1-P0)*(u[sel]/(u[sel]-v[sel]))[:,None]
+            if len(P0)<8:return None
+            # Cross sections restricted to the anterior face. Use a
+            # consistent anatomical cut relative to the eye centers.
+            P0=P0[P0[:,1]<eye[1]+gap*.12]
+            if len(P0)<6:return None
+            low,high=np.quantile(P0[:,0],[.025,.975])
+            widths.append(high-low);centers.append((high+low)*.5)
+            depths.append(float(np.quantile(P0[:,1],.10)))
+        return np.array(widths),np.array(centers),np.array(depths)
+    def smooth(t):
+        t=np.clip(t,0.,1.);return t*t*(3.-2.*t)
+    base=stations(A)
+    if base is None:return A,{'status':'insufficient anterior sections','applied':False}
+    def rms(m):return float(np.sqrt(np.mean((m[0]-targetWidth)**2)))
+    def strain(V):
+        E0=np.linalg.norm(V[ix]-V[jx],axis=1)[validEdge]/oldEdge[validEdge]
+        return {'p95AbsLog':float(np.quantile(np.abs(np.log(np.maximum(E0,1e-8))),.95)),'p99AbsLog':float(np.quantile(np.abs(np.log(np.maximum(E0,1e-8))),.99))}
+    best=A.copy();bm=base;bestErr=rms(base);attempts=[]
+    # Smooth section scaling rather than independent vertex pulls.
+    # Preserve the orbital rims, midline features, rear cranium and neck.
+    # The foundation can be narrower even when the previous pointwise
+    # silhouette fit got trapped by the wrong section geometry.
+    for iteration in range(7):
+        V=best.copy();xx=(V[:,0]-eye[0])/gap;yy=(V[:,1]-eye[1])/gap;zz=(V[:,2]-eye[2])/gap
+        ratio=np.clip(targetWidth/np.maximum(bm[0],gap*.12),.55,1.35)
+        ratio=np.convolve(np.r_[ratio[0],ratio,ratio[-1]],[.2,.6,.2],mode='valid')
+        scale0=np.interp(V[:,2],rowZ[::-1],ratio[::-1])
+        # At cheek and jaw, move broad lateral tissue as one envelope.
+        # Smoothly fade toward the posterior skull/neck and eye openings.
+        faceDepth=smooth((.68-yy)/.70)
+        vertical=smooth((-zz-.15)/.28)*smooth((zz+2.02)/.32)
+        orbitalKeep=1-np.maximum(ga(xx,.5,.30),ga(xx,-.5,.30))*ga(zz,0,.27)
+        centerKeep=smooth(np.abs(xx)/.38)
+        D=np.zeros_like(V);D[:,0]=(V[:,0]-eye[0])*(scale0-1)*faceDepth*vertical*orbitalKeep*centerKeep
+        # Smooth away the accumulated crease in the lateral mandible
+        # without pulling the nose/lip/eye or changing neck-seam vertices.
+        ee=np.r_[ix,jx];ff=np.r_[jx,ix];deg=np.maximum(1,np.bincount(ee,minlength=len(V)))
+        def average(B):return np.column_stack([np.bincount(ee,weights=B[ff,k],minlength=len(B))/deg for k in range(3)])
+        lap=average(V)-V
+        lateral=smooth((np.abs(xx)-.35)/.35)*faceDepth*vertical*orbitalKeep
+        smoothD=lap*lateral[:,None]*.22
+        chosen=None;score0=bestErr
+        for alpha in (.22,.42,.65,.85,1.):
+            for relax in (0.,1.):
+                C=V+alpha*D+relax*smoothD
+                # Limit the total departure from the source rest geometry.
+                delta=C-A;dn=np.linalg.norm(delta,axis=1)
+                C=A+delta*np.minimum(1.,gap*.45/np.maximum(dn,1e-12))[:,None]
+                N=profile_norm(C)
+                if np.any(pv&((np.sum(pn*N,axis=1)<=0)|(np.linalg.norm(N,axis=1)<.15*pa))):continue
+                met=stations(C)
+                if met is None:continue
+                e=rms(met);st=strain(C)
+                if st['p99AbsLog']>.80:continue
+                # No hidden camera adjustment: use the same station grid.
+                attempts.append({'iteration':iteration+1,'scaleStrength':alpha,'lateralSmoothing':relax,'rmsMm':e*1000,'edgeStrain':st})
+                if e<score0-1e-7:score0=e;chosen=(C,met)
+        if chosen is None:break
+        best,bm=chosen;bestErr=score0
+        if bestErr<.0035:break
+    return best,{'status':'candidate','applied':bestErr<rms(base)-1e-7,'method':'anterior craniofacial cross-section scaffold with coherent width scaling, lateral surface relaxation and edge-strain/topology checks','source':'350-point visible cheek/jaw trace; internal anatomy inferred, no actual skull measurement','stationsZ_m':rowZ.tolist(),'targetWidth_m':targetWidth.tolist(),'beforeWidth_m':base[0].tolist(),'afterWidth_m':bm[0].tolist(),'beforeRmsMm':rms(base)*1000,'afterRmsMm':bestErr*1000,'edgeStrain':strain(best),'sideJawProjections':side,'attempts':attempts,'maxDisplacementMm':float(np.linalg.norm(best-A,axis=1).max()*1000),'visualApproved':False}
 if female:
+    Q,dreport['craniofacialFoundationFit']=fit_face_foundation(Q)
     Q,dreport['lowerOutlineFit']=fit_lower_outline(Q)
 # Fit the measured visible eyelid curves, rather than preserving an
 # arbitrarily small aperture. Globes remain centered on the eye bones.

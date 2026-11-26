@@ -66,6 +66,7 @@
     "equip": "independent parts; no legacy armor baked into core"
   },
   "next": [
+    "Review unarmored, hair-free face foundation against 9-view reference; reject jaw/neck pinching and visible artifacts even if numerical fit improves",
     "review new iterative jaw candidate and compare actual JPG to target",
     "refine individual eyes/lips/skin/hair shape and reference fit",
     "review isolated core motion and rig joint deformation",
@@ -81,5 +82,5 @@
     "R53_HERO_REVIEW_JPG.zip"
   ],
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
-  "pendingChange": "whole-face single manual candidate: eyelid envelopes, sagittal central profile, lip crease/peak projection and UV boundary, material estimates, side closeups"
+  "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured"
 }
