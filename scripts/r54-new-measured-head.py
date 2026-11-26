@@ -455,6 +455,111 @@ for s in spec[:2]:
                 path.append((X,surf(float(np.clip(u,-.99,.99)),zz)[1]-.008,zz))
             paths.append((path,.0023))
     merge_tubes('R54_Brows_'+lab,paths,browmat)
+# R54 v6: independently modeled auricles. Side-view outline points are
+# direct projected constraints, unlike the inferred front root and cartilage.
+from mathutils.bvhtree import BVHTree
+earSpec=json.loads(Path('data/r54-ear-design.json').read_text())
+assert earSpec['referenceSHA256']==contract['referenceSHA256']
+headTree=BVHTree.FromObject(head,bpy.context.evaluated_depsgraph_get())
+earObjects={};earReport={}
+def skull_x(sgn,y,z):
+    hit,_,_,_=headTree.ray_cast(Vector((sgn*.25,y*UNIT,z*UNIT)),Vector((-sgn,0,0)),.5)
+    return abs(float(hit.x/UNIT)) if hit is not None else None
+def closed_outline(points,n=120):
+    # Periodic Catmull-Rom, interpolates every observed station exactly.
+    pts=np.array(points,float);ret=[]
+    for k in range(len(pts)):
+        a,b,c,d=[pts[j%len(pts)] for j in (k-1,k,k+1,k+2)]
+        for t in np.linspace(0,1,n//len(pts),endpoint=False):
+            ret.append(.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t))
+    return np.array(ret)
+for label,sgn in (('left',-1),('right',1)):
+    item=earSpec['ears'][label]
+    raw=np.array(item['observedOuterCurve']['yzRelativeEye_ipd'],float)
+    raw[:,0]+=float(item['sideEyeAnteriorDesignYIpd'])
+    ymin,zmin=raw.min(axis=0);ymax,zmax=raw.max(axis=0)
+    w=ymax-ymin;h=zmax-zmin
+    # Visible side outline starts at superior root and ends at lobe.
+    # Anterior edge is occluded; close using explicitly inferred anchors.
+    extra=np.array([[ymin-.055*w,zmin+.25*h],[ymin-.17*w,zmin+.50*h],[ymin-.07*w,zmin+.77*h]])
+    allpts=np.vstack([raw,extra]);rim=closed_outline(allpts,156)
+    n=len(rim);center=np.array([ymin+.43*w,zmin+.49*h])
+    # Ear disc has a gently tilted base. Anterior roots intersect the
+    # head slightly; exterior cartilage remains an independent shell.
+    xgoal=float(earSpec['frontOuterXDesignIpd'])
+    def local(y,z):
+        return ((y-center[0])/max(w*.5,.001),(z-center[1])/max(h*.5,.001))
+    def xsurface(r,y,z):
+        u,v=local(y,z)
+        # x is lateral displacement. The concha is a true recessed
+        # basin; helix and antihelix have distinct continuous relief.
+        root=skull_x(sgn,y,z)
+        if root is None:
+            root=skull_x(sgn,min(y,.72),z)
+        if root is None:root=.51
+        frontFactor=float(sstep((y-ymin+.035)/(w*.58)))
+        free=float(sstep((r-.18)/.75))
+        envelope=(root-.018)*(1-frontFactor)+(.87+.27*frontFactor)*frontFactor
+        helix=.105*math.exp(-((r-.89)/.090)**2)
+        anti=.075*math.exp(-((u-.10)/.24)**2)*math.exp(-((v-.16)/.65)**2)
+        # Upper bifurcation of antihelix.
+        anti+=.047*math.exp(-((u-.38*(v-.05))/.17)**2-((v-.51)/.29)**2)
+        concha=-.105*math.exp(-((u+.22)/.34)**2-((v+.17)/.39)**2)
+        tragus=.077*math.exp(-((u+.82)/.19)**2-((v+.05)/.21)**2)
+        canal=-.045*math.exp(-((u+.43)/.13)**2-((v+.07)/.15)**2)
+        lobe=.065*math.exp(-((v+.84)/.25)**2-((u+.17)/.55)**2)
+        x=envelope+free*.025+helix+anti+concha+tragus+canal+lobe
+        # Anchor the anterior root below the cranial surface.
+        anch=float(sstep((y-ymin+.02)/(w*.24)))
+        x=(root-.020)*(1-anch)+x*anch
+        return min(x,xgoal+.035)
+    rv=np.linspace(.04,1.,28);VV=[];FF=[];II=[]
+    def push(p):VV.append(tuple(p));return len(VV)-1
+    for outerSide in (True,False):
+        for r in rv:
+            for yy,zz in rim:
+                y,z=center+r*(np.array([yy,zz])-center)
+                x=xsurface(float(r),float(y),float(z))
+                if not outerSide:
+                    # Cartilage thickness is estimated; posterior surface
+                    # closes the ear rather than leaving loose tubes.
+                    x-=.035+.045*(1-r*r)
+                push((sgn*x,y,z))
+    nr=len(rv);N=nr*n
+    for shell in (0,1):
+        off=shell*N
+        for j in range(nr-1):
+            for k in range(n):
+                a=off+j*n+k;b=off+j*n+(k+1)%n
+                q=(a,b,b+n,a+n);FF.append(q if shell==0 else q[::-1]);II.append(0)
+        cp=push(np.mean(VV[off:off+n],axis=0))
+        for k in range(n):FF.append((cp,off+k,off+(k+1)%n));II.append(0)
+    for k in range(n):
+        a=(nr-1)*n+k;b=(nr-1)*n+(k+1)%n
+        FF.append((a,b,b+N,a+N));II.append(0)
+    ear=object_mesh('R54_Auricle_'+label,VV,FF,[skin],II)
+    # Skin's vertex-color node expects its named point attribute.
+    C=np.array(VV);u=(C[:,1]-center[0])/(w*.5);v=(C[:,2]-center[1])/(h*.5)
+    redden=np.exp(-((u+.10)/.80)**2-((v+.10)/.85)**2)
+    rgb=np.tile([217.,181.,168.],(len(C),1))+redden[:,None]*[4.,-9.,-8.]
+    rgba=np.column_stack([np.array([linear(q) for q in rgb]),np.ones(len(C))])
+    ca=ear.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domain='POINT')
+    ca.data.foreach_set('color',rgba.astype(np.float32).ravel())
+    earObjects[label]=ear
+    # Verify the actual exported mesh surface positions, not design rows.
+    B=np.array([tuple(v.co) for v in ear.data.vertices])/UNIT
+    # BMesh may reorder vertices; nearest actual projected vertex is
+    # independently checked for each traced outer station as well.
+    nearest=[float(np.linalg.norm(B[:,1:3]-p,axis=1).min()) for p in raw]
+    rootSel=B[:,1]<ymin+w*.12
+    distances=[]
+    for x,y,z in B[rootSel][::max(1,int(rootSel.sum())//100)]:
+        h0,n0,_,dd=headTree.find_nearest(Vector((x*UNIT,y*UNIT,z*UNIT)))
+        if h0 is not None:distances.append(float((Vector((x*UNIT,y*UNIT,z*UNIT))-h0).dot(n0)*1000))
+    earReport[label]={'observedOuterYZIpd':raw.tolist(),'inferredAnteriorYZIpd':extra.tolist(),'actualBoundsMm':(np.ptp(B,axis=0)*UNIT*1000).tolist(),'observedHeightDesignMm':float(h*UNIT*1000),'observedWidthDesignMm':float(w*UNIT*1000),'actualOutlineNearestVertex':stats(nearest),'inferredCartilage':['helix','antihelix','concha','tragus','lobule','canal depression'],'rootContactSignedMm':distances,'rootContactSamples':len(distances),'rootOverlapSamples':sum(x<0 for x in distances),'seamWelded':False,'visualApproved':False}
+    bpy.ops.object.select_all(action='DESELECT');ear.select_set(True);bpy.context.view_layer.objects.active=ear
+    bpy.ops.export_scene.gltf(filepath=str(out/('R54_ear_'+label+'.glb')),export_format='GLB',use_selection=True)
+(out/'ear-audit.json').write_text(json.dumps({'referenceSHA256':earSpec['referenceSHA256'],'ears':earReport,'internalAnatomyStatus':'inferred, not measured','attachmentStatus':'overlap candidate; no welded seam or rig yet','visualApproved':False},indent=2,allow_nan=False))
 # Export candidate without old head geometry or armor.
 objects=[o for o in bpy.context.scene.objects if o.type=='MESH']
 bpy.ops.object.select_all(action='DESELECT')
@@ -479,8 +584,17 @@ def render(name,axis):
     o.location=focus+Vector(axis).normalized()*.72;o.rotation_euler=(focus-o.location).to_track_quat('-Z','Y').to_euler()
     scene.render.filepath=str(out/(name+'.jpg'));bpy.ops.render.render(write_still=True)
 for tag,axis in [('front',(0,-1,0)),('left',(-1,0,0)),('right',(1,0,0)),('threequarter',(.66,-1,.03)),('rear',(0,1,0))]:render(tag,axis)
+# Close-up renders use the same real model and unchanged material.
+oldFocus=focus.copy();oldScale=cam.ortho_scale
+for label,sgn in (('left',-1),('right',1)):
+    ear=earObjects[label]
+    center0=np.mean([tuple(v.co) for v in ear.data.vertices],axis=0)
+    focus=Vector(center0);cam.ortho_scale=.095
+    render('ear_'+label+'_detail',(sgn,0,0))
+    render('ear_'+label+'_threequarter',(sgn,-.48,.06))
+focus=oldFocus;cam.ortho_scale=oldScale
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v5','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'no neck mesh; later anatomical neck/body seam integration after visual approval','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ears not yet built','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','head-only; no neck mesh, body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review, then reconstruct ears, eye/lip deformations, neck interface and skin weights; no automatic adoption'}
+report={'id':'R54-new-head-v6','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'no neck mesh; later anatomical neck/body seam integration after visual approval','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','head-only; no neck mesh, body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review of ear shape and face, then eye/lip deformations, ear seam, neck interface and skin weights; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])

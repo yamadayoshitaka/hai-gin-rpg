@@ -1,0 +1,225 @@
+{
+  "schema": "R54-ear-design-v1",
+  "referenceSHA256": "580fae9d783e48fcc1c9051eea3fe0c2201f235d85f7c01494620beaf7046e80",
+  "source": "data/r54-dimensional-constraints.json",
+  "unit": "IPD normalized, design IPD 63 mm; not physical measurements",
+  "ears": {
+    "left": {
+      "observedOuterCurve": {
+        "pixel": [
+          [
+            1038.5,
+            190.25
+          ],
+          [
+            1050.5,
+            191.25
+          ],
+          [
+            1061,
+            200.5
+          ],
+          [
+            1064,
+            212.5
+          ],
+          [
+            1060.75,
+            226.5
+          ],
+          [
+            1052,
+            241.5
+          ],
+          [
+            1040.75,
+            253.5
+          ],
+          [
+            1030,
+            259.25
+          ],
+          [
+            1020.25,
+            256.5
+          ],
+          [
+            1018.75,
+            247.5
+          ]
+        ],
+        "yzRelativeEye_ipd": [
+          [
+            1.4230886850152904,
+            0.07209480122324159
+          ],
+          [
+            1.5735474006116208,
+            0.0595565749235474
+          ],
+          [
+            1.7051987767584098,
+            -0.05642201834862385
+          ],
+          [
+            1.7428134556574923,
+            -0.20688073394495413
+          ],
+          [
+            1.7020642201834861,
+            -0.3824159021406728
+          ],
+          [
+            1.592354740061162,
+            -0.5704892966360856
+          ],
+          [
+            1.4512996941896024,
+            -0.7209480122324159
+          ],
+          [
+            1.31651376146789,
+            -0.7930428134556574
+          ],
+          [
+            1.1942660550458715,
+            -0.7585626911314984
+          ],
+          [
+            1.1754587155963303,
+            -0.6457186544342507
+          ]
+        ],
+        "provenance": "2D projection; per-view scale inferred from eye to lower chin"
+      },
+      "sideEyeAnteriorDesignYIpd": -0.39,
+      "coarseMultiViewPoints": {
+        "ear_top": [
+          1039,
+          187
+        ],
+        "ear_bottom": [
+          1029,
+          254
+        ],
+        "ear_center": [
+          1033,
+          222
+        ]
+      }
+    },
+    "right": {
+      "observedOuterCurve": {
+        "pixel": [
+          [
+            163.75,
+            623.25
+          ],
+          [
+            152.75,
+            626.5
+          ],
+          [
+            145.75,
+            635.5
+          ],
+          [
+            143,
+            647.5
+          ],
+          [
+            145.25,
+            660.5
+          ],
+          [
+            152.75,
+            674
+          ],
+          [
+            163.25,
+            685.75
+          ],
+          [
+            174,
+            692.75
+          ],
+          [
+            182.5,
+            691.75
+          ],
+          [
+            185.75,
+            685
+          ]
+        ],
+        "yzRelativeEye_ipd": [
+          [
+            1.3910506009529904,
+            0.08674703079439584
+          ],
+          [
+            1.5273673636298981,
+            0.046471623639854916
+          ],
+          [
+            1.6141143944242942,
+            -0.06506027309579689
+          ],
+          [
+            1.648193585093521,
+            -0.2137694687433326
+          ],
+          [
+            1.6203106109096082,
+            -0.3748710973614963
+          ],
+          [
+            1.5273673636298981,
+            -0.542168942464974
+          ],
+          [
+            1.3972468174383044,
+            -0.6877800298698528
+          ],
+          [
+            1.2640281630040537,
+            -0.7745270606642486
+          ],
+          [
+            1.158692482753716,
+            -0.7621346276936206
+          ],
+          [
+            1.118417075599175,
+            -0.6784857051418818
+          ]
+        ],
+        "provenance": "2D projection; per-view scale inferred from eye to lower chin"
+      },
+      "sideEyeAnteriorDesignYIpd": -0.39,
+      "coarseMultiViewPoints": {
+        "ear_top": [
+          161,
+          617
+        ],
+        "ear_bottom": [
+          162,
+          689
+        ],
+        "ear_center": [
+          160,
+          652
+        ]
+      }
+    }
+  },
+  "frontOuterXDesignIpd": 1.259493670886076,
+  "inferred": {
+    "anteriorClosure": "anterior ear root and tragus obscured by hair; three inferred points",
+    "depth": "curved cartilage shell, helix, antihelix, concha, tragus, lobe, shallow canal depression",
+    "root": "fit to actual lateral skull by BVH; independent mesh; contact overlap only, not a welded anatomical seam",
+    "material": "same skin estimate, subtle regional red coloration"
+  },
+  "visualApproved": false,
+  "productionApproved": false
+}
