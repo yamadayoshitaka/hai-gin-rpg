@@ -403,7 +403,7 @@ def curve_on(s,frac,top,key=None):
     arr=s[key] if key else s['upper' if top else 'lower']
     x=s['upper'][0,0]+frac*(s['upper'][-1,0]-s['upper'][0,0])
     return x,smooth_interp(x,arr[:,0],arr[:,1])
-mouthVertices={};mouthMotion={};mouthPairs=[];eyeRims={};boundaryReport=[];actualRings={}
+mouthVertices={};mouthMotion={};mouthPairs=[];eyeRims={};eyeMotionRings={};boundaryReport=[];actualRings={}
 for s in spec:
     coords=rect(s);outer=[grid[True,i,j] for i,j in coords]
     a,b,c,e=(s[k] for k in ('x0','x1','z0','z1'))
@@ -499,6 +499,7 @@ for s in spec:
         ring_bridge(previous,inner,[4 if top else 5 for fr,top in params])
         eyeRims[s['lab']]=[V[k] for k in inner]
         actualRings['eye'+s['lab']]=list(inner)
+        eyeMotionRings[s['lab']]={'inner':list(inner),'outer':list(previous),'params':list(params)}
     boundaryReport.append({'id':s['id'],'boundaryVertices':len(outer),'targetXZ_ipd':[p[[0,2]].tolist() for p in target],'referenceUpper_ipd':s['upper'].tolist(),'referenceLower_ipd':s['lower'].tolist()})
 # Local topology-aware fairing of depth around the orbital transition.
 # Keep the measured x/z and the actual eye/lip margins pinned. This
@@ -750,7 +751,7 @@ oralAudit={'samples':oralRows,'sampleCount':len(oralRows),'separationPassed':boo
 # Build the visible corneoscleral surface using the measured opening,
 # retaining the full anatomical globe parameters for future rigging.
 # This neutral review patch is NOT a finished rotating/blinking eye.
-ocularPatchReport={}
+ocularPatchReport={};eyeMorphs={};eyeMotionAudit={};blinkFunctions={}
 for label,c in eyeCent.items():
     sp=next(q for q in spec if q.get('lab')==label)
     up=np.asarray(sp['upper']);low=np.asarray(sp['lower'])
@@ -829,6 +830,77 @@ for label,c in eyeCent.items():
             err=max(xmin-x,x-xmax,lo0-z,z-hi0,0.)
             bad+=int(err>.001);maxerr=max(maxerr,err)
         return {'outsideVertices':bad,'maxOutsideDesignMm':maxerr*UNIT*1000}
+    # Blink: the measured inner aperture closes toward a common curved
+    # seam. Eyelid motion and the visible ocular patches share that seam.
+    # This is a clipped-patch prototype, not a true rotating globe.
+    def make_blink(label0,poly0,xmin0,xmax0):
+        q0=np.roll(poly0,-1,axis=0)
+        def lim(x):
+            x=float(np.clip(x,xmin0+1e-8,xmax0-1e-8))
+            a,b=poly0[:,0],q0[:,0];mask=((a<=x)&(x<b))|((b<=x)&(x<a))
+            if not np.any(mask):
+                z=float(poly0[np.argmin(abs(a-x)),1]);return z,z
+            t=(x-a[mask])/(b[mask]-a[mask])
+            z=poly0[mask,1]+t*(q0[mask,1]-poly0[mask,1]);return float(z.min()),float(z.max())
+        def seam(x):
+            lo,hi=lim(x);return .76*lo+.24*hi
+        return lim,seam
+    limits,closeZ=make_blink(label,poly.copy(),xmin,xmax)
+    blinkFunctions[label]=(limits,closeZ,xmin,xmax)
+    keyName='blink_'+label+'_candidate'
+    bk=head.shape_key_add(name=keyName)
+    def moved_lid(x,y,z,top,weight=1.):
+        lo,hi=limits(x);target=closeZ(x)+(.0006 if top else -.0006)
+        edge=hi if top else lo
+        dz=(target-edge)*weight
+        old=globe_surface(label,x,z);new=globe_surface(label,x,z+dz)
+        dy=(new-old) if old is not None and new is not None else 0.
+        return (x,y+dy,z+dz)
+    # Blend periocular skin toward the lid, fixing remote facial geometry.
+    for idx,v0 in enumerate(head.data.vertices):
+        x,y,z=np.asarray(v0.co)/UNIT
+        if not xmin-.055<x<xmax+.055 or y>.05:continue
+        lo,hi=limits(x);top=z>=closeZ(x)
+        edge=hi if top else lo
+        w=float(sstep(1-abs(z-edge)/.17)*sstep((x-xmin+.035)/.065)*sstep((xmax-x+.035)/.065))
+        if w>0:bk.data[idx].co=Vector(moved_lid(x,y,z,top,w))*UNIT
+    # Pin the exact eyelid margin to the seam, using its actual x coordinate.
+    mr=eyeMotionRings[label]
+    for ids in (mr['inner'],mr['outer']):
+        for k,(fr,top) in zip(ids,mr['params']):
+            idx=remap[k];x,y,z=np.asarray(head.data.vertices[idx].co)/UNIT
+            target=closeZ(x)+(.0006 if top else -.0006)
+            # Preserve the margin thickness on the outer ring.
+            if ids is mr['outer']:target+=.003 if top else -.003
+            old=globe_surface(label,x,z);new=globe_surface(label,x,target)
+            dy=new-old if old is not None and new is not None else 0.
+            bk.data[idx].co=Vector((x,y+dy,target))*UNIT
+    bk.value=0.;eyeMorphs[keyName]=[bk]
+    for ob in (eyeObj,irisObj):
+        ob.shape_key_add(name='Basis');key=ob.shape_key_add(name=keyName)
+        for idx,v0 in enumerate(ob.data.vertices):
+            x,y,z=np.asarray(v0.co)/UNIT;target=closeZ(x)
+            old=globe_surface(label,x,z);new=globe_surface(label,x,target)
+            dy=new-old if old is not None and new is not None else 0.
+            key.data[idx].co=Vector((x,y+dy,target+(z-target)*.003))*UNIT
+        key.value=0.;eyeMorphs[keyName].append(key)
+    # Gaze targets use a conservative inferred range. Reproject all iris
+    # vertices into the actual aperture, including clipped outer annulus.
+    gazeAudit={}
+    for name,dx,dz in (('lookLeft',-.045,0.),('lookRight',.045,0.),('lookUp',0.,.026),('lookDown',0.,-.026)):
+        key=irisObj.shape_key_add(name=name+'_candidate')
+        errors=[]
+        for idx,v0 in enumerate(irisObj.data.vertices):
+            x,y,z=np.asarray(v0.co)/UNIT
+            xx=float(np.clip(x+dx,xmin+.0005,xmax-.0005))
+            lo,hi=limits(xx);margin=min(.0005,max(0.,(hi-lo)*.25))
+            zz=float(np.clip(z+dz,lo+margin,hi-margin))
+            key.data[idx].co=Vector((xx,surface(xx,zz)-.003,zz))*UNIT
+            errors.append(max(xmin-xx,xx-xmax,lo-zz,zz-hi,0.))
+        key.value=0.;eyeMorphs.setdefault(name+'_candidate',[]).append(key)
+        gazeAudit[name]={'shiftXZIpd':[dx,dz],'maxOutsideDesignMm':float(max(errors)*UNIT*1000)}
+    rimTravel=[float((bk.data[remap[k]].co-head.data.vertices[remap[k]].co).length*1000) for k in mr['inner']]
+    eyeMotionAudit[label]={'blinkRimMaxTravelMm':max(rimTravel),'blinkRimSamples':len(rimTravel),'gaze':gazeAudit,'combinedGazeBlinkChecked':False,'visualApproved':False}
     ocularPatchReport[label]={'sclera':outside(eyeObj),'iris':outside(irisObj),'globeCenterIpd':c.tolist(),'globeRadiusIpd':eyeR.tolist(),'irisRadiusIpd':r,'irisVerticalRadiusIpd':rz,'irisCenterXZIpd':[icx,icz],'pupilRatioDesignEstimate':pupilRatio,'clippedDirectionCount':int(sum(bool(t<.99) for t in caps)),'method':'actual inner eyelid polygon, measured elliptical iris and independent pupil; full eyeball rig required for dynamic use'}
 (out/'ocular-patch-audit.json').write_text(json.dumps(ocularPatchReport,indent=2,allow_nan=False))
 def tube(name,points,r0,material):
@@ -860,6 +932,7 @@ def actual_front_y(x,z):
 for s in spec[:2]:
     lab=s['lab'];paths=[]
     for top in (True,False):
+        paths=[]
         prefix=('lash' if top else 'lowerLash')+lab
         roots=px(f[prefix+'Roots']);tips=px(f[prefix+'Tips']);delta=tips-roots
         order=np.argsort(roots[:,0]);roots=roots[order];delta=delta[order]
@@ -877,7 +950,17 @@ for s in spec[:2]:
                 if sy is not None:yy=min(yy,sy-.003-.018*t)
                 P.append((xx,yy,zz))
             paths.append((P,.0027 if top else .0017))
-    merge_tubes('R54_Lashes_'+lab,paths,lashmat)
+        if paths:
+            ob=merge_tubes('R54_Lashes_'+lab+('_Upper' if top else '_Lower'),paths,lashmat)
+            ob.shape_key_add(name='Basis');name='blink_'+lab+'_candidate';key=ob.shape_key_add(name=name)
+            lim,closeZ,xmin,xmax=blinkFunctions[lab]
+            for idx,v0 in enumerate(ob.data.vertices):
+                x,y,z=np.asarray(v0.co)/UNIT;lo,hi=lim(x);edge=hi if top else lo
+                dz=closeZ(x)-edge
+                old=globe_surface(lab,x,edge);new=globe_surface(lab,x,edge+dz)
+                dy=new-old if old is not None and new is not None else 0.
+                key.data[idx].co=Vector((x,y+dy,z+dz))*UNIT
+            key.value=0.;eyeMorphs[name].append(key)
     bu=px(f['brow'+lab+'Top']);bl=px(f['brow'+lab+'Bottom']);paths=[]
     bu=bu[np.argsort(bu[:,0])];bl=bl[np.argsort(bl[:,0])]
     for frac in np.linspace(.025,.975,88):
@@ -893,6 +976,11 @@ for s in spec[:2]:
                 path.append((X,yy-.006,zz))
             paths.append((path,.0025*(.65+.35*math.sin(math.pi*frac))))
     merge_tubes('R54_Brows_'+lab,paths,browmat)
+def set_eye_pose(name=None,value=0.):
+    for n,keys in eyeMorphs.items():
+        for key in keys:key.value=value if n==name or (name=='blinkBoth' and n.startswith('blink_')) else 0.
+    bpy.context.view_layer.update()
+(out/'eye-motion-audit.json').write_text(json.dumps(eyeMotionAudit,indent=2,allow_nan=False))
 # R54 v6: independently modeled auricles. Side-view outline points are
 # direct projected constraints, unlike the inferred front root and cartilage.
 from mathutils.bvhtree import BVHTree
@@ -1118,7 +1206,10 @@ focus=Vector((cx*UNIT,(cy+.035)*UNIT,(cz-.025)*UNIT));cam.ortho_scale=.082
 render('oral_open_detail',(0,-1,-.05));render('oral_open_oblique',(.55,-1,-.10))
 set_oral_open(0.);render('oral_neutral_detail',(0,-1,0))
 focus=oldFocus;cam.ortho_scale=oldScale
+for tag,pose,value in [('blink_closed','blinkBoth',1.),('blink_half','blinkBoth',.5),('gaze_left','lookLeft_candidate',1.),('gaze_right','lookRight_candidate',1.),('gaze_up','lookUp_candidate',1.),('gaze_down','lookDown_candidate',1.)]:
+    set_eye_pose(pose,value);render(tag,(0,-1,0))
+set_eye_pose()
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v18','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','revisionNotes':['expanded oral lining with four depth rings','separate upper and lower tooth crowns and gingiva','separate tongue candidate','lower oral parts share jaw morph target name','three actual oral detail JPGs','retains v17 nasal and ocular changes'],'next':'visual comparison and dimension regression against v17, check oral intersections and expression quality, then blinking and neck interface; no automatic adoption'}
+report={'id':'R54-new-head-v19','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw and blink/gaze morphs experimental; simultaneous gaze/blink and full facial expressions unverified','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','revisionNotes':['left and right blink morphs on actual eyelid margins','synchronized upper/lower lashes and visible ocular patch morphs','four aperture-constrained gaze targets','six actual eye pose review JPGs','retains v18 oral geometry'],'next':'verify blink/gaze and oral poses visually, then neck interface and facial expression candidates; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
