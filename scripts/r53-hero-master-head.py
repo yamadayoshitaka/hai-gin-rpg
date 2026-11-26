@@ -659,12 +659,12 @@ for side in ('L','R'):
     cx=float((lo[0]+hi[0])/2);sgn=1 if cx>eye[0] else -1
     ew=float(hi[0]-lo[0]);ez=float(hi[2]-lo[2])
     V=[];F=[];RW=[];RD={n:[] for n in names};roots=[]
-    for j in range(34):
-        t=j/33
+    for j in range(52):
+        t=j/51
         x=cx+sgn*ew*(-.51+1.10*t)
-        z=float(hi[2])+ez*((float(np.clip(portraitRatios['browEyeGap']*.85,.14,.28)) if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
-        thick=(.00165 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
-        for row in (-1,0,1):
+        z=float(hi[2])+ez*((float(np.clip(portraitRatios['browEyeGap']*1.65,.30,.46)) if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
+        thick=(.0020 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
+        for row in (-1,-.5,0,.5,1):
             zz=z+row*thick
             a,i,_=cast(skinTree,x,zz)
             if a is None:continue
@@ -679,13 +679,13 @@ for side in ('L','R'):
             for u in (0.,.33,.67,1.):
                 hit,_,_=cast(skinTree,x+dx*u,zz+dz*u)
                 if hit is None:break
-                C.append(hit+Vector((0,-(.00015+.00030*math.sin(math.pi*u)),0)))
+                C.append(hit+Vector((0,-(.00045+.00040*math.sin(math.pi*u)),0)))
             if len(C)!=4:continue
             idx=len(V)
             for k,c in enumerate(C):
                 tangent=(C[min(3,k+1)]-C[max(0,k-1)]).normalized()
                 u=tangent.cross(Vector((0,1,0))).normalized();v=tangent.cross(u).normalized()
-                rad=(.000115 if female else .000125)*(1-.86*k/3)
+                rad=(.00016 if female else .000125)*(1-.86*k/3)
                 for h in range(5):
                     th=2*math.pi*h/5;V.append(tuple(c+rad*(u*math.cos(th)+v*math.sin(th))));RW.append(rw)
                     for n in names:RD[n].append(b@fixed[n][ids])
@@ -696,7 +696,7 @@ for side in ('L','R'):
     if len(roots)<30:raise RuntimeError('insufficient brow roots '+side)
     me=bpy.data.meshes.new('R53_BrowFibres_'+side);me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_BrowFibres_'+side,me);bpy.context.collection.objects.link(ob)
-    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.16,.095,.050) if female else (.026,.018,.012)
+    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.073,.038,.019) if female else (.026,.018,.012)
     mat.diffuse_color=(*col,1);mat.use_nodes=True
     bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.62
     me.materials.append(mat)
@@ -1036,6 +1036,43 @@ def fitted_scalp_hair():
             for k0 in range(2):
                 a=start+j*3+k0;F.append((a,a+3,a+4,a+1))
         groups.append({'kind':'shallow_surface_layer','vertices':sections*3})
+    # Individually sculpted swept bangs. Derive the approximate terminal
+    # heights from the visible three fringe tips and the eyebrow level.
+    # The missing depth is reconstructed on the actual scalp surface.
+    bangCount=0
+    if female:
+        tips=[rp2['hair_bang_near_tip'],rp2['hair_bang_middle_tip'],rp2['hair_bang_far_tip']]
+        frontSpecs=[(-.85,-.22,0),(-.70,-.12,0),(-.55,-.05,0),(-.40,.12,1),(-.22,.32,1),(-.04,.48,1),(.14,.65,2),(.30,.83,2),(.45,1.00,2)]
+        for strand0,(a0,a1,tipI) in enumerate(frontSpecs):
+            start=len(V);sections=30;cross=7
+            # Convert image vertical offset to a bounded anatomical target;
+            # it is projected, not claimed as a measured physical length.
+            dz=float(np.clip((rp2['brow_near_mid'][1]-tips[tipI][1])/eyePx,-.48,.12))*gap
+            endZ=float(eye[2]+gap*.22+dz)
+            root=smoothSample(a0,.28)
+            for j in range(sections):
+                t=j/(sections-1);a=a0+(a1-a0)*math.sin(t*math.pi*.5)
+                p=smoothSample(a,.28+.70*t)
+                u=smooth01((t-.40)/.60)
+                if u>0:
+                    p.z=(1-u)*p.z+u*endZ
+                    hit,_,_=cast(skinTree,p.x,p.z)
+                    if hit is not None:p.y=min(p.y,hit.y-.0025)
+                p+=Vector((math.sin(a)*.002,-.002-.003*math.sin(math.pi*t),.001))
+                lateral=Vector((math.cos(a),math.sin(a),0)).normalized()
+                normal=Vector((math.sin(a),-math.cos(a),.3)).normalized()
+                width=gap*.105*(.45+.55*math.sin(math.pi*t)**.5)*(1-.97*t**5)
+                for k in range(cross):
+                    f=k/(cross-1)*2-1
+                    q=p+lateral*(f*width)+normal*(.002*(1-f*f)*math.sin(math.pi*t))
+                    near,norm,_,d=skinTree.find_nearest(q)
+                    if near is not None and d<.018 and (q-near).dot(norm)<.0015:q=near+norm*.0018
+                    V.append(tuple(q));UV.append(((k/(cross-1)+strand0)/len(frontSpecs),t))
+            for j in range(sections-1):
+                for k in range(cross-1):
+                    i=start+j*cross+k;F.append((i,i+cross,i+cross+1,i+1))
+            bangCount+=sections*cross
+        groups.append({'kind':'portrait_front_bangs','vertices':bangCount,'projectedTipCount':3})
     # A separate visible side braid derived from the three annotated
     # braid points. Its 3D course is estimated on the fitted scalp.
     braidCount=0
@@ -1081,7 +1118,7 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'portrait-inspired golden long layers with side braid','referenceLengthRatio':portraitRatios['hairVisibleLength'],'rearDepthInferred':True,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
+    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'portrait-inspired golden long layers with side braid','referenceLengthRatio':portraitRatios['hairVisibleLength'],'rearDepthInferred':True,'frontBangVertices':bangCount,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
 # Render actual new scalp-fitted geometry in all five views, separately from old wig.
@@ -1195,15 +1232,33 @@ try:
                     if node:
                         node.inputs['Metallic'].default_value=.66
                         node.inputs['Roughness'].default_value=.43
-                        if not node.inputs['Base Color'].is_linked:
-                            old=np.array(node.inputs['Base Color'].default_value[:3])
-                            node.inputs['Base Color'].default_value=(*(old*.15+np.array([.52,.56,.62])*.85),1)
+                        # Old linked textures held the original green/brown
+                        # palette. Explicitly replace the base colour only,
+                        # retaining normal and roughness texture links.
+                        for lk in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(lk)
+                        node.inputs['Base Color'].default_value=(.52,.56,.62,1)
                 armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled','curvedPanelAccepted':rounded})
             except Exception as e:
                 for md0 in list(plate.modifiers):
                     if md0.name.startswith(('R53 edge bevel','R53 weld seams','R53 panel refinement','R53 rounded panel')):plate.modifiers.remove(md0)
                 plate.data=backup;armorStudy.append({'name':plate.name,'before':n0,'status':'retained-original','error':str(e)})
+    # Assign a navy textile palette to the existing fitted clothing.
+    # Material copies avoid modifying shared source skin materials.
+    palette=[]
+    if female:
+        for ob1 in cloth:
+            for slot in ob1.material_slots:
+                if slot.material is None:continue
+                mt=slot.material.copy();slot.material=mt
+                if not mt.use_nodes:mt.use_nodes=True
+                nd=next((n for n in mt.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
+                if nd is None:continue
+                for lk in list(nd.inputs['Base Color'].links):mt.node_tree.links.remove(lk)
+                nd.inputs['Base Color'].default_value=(.025,.047,.105,1)
+                nd.inputs['Metallic'].default_value=0.;nd.inputs['Roughness'].default_value=.72
+                mt.diffuse_color=(.025,.047,.105,1);palette.append(ob1.name)
     assemblyReport['armorStudy']=armorStudy
+    assemblyReport['portraitPalette']={'navyClothMeshes':sorted(set(palette)),'silverArmor':True,'goldTrim':'not yet modeled'}
     assemblyReport['bodyMaterialReview']={'clothMeshes':len(cloth),'armorMeshes':len(plates),'note':'original fitted body and garments retained; PBR render evidence required'}
     assembleParts=[assembly]+[o for o in new if o!=hd]+[fittedHair]+[o for o in parts if o!=body and o not in hair]
     for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
