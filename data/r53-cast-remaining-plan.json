@@ -1,0 +1,501 @@
+{
+  "classification": "role-based independent provisional concepts, not measured portrait likeness; conflicting originals not used as face references",
+  "models": [
+    {
+      "id": "iris",
+      "sex": "female",
+      "age": "20s",
+      "build": "normal",
+      "bodySource": "female_20s_normal",
+      "studyCoefficients": [
+        -0.035,
+        -0.13,
+        0.001,
+        -0.07,
+        0.0014,
+        0.055,
+        -0.0006,
+        -0.0011
+      ],
+      "hairIndex": 2,
+      "style": "Peasant",
+      "designNote": "淡色髪の治癒師",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/iris.webp",
+        "blob": "48aba1f03d53e2bb039192163fdf4f7089600df1",
+        "status": "identity-conflict-hold",
+        "conflict": "頭布・書物を持つ同じ女性の切り出しに見える。少女ミナの独立基準を用意する。"
+      },
+      "sexIsDesignEstimate": false,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "shion",
+      "sex": "male",
+      "age": "30s",
+      "build": "slim",
+      "bodySource": "male_30s_slim",
+      "studyCoefficients": [
+        -0.11,
+        -0.18,
+        -0.0014,
+        -0.06,
+        0.0028,
+        -0.07,
+        -0.0012,
+        -0.0022
+      ],
+      "hairIndex": 5,
+      "style": "Ranger",
+      "designNote": "忍び頭、細く鋭い目",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/shion.webp",
+        "blob": "a0f19613ee9d8e7d332cf15f03a99d3327f40439",
+        "status": "identity-conflict-hold",
+        "conflict": "結い髪の黒いマスクの男性が同一原画に見える。オルフェの独立基準が必要。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "kai",
+      "sex": "male",
+      "age": "20s",
+      "build": "slim",
+      "bodySource": "male_20s_slim",
+      "studyCoefficients": [
+        0.1,
+        0.04,
+        0.0016,
+        -0.14,
+        0.0007,
+        0.06,
+        0.0013,
+        -0.0029
+      ],
+      "hairIndex": 3,
+      "style": "Ranger",
+      "designNote": "若い斥候、機敏な体格",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/kai.webp",
+        "blob": "a83df02bd04650fa3c9d2e5efe1b5c2210e56bb0",
+        "status": "provisional-source-needs-individual-turnaround",
+        "conflict": null
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "leon",
+      "sex": "male",
+      "age": "30s",
+      "build": "muscular",
+      "bodySource": "male_30s_muscular",
+      "studyCoefficients": [
+        0.065,
+        -0.06,
+        -0.0005,
+        0.12,
+        0.0023,
+        0.085,
+        0.0008,
+        0.0032
+      ],
+      "hairIndex": 6,
+      "style": "Ranger",
+      "designNote": "傭兵隊長、頑健な輪郭",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/leon.webp",
+        "blob": "6a1b2e71b4702cef17c8f3be55d79d2770fd2a1a",
+        "status": "identity-conflict-hold",
+        "conflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "fio",
+      "sex": "female",
+      "age": "30s",
+      "build": "muscular",
+      "bodySource": "female_30s_muscular",
+      "studyCoefficients": [
+        -0.015,
+        0.05,
+        0.0018,
+        0.1,
+        0.0011,
+        0.075,
+        -0.0003,
+        0.0022
+      ],
+      "hairIndex": 4,
+      "style": "Peasant",
+      "designNote": "工兵長、活動的な体格",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/fio.webp",
+        "blob": "e182ab872634b6f742eaf3e42c54c1d6db16e1ab",
+        "status": "identity-conflict-hold",
+        "conflict": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "edo",
+      "sex": "male",
+      "age": "50s",
+      "build": "normal",
+      "bodySource": "male_50s_normal",
+      "studyCoefficients": [
+        -0.075,
+        -0.14,
+        0.0009,
+        0.04,
+        0.0034,
+        -0.025,
+        -0.0015,
+        0.0008
+      ],
+      "hairIndex": 9,
+      "style": "Peasant",
+      "designNote": "元騎士・記録官",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/edo.webp",
+        "blob": "bdca545f6acf773c4fcd178c3c12a4c575cd86c0",
+        "status": "identity-conflict-hold",
+        "conflict": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "mina",
+      "sex": "female",
+      "age": "under10",
+      "build": "normal",
+      "bodySource": "female_under10_normal",
+      "studyCoefficients": [
+        0.03,
+        0.035,
+        -0.0006,
+        -0.06,
+        0.0005,
+        0.025,
+        0.0004,
+        -0.0008
+      ],
+      "hairIndex": 1,
+      "style": "Peasant",
+      "designNote": "避難民の少女、子供用の骨格と体格",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/mina.webp",
+        "blob": "e2f085871e32ac45e7b77701209f1b44d95022f4",
+        "status": "identity-conflict-hold",
+        "conflict": "頭布・書物を持つ同じ女性の切り出しに見える。少女ミナの独立基準を用意する。"
+      },
+      "sexIsDesignEstimate": false,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "noel",
+      "sex": "female",
+      "age": "20s",
+      "build": "slim",
+      "bodySource": "female_20s_slim",
+      "studyCoefficients": [
+        0.05,
+        -0.03,
+        0.0014,
+        -0.11,
+        0.0019,
+        -0.045,
+        0.001,
+        -0.0032
+      ],
+      "hairIndex": 6,
+      "style": "Ranger",
+      "designNote": "森守・使節",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/noel.webp",
+        "blob": "f333ba543485bc5e52259eecb09b4283c1275fd9",
+        "status": "provisional-source-needs-individual-turnaround",
+        "conflict": null
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "raizen",
+      "sex": "male",
+      "age": "40s",
+      "build": "muscular",
+      "bodySource": "male_40s_muscular",
+      "studyCoefficients": [
+        -0.08,
+        -0.15,
+        0.0011,
+        0.16,
+        0.0035,
+        -0.035,
+        -0.001,
+        0.0039
+      ],
+      "hairIndex": 10,
+      "style": "Ranger",
+      "designNote": "国境将軍",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/raizen.webp",
+        "blob": "cb39041fa31f956544d2778ae4565cd3e3d7732a",
+        "status": "identity-conflict-hold",
+        "conflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "vald",
+      "sex": "male",
+      "age": "60s",
+      "build": "normal",
+      "bodySource": "male_60s_normal",
+      "studyCoefficients": [
+        -0.025,
+        -0.2,
+        -0.001,
+        0.08,
+        0.0041,
+        0.015,
+        -0.0016,
+        0.0016
+      ],
+      "hairIndex": 11,
+      "style": "Ranger",
+      "designNote": "皇帝",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/vald.webp",
+        "blob": "6f5932a26a3bb4c0b33d2aef727dc96d7d078fa7",
+        "status": "identity-conflict-hold",
+        "conflict": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
+      },
+      "sexIsDesignEstimate": false,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "zahar",
+      "sex": "male",
+      "age": "50s",
+      "build": "slim",
+      "bodySource": "male_50s_slim",
+      "studyCoefficients": [
+        -0.1,
+        -0.11,
+        0.0019,
+        -0.05,
+        0.0038,
+        -0.09,
+        -0.0014,
+        -0.0024
+      ],
+      "hairIndex": 12,
+      "style": "Peasant",
+      "designNote": "宰相",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/zahar.webp",
+        "blob": "e658b8367df2e8c817ee746e8342d63ae8305411",
+        "status": "identity-conflict-hold",
+        "conflict": "銀灰髪の王冠を着けた男性。ヴァルドとザハルは同じ原画の切り出しに見える。エドも役職に照らして再確認する。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "grad",
+      "sex": "male",
+      "age": "40s",
+      "build": "obese",
+      "bodySource": "male_40s_obese",
+      "studyCoefficients": [
+        0.02,
+        -0.08,
+        -0.0018,
+        0.18,
+        0.0014,
+        0.11,
+        0.0009,
+        0.0042
+      ],
+      "hairIndex": 13,
+      "style": "Ranger",
+      "designNote": "重装将軍、重厚な体格",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/grad.webp",
+        "blob": "d6836a4078b65b36dd66eb79a4ae1d49e8c4a800",
+        "status": "identity-conflict-hold",
+        "conflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "altea",
+      "sex": "female",
+      "age": "40s",
+      "build": "normal",
+      "bodySource": "female_40s_normal",
+      "studyCoefficients": [
+        -0.05,
+        -0.17,
+        0.0007,
+        -0.04,
+        0.0026,
+        0.025,
+        -0.0013,
+        0.0011
+      ],
+      "hairIndex": 10,
+      "style": "Peasant",
+      "designNote": "女王",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/altea.webp",
+        "blob": "6e9785cce48b8c84eb07f840f2473017578ad71a",
+        "status": "identity-conflict-hold",
+        "conflict": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
+      },
+      "sexIsDesignEstimate": false,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "orphe",
+      "sex": "male",
+      "age": "40s",
+      "build": "normal",
+      "bodySource": "male_40s_normal",
+      "studyCoefficients": [
+        0.07,
+        -0.09,
+        0.0017,
+        0.07,
+        0.0029,
+        -0.05,
+        0.0003,
+        0.0025
+      ],
+      "hairIndex": 4,
+      "style": "Ranger",
+      "designNote": "艦隊司令",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/orphe.webp",
+        "blob": "b5c88c4075e98abf3353550af401d0648392c952",
+        "status": "identity-conflict-hold",
+        "conflict": "結い髪の黒いマスクの男性が同一原画に見える。オルフェの独立基準が必要。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "meve",
+      "sex": "female",
+      "age": "30s",
+      "build": "slim",
+      "bodySource": "female_30s_slim",
+      "studyCoefficients": [
+        -0.12,
+        -0.19,
+        -0.0015,
+        -0.13,
+        0.0018,
+        -0.065,
+        0.0005,
+        -0.0028
+      ],
+      "hairIndex": 8,
+      "style": "Ranger",
+      "designNote": "密偵長",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/meve.webp",
+        "blob": "70d08ac4bcce8f7746a0d06bcb03224729f7a195",
+        "status": "identity-conflict-hold",
+        "conflict": "金髪の王冠を着けた女性が非常に似る。特にフィオとメーヴは同一構図の切り出し。人物対応を確認する。"
+      },
+      "sexIsDesignEstimate": true,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    },
+    {
+      "id": "vess",
+      "sex": "male",
+      "age": "80plus",
+      "build": "slim",
+      "bodySource": "male_80plus_slim",
+      "studyCoefficients": [
+        -0.1,
+        -0.24,
+        0.0012,
+        0.05,
+        0.0044,
+        -0.04,
+        -0.002,
+        -0.0019
+      ],
+      "hairIndex": 14,
+      "style": "Peasant",
+      "designNote": "年長の男性記録院長",
+      "sourceRecord": {
+        "path": "assets/story-cinema/cast/vess.webp",
+        "blob": "98c07d3d274fd78c5052a6aa8808746c16e13f04",
+        "status": "identity-conflict-hold",
+        "conflict": "灰髪・髭・同じ鎧の男性が重複するように見える。別人の顔基準に転用しない。"
+      },
+      "sexIsDesignEstimate": false,
+      "ageIsDesignEstimate": true,
+      "referenceUsedForFaceFit": false,
+      "protectedR6Used": false,
+      "finalIdentity": false
+    }
+  ]
+}

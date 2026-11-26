@@ -1,0 +1,142 @@
+name: R53 remaining sixteen independent role-design cast assemblies
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'data/r53-cast-remaining-plan.json'
+      - 'scripts/r53-cast-remaining-study.py'
+      - 'scripts/r53-cast-remaining-stage.py'
+      - 'scripts/r53-cast-remaining-inventory.py'
+      - 'scripts/r53-cast-remaining-reference.py'
+      - '.github/workflows/r53-cast-remaining.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include:
+          - id: iris
+            shard: female-early
+            style: Peasant
+          - id: shion
+            shard: male-middle
+            style: Ranger
+          - id: kai
+            shard: male-early
+            style: Ranger
+          - id: leon
+            shard: male-middle
+            style: Ranger
+          - id: fio
+            shard: female-middle
+            style: Peasant
+          - id: edo
+            shard: male-middle
+            style: Peasant
+          - id: mina
+            shard: female-early
+            style: Peasant
+          - id: noel
+            shard: female-early
+            style: Ranger
+          - id: raizen
+            shard: male-middle
+            style: Ranger
+          - id: vald
+            shard: male-late
+            style: Ranger
+          - id: zahar
+            shard: male-middle
+            style: Peasant
+          - id: grad
+            shard: male-middle
+            style: Ranger
+          - id: altea
+            shard: female-middle
+            style: Peasant
+          - id: orphe
+            shard: male-middle
+            style: Ranger
+          - id: meve
+            shard: female-middle
+            style: Ranger
+          - id: vess
+            shard: male-late
+            style: Peasant
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+            assets/story/characters
+            assets/story-cinema/cast
+            assets/animations
+            assets/characters/hair-fitted-v1
+            assets/characters/quaternius-outfits
+            docs/wig-production-standard-v1.md
+      - run: |
+          python3 -m py_compile scripts/r53-cast-remaining-study.py scripts/r53-cast-remaining-reference.py scripts/r53-cast-remaining-inventory.py
+          python3 scripts/r53-cast-remaining-stage.py --check
+          python3 -m pip install pillow
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-age90-${{ matrix.shard }}
+          run-id: 45637676131
+          github-token: ${{ github.token }}
+          path: /tmp/r53-bodies
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Generate independent role design, wig, expressions and fitted outfit
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+          STYLE: ${{ matrix.style }}
+        run: |
+          mkdir -p review/{reference,study,wig,motion,first,second,third,assembly}
+          python3 scripts/r53-cast-remaining-reference.py . data/r53-cast-remaining-plan.json review/reference "$ID"
+          cp assets/characters/hair-fitted-v1/ATTRIBUTION.md review/wig/
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-remaining-study.py -- /tmp/r53-bodies data/r53-cast-remaining-plan.json review/study "$ID"
+          run() { xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-remaining-stage.py -- "$@"; }
+          run wig review/study assets/characters/hair-fitted-v1 review/wig "$ID"
+          run motion assets/animations/UAL1_Standard.glb review/study review/motion "$ID"
+          run fit review/study assets/characters/quaternius-outfits review/first "$ID" "$STYLE"
+          run refine review/study review/first review/second "$ID" "$STYLE"
+          run third review/study review/second review/third "$ID" "$STYLE"
+          run audit review/study review/third review/motion review/third "$ID" "$STYLE"
+          run assemble review/motion review/wig review/third review/assembly "$ID" "$STYLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-remaining-candidate-${{ matrix.id }}
+          path: review/
+          if-no-files-found: warn
+  inventory:
+    needs: integrate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-remaining-candidate-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-remaining-inventory.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-remaining-summary
+          path: review/summary/
+          if-no-files-found: error
