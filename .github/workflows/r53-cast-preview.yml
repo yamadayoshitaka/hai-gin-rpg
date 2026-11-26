@@ -1,0 +1,90 @@
+name: R53 Garan geometric age correction and named cast browser preview
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-garan-age-geometry.py'
+      - 'scripts/r53-cast-browser-pack.py'
+      - 'review-tools/r53-cast/**'
+      - '.github/workflows/r53-cast-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  age:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-fifth-garan
+          run-id: 45732684923
+          github-token: ${{ github.token }}
+          path: /tmp/cast
+      - run: |
+          python3 -m py_compile scripts/r53-garan-age-geometry.py
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/age
+          LIBGL_ALWAYS_SOFTWARE=1 LP_NUM_THREADS=2 MESA_GLTHREAD=false xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-garan-age-geometry.py -- /tmp/cast review/age
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-garan-age-geometry
+          path: review/age/
+          if-no-files-found: warn
+  browser:
+    needs: age
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            review-tools/r53-cast
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-fifth-*
+          run-id: 45732684923
+          github-token: ${{ github.token }}
+          path: /tmp/fifth
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-garan-age-geometry
+          path: /tmp/age
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          python3 scripts/r53-cast-browser-pack.py /tmp/fifth /tmp/age review/site
+          cp review-tools/r53-cast/index.html review-tools/r53-cast/viewer.mjs review/site/
+          npm install --no-save --ignore-scripts three@0.180.0 playwright@1.56.1
+          mkdir -p review/site/vendor/three
+          cp -r node_modules/three/build node_modules/three/examples review/site/vendor/three/
+          cp node_modules/three/LICENSE review/site/vendor/three/
+          npx playwright install --with-deps chromium
+      - run: |
+          node --check review-tools/r53-cast/viewer.mjs
+          cp review-tools/r53-cast/browser-test.mjs ./cast-browser-test.mjs
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory review/site >/tmp/cast-http.log 2>&1 &
+          node cast-browser-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-browser-evidence
+          path: |
+            cast-browser-report.json
+            commander-male-*.png
+            garan-*.png
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: r53-cast-offline-review
+          path: review/site/
+          retention-days: 30
