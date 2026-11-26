@@ -145,8 +145,12 @@ for f in F:
         if a!=b:par[b]=a
 gs={}
 for k in range(len(V)):gs.setdefault(rr(k),[]).append(k)
-sourceEyes=sorted([np.array(g) for g in gs.values() if len(g)>100],key=lambda g:V[g,0].mean())
-if len(sourceEyes)!=2:raise RuntimeError('original eye components '+str([len(g) for g in gs.values()]))
+# Official OBJ has two concentric components per eye (256 and 276
+# vertices). Retain both, including their original atlas coordinates.
+components=[np.array(g) for g in gs.values()]
+if sorted(map(len,components))!=[256,256,276,276]:raise RuntimeError('original eye shell components')
+sourceEyes=[np.sort(np.concatenate([g for g in components if np.sign(V[g,0].mean())==side])) for side in (-1,1)]
+if any(len(g)!=532 for g in sourceEyes):raise RuntimeError('source eye side grouping')
 scene=bpy.context.scene;scene.render.engine='BLENDER_WORKBENCH';scene.render.resolution_x=560;scene.render.resolution_y=700;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG'
 sh=scene.display.shading;sh.light='STUDIO';sh.color_type='TEXTURE';sh.show_cavity=True
 bpy.ops.object.camera_add();cam=bpy.context.object;cam.data.type='ORTHO';scene.camera=cam
