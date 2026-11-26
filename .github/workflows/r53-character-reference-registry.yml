@@ -1,0 +1,78 @@
+name: R53 character reference registry (review only)
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'data/r53-character-reference-registry.json'
+      - 'scripts/r53-character-reference-*.py'
+      - '.github/workflows/r53-character-reference-registry.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-quality-*
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: /tmp/reference/cast
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-assembled-*
+          run-id: 45715987693
+          github-token: ${{ github.token }}
+          path: /tmp/reference/mob
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-hero-master-head-commander-female
+          run-id: 45783613678
+          github-token: ${{ github.token }}
+          path: /tmp/reference/hero
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb xauth libgl1-mesa-dri
+          python3 -m py_compile scripts/r53-character-reference-render.py scripts/r53-character-reference-pack.py
+      - name: Measure actual model and render reference views
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-character-reference-render.py -- /tmp/reference review/shard data/r53-character-reference-registry.json "${{ matrix.shard }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-reference-shard-${{ matrix.shard }}
+          path: review/shard/
+  registry:
+    needs: render
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-reference-shard-*
+          path: /tmp/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-character-reference-pack.py /tmp/shards review/catalog
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-character-reference-registry-42
+          path: review/catalog/
+          retention-days: 30
