@@ -9,7 +9,12 @@ for i in ('commander-male','commander-female'):
     d=out/'assets'/i;d.mkdir(parents=True,exist_ok=True)
     nr=json.loads((a/'master-head-report.json').read_text());orr=json.loads((b/'anatomy-report.json').read_text())
     if nr['id']!=i or orr['id']!=i or nr['sourceSHA256']!=orr['sha256'] or not nr['roundTrip'] or not orr['roundTrip'] or nr['productionApproved']:raise RuntimeError('provenance '+i)
-    models[i]={}
+    centers=nr['targetEyeCenters_m']
+    left,right=centers['L'],centers['R']
+    if len(left)!=3 or len(right)!=3:raise RuntimeError('eye landmark inventory')
+    # Blender Z-up, -Y front -> glTF Y-up, +Z front.
+    def gltf(q):return [q[0],q[2],-q[1]]
+    models[i]={'eyeCenters':{'L':gltf(left),'R':gltf(right)}}
     for v,p,h in [('new',a/(i+'_master_head.glb'),nr['sha256']),('old',b/(i+'_anatomy_candidate.glb'),orr['sha256'])]:
         if sha(p)!=h:raise RuntimeError('hash '+i)
         f=d/(v+'.glb');shutil.copyfile(p,f);models[i][v]={'path':f.relative_to(out).as_posix(),'sha256':h}
