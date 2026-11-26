@@ -185,6 +185,63 @@ bs=next(n for n in skin.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
 bs.inputs['Base Color'].default_value=(.58,.37,.27,1) if ident=='commander-male' else (.65,.45,.35,1)
 bs.inputs['Roughness'].default_value=.55
 hd.data.materials[0]=skin
+
+# Baked per-vertex anatomical UV projection; texture maps are exportable
+# in glTF, unlike a Blender-only procedural shader. Preserve original UV.
+def rgba_image(name,rgb,noncolor=False):
+    a=np.asarray(rgb,dtype=np.float32)
+    if a.ndim==2:a=np.repeat(a[:,:,None],3,axis=2)
+    a=np.concatenate([np.clip(a,0,1),np.ones((*a.shape[:2],1),np.float32)],axis=2)
+    im=bpy.data.images.new(name,width=a.shape[1],height=a.shape[0],alpha=True)
+    if noncolor:im.colorspace_settings.name='Non-Color'
+    im.pixels.foreach_set(a.ravel());im.update();im.pack();return im
+def texlink(mat,bs,im,uv,socket):
+    nd=mat.node_tree.nodes;lk=mat.node_tree.links
+    u=nd.new('ShaderNodeUVMap');u.uv_map=uv
+    t=nd.new('ShaderNodeTexImage');t.image=im;lk.new(u.outputs['UV'],t.inputs['Vector'])
+    if socket:lk.new(t.outputs['Color'],bs.inputs[socket])
+    return t
+# Use measured head coordinates for a continuous cylindrical UV.
+# Front face is centred at u=.5, avoiding seams in the lips and eyes.
+uv=hd.data.uv_layers.new(name='R53_AnatomicalSkin')
+lowZ=float(Q[:,2].min());highZ=float(Q[:,2].max());height=highZ-lowZ
+for l in hd.data.loops:
+    x,y,z=Q[l.vertex_index]
+    uv.data[l.index].uv=(.5+math.atan2(x-eye[0],-(y-eye[1]))/(2*math.pi),(z-lowZ)/height)
+# Correct wrap-crossing polygons at the back.
+for poly in hd.data.polygons:
+    ids=list(poly.loop_indices);us=[uv.data[i].uv.x for i in ids]
+    if max(us)-min(us)>.5:
+        for i in ids:
+            if uv.data[i].uv.x<.5:uv.data[i].uv.x+=1
+size=1024;yy,xx=np.mgrid[0:size,0:size];U=(xx+.5)/size;V=(yy+.5)/size
+rng=np.random.default_rng(5300+(1 if female else 0))
+noise=rng.normal(0,1,(size,size));fine=.005*noise+.009*np.sin(67*U+39*V)*np.sin(103*V)
+def field(u,v,wu,wv):return np.exp(-((U-u)/wu)**2-((V-v)/wv)**2)
+base=np.array([.76,.58,.48] if female else [.69,.49,.39])
+C=np.broadcast_to(base,(size,size,3)).copy()+fine[:,:,None]
+# Subtle cheek, lip-area and eye socket tonal variation, not painted geometry.
+# Actual anatomical lip colouring is applied separately using mesh landmarks.
+ev=(eye[2]-lowZ)/height;mv=(eye[2]-gap*1.15-lowZ)/height
+cheeks=field(.42,ev-.11,.047,.09)+field(.58,ev-.11,.047,.09)
+C+=cheeks[:,:,None]*np.array([.025,-.018,-.014])
+C+=field(.5,mv,.045,.026)[:,:,None]*np.array([.015,-.035,-.025])
+im=rgba_image(ident+'_SkinAlbedo',C)
+texlink(skin,bs,im,uv.name,'Base Color')
+rough=np.clip(.54+.035*noise+.03*field(.5,mv,.06,.045)-.06*field(.5,ev-.03,.055,.16),.40,.70)
+texlink(skin,bs,rgba_image(ident+'_SkinRoughness',rough,True),uv.name,'Roughness')
+dx=(np.roll(noise,-1,1)-np.roll(noise,1,1))*.018
+dy=(np.roll(noise,-1,0)-np.roll(noise,1,0))*.018
+norm=np.stack([.5+dx,.5+dy,np.full_like(dx,1)],axis=2)
+nt=texlink(skin,bs,rgba_image(ident+'_SkinMicroNormal',norm,True),uv.name,None)
+nm=skin.node_tree.nodes.new('ShaderNodeNormalMap');nm.uv_map=uv.name;nm.inputs['Strength'].default_value=.24
+skin.node_tree.links.new(nt.outputs['Color'],nm.inputs['Color']);skin.node_tree.links.new(nm.outputs['Normal'],bs.inputs['Normal'])
+if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.28
+if 'Subsurface Weight' in bs.inputs:bs.inputs['Subsurface Weight'].default_value=.065
+elif 'Subsurface' in bs.inputs:bs.inputs['Subsurface'].default_value=.065
+skin.diffuse_color=(*base,1)
+pbrReport={'skinTextureSize':size,'albedo':True,'roughness':True,'normal':True,'uv':'R53_AnatomicalSkin','proceduralBaked':True,'visualApproved':False}
+
 # Stabilize transferred morphs with seam-consistent per-vertex repair.
 _,w=np.unique(np.round(Q,6),axis=0,return_inverse=True);cnt=np.bincount(w)
 def weld(D):return np.column_stack([np.bincount(w,weights=D[:,k])/cnt for k in range(3)])[w]
@@ -244,7 +301,14 @@ for (kind,side),o in eyes.items():
     A=mapP(pts(o));freeze(o,A);o.name='R53_Master_'+kind+'_'+side;bind(o,[{'eye.'+side:1.} for _ in A])
     m=o.data.materials[0].copy();m.name=ident+'_'+kind+'_'+side
     b=next(n for n in m.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
-    b.inputs['Roughness'].default_value=.19 if kind=='iris' else .23
+    b.inputs['Roughness'].default_value=.14 if kind=='iris' else .22
+    if 'Coat Weight' in b.inputs:
+        b.inputs['Coat Weight'].default_value=.30 if kind=='iris' else .12
+        b.inputs['Coat Roughness'].default_value=.12
+    if 'Specular IOR Level' in b.inputs:b.inputs['Specular IOR Level'].default_value=.42
+    if kind=='iris':
+        m.diffuse_color=(.095,.20,.31,1) if female else (.18,.095,.043,1)
+    else:m.diffuse_color=(.86,.84,.79,1)
     if kind=='iris':
         # Original iris topology remains; dense radial texture based on
         # the measured local iris surface projection, not a flat extra disk.
@@ -495,7 +559,7 @@ def fitted_scalp_hair():
     female=ident=='commander-female'
     def edge(a):
         f=math.cos(a)
-        return 1.10+.42*(1-f)+(.12 if female else 0)*math.sin(a)**2
+        return 1.08+.43*(1-f)+(.12 if female else 0)*math.sin(a)**2+.075*math.sin(a+.6)*max(0.,f)**2
     def sample(a,t):
         angle=.022+(edge(a)-.022)*t
         # Swept strands begin at the measured scalp, not at an assumed ellipsoid.
@@ -524,7 +588,7 @@ def fitted_scalp_hair():
         a0=2*math.pi*k/72;start=len(V)
         for j in range(29):
             t=.10+.90*j/28
-            a=a0+(.18 if female else .30)*math.sin(t*math.pi*.75)
+            a=a0+(.32 if female else .42)*math.sin(t*math.pi*.75)+.10*math.sin(2*a0)*t
             p,h,v=sample(a,t)
             width=(.033 if female else .029)*(.40+.60*math.sin(math.pi*t)**.6)
             for side in (-1,0,1):
@@ -541,6 +605,28 @@ def fitted_scalp_hair():
         mat=bpy.data.materials.new('R53_fitted_hair_%d'%i);mat.diffuse_color=(*col,1);mat.use_nodes=True
         b=mat.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*col,1);b.inputs['Roughness'].default_value=.38
         me.materials.append(mat)
+    # UV coordinates follow the actual strand flow, not planar projected hair.
+    hu=me.uv_layers.new(name='R53_HairFlow')
+    capCount=(rows+1)*n
+    for loop in me.loops:
+        vi=loop.vertex_index
+        if vi<capCount:
+            j,k=divmod(vi,n);u=k/n;v=j/rows
+        else:
+            k,rem=divmod(vi-capCount,29*3);j,side=divmod(rem,3);u=(k+(side/2)*.95)/72;v=j/28
+        hu.data[loop.index].uv=(u,v)
+    for poly in me.polygons:
+        ids=list(poly.loop_indices)
+        if max(hu.data[i].uv.x for i in ids)-min(hu.data[i].uv.x for i in ids)>.5:
+            for i in ids:
+                if hu.data[i].uv.x<.5:hu.data[i].uv.x+=1
+    Yh,Xh=np.mgrid[0:512,0:1024];u=Xh/1024;v=Yh/512
+    stripe=.84+.09*np.sin(2*math.pi*(u*263+.31*np.sin(v*7)))+.07*np.sin(2*math.pi*(u*491+v*.20))
+    for mat,col in zip(me.materials,shades):
+        b=mat.node_tree.nodes.get('Principled BSDF')
+        texlink(mat,b,rgba_image(mat.name+'_strand',stripe[:,:,None]*np.array(col)[None,None,:]),hu.name,'Base Color')
+        b.inputs['Roughness'].default_value=.34
+        if 'Anisotropic IOR Level' in b.inputs:b.inputs['Anisotropic IOR Level'].default_value=.28
     for poly,mi in zip(me.polygons,M):poly.material_index=mi;poly.use_smooth=True
     # Anchor rigidly to the same head bone; no weight on facial morphs.
     headName=next((b.name for b in rig.data.bones if b.name.lower()=='head'),None)
@@ -549,7 +635,7 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    diag={'vertices':len(V),'faces':len(F),'scalpSamples':len(distances),'minRadialClearance_m':min(distances),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['scalp cap and tapered ribbon prototype; final hairstyle and back length require artist review','nearest-surface metric is not a complete collision guarantee']}
+    diag={'vertices':len(V),'faces':len(F),'scalpSamples':len(distances),'strandTextureSize':[1024,512],'sweptFlow':True,'minRadialClearance_m':min(distances),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['scalp cap and tapered ribbon prototype; final hairstyle and back length require artist review','nearest-surface metric is not a complete collision guarantee']}
     return ob,diag
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
@@ -592,5 +678,5 @@ if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for
 count=len(new);bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(dest));bpy.context.view_layer.update()
 rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
-report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
+report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)
