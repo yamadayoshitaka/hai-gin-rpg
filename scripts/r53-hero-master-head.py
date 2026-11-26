@@ -325,11 +325,11 @@ def fitted_scalp_hair():
             a=2*math.pi*k/n
             p,h,v=sample(a,t);V.append(tuple(p));distances.append((p-h).length)
     # Close the crown without creating duplicate pole vertices.
-    F.append(tuple(reversed(range(n))));M.append(0)
+    F.append(tuple(range(n)));M.append(0)
     for j in range(rows):
         for k in range(n):
             a=j*n+k;b=j*n+(k+1)%n
-            F.append((a,b,b+n,a+n));M.append(0)
+            F.append((a,a+n,b+n,b));M.append(0)
     # Raised, smoothly tapered hair ribbons distributed over the fitted cap.
     # These are real mesh surfaces and are not the previous fragmented wig.
     for k in range(72):
@@ -345,7 +345,7 @@ def fitted_scalp_hair():
                 V.append(tuple(q))
         for j in range(28):
             for k2 in range(2):
-                a=start+j*3+k2;F.append((a,a+1,a+4,a+3));M.append(1+(k%3))
+                a=start+j*3+k2;F.append((a,a+3,a+4,a+1));M.append(1+(k%3))
     me=bpy.data.meshes.new('R53_MeasuredScalpHair');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
     shades=[(.20,.105,.040),(.26,.14,.055),(.33,.19,.080),(.23,.12,.05)] if female else [(.020,.014,.011),(.030,.022,.018),(.045,.032,.025),(.024,.018,.014)]
