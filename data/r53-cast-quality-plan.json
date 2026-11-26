@@ -1,0 +1,451 @@
+{
+  "classification": "provisional role-specific palettes, not canon approval",
+  "models": [
+    {
+      "id": "commander-male",
+      "label": "男性主人公・軍師",
+      "role": "軍師",
+      "sex": "male",
+      "age": "20s",
+      "build": "normal",
+      "sourceKind": "fifth",
+      "hairColor": null,
+      "clothColor": null,
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "commander-female",
+      "label": "女性主人公・軍師",
+      "role": "軍師",
+      "sex": "female",
+      "age": "20s",
+      "build": "normal",
+      "sourceKind": "female",
+      "hairColor": [
+        0.62,
+        0.38,
+        0.12
+      ],
+      "clothColor": [
+        0.37,
+        0.43,
+        0.51
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "lucia",
+      "label": "リュシア",
+      "role": "摂政",
+      "sex": "female",
+      "age": "30s",
+      "build": "slim",
+      "sourceKind": "female",
+      "hairColor": [
+        0.48,
+        0.5,
+        0.54
+      ],
+      "clothColor": [
+        0.1,
+        0.21,
+        0.36
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "garan",
+      "label": "ガラン",
+      "role": "老騎士",
+      "sex": "male",
+      "age": "70s",
+      "build": "muscular",
+      "sourceKind": "age",
+      "hairColor": null,
+      "clothColor": null,
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "iris",
+      "label": "イリス",
+      "role": "治癒師",
+      "sex": "female",
+      "age": "20s",
+      "build": "normal",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.34,
+        0.23,
+        0.11
+      ],
+      "clothColor": [
+        0.46,
+        0.52,
+        0.41
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "shion",
+      "label": "シオン",
+      "role": "忍び頭",
+      "sex": "male",
+      "age": "30s",
+      "build": "slim",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.018,
+        0.021,
+        0.027
+      ],
+      "clothColor": [
+        0.035,
+        0.048,
+        0.065
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "kai",
+      "label": "カイ",
+      "role": "盗賊・斥候",
+      "sex": "male",
+      "age": "20s",
+      "build": "slim",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.13,
+        0.073,
+        0.029
+      ],
+      "clothColor": [
+        0.12,
+        0.26,
+        0.16
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "leon",
+      "label": "レオン",
+      "role": "傭兵隊長",
+      "sex": "male",
+      "age": "30s",
+      "build": "muscular",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.084,
+        0.041,
+        0.021
+      ],
+      "clothColor": [
+        0.27,
+        0.13,
+        0.08
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "fio",
+      "label": "フィオ",
+      "role": "工兵長",
+      "sex": "female",
+      "age": "30s",
+      "build": "muscular",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.23,
+        0.11,
+        0.046
+      ],
+      "clothColor": [
+        0.35,
+        0.22,
+        0.08
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "edo",
+      "label": "エド",
+      "role": "元騎士・記録官",
+      "sex": "male",
+      "age": "50s",
+      "build": "normal",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.26,
+        0.25,
+        0.24
+      ],
+      "clothColor": [
+        0.15,
+        0.21,
+        0.28
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "mina",
+      "label": "ミナ",
+      "role": "避難民の少女",
+      "sex": "female",
+      "age": "under10",
+      "build": "normal",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.18,
+        0.087,
+        0.035
+      ],
+      "clothColor": [
+        0.39,
+        0.24,
+        0.15
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "noel",
+      "label": "ノエル",
+      "role": "森守・使節",
+      "sex": "female",
+      "age": "20s",
+      "build": "slim",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.35,
+        0.23,
+        0.11
+      ],
+      "clothColor": [
+        0.07,
+        0.28,
+        0.17
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "raizen",
+      "label": "ライゼン",
+      "role": "国境将軍",
+      "sex": "male",
+      "age": "40s",
+      "build": "muscular",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.055,
+        0.045,
+        0.037
+      ],
+      "clothColor": [
+        0.23,
+        0.08,
+        0.065
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "vald",
+      "label": "ヴァルド",
+      "role": "皇帝",
+      "sex": "male",
+      "age": "60s",
+      "build": "normal",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.37,
+        0.38,
+        0.4
+      ],
+      "clothColor": [
+        0.25,
+        0.055,
+        0.09
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "selika",
+      "label": "セリカ",
+      "role": "皇女",
+      "sex": "female",
+      "age": "20s",
+      "build": "slim",
+      "sourceKind": "female",
+      "hairColor": [
+        0.35,
+        0.045,
+        0.021
+      ],
+      "clothColor": [
+        0.4,
+        0.075,
+        0.1
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "zahar",
+      "label": "ザハル",
+      "role": "宰相",
+      "sex": "male",
+      "age": "50s",
+      "build": "slim",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.28,
+        0.28,
+        0.27
+      ],
+      "clothColor": [
+        0.13,
+        0.07,
+        0.24
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "grad",
+      "label": "グラド",
+      "role": "重装将軍",
+      "sex": "male",
+      "age": "40s",
+      "build": "obese",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.075,
+        0.055,
+        0.042
+      ],
+      "clothColor": [
+        0.22,
+        0.12,
+        0.085
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "altea",
+      "label": "アルテア",
+      "role": "女王",
+      "sex": "female",
+      "age": "40s",
+      "build": "normal",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.55,
+        0.36,
+        0.11
+      ],
+      "clothColor": [
+        0.16,
+        0.3,
+        0.34
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "orphe",
+      "label": "オルフェ",
+      "role": "艦隊司令",
+      "sex": "male",
+      "age": "40s",
+      "build": "normal",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.065,
+        0.07,
+        0.08
+      ],
+      "clothColor": [
+        0.055,
+        0.16,
+        0.31
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "meve",
+      "label": "メーヴ",
+      "role": "密偵長",
+      "sex": "female",
+      "age": "30s",
+      "build": "slim",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.032,
+        0.024,
+        0.028
+      ],
+      "clothColor": [
+        0.13,
+        0.055,
+        0.17
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "elne",
+      "label": "エルネ",
+      "role": "最後の鐘守",
+      "sex": "female",
+      "age": "40s",
+      "build": "normal",
+      "sourceKind": "female",
+      "hairColor": [
+        0.51,
+        0.54,
+        0.57
+      ],
+      "clothColor": [
+        0.2,
+        0.27,
+        0.3
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    },
+    {
+      "id": "vess",
+      "label": "ヴェス",
+      "role": "記録院長",
+      "sex": "male",
+      "age": "80plus",
+      "build": "slim",
+      "sourceKind": "remaining",
+      "hairColor": [
+        0.6,
+        0.61,
+        0.62
+      ],
+      "clothColor": [
+        0.075,
+        0.1,
+        0.15
+      ],
+      "designEstimated": true,
+      "protectedR6Used": false
+    }
+  ]
+}

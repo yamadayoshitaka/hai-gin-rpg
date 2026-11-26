@@ -1,0 +1,179 @@
+name: R53 all named cast quality and LOD
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'data/r53-cast-quality-plan.json'
+      - 'scripts/r53-cast-quality.py'
+      - 'scripts/r53-cast-lod.py'
+      - 'scripts/r53-cast-quality-inventory.py'
+      - '.github/workflows/r53-cast-quality-lod.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include:
+          - id: commander-male
+            run: 45732684923
+            artifact: r53-cast-fifth-commander-male
+          - id: commander-female
+            run: 45734506574
+            artifact: r53-cast-female-candidate-commander-female
+          - id: lucia
+            run: 45734506574
+            artifact: r53-cast-female-candidate-lucia
+          - id: garan
+            run: 45734407871
+            artifact: r53-garan-age-geometry
+          - id: iris
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-iris
+          - id: shion
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-shion
+          - id: kai
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-kai
+          - id: leon
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-leon
+          - id: fio
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-fio
+          - id: edo
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-edo
+          - id: mina
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-mina
+          - id: noel
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-noel
+          - id: raizen
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-raizen
+          - id: vald
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-vald
+          - id: selika
+            run: 45734506574
+            artifact: r53-cast-female-candidate-selika
+          - id: zahar
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-zahar
+          - id: grad
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-grad
+          - id: altea
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-altea
+          - id: orphe
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-orphe
+          - id: meve
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-meve
+          - id: elne
+            run: 45734506574
+            artifact: r53-cast-female-candidate-elne
+          - id: vess
+            run: 45736494700
+            artifact: r53-cast-remaining-candidate-vess
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - run: python3 -m py_compile scripts/r53-cast-quality.py scripts/r53-cast-lod.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          run-id: ${{ matrix.run }}
+          github-token: ${{ github.token }}
+          path: /tmp/cast
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/quality
+      - name: Verify actual body fit and role palettes
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-quality.py -- /tmp/cast data/r53-cast-quality-plan.json review/quality "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-quality-${{ matrix.id }}
+          path: review/quality/
+          if-no-files-found: warn
+  lod:
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        id: [commander-male, commander-female, lucia, garan, iris, shion, kai, leon, fio, edo, mina, noel, raizen, vald, selika, zahar, grad, altea, orphe, meve, elne, vess]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-quality-${{ matrix.id }}
+          path: /tmp/quality
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/lod
+      - name: Generate LODs with body and facial morph protection
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-lod.py -- /tmp/quality review/lod "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-lod-${{ matrix.id }}
+          path: review/lod/
+          if-no-files-found: warn
+  inventory:
+    needs: lod
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-quality-*
+          path: /tmp/quality
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-lod-*
+          path: /tmp/lod
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-quality-inventory.py /tmp/quality /tmp/lod data/r53-cast-quality-plan.json review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-quality-lod-summary
+          path: review/summary/
