@@ -164,7 +164,7 @@ female=ident=='commander-female'
 referencePath=Path('data/r53-female-portrait-landmarks.json')
 reference=json.loads(referencePath.read_text())
 referenceBytes=Path(reference['image']).read_bytes()
-if hashlib.sha1(('blob '+str(len(referenceBytes))+'\\0').encode()+referenceBytes).hexdigest()!=reference['gitBlob']:raise RuntimeError('portrait source drift')
+if hashlib.sha1(('blob '+str(len(referenceBytes))+chr(0)).encode()+referenceBytes).hexdigest()!=reference['gitBlob']:raise RuntimeError('portrait source drift')
 (out/'portrait-reference.webp').write_bytes(referenceBytes)
 rp2={k:np.array(v,dtype=float) for k,v in reference['points'].items()}
 eyePx=float(np.linalg.norm(rp2['eye_far_center']-rp2['eye_near_center']))
