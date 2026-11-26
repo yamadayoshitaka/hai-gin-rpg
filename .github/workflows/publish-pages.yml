@@ -651,9 +651,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: r53-hero-master-head-commander-*
-          run-id: 45748909583
+          run-id: 45762954201
           github-token: ${{ github.token }}
           path: /tmp/r53hero/new
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-hero-master-head-commander-*
+          run-id: 45759294848
+          github-token: ${{ github.token }}
+          path: /tmp/r53hero/previous
       - uses: actions/download-artifact@v4
         with:
           pattern: r53-hero-anatomy-commander-*
