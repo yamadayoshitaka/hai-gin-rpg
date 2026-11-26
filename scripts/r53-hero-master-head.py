@@ -165,6 +165,13 @@ Dprofile[:,1]=gap*((.055 if female else -.035)*chin+(-.037 if female else .022)*
 Dprofile[:,2]=gap*((.085 if female else -.027)*chin+(.025 if female else -.008)*lip)
 # Keep the neck seam geometry fixed; avoid changing the eye sockets.
 neckLock=np.clip((Z+1.90)/.32,0,1);neckLock=neckLock*neckLock*(3-2*neckLock)
+if female:
+    # Full jaw arc, including the lateral mandible, instead of a small
+    # central-front mask. Preserve the neck cut and orbital support.
+    jside=ga(Z,-1.09,.40)*ga(np.abs(X),.82,.38)*np.clip((.66-Y)/.90,0,1)
+    Dprofile[:,0]-=.095*(Q0[:,0]-eye[0])*jside
+    Dprofile[:,2]+=gap*.045*ga(Z,-1.48,.27)*ga(X,0,.66)*front
+    Dprofile[:,1]+=gap*.035*ga(Z,-.91,.24)*ga(X,0,.30)*front
 Dprofile*=((1-orbital*.85)*neckLock)[:,None]
 if female:
     # Use the actual female anatomy candidate as a secondary anterior
@@ -422,7 +429,11 @@ for name in names:
             # actual contiguous first-hit oral lining over mere recession.
             chin0=(zz<-.28)&(zz>-.65)&(np.abs(xx)<.20)&(yy<0)
             chinShift=float(np.max(np.abs(D[chin0,2]))) if chin0.any() else 0.
-            score0=m['visibleLiningSamples']+2500*m['centerOpeningHeight_m']-1800*max(0.,chinShift-.004)
+            target={'jawOpen':.007,'viseme_A':.006,'viseme_O':.005,'laugh':.006}[name]
+            score0=m['visibleLiningSamples']+3500*min(m['centerOpeningHeight_m'],target)-2300*max(0.,chinShift-.004)
+            if name=='laugh':
+                corners=(np.abs(xx)>.23)&(np.abs(xx)<.48)&(np.abs(zz)<.16)&(yy<0)
+                if corners.any():score0+=5000*float(np.mean(D[corners,2]))
             return score0,{**m,'chinShift_m':chinShift}
         baseD=weld(D);safe0,it0=repair_candidate(baseD)
         if safe0 is None:safe0=np.zeros_like(Q)
@@ -435,10 +446,17 @@ for name in names:
             for width in (.18,.27):
                 wz=np.exp(-(zc/width)**4)
                 split=np.tanh(zc/.042)
-                for opening in (.045,.075,.115,.155,.20):
+                for opening in (.065,.105,.155,.22,.28):
                     L=np.zeros_like(Q)
                     L[:,2]=gap*opening*wx*wz*wf*split*(.65+.35*(split<0))
                     L[:,1]=gap*opening*.7*wx*wz*wf*mouthInner
+                    if name=='laugh':
+                        corner=np.exp(-((np.abs(xx)-.35)/.14)**2)*np.exp(-(zz/.20)**2)*wf
+                        L[:,2]+=gap*.095*corner
+                        L[:,0]+=gap*.035*np.sign(xx)*corner
+                    elif name=='viseme_O':
+                        L[:,0]-=gap*.045*np.tanh(xx/.13)*wx*wz*wf
+                        L[:,1]-=gap*.024*wx*wz*wf*(~mouthInner)
                     # Let the actual topological neighbors transition
                     # smoothly; no artificial face-hole or painted slit.
                     L=weld(L)
@@ -677,19 +695,28 @@ def oral_piece(name,centers,radii,col,lower=False):
     for n in names:
         D=np.zeros_like(A)
         if lower and n in jawAngles:
-            angle=jawAngles[n]*.84;yy=A[:,1]-hingeY;zz=A[:,2]-hingeZ
-            D[:,1]=yy*(math.cos(angle)-1)-zz*math.sin(angle)
-            D[:,2]=yy*math.sin(angle)+zz*(math.cos(angle)-1)
+            # Match the actual selected lower-lip morph; the candidate search
+            # may choose less rotation than the nominal jaw angle.
+            xx0=(Q[:,0]-eye[0])/gap;zz0=(Q[:,2]-mouthZ)/gap
+            mask=(np.abs(xx0)<.25)&(zz0<-.045)&(zz0>-.21)&(Q[:,1]<eye[1])&(~mouthInner)
+            if mask.any():
+                shift=np.median(fixed[n][mask],axis=0)
+                D[:,1]=np.clip(shift[1],-.003,.008)
+                D[:,2]=np.clip(shift[2],-.016,.002)
+            else:
+                angle=jawAngles[n]*.35;yy=A[:,1]-hingeY;zz=A[:,2]-hingeZ
+                D[:,1]=yy*(math.cos(angle)-1)-zz*math.sin(angle)
+                D[:,2]=yy*math.sin(angle)+zz*(math.cos(angle)-1)
         k=ob.shape_key_add(name=n);k.data.foreach_set('co',(A+D).astype(np.float32).ravel())
     oral.append(ob);oralReports.append({'name':name,'components':len(centers),'vertices':len(V),'lowerJawFollow':lower,'morphs':len(names)})
 for lower in (False,True):
     centers=[];radii=[]
     for k in (-2.5,-1.5,-.5,.5,1.5,2.5):
         x=eye[0]+k*gap*.087
-        y=lipY+gap*(.19+.027*abs(k)**1.55)
+        y=lipY+gap*(.25+.027*abs(k)**1.55)
         z=mouthZ+gap*((-.065 if lower else .065)-.009*abs(k))
         centers.append((x,y,z));radii.append((gap*.040,gap*.037,gap*(.040 if lower else .052)))
-    oral_piece('R53_LowerTeeth' if lower else 'R53_UpperTeeth',centers,radii,(.83,.77,.64),lower)
+    oral_piece('R53_LowerTeeth' if lower else 'R53_UpperTeeth',centers,radii,(.73,.69,.60),lower)
 oral_piece('R53_Tongue',[(eye[0],lipY+gap*.55,mouthZ-gap*.19)],[(gap*.185,gap*.18,gap*.052)],(.39,.13,.11),True)
 # Evaluate the real frontmost surface recession through the lip region.
 # A successful morph topology check alone cannot prove an open mouth.
@@ -889,7 +916,7 @@ def fitted_scalp_hair():
             radial=Vector((math.sin(a),-math.cos(a),0))
             target=p+Vector((-.006*mix*math.sin(a),0,-hang))+radial*(.004+.004*mix)
             endtan=Vector((0,0,-hang*.8))-radial*.007*mix
-            t0=tan*.16
+            t0=tan*.55
             q=(2*u**3-3*u*u+1)*p+(u**3-2*u*u+u)*t0+(-2*u**3+3*u*u)*target+(u**3-u*u)*endtan
             q+=radial*(.004*math.sin(math.pi*u)*mix)
         q+=ray*(.00038*math.sin(29*a+5*t)*math.sin(math.pi*min(t,1.))**2)
@@ -904,11 +931,24 @@ def fitted_scalp_hair():
                 clearance=(q-h).dot(horizontal)
                 if clearance<.0025:q+=horizontal*(.0025-clearance)
         return q
+    # Smooth across the scalp/skirt junction and ear envelopes. Every
+    # overlay samples this same final surface, preventing a second ridge.
+    grid=np.array([[tuple(sample(2*math.pi*k/n,1.95*j/rows)) for k in range(n)] for j in range(rows+1)])
+    originalGrid=grid.copy()
+    for _ in range(14):
+        avg=(np.roll(grid,1,axis=1)+np.roll(grid,-1,axis=1)+np.roll(grid,1,axis=0)+np.roll(grid,-1,axis=0))*.25
+        nxt=.50*grid+.50*avg
+        nxt[0]=grid[0];nxt[-1]=.85*grid[-1]+.15*(np.roll(grid[-1],1,axis=0)+np.roll(grid[-1],-1,axis=0))*.5
+        grid=nxt
     for j in range(rows+1):
-        t=1.95*j/rows
         for k in range(n):
-            a=2*math.pi*k/n
-            V.append(tuple(sample(a,t)));UV.append((k/n,j/rows))
+            q=Vector(grid[j,k]);p0,n0,_,d0=skinTree.find_nearest(q)
+            if p0 is not None and d0<.025 and (q-p0).dot(n0)<.0014:q=p0+n0*.0014
+            grid[j,k]=tuple(q);V.append(tuple(q));UV.append((k/n,j/rows))
+    def smoothSample(a,t):
+        x=(a%(2*math.pi))*n/(2*math.pi);y=np.clip(t/1.95*rows,0,rows-1e-6)
+        k=int(x)%n;j=int(y);u=x-int(x);v=y-j
+        return Vector((1-v)*((1-u)*grid[j,k]+u*grid[j,(k+1)%n])+v*((1-u)*grid[j+1,k]+u*grid[j+1,(k+1)%n]))
     F.append(tuple(range(n)))
     for j in range(rows):
         for k in range(n):
@@ -916,16 +956,16 @@ def fitted_scalp_hair():
     # Fine overlay strips with very shallow relief follow the silhouette.
     # Their edges remain close to the continuous backing; no separate rods.
     groups=[]
-    for k in range(48):
-        a0=2*math.pi*(k+.15*math.sin(k*2.37))/48;start=len(V);sections=32
+    for k in range(56):
+        a0=2*math.pi*(k+.15*math.sin(k*2.37))/56;start=len(V);sections=32
         for j in range(sections):
             t=.38+1.54*j/(sections-1);a=a0+.23*math.sin(t*1.7)*math.sin(a0+.5)
             width=.049*(.35+.65*math.sin(math.pi*j/(sections-1))**.65)
             for side in (-1,0,1):
-                q=sample(a+side*width,t)
+                q=smoothSample(a+side*width,t)
                 normal=Vector((math.sin(a),-math.cos(a),max(0.,1-t))).normalized()
                 q+=normal*(.00013+.00020*(1-abs(side))*math.sin(math.pi*j/(sections-1)))
-                V.append(tuple(q));UV.append(((k+(side*.42))/48,j/(sections-1)))
+                V.append(tuple(q));UV.append(((k+(side*.42))/56,j/(sections-1)))
         for j in range(sections-1):
             for k0 in range(2):
                 a=start+j*3+k0;F.append((a,a+3,a+4,a+1))
@@ -950,7 +990,7 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'continuous layered asymmetrical bob','minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
+    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'smoothed continuous layered asymmetrical bob','surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
 # Render actual new scalp-fitted geometry in all five views, separately from old wig.
@@ -1042,14 +1082,32 @@ try:
                     bpy.ops.object.modifier_apply(modifier=sm.name)
                 if any(not v.groups for v in plate.data.vertices):raise RuntimeError('panel lost skin weights')
                 if len(plate.data.vertices)<=n0:raise RuntimeError('no geometric refinement')
+                # Smooth the panel faces themselves rather than just the
+                # tiny edge bevels. Accept only if body collision does not
+                # become worse and skin weights survive.
+                roundedBackup=plate.data.copy();beforeRound=metrics(pts(plate),baseTree)
+                try:
+                    mod=plate.modifiers.new('R53 panel curved surface','SUBSURF');mod.subdivision_type='CATMULL_CLARK';mod.levels=1
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    if any(not v.groups for v in plate.data.vertices):raise RuntimeError('panel weight loss')
+                    afterRound=metrics(pts(plate),baseTree)
+                    if score(afterRound)>score(beforeRound)+.025:raise RuntimeError('panel collision regression')
+                    rounded=True
+                except Exception:
+                    for md0 in list(plate.modifiers):
+                        if md0.name.startswith('R53 panel curved surface'):plate.modifiers.remove(md0)
+                    plate.data=roundedBackup;rounded=False
                 for pol in plate.data.polygons:pol.use_smooth=True
                 for mat in plate.data.materials:
                     if not mat or not mat.use_nodes:continue
                     node=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
                     if node:
-                        node.inputs['Metallic'].default_value=.82
-                        node.inputs['Roughness'].default_value=.34
-                armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled'})
+                        node.inputs['Metallic'].default_value=.66
+                        node.inputs['Roughness'].default_value=.43
+                        if not node.inputs['Base Color'].is_linked:
+                            old=np.array(node.inputs['Base Color'].default_value[:3])
+                            node.inputs['Base Color'].default_value=(*(old*.25+np.array([.21,.25,.29])*.75),1)
+                armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled','curvedPanelAccepted':rounded})
             except Exception as e:
                 for md0 in list(plate.modifiers):
                     if md0.name.startswith(('R53 edge bevel','R53 weld seams','R53 panel refinement','R53 rounded panel')):plate.modifiers.remove(md0)
