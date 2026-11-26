@@ -1,0 +1,33 @@
+name: R53 modular female character part library review only
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-modular-parts.py'
+      - '.github/workflows/r53-modular-parts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  parts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-hero-master-head-commander-female
+          run-id: 45783613678
+          github-token: ${{ github.token }}
+          path: /tmp/hero
+      - run: |
+          python3 -m pip install numpy
+          python3 scripts/r53-modular-parts.py /tmp/hero/continuous-neck-study/commander-female_continuous_neck.glb review/parts
+          cp /tmp/hero/ATTRIBUTION.md /tmp/hero/ARMOR-LICENSE.txt review/parts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-female-modular-parts
+          path: review/parts/
