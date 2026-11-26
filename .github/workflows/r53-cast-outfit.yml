@@ -1,0 +1,70 @@
+name: R53 cast cape fur mantle and lower plate review
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-cast-outfit.py'
+      - 'scripts/r53-cast-outfit-audit.py'
+      - '.github/workflows/r53-cast-outfit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  outfit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, garan]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/free-knight
+      - run: python3 -m py_compile scripts/r53-cast-outfit.py scripts/r53-cast-outfit-audit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-visual-${{ matrix.id }}
+          run-id: 45728407832
+          github-token: ${{ github.token }}
+          path: /tmp/cast-visual
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Fit lower armor and cloth, sample actual animation
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/outfit
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-outfit.py -- /tmp/cast-visual assets/characters/free-knight/knight_full_plate_armor.glb review/outfit "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-outfit-${{ matrix.id }}
+          path: review/outfit/
+          if-no-files-found: warn
+  inventory:
+    needs: outfit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-outfit-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-outfit-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-outfit-summary
+          path: review/summary/
+          if-no-files-found: error
