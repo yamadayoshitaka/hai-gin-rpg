@@ -570,8 +570,167 @@ if female:
                     if score<localScore-1e-8:
                         localBest=C;localScore=score;canthus_candidate={'stretch':stretch,'relief_m':relief,'metrics':metric}
         bestQ=localBest;refinement.append({'side':side,'before':baseMetric,'selected':canthus_candidate,'beforeScore':baseScore,'afterScore':localScore})
+    # Fit the SHAPE of both eyelid margins, not just their bounding box.
+    # Compare profiles at corresponding normalized horizontal positions,
+    # then separately retain absolute width/height and the canthal tilt.
+    eyeCurves={}
+    for side in ('L','R'):
+        lab='L' if dstEye[side][0]<eye[0] else 'R';c=dstEye[side]
+        U0=df['eye'+lab+'Upper'];L0=df['eye'+lab+'Lower'];o=df['iris'+lab][0]
+        t0=np.linspace(0.,1.,19)
+        tx=U0[0,0]+t0*(U0[-1,0]-U0[0,0])
+        tarU=c[2]-(np.interp(tx,U0[:,0],U0[:,1])-o[1])*gap/detailIPD
+        tarL=c[2]-(np.interp(tx,L0[:,0],L0[:,1])-o[1])*gap/detailIPD
+        def curve_measure(A):
+            G=aperture(A,side,bestFactor)
+            if len(G)<10:return None
+            gx=np.unique(G[:,0]);gu=np.array([G[G[:,0]==x,1].max() for x in gx]);gl=np.array([G[G[:,0]==x,1].min() for x in gx])
+            if len(gx)<5:return None
+            px=gx[0]+t0*(gx[-1]-gx[0])
+            uu=np.interp(px,gx,gu);ll=np.interp(px,gx,gl)
+            rms=float(np.sqrt(np.mean(np.r_[uu-tarU,ll-tarL]**2))/gap)
+            w=float(np.ptp(G[:,0])/gap);hh0=float(np.ptp(G[:,1])/gap)
+            tilt=float(np.degrees(np.arctan2((uu[-1]+ll[-1]-uu[0]-ll[0])*.5,gx[-1]-gx[0])))
+            return {'x':px,'upper':uu,'lower':ll,'rms':rms,'width':w,'height':hh0,'tiltDeg':tilt}
+        initial=curve_measure(bestQ)
+        if initial is None:continue
+        current=initial
+        tries=[]
+        for it0 in range(3):
+            A0=bestQ.copy();dx=A0[:,0]-c[0];dz=A0[:,2]-c[2]
+            oldU=np.interp(A0[:,0],current['x'],current['upper']);oldL=np.interp(A0[:,0],current['x'],current['lower'])
+            dU=np.interp(A0[:,0],current['x'],tarU-current['upper']);dL=np.interp(A0[:,0],current['x'],tarL-current['lower'])
+            weight=np.exp(-(dx/(gap*.34))**4-(dz/(gap*.27))**4)*np.clip((c[1]-A0[:,1]+gap*.025)/(gap*.14),0,1)
+            mu=np.clip((A0[:,2]-oldL)/np.maximum(oldU-oldL,.0015),0,1)
+            move=(dU*mu+dL*(1-mu))*weight
+            picked=None;bestLocal=current['rms']
+            for k0 in (.25,.50,.75,1.):
+                C=A0.copy();C[:,2]+=np.clip(move,-gap*.075,gap*.075)*k0
+                N=profile_norm(C)
+                if np.any(pv&((np.sum(pn*N,axis=1)<=0)|(np.linalg.norm(N,axis=1)<.15*pa))):continue
+                met=curve_measure(C)
+                if met is None:continue
+                if abs(met['width']-dm[lab]['eyeWidth'])>abs(initial['width']-dm[lab]['eyeWidth'])+.008:continue
+                if abs(met['height']-dm[lab]['eyeHeight'])>abs(initial['height']-dm[lab]['eyeHeight'])+.012:continue
+                tries.append({'iteration':it0+1,'strength':k0,'curveRmsRatio':met['rms']})
+                if met['rms']<bestLocal-1e-6:bestLocal=met['rms'];picked=(C,met)
+            if picked is None:break
+            bestQ,current=picked
+        eyeCurves[lab]={'beforeRmsRatio':initial['rms'],'afterRmsRatio':current['rms'],'beforeTiltDeg':initial['tiltDeg'],'afterTiltDeg':current['tiltDeg'],'targetUpper_m':tarU.tolist(),'targetLower_m':tarL.tolist(),'actualUpper_m':current['upper'].tolist(),'actualLower_m':current['lower'].tolist(),'attempts':tries}
+    dreport['eyelidShapeCurveFit']=eyeCurves
     Q=bestQ;eyeScaleFactors={k:bestFactor for k in ('L','R')}
     dreport['eyelidCurveFit']={'beforeError':beforeErr,'afterError':bestErr,'globeScale':bestFactor,'attempts':attempts,'canthusRefinement':refinement,'applied':bool(bestErr<beforeErr-1e-8),'initialEyes':{k:aperture_metric(originalA[k],k)[1] for k in originalA},'limitation':'synthetic projected target; topology and globe scale constrain fit'}
+# Central facial-feature reconstruction from measured front lip curves and
+# the bilateral sagittal nose/lip profile. These are projected surface
+# constraints, not fabricated anatomical depth measurements.
+if female:
+    mid2=(df['irisL'][0]+df['irisR'][0])*.5
+    def pixxz(p):return np.array([eye[0]+(p[0]-mid2[0])*gap/detailIPD,eye[2]-(p[1]-mid2[1])*gap/detailIPD])
+    featureTris=[tuple(int(i) for i in t) for t in ST]
+    def surfaceTree(A):return BVHTree.FromPolygons([Vector(p) for p in A],featureTris,all_triangles=True)
+    def depthRay(t,x,z):
+        p,_,_,_=t.ray_cast(Vector((float(x),float(Q0[:,1].min()-.08),float(z))),Vector((0,1,0)),.5)
+        return float(p.y) if p is not None else np.nan
+    # Trace the central nose, philtrum, lip peaks and chin from each
+    # side with independently normalized eye-to-chin distance.
+    sideNames=('noseRoot','noseTip','noseBase','upperLip','mouth','lowerLip')
+    refDepth=[]
+    for lab,sgn0 in (('left',1.),('right',-1.)):
+        dd=detail['views'][lab];ep=np.array(dd['eye'][0]);cp=np.array(dd['chin'][0]);tip=np.array(dd['noseTip'][0])
+        ss=abs(np.mean(df['chin'][:,1])-mid2[1])*gap/detailIPD/max(abs(cp[1]-ep[1]),1.)
+        refDepth.append(np.array([[(np.array(dd[k][0])[0]-tip[0])*sgn0*ss,eye[2]-(np.array(dd[k][0])[1]-ep[1])*ss] for k in sideNames]))
+    profileTarget=np.mean(refDepth,axis=0)
+    # Align the two image projections to the measured tip on the actual
+    # mesh; use relative depths only, since absolute depth is unobservable.
+    t=surfaceTree(Q);actualTip=depthRay(t,eye[0],profileTarget[1,1])
+    if not np.isfinite(actualTip):actualTip=float(Q[noseI,1])
+    profileTarget[:,0]+=actualTip
+    zRef=profileTarget[:,1];yRef=profileTarget[:,0]
+    def nose_metric(A):
+        tr=surfaceTree(A);y0=np.array([depthRay(tr,eye[0],z) for z in zRef])
+        if not np.isfinite(y0).all():return None
+        # Relative shape error eliminates absolute camera-depth ambiguity.
+        d0=y0-y0[1];tar=yRef-yRef[1]
+        return {'depth_m':y0,'rms_m':float(np.sqrt(np.mean((d0-tar)**2)))}
+    baseN=nose_metric(Q);bestN=baseN;profileTries=[]
+    if baseN is not None:
+        for it0 in range(5):
+            A0=Q.copy();old=bestN
+            dz0=(A0[:,2]-eye[2])/gap;dx0=(A0[:,0]-eye[0])/gap
+            ksort=np.argsort(zRef);actual=old['depth_m']
+            delta=(yRef-yRef[1])-(actual-actual[1])
+            move=np.interp(A0[:,2],zRef[ksort],delta[ksort])
+            envelope=np.exp(-(dx0/.32)**4)*np.clip((eye[1]-A0[:,1]+gap*.02)/(gap*.23),0.,1.)
+            envelope*=np.clip((-dz0+.12)/.27,0,1)*np.clip((dz0+1.42)/.25,0,1)
+            move*=envelope;chosen=None;err=old['rms_m']
+            for strength in (.25,.5,.75,1.):
+                C=A0.copy();C[:,1]+=np.clip(move,-gap*.065,gap*.065)*strength
+                nn=profile_norm(C)
+                if np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):continue
+                met=nose_metric(C)
+                if met is None:continue
+                profileTries.append({'iteration':it0+1,'strength':strength,'rmsMm':met['rms_m']*1000})
+                if met['rms_m']<err-1e-7:err=met['rms_m'];chosen=(C,met)
+            if chosen is None:break
+            Q,bestN=chosen
+    dreport['centralProfileFit']={'labels':list(sideNames),'targetDepth_m':yRef.tolist(),'sampleZ_m':zRef.tolist(),'beforeDepth_m':baseN['depth_m'].tolist() if baseN else None,'afterDepth_m':bestN['depth_m'].tolist() if bestN else None,'beforeRmsMm':baseN['rms_m']*1000 if baseN else None,'afterRmsMm':bestN['rms_m']*1000 if bestN else None,'attempts':profileTries,'measurement':'relative sagittal projection proxy, calibrated to the same model tip, not physical depth'}
+    # Determine lip seam and vermilion peaks from actual surface depth
+    # profiles at seven central x locations. Never invent corners when
+    # a crease cannot be observed. Use the traced Cupid bow and thickness
+    # as surface constraints, with smooth tapered neighboring influence.
+    lp={k:np.array([pixxz(p) for p in df[k]]) for k in ('lipTop','lipSeam','lipBottom')}
+    tx=np.linspace(lp['lipSeam'][0,0],lp['lipSeam'][-1,0],13)[2:-2]
+    targetSeam=np.interp(tx,lp['lipSeam'][:,0],lp['lipSeam'][:,1])
+    targetTop=np.interp(tx,lp['lipTop'][:,0],lp['lipTop'][:,1])
+    targetBottom=np.interp(tx,lp['lipBottom'][:,0],lp['lipBottom'][:,1])
+    def lip_metrics(A):
+        tr=surfaceTree(A);result=[]
+        for x,z0,zt,zb in zip(tx,targetSeam,targetTop,targetBottom):
+            zz=np.linspace(z0-gap*.22,z0+gap*.22,89)
+            d=np.array([depthRay(tr,x,z) for z in zz])
+            if not np.isfinite(d).all():result.append([np.nan]*3);continue
+            # The crease is a recess bounded by upper/lower lip projections.
+            candidates=[j for j in range(14,len(zz)-14) if d[j]>=d[j-1] and d[j]>=d[j+1] and abs(zz[j]-z0)<gap*.15]
+            if not candidates:result.append([np.nan]*3);continue
+            j=max(candidates,key=lambda j0:min(d[j0]-np.min(d[j0-12:j0]),d[j0]-np.min(d[j0+1:j0+13]))-abs(zz[j0]-z0)*.035)
+            if min(d[j]-np.min(d[j-12:j]),d[j]-np.min(d[j+1:j+13]))<.00004:result.append([np.nan]*3);continue
+            # Peak coordinates are *proxies* for the full vermilion border;
+            # target peaks lie inside the traced silhouette, not at its edge.
+            lo=j-1-int(np.argmin(d[j-13:j][::-1]));hi=j+1+int(np.argmin(d[j+1:j+14]))
+            result.append([zz[hi],zz[j],zz[lo]])
+        return np.array(result)
+    lipTarget=np.column_stack([targetSeam+.60*(targetTop-targetSeam),targetSeam,targetSeam+.60*(targetBottom-targetSeam)])
+    baseLip=lip_metrics(Q);validLip=np.isfinite(baseLip).all(axis=1)
+    def lip_error(M):
+        if validLip.sum()<3 or not np.isfinite(M[validLip]).all():return float('inf')
+        return float(np.sqrt(np.mean((M[validLip]-lipTarget[validLip])**2)))
+    startLip=lip_error(baseLip);bestLip=baseLip;lipErr=startLip;lipTries=[]
+    if np.isfinite(startLip):
+        for it0 in range(4):
+            A0=Q.copy();M=bestLip
+            xx0=(A0[:,0]-eye[0])/gap;z0=A0[:,2]
+            curS=np.interp(A0[:,0],tx[validLip],M[validLip,1]);tarS=np.interp(A0[:,0],tx,targetSeam)
+            du=np.interp(A0[:,0],tx[validLip],(lipTarget-M)[validLip,0]);ds0=tarS-curS
+            dl=np.interp(A0[:,0],tx[validLip],(lipTarget-M)[validLip,2])
+            # Move the crease, then expand upper/lower lip surfaces
+            # independently. Keep mouth folds, jaw hinge and neck intact.
+            spread=gap*.125;up=np.exp(-((z0-curS-gap*.062)/spread)**2);low=np.exp(-((z0-curS+gap*.062)/spread)**2)
+            seamW=np.exp(-((z0-curS)/(gap*.045))**2)
+            w0=np.exp(-(xx0/.39)**6)*np.clip((eye[1]-A0[:,1]+gap*.025)/(gap*.22),0,1)
+            delta=(ds0*seamW+(du*up+dl*low)*(1-seamW)/np.maximum(1.,up+low))*w0
+            selected=None;err=lipErr
+            for strength in (.25,.5,.75,1.):
+                C=A0.copy();C[:,2]+=np.clip(delta,-gap*.065,gap*.065)*strength
+                nn=profile_norm(C)
+                if np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):continue
+                met=lip_metrics(C);e=lip_error(met)
+                if not np.isfinite(e):continue
+                lipTries.append({'iteration':it0+1,'strength':strength,'rmsMm':e*1000})
+                if e<err-1e-7:err=e;selected=(C,met)
+            if selected is None:break
+            Q,bestLip=selected;lipErr=err
+    def clean_rows(M):return [[float(v) if np.isfinite(v) else None for v in row] for row in M]
+    dreport['lipSurfaceFit']={'method':'ray-detected crease and lip projection peaks, matched to traced top/seam/bottom curves; peaks are not exact vermilion edges','validSamples':int(validLip.sum()),'x_m':tx.tolist(),'targetPeakSeamPeak_m':lipTarget.tolist(),'before_m':clean_rows(baseLip),'after_m':clean_rows(bestLip),'beforeRmsMm':startLip*1000 if np.isfinite(startLip) else None,'afterRmsMm':lipErr*1000 if np.isfinite(lipErr) else None,'attempts':lipTries}
 if female:
     after=np.vstack([eyes3,Q[[noseI,mouthI,chinI]]])
     referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@M.T+tr-obs,axis=1)**2)))
@@ -633,7 +792,15 @@ size=1024;yy,xx=np.mgrid[0:size,0:size];U=(xx+.5)/size;V=(yy+.5)/size
 rng=np.random.default_rng(5300+(1 if female else 0))
 noise=rng.normal(0,1,(size,size));fine=.005*noise+.009*np.sin(67*U+39*V)*np.sin(103*V)
 def field(u,v,wu,wv):return np.exp(-((U-u)/wu)**2-((V-v)/wv)**2)
-base=np.array([.76,.58,.48] if female else [.69,.49,.39])
+def srgb_linear(v):
+    v=np.asarray(v,float)/255.;return np.where(v<=.04045,v/12.92,((v+.055)/1.055)**2.4)
+# Reference is rendered RGB under unknown lighting, so store both the
+# observed RGB and the estimated linear material, not false albedo data.
+refCheek=np.mean([detail['colorSamples'][k+'_cheek']['rgb'] for k in ('left','right')],axis=0)
+# Bounded compensation estimated from the previous PBR cheek samples.
+# No image-wide exposure edit; these are material parameters.
+base=np.clip(srgb_linear(refCheek)*np.array([1.19,1.22,1.22]),0,1) if female else np.array([.69,.49,.39])
+materialEvidence={'referenceCheekSRGB':refCheek.tolist(),'estimatedSkinLinear':base.tolist(),'source':'350-point reference RGB; apparent colors, not measured reflectance','calibration':'bounded estimate from prior studio preview; final pixel comparison still required'}
 C=np.broadcast_to(base,(size,size,3)).copy()+fine[:,:,None]
 # Subtle cheek, lip-area and eye socket tonal variation, not painted geometry.
 # Actual anatomical lip colouring is applied separately using mesh landmarks.
@@ -644,19 +811,50 @@ C+=field(.5,mv,.045,.026)[:,:,None]*np.array([.015,-.035,-.025])
 if female:
     # Vermilion and eyelid colour gradients follow the existing anatomical UV.
     # This is subtle material colour, not a substitute for geometric lips.
-    lipMask=np.clip(field(.5,mv+.014,.060,.018)+.85*field(.5,mv-.009,.056,.017),0,1)
-    C=C*(1-.45*lipMask[:,:,None])+np.array([.53,.245,.22])*.45*lipMask[:,:,None]
+    # Trace the actual sampled upper/lower vermilion paths on the final
+    # surface, project each onto the material UV. Align the reference
+    # seam to the observed crease if the geometry is still imperfect.
+    tr=surfaceTree(Q)
+    observed=bestLip[validLip,1] if validLip.any() else np.array([])
+    offset=float(np.median(observed-targetSeam[validLip])) if len(observed) else 0.
+    def lip_uv(points):
+        out0=[]
+        for p in points:
+            x,z=pixxz(p);z+=offset;y=depthRay(tr,x,z)
+            if not np.isfinite(y):y=eye[1]-gap*.6
+            out0.append([.5+math.atan2(x-eye[0],-(y-eye[1]))/(2*math.pi),(z-lowZ)/height])
+        return np.array(out0)
+    topUV=lip_uv(df['lipTop']);seamUV=lip_uv(df['lipSeam']);bottomUV=lip_uv(df['lipBottom'])
+    def lip_poly_mask(a,b):
+        poly=np.vstack([a,b[::-1]]);mask=np.zeros_like(U,dtype=bool)
+        for i in range(len(poly)):
+            x1,y1=poly[i];x2,y2=poly[(i+1)%len(poly)]
+            if abs(y2-y1)<1e-12:continue
+            mask^=((V>y1)!=(V>y2))&(U<(x2-x1)*(V-y1)/(y2-y1)+x1)
+        m=mask.astype(float)
+        for _ in range(3):m=(4*m+np.roll(m,1,0)+np.roll(m,-1,0)+np.roll(m,1,1)+np.roll(m,-1,1))/8
+        return np.clip(m,0,1)
+    um=lip_poly_mask(topUV,seamUV);lm=lip_poly_mask(seamUV,bottomUV)
+    upCol=np.clip(srgb_linear(detail['colorSamples']['lip_upper']['rgb'])*1.30,0,1)
+    loCol=np.clip(srgb_linear(detail['colorSamples']['lip_lower']['rgb'])*1.22,0,1)
+    C=C*(1-.78*um[:,:,None])+upCol*.78*um[:,:,None]
+    C=C*(1-.74*lm[:,:,None])+loCol*.74*lm[:,:,None]
+    lipMask=np.clip(um+lm,0,1)
+    materialEvidence.update({'lipUpperLinear':upCol.tolist(),'lipLowerLinear':loCol.tolist(),'lipTopUV':topUV.tolist(),'lipSeamUV':seamUV.tolist(),'lipBottomUV':bottomUV.tolist(),'observedSeamOffset_m':offset,'lipBoundaryMethod':'traced reference curves ray-projected onto actual UV, seam-aligned; estimated albedo'})
     socket=field(.403,ev+.005,.042,.023)+field(.597,ev+.005,.042,.023)
-    C-=socket[:,:,None]*np.array([.027,.039,.034])
+    C-=socket[:,:,None]*np.array([.014,.025,.020])
     # Sampled RGB difference includes the original lighting. Apply a small
     # bounded fraction as albedo shading; do not mistake it for skin depth.
     cs=detail['colorSamples'];diff=np.mean([np.array(cs[k+'_cheek']['rgb'])-np.array(cs[k+'_under_eye']['rgb']) for k in ('left','right')],axis=0)/255
     for side0,u0 in (('L',.403),('R',.597)):
         v0=ev-dm[side0]['underEyeDrop']*gap/height
         mask=field(u0,v0,float(np.clip(dm[side0]['underEyeWidth']*.09,.025,.045)),.018)
-        C-=mask[:,:,None]*np.clip(diff*.24,0,.055)
+        C-=mask[:,:,None]*np.clip(diff*.14,0,.032)
     dreport['applied'].append('bounded sampled under-eye colour gradient')
 im=rgba_image(ident+'_SkinAlbedo',C)
+# Store source and estimated material separately for future regression.
+materialEvidence['textureMeanLinear']=np.mean(np.clip(C,0,1),axis=(0,1)).tolist()
+dreport['materialFit']=materialEvidence
 texlink(skin,bs,im,uv.name,'Base Color')
 rough=np.clip(.54+.035*noise+.03*field(.5,mv,.06,.045)-.06*field(.5,ev-.03,.055,.16),.40,.70)
 texlink(skin,bs,rgba_image(ident+'_SkinRoughness',rough,True),uv.name,'Roughness')
@@ -664,11 +862,11 @@ dx=(np.roll(noise,-1,1)-np.roll(noise,1,1))*.018
 dy=(np.roll(noise,-1,0)-np.roll(noise,1,0))*.018
 norm=np.stack([.5+dx,.5+dy,np.full_like(dx,1)],axis=2)
 nt=texlink(skin,bs,rgba_image(ident+'_SkinMicroNormal',norm,True),uv.name,None)
-nm=skin.node_tree.nodes.new('ShaderNodeNormalMap');nm.uv_map=uv.name;nm.inputs['Strength'].default_value=.24
+nm=skin.node_tree.nodes.new('ShaderNodeNormalMap');nm.uv_map=uv.name;nm.inputs['Strength'].default_value=.13
 skin.node_tree.links.new(nt.outputs['Color'],nm.inputs['Color']);skin.node_tree.links.new(nm.outputs['Normal'],bs.inputs['Normal'])
 if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.28
-if 'Subsurface Weight' in bs.inputs:bs.inputs['Subsurface Weight'].default_value=.065
-elif 'Subsurface' in bs.inputs:bs.inputs['Subsurface'].default_value=.065
+if 'Subsurface Weight' in bs.inputs:bs.inputs['Subsurface Weight'].default_value=.085
+elif 'Subsurface' in bs.inputs:bs.inputs['Subsurface'].default_value=.085
 skin.diffuse_color=(*base,1)
 pbrReport={'skinTextureSize':size,'albedo':True,'roughness':True,'normal':True,'uv':'R53_AnatomicalSkin','proceduralBaked':True,'visualApproved':False}
 
@@ -911,7 +1109,11 @@ for (kind,side),o in eyes.items():
     if 'Specular IOR Level' in b.inputs:b.inputs['Specular IOR Level'].default_value=.42
     if kind=='iris':
         m.diffuse_color=(.095,.20,.31,1) if female else (.18,.095,.043,1)
-    else:m.diffuse_color=(.86,.84,.79,1)
+    else:
+        m.diffuse_color=(.76,.70,.65,1)
+        if female:
+            for lk0 in list(b.inputs['Base Color'].links):m.node_tree.links.remove(lk0)
+            b.inputs['Base Color'].default_value=(.76,.70,.65,1)
     if kind=='iris':
         # Original iris topology remains; dense radial texture based on
         # the measured local iris surface projection, not a flat extra disk.
@@ -919,10 +1121,13 @@ for (kind,side),o in eyes.items():
         size=512;Y,X=np.mgrid[0:size,0:size];xx=(X/(size-1)-.5)*2;yy=(Y/(size-1)-.5)*2;rad=np.sqrt(xx*xx+yy*yy);ang=np.arctan2(yy,xx)
         rgb_ref=np.asarray(dreport['colorSamples']['iris']['rgb'],dtype=float)/255.
         if rgb_ref.shape!=(3,) or not np.isfinite(rgb_ref).all() or np.any((rgb_ref<0)|(rgb_ref>1)):raise RuntimeError('invalid iris RGB in source ledger')
-        col=np.where(rgb_ref<=.04045,rgb_ref/12.92,((rgb_ref+.055)/1.055)**2.4) if ident=='commander-female' else np.array([.18,.095,.043])
-        iris_pattern=.72+.18*np.sin(67*ang+19*rad)+.10*np.sin(113*ang-33*rad)
+        col=np.clip(srgb_linear(dreport['colorSamples']['iris']['rgb'])*np.array([1.20,1.44,1.72]),0,1) if female else np.array([.18,.095,.043])
+        # Single sample contains image lighting; lift the blue-grey ring
+        # while keeping a physically distinct dark pupil and limbal ring.
+        if female:dreport['materialFit']['irisLinearEstimate']=col.tolist()
+        iris_pattern=.88+.10*np.sin(67*ang+19*rad)+.06*np.sin(113*ang-33*rad)
         rgb=col*iris_pattern[:,:,None]*(.55+.45*np.sin(np.clip(rad,0,1)*np.pi))[:,:,None]
-        pupil=np.clip((.32-rad)/.035,0,1);rgb=rgb*(1-pupil[:,:,None])+.006*pupil[:,:,None];rgb*=np.clip((1.04-rad)/.12,.20,1)[:,:,None]
+        pupil=np.clip((.27-rad)/.035,0,1);rgb=rgb*(1-pupil[:,:,None])+.006*pupil[:,:,None];rgb*=np.clip((1.04-rad)/.12,.20,1)[:,:,None]
         rgba=np.concatenate([np.clip(rgb,0,1),np.ones((size,size,1))],axis=2).astype(np.float32)
         im=bpy.data.images.new(m.name+'_map',width=size,height=size,alpha=True);im.pixels.foreach_set(rgba.ravel());im.update();im.pack()
         uv=o.data.uv_layers.new(name='R53_IrisRadial')
@@ -1065,7 +1270,7 @@ for side in ('L','R'):
     if len(roots)<30:raise RuntimeError('insufficient brow roots '+side)
     me=bpy.data.meshes.new('R53_BrowFibres_'+side);me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_BrowFibres_'+side,me);bpy.context.collection.objects.link(ob)
-    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.073,.038,.019) if female else (.026,.018,.012)
+    mat=bpy.data.materials.new('R53_Brow_'+side);col=tuple(srgb_linear(detail['colorSamples']['brow']['rgb'])*.85) if female else (.026,.018,.012)
     mat.diffuse_color=(*col,1);mat.use_nodes=True
     bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.62
     me.materials.append(mat)
@@ -1078,7 +1283,8 @@ for side in ('L','R'):
 
 
 dreport['applied']+=['projected per-region upper/lower lash vector and length','brow centerline and thickness','bounded ray-tested eyelid curve fit']
-dreport['unresolved']=['remaining eyelid projection residual','individual lash depth/curl inferred','true cheek depth target','skeletal mandibular angle geometry fit','true lip border texture tracing','posterior mandibular contour']
+dreport['unresolved']=['remaining eyelid projection residual','individual lash depth/curl inferred','true cheek depth target','skeletal mandibular angle geometry fit','exact physical vermilion edges and lip corner geometry','posterior mandibular contour','true albedo and hair reflectance unavailable from rendered reference']
+if female:dreport['applied']+=['independent eyelid envelope shape fitting','central relative nose/lip sagittal fit','ray-detected lip crease/peak fitting','measured lip UV boundaries and reference-sampled material estimates']
 if female and dreport.get('lowerOutlineFit',{}).get('applied'):dreport['applied'].append('projected front cheek/jaw and anterior under-jaw curve fit')
 (out/'detail-face-report.json').write_text(json.dumps(dreport,indent=2))
 # Independent dental and tongue candidates. Fit behind the actual lips;
@@ -1479,8 +1685,8 @@ def fitted_scalp_hair():
     if braidCount:groups.append({'kind':'side_braid_inferred_depth','vertices':braidCount})
     me=bpy.data.meshes.new('R53_PortraitLongLayeredHair');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
-    col=np.array([.31,.22,.145]);mat=bpy.data.materials.new('R53_GoldenBlondeHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
-    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.69
+    col=srgb_linear([181,159,140])*1.13 if female else np.array([.31,.22,.145]);mat=bpy.data.materials.new('R53_GoldenBlondeHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
+    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.49
     if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.11
     me.materials.append(mat);hu=me.uv_layers.new(name='R53_HairFlow')
     for p in me.polygons:
@@ -1490,7 +1696,7 @@ def fitted_scalp_hair():
     yy,xx=np.mgrid[0:1024,0:2048];u=xx/2048;v=yy/1024
     strand=.82+.055*np.sin(2*math.pi*(u*317+.19*np.sin(v*8)))+.035*np.sin(2*math.pi*(u*503+v*.12))+.018*np.sin(2*math.pi*u*809)+.075*np.sin(2*math.pi*(u*19+.28*np.sin(v*4)))
     texlink(mat,bs,rgba_image('R53_BobStrands',strand[:,:,None]*col[None,None,:]),hu.name,'Base Color')
-    rough=np.clip(.68+.045*np.sin(2*math.pi*(u*317+.19*np.sin(v*8))),.58,.78)
+    rough=np.clip(.49+.065*np.sin(2*math.pi*(u*317+.19*np.sin(v*8))),.38,.62)
     texlink(mat,bs,rgba_image('R53_BobRoughness',rough,True),hu.name,'Roughness')
     headName=next((b.name for b in rig.data.bones if b.name.lower()=='head'),None)
     if headName is None:headName=next((b.name for b in rig.data.bones if b.name.lower().endswith('head')),None)
@@ -1542,8 +1748,10 @@ def studio_render():
             scene.render.resolution_x=1000;scene.render.resolution_y=1000
             for tag,focus0,scale0 in [('face_front',Vector((eye[0],eye[1],eye[2]-gap*.63)),gap*3.7),('eyes_front',Vector((eye[0],eye[1],eye[2]+gap*.04)),gap*2.1),('eye_left',Vector(dstEye['L']),gap*1.05),('eye_right',Vector(dstEye['R']),gap*1.05)]:
                 cam.data.ortho_scale=scale0;cam.location=focus0+Vector((0,-H*3,0));cam.rotation_euler=(focus0-cam.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(detailDir/(tag+'.png'));bpy.ops.render.render(write_still=True)
+            for tag,d in [('face_left',(-1,0,0)),('face_right',(1,0,0)),('face_threequarter',(.66,-1,.04))]:
+                focus0=Vector((eye[0],eye[1],eye[2]-gap*.63));cam.data.ortho_scale=gap*3.7;cam.location=focus0+Vector(d).normalized()*H*3;cam.rotation_euler=(focus0-cam.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(detailDir/(tag+'.png'));bpy.ops.render.render(write_still=True)
         finally:scene.render.resolution_x,scene.render.resolution_y=oldRes
-        return {'status':'rendered','engine':scene.render.engine,'views':7,'faceDetailViews':4}
+        return {'status':'rendered','engine':scene.render.engine,'views':7,'faceDetailViews':7}
     finally:
         fittedHair.hide_render=True
         for ob in lights:bpy.data.objects.remove(ob,do_unlink=True)

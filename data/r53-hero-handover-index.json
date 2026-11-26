@@ -3,9 +3,9 @@
   "id": "commander-female",
   "sourceCommit": "174c216756dba9a23961998b9a6a33ff9cfc208c",
   "latestVerifiedCandidate": {
-    "run": 45814845599,
-    "artifact": 15115142005,
-    "summaryArtifact": 15115162071,
+    "run": 45820085864,
+    "artifact": 15117882087,
+    "summaryArtifact": 15117627416,
     "visualApproved": false,
     "productionApproved": false,
     "independentCore": "core-body-study/commander-female_core_body.glb",
@@ -19,19 +19,20 @@
         18.064716922313533
       ],
       "lowerOutlineAfterMm": [
-        15.402123787787755,
-        10.514693817976688,
-        14.557115456703468
+        11.497128423695223,
+        7.725798864806288,
+        7.476719472219699
       ],
       "toleranceMm": 4,
       "eyeWidthTargetTolerance": 0.12
     },
     "blockers": [
-      "lower face outline outside tolerance",
-      "armor refinement",
-      "hair silhouette and surface not approved",
+      "visible face differs substantially from 9-view reference",
+      "jaw contour outside tolerance",
+      "skin/eyes/lip/hair appearance not approved",
       "new equipment not built"
-    ]
+    ],
+    "sourceCommit": "1b0b4a4d4306913acb608ceff2d9505e0fc0f5a0"
   },
   "references": {
     "face": {
@@ -79,5 +80,6 @@
     "R53_HERO_MODULAR_PARTS.zip",
     "R53_HERO_REVIEW_JPG.zip"
   ],
-  "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved."
+  "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
+  "pendingChange": "whole-face single manual candidate: eyelid envelopes, sagittal central profile, lip crease/peak projection and UV boundary, material estimates, side closeups"
 }

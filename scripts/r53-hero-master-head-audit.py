@@ -71,6 +71,18 @@ for i in ids:
     if len(core.get('motionReview',[]))<3:issues.append('core motion preview insufficient')
     for m0 in core.get('motionReview',[]):
         with Image.open(a/'continuous-neck-study'/m0['image']) as im:im.verify()
+    for lab,x in de.get('eyelidShapeCurveFit',{}).items():
+        if x['afterRmsRatio']>x['beforeRmsRatio']+1e-8:issues.append('eyelid curve regression '+lab)
+        if x['afterRmsRatio']>.055:issues.append('eyelid curve outside provisional tolerance '+lab)
+    if len(de.get('eyelidShapeCurveFit',{}))!=2:issues.append('missing measured eyelid profiles')
+    for key in ('centralProfileFit','lipSurfaceFit'):
+        x=de.get(key,{})
+        if x.get('afterRmsMm') is None:issues.append('unmeasurable '+key)
+        elif x['afterRmsMm']>x['beforeRmsMm']+1e-5 or x['afterRmsMm']>3:issues.append('feature profile outside tolerance '+key)
+    if de.get('lipSurfaceFit',{}).get('validSamples',0)<3:issues.append('lip crease detection insufficient')
+    if not de.get('materialFit',{}).get('lipTopUV'):issues.append('reference material mapping missing')
+    for view in ('face_left','face_right','face_threequarter'):
+        with Image.open(a/'face-detail-review'/(view+'.png')) as im:im.verify()
     r['detailFaceFit']=de
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)
