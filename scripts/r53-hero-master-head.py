@@ -81,7 +81,14 @@ from mathutils.geometry import barycentric_transform
 # Official source preview contains the real skin, two sclerae and two irises.
 # Use the actual imported transforms, not a procedural head or eyeball.
 master=Path(args[3]).resolve()
-if sha(master)!='cd74b2575785e470e2001ce90103f5b3a76d56382296acebabcae3d6c53f59':raise RuntimeError('master source hash')
+manifest=json.loads((master.parent/'SOURCE-MANIFEST.json').read_text())
+sourceRecord=next(a for a in manifest['artifacts'] if a['id']=='realistic-head-animation')
+rawMaster=master.read_bytes()
+gitBlob=hashlib.sha1(('blob '+str(len(rawMaster))+'\0').encode()+rawMaster).hexdigest()
+actualMasterSHA=sha(master)
+if manifest['license']!='CC0-1.0' or sourceRecord['output']!=master.name or len(rawMaster)!=sourceRecord['previewBytes'] or actualMasterSHA!=sourceRecord['previewSha256'] or gitBlob!='cf27a3936bb356475f1b1a6eb284fc2aa8155212':
+    raise RuntimeError('master source integrity: '+str({'actualSHA256':actualMasterSHA,'expectedSHA256':sourceRecord['previewSha256'],'gitBlob':gitBlob,'bytes':len(rawMaster)}))
+print('R53 verified master provenance',actualMasterSHA,gitBlob,len(rawMaster),flush=True)
 before=set(bpy.context.scene.objects);bpy.ops.import_scene.gltf(filepath=str(master));bpy.context.view_layer.update()
 imported=[o for o in bpy.context.scene.objects if o not in before]
 raw=[o for o in imported if o.type=='MESH']
