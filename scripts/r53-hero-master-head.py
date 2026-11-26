@@ -140,7 +140,35 @@ def bary(p,A):
 # nearest triangle barycentric interpolation. No guessed eye bone binding
 # on the skin; the two source globes use the actual eye bones independently.
 BT=tri(body);baseTree=tree([body]);D0={n:morphs[(body.name,n)]-P for n in names}
-Q=mapP(S);wr=[];deltas={n:[] for n in names};dist=[];matches=[]
+Q0=mapP(S)
+# Subtle, separate facial profiles, applied before weight/morph transfer.
+# Keep orbital rims, globe alignment and scalp/neck unchanged.
+gap=float(np.linalg.norm(dstEye['L']-dstEye['R']))
+X=(Q0[:,0]-eye[0])/gap;Y=(Q0[:,1]-eye[1])/gap;Z=(Q0[:,2]-eye[2])/gap
+def ga(v,c,w):return np.exp(-((v-c)/w)**2)
+front=np.clip((-Y+.12)/.48,0,1);front=front*front*(3-2*front)
+orbital=np.maximum(ga(X,.5,.32),ga(X,-.5,.32))*ga(Z,0,.25)
+jaw=ga(Z,-1.08,.46)*ga(np.abs(X),.71,.40)*front*(1-orbital)
+cheek=ga(Z,-.50,.31)*ga(np.abs(X),.63,.29)*front*(1-orbital)
+chin=ga(Z,-1.35,.26)*ga(X,0,.47)*front
+# Profile choices are deliberately bounded and not a substitute for likeness review.
+female=ident=='commander-female'
+Dprofile=np.zeros_like(Q0)
+Dprofile[:,0]=(Q0[:,0]-eye[0])*((-0.075 if female else .055)*jaw+(.018 if female else .006)*cheek)
+Dprofile[:,1]=gap*((.019 if female else -.018)*chin+(-.018 if female else .009)*cheek)
+Dprofile[:,2]=gap*(.025 if female else -.018)*chin
+# Guard against inverted or collapsed faces against the unchanged source.
+def profile_norm(A):
+    T=A[ST];return np.cross(T[:,1]-T[:,0],T[:,2]-T[:,0])
+pn=profile_norm(Q0);pa=np.linalg.norm(pn,axis=1);pv=pa>1e-11
+profile_factor=1.
+for _ in range(12):
+    Q=Q0+Dprofile*profile_factor;nn=profile_norm(Q)
+    if not np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):break
+    profile_factor*=.5
+else:raise RuntimeError('profile neutral topology')
+profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True}
+wr=[];deltas={n:[] for n in names};dist=[];matches=[]
 for p0 in Q:
     q,n,i,d=baseTree.find_nearest(Vector(p0))
     if q is None:raise RuntimeError('body surface unavailable')
@@ -257,6 +285,62 @@ for side in ('L','R'):
     for n in names:
         k=o.shape_key_add(name=n);k.data.foreach_set('co',(np.array(V)+np.array(rootD[n])).astype(np.float32).ravel())
     lashes.append(o);exposureReport[-1]['lashRoots']=rootCount
+
+# Eyebrow fibres projected onto the actual forehead; each root inherits
+# the underlying triangle's bone weights and all thirteen morph deltas.
+brows=[];browReports=[]
+for side in ('L','R'):
+    O=pts(eyes[('sclera',side)]);lo=O.min(0);hi=O.max(0)
+    cx=float((lo[0]+hi[0])/2);sgn=1 if cx>eye[0] else -1
+    ew=float(hi[0]-lo[0]);ez=float(hi[2]-lo[2])
+    V=[];F=[];RW=[];RD={n:[] for n in names};roots=[]
+    for j in range(34):
+        t=j/33
+        x=cx+sgn*ew*(-.51+1.10*t)
+        z=float(hi[2])+ez*((.20 if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
+        thick=(.00135 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
+        for row in (-1,0,1):
+            zz=z+row*thick
+            a,i,_=cast(skinTree,x,zz)
+            if a is None:continue
+            ids=ST[i];b=bary(np.array(a),Q[ids]);rw={}
+            for k,ww in zip(ids,b):
+                for n,v in wr[k].items():rw[n]=rw.get(n,0)+float(ww)*v
+            length=(.0035 if female else .0044)*(.55+.45*math.sin(math.pi*t))
+            dx=sgn*length*(.48+.45*t);dz=length*(.75-.90*t)
+            # Sample the whole fibre along the skin, rather than straight
+            # lines floating above a curved brow ridge.
+            C=[]
+            for u in (0.,.33,.67,1.):
+                hit,_,_=cast(skinTree,x+dx*u,zz+dz*u)
+                if hit is None:break
+                C.append(hit+Vector((0,-(.00015+.00030*math.sin(math.pi*u)),0)))
+            if len(C)!=4:continue
+            idx=len(V)
+            for k,c in enumerate(C):
+                tangent=(C[min(3,k+1)]-C[max(0,k-1)]).normalized()
+                u=tangent.cross(Vector((0,1,0))).normalized();v=tangent.cross(u).normalized()
+                rad=(.000095 if female else .000125)*(1-.86*k/3)
+                for h in range(5):
+                    th=2*math.pi*h/5;V.append(tuple(c+rad*(u*math.cos(th)+v*math.sin(th))));RW.append(rw)
+                    for n in names:RD[n].append(b@fixed[n][ids])
+            for k in range(3):
+                for h in range(5):
+                    h2=(h+1)%5;F.append((idx+k*5+h,idx+k*5+h2,idx+(k+1)*5+h2,idx+(k+1)*5+h))
+            roots.append(tuple(a))
+    if len(roots)<30:raise RuntimeError('insufficient brow roots '+side)
+    me=bpy.data.meshes.new('R53_BrowFibres_'+side);me.from_pydata(V,[],F);me.update()
+    ob=bpy.data.objects.new('R53_BrowFibres_'+side,me);bpy.context.collection.objects.link(ob)
+    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.072,.034,.014) if female else (.026,.018,.012)
+    mat.diffuse_color=(*col,1);mat.use_nodes=True
+    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.62
+    me.materials.append(mat)
+    for p0 in me.polygons:p0.use_smooth=True
+    bind(ob,RW);ob.shape_key_add(name='Basis')
+    for n in names:
+        k=ob.shape_key_add(name=n);k.data.foreach_set('co',(np.array(V)+np.array(RD[n])).astype(np.float32).ravel())
+    brows.append(ob);browReports.append({'side':side,'roots':len(roots),'vertices':len(V),'morphs':len(names),'visualApproved':False})
+
 # Compare neck cross-sections at actual planes; record fit data for a
 # future continuous retopology seam. Do NOT hide the seam inside clothing
 # or call overlapping original and replacement heads a merged character.
@@ -280,7 +364,7 @@ for factor in (1.10,1.25,1.40,1.55,1.70):
     seams.append({'z_m':float(z),'targetSegments':len(a)//2,'masterSegments':len(b)//2,'targetWidthDepth_m':ea[:2].tolist(),'masterWidthDepth_m':eb[:2].tolist(),'centerError_m':float(np.linalg.norm(ca-cb)),'fitScore_m':err})
 # Independent head-and-eye preview, with optional existing hair as a
 # diagnostic only. Hair is unchanged and is not approved for this head.
-new=[hd]+list(eyes.values())+lashes
+new=[hd]+list(eyes.values())+lashes+brows
 scene=bpy.context.scene;scene.render.engine='BLENDER_WORKBENCH';scene.render.resolution_x=640;scene.render.resolution_y=720;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG'
 sh=scene.display.shading;sh.light='STUDIO';sh.color_type='TEXTURE';sh.show_cavity=True
 bpy.ops.object.camera_add();cam=bpy.context.object;cam.data.type='ORTHO';scene.camera=cam
@@ -372,9 +456,9 @@ for tag,d in views:
 fittedHair.hide_render=True
 
 for name in names:
-    for o in [hd]+lashes:o.data.shape_keys.key_blocks[name].value=1
+    for o in [hd]+lashes+brows:o.data.shape_keys.key_blocks[name].value=1
     bpy.context.view_layer.update();render('expression_'+name,(0,-1,0))
-    for o in [hd]+lashes:o.data.shape_keys.key_blocks[name].value=0
+    for o in [hd]+lashes+brows:o.data.shape_keys.key_blocks[name].value=0
 bpy.context.view_layer.update()
 combos=[]
 for ns in [('smile','blink_L','blink_R'),('viseme_A','browRaise'),('laugh','blink_R')]:
@@ -404,5 +488,5 @@ if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for
 count=len(new);bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(dest));bpy.context.view_layer.update()
 rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
-report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head same base for both sex profiles, not final likeness','original body not modified or included','no validated continuous neck seam, oral cavity or eyebrow fiber','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
+report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or oral cavity; eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)
