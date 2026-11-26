@@ -10,15 +10,17 @@ def patched(stage):
         s=s.replace(old,new,1)
     if stage=='wig':
         # use role profile rather than name-based gender inference
-        s=s.replace('import bpy, numpy as np, math, sys, hashlib, json','import bpy, numpy as np, math, sys, hashlib, json')
         replace("ident=args[3];sex=ident.split('_')[1];i=int(ident[-2:])","ident=args[3];profile=next(x for x in json.loads((Path(__file__).resolve().parent.parent/'data/r53-cast-remaining-plan.json').read_text())['models'] if x['id']==ident);sex=profile['sex'];i=profile['hairIndex']")
         replace("bodies.rglob('mob-study-report.json')","bodies.rglob('cast-study-report.json')")
+        replace("not 1<=i<=10","not 1<=i<=(14 if sex=='male' else 12)")
     elif stage=='motion':
         replace("root.rglob('mob-study-report.json')","root.rglob('cast-study-report.json')")
     elif stage in ('fit','refine','third','audit'):
         anchor="folder,rec=records[ident];"
         replace(anchor,"for f in root.rglob('cast-study-report.json'):\n    m=json.loads(f.read_text());records[m['id']]=(f.parent,m)\n"+anchor)
-        if stage in ('fit','audit'):replace("sex=ident.split('_')[0]","sex=rec['sex']")
+        if stage in ('fit','audit'):
+            replace(";sex=ident.split('_')[0]","")
+            replace("folder,rec=records[ident];","folder,rec=records[ident];sex=rec['sex'];")
         if stage=='audit':
             replace("mr['id']!=sex+'_30s_normal'","mr['id']!=ident or mr['sourceBodySHA256']!=rec['sha256']")
             replace("clips=['Idle_Loop','Walk_Loop','Sprint_Loop','Sword_Attack']","clips=['Idle_Loop','Walk_Loop','Walk_Formal_Loop','Sprint_Loop','Sword_Attack','Interact','Hit_Chest','Death01','Spell_Simple_Shoot','Punch_Jab']")
