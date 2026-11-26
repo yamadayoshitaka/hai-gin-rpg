@@ -19,6 +19,12 @@ for i in ids:
     if any(x.get('visibleIrisSamples',0)<20 for x in r.get('irisSurfaceFit',{}).values()) or len(r.get('irisSurfaceFit',{}))!=2:issues.append('iris visibility')
     for n in ('jawOpen','viseme_A','laugh'):
         if r.get('mouthSurfaceDiagnostics',{}).get(n,{}).get('recessedSamples',0)<15:issues.append('insufficient measured mouth opening: '+n)
+    # Recession is not an open mouth: a visible contiguous oral lining
+    # must be observed by raycasts through the exterior skin.
+    for n in ('jawOpen','viseme_A','laugh'):
+        m=r.get('mouthSurfaceDiagnostics',{}).get(n,{})
+        if m.get('visibleLiningSamples',0)-m.get('neutralVisibleLiningSamples',0)<12 or m.get('centerOpeningHeight_m',0)<.0015:
+            issues.append('actual oral opening not established: '+n)
     if r.get('studioReview',{}).get('status')!='rendered':issues.append('PBR render')
     hair=json.loads((a/'fitted-hair-study'/'fitted-hair-report.json').read_text())
     if hair.get('deepPenetrationProxy',1)>.005:issues.append('hair penetration')

@@ -311,9 +311,13 @@ for dx0 in (-.10,-.05,0,.05,.10):
     if peaks:
         j=max(peaks,key=lambda k:min(d[k]-np.min(d[k-7:k]),d[k]-np.min(d[k+1:k+8])))
         contrast=float(min(d[j]-np.min(d[j-7:j]),d[j]-np.min(d[j+1:j+8])))
-        if contrast>.00012:mouthRows.append((float(zs[j]),contrast))
+        if contrast>.00012:mouthRows.append((float(zs[j]),contrast,float(dx0)))
 mouthZ=float(np.median([x[0] for x in mouthRows])) if len(mouthRows)>=3 else float(eye[2]-gap*1.12)
 mouthWidth=gap*.37
+creaseX=np.array([r[2] for r in mouthRows]);creaseZ=np.array([r[0] for r in mouthRows])
+def localCrease(x):
+    if len(creaseX)<3:return np.full_like(x,mouthZ)
+    return np.interp(x,creaseX,creaseZ,left=creaseZ[0],right=creaseZ[-1])
 # Mark folded oral lining on its existing geometry, keeping the exterior
 # lip and facial skin unchanged. Use the measured anterior surface and
 # triangle depth, not a painted black ellipse across the lips.
@@ -331,6 +335,23 @@ hd.data.materials.append(lining);innerFaces=0
 for poly in hd.data.polygons:
     if all(mouthInner[k] for k in poly.vertices):
         poly.material_index=len(hd.data.materials)-1;innerFaces+=1
+hd.data.calc_loop_triangles()
+oralTriangles=np.array([t.material_index==len(hd.data.materials)-1 for t in hd.data.loop_triangles],dtype=bool)
+def oral_visibility(A):
+    tr=BVHTree.FromPolygons([Vector(p) for p in A],[tuple(int(i) for i in t) for t in ST],all_triangles=True)
+    xs=np.linspace(eye[0]-gap*.32,eye[0]+gap*.32,45)
+    zs=np.linspace(mouthZ-gap*.30,mouthZ+gap*.20,37)
+    grid=np.zeros((len(zs),len(xs)),dtype=bool)
+    for iz,z in enumerate(zs):
+        for ix,x in enumerate(xs):
+            q,_,i,_=tr.ray_cast(Vector((x,float(Q[:,1].min()-.05),z)),Vector((0,1,0)),gap*8)
+            if q is not None and i is not None:grid[iz,ix]=bool(oralTriangles[i])
+    # Require contiguous visible lining, not isolated pixels.
+    best=0;run=0
+    for v in grid[:,len(xs)//2]:
+        run=run+1 if v else 0;best=max(best,run)
+    return {'visibleLiningSamples':int(grid.sum()),'centerOpeningHeight_m':float(best*(zs[1]-zs[0])),'gridSamples':int(grid.size)}
+neutralOralVisibility=oral_visibility(Q)
 mouthLandmarks={'creaseZ_m':mouthZ,'sampledCreases':len(mouthRows),'fallback':len(mouthRows)<3,'eyeGap_m':gap,'oralLiningVertices':int(mouthInner.sum()),'oralLiningFaces':innerFaces}
 
 hingeY=float(eye[1]+gap*.85)
@@ -340,7 +361,7 @@ def smooth01(t):
 def jaw_motion(A,angle):
     x=(A[:,0]-eye[0])/gap;y=(A[:,1]-eye[1])/gap;z=(A[:,2]-eye[2])/gap
     # Lower lip and chin move with mandible, upper lip stays in place.
-    lipline=(mouthZ-eye[2])/gap+.045*np.clip(np.abs(x)/.6,0,1)**2
+    lipline=(localCrease(x)-eye[2])/gap+.045*np.clip(np.abs(x)/.6,0,1)**2
     low=smooth01((lipline-z+.015)/(.165 if female else .20))
     front=smooth01((.9-y)/1.1)
     neck=smooth01((z+2.3)/.75)
@@ -376,6 +397,28 @@ for name in names:
             # Keep outward lateral articulation, but suppress the inherited
             # central lip stretch that creates a narrow vertical crumple.
             D[:,0]*=(1-.72*central)
+    # Explore explicit local upper/lower lip separation candidates.
+    # A recessed skin surface alone is not an oral opening. Score actual
+    # first-hit lining pixels, preserve surface topology and the chin.
+    openingSearch=None
+    if female and name in ('jawOpen','viseme_A','viseme_O','laugh'):
+        xx=(Q[:,0]-eye[0])/gap;zz=(Q[:,2]-localCrease(xx))/gap;yy=(Q[:,1]-eye[1])/gap
+        wx=np.exp(-(xx/.33)**6);wz=np.exp(-(zz/.20)**4);wf=smooth01((-.04-yy)/.25)
+        split=np.tanh(zz/.035)
+        # Move opposing lips apart and retreat inner tissue independently.
+        L=np.zeros_like(Q);L[:,2]=gap*wx*wz*wf*split*(~mouthInner)
+        L[:,1]=gap*wx*wz*wf*mouthInner*.45
+        baseD=weld(D);bestD=baseD;best=oral_visibility(Q+baseD);attempts=[]
+        for k in (.025,.05,.075,.10,.14):
+            for scale0 in (.8,1.0):
+                cand=weld(baseD*scale0+L*k)
+                if defects(Q+cand).any():continue
+                met=oral_visibility(Q+cand)
+                attempts.append({'separation':k,'baseScale':scale0,**met})
+                score0=met['visibleLiningSamples']+2000*met['centerOpeningHeight_m']
+                if score0>best['visibleLiningSamples']+2000*best['centerOpeningHeight_m']:
+                    bestD=cand;best=met
+        D=bestD;openingSearch={'candidateCount':len(attempts),'selectedPreRepair':best,'attempts':attempts}
     D=weld(D);alpha=np.ones(len(cnt))
     for it in range(120):
         A=Q+D*alpha[w,None];bad=defects(A)
@@ -385,7 +428,7 @@ for name in names:
     peak=float(np.max(np.linalg.norm(A-Q,axis=1)))
     if bad.any():raise RuntimeError('master expression triangle defect '+name)
     k=hd.shape_key_add(name=name);k.data.foreach_set('co',A.astype(np.float32).ravel());k.value=0
-    fixed[name]=A-Q;reports.append({'name':name,'peak_m':peak,'effective':peak>=.0001,'repairIterations':it,'newDefects':0})
+    fixed[name]=A-Q;reports.append({'name':name,'peak_m':peak,'effective':peak>=.0001,'repairIterations':it,'newDefects':0,'openingSearch':openingSearch})
 # Use original iris/sclera meshes, keeping UV and relative alignment.
 # Source fitting uses the same head transform so eyes cannot drift away
 # from the authored lids. Eye coverage is measured by actual front rays.
@@ -625,7 +668,7 @@ def mouth_surface(V):
     return np.array(out)
 neutralM=mouth_surface(Q);mouthMetrics={}
 for n in ('jawOpen','viseme_A','viseme_O','laugh'):
-    a=mouth_surface(Q+fixed[n]);mouthMetrics[n]={'recessedSamples':int(np.sum(a-neutralM>gap*.07)),'sampleCount':len(a),'maxRecession_m':float(np.max(a-neutralM)),'actualOpeningApproved':False}
+    a=mouth_surface(Q+fixed[n]);mouthMetrics[n]={'recessedSamples':int(np.sum(a-neutralM>gap*.07)),'sampleCount':len(a),'maxRecession_m':float(np.max(a-neutralM)),'actualOpeningApproved':False,**oral_visibility(Q+fixed[n]),'neutralVisibleLiningSamples':neutralOralVisibility['visibleLiningSamples']}
 
 # Compare neck cross-sections at actual planes; record fit data for a
 # future continuous retopology seam. Do NOT hide the seam inside clothing
@@ -807,14 +850,14 @@ def fitted_scalp_hair():
             # back, without the former abrupt cos(a) threshold.
             side=(1-math.cos(a))/2
             mix=smooth01((side-.06)/.48)
-            hang=float(.008+.085*mix+.014*side+.012*math.sin(a)*mix)
+            hang=float(.008+.085*mix+.014*side+.012*math.sin(a)*mix+.0022*math.sin(19*a+.2)*mix+.0008*math.sin(47*a))
             radial=Vector((math.sin(a),-math.cos(a),0))
             target=p+Vector((-.006*mix*math.sin(a),0,-hang))+radial*(.004+.004*mix)
             endtan=Vector((0,0,-hang*.8))-radial*.007*mix
-            t0=tan*.23
+            t0=tan*.16
             q=(2*u**3-3*u*u+1)*p+(u**3-2*u*u+u)*t0+(-2*u**3+3*u*u)*target+(u**3-u*u)*endtan
             q+=radial*(.004*math.sin(math.pi*u)*mix)
-        q+=ray*(.00018*math.sin(29*a+5*t))
+        q+=ray*(.00038*math.sin(29*a+5*t)*math.sin(math.pi*min(t,1.))**2)
         near,normal,_,d=skinTree.find_nearest(q)
         if near is not None and d<.025 and (q-near).dot(normal)<.0012:q=near+normal*.0014
         return q
@@ -886,7 +929,16 @@ def studio_render():
         fittedHair.hide_render=False
         for tag,d in [('front',(0,-1,0)),('threequarter',(.66,-1,.08))]:
             render('studio_'+tag,d);(out/('studio_'+tag+'.png')).replace(studio/('studio_'+tag+'.png'))
-        return {'status':'rendered','engine':scene.render.engine,'views':2}
+        # Separate lit expression renders, without replacing the 28 legacy
+        # matched workbench images used by the comparison manifest.
+        fittedHair.hide_render=True
+        for n in ('jawOpen','viseme_A','viseme_O','laugh','smile'):
+            for o in [hd]+lashes+brows+oral:o.data.shape_keys.key_blocks[n].value=1
+            bpy.context.view_layer.update()
+            render('pbr_'+n,(0,-1,0));(out/('pbr_'+n+'.png')).replace(studio/('pbr_'+n+'.png'))
+            for o in [hd]+lashes+brows+oral:o.data.shape_keys.key_blocks[n].value=0
+        bpy.context.view_layer.update()
+        return {'status':'rendered','engine':scene.render.engine,'views':7}
     finally:
         fittedHair.hide_render=True
         for ob in lights:bpy.data.objects.remove(ob,do_unlink=True)
