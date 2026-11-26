@@ -680,6 +680,32 @@ chinFairMm=float(np.max(np.linalg.norm(PV-chinBefore,axis=1))*UNIT*1000)
 under=np.asarray(bald['side']['underjawYZ_ipd'],float)
 under=under[under[:,0]<=.105]
 underAudit=[]
+# v32: reject a submental change if any measured frontal station
+# disappears or the frontal RMS increases. Work on the actual mesh edges.
+def frontal_score(P0):
+    A0,B0=P0[ee[:,0]],P0[ee[:,1]];scores={};missing=0
+    for label,trace,sgn in (('left',left,-1),('right',right,1)):
+        errs=[]
+        for xx,zz in trace:
+            da=A0[:,2]-zz;db=B0[:,2]-zz;k=da*db<0
+            sec=A0[k]+(B0[k]-A0[k])*(da[k]/(da[k]-db[k]))[:,None]
+            if not len(sec):missing+=1;continue
+            x0=float(sec[:,0].min() if sgn<0 else sec[:,0].max())
+            errs.append(x0-float(xx))
+        scores[label]=float(np.sqrt(np.mean(np.square(errs)))*UNIT*1000) if errs else 1e6
+    return scores,missing
+def under_score(P0):
+    A0,B0=P0[ee[:,0]],P0[ee[:,1]];err=[]
+    for yy,zz in under:
+        da=A0[:,1]-yy;db=B0[:,1]-yy;k=da*db<0
+        sec=A0[k]+(B0[k]-A0[k])*(da[k]/(da[k]-db[k]))[:,None]
+        sec=sec[np.abs(sec[:,0])<.30]
+        if not len(sec):return 1e6
+        err.append(float(sec[:,2].min()-zz))
+    return float(np.sqrt(np.mean(np.square(err)))*UNIT*1000)
+underBaseline,underMissing=frontal_score(PV)
+underBefore=under_score(PV)
+underTrials=[]
 for iteration in range(2):
     A0,B0=PV[ee[:,0]],PV[ee[:,1]]
     delta=[]
@@ -696,7 +722,19 @@ for iteration in range(2):
     target=np.interp(y0,under[:,0],under[:,1])
     influence=np.exp(-(x0/.34)**4-((z0-target)/.15)**4)
     influence[pins]=0.
-    PV[:,2]+=dz*influence
+    # Preserve anterior chin station and the visible lateral jaw.
+    influence*=sstep((y0+.44)/.23)
+    current=PV.copy();currentUnder=under_score(current)
+    best=current;bestUnder=currentUnder
+    for amount in (1.,.5,.25,.125):
+        trial=current.copy();trial[:,2]+=amount*dz*influence
+        scores,missing=frontal_score(trial);err=under_score(trial)
+        accept=missing<=underMissing and all(scores[k]<=underBaseline[k]+.025 for k in scores) and err<bestUnder
+        underTrials.append({'iteration':iteration+1,'strength':amount,'frontRmsMm':scores,'missing':missing,'submentalRmsMm':err,'acceptedAsBest':bool(accept)})
+        if accept:best=trial;bestUnder=err
+    PV[:]=best
+underAfter,underAfterMissing=frontal_score(PV)
+underGuard={'beforeFrontalRmsMm':underBaseline,'afterFrontalRmsMm':underAfter,'beforeMissing':underMissing,'afterMissing':underAfterMissing,'beforeSubmentalRmsMm':underBefore,'afterSubmentalRmsMm':under_score(PV),'trials':underTrials,'maxAllowedFrontalIncreaseMm':.025}
 V=[tuple(q) for q in PV]
 globalFairReport={'maxDisplacementDesignMm':float(np.max(np.linalg.norm(PV-beforeGlobal,axis=1))*UNIT*1000),'method':'22 bounded Taubin pairs, measured rim vertices pinned; no remesh'}
 fairReport={'method':'16 adjacency-based depth fairing iterations; x/z and measured rims unchanged','maxDepthChangeDesignMm':float(np.max(np.abs(PV[:,1]-beforeFair[:,1]))*UNIT*1000),'scope':'peri-orbital patch only; actual visible fit remains unapproved'}
@@ -797,7 +835,7 @@ dimReport['orbitalFairing']=fairReport
 dimReport['globalSurfaceFairing']=globalFairReport
 dimReport['v27FacialSurfaceFairing']=faceFairAudit
 dimReport['v30TransitionTopology']=patchAudit
-dimReport['v28SubmentalFit']={'samples':underAudit,'source':'active bald side underjaw trace; limited visible interval','baselineV27CrownTinyFaces':1216}
+dimReport['v28SubmentalFit']={'samples':underAudit,'source':'active bald side underjaw trace; limited visible interval','baselineV27CrownTinyFaces':1216,'v32RegressionGuard':underGuard}
 dimReport['v29OrbitalDesign']={'previousApexYIpd':-.390,'candidateApexYIpd':float(eyeCent['L'][1]-eyeR[1]),'recessionDesignMm':float((eyeCent['L'][1]-eyeR[1]+.390)*UNIT*1000),'frontalApertureSource':'unchanged measured curves','depthStatus':'inferred; inspect oblique render and pose intersections','visualApproved':False}
 dimReport['v22JawFit']={'samples':jawFit,'chinAnteriorCorrectionIpd':chinCorrection,'baselineV21OutlineRmsDesignMm':{'left':7.5061866578293825,'right':6.875271384700695},'improvedVsV21':bool(outline['left']['rmsDesignMm'] is not None and outline['right']['rmsDesignMm'] is not None and outline['left']['rmsDesignMm']<7.5061866578293825 and outline['right']['rmsDesignMm']<6.875271384700695)}
 dimReport['ocularCoverageVertexAudit']=coverageReport
@@ -1507,7 +1545,7 @@ for lab in ('left','right'):
     check('profile_'+lab+'_rms_mm',profile[lab]['rmsDesignMm'],.70)
     check('profile_'+lab+'_missing',profile[lab]['missing'],0)
     check('iris_'+lab+'_outside_vertices',ocularPatchReport['L' if lab=='left' else 'R']['iris']['outsideVertices'],0)
-check('head_crown_tiny_faces',topologyAudit[head.name]['tinyFaceRegions']['crown'],1216)
+check('head_crown_tiny_faces',topologyAudit[head.name]['tinyFaceRegions']['crown'],0)
 check('nonfinite_mesh_objects',sum(not q['finiteCoordinates'] for q in topologyAudit.values()),0)
 check('head_nonmanifold_edges',topologyAudit[head.name]['nonManifoldEdges'],0)
 for pose,rows1 in poseAudit.items():
@@ -1591,14 +1629,14 @@ def contact_sheet(filename,names,cols=3,tile=420,gap=8):
     bpy.data.images.remove(sheet)
 contact_sheet('review_face_grid.jpg',['front','threequarter','right','eye_L_detail','nose_front_detail','oral_neutral_detail'])
 contact_sheet('review_expression_grid.jpg',['expression_'+k for k in expressionSpecs])
-report={'id':'R54-new-head-v31','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'actual skull underside contact with normal inset and bounded tangent transition; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw, blink/gaze and nine expression candidates experimental; combined pose and collision checks pending','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','expressionAudit':'expression-audit.json','reviewPage':'review.html','qualityGate':'quality-gate.json','qualityGatePassed':qualityGate['allChecksPassed'],'contactSheets':['review_face_grid.jpg','review_expression_grid.jpg'],'meshRegressionAudit':'mesh-regression-audit.json','tongueFitAudit':'tongue-fit-audit.json','chinLocalFairingMaxMm':chinFairMm,'revisionNotes':['provisional regression limits against verified v27','separate build success from quality pass and visual approval','two contact sheet JPGs composed from actual Blender renders','retain v30 geometry pending its visual review'],'next':'verify neck seam, neutral face and expressions visually; correct collisions and prepare body rig; no automatic adoption'}
+report={'id':'R54-new-head-v32','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'actual skull underside contact with normal inset and bounded tangent transition; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw, blink/gaze and nine expression candidates experimental; combined pose and collision checks pending','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','expressionAudit':'expression-audit.json','reviewPage':'review.html','qualityGate':'quality-gate.json','qualityGatePassed':qualityGate['allChecksPassed'],'contactSheets':['review_face_grid.jpg','review_expression_grid.jpg'],'meshRegressionAudit':'mesh-regression-audit.json','tongueFitAudit':'tongue-fit-audit.json','chinLocalFairingMaxMm':chinFairMm,'revisionNotes':['guard submental correction against measured frontal RMS regression and missing sections','try four correction strengths and retain previous geometry if all regress','protect anterior chin and lateral jaw','tighten crown tiny face gate to zero based on verified v29','retain actual render contact sheets'],'next':'verify neck seam, neutral face and expressions visually; correct collisions and prepare body rig; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 # Offline review page: all images are actual Blender renders. The exact
 # reference is not stored in this branch; select the original locally.
 from html import escape
 import base64
 groups=[('一括確認JPG',['review_face_grid','review_expression_grid']),('基本形状',['front','left','right','threequarter','rear']),('顔パーツ',['eye_L_detail','eye_R_detail','eye_L_oblique','eye_R_oblique','nose_front_detail','nose_profile_detail','nose_oblique_detail','ear_left_detail','ear_right_detail','oral_neutral_detail','oral_open_detail','oral_open_oblique']),('首・接合部',['neck_front_detail','neck_side_detail','neck_oblique_detail','neck_rear_detail']),('瞬き・視線',['blink_closed','blink_half','gaze_left','gaze_right','gaze_up','gaze_down']),('表情・発音',['expression_'+k for k in expressionSpecs])]
-html=['<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R54 v31 review</title><style>body{font:16px system-ui,sans-serif;background:#15171c;color:#eee;margin:16px}a{color:#a9d3ff}h2{font-size:20px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}figure{margin:0;background:#242730;padding:8px;border-radius:8px}img{width:100%;height:auto;display:block}figcaption{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere}.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}button,select,input{max-width:100%;font:inherit}</style><h1>R54 v31 実モデル確認</h1><p>承認前候補。本番反映なし。見本とレンダリングを比較し、寸法検査と外観は別々に判定してください。</p>']
+html=['<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R54 v32 review</title><style>body{font:16px system-ui,sans-serif;background:#15171c;color:#eee;margin:16px}a{color:#a9d3ff}h2{font-size:20px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}figure{margin:0;background:#242730;padding:8px;border-radius:8px}img{width:100%;height:auto;display:block}figcaption{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere}.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}button,select,input{max-width:100%;font:inherit}</style><h1>R54 v32 実モデル確認</h1><p>承認前候補。本番反映なし。見本とレンダリングを比較し、寸法検査と外観は別々に判定してください。</p>']
 html.append('<p>寸法許容範囲：'+('合格' if report['dimensionGatePassed'] else '未合格')+' ／ 開口分離：'+('合格' if report['oralSeparationPassed'] else '未合格')+' ／ 首の全サンプル接合：'+('合格' if neckContinuity['overlapAllSamples'] else '未合格')+' ／ 回帰判定：'+('合格' if qualityGate['allChecksPassed'] else '未合格')+' ／ 外観：未承認</p>')
 html.append('<h2>見本との比較</h2><p>見本画像を端末から選択してください（画像は外部へ送信されません）。</p><input type="file" accept="image/*" id="referenceFile"><select id="view"><option value="front">正面</option><option value="left">左</option><option value="right">右</option><option value="threequarter">斜め</option><option value="rear">背面</option></select><div class="compare"><figure><img id="reference" alt="見本未選択"><figcaption>見本</figcaption></figure><figure><img id="actual" src="front.jpg" alt="実モデル"><figcaption>実モデル</figcaption></figure></div>')
 for title,names in groups:
