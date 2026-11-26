@@ -333,6 +333,78 @@ for _ in range(12):
     if not np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):break
     profile_factor*=.5
 else:raise RuntimeError('profile neutral topology')
+# Fit the measured visible eyelid curves, rather than preserving an
+# arbitrarily small aperture. Globes remain centered on the eye bones.
+# A bounded candidate search uses actual front-ray visibility and rejects
+# mesh inversions. The synthetic image cannot override safe globe size.
+eyeScaleFactors={k:1. for k in ('L','R')}
+if female:
+    QbaseEye=Q.copy()
+    tris0=[tuple(int(i) for i in t) for t in ST]
+    def skin_bvh(A):return BVHTree.FromPolygons([Vector(p) for p in A],tris0,all_triangles=True)
+    def globe_bvh(side,factor):
+        o=eyes[('sclera',side)];A=mapP(pts(o));c=dstEye[side];A=c+(A-c)*factor
+        return BVHTree.FromPolygons([Vector(p) for p in A],[tuple(int(i) for i in t) for t in tri(o)],all_triangles=True)
+    def aperture(A,side,factor,st0=None):
+        c=dstEye[side];st0=st0 or skin_bvh(A);gt=globe_bvh(side,factor)
+        xs=np.linspace(c[0]-gap*.33,c[0]+gap*.33,53);zs=np.linspace(c[2]-gap*.23,c[2]+gap*.23,43)
+        hits=[]
+        for x0 in xs:
+            for z0 in zs:
+                origin=Vector((x0,float(Q0[:,1].min()-.08),z0))
+                e,_,_,ed=gt.ray_cast(origin,Vector((0,1,0)),.4);a,_,_,sd=st0.ray_cast(origin,Vector((0,1,0)),.4)
+                if e is not None and (a is None or ed<sd-.00005):hits.append((x0,z0))
+        return np.array(hits).reshape(-1,2)
+    def aperture_metric(G,side):
+        lab='L' if dstEye[side][0]<eye[0] else 'R'
+        if len(G)<10:return 100.,{'samples':len(G)}
+        c=dstEye[side];U0=df['eye'+lab+'Upper'];L0=df['eye'+lab+'Lower'];o=df['iris'+lab][0]
+        U1=np.column_stack([c[0]+(U0[:,0]-o[0])*gap/detailIPD,c[2]-(U0[:,1]-o[1])*gap/detailIPD])
+        L1=np.column_stack([c[0]+(L0[:,0]-o[0])*gap/detailIPD,c[2]-(L0[:,1]-o[1])*gap/detailIPD])
+        w0,h0=np.ptp(G,axis=0)/gap
+        err=abs(w0-dm[lab]['eyeWidth'])+abs(h0-dm[lab]['eyeHeight'])
+        # Compare actual top/bottom envelopes over their common x domain.
+        e=[]
+        for x0 in np.unique(G[:,0]):
+            z0=G[np.abs(G[:,0]-x0)<1e-9,1]
+            if U1[0,0]<=x0<=U1[-1,0]:
+                e.extend([abs(z0.max()-np.interp(x0,U1[:,0],U1[:,1])),abs(z0.min()-np.interp(x0,L1[:,0],L1[:,1]))])
+        rms=float(np.sqrt(np.mean(np.square(e)))/gap) if e else 1.
+        return float(err+rms),{'samples':len(G),'widthRatio':float(w0),'heightRatio':float(h0),'curveRmsRatio':rms,'targetWidth':dm[lab]['eyeWidth'],'targetHeight':dm[lab]['eyeHeight']}
+    initialTree=skin_bvh(QbaseEye);originalA={side:aperture(QbaseEye,side,1.,initialTree) for side in ('L','R')}
+    bestQ=QbaseEye.copy();bestFactor=1.;bestErr=sum(aperture_metric(originalA[k],k)[0] for k in originalA);beforeErr=bestErr;attempts=[]
+    # Warp local vertices according to the sampled reference upper/lower
+    # contours. Taper influence beyond orbital rim and preserve skin depth.
+    for factor in (1.,1.12,1.22):
+        for strength in (.45,.75,1.):
+            delta=np.zeros_like(QbaseEye)
+            for side in ('L','R'):
+                G=originalA[side]
+                if len(G)<10:continue
+                c=dstEye[side];lab='L' if c[0]<eye[0] else 'R';u0=df['eye'+lab+'Upper'];l0=df['eye'+lab+'Lower'];o=df['iris'+lab][0]
+                x0,x1=G[:,0].min(),G[:,0].max();gx=np.unique(G[:,0]);gzU=np.array([G[G[:,0]==x,1].max() for x in gx]);gzL=np.array([G[G[:,0]==x,1].min() for x in gx])
+                t=np.clip((QbaseEye[:,0]-x0)/max(x1-x0,.001),0,1)
+                tx=c[0]+(u0[0,0]+t*(u0[-1,0]-u0[0,0])-o[0])*gap/detailIPD
+                uPx=u0[0,0]+t*(u0[-1,0]-u0[0,0])
+                zu=c[2]-(np.interp(uPx,u0[:,0],u0[:,1])-o[1])*gap/detailIPD
+                zl=c[2]-(np.interp(uPx,l0[:,0],l0[:,1])-o[1])*gap/detailIPD
+                oldU=np.interp(QbaseEye[:,0],gx,gzU);oldL=np.interp(QbaseEye[:,0],gx,gzL)
+                w=np.clip((QbaseEye[:,2]-oldL)/np.maximum(oldU-oldL,.002),0,1)
+                zt=w*(zu-oldU)+(1-w)*(zl-oldL)
+                wx=np.exp(-((QbaseEye[:,0]-c[0])/(gap*.32))**4)
+                wz=np.exp(-((QbaseEye[:,2]-c[2])/(gap*.28))**4)
+                wy=np.clip((c[1]-QbaseEye[:,1]+gap*.04)/(gap*.19),0,1)
+                weight=wx*wz*wy
+                delta[:,0]+=np.clip(tx-QbaseEye[:,0],-gap*.13,gap*.13)*weight*strength
+                delta[:,2]+=np.clip(zt,-gap*.10,gap*.10)*weight*strength
+            candidate=QbaseEye+delta
+            n1=profile_norm(candidate)
+            if np.any(pv&((np.sum(pn*n1,axis=1)<=0)|(np.linalg.norm(n1,axis=1)<.15*pa))):continue
+            t0=skin_bvh(candidate);met={k:aperture_metric(aperture(candidate,k,factor,t0),k) for k in ('L','R')}
+            err=sum(x[0] for x in met.values());attempts.append({'globeScale':factor,'warpStrength':strength,'error':err,'eyes':{k:x[1] for k,x in met.items()}})
+            if err<bestErr:bestErr=err;bestFactor=factor;bestQ=candidate
+    Q=bestQ;eyeScaleFactors={k:bestFactor for k in ('L','R')}
+    dreport['eyelidCurveFit']={'beforeError':beforeErr,'afterError':bestErr,'globeScale':bestFactor,'attempts':attempts,'applied':bool(bestErr<beforeErr-1e-8),'initialEyes':{k:aperture_metric(originalA[k],k)[1] for k in originalA},'limitation':'synthetic projected target; topology and globe scale constrain fit'}
 if female:
     after=np.vstack([eyes3,Q[[noseI,mouthI,chinI]]])
     referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@M.T+tr-obs,axis=1)**2)))
@@ -633,7 +705,7 @@ for name in names:
 # iris was hidden behind the opaque sclera; conform its actual topology
 # to the curved front surface with a sub-millimetre clearance.
 eyeFit={}
-eyeSource={k:mapP(pts(o)) for k,o in eyes.items()}
+eyeSource={k:dstEye[k[1]]+(mapP(pts(o))-dstEye[k[1]])*eyeScaleFactors[k[1]] for k,o in eyes.items()}
 for (kind,side),o in eyes.items():
     A=eyeSource[(kind,side)].copy()
     if kind=='iris':
@@ -709,13 +781,14 @@ for side in ('L','R'):
     # Ray-derived upper/lower margins: find nearby actual skin triangles.
     # Generate tapered tubes rooted in actual triangle with interpolated
     # skin weights and all facial morph deltas.
-    V=[];F=[];rootRows=[];rootD={n:[] for n in names};rootCount=0
+    V=[];F=[];rootRows=[];rootD={n:[] for n in names};rootCount=0;lashMeasures=[]
     for upper in (True,False):
-        for x in np.unique(G[:,0])[1:-1]:
-            Z=G[np.abs(G[:,0]-x)<1e-8,1];z=float(max(Z) if upper else min(Z));sgn=1 if upper else -1
+        gx=np.unique(G[:,0]);edgeZ=np.array([G[G[:,0]==v,1].max() if upper else G[G[:,0]==v,1].min() for v in gx])
+        for x in np.linspace(gx[0],gx[-1],54 if upper else 32)[1:-1]:
+            z=float(np.interp(x,gx,edgeZ));sgn=1 if upper else -1
             hit=None
             for step in range(1,9):
-                zz=z+sgn*step*.00045
+                zz=z+sgn*step*.00024
                 a,i,sd=cast(skinTree,float(x),zz);b,_,ed=cast(et,float(x),zz)
                 if a is not None and (b is None or sd<=ed+.00005):hit=(a,i);break
             if hit is None:continue
@@ -723,28 +796,37 @@ for side in ('L','R'):
             for j,t in zip(ids,b):
                 for n,v in wr[j].items():wr0[n]=wr0.get(n,0)+float(t)*v
             dside='L' if x<eye[0] else 'R'
-            length=float(np.clip(dm[dside]['upperLashLength' if upper else 'lowerLashLength']*gap*1.35,.0012,.0058)) if female else (.0030 if upper else .0018)
-            # Vary sweep toward outer corner; 2D lengths are projected,
-            # so out-of-plane curvature is a design estimate.
-            frac=min(1.,abs(x-eye[0])/gap)
-            sweep=.15+.35*frac
-            origin=a+Vector((0,-.00015,0));direction=Vector((sweep*np.sign(x-eye[0]),-.70,.70*sgn)).normalized()
-            u=direction.cross(Vector((1,0,0))).normalized();v=direction.cross(u).normalized();at=len(V)
-            for t,rad in ((0,.00016),(.35,.00013),(.70,.000075),(1,.000015)):
-                c=origin+direction*length*t+Vector((0,-.0003*t*t,.0006*sgn*t*t))
+            frac=float(np.clip((x-gx[0])/max(gx[-1]-gx[0],1e-6),0,1))
+            pref=('lash' if upper else 'lowerLash')+dside
+            rr=df[pref+'Roots'];tt=df[pref+'Tips'];dif=tt-rr
+            t0=np.linspace(0,1,len(rr));projected=np.array([np.interp(frac,t0,dif[:,0]),-np.interp(frac,t0,dif[:,1])])*gap/detailIPD
+            # Preserve the measured screen-space tangent and length; the
+            # out-of-plane bend is estimated. Root remains on the actual lid.
+            dx0,dz0=projected
+            dz0=sgn*max(abs(dz0),.00075 if upper else .00045)
+            origin=a+Vector((0,-.00045,0));at=len(V)
+            length=float(np.linalg.norm([dx0,dz0]));depth=.00165 if upper else .0009
+            C=[origin+Vector((dx0*t,-depth*(1.65*t-.65*t*t),dz0*(.48*t+.52*t*t))) for t in np.linspace(0,1,7)]
+            lashMeasures.append({'upper':upper,'root_m':list(origin),'tip_m':list(C[-1]),'projectedLength_m':length,'projectedDirectionDeg':float(np.degrees(np.arctan2(dz0,dx0)))})
+            for k,c in enumerate(C):
+                t=k/(len(C)-1);rad=(.000145 if upper else .00010)*(1-.94*t**1.3)
+                direction=(C[min(k+1,len(C)-1)]-C[max(k-1,0)]).normalized()
+                u=direction.cross(Vector((1,0,0))).normalized();v=direction.cross(u).normalized()
                 for j in range(5):
                     th=2*math.pi*j/5;V.append(tuple(c+rad*(u*math.cos(th)+v*math.sin(th))));rootRows.append(wr0)
                     for n in names:rootD[n].append(b@fixed[n][ids])
-            for k in range(3):
+            for k in range(len(C)-1):
                 for j in range(5):t=(j+1)%5;F.append((at+k*5+j,at+k*5+t,at+(k+1)*5+t,at+(k+1)*5+j))
             rootCount+=1
     if not V:continue
     me=bpy.data.meshes.new('MasterLashes_'+side);me.from_pydata(V,[],F);me.update();o=bpy.data.objects.new('R53_MasterLashes_'+side,me);bpy.context.collection.objects.link(o)
-    mat=bpy.data.materials.new('FineLashes_'+side);mat.use_nodes=True;bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(.035,.020,.014,1);bs.inputs['Roughness'].default_value=.65;me.materials.append(mat)
+    mat=bpy.data.materials.new('FineLashes_'+side);mat.use_nodes=True;bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(.017,.010,.008,1);bs.inputs['Roughness'].default_value=.58;mat.diffuse_color=(.017,.010,.008,1);me.materials.append(mat)
     bind(o,rootRows);o.shape_key_add(name='Basis')
     for n in names:
         k=o.shape_key_add(name=n);k.data.foreach_set('co',(np.array(V)+np.array(rootD[n])).astype(np.float32).ravel())
+    for poly in me.polygons:poly.use_smooth=True
     lashes.append(o);exposureReport[-1]['lashRoots']=rootCount
+    dreport.setdefault('actualLashGeometry',{})[side]={'rootCount':rootCount,'upperCount':sum(x['upper'] for x in lashMeasures),'lowerCount':sum(not x['upper'] for x in lashMeasures),'strands':lashMeasures}
 
 # Eyebrow fibres projected onto the actual forehead; each root inherits
 # the underlying triangle's bone weights and all thirteen morph deltas.
@@ -810,8 +892,8 @@ for side in ('L','R'):
     brows.append(ob);browReports.append({'side':side,'roots':len(roots),'vertices':len(V),'morphs':len(names),'visualApproved':False})
 
 
-dreport['applied']+=['projected upper/lower lash length','brow centerline and thickness']
-dreport['unresolved']=['exact eyelid curvature fit','individual lash 3D curl','cheek depth target','mandibular angle geometry fit','true lip border texture tracing']
+dreport['applied']+=['projected per-region upper/lower lash vector and length','brow centerline and thickness','bounded ray-tested eyelid curve fit']
+dreport['unresolved']=['remaining eyelid projection residual','individual lash depth/curl inferred','cheek depth target','mandibular angle geometry fit','true lip border texture tracing']
 (out/'detail-face-report.json').write_text(json.dumps(dreport,indent=2))
 # Independent dental and tongue candidates. Fit behind the actual lips;
 # preserve the original skin topology and record ray-based visibility
@@ -1255,7 +1337,16 @@ def studio_render():
             render('pbr_'+n,(0,-1,0));(out/('pbr_'+n+'.png')).replace(studio/('pbr_'+n+'.png'))
             for o in [hd]+lashes+brows+oral:o.data.shape_keys.key_blocks[n].value=0
         bpy.context.view_layer.update()
-        return {'status':'rendered','engine':scene.render.engine,'views':7}
+        # High-resolution skin-only face and both orbital detail views.
+        # Existing full-head images are preserved for like-for-like review.
+        detailDir=out/'face-detail-review';detailDir.mkdir(exist_ok=True)
+        oldRes=(scene.render.resolution_x,scene.render.resolution_y)
+        try:
+            scene.render.resolution_x=1000;scene.render.resolution_y=1000
+            for tag,focus0,scale0 in [('face_front',Vector((eye[0],eye[1],eye[2]-gap*.63)),gap*3.7),('eyes_front',Vector((eye[0],eye[1],eye[2]+gap*.04)),gap*2.1),('eye_left',Vector(dstEye['L']),gap*1.05),('eye_right',Vector(dstEye['R']),gap*1.05)]:
+                cam.data.ortho_scale=scale0;cam.location=focus0+Vector((0,-H*3,0));cam.rotation_euler=(focus0-cam.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(detailDir/(tag+'.png'));bpy.ops.render.render(write_still=True)
+        finally:scene.render.resolution_x,scene.render.resolution_y=oldRes
+        return {'status':'rendered','engine':scene.render.engine,'views':7,'faceDetailViews':4}
     finally:
         fittedHair.hide_render=True
         for ob in lights:bpy.data.objects.remove(ob,do_unlink=True)

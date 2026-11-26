@@ -52,6 +52,15 @@ for i in ids:
     r['nineViewFit']=nv
     de=json.loads((a/'detail-face-report.json').read_text())
     if de['pointCount']<250 or len(de.get('actualEyeOpening',{}))!=2 or len(de.get('actualBrowRoots',{}))!=2:issues.append('detail face evidence incomplete')
+    # Expose residuals instead of treating landmark registration as success.
+    if not de.get('eyelidCurveFit',{}).get('applied'):issues.append('eyelid fit did not improve')
+    for side,x in de.get('actualEyeOpening',{}).items():
+        if abs(x['widthRatio']/x['targetWidth']-1)>.12 or abs(x['heightRatio']/x['targetHeight']-1)>.12:issues.append('eye opening still outside 12% target: '+side)
+    for side,x in de.get('actualLashGeometry',{}).items():
+        if x.get('upperCount',0)<35 or x.get('lowerCount',0)<18:issues.append('lash density below review threshold: '+side)
+    if len(de.get('actualLashGeometry',{}))!=2:issues.append('missing lash evidence')
+    for view in ('face_front','eyes_front','eye_left','eye_right'):
+        with Image.open(a/'face-detail-review'/(view+'.png')) as im:im.verify()
     r['detailFaceFit']=de
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)
