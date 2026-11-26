@@ -166,6 +166,30 @@ Dprofile[:,2]=gap*((.085 if female else -.027)*chin+(.025 if female else -.008)*
 # Keep the neck seam geometry fixed; avoid changing the eye sockets.
 neckLock=np.clip((Z+1.90)/.32,0,1);neckLock=neckLock*neckLock*(3-2*neckLock)
 Dprofile*=((1-orbital*.85)*neckLock)[:,None]
+if female:
+    # Use the actual female anatomy candidate as a secondary anterior
+    # reference, rather than guessing all of the sex-specific proportions.
+    # Ray sample the same x/z coordinates on both heads; only adjust front
+    # cheek, nasal and lip depth, never the orbital margins or neck cut.
+    sourceFace=BVHTree.FromPolygons([Vector(p) for p in Q0],[tuple(int(i) for i in t) for t in ST],all_triangles=True)
+    correction=np.zeros(len(Q0));support=np.zeros(len(Q0))
+    for k,p0 in enumerate(Q0):
+        if abs(X[k])>.94 or Z[k]>.35 or Z[k]<-1.66 or Y[k]>-.05:continue
+        start=Vector((p0[0],min(float(P[:,1].min()),float(Q0[:,1].min()))-.04,p0[2]))
+        q0,_,_,_=sourceFace.ray_cast(start,Vector((0,1,0)),gap*9)
+        q1,_,_,_=baseTree.ray_cast(start,Vector((0,1,0)),gap*9)
+        if q0 is None or q1 is None or abs(p0[1]-q0.y)>.0035:continue
+        weight=float(front[k]*(1-orbital[k])**3*neckLock[k])
+        weight*=float(np.exp(-((Z[k]+.76)/.78)**4))
+        correction[k]=np.clip(q1.y-q0.y,-gap*.10,gap*.10)*weight*.40
+        support[k]=weight
+    # Smooth measured displacement over original topological adjacency.
+    ed=np.unique(np.sort(np.concatenate([ST[:,[0,1]],ST[:,[1,2]],ST[:,[2,0]]]),axis=1),axis=0)
+    ea=np.r_[ed[:,0],ed[:,1]];eb=np.r_[ed[:,1],ed[:,0]]
+    deg=np.maximum(1,np.bincount(ea,minlength=len(Q0)))
+    for _ in range(4):correction=.58*correction+.42*np.bincount(ea,weights=correction[eb],minlength=len(Q0))/deg
+    Dprofile[:,1]+=correction*(1-orbital)**3*neckLock
+
 # Guard against inverted or collapsed faces against the unchanged source.
 def profile_norm(A):
     T=A[ST];return np.cross(T[:,1]-T[:,0],T[:,2]-T[:,0])
@@ -176,7 +200,7 @@ for _ in range(12):
     if not np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):break
     profile_factor*=.5
 else:raise RuntimeError('profile neutral topology')
-profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True,'regions':['jaw','cheek','chin','nasalBridge','alar','philtrum','lip'],'neckLock':True}
+profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True,'regions':['jaw','cheek','chin','nasalBridge','alar','philtrum','lip'],'neckLock':True,'femaleReferenceDepthFit':bool(female)}
 wr=[];deltas={n:[] for n in names};dist=[];matches=[]
 for p0 in Q:
     q,n,i,d=baseTree.find_nearest(Vector(p0))
@@ -290,7 +314,24 @@ for dx0 in (-.10,-.05,0,.05,.10):
         if contrast>.00012:mouthRows.append((float(zs[j]),contrast))
 mouthZ=float(np.median([x[0] for x in mouthRows])) if len(mouthRows)>=3 else float(eye[2]-gap*1.12)
 mouthWidth=gap*.37
-mouthLandmarks={'creaseZ_m':mouthZ,'sampledCreases':len(mouthRows),'fallback':len(mouthRows)<3,'eyeGap_m':gap}
+# Mark folded oral lining on its existing geometry, keeping the exterior
+# lip and facial skin unchanged. Use the measured anterior surface and
+# triangle depth, not a painted black ellipse across the lips.
+mouthInner=np.zeros(len(Q),dtype=bool)
+for k,p0 in enumerate(Q):
+    if abs(p0[0]-eye[0])>gap*.36 or abs(p0[2]-mouthZ)>gap*.19:continue
+    hit,_,_,_=mouthProbe.ray_cast(Vector((p0[0],float(Q[:,1].min()-.04),p0[2])),Vector((0,1,0)),gap*8)
+    if hit is not None and .0028<p0[1]-hit.y<gap*.52:mouthInner[k]=True
+lining=skin.copy();lining.name='R53_OralLining'
+lining.node_tree.nodes.clear();nd=lining.node_tree.nodes
+ob0=nd.new('ShaderNodeOutputMaterial');pb=nd.new('ShaderNodeBsdfPrincipled')
+pb.inputs['Base Color'].default_value=(.075,.014,.013,1);pb.inputs['Roughness'].default_value=.54
+lining.node_tree.links.new(pb.outputs['BSDF'],ob0.inputs['Surface']);lining.diffuse_color=(.075,.014,.013,1)
+hd.data.materials.append(lining);innerFaces=0
+for poly in hd.data.polygons:
+    if all(mouthInner[k] for k in poly.vertices):
+        poly.material_index=len(hd.data.materials)-1;innerFaces+=1
+mouthLandmarks={'creaseZ_m':mouthZ,'sampledCreases':len(mouthRows),'fallback':len(mouthRows)<3,'eyeGap_m':gap,'oralLiningVertices':int(mouthInner.sum()),'oralLiningFaces':innerFaces}
 
 hingeY=float(eye[1]+gap*.85)
 hingeZ=float(eye[2]-gap*.40)
@@ -330,7 +371,8 @@ for name in names:
             central=np.exp(-(x0/.29)**4)*np.exp(-((z0+.035)/.16)**4)*smooth01((-.04-y0)/.22)
             yfront=np.quantile(Q[(np.abs(x0)<.15)&(np.abs(z0)<.20),1],.14)
             inner=smooth01((Q[:,1]-yfront-.0015)/.0045)
-            D[:,1]+=gap*.14*(jawAngles[name]/.275)*central*inner
+            D[:,1]+=gap*.19*(jawAngles[name]/.275)*central*inner*mouthInner
+            D[:,2]*=(1-.42*central*(~mouthInner))
             # Keep outward lateral articulation, but suppress the inherited
             # central lip stretch that creates a narrow vertical crumple.
             D[:,0]*=(1-.72*central)
@@ -570,7 +612,7 @@ for lower in (False,True):
         z=mouthZ+gap*((-.065 if lower else .065)-.009*abs(k))
         centers.append((x,y,z));radii.append((gap*.040,gap*.037,gap*(.040 if lower else .052)))
     oral_piece('R53_LowerTeeth' if lower else 'R53_UpperTeeth',centers,radii,(.83,.77,.64),lower)
-oral_piece('R53_Tongue',[(eye[0],lipY+gap*.40,mouthZ-gap*.17)],[(gap*.205,gap*.24,gap*.072)],(.39,.13,.11),True)
+oral_piece('R53_Tongue',[(eye[0],lipY+gap*.55,mouthZ-gap*.19)],[(gap*.185,gap*.18,gap*.052)],(.39,.13,.11),True)
 # Evaluate the real frontmost surface recession through the lip region.
 # A successful morph topology check alone cannot prove an open mouth.
 def mouth_surface(V):
@@ -737,7 +779,7 @@ def fitted_scalp_hair():
     n=160;rows=64;V=[];F=[];UV=[];clearance=[]
     def edge(a):
         f=max(0.,math.cos(a))
-        return .96+.42*(1-math.cos(a))+.105*math.sin(a)**2+.19*math.sin(a+.7)*f**2
+        return .83+.47*(1-math.cos(a))+.17*math.sin(a)**2+.34*math.sin(a+.7)*f**2
     def scalp(a,t):
         ang=.018+(edge(a)-.018)*t
         ray=Vector((math.sin(ang)*math.sin(a),-math.sin(ang)*math.cos(a),math.cos(ang)))
@@ -765,9 +807,9 @@ def fitted_scalp_hair():
             # back, without the former abrupt cos(a) threshold.
             side=(1-math.cos(a))/2
             mix=smooth01((side-.06)/.48)
-            hang=float(.006+.075*mix+.017*side)
+            hang=float(.008+.085*mix+.014*side+.012*math.sin(a)*mix)
             radial=Vector((math.sin(a),-math.cos(a),0))
-            target=p+Vector((0,0,-hang))+radial*(.006+.006*mix)
+            target=p+Vector((-.006*mix*math.sin(a),0,-hang))+radial*(.004+.004*mix)
             endtan=Vector((0,0,-hang*.8))-radial*.007*mix
             t0=tan*.23
             q=(2*u**3-3*u*u+1)*p+(u**3-2*u*u+u)*t0+(-2*u**3+3*u*u)*target+(u**3-u*u)*endtan
@@ -804,8 +846,8 @@ def fitted_scalp_hair():
         groups.append({'kind':'shallow_surface_layer','vertices':sections*3})
     me=bpy.data.meshes.new('R53_ContinuousLayeredBob');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
-    col=np.array([.095,.046,.024]);mat=bpy.data.materials.new('R53_ChestnutHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
-    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.53
+    col=np.array([.105,.058,.033]);mat=bpy.data.materials.new('R53_ChestnutHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
+    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.64
     if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.18
     me.materials.append(mat);hu=me.uv_layers.new(name='R53_HairFlow')
     for p in me.polygons:
@@ -813,7 +855,7 @@ def fitted_scalp_hair():
         for i,u in zip(ids,u0):
             _,v=UV[me.loops[i].vertex_index];hu.data[i].uv=(u+1 if wrap and u<.5 else u,v)
     yy,xx=np.mgrid[0:1024,0:2048];u=xx/2048;v=yy/1024
-    strand=.79+.12*np.sin(2*math.pi*(u*317+.19*np.sin(v*8)))+.06*np.sin(2*math.pi*(u*503+v*.12))+.025*np.sin(2*math.pi*u*809)
+    strand=.82+.055*np.sin(2*math.pi*(u*317+.19*np.sin(v*8)))+.035*np.sin(2*math.pi*(u*503+v*.12))+.018*np.sin(2*math.pi*u*809)+.075*np.sin(2*math.pi*(u*19+.28*np.sin(v*4)))
     texlink(mat,bs,rgba_image('R53_BobStrands',strand[:,:,None]*col[None,None,:]),hu.name,'Base Color')
     rough=np.clip(.55+.07*np.sin(2*math.pi*(u*317+.19*np.sin(v*8))),.42,.69)
     texlink(mat,bs,rgba_image('R53_BobRoughness',rough,True),hu.name,'Roughness')
