@@ -1,0 +1,36 @@
+name: R54 independent measured head prototype review only
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r54-new-measured-head.py'
+      - '.github/workflows/r54-new-measured-head.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts/r54-new-measured-head.py
+            data
+          sparse-checkout-cone-mode: false
+      - run: python3 -m py_compile scripts/r54-new-measured-head.py
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Build new geometry and render actual JPGs
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r54-new-measured-head.py -- review/r54-new-head
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r54-independent-head-review
+          path: review/r54-new-head/
+          if-no-files-found: warn

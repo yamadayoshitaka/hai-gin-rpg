@@ -82,5 +82,21 @@
     "R53_HERO_REVIEW_JPG.zip"
   ],
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
-  "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured"
+  "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
+  "independentNewHead": {
+    "id": "R54-new-head-v1",
+    "source": "scripts/r54-new-measured-head.py",
+    "workflow": ".github/workflows/r54-new-measured-head.yml",
+    "status": "prototype, newly constructed geometry without imported head",
+    "reference": "same 350 point and 9-view ledger",
+    "oldHeadPolicy": "preserved comparison; no automatic replacement",
+    "approval": false,
+    "limitations": [
+      "back skull inferred",
+      "ears pending",
+      "no rig/neck integration",
+      "experimental jaw key only",
+      "actual visual fit unverified"
+    ]
+  }
 }
