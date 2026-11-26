@@ -218,8 +218,10 @@
     "anteriorClosure": "anterior ear root and tragus obscured by hair; three inferred points",
     "depth": "curved cartilage shell, helix, antihelix, concha, tragus, lobe, shallow canal depression",
     "root": "fit to actual lateral skull by BVH; independent mesh; contact overlap only, not a welded anatomical seam",
-    "material": "same skin estimate, subtle regional red coloration"
+    "material": "same skin estimate, subtle regional red coloration",
+    "frontTaper": "bounded height-dependent free edge; front ear partly occluded, visual review required"
   },
   "visualApproved": false,
-  "productionApproved": false
+  "productionApproved": false,
+  "revision": "v7 tapered lateral profile and thinner cartilage, retains exact measured side outline stations"
 }

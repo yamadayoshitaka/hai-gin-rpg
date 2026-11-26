@@ -1,0 +1,98 @@
+{
+  "schema": "R54-neck-design-v1",
+  "referenceSHA256": "580fae9d783e48fcc1c9051eea3fe0c2201f235d85f7c01494620beaf7046e80",
+  "source": "data/r54-dimensional-constraints.json",
+  "designIPD_mm": 63,
+  "sideProjections": {
+    "left": {
+      "sourcePixel": {
+        "front": [
+          961,
+          347
+        ],
+        "back": [
+          1054,
+          349
+        ],
+        "eye": [
+          915,
+          195
+        ],
+        "chin": [
+          910,
+          320
+        ]
+      },
+      "scale": 0.012788990825688072,
+      "frontYZ": [
+        0.19829357798165126,
+        -1.943926605504587
+      ],
+      "backYZ": [
+        1.387669724770642,
+        -1.969504587155963
+      ],
+      "provenance": "visible clothing/neck boundary in nine-view illustration; projected anchor, not physical measurement"
+    },
+    "right": {
+      "sourcePixel": {
+        "front": [
+          232,
+          776
+        ],
+        "back": [
+          128,
+          776
+        ],
+        "eye": [
+          277,
+          627
+        ],
+        "chin": [
+          279,
+          752
+        ]
+      },
+      "scale": 0.012788990825688072,
+      "frontYZ": [
+        0.18550458715596319,
+        -1.9055596330275226
+      ],
+      "backYZ": [
+        1.5155596330275225,
+        -1.9055596330275226
+      ],
+      "provenance": "visible clothing/neck boundary in nine-view illustration; projected anchor, not physical measurement"
+    }
+  },
+  "frontCollarWidthIpd": 1.2658227848101267,
+  "frontCollarSourcePx": [
+    [
+      150,
+      342
+    ],
+    [
+      250,
+      341
+    ]
+  ],
+  "rearNeckWidthProxyIpd": 1.4683544303797469,
+  "rearNeckSourcePx": [
+    [
+      537,
+      398
+    ],
+    [
+      653,
+      398
+    ]
+  ],
+  "inferred": {
+    "neckWidth": "front collar and rear neck are clothing/hair occluded; width derived from front proxy and anatomy, not exact physical size",
+    "sternocleidomastoid": "gentle paired contour, not isolated tubes",
+    "attachment": "actual head underside ray intersection, independent overlapping mesh; body socket later",
+    "lowerBoundary": "inferred base at collar level plus short extension for future body integration"
+  },
+  "visualApproved": false,
+  "productionApproved": false
+}

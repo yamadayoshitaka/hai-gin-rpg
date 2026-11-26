@@ -499,8 +499,12 @@ for label,sgn in (('left',-1),('right',1)):
         if root is None:root=.51
         frontFactor=float(sstep((y-ymin+.035)/(w*.58)))
         free=float(sstep((r-.18)/.75))
-        envelope=(root-.018)*(1-frontFactor)+(.87+.27*frontFactor)*frontFactor
-        helix=.105*math.exp(-((r-.89)/.090)**2)
+        # Taper frontal protrusion toward superior root and lobule. Do not
+        # clamp the entire free edge to a flat vertical plane.
+        heightFactor=max(0.,1.-((v-.08)/1.28)**2)
+        lateralTarget=.79+.27*heightFactor+.08*frontFactor
+        envelope=(root-.018)*(1-frontFactor)+lateralTarget*frontFactor
+        helix=.068*math.exp(-((r-.89)/.105)**2)
         anti=.075*math.exp(-((u-.10)/.24)**2)*math.exp(-((v-.16)/.65)**2)
         # Upper bifurcation of antihelix.
         anti+=.047*math.exp(-((u-.38*(v-.05))/.17)**2-((v-.51)/.29)**2)
@@ -512,7 +516,11 @@ for label,sgn in (('left',-1),('right',1)):
         # Anchor the anterior root below the cranial surface.
         anch=float(sstep((y-ymin+.02)/(w*.24)))
         x=(root-.020)*(1-anch)+x*anch
-        return min(x,xgoal+.035)
+        # Bounded smooth cap varies vertically; the hair-obscured frontal
+        # outline is only a proxy. Avoid a rectangular silhouette.
+        cap=min(xgoal+.018,.91+.23*max(0.,1.-((v-.06)/1.2)**2))
+        if x>cap-.045:x=cap-.045*math.exp(-(x-cap+.045)/.045)
+        return x
     rv=np.linspace(.04,1.,28);VV=[];FF=[];II=[]
     def push(p):VV.append(tuple(p));return len(VV)-1
     for outerSide in (True,False):
@@ -523,7 +531,7 @@ for label,sgn in (('left',-1),('right',1)):
                 if not outerSide:
                     # Cartilage thickness is estimated; posterior surface
                     # closes the ear rather than leaving loose tubes.
-                    x-=.035+.045*(1-r*r)
+                    x-=.025+.028*(1-r*r)
                 push((sgn*x,y,z))
     nr=len(rv);N=nr*n
     for shell in (0,1):
@@ -560,6 +568,72 @@ for label,sgn in (('left',-1),('right',1)):
     bpy.ops.object.select_all(action='DESELECT');ear.select_set(True);bpy.context.view_layer.objects.active=ear
     bpy.ops.export_scene.gltf(filepath=str(out/('R54_ear_'+label+'.glb')),export_format='GLB',use_selection=True)
 (out/'ear-audit.json').write_text(json.dumps({'referenceSHA256':earSpec['referenceSHA256'],'ears':earReport,'internalAnatomyStatus':'inferred, not measured','attachmentStatus':'overlap candidate; no welded seam or rig yet','visualApproved':False},indent=2,allow_nan=False))
+# R54 v7 neck: independent smooth anatomical surface, fit to actual
+# head underside. The visible collar/neck outline is a projection only.
+neckSpec=json.loads(Path('data/r54-neck-design.json').read_text())
+assert neckSpec['referenceSHA256']==contract['referenceSHA256']
+ns=neckSpec['sideProjections']
+frontYZ=np.mean([ns[k]['frontYZ'] for k in ('left','right')],axis=0)
+backYZ=np.mean([ns[k]['backYZ'] for k in ('left','right')],axis=0)
+baseZ=float((frontYZ[1]+backYZ[1])*.5-.24)
+# Lower ellipse follows the measured anterior and posterior side anchors.
+# Keep estimates bounded because the reference includes a collar and hair.
+lowerFront=float(np.clip(frontYZ[0],-.04,.38))
+lowerBack=float(np.clip(backYZ[0],.72,1.25))
+if lowerBack-lowerFront<.55:lowerBack=lowerFront+.55
+lowerHalf=float(np.clip(neckSpec['frontCollarWidthIpd']*.46,.45,.64))
+upperHalf=lowerHalf*.82
+upperCenter=.31
+upperDepth=.34
+N=128;rows=45;NV=[];NF=[];topAudit=[]
+# sample underside at a conservative upper neck ellipse. Pull inward
+# until a ray meets the actual skull; never fabricate a successful hit.
+for j in range(rows):
+    t=j/(rows-1);blend=float(sstep(t))
+    for i in range(N):
+        ang=2*math.pi*i/N;sn=math.sin(ang);cs=math.cos(ang)
+        ux=upperHalf*sn;uy=upperCenter-upperDepth*cs
+        hit=None
+        for scale in (1.,.94,.88,.80,.70,.60):
+            x=ux*scale;y=upperCenter+(uy-upperCenter)*scale
+            q,_,_,_=headTree.ray_cast(Vector((x*UNIT,y*UNIT,-.25)),Vector((0,0,1)),.35)
+            if q is not None:hit=(x,y,float(q.z/UNIT));break
+        if hit is None:raise RuntimeError('neck underside ray missed at angle '+str(i))
+        tx,ty,tz=hit
+        # Short overlap is explicit, not a claim of a welded seam.
+        tz+=.038
+        lx=lowerHalf*sn;ly=(lowerBack+lowerFront)*.5-(lowerBack-lowerFront)*.5*cs
+        # The neck narrows slightly below the jaw, then broadens at base.
+        waist=1-.085*math.sin(math.pi*t)
+        x=((1-blend)*tx+blend*lx)*waist
+        y=(1-blend)*ty+blend*ly
+        z=(1-t)*tz+t*baseZ
+        # Soft paired sternocleidomastoid contour, with zero boundary
+        # displacement and no external disconnected muscle geometry.
+        ridge=.023*math.sin(math.pi*t)**2*math.exp(-((abs(sn)-.69)/.22)**2)
+        x+=math.copysign(ridge,x) if abs(x)>1e-9 else 0
+        y-=ridge*.4*max(0.,cs)
+        NV.append((x,y,z))
+        if j==0:
+            q0,n0,_,dd=headTree.find_nearest(Vector((x*UNIT,y*UNIT,z*UNIT)))
+            signed=float((Vector((x*UNIT,y*UNIT,z*UNIT))-q0).dot(n0)*1000) if q0 is not None else None
+            topAudit.append({'angleDeg':360*i/N,'headIntersectionIpd':[tx,ty,tz-.038],'neckTopIpd':[x,y,z],'signedDistanceMm':signed})
+for j in range(rows-1):
+    for i in range(N):
+        a=j*N+i;b=j*N+(i+1)%N;NF.append((a,b,b+N,a+N))
+for j in (0,rows-1):
+    q=list(range(j*N,(j+1)*N))
+    ci=len(NV);NV.append(tuple(np.mean([NV[k] for k in q],axis=0)))
+    for i,k in enumerate(q):NF.append((ci,k,q[(i+1)%N]))
+neck=object_mesh('R54_AnatomicalNeck',NV,NF,[skin])
+attr=neck.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domain='POINT')
+rgba=np.tile(np.r_[linear([217,181,168]),1.],(len(neck.data.vertices),1))
+attr.data.foreach_set('color',rgba.astype(np.float32).ravel())
+neckBounds=np.array([tuple(v.co) for v in neck.data.vertices])
+neckReport={'referenceSHA256':neckSpec['referenceSHA256'],'designInputs':neckSpec,'actualBoundsMm':(np.ptp(neckBounds,axis=0)*1000).tolist(),'topAttachmentSamples':topAudit,'topOverlapSamples':sum(r['signedDistanceMm'] is not None and r['signedDistanceMm']<0 for r in topAudit),'sampleCount':len(topAudit),'bodySocket':{'origin_m':[0.,(lowerFront+lowerBack)*.5*UNIT,baseZ*UNIT],'ellipseHalfAxes_m':[lowerHalf*UNIT,(lowerBack-lowerFront)*.5*UNIT],'status':'design estimate; not fitted to body'},'seamWelded':False,'rigged':False,'visualApproved':False}
+(out/'neck-audit.json').write_text(json.dumps(neckReport,indent=2,allow_nan=False))
+bpy.ops.object.select_all(action='DESELECT');neck.select_set(True);bpy.context.view_layer.objects.active=neck
+bpy.ops.export_scene.gltf(filepath=str(out/'R54_neck.glb'),export_format='GLB',use_selection=True)
 # Export candidate without old head geometry or armor.
 objects=[o for o in bpy.context.scene.objects if o.type=='MESH']
 bpy.ops.object.select_all(action='DESELECT')
@@ -573,11 +647,11 @@ except Exception:scene.render.engine='BLENDER_EEVEE'
 scene.world=bpy.data.worlds.new('NeutralStudio');scene.world.use_nodes=True
 scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.28,.28,.28,1)
 scene.world.node_tree.nodes['Background'].inputs[1].default_value=.48
-focus=Vector((0,.008,-.018))
+focus=Vector((0,.013,-.038))
 for name,p,power,sz in [('Key',(-.28,-.46,.36),14,.40),('Fill',(.31,-.39,.12),7,.38),('Rim',(.10,.29,.29),10,.34)]:
     l=bpy.data.lights.new(name,'AREA');l.energy=power;l.shape='DISK';l.size=sz
     o=bpy.data.objects.new(name,l);scene.collection.objects.link(o);o.location=p;o.rotation_euler=(focus-o.location).to_track_quat('-Z','Y').to_euler()
-cam=bpy.data.cameras.new('ReviewCamera');cam.type='ORTHO';cam.ortho_scale=.255
+cam=bpy.data.cameras.new('ReviewCamera');cam.type='ORTHO';cam.ortho_scale=.31
 o=bpy.data.objects.new('ReviewCamera',cam);scene.collection.objects.link(o);scene.camera=o
 scene.render.resolution_x=840;scene.render.resolution_y=840;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='JPEG';scene.render.image_settings.quality=95
 def render(name,axis):
@@ -595,6 +669,6 @@ for label,sgn in (('left',-1),('right',1)):
 focus=oldFocus;cam.ortho_scale=oldScale
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v6','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'no neck mesh; later anatomical neck/body seam integration after visual approval','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','head-only; no neck mesh, body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review of ear shape and face, then eye/lip deformations, ear seam, neck interface and skin weights; no automatic adoption'}
+report={'id':'R54-new-head-v7','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review of ear shape and face, then eye/lip deformations, ear seam, neck interface and skin weights; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
