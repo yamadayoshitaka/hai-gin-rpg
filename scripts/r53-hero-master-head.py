@@ -297,13 +297,29 @@ for name in names:
 # Use original iris/sclera meshes, keeping UV and relative alignment.
 # Source fitting uses the same head transform so eyes cannot drift away
 # from the authored lids. Eye coverage is measured by actual front rays.
+# Measure the front scleral surface at each iris vertex. The imported
+# iris was hidden behind the opaque sclera; conform its actual topology
+# to the curved front surface with a sub-millimetre clearance.
+eyeFit={}
+eyeSource={k:mapP(pts(o)) for k,o in eyes.items()}
 for (kind,side),o in eyes.items():
-    A=mapP(pts(o));freeze(o,A);o.name='R53_Master_'+kind+'_'+side;bind(o,[{'eye.'+side:1.} for _ in A])
+    A=eyeSource[(kind,side)].copy()
+    if kind=='iris':
+        globe=eyeSource[('sclera',side)]
+        gt=BVHTree.FromPolygons([Vector(p) for p in globe],[tuple(int(i) for i in t) for t in tri(eyes[('sclera',side)])],all_triangles=True)
+        old=A.copy();hits=0
+        for i,p in enumerate(A):
+            q,_,_,_=gt.ray_cast(Vector((p[0],float(globe[:,1].min()-.05),p[2])),Vector((0,1,0)),.12)
+            if q is not None:
+                A[i,1]=min(p[1],q.y-.00018);hits+=1
+        if hits<.90*len(A):raise RuntimeError('iris conformation coverage '+side)
+        eyeFit[side]={'matchedVertices':hits,'vertices':len(A),'maxForwardCorrection_m':float(np.max(old[:,1]-A[:,1])),'clearance_m':.00018}
+    freeze(o,A);o.name='R53_Master_'+kind+'_'+side;bind(o,[{'eye.'+side:1.} for _ in A])
     m=o.data.materials[0].copy();m.name=ident+'_'+kind+'_'+side
     b=next(n for n in m.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
-    b.inputs['Roughness'].default_value=.14 if kind=='iris' else .22
+    b.inputs['Roughness'].default_value=.25 if kind=='iris' else .28
     if 'Coat Weight' in b.inputs:
-        b.inputs['Coat Weight'].default_value=.30 if kind=='iris' else .12
+        b.inputs['Coat Weight'].default_value=.12 if kind=='iris' else .08
         b.inputs['Coat Roughness'].default_value=.12
     if 'Specular IOR Level' in b.inputs:b.inputs['Specular IOR Level'].default_value=.42
     if kind=='iris':
@@ -344,6 +360,16 @@ for side in ('L','R'):
     et=tree([eyes[('sclera',side)],eyes[('iris',side)]])
     G=exposure(side,skinTree,et)
     exposureReport.append({'side':side,'visibleSamples':len(G),'gridResolution':33})
+    # Count samples where the iris itself, not merely the sclera,
+    # is the first visible ocular surface through the actual eyelids.
+    it=tree([eyes[('iris',side)]]);st=tree([eyes[('sclera',side)]])
+    visibleIris=0
+    for x,z,_ in G:
+        i0,_,di=cast(it,x,z);s0,_,ds=cast(st,x,z);h0,_,dh=cast(skinTree,x,z)
+        if i0 is not None and (s0 is None or di<ds-.00003) and (h0 is None or di<dh-.00003):visibleIris+=1
+    eyeFit[side]['visibleIrisSamples']=visibleIris
+    eyeFit[side]['visibleEyeSamples']=len(G)
+    if visibleIris<5:raise RuntimeError('iris remains occluded '+side)
     if len(G)<8:continue
     # Ray-derived upper/lower margins: find nearby actual skin triangles.
     # Generate tapered tubes rooted in actual triangle with interpolated
@@ -660,7 +686,7 @@ def fitted_scalp_hair():
     female=ident=='commander-female'
     def edge(a):
         f=math.cos(a)
-        return 1.08+.43*(1-f)+(.12 if female else 0)*math.sin(a)**2+.075*math.sin(a+.6)*max(0.,f)**2
+        return 1.08+.43*(1-f)+(.16 if female else 0)*math.sin(a)**2+.10*math.sin(a+.6)*max(0.,f)**2+.025*math.sin(9*a+.3)+.014*math.sin(17*a)
     def sample(a,t):
         angle=.022+(edge(a)-.022)*t
         # Swept strands begin at the measured scalp, not at an assumed ellipsoid.
@@ -701,7 +727,7 @@ def fitted_scalp_hair():
                 a=start+j*3+k2;F.append((a,a+3,a+4,a+1));M.append(1+(k%3))
     me=bpy.data.meshes.new('R53_MeasuredScalpHair');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
-    shades=[(.20,.105,.040),(.26,.14,.055),(.33,.19,.080),(.23,.12,.05)] if female else [(.020,.014,.011),(.030,.022,.018),(.045,.032,.025),(.024,.018,.014)]
+    shades=[(.14,.075,.035),(.18,.10,.048),(.23,.135,.066),(.16,.085,.04)] if female else [(.020,.014,.011),(.030,.022,.018),(.045,.032,.025),(.024,.018,.014)]
     for i,col in enumerate(shades):
         mat=bpy.data.materials.new('R53_fitted_hair_%d'%i);mat.diffuse_color=(*col,1);mat.use_nodes=True
         b=mat.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*col,1);b.inputs['Roughness'].default_value=.38
@@ -726,7 +752,8 @@ def fitted_scalp_hair():
     for mat,col in zip(me.materials,shades):
         b=mat.node_tree.nodes.get('Principled BSDF')
         texlink(mat,b,rgba_image(mat.name+'_strand',stripe[:,:,None]*np.array(col)[None,None,:]),hu.name,'Base Color')
-        b.inputs['Roughness'].default_value=.34
+        b.inputs['Roughness'].default_value=.49
+        if 'Specular IOR Level' in b.inputs:b.inputs['Specular IOR Level'].default_value=.24
         if 'Anisotropic IOR Level' in b.inputs:b.inputs['Anisotropic IOR Level'].default_value=.28
     for poly,mi in zip(me.polygons,M):poly.material_index=mi;poly.use_smooth=True
     # Anchor rigidly to the same head bone; no weight on facial morphs.
@@ -753,7 +780,7 @@ def studio_render():
         try:scene.render.engine='BLENDER_EEVEE_NEXT'
         except Exception:scene.render.engine='BLENDER_EEVEE'
         w0=bpy.data.worlds.new('R53_StudioWorld');w0.use_nodes=True;w0.node_tree.nodes['Background'].inputs[0].default_value=(.15,.15,.15,1);w0.node_tree.nodes['Background'].inputs[1].default_value=.45;scene.world=w0
-        for name,offset,power,size in [('key',(-.38,-.65,.43),38,.50),('fill',(.40,-.35,.16),17,.48),('rim',(.18,.40,.35),29,.35)]:
+        for name,offset,power,size in [('key',(-.38,-.65,.43),26,.50),('fill',(.40,-.35,.16),11,.48),('rim',(.18,.40,.35),16,.35)]:
             dat=bpy.data.lights.new('R53_'+name,'AREA');dat.energy=power;dat.shape='DISK';dat.size=size
             ob=bpy.data.objects.new('R53_'+name,dat);bpy.context.collection.objects.link(ob);ob.location=fc+Vector(offset);ob.rotation_euler=(fc-ob.location).to_track_quat('-Z','Y').to_euler();lights.append(ob)
         fittedHair.hide_render=False
@@ -805,9 +832,13 @@ try:
         cam.data.ortho_scale=scale;cam.location=target+Vector(d).normalized()*H*3
         cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         scene.render.filepath=str(assemblyDir/(tag+'.png'));bpy.ops.render.render(write_still=True)
+    # Render neutral rig rather than the first NLA action pose.
+    for tr0 in ad.nla_tracks:tr0.mute=True
+    reset()
     target=Vector((eye[0],eye[1],eye[2]-hh*1.1))
     for tag,d in [('neck_front',(0,-1,0)),('neck_side',(1,0,0)),('neck_rear',(0,1,0))]:full_render(tag,d,target,hh*5.0)
     for tag,d in [('full_front',(0,-1,0)),('full_side',(1,0,0))]:full_render(tag,d,center,H*1.13)
+    for tr0 in ad.nla_tracks:tr0.mute=False
     bpy.ops.object.select_all(action='DESELECT')
     for o in assembleParts+[rig]:o.select_set(True)
     bpy.context.view_layer.objects.active=assembly
@@ -828,5 +859,5 @@ if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for
 count=len(new);bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(dest));bpy.context.view_layer.update()
 rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
-report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'studioReview':studioReport,'continuousNeckStudy':assemblyReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
+report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'irisSurfaceFit':eyeFit,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'studioReview':studioReport,'continuousNeckStudy':assemblyReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)
