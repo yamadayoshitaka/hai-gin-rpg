@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v1",
+    "id": "R54-new-head-v2",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "prototype, newly constructed geometry without imported head",
+    "status": "v2 source ready; build pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -97,6 +97,18 @@
       "no rig/neck integration",
       "experimental jaw key only",
       "actual visual fit unverified"
-    ]
+    ],
+    "previous": {
+      "run": 45823254363,
+      "artifact": 15119011277,
+      "visualApproved": false,
+      "issues": [
+        "horizontal nasal ridge",
+        "abrupt section transitions",
+        "pinched chin-neck junction",
+        "faceted crown"
+      ]
+    },
+    "next": "compare actual v2 render to reference before ear or rig integration"
   }
 }

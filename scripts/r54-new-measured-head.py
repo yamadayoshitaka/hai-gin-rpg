@@ -50,47 +50,82 @@ def sstep(t):
 # cranium and neck support. Interpolate the left/right traces independently.
 left=px(np.vstack((f['cheekL'],f['jawL'])))
 right=px(np.vstack((f['cheekR'],f['jawR'])))
+# Shape-preserving C1 interpolation. No piecewise-linear ridges or
+# duplicate stations at the transition between neck and jaw.
+def smooth_interp(x,X,Y):
+    X=np.asarray(X,float);Y=np.asarray(Y,float)
+    j=np.argsort(X);X=X[j];Y=Y[j]
+    X,idx=np.unique(X,return_index=True);Y=Y[idx]
+    h=np.diff(X);m=np.diff(Y)/h
+    d=np.zeros_like(Y);d[0]=m[0];d[-1]=m[-1]
+    for k in range(1,len(Y)-1):
+        if m[k-1]*m[k]>0:
+            w1=2*h[k]+h[k-1];w2=h[k]+2*h[k-1]
+            d[k]=(w1+w2)/(w1/m[k-1]+w2/m[k])
+    x=float(np.clip(x,X[0],X[-1]));k=min(len(X)-2,max(0,int(np.searchsorted(X,x)-1)))
+    t=(x-X[k])/h[k]
+    return float((2*t**3-3*t*t+1)*Y[k]+(t**3-2*t*t+t)*h[k]*d[k]+(-2*t**3+3*t*t)*Y[k+1]+(t**3-t*t)*h[k]*d[k+1])
+# Reference visible widths are measurements; skull and neck rows are
+# inferred. Neck cross-section must not shrink to the chin-tip width.
+# Smooth interpolation joins all rows rather than fitting facial outline
+# extrema to the entire head and neck section indiscriminately.
 def fitwidth(z,side):
     P=left if side<0 else right
-    Z=np.r_[-2.03,-1.82,-1.65,P[::-1,1],-.20,.16,.50,.85,1.15,1.42,1.53]
-    W=np.r_[.43,.38,.12,np.abs(P[::-1,0]),.94,.92,.91,.87,.74,.46,.07]
-    # Sort, then interpolate a monotone vertical coordinate.
-    j=np.argsort(Z);return float(np.interp(z,Z[j],W[j]))
-# Infer a central sagittal depth curve from each lateral view, normalized
-# to the same eye/chin distance. Observed eye surface is anchored at y=-.30.
+    Z=np.r_[-2.03,-1.84,-1.66,-1.51,-1.34,P[P[:,1]>-1.27,1],-.20,.15,.50,.82,1.08,1.30,1.44,1.51,1.53]
+    W=np.r_[.43,.41,.40,.43,.52,np.abs(P[P[:,1]>-1.27,0]),.94,.96,.95,.90,.79,.61,.38,.17,.045]
+    return smooth_interp(z,Z,W)
 profiles=[]
 for key,sgn in [('left',1),('right',-1)]:
     a=d['views'][key];P=np.array(a['profile'],float)[:25];e=np.array(a['eye'][0],float)
     sc=abs(np.mean(f['chin'][:,1])-mid[1])/ipd/max(abs(P[-1,1]-e[1]),1)
     Z=-(P[:,1]-e[1])*sc;Y=-.30+(P[:,0]-e[0])*sc*sgn
-    order=np.argsort(Z);profiles.append((Z[order],Y[order]))
+    profiles.append((Z,Y))
+def baseline_depth(z):
+    # Broad craniofacial surface, without copying the central nasal and
+    # lip projections across the whole horizontal face section.
+    return smooth_interp(z,[-2.03,-1.83,-1.66,-1.50,-1.30,-1.10,-.85,-.60,-.35,0,.25,.48,.75,1.0,1.25,1.44,1.53],[-.02,-.04,-.12,-.32,-.40,-.43,-.43,-.41,-.40,-.39,-.43,-.42,-.38,-.28,-.13,.08,.24])
 def center_depth(z):
-    if -.0>z>-1.60 or 0<=z<=.42:
-        return float(np.mean([np.interp(z,a,b) for a,b in profiles]))
-    return float(np.interp(z,[-2.03,-1.80,-1.60,.42,.70,1.0,1.3,1.53],[-.16,-.16,-.34,-.43,-.38,-.25,-.10,.12]))
+    # Reference profile and its broad face surface meet with continuous
+    # transition at each end; no hard switch at eyebrow or jaw.
+    v=baseline_depth(z)
+    if -1.57<z<.36:
+        sampled=float(np.mean([smooth_interp(z,a,b) for a,b in profiles]))
+        t=float(sstep((z+1.57)/.20)*sstep((.36-z)/.21))
+        return v+(sampled-v)*t
+    return v
 def back_depth(z):
-    return float(np.interp(z,[-2.03,-1.80,-1.50,-1.10,-.6,0,.6,1.,1.3,1.53],[.45,.52,.66,.80,.94,1.05,1.03,.88,.60,.13]))
+    return smooth_interp(z,[-2.03,-1.83,-1.60,-1.30,-1.0,-.55,0,.5,.85,1.10,1.30,1.44,1.53],[.72,.70,.68,.76,.88,.99,1.06,1.05,.96,.82,.64,.44,.27])
 eyeCent={'L':np.array([-.5,-.08,0.]),'R':np.array([.5,-.08,0.])}
 eyeR=np.array([.265,.245,.232])
 def globe_surface(label,x,z):
     c=eyeCent[label];a=((x-c[0])/eyeR[0])**2+((z-c[2])/eyeR[2])**2
     return None if a>=1 else c[1]-eyeR[1]*math.sqrt(max(0,1-a))
+def softmin(a,b,k):
+    h=max(k-abs(a-b),0.)/k
+    return min(a,b)-.25*k*h*h
 def surf(u,z,front=True):
     w=fitwidth(z,-1 if u<0 else 1);x=u*w
-    # curved transverse face, with rounded anterior cheeks rather than a
-    # flat mask. Side depth is inferred, not copied from an old mesh.
     q=max(0.,1-u*u)**.54
     if front:
-        y=.18+(center_depth(z)-.18)*q
-        y-=.070*math.exp(-((abs(x)-.55)/.22)**2-((z+.47)/.29)**2)
-        y+=.047*math.exp(-((abs(x)-.50)/.22)**2-((z-.04)/.16)**2)
-        # cover the globe outside the intentionally cut aperture.
+        # Center profile is localized: nasal bridge and tip, mouth and
+        # chin each have their own width and transition.
+        base=baseline_depth(z)
+        y=.24+(base-.24)*q
+        width=smooth_interp(z,[-1.57,-1.35,-1.10,-.85,-.68,-.45,-.25,.0,.36],[.32,.32,.29,.25,.14,.15,.12,.12,.24])
+        proj=(center_depth(z)-base)*math.exp(-((x/max(.08,width))**2))
+        y+=proj
+        # Nasal alar wings and small cheek curvature are distinct.
+        y-=.045*math.exp(-((abs(x)-.16)/.095)**2-((z+.63)/.11)**2)
+        y-=.043*math.exp(-((abs(x)-.56)/.22)**2-((z+.43)/.30)**2)
+        y+=.044*math.exp(-((abs(x)-.50)/.24)**2-((z-.04)/.18)**2)
+        # Blend eye coverage into the broad face without a hard ledge.
         for lab,c in eyeCent.items():
-            v=globe_surface(lab,x,z)
-            if v is not None:
-                r=((x-c[0])/eyeR[0])**2+((z-c[2])/eyeR[2])**2
-                y=min(y,v-.012*(1-r)-.006)
-    else:y=.18+(back_depth(z)-.18)*q
+            rad=((x-c[0])/eyeR[0])**2+((z-c[2])/eyeR[2])**2
+            if rad<1:
+                g=globe_surface(lab,x,z)
+                weight=float(sstep((1-rad)/.35))
+                y=(1-weight)*y+weight*softmin(y,g-.012,.025)
+    else:y=.24+(back_depth(z)-.24)*q
     return (x,y,z)
 # New structured topology: front and rear grids, sharing side boundary.
 # Three deliberate openings for the actual eyelid and lip loop topology.
@@ -155,8 +190,15 @@ for s in spec:
             g=globe_surface(s['lab'],x,z);y=g-.011 if g is not None else surf(x/max(fitwidth(z,-1 if x<0 else 1),.1),z)[1]
         target.append(np.array([x,y,z]))
     previous=outer
-    for t in (.32,.66,1.):
-        ring=[add((1-t)*np.array(V[k])+t*p) for k,p in zip(outer,target)]
+    for t in (.18,.36,.56,.76,.91,1.):
+        ring=[]
+        for k,p in zip(outer,target):
+            outerP=np.array(V[k]);xz=(1-t)*outerP+t*p
+            u=float(np.clip(xz[0]/max(fitwidth(xz[2],-1 if xz[0]<0 else 1),.05),-.999,.999))
+            yy=surf(u,xz[2])[1]
+            ublend=float(sstep((t-.20)/.80))
+            xz[1]=(1-ublend)*yy+ublend*xz[1]
+            ring.append(add(xz))
         ring_bridge(previous,ring);previous=ring
     if s['id']=='mouth':
         lipOuter=previous;inner=[]
@@ -280,6 +322,6 @@ def render(name,axis):
 for tag,axis in [('front',(0,-1,0)),('left',(-1,0,0)),('right',(1,0,0)),('threequarter',(.66,-1,.03)),('rear',(0,1,0))]:render(tag,axis)
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v1','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ears not yet built','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','no body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review, then reconstruct ears, eye/lip deformations, neck interface and skin weights; no automatic adoption'}
+report={'id':'R54-new-head-v2','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'smooth section interpolation, local sagittal nose/lip depth, stable neck width and tapered lid transition','actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ears not yet built','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','no body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review, then reconstruct ears, eye/lip deformations, neck interface and skin weights; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
