@@ -275,6 +275,7 @@ if female:
             err=float(np.mean(np.linalg.norm((anchors-eye)@M.T+tr-obs,axis=1)**2))
             if best is None or err<best[0]:best=(err,M,tr,float(yaw0),float(pitch0))
     err,M,tr,yaw0,pitch0=best
+    portraitProjectionMatrix=M.copy();portraitProjectionShift=tr.copy()
     fitD=np.zeros_like(Q0)
     for j,(idx,spread) in enumerate(((noseI,.22),(mouthI,.27),(chinI,.34))):
         target=obs[j+2];cur=(qbase[idx]-eye)@M.T+tr
@@ -825,7 +826,7 @@ if female:
     dreport['lipSurfaceFit']={'method':'ray-detected crease and lip projection peaks, matched to traced top/seam/bottom curves; peaks are not exact vermilion edges','validSamples':int(validLip.sum()),'x_m':tx.tolist(),'targetPeakSeamPeak_m':lipTarget.tolist(),'before_m':clean_rows(baseLip),'after_m':clean_rows(bestLip),'beforeRmsMm':startLip*1000 if np.isfinite(startLip) else None,'afterRmsMm':lipErr*1000 if np.isfinite(lipErr) else None,'attempts':lipTries}
 if female:
     after=np.vstack([eyes3,Q[[noseI,mouthI,chinI]]])
-    referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@M.T+tr-obs,axis=1)**2)))
+    referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@portraitProjectionMatrix.T+portraitProjectionShift-obs,axis=1)**2)))
     referenceReport['acceptedProfileScale']=profile_factor
     nineReport['postFitMidlineRms_m']=float(np.sqrt(np.mean(np.sum((Q[[noseI,mouthI,chinI]]-targets)**2,axis=1))))
     nineReport['profileScale']=profile_factor
