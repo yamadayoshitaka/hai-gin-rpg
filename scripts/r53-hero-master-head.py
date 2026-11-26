@@ -239,7 +239,7 @@ if female:
     # Vermilion and eyelid colour gradients follow the existing anatomical UV.
     # This is subtle material colour, not a substitute for geometric lips.
     lipMask=np.clip(field(.5,mv+.014,.060,.018)+.85*field(.5,mv-.009,.056,.017),0,1)
-    C=C*(1-.45*lipMask[:,:,None])+np.array([.59,.29,.25])*.45*lipMask[:,:,None]
+    C=C*(1-.45*lipMask[:,:,None])+np.array([.53,.245,.22])*.45*lipMask[:,:,None]
     socket=field(.403,ev+.005,.042,.023)+field(.597,ev+.005,.042,.023)
     C-=socket[:,:,None]*np.array([.027,.039,.034])
 im=rgba_image(ident+'_SkinAlbedo',C)
@@ -309,7 +309,7 @@ def jaw_motion(A,angle):
     co=np.cos(angle);si=np.sin(angle)
     out=np.zeros_like(A);out[:,1]=(yy*(co-1)-zz*si)*weight;out[:,2]=(yy*si+zz*(co-1))*weight
     return out
-jawAngles={'jawOpen':.255,'viseme_A':.22,'viseme_O':.145,'viseme_E':.10,'viseme_I':.055,'viseme_U':.085,'laugh':.235,'smile':.025} if female else {'jawOpen':.23,'viseme_A':.19,'viseme_O':.12,'viseme_E':.07,'viseme_I':.045,'viseme_U':.06,'laugh':.21,'smile':.025}
+jawAngles={'jawOpen':.275,'viseme_A':.275,'viseme_O':.16,'viseme_E':.10,'viseme_I':.055,'viseme_U':.085,'laugh':.285,'smile':.025} if female else {'jawOpen':.23,'viseme_A':.19,'viseme_O':.12,'viseme_E':.07,'viseme_I':.045,'viseme_U':.06,'laugh':.21,'smile':.025}
 hd.shape_key_add(name='Basis');fixed={};reports=[]
 for name in names:
     D=np.array(deltas[name])
@@ -317,14 +317,23 @@ for name in names:
         # Keep original lateral articulation, but replace the old collapsed
         # lower-face vertical displacement with a rotation-based candidate.
         region=smooth01((-(Q[:,2]-eye[2])/gap-.76)/.25)*smooth01((.8-(Q[:,1]-eye[1])/gap)/1.2)*smooth01(((Q[:,2]-eye[2])/gap+2.2)/.55)
-        D[:,1:]*=(1-.82*region[:,None])
+        D[:,1:]*=(1-.94*region[:,None])
         D+=jaw_motion(Q,jawAngles[name])
         if female and name in ('jawOpen','viseme_A','viseme_O','laugh'):
             # Separate the upper lip gently from the lower jaw. Localize to
             # the measured crease and preserve nose, corners and neck.
             x0=(Q[:,0]-eye[0])/gap;z0=(Q[:,2]-mouthZ)/gap;y0=(Q[:,1]-eye[1])/gap
             upper=smooth01((z0+.018)/.060)*np.exp(-((z0-.075)/.12)**2)*np.exp(-(x0/.31)**4)*smooth01((-.08-y0)/.24)
-            D[:,2]+=gap*.028*(jawAngles[name]/.255)*upper
+            D[:,2]+=gap*.035*(jawAngles[name]/.275)*upper
+            # Keep the lip corners stable and give the folded oral interior
+            # a separate displacement from the front vermilion surface.
+            central=np.exp(-(x0/.29)**4)*np.exp(-((z0+.035)/.16)**4)*smooth01((-.04-y0)/.22)
+            yfront=np.quantile(Q[(np.abs(x0)<.15)&(np.abs(z0)<.20),1],.14)
+            inner=smooth01((Q[:,1]-yfront-.0015)/.0045)
+            D[:,1]+=gap*.14*(jawAngles[name]/.275)*central*inner
+            # Keep outward lateral articulation, but suppress the inherited
+            # central lip stretch that creates a narrow vertical crumple.
+            D[:,0]*=(1-.72*central)
     D=weld(D);alpha=np.ones(len(cnt))
     for it in range(120):
         A=Q+D*alpha[w,None];bad=defects(A)
@@ -459,7 +468,7 @@ for side in ('L','R'):
         t=j/33
         x=cx+sgn*ew*(-.51+1.10*t)
         z=float(hi[2])+ez*((.20 if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
-        thick=(.00135 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
+        thick=(.00165 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
         for row in (-1,0,1):
             zz=z+row*thick
             a,i,_=cast(skinTree,x,zz)
@@ -481,7 +490,7 @@ for side in ('L','R'):
             for k,c in enumerate(C):
                 tangent=(C[min(3,k+1)]-C[max(0,k-1)]).normalized()
                 u=tangent.cross(Vector((0,1,0))).normalized();v=tangent.cross(u).normalized()
-                rad=(.000095 if female else .000125)*(1-.86*k/3)
+                rad=(.000115 if female else .000125)*(1-.86*k/3)
                 for h in range(5):
                     th=2*math.pi*h/5;V.append(tuple(c+rad*(u*math.cos(th)+v*math.sin(th))));RW.append(rw)
                     for n in names:RD[n].append(b@fixed[n][ids])
@@ -492,7 +501,7 @@ for side in ('L','R'):
     if len(roots)<30:raise RuntimeError('insufficient brow roots '+side)
     me=bpy.data.meshes.new('R53_BrowFibres_'+side);me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_BrowFibres_'+side,me);bpy.context.collection.objects.link(ob)
-    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.072,.034,.014) if female else (.026,.018,.012)
+    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.042,.023,.016) if female else (.026,.018,.012)
     mat.diffuse_color=(*col,1);mat.use_nodes=True
     bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.62
     me.materials.append(mat)
@@ -726,29 +735,46 @@ def fitted_scalp_hair():
     if len(crown)<30:raise RuntimeError('insufficient scalp')
     c=Vector((float(np.median(crown[:,0])),float(np.median(crown[:,1])),float(eye[2]+hh*.26)))
     n=160;rows=64;V=[];F=[];UV=[];clearance=[]
-    def sample(a,t):
-        front=max(0.,math.cos(a))
-        # Asymmetric swept hairline: higher on the part, lower at temples.
-        e=1.10+.39*(1-math.cos(a))+.12*math.sin(a)**2+.16*math.sin(a+.4)*front**2
-        ang=.018+(e-.018)*min(t,1.)
+    def edge(a):
+        f=max(0.,math.cos(a))
+        return .96+.42*(1-math.cos(a))+.105*math.sin(a)**2+.19*math.sin(a+.7)*f**2
+    def scalp(a,t):
+        ang=.018+(edge(a)-.018)*t
         ray=Vector((math.sin(ang)*math.sin(a),-math.sin(ang)*math.cos(a),math.cos(ang)))
-        p,norm,_,_=skinTree.ray_cast(c+ray*.42,-ray,.42)
+        p,_,_,_=skinTree.ray_cast(c+ray*.42,-ray,.42)
         if p is None:raise RuntimeError('scalp ray missed')
-        vol=.0023+.0045*math.sin(math.pi*min(t,1.))**.7
-        q=p+ray*vol
-        # A smooth skirt length field yields a single uninterrupted outer
-        # hair surface. It tapers toward the temples and away from the eyes.
-        if t>1:
-            u=t-1;side=(1-math.cos(a))/2
-            hang=(.006+.100*side**.74)*u
-            if math.cos(a)>.5:hang=.004*u
-            flare=.006*math.sin(math.pi*u)+.007*u*side
-            q+=Vector((math.sin(a)*flare,-math.cos(a)*flare,-hang))
-            q+=Vector((.003*math.sin(a)*math.sin(math.pi*u),.003*math.sin(2*a)*u,0))
-        # Small irregularity is in the silhouette, not large ridged tubes.
-        q+=ray*(.00025*math.sin(23*a+4*t))
+        # A small angular neighborhood filters sharp ear protrusions and
+        # retains their envelope. Shell remains outside the measured head.
+        dist=(p-c).dot(ray)
+        for da in (-.075,-.0375,.0375,.075):
+            a1=a+da
+            v=Vector((math.sin(ang)*math.sin(a1),-math.sin(ang)*math.cos(a1),math.cos(ang)))
+            h,_,_,_=skinTree.ray_cast(c+v*.42,-v,.42)
+            if h is not None:dist=max(dist,(h-c).dot(v)-.0015)
+        vol=.004+.0035*math.sin(math.pi*t*.85)**2
+        return c+ray*(dist+vol),ray
+    def sample(a,t):
+        if t<=1:
+            q,ray=scalp(a,t)
+        else:
+            p,ray=scalp(a,1.)
+            prev,_=scalp(a,.96)
+            tan=(p-prev)/.04
+            u=t-1
+            # Smooth growth from short swept bangs to jaw-length sides and
+            # back, without the former abrupt cos(a) threshold.
+            side=(1-math.cos(a))/2
+            mix=smooth01((side-.06)/.48)
+            hang=float(.006+.075*mix+.017*side)
+            radial=Vector((math.sin(a),-math.cos(a),0))
+            target=p+Vector((0,0,-hang))+radial*(.006+.006*mix)
+            endtan=Vector((0,0,-hang*.8))-radial*.007*mix
+            t0=tan*.23
+            q=(2*u**3-3*u*u+1)*p+(u**3-2*u*u+u)*t0+(-2*u**3+3*u*u)*target+(u**3-u*u)*endtan
+            q+=radial*(.004*math.sin(math.pi*u)*mix)
+        q+=ray*(.00018*math.sin(29*a+5*t))
         near,normal,_,d=skinTree.find_nearest(q)
-        if near is not None and d<.025 and (q-near).dot(normal)<.0007:q=near+normal*.0009
+        if near is not None and d<.025 and (q-near).dot(normal)<.0012:q=near+normal*.0014
         return q
     for j in range(rows+1):
         t=1.95*j/rows
@@ -765,12 +791,12 @@ def fitted_scalp_hair():
     for k in range(64):
         a0=2*math.pi*k/64;start=len(V);sections=32
         for j in range(sections):
-            t=.18+1.74*j/(sections-1);a=a0+.08*math.sin(t*2.0)*math.sin(a0+.5)
+            t=.18+1.74*j/(sections-1);a=a0+.12*math.sin(t*1.7)*math.sin(a0+.5)
             width=.042*(.35+.65*math.sin(math.pi*j/(sections-1))**.65)
             for side in (-1,0,1):
                 q=sample(a+side*width,t)
                 normal=Vector((math.sin(a),-math.cos(a),max(0.,1-t))).normalized()
-                q+=normal*(.00030+.00038*(1-abs(side))*math.sin(math.pi*j/(sections-1)))
+                q+=normal*(.00013+.00020*(1-abs(side))*math.sin(math.pi*j/(sections-1)))
                 V.append(tuple(q));UV.append(((k+(side*.42))/64,j/(sections-1)))
         for j in range(sections-1):
             for k0 in range(2):
@@ -812,7 +838,7 @@ def studio_render():
         try:scene.render.engine='BLENDER_EEVEE_NEXT'
         except Exception:scene.render.engine='BLENDER_EEVEE'
         w0=bpy.data.worlds.new('R53_StudioWorld');w0.use_nodes=True;w0.node_tree.nodes['Background'].inputs[0].default_value=(.15,.15,.15,1);w0.node_tree.nodes['Background'].inputs[1].default_value=.45;scene.world=w0
-        for name,offset,power,size in [('key',(-.38,-.65,.43),26,.50),('fill',(.40,-.35,.16),11,.48),('rim',(.18,.40,.35),16,.35)]:
+        for name,offset,power,size in [('key',(-.38,-.65,.43),19,.50),('fill',(.40,-.35,.16),7,.48),('rim',(.18,.40,.35),12,.35)]:
             dat=bpy.data.lights.new('R53_'+name,'AREA');dat.energy=power;dat.shape='DISK';dat.size=size
             ob=bpy.data.objects.new('R53_'+name,dat);bpy.context.collection.objects.link(ob);ob.location=fc+Vector(offset);ob.rotation_euler=(fc-ob.location).to_track_quat('-Z','Y').to_euler();lights.append(ob)
         fittedHair.hide_render=False
@@ -908,7 +934,7 @@ try:
     # state before exporting; the existing NLA animation clips are preserved.
     motion=[]
     for key,act in selected.items():
-        if not any(v in key.lower() for v in ('walk','run','attack','idle')):continue
+        if not any(v in key.lower() for v in ('walk','run','attack','idle','sprint','dodge')):continue
         ad.action=act
         lo,hi=act.frame_range;frame=float(lo+(hi-lo)*.42)
         scene.frame_set(int(frame),subframe=frame-int(frame));bpy.context.view_layer.update()
