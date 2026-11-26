@@ -1,0 +1,46 @@
+name: R53 handover source snapshot only
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - '.github/workflows/r53-handover-source-export.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: fb2fc85b06636e250e3ac150931a5797ddcdc0c4
+          sparse-checkout: |
+            scripts
+            data
+            assets/master-sources/blender
+            assets/story/characters/commander
+            assets/props/fantasy-megakit
+            review-tools
+            .github/workflows
+      - name: Collect exact source snapshot
+        run: |
+          mkdir -p handover
+          python3 - <<'PY'
+          import shutil, pathlib, subprocess,json,hashlib
+          root=pathlib.Path('.')
+          out=pathlib.Path('handover')
+          files=[]
+          for pat in ('scripts/r53*','data/r53*','.github/workflows/r53*','review-tools/r53-*/**/*','assets/master-sources/blender/**/*','assets/story/characters/commander/**/*','assets/props/fantasy-megakit/Sword_Bronze*','assets/props/fantasy-megakit/Shield_Wooden*','assets/props/fantasy-megakit/*T_Trim_Props*','assets/props/fantasy-megakit/*LICENSE*','assets/props/fantasy-megakit/*ATTRIBUTION*'):
+              for p in root.glob(pat):
+                  if p.is_file() and p not in files:files.append(p)
+          for p in files:
+              q=out/p;q.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,q)
+          (out/'source-manifest.json').write_text(json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':[{'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in files]},indent=2))
+          (out/'git-history.txt').write_text(subprocess.check_output(['git','log','-1','--format=fuller'],text=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-handover-exact-source
+          path: handover/
+          include-hidden-files: true
