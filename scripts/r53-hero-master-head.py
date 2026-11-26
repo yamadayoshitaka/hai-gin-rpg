@@ -530,6 +530,107 @@ for factor in (1.10,1.25,1.40,1.55,1.70):
     ea=np.ptp(a,axis=0);eb=np.ptp(b,axis=0)
     err=float(np.linalg.norm(ca-cb)+.5*np.linalg.norm(ea-eb))
     seams.append({'z_m':float(z),'targetSegments':len(a)//2,'masterSegments':len(b)//2,'targetWidthDepth_m':ea[:2].tolist(),'masterWidthDepth_m':eb[:2].tolist(),'centerError_m':float(np.linalg.norm(ca-cb)),'fitScore_m':err})
+
+# Separate continuous neck study; never overwrite the validated head.
+def neck_assembly():
+    from collections import Counter
+    V=[];RW=[];MD=[];F=[];FU=[];FM=[];materials=[];uvNames=set()
+    def matindex(m):
+        if m not in materials:materials.append(m)
+        return materials.index(m)
+    def clipped(obj,A,rows,D,z,upper):
+        v=[];rw=[];md=[];f=[];fu=[];fm=[];lookup={}
+        obj.data.calc_loop_triangles()
+        layers=list(obj.data.uv_layers);uvNames.update(l.name for l in layers)
+        def make(i,li):
+            return A[i],rows[i],np.array([D[n][i] for n in names]),{l.name:np.array(l.data[li].uv) for l in layers}
+        def interp(a,b):
+            t=float((z-a[0][2])/(b[0][2]-a[0][2]));q=(1-t)*a[0]+t*b[0];q[2]=z
+            w0={k:(1-t)*a[1].get(k,0)+t*b[1].get(k,0) for k in set(a[1])|set(b[1])}
+            return q,w0,(1-t)*a[2]+t*b[2],{k:(1-t)*a[3][k]+t*b[3][k] for k in a[3]}
+        def add(a):
+            key=tuple(np.round(a[0]*1e6).astype(np.int64))
+            if key not in lookup:lookup[key]=len(v);v.append(a[0]);rw.append(a[1]);md.append(a[2])
+            return lookup[key]
+        def inside(a):return a[0][2]>=z if upper else a[0][2]<=z
+        for t in obj.data.loop_triangles:
+            poly=[make(i,li) for i,li in zip(t.vertices,t.loops)];cut=[]
+            for a,b in zip(poly,poly[1:]+poly[:1]):
+                ia,ib=inside(a),inside(b)
+                if ia:cut.append(a)
+                if ia!=ib:cut.append(interp(a,b))
+            for j in range(1,len(cut)-1):
+                corners=[cut[0],cut[j],cut[j+1]];ids=tuple(add(a) for a in corners)
+                if len(set(ids))!=3:continue
+                p0,p1,p2=[v[i] for i in ids]
+                if np.linalg.norm(np.cross(p1-p0,p2-p0))<1e-12:continue
+                f.append(ids);fu.append([a[3] for a in corners]);fm.append(obj.data.materials[t.material_index])
+        ec=Counter();dr={}
+        for t in f:
+            for a,b in zip(t,t[1:]+t[:1]):
+                k=tuple(sorted((a,b)));ec[k]+=1;dr[k]=(a,b)
+        edges=[dr[k] for k,c in ec.items() if c==1 and all(abs(v[i][2]-z)<2e-6 for i in k)]
+        nxt=dict(edges)
+        if len(nxt)!=len(edges) or len(set(nxt.values()))!=len(nxt) or len(nxt)<12:raise RuntimeError('neck cut not simple')
+        start=next(iter(nxt));ring=[start];k=nxt[start]
+        while k!=start and k not in ring and k in nxt:ring.append(k);k=nxt[k]
+        if k!=start or len(ring)!=len(nxt):raise RuntimeError('multiple or open neck rings')
+        return v,rw,md,f,fu,fm,ring
+    attempts=[];hc=bc=None
+    for tf,bf in ((1.10,1.28),(1.06,1.25),(1.15,1.34),(1.20,1.40)):
+        za=float(eye[2]-hh*tf);zb=float(eye[2]-hh*bf)
+        try:hc=clipped(hd,Q,wr,fixed,za,True);bc=clipped(body,P,weights,D0,zb,False);break
+        except Exception as e:hc=bc=None;attempts.append(str(e))
+    if hc is None:raise RuntimeError('no valid neck loops: '+str(attempts))
+    def append(cut):
+        v,r,d,f,u,m,ring=cut;o=len(V);V.extend(v);RW.extend(r);MD.extend(d)
+        F.extend(tuple(i+o for i in t) for t in f);FU.extend(u);FM.extend(matindex(x) for x in m)
+        return [i+o for i in ring]
+    ar=append(hc);br=append(bc)[::-1]
+    ac=np.mean([V[i] for i in ar],axis=0);bc0=np.mean([V[i] for i in br],axis=0)
+    def az(i,c):return math.atan2(V[i][0]-c[0],-(V[i][1]-c[1]))
+    def rotate(a,k):return a[k:]+a[:k]
+    ar=rotate(ar,min(range(len(ar)),key=lambda i:abs(az(ar[i],ac))))
+    def angular(a,b):return abs(math.atan2(math.sin(a-b),math.cos(a-b)))
+    br=rotate(br,min(range(len(br)),key=lambda i:angular(az(br[i],bc0),az(ar[0],ac))))
+    def arc(r):
+        d=np.array([np.linalg.norm(V[a]-V[b]) for a,b in zip(r,r[1:]+r[:1])]);return np.r_[0,np.cumsum(d)/d.sum()]
+    aa,bb=arc(ar),arc(br);i=j=0;bridge=[]
+    while i<len(ar) or j<len(br):
+        a=ar[i%len(ar)];b=br[j%len(br)]
+        if j==len(br) or (i<len(ar) and aa[i+1]<=bb[j+1]):
+            i+=1;bridge.append((ar[i%len(ar)],a,b))
+        else:j+=1;bridge.append((a,b,br[j%len(br)]))
+    def skinuv(q):return np.array([.5+math.atan2(q[0]-eye[0],-(q[1]-eye[1]))/(2*math.pi),(q[2]-lowZ)/height])
+    for t in bridge:
+        F.append(t);coords=[skinuv(V[k]) for k in t]
+        if max(x[0] for x in coords)-min(x[0] for x in coords)>.5:
+            for x in coords:
+                if x[0]<.5:x[0]+=1
+        FU.append([{'R53_AnatomicalSkin':x} for x in coords]);FM.append(matindex(skin))
+    # Every actual cut edge must be stitched with opposite winding.
+    orient=Counter((a,b) for t in F for a,b in zip(t,t[1:]+t[:1]))
+    es={tuple(sorted((a,b))) for t in bridge for a,b in zip(t,t[1:]+t[:1])}
+    seamBad=sum(orient[(a,b)]!=1 or orient[(b,a)]!=1 for a,b in es)
+    if seamBad:raise RuntimeError('seam edge topology '+str(seamBad))
+    A=np.array(V);T=np.array(bridge);N0=np.cross(A[T[:,1]]-A[T[:,0]],A[T[:,2]]-A[T[:,0]])
+    areas=np.linalg.norm(N0,axis=1)/2
+    if float(areas.min())<1e-10:raise RuntimeError('degenerate neck bridge')
+    me=bpy.data.meshes.new('R53_ContinuousSkin');me.from_pydata(V,[],F);me.update()
+    ob=bpy.data.objects.new('R53_ContinuousSkin',me);bpy.context.collection.objects.link(ob)
+    for m in materials:me.materials.append(m)
+    layers={name:me.uv_layers.new(name=name) for name in sorted(uvNames|{'R53_AnatomicalSkin'})}
+    for poly,mi,uvs in zip(me.polygons,FM,FU):
+        poly.material_index=mi;poly.use_smooth=True
+        for li,u0 in zip(poly.loop_indices,uvs):
+            for name,l in layers.items():l.data[li].uv=u0.get(name,(0.,0.))
+    bind(ob,RW);ob.shape_key_add(name='Basis');MD=np.array(MD);morphBad={}
+    for k,n in enumerate(names):
+        B=A+MD[:,k];sk=ob.shape_key_add(name=n);sk.data.foreach_set('co',B.astype(np.float32).ravel())
+        N1=np.cross(B[T[:,1]]-B[T[:,0]],B[T[:,2]]-B[T[:,0]])
+        morphBad[n]=int(np.sum((np.sum(N0*N1,axis=1)<=0)|(np.linalg.norm(N1,axis=1)<.03*np.linalg.norm(N0,axis=1))))
+    return ob,{'status':'candidate','headRingVertices':len(ar),'bodyRingVertices':len(br),'bridgeTriangles':len(bridge),'seamBadEdges':seamBad,'minimumBridgeArea_m2':float(areas.min()),'morphBridgeDefects':morphBad,'cutPlanes_m':[za,zb],'previousAttempts':attempts,'visualApproved':False,'productionApproved':False}
+
 # Independent head-and-eye preview, with optional existing hair as a
 # diagnostic only. Hair is unchanged and is not approved for this head.
 new=[hd]+list(eyes.values())+lashes+brows+oral
@@ -645,6 +746,27 @@ for tag,d in views:
     (out/('fitted_hair_'+tag+'.png')).replace(candidate/('fitted_hair_'+tag+'.png'))
 fittedHair.hide_render=True
 
+studio=out/'studio-review';studio.mkdir(exist_ok=True)
+def studio_render():
+    oldEngine=scene.render.engine;oldWorld=scene.world;lights=[]
+    try:
+        try:scene.render.engine='BLENDER_EEVEE_NEXT'
+        except Exception:scene.render.engine='BLENDER_EEVEE'
+        w0=bpy.data.worlds.new('R53_StudioWorld');w0.use_nodes=True;w0.node_tree.nodes['Background'].inputs[0].default_value=(.15,.15,.15,1);w0.node_tree.nodes['Background'].inputs[1].default_value=.45;scene.world=w0
+        for name,offset,power,size in [('key',(-.38,-.65,.43),38,.50),('fill',(.40,-.35,.16),17,.48),('rim',(.18,.40,.35),29,.35)]:
+            dat=bpy.data.lights.new('R53_'+name,'AREA');dat.energy=power;dat.shape='DISK';dat.size=size
+            ob=bpy.data.objects.new('R53_'+name,dat);bpy.context.collection.objects.link(ob);ob.location=fc+Vector(offset);ob.rotation_euler=(fc-ob.location).to_track_quat('-Z','Y').to_euler();lights.append(ob)
+        fittedHair.hide_render=False
+        for tag,d in [('front',(0,-1,0)),('threequarter',(.66,-1,.08))]:
+            render('studio_'+tag,d);(out/('studio_'+tag+'.png')).replace(studio/('studio_'+tag+'.png'))
+        return {'status':'rendered','engine':scene.render.engine,'views':2}
+    finally:
+        fittedHair.hide_render=True
+        for ob in lights:bpy.data.objects.remove(ob,do_unlink=True)
+        scene.world=oldWorld;scene.render.engine=oldEngine
+try:studioReport=studio_render()
+except Exception as e:studioReport={'status':'failed','error':str(e)}
+
 for name in names:
     for o in [hd]+lashes+brows+oral:o.data.shape_keys.key_blocks[name].value=1
     bpy.context.view_layer.update();render('expression_'+name,(0,-1,0))
@@ -672,11 +794,39 @@ bpy.ops.export_scene.gltf(**dict(opts,filepath=str(hairDest)))
 hairDiag['sha256']=sha(hairDest);hairDiag['id']=ident
 (candidate/'fitted-hair-report.json').write_text(json.dumps(hairDiag,indent=2))
 fittedHair.select_set(False);fittedHair.hide_render=True
+
+assemblyDir=out/'continuous-neck-study';assemblyDir.mkdir(exist_ok=True)
+assemblyReport={'status':'not-run','productionApproved':False}
+try:
+    assembly,assemblyReport=neck_assembly()
+    assembleParts=[assembly]+[o for o in new if o!=hd]+[fittedHair]+[o for o in parts if o!=body and o not in hair]
+    for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
+    def full_render(tag,d,target,scale):
+        cam.data.ortho_scale=scale;cam.location=target+Vector(d).normalized()*H*3
+        cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+        scene.render.filepath=str(assemblyDir/(tag+'.png'));bpy.ops.render.render(write_still=True)
+    target=Vector((eye[0],eye[1],eye[2]-hh*1.1))
+    for tag,d in [('neck_front',(0,-1,0)),('neck_side',(1,0,0)),('neck_rear',(0,1,0))]:full_render(tag,d,target,hh*5.0)
+    for tag,d in [('full_front',(0,-1,0)),('full_side',(1,0,0))]:full_render(tag,d,center,H*1.13)
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in assembleParts+[rig]:o.select_set(True)
+    bpy.context.view_layer.objects.active=assembly
+    adest=assemblyDir/(ident+'_continuous_neck.glb')
+    bpy.ops.export_scene.gltf(**dict(opts,filepath=str(adest)))
+    rr=adest.read_bytes();ag=json.loads(rr[20:20+int.from_bytes(rr[12:16],'little')])
+    if len(ag.get('skins',[]))!=1 or not all(any(n.lower() in a.get('name','').lower() for a in ag.get('animations',[])) for n in clips):raise RuntimeError('assembled rig/clip inventory')
+    if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for m in ag['meshes']):raise RuntimeError('assembled morph inventory')
+    assemblyReport.update({'sha256':sha(adest),'meshCount':len(assembleParts),'exportInventoryVerified':True,'continuousNeckCandidate':True,'productionApproved':False})
+except Exception as e:
+    assemblyReport.update({'status':'failed','error':str(e),'continuousNeckCandidate':False,'productionApproved':False})
+    print('R53 NECK CANDIDATE FAILED',str(e),flush=True)
+(assemblyDir/'continuous-neck-report.json').write_text(json.dumps(assemblyReport,indent=2))
+
 raw=dest.read_bytes();g=json.loads(raw[20:20+int.from_bytes(raw[12:16],'little')])
 if len(g.get('skins',[]))!=1 or not all(any(n.lower() in a.get('name','').lower() for a in g.get('animations',[])) for n in clips):raise RuntimeError('master rig/actions')
 if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for m in g['meshes']):raise RuntimeError('master morph inventory')
 count=len(new);bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(dest));bpy.context.view_layer.update()
 rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
-report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
+report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'studioReview':studioReport,'continuousNeckStudy':assemblyReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)
