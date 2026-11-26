@@ -375,8 +375,11 @@ if female:
     bestQ=QbaseEye.copy();bestFactor=1.;bestErr=sum(aperture_metric(originalA[k],k)[0] for k in originalA);beforeErr=bestErr;attempts=[]
     # Warp local vertices according to the sampled reference upper/lower
     # contours. Taper influence beyond orbital rim and preserve skin depth.
-    for factor in (1.,1.12,1.22):
-        for strength in (.45,.75,1.):
+    # Search separately along horizontal and vertical axes; bounded ocular
+    # aspect ratios avoid unrestricted eyeball enlargement. The prior
+    # candidate remains in the search as an exact regression baseline.
+    for factor in (1.,1.12,1.22,(1.28,1.18,1.18),(1.32,1.18,1.18),(1.35,1.22,1.22),(1.38,1.22,1.22)):
+        for strength in (.25,.35,.45,.55,.65,.75,1.):
             delta=np.zeros_like(QbaseEye)
             for side in ('L','R'):
                 G=originalA[side]
@@ -385,13 +388,17 @@ if female:
                 x0,x1=G[:,0].min(),G[:,0].max();gx=np.unique(G[:,0]);gzU=np.array([G[G[:,0]==x,1].max() for x in gx]);gzL=np.array([G[G[:,0]==x,1].min() for x in gx])
                 t=np.clip((QbaseEye[:,0]-x0)/max(x1-x0,.001),0,1)
                 tx=c[0]+(u0[0,0]+t*(u0[-1,0]-u0[0,0])-o[0])*gap/detailIPD
+                if isinstance(factor,tuple):
+                    # Preserve the exterior coordinate offset rather than
+                    # collapsing the surrounding orbital rim toward a corner.
+                    tx+=QbaseEye[:,0]-(x0+t*(x1-x0))
                 uPx=u0[0,0]+t*(u0[-1,0]-u0[0,0])
                 zu=c[2]-(np.interp(uPx,u0[:,0],u0[:,1])-o[1])*gap/detailIPD
                 zl=c[2]-(np.interp(uPx,l0[:,0],l0[:,1])-o[1])*gap/detailIPD
                 oldU=np.interp(QbaseEye[:,0],gx,gzU);oldL=np.interp(QbaseEye[:,0],gx,gzL)
                 w=np.clip((QbaseEye[:,2]-oldL)/np.maximum(oldU-oldL,.002),0,1)
                 zt=w*(zu-oldU)+(1-w)*(zl-oldL)
-                wx=np.exp(-((QbaseEye[:,0]-c[0])/(gap*.32))**4)
+                wx=np.exp(-((QbaseEye[:,0]-c[0])/(gap*(.36 if isinstance(factor,tuple) else .32)))**4)
                 wz=np.exp(-((QbaseEye[:,2]-c[2])/(gap*.28))**4)
                 wy=np.clip((c[1]-QbaseEye[:,1]+gap*.04)/(gap*.19),0,1)
                 weight=wx*wz*wy
@@ -705,7 +712,12 @@ for name in names:
 # iris was hidden behind the opaque sclera; conform its actual topology
 # to the curved front surface with a sub-millimetre clearance.
 eyeFit={}
-eyeSource={k:dstEye[k[1]]+(mapP(pts(o))-dstEye[k[1]])*eyeScaleFactors[k[1]] for k,o in eyes.items()}
+# Keep iris circular in its original plane when sclera width is adjusted.
+# The existing ray-conformation below then follows the updated globe.
+def ocular_factor(k):
+    f=eyeScaleFactors[k[1]]
+    return (f[2],f[1],f[2]) if isinstance(f,tuple) and k[0]=='iris' else f
+eyeSource={k:dstEye[k[1]]+(mapP(pts(o))-dstEye[k[1]])*ocular_factor(k) for k,o in eyes.items()}
 for (kind,side),o in eyes.items():
     A=eyeSource[(kind,side)].copy()
     if kind=='iris':
@@ -1509,6 +1521,23 @@ try:
         ad.action=None;reset()
     assemblyReport['motionReview']=motion
     scene.frame_set(1);reset()
+    # Keep the new integrated body, face and facial submeshes independent
+    # of armor, hair, garments and weapons. Export under the identical rig.
+    coreDir=out/'core-body-study';coreDir.mkdir(exist_ok=True)
+    coreParts=[assembly]+[o for o in new if o!=hd]
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in coreParts+[rig]:o.select_set(True)
+    bpy.context.view_layer.objects.active=assembly
+    coreDest=coreDir/(ident+'_core_body.glb')
+    bpy.ops.export_scene.gltf(**dict(opts,filepath=str(coreDest)))
+    # Neutral non-armored review uses existing clothing for coverage;
+    # the independent GLB above has no clothing or armor meshes.
+    innerReview=coreParts+cloth
+    for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in innerReview
+    for tag,d in [('core_clothed_front',(0,-1,0)),('core_clothed_side',(1,0,0)),('core_clothed_rear',(0,1,0))]:
+        full_render(tag,d,center,H*1.13)
+    for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
+    assemblyReport['independentCore']={'file':str(coreDest.relative_to(out)),'sha256':sha(coreDest),'objects':[o.name for o in coreParts],'armorIncluded':False,'hairIncluded':False,'clothingIncluded':False,'approval':False}
     for tr0 in ad.nla_tracks:tr0.mute=False
     bpy.ops.object.select_all(action='DESELECT')
     for o in assembleParts+[rig]:o.select_set(True)
@@ -1519,6 +1548,14 @@ try:
     if len(ag.get('skins',[]))!=1 or not all(any(n.lower() in a.get('name','').lower() for a in ag.get('animations',[])) for n in clips):raise RuntimeError('assembled rig/clip inventory')
     if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for m in ag['meshes']):raise RuntimeError('assembled morph inventory')
     assemblyReport.update({'sha256':sha(adest),'meshCount':len(assembleParts),'exportInventoryVerified':True,'continuousNeckCandidate':True,'productionApproved':False})
+    # Editable scene for manual review; this contains all source study
+    # objects and the independent core, not a production-ready asset.
+    try:
+        bpy.ops.file.pack_all()
+        bpy.ops.wm.save_as_mainfile(filepath=str((assemblyDir/(ident+'_review.blend')).resolve()),copy=True)
+        assemblyReport['editableBlend']=str((assemblyDir/(ident+'_review.blend')).relative_to(out))
+    except Exception as exc:
+        assemblyReport['editableBlendError']=str(exc)
 except Exception as e:
     assemblyReport.update({'status':'failed','error':str(e),'continuousNeckCandidate':False,'productionApproved':False})
     print('R53 NECK CANDIDATE FAILED',str(e),flush=True)
@@ -1532,3 +1569,27 @@ rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
 report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'irisSurfaceFit':eyeFit,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'studioReview':studioReport,'continuousNeckStudy':assemblyReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthLandmarks':mouthLandmarks,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)
+
+# Convert genuine generated PNG renders to separately labelled review JPEGs.
+# Never use design/reference images as actual model render evidence.
+try:
+    jpeg_scene=bpy.context.scene
+    jpeg_scene.render.image_settings.file_format='JPEG'
+    jpeg_scene.render.image_settings.color_mode='RGB'
+    jpeg_scene.render.image_settings.quality=94
+    jpeg_scene.view_settings.view_transform='Standard'
+    jpeg_scene.view_settings.exposure=0
+    jpeg_scene.view_settings.gamma=1
+    jpeg_count=0
+    for image_path in sorted(out.rglob('*.png')):
+        if 'reference' in image_path.name.lower() or 'annotated' in image_path.name.lower():continue
+        img=bpy.data.images.load(str(image_path.resolve()),check_existing=False)
+        try:
+            jpg=out/'actual-render-jpg'/image_path.relative_to(out).with_suffix('.jpg')
+            jpg.parent.mkdir(parents=True,exist_ok=True)
+            img.save_render(str(jpg.resolve()),scene=jpeg_scene)
+            jpeg_count+=1
+        finally:bpy.data.images.remove(img)
+    (out/'actual-render-jpg'/'manifest.json').write_text(json.dumps({'count':jpeg_count,'source':'Blender actual rendered PNG conversion','visualApproved':False},indent=2))
+except Exception as exc:
+    print('R53 JPG EXPORT FAILED',str(exc),flush=True)
