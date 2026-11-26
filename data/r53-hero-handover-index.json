@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v10",
+    "id": "R54-new-head-v11",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "v10 source committed; actual generation and visual review pending",
+    "status": "v11 source committed; generation pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -99,27 +99,27 @@
       "actual visual fit unverified"
     ],
     "previous": {
-      "run": 45834426403,
-      "artifact": 15123358258,
-      "sourceCommit": "1b954ad345dd474d1e248799fd3d03142ae09757",
+      "run": 45835803664,
+      "artifact": 15127450174,
+      "sourceCommit": "1f288f70ab4a45c6f7141fff4a2db3b9633beec5",
       "visualApproved": false,
       "dimensionsRmsDesignMm": {
-        "leftOutline": 2.996,
-        "rightOutline": 3.451,
-        "leftProfile": 1.491,
-        "rightProfile": 0.88,
-        "foreheadWidth": 1.246,
-        "posteriorDepth": 0.044
+        "leftOutline": 2.953,
+        "rightOutline": 3.609,
+        "leftProfile": 1.394,
+        "rightProfile": 0.87,
+        "foreheadWidth": 1.193,
+        "posteriorDepth": 0.254
       },
       "issues": [
-        "square cranium and pointed crown",
-        "original supplemental manual trace overestimated upper skull width",
-        "lashes/brows partially buried",
-        "mask-like face and chin cap",
-        "neck overlap not welded"
+        "horizontal bands from section curvature",
+        "medial canthus outside globe radius",
+        "central dark nasal depression",
+        "pointed chin",
+        "ear and neck seam not welded"
       ]
     },
-    "next": "compare v10 with original bald reference and v9; corrected pixel silhouette audit; verify actual eye/lash surface visibility and chin/neck shape; no production deployment",
+    "next": "inspect actual frontal and matching-direction profile JPG; evaluate dimensions and surface quality; separate ear/neck remain unwelded; no auto deployment",
     "dimensionalContract": "data/r54-dimensional-constraints.json",
     "earDesign": "data/r54-ear-design.json",
     "neckDesign": "data/r54-neck-design.json",
