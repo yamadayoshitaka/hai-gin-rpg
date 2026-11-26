@@ -1,0 +1,118 @@
+name: R53 all42 baseline and quality-approved-candidate browser review
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-all42-browser-pack.py'
+      - 'review-tools/r53-all42/**'
+      - '.github/workflows/r53-all42-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [baseline, updated]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+            review-tools/r53-all42
+      - name: Wait for the exact quality and LOD run to pass
+        if: matrix.mode == 'updated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 45738398068 --exit-status --repo "${{ github.repository }}" --interval 60
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'updated'
+        with:
+          pattern: r53-cast-quality-*
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: /tmp/all42/quality
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'updated'
+        with:
+          pattern: r53-cast-lod-*
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: /tmp/all42/castlod
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'baseline'
+        with:
+          name: r53-garan-age-geometry
+          run-id: 45734407871
+          github-token: ${{ github.token }}
+          path: /tmp/all42/age
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'baseline'
+        with:
+          name: r53-cast-fifth-commander-male
+          run-id: 45732684923
+          github-token: ${{ github.token }}
+          path: /tmp/all42/fifth
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'baseline'
+        with:
+          pattern: r53-cast-female-candidate-*
+          run-id: 45734506574
+          github-token: ${{ github.token }}
+          path: /tmp/all42/female
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'baseline'
+        with:
+          pattern: r53-cast-remaining-candidate-*
+          run-id: 45736494700
+          github-token: ${{ github.token }}
+          path: /tmp/all42/remaining
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-assembled-*
+          run-id: 45715987693
+          github-token: ${{ github.token }}
+          path: /tmp/all42/mob
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-mob-lod-mob_*
+          run-id: 45721246173
+          github-token: ${{ github.token }}
+          path: /tmp/all42/moblod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build review package from actual verified files
+        run: |
+          python3 scripts/r53-all42-browser-pack.py "${{ matrix.mode }}" /tmp/all42 data/r53-cast-quality-plan.json data/r53-mob-sculpt-plan.json review/site
+          cp review-tools/r53-all42/index.html review-tools/r53-all42/viewer.mjs review/site/
+          npm install --no-save --ignore-scripts three@0.180.0 playwright@1.56.1
+          mkdir -p review/site/vendor/three
+          cp -r node_modules/three/build node_modules/three/examples review/site/vendor/three/
+          cp node_modules/three/LICENSE review/site/vendor/three/
+          npx playwright install --with-deps chromium
+      - name: Check every GLB, action, morph and parts selector
+        run: |
+          node --check review-tools/r53-all42/viewer.mjs
+          cp review-tools/r53-all42/browser-test.mjs ./all42-browser-test.mjs
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory review/site >/tmp/r53-http.log 2>&1 &
+          node all42-browser-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-all42-${{ matrix.mode }}-evidence
+          path: |
+            all42-browser-report.json
+            captures/
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: r53-all42-${{ matrix.mode }}-offline-review
+          path: review/site/
+          retention-days: 30
