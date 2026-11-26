@@ -296,6 +296,81 @@ for tag,d in views:render('master_'+tag,d)
 for o in hair:o.hide_render=False
 for tag,d in views:render('with_old_hair_'+tag,d)
 for o in hair:o.hide_render=True
+
+# Independent scalp-fitted hair candidate. Keep all previous renders and the
+# baseline head export intact; this is a separate, explicitly unapproved study.
+def fitted_scalp_hair():
+    crown=Q[Q[:,2]>eye[2]+hh*.30]
+    if len(crown)<30:raise RuntimeError('insufficient crown landmarks')
+    c=Vector((float(np.median(crown[:,0])),float(np.median(crown[:,1])),float(eye[2]+hh*.26)))
+    n=96;rows=32
+    female=ident=='commander-female'
+    def edge(a):
+        f=math.cos(a)
+        return 1.10+.42*(1-f)+(.12 if female else 0)*math.sin(a)**2
+    def sample(a,t):
+        angle=.022+(edge(a)-.022)*t
+        # Swept strands begin at the measured scalp, not at an assumed ellipsoid.
+        v=Vector((math.sin(angle)*math.sin(a),-math.sin(angle)*math.cos(a),math.cos(angle)))
+        hit,norm,ix,dist=skinTree.ray_cast(c+v*.42,-v,.42)
+        if hit is None:raise RuntimeError('scalp ray missed '+str((a,t)))
+        # Use radial offset so the shell remains outside the measured surface.
+        vol=.0025+(.0065 if female else .009)*math.sin(math.pi*t)**.8
+        wave=(.0008 if female else .0014)*(.5+.5*math.cos(23*a+3*t))
+        return hit+v*(vol+wave),hit,v
+    V=[];F=[];M=[];distances=[]
+    for j in range(rows+1):
+        t=j/rows
+        for k in range(n):
+            a=2*math.pi*k/n
+            p,h,v=sample(a,t);V.append(tuple(p));distances.append((p-h).length)
+    # Close the crown without creating duplicate pole vertices.
+    F.append(tuple(reversed(range(n))));M.append(0)
+    for j in range(rows):
+        for k in range(n):
+            a=j*n+k;b=j*n+(k+1)%n
+            F.append((a,b,b+n,a+n));M.append(0)
+    # Raised, smoothly tapered hair ribbons distributed over the fitted cap.
+    # These are real mesh surfaces and are not the previous fragmented wig.
+    for k in range(72):
+        a0=2*math.pi*k/72;start=len(V)
+        for j in range(29):
+            t=.10+.90*j/28
+            a=a0+(.18 if female else .30)*math.sin(t*math.pi*.75)
+            p,h,v=sample(a,t)
+            width=(.033 if female else .029)*(.40+.60*math.sin(math.pi*t)**.6)
+            for side in (-1,0,1):
+                q,_,d=sample(a+side*width,t)
+                q+=d*((.0006 if side else .0021)*math.sin(math.pi*t)**.5+.0002)
+                V.append(tuple(q))
+        for j in range(28):
+            for k2 in range(2):
+                a=start+j*3+k2;F.append((a,a+1,a+4,a+3));M.append(1+(k%3))
+    me=bpy.data.meshes.new('R53_MeasuredScalpHair');me.from_pydata(V,[],F);me.update()
+    ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
+    shades=[(.20,.105,.040),(.26,.14,.055),(.33,.19,.080),(.23,.12,.05)] if female else [(.020,.014,.011),(.030,.022,.018),(.045,.032,.025),(.024,.018,.014)]
+    for i,col in enumerate(shades):
+        mat=bpy.data.materials.new('R53_fitted_hair_%d'%i);mat.diffuse_color=(*col,1);mat.use_nodes=True
+        b=mat.node_tree.nodes.get('Principled BSDF');b.inputs['Base Color'].default_value=(*col,1);b.inputs['Roughness'].default_value=.38
+        me.materials.append(mat)
+    for poly,mi in zip(me.polygons,M):poly.material_index=mi;poly.use_smooth=True
+    # Anchor rigidly to the same head bone; no weight on facial morphs.
+    headName=next((b.name for b in rig.data.bones if b.name.lower()=='head'),None)
+    if headName is None:
+        headName=next((b.name for b in rig.data.bones if b.name.lower().endswith('head')),None)
+    if headName is None:raise RuntimeError('head bone missing')
+    bind(ob,[{headName:1.} for _ in V])
+    values=signed(np.array(V),skinTree)
+    diag={'vertices':len(V),'faces':len(F),'scalpSamples':len(distances),'minRadialClearance_m':min(distances),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['scalp cap and tapered ribbon prototype; final hairstyle and back length require artist review','nearest-surface metric is not a complete collision guarantee']}
+    return ob,diag
+fittedHair,hairDiag=fitted_scalp_hair()
+candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
+# Render actual new scalp-fitted geometry in all five views, separately from old wig.
+for tag,d in views:
+    render('fitted_hair_'+tag,d)
+    (out/('fitted_hair_'+tag+'.png')).replace(candidate/('fitted_hair_'+tag+'.png'))
+fittedHair.hide_render=True
+
 for name in names:
     for o in [hd]+lashes:o.data.shape_keys.key_blocks[name].value=1
     bpy.context.view_layer.update();render('expression_'+name,(0,-1,0))
@@ -316,6 +391,13 @@ if 'export_animation_mode' in props and 'NLA_TRACKS' in props['export_animation_
 elif 'export_nla_strips' in props:opts['export_nla_strips']=True
 else:raise RuntimeError('NLA export unsupported')
 bpy.ops.export_scene.gltf(**opts)
+# Additional independent GLB, preserving the original head-only artifact.
+fittedHair.hide_render=False;fittedHair.select_set(True)
+hairDest=candidate/(ident+'_fitted_hair_head.glb')
+bpy.ops.export_scene.gltf(**dict(opts,filepath=str(hairDest)))
+hairDiag['sha256']=sha(hairDest);hairDiag['id']=ident
+(candidate/'fitted-hair-report.json').write_text(json.dumps(hairDiag,indent=2))
+fittedHair.select_set(False);fittedHair.hide_render=True
 raw=dest.read_bytes();g=json.loads(raw[20:20+int.from_bytes(raw[12:16],'little')])
 if len(g.get('skins',[]))!=1 or not all(any(n.lower() in a.get('name','').lower() for a in g.get('animations',[])) for n in clips):raise RuntimeError('master rig/actions')
 if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for m in g['meshes']):raise RuntimeError('master morph inventory')
