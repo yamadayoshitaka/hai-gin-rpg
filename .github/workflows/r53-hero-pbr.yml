@@ -1,0 +1,90 @@
+name: R53 two protagonist PBR closeup and female silver armor
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-hero-pbr.py'
+      - 'scripts/r53-hero-female-armor.py'
+      - 'scripts/r53-hero-pbr-audit.py'
+      - '.github/workflows/r53-hero-pbr.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  hero:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, commander-female]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/free-knight
+            assets/characters/seven-head-equipment-candidates/LICENSE.upstream
+            docs/wig-production-standard-v1.md
+      - run: python3 -m py_compile scripts/r53-hero-pbr.py scripts/r53-hero-female-armor.py scripts/r53-hero-pbr-audit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-quality-${{ matrix.id }}
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: /tmp/hero
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/pbr
+      - name: Fit silver armor to actual female hero body
+        if: matrix.id == 'commander-female'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+        run: |
+          mkdir -p review/armor
+          cp assets/characters/seven-head-equipment-candidates/LICENSE.upstream review/armor/ARMOR-LICENSE.txt
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-hero-female-armor.py -- /tmp/hero assets/characters/free-knight/knight_full_plate_armor.glb review/armor commander-female
+      - uses: actions/upload-artifact@v4
+        if: matrix.id == 'commander-female' && always()
+        with:
+          name: r53-hero-female-armor
+          path: review/armor/
+          if-no-files-found: warn
+      - name: Render and verify material closeups on existing hero anatomy
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          SRC=/tmp/hero
+          if [ "$ID" = commander-female ]; then SRC=review/armor; fi
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-hero-pbr.py -- "$SRC" review/pbr "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-hero-pbr-${{ matrix.id }}
+          path: review/pbr/
+          if-no-files-found: warn
+  inventory:
+    needs: hero
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-hero-pbr-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-hero-pbr-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-hero-pbr-summary
+          path: review/summary/
