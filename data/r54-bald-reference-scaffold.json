@@ -860,5 +860,11 @@
     "posterior neck/head boundary ambiguous",
     "ear internal relief and thickness inferred"
   ],
-  "visualApproved": false
+  "visualApproved": false,
+  "revision": "v9 uses observed upper forehead width station at 1.427 IPD, coherent C1 anterior/posterior profiles, inferred cropped apex 1.88 IPD; original 2D traces retained",
+  "inferredCrown": {
+    "apexZIpd": 1.88,
+    "reason": "cropped head top; visible width at 1.427 must be preserved",
+    "status": "unverified design estimate"
+  }
 }

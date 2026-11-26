@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v8",
+    "id": "R54-new-head-v9",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "v8 source committed; generation pending",
+    "status": "v9 source committed; generation and review pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -99,19 +99,26 @@
       "actual visual fit unverified"
     ],
     "previous": {
-      "run": 45830049995,
-      "artifact": 15122900402,
-      "sourceCommit": "ee3fff48d1e11067711ba343702435db23151ef3",
+      "run": 45831913614,
+      "artifact": 15123480241,
+      "sourceCommit": "6a1d53262be6eab1a45eef28820ff7eeb07d9c79",
       "visualApproved": false,
+      "dimensionsRmsDesignMm": {
+        "leftOutline": 3.08570826119496,
+        "rightOutline": 3.433398556699021,
+        "leftProfile": 1.4821935588610289,
+        "rightProfile": 0.8755600451775971,
+        "foreheadWidth": 6.419117679207682
+      },
       "issues": [
-        "pointed crown",
-        "insufficient posterior cranial depth",
-        "flattened temple",
-        "jaw-neck seam",
-        "weak ear cartilage"
+        "horizontal cranial bands",
+        "orbital bulge",
+        "chin tip",
+        "wide posterior neck",
+        "ear and neck seams not welded"
       ]
     },
-    "next": "inspect actual front/profile/ear/neck JPG and cranial audit; no automatic approval",
+    "next": "review actual scalp continuity and orbital surface, forehead station error, ear and neck shape; no auto adoption",
     "dimensionalContract": "data/r54-dimensional-constraints.json",
     "earDesign": "data/r54-ear-design.json",
     "neckDesign": "data/r54-neck-design.json",
