@@ -1,0 +1,68 @@
+name: R53 independent master anatomy head reconstruction two heroes
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-hero-master-head.py'
+      - 'scripts/r53-hero-master-head-audit.py'
+      - '.github/workflows/r53-hero-master-head.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  head:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, commander-female]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/master-sources/blender
+      - run: python3 -m py_compile scripts/r53-hero-master-head.py scripts/r53-hero-master-head-audit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-hero-anatomy-${{ matrix.id }}
+          run-id: 45746728837
+          github-token: ${{ github.token }}
+          path: /tmp/hero
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/head
+      - name: Fit original master head, rigged eyes and measured eyelid strands
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-hero-master-head.py -- /tmp/hero review/head "$ID" assets/master-sources/blender/realistic-head-animation.glb
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-hero-master-head-${{ matrix.id }}
+          path: review/head/
+          if-no-files-found: warn
+  inventory:
+    needs: head
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-hero-master-head-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-hero-master-head-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-hero-master-head-summary
+          path: review/summary/
