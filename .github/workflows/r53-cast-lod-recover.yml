@@ -1,0 +1,131 @@
+name: R53 cast LOD recovery six and full inventory
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-cast-lod-recover.py'
+      - '.github/workflows/r53-cast-lod-recover.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  lod:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include:
+          - id: commander-male
+            reuse: false
+          - id: commander-female
+            reuse: true
+          - id: lucia
+            reuse: false
+          - id: garan
+            reuse: false
+          - id: iris
+            reuse: true
+          - id: shion
+            reuse: true
+          - id: kai
+            reuse: false
+          - id: leon
+            reuse: true
+          - id: fio
+            reuse: false
+          - id: edo
+            reuse: true
+          - id: mina
+            reuse: true
+          - id: noel
+            reuse: true
+          - id: raizen
+            reuse: true
+          - id: vald
+            reuse: true
+          - id: selika
+            reuse: true
+          - id: zahar
+            reuse: true
+          - id: grad
+            reuse: true
+          - id: altea
+            reuse: true
+          - id: orphe
+            reuse: true
+          - id: meve
+            reuse: true
+          - id: elne
+            reuse: false
+          - id: vess
+            reuse: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - run: python3 -m py_compile scripts/r53-cast-lod-recover.py
+      - uses: actions/download-artifact@v4
+        if: matrix.reuse
+        with:
+          name: r53-cast-lod-${{ matrix.id }}
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: review/lod
+      - uses: actions/download-artifact@v4
+        if: "!matrix.reuse"
+        with:
+          name: r53-cast-quality-${{ matrix.id }}
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: /tmp/quality
+      - name: Install Blender
+        if: "!matrix.reuse"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/lod
+      - name: Recover distinct LOD pair and verify all 30 poses
+        if: "!matrix.reuse"
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-lod-recover.py -- /tmp/quality review/lod "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-lod-${{ matrix.id }}
+          path: review/lod/
+          if-no-files-found: warn
+  inventory:
+    needs: lod
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-quality-*
+          run-id: 45738398068
+          github-token: ${{ github.token }}
+          path: /tmp/quality
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-lod-*
+          path: /tmp/lod
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-quality-inventory.py /tmp/quality /tmp/lod data/r53-cast-quality-plan.json review/summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-lod-recovery-summary
+          path: review/summary/
