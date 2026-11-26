@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v11",
+    "id": "R54-new-head-v12",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "v11 source committed; generation pending",
+    "status": "v12 source committed; generation pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -99,31 +99,31 @@
       "actual visual fit unverified"
     ],
     "previous": {
-      "run": 45835803664,
-      "artifact": 15127450174,
-      "sourceCommit": "1f288f70ab4a45c6f7141fff4a2db3b9633beec5",
+      "run": 45837838170,
+      "artifact": 15125658976,
+      "sourceCommit": "960bbcf8a863861a7161b353c997e9008194d2f4",
       "visualApproved": false,
       "dimensionsRmsDesignMm": {
-        "leftOutline": 2.953,
-        "rightOutline": 3.609,
-        "leftProfile": 1.394,
-        "rightProfile": 0.87,
-        "foreheadWidth": 1.193,
-        "posteriorDepth": 0.254
+        "leftOutline": 3.0568429399225843,
+        "rightOutline": 3.2850427639785638,
+        "leftProfile": 1.471365832551697,
+        "rightProfile": 1.3786773893464954,
+        "foreheadWidth": 1.3400150736451326,
+        "posteriorDepth": 0.7381411965474206
       },
       "issues": [
-        "horizontal bands from section curvature",
-        "medial canthus outside globe radius",
-        "central dark nasal depression",
+        "eyeball lateral sclera breakthrough",
+        "forehead band reduced but shape still artificial",
         "pointed chin",
-        "ear and neck seam not welded"
+        "ear/neck overlap not welded"
       ]
     },
-    "next": "inspect actual frontal and matching-direction profile JPG; evaluate dimensions and surface quality; separate ear/neck remain unwelded; no auto deployment",
+    "next": "verify face against same bald image in actual renders; inspect ocular coverage at multiple angles; original character identity target retained; neck seam still independent",
     "dimensionalContract": "data/r54-dimensional-constraints.json",
     "earDesign": "data/r54-ear-design.json",
     "neckDesign": "data/r54-neck-design.json",
     "supplementalScaffold": "data/r54-bald-reference-scaffold.json",
-    "pixelSilhouette": "data/r54-bald-pixel-silhouette.json"
+    "pixelSilhouette": "data/r54-bald-pixel-silhouette.json",
+    "baldFaceLandmarks": "data/r54-bald-face-landmarks.json"
   }
 }
