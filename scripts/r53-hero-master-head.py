@@ -227,8 +227,8 @@ def sideDepth(k):
 designMetrics={'eyeWidth':frontWidth('eye_left_outer','eye_left_inner'),'browGap':float((fp['eye_left'][1]-fp['brow_left_mid'][1])/ipd),'noseWidth':frontWidth('nose_left','nose_right'),'lipWidth':frontWidth('lip_left','lip_right'),'lipHeight':float((fp['lower_lip'][1]-fp['upper_lip'][1])/ipd),'jawWidth':frontWidth('jaw_left','jaw_right'),'cheekWidth':frontWidth('cheek_left','cheek_right'),'noseHeight':frontHeight('nose_tip'),'mouthHeight':frontHeight('mouth'),'chinHeight':frontHeight('chin'),'noseProjection':sideDepth('nose_tip'),'mouthProjection':sideDepth('mouth'),'chinProjection':sideDepth('chin'),'hairDrop':float((fp['hair_right_end'][1]-fp['chin'][1])/ipd),'hairWidth':frontWidth('hair_left','hair_right')}
 detail=json.loads(Path('data/r53-female-detail-landmarks.json').read_text())
 df={k:np.asarray(v,float) for k,v in detail['views']['front'].items()}
-di=float(np.linalg.norm(df['irisR'][0]-df['irisL'][0]))
-def span(a):return float(np.ptp(a[:,0])/di)
+detailIPD=float(np.linalg.norm(df['irisR'][0]-df['irisL'][0]))
+def span(a):return float(np.ptp(a[:,0])/detailIPD)
 def angle(a,b):return float(np.degrees(np.arctan2(b[1]-a[1],b[0]-a[0])))
 def internal(a,b,c):
     u=a-b;v=c-b
@@ -236,9 +236,9 @@ def internal(a,b,c):
 dm={}
 for label in ('L','R'):
     U0=df['eye'+label+'Upper'];L0=df['eye'+label+'Lower'];bu=df['brow'+label+'Top'];bl=df['brow'+label+'Bottom']
-    dm[label]={'eyeWidth':span(U0),'eyeHeight':float((L0[:,1].max()-U0[:,1].min())/di),'eyeTiltDeg':angle(U0[0],U0[-1]),'browWidth':span(bu),'browGap':float((U0[:,1].min()-bl[:,1].mean())/di),'browThickness':float(np.mean(bl[:,1]-bu[:,1])/di),'browCurve':((bu+bl)*.5).tolist(),'upperLashLength':float(np.median(np.linalg.norm(df['lash'+label+'Tips']-df['lash'+label+'Roots'],axis=1))/di),'lowerLashLength':float(np.median(np.linalg.norm(df['lowerLash'+label+'Tips']-df['lowerLash'+label+'Roots'],axis=1))/di),'underEyeWidth':span(df['underEye'+label]),'underEyeDrop':float((df['underEyeOuter'+label][:,1].mean()-df['iris'+label][0,1])/di)}
-dm['mouthWidth']=span(df['lipSeam']);dm['upperLipThickness']=float((df['lipSeam'][3,1]-df['lipTop'][3,1])/di);dm['lowerLipThickness']=float((df['lipBottom'][3,1]-df['lipSeam'][3,1])/di)
-dm['noseWidth']=span(df['noseAlar']);dm['philtrumLength']=float((df['philtrum'][-1,1]-df['philtrum'][0,1])/di)
+    dm[label]={'eyeWidth':span(U0),'eyeHeight':float((L0[:,1].max()-U0[:,1].min())/detailIPD),'eyeTiltDeg':angle(U0[0],U0[-1]),'browWidth':span(bu),'browGap':float((U0[:,1].min()-bl[:,1].mean())/detailIPD),'browThickness':float(np.mean(bl[:,1]-bu[:,1])/detailIPD),'browCurve':((bu+bl)*.5).tolist(),'upperLashLength':float(np.median(np.linalg.norm(df['lash'+label+'Tips']-df['lash'+label+'Roots'],axis=1))/detailIPD),'lowerLashLength':float(np.median(np.linalg.norm(df['lowerLash'+label+'Tips']-df['lowerLash'+label+'Roots'],axis=1))/detailIPD),'underEyeWidth':span(df['underEye'+label]),'underEyeDrop':float((df['underEyeOuter'+label][:,1].mean()-df['iris'+label][0,1])/detailIPD)}
+dm['mouthWidth']=span(df['lipSeam']);dm['upperLipThickness']=float((df['lipSeam'][3,1]-df['lipTop'][3,1])/detailIPD);dm['lowerLipThickness']=float((df['lipBottom'][3,1]-df['lipSeam'][3,1])/detailIPD)
+dm['noseWidth']=span(df['noseAlar']);dm['philtrumLength']=float((df['philtrum'][-1,1]-df['philtrum'][0,1])/detailIPD)
 dm['profile']={}
 for v,sgn in (('left',-1),('right',1)):
     q={k:np.asarray(a,float) for k,a in detail['views'][v].items()};norm=abs(q['chin'][0,1]-q['eye'][0,1])
@@ -761,8 +761,8 @@ for side in ('L','R'):
             xp=curve[:,0];yp=curve[:,1];u0=t if sgn>0 else 1-t
             k0=min(len(curve)-2,int(u0*(len(curve)-1)));f0=u0*(len(curve)-1)-k0
             q0=(1-f0)*curve[k0]+f0*curve[k0+1];origin=df['iris'+dside][0]
-            x=cx+(q0[0]-origin[0])*gap/di
-            z=dstEye[side][2]-(q0[1]-origin[1])*gap/di
+            x=cx+(q0[0]-origin[0])*gap/detailIPD
+            z=dstEye[side][2]-(q0[1]-origin[1])*gap/detailIPD
             thick=float(np.clip(dm[dside]['browThickness']*gap*.5,.0008,.0022))*(.45+.55*math.sin(math.pi*t)**.6)
         else:
             x=cx+sgn*ew*(-.51+1.10*t);z=float(hi[2])+ez*(.13+.09*math.sin(math.pi*t)-.10*t);thick=.002*(.37+.63*math.sin(math.pi*t)**.6)

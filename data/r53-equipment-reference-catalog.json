@@ -63,7 +63,22 @@
     },
     "policy": "actual geometry measurements cannot substitute for missing concept landmarks, true material thickness, semantic part boundaries, or fitted grip and pose tests. Keep unobserved values null.",
     "imagePolicy": "generate orthographic geometry evidence per part; independent 2D design required before final fit",
-    "approval": false
+    "approval": false,
+    "curveRequirements": {
+      "representation": "ordered sampled points, arc length, tangent, curvature and unit; separate from projected design points; do not invent occluded thickness",
+      "required": [
+        "face contour",
+        "eyelids",
+        "brows",
+        "lip seam",
+        "hair roots and tips",
+        "body sections",
+        "armor rim",
+        "blade taper",
+        "shield profile"
+      ]
+    },
+    "materialRequirements": "PBR base colour, metallic, roughness, texture maps, material IDs, source/estimate distinction"
   },
   "sets": [
     {
@@ -534,5 +549,6 @@
         "physicalDimensionsMm": null
       }
     ]
-  }
+  },
+  "actionModelDesign": "data/r53-action-model-design.json"
 }

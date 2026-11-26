@@ -1,0 +1,30 @@
+name: R53 Blender measured equipment candidates review only
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-blender-equipment-concept.py'
+      - 'data/r53-action-model-design.json'
+      - '.github/workflows/r53-blender-equipment-concept.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender
+          blender -b --python-exit-code 1 --python scripts/r53-blender-equipment-concept.py -- data/r53-equipment-concept-v2.json data/r53-action-model-design.json review/equipment
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-new-equipment-blender-review
+          path: review/equipment/
