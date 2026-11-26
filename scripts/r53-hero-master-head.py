@@ -410,8 +410,44 @@ if female:
             t0=skin_bvh(candidate);met={k:aperture_metric(aperture(candidate,k,factor,t0),k) for k in ('L','R')}
             err=sum(x[0] for x in met.values());attempts.append({'globeScale':factor,'warpStrength':strength,'error':err,'eyes':{k:x[1] for k,x in met.items()}})
             if err<bestErr:bestErr=err;bestFactor=factor;bestQ=candidate
+    # Independently refine the canthi without increasing globe size.
+    refinement=[]
+    def score_refinement(A,side):
+        sk=skin_bvh(A);gt=globe_bvh(side,bestFactor)
+        O=mapP(pts(eyes[('sclera',side)]));c=dstEye[side];O=c+(O-c)*bestFactor
+        lo=O.min(0);hi=O.max(0);G=[]
+        for x in np.linspace(lo[0],hi[0],33):
+            for z in np.linspace(lo[2],hi[2],33):
+                org=Vector((x,float(Q0[:,1].min()-.3),z))
+                e,_,_,ed=gt.ray_cast(org,Vector((0,1,0)),1.)
+                a,_,_,sd=sk.ray_cast(org,Vector((0,1,0)),1.)
+                if e is not None and (a is None or ed<sd-.00005):G.append((x,z))
+        if len(G)<10:return 100.,{}
+        lab='L' if dstEye[side][0]<eye[0] else 'R'
+        ww,hh=np.ptp(np.array(G),axis=0)/gap
+        we=abs(ww/dm[lab]['eyeWidth']-1);he=abs(hh/dm[lab]['eyeHeight']-1)
+        er,met=aperture_metric(aperture(A,side,bestFactor,sk),side)
+        return float(we+he+3*(max(0.,we-.12)+max(0.,he-.12))+er),{'widthError':float(we),'heightError':float(he),'widthRatio':float(ww),'heightRatio':float(hh),'curve':met}
+    for side in ('L','R'):
+        A0=bestQ.copy();baseScore,baseMetric=score_refinement(A0,side)
+        localBest=A0;localScore=baseScore;selected={'stretch':0.,'relief_m':0.,'metrics':baseMetric}
+        c=dstEye[side];dx=A0[:,0]-c[0];dz=A0[:,2]-c[2]
+        weight=np.exp(-(dx/(gap*.31))**4-(dz/(gap*.18))**4)*np.clip((c[1]-A0[:,1]+gap*.045)/(gap*.16),0,1)
+        corner=np.exp(-((np.abs(dx)-gap*.20)/(gap*.075))**2)
+        if baseMetric.get('widthError',1.)>.12:
+            for stretch in (0.,.05,.10,.15,.20):
+                for relief in (0.,.00035,.0007,.00105,.0014):
+                    C=A0.copy();C[:,0]+=stretch*dx*weight;C[:,1]+=relief*corner*weight
+                    n1=profile_norm(C)
+                    if np.any(pv&((np.sum(pn*n1,axis=1)<=0)|(np.linalg.norm(n1,axis=1)<.15*pa))):continue
+                    score,metric=score_refinement(C,side)
+                    if metric.get('heightError',1.)>max(.12,baseMetric.get('heightError',1.))+1e-8:continue
+                    if metric.get('widthError',1.)>baseMetric.get('widthError',1.)+1e-8:continue
+                    if score<localScore-1e-8:
+                        localBest=C;localScore=score;selected={'stretch':stretch,'relief_m':relief,'metrics':metric}
+        bestQ=localBest;refinement.append({'side':side,'before':baseMetric,'selected':selected,'beforeScore':baseScore,'afterScore':localScore})
     Q=bestQ;eyeScaleFactors={k:bestFactor for k in ('L','R')}
-    dreport['eyelidCurveFit']={'beforeError':beforeErr,'afterError':bestErr,'globeScale':bestFactor,'attempts':attempts,'applied':bool(bestErr<beforeErr-1e-8),'initialEyes':{k:aperture_metric(originalA[k],k)[1] for k in originalA},'limitation':'synthetic projected target; topology and globe scale constrain fit'}
+    dreport['eyelidCurveFit']={'beforeError':beforeErr,'afterError':bestErr,'globeScale':bestFactor,'attempts':attempts,'canthusRefinement':refinement,'applied':bool(bestErr<beforeErr-1e-8),'initialEyes':{k:aperture_metric(originalA[k],k)[1] for k in originalA},'limitation':'synthetic projected target; topology and globe scale constrain fit'}
 if female:
     after=np.vstack([eyes3,Q[[noseI,mouthI,chinI]]])
     referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@M.T+tr-obs,axis=1)**2)))
@@ -718,6 +754,17 @@ def ocular_factor(k):
     f=eyeScaleFactors[k[1]]
     return (f[2],f[1],f[2]) if isinstance(f,tuple) and k[0]=='iris' else f
 eyeSource={k:dstEye[k[1]]+(mapP(pts(o))-dstEye[k[1]])*ocular_factor(k) for k,o in eyes.items()}
+if female:
+    irisSizeReport={}
+    for side in ('L','R'):
+        k=('iris',side);A=eyeSource[k];lab='L' if dstEye[side][0]<eye[0] else 'R'
+        ip=df['iris'+lab];target=float(abs(ip[2,0]-ip[1,0])*gap/detailIPD)
+        ext=np.ptp(A,axis=0);mid=(A.min(0)+A.max(0))/2
+        if not .005<target<.020 or min(ext[0],ext[2])<.001:raise RuntimeError('invalid traced iris diameter '+side)
+        A[:,0]=mid[0]+(A[:,0]-mid[0])*target/ext[0]
+        A[:,2]=mid[2]+(A[:,2]-mid[2])*target/ext[2]
+        irisSizeReport[side]={'targetDiameter_m':target,'previousWidth_m':float(ext[0]),'previousHeight_m':float(ext[2]),'actualWidth_m':float(np.ptp(A[:,0])),'actualHeight_m':float(np.ptp(A[:,2])),'referenceProjectedHeight_m':float(abs(ip[4,1]-ip[3,1])*gap/detailIPD),'source':'350-point approximate 2D iris contour; circular shape inferred'}
+    dreport['irisDiameterFit']=irisSizeReport
 for (kind,side),o in eyes.items():
     A=eyeSource[(kind,side)].copy()
     if kind=='iris':
@@ -727,7 +774,7 @@ for (kind,side),o in eyes.items():
         for i,p in enumerate(A):
             q,_,_,_=gt.ray_cast(Vector((p[0],float(globe[:,1].min()-.05),p[2])),Vector((0,1,0)),.12)
             if q is not None:
-                A[i,1]=min(p[1],q.y-.00018);hits+=1
+                A[i,1]=(q.y-.00018) if female else min(p[1],q.y-.00018);hits+=1
         if hits<.90*len(A):raise RuntimeError('iris conformation coverage '+side)
         eyeFit[side]={'matchedVertices':hits,'vertices':len(A),'maxForwardCorrection_m':float(np.max(old[:,1]-A[:,1])),'clearance_m':.00018}
     freeze(o,A);o.name='R53_Master_'+kind+'_'+side;bind(o,[{'eye.'+side:1.} for _ in A])
@@ -746,7 +793,8 @@ for (kind,side),o in eyes.items():
         # the measured local iris surface projection, not a flat extra disk.
         lo=A.min(0);hi=A.max(0);c=(lo+hi)/2;ext=hi-lo
         size=512;Y,X=np.mgrid[0:size,0:size];xx=(X/(size-1)-.5)*2;yy=(Y/(size-1)-.5)*2;rad=np.sqrt(xx*xx+yy*yy);ang=np.arctan2(yy,xx)
-        col=np.array([.095,.20,.31] if ident=='commander-female' else [.18,.095,.043])
+        rgb_ref=np.asarray(detail['colorSamples']['iris']['rgb'],dtype=float)/255.
+        col=np.where(rgb_ref<=.04045,rgb_ref/12.92,((rgb_ref+.055)/1.055)**2.4) if ident=='commander-female' else np.array([.18,.095,.043])
         detail=.72+.18*np.sin(67*ang+19*rad)+.10*np.sin(113*ang-33*rad)
         rgb=col*detail[:,:,None]*(.55+.45*np.sin(np.clip(rad,0,1)*np.pi))[:,:,None]
         pupil=np.clip((.32-rad)/.035,0,1);rgb=rgb*(1-pupil[:,:,None])+.006*pupil[:,:,None];rgb*=np.clip((1.04-rad)/.12,.20,1)[:,:,None]
