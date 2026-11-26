@@ -384,7 +384,7 @@ def curve_on(s,frac,top,key=None):
     arr=s[key] if key else s['upper' if top else 'lower']
     x=s['upper'][0,0]+frac*(s['upper'][-1,0]-s['upper'][0,0])
     return x,smooth_interp(x,arr[:,0],arr[:,1])
-mouthVertices={};eyeRims={};boundaryReport=[];actualRings={}
+mouthVertices={};mouthMotion={};mouthPairs=[];eyeRims={};boundaryReport=[];actualRings={}
 for s in spec:
     coords=rect(s);outer=[grid[True,i,j] for i,j in coords]
     a,b,c,e=(s[k] for k in ('x0','x1','z0','z1'))
@@ -429,12 +429,32 @@ for s in spec:
             inner.append(add((x,y,z)))
         actualRings['lipSeam']=list(inner)
         for k,(_,top) in enumerate(params):mouthVertices[inner[k]]=top
-        mids=[add(.48*np.array(V[i])+.52*np.array(V[j])+np.array([0,-.013*math.sin(math.pi*fr),0])) for i,j,(fr,_) in zip(lipOuter,inner,params)]
-        m=[1 if top else 2 for _,top in params]
-        ring_bridge(lipOuter,mids,m);ring_bridge(mids,inner,m)
+        # v15: local measured thickness drives independently rounded lip surfaces.
+        mids=[];prevLip=lipOuter
+        for t in (.22,.44,.66,.84):
+            row=[]
+            for i,j,(fr,top) in zip(lipOuter,inner,params):
+                a0=np.asarray(V[i]);a1=np.asarray(V[j]);p=(1-t)*a0+t*a1
+                thickness=abs(a1[2]-a0[2]);taper=max(0.,math.sin(math.pi*fr))**.75
+                relief=min(.033 if top else .050,thickness*(.24 if top else .32))
+                p[1]-=relief*math.sin(math.pi*t)*taper
+                row.append(add(p))
+            ring_bridge(prevLip,row,[1 if top else 2 for _,top in params]);prevLip=row;mids.append(row)
+        ring_bridge(prevLip,inner,[1 if top else 2 for _,top in params])
+        for row in [lipOuter,*mids,inner]:
+            for k,(fr,top) in zip(row,params):
+                w=float(sstep(min(fr,1-fr)/.19))
+                mouthMotion[k]=0. if top else w
+        upper=[(fr,k) for k,(fr,top) in zip(inner,params) if top]
+        lower=[(fr,k) for k,(fr,top) in zip(inner,params) if not top]
+        for fr,k in upper:
+            if .22<fr<.78:
+                f0,j=min(lower,key=lambda q:abs(q[0]-fr))
+                if abs(f0-fr)<.025:mouthPairs.append((k,j))
         cavity=[add(np.array(V[k])+np.array([0,.13,0])) for k in inner]
+        for k,(fr,top) in zip(cavity,params):mouthMotion[k]=0. if top else float(sstep(min(fr,1-fr)/.19))*.8
         ring_bridge(inner,cavity,3)
-        cp=add(np.mean([V[k] for k in cavity],axis=0)+[0,.035,0])
+        cp=add(np.mean([V[k] for k in cavity],axis=0)+[0,.035,0]);mouthMotion[cp]=.35
         for j,k in enumerate(cavity):face((k,cavity[(j+1)%len(cavity)],cp),3)
     else:
         # Add a small actual eyelid thickness and inner rim surface.
@@ -610,9 +630,19 @@ dimReport['allMeasuredWithinTolerance']=dimReport['allMeasuredWithinTolerance'] 
 head.shape_key_add(name='Basis');jaw=head.shape_key_add(name='jawOpen_candidate')
 for i,k in enumerate(used):
     x,y,z=np.array(V[k]);w=float(sstep((-z-.98)/.28))*float(sstep((z+2.03)/.22))*float(sstep((.80-y)/.6))
+    if k in mouthMotion:w=mouthMotion[k]
     ang=.19*w;dy=y-.58;dz=z+.92
     jaw.data[i].co=Vector((x,.58+dy*math.cos(ang)-dz*math.sin(ang),-.92+dy*math.sin(ang)+dz*math.cos(ang)))*UNIT
 jaw.value=0
+# Measure actual neutral/open shape-key separation at matched central lip samples.
+oralRows=[]
+for ku,kl in mouthPairs:
+    iu,il=remap[ku],remap[kl]
+    bu0,bl0=head.data.vertices[iu].co,head.data.vertices[il].co
+    ju,jl=jaw.data[iu].co,jaw.data[il].co
+    oralRows.append({'neutralGapMm':float((bu0.z-bl0.z)*1000),'openGapMm':float((ju.z-jl.z)*1000),'upperTravelMm':float((ju-bu0).length*1000),'lowerTravelMm':float((jl-bl0).length*1000)})
+oralAudit={'samples':oralRows,'sampleCount':len(oralRows),'separationPassed':bool(oralRows) and all(q['openGapMm']>q['neutralGapMm'] and q['upperTravelMm']<.01 for q in oralRows),'depthStatus':'inferred','visualApproved':False,'teethTongueStatus':'not implemented'}
+(out/'oral-motion-audit.json').write_text(json.dumps(oralAudit,indent=2,allow_nan=False))
 # Independent ocular meshes, visible iris on the curved scleral surface.
 # The full ellipsoid in v12 still protruded at oblique angles.
 # Build the visible corneoscleral surface using the measured opening,
@@ -958,6 +988,6 @@ for label,sgn in (('left',-1),('right',1)):
 focus=oldFocus;cam.ortho_scale=oldScale
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v14','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'revisionNotes':['rounded chin cap with lateral inferior lift','reduced abrupt orbital cheek relief','denser surface-attached mirrored eyebrow strands','broader ear helix and concha relief','corrected neck intersection audit offset'],'next':'visual comparison and dimension regression against v13, then eye/lip deformations, ear seam, neck interface and skin weights; no automatic adoption'}
+report={'id':'R54-new-head-v15','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'revisionNotes':['four independent vermilion relief rings using measured projected thickness','upper lip held, lower lip follows candidate jaw','measured shape-key separation audit','retains v14 craniofacial geometry'],'next':'visual comparison and dimension regression against v14, then oral cavity completion, blinking and neck interface; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
