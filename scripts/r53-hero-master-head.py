@@ -148,15 +148,24 @@ X=(Q0[:,0]-eye[0])/gap;Y=(Q0[:,1]-eye[1])/gap;Z=(Q0[:,2]-eye[2])/gap
 def ga(v,c,w):return np.exp(-((v-c)/w)**2)
 front=np.clip((-Y+.12)/.48,0,1);front=front*front*(3-2*front)
 orbital=np.maximum(ga(X,.5,.32),ga(X,-.5,.32))*ga(Z,0,.25)
-jaw=ga(Z,-1.08,.46)*ga(np.abs(X),.71,.40)*front*(1-orbital)
-cheek=ga(Z,-.50,.31)*ga(np.abs(X),.63,.29)*front*(1-orbital)
-chin=ga(Z,-1.35,.26)*ga(X,0,.47)*front
-# Profile choices are deliberately bounded and not a substitute for likeness review.
+# Differentiate the entire lower face, not only the tip of the chin.
+# Gaussian masks preserve eye rims and the validated lower-neck cut.
+jaw=ga(Z,-1.04,.53)*ga(np.abs(X),.73,.48)*front*(1-orbital)
+cheek=ga(Z,-.47,.39)*ga(np.abs(X),.62,.32)*front*(1-orbital)
+chin=ga(Z,-1.43,.30)*ga(X,0,.48)*front
+bridge=ga(Z,-.38,.40)*ga(X,0,.23)*front*(1-orbital)
+noseTip=ga(Z,-.70,.20)*ga(X,0,.29)*front
+alar=ga(Z,-.75,.20)*ga(np.abs(X),.22,.18)*front
+philtrum=ga(Z,-.93,.17)*ga(X,0,.26)*front
+lip=ga(Z,-1.14,.13)*ga(X,0,.40)*front
 female=ident=='commander-female'
 Dprofile=np.zeros_like(Q0)
-Dprofile[:,0]=(Q0[:,0]-eye[0])*((-0.075 if female else .055)*jaw+(.018 if female else .006)*cheek)
-Dprofile[:,1]=gap*((.019 if female else -.018)*chin+(-.018 if female else .009)*cheek)
-Dprofile[:,2]=gap*(.025 if female else -.018)*chin
+Dprofile[:,0]=(Q0[:,0]-eye[0])*((-.19 if female else .085)*jaw+(.045 if female else -.012)*cheek+(-.13 if female else .035)*bridge+(-.10 if female else .035)*alar)
+Dprofile[:,1]=gap*((.055 if female else -.035)*chin+(-.037 if female else .022)*cheek+(.035 if female else -.018)*noseTip+(.012 if female else -.010)*philtrum)
+Dprofile[:,2]=gap*((.085 if female else -.027)*chin+(.025 if female else -.008)*lip)
+# Keep the neck seam geometry fixed; avoid changing the eye sockets.
+neckLock=np.clip((Z+1.90)/.32,0,1);neckLock=neckLock*neckLock*(3-2*neckLock)
+Dprofile*=((1-orbital*.85)*neckLock)[:,None]
 # Guard against inverted or collapsed faces against the unchanged source.
 def profile_norm(A):
     T=A[ST];return np.cross(T[:,1]-T[:,0],T[:,2]-T[:,0])
@@ -167,7 +176,7 @@ for _ in range(12):
     if not np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):break
     profile_factor*=.5
 else:raise RuntimeError('profile neutral topology')
-profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True}
+profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True,'regions':['jaw','cheek','chin','nasalBridge','alar','philtrum','lip'],'neckLock':True}
 wr=[];deltas={n:[] for n in names};dist=[];matches=[]
 for p0 in Q:
     q,n,i,d=baseTree.find_nearest(Vector(p0))
@@ -725,6 +734,60 @@ def fitted_scalp_hair():
         for j in range(28):
             for k2 in range(2):
                 a=start+j*3+k2;F.append((a,a+3,a+4,a+1));M.append(1+(k%3))
+    # Add independent swept lock geometry, not another uniform cap.
+    # Use the fitted scalp as root, then extend a tapered free silhouette.
+    # Women: side-parted shoulder-length study with side locks and nape.
+    # Men: shorter, irregular swept fringe and lifted crown locks.
+    lockUV={};lockGroups=[]
+    rng=np.random.default_rng(53123+(1 if female else 0))
+    def lock(rootAngle,rootT,azSweep,length,width,kind):
+        start=len(V);sections=22;cross=5
+        p0,_,r0=sample(rootAngle,rootT);p0+=r0*.0015
+        d0=Vector((math.cos(rootAngle),math.sin(rootAngle),0))
+        for j in range(sections):
+            t=j/(sections-1);u=t*t*(3-2*t)
+            a=rootAngle+azSweep*math.sin(t*math.pi*.5)
+            # Root-to-hairline portion follows the measured scalp.
+            # The terminal part moves down and outward independently.
+            p,_,rad=sample(a,min(.99,rootT+(1-rootT)*min(1.,t/.62)))
+            p+=rad*(.002+.008*math.sin(math.pi*t)**1.25)
+            ext=max(0.,(t-.62)/.38);ext=ext*ext*(3-2*ext)
+            if kind=='fringe':
+                p+=Vector((math.sin(a)*length*.16,-length*.15,-length*.72))*ext
+            else:
+                p+=Vector((math.sin(a)*length*.20,-math.cos(a)*length*.13,-length))*ext
+            if j==0:p=p0
+            lateral=Vector((math.cos(a),math.sin(a),0)).normalized()
+            taper=(.32+.68*math.sin(math.pi*min(.99,t*.88+.08))**.6)*(1-.93*t**3)
+            for k in range(cross):
+                q=k/(cross-1)*2-1
+                v=p+lateral*(q*width*taper)+rad*((1-q*q)*width*.36*taper)
+                # Limit penetration against the actual head, including tips.
+                near,norm,ix,dist=skinTree.find_nearest(v)
+                if near is not None and (v-near).dot(norm)<.0006 and dist<.025:
+                    v=near+norm*.0008
+                lockUV[len(V)]=(k/(cross-1),t);V.append(tuple(v))
+        for j in range(sections-1):
+            for k in range(cross-1):
+                a=start+j*cross+k
+                F.append((a,a+cross,a+cross+1,a+1));M.append(1+(len(lockGroups)%3))
+        lockGroups.append({'kind':kind,'vertices':sections*cross,'length_m':length})
+    if female:
+        # Rear and side tresses, longer at the nape; keep central face clear.
+        for k in range(42):
+            a=.92+(2*math.pi-1.84)*k/41
+            length=float(.045+.090*max(0.,-math.cos(a))+.012*rng.random())
+            lock(a,.25+float(rng.random())*.19,.08*math.sin(a),length,.0075,'side_nape')
+        for k in range(12):
+            a=-.83+1.66*k/11
+            lock(a,.30,.40 if k<8 else -.26,.022+float(rng.random())*.014,.005,'fringe')
+    else:
+        for k in range(23):
+            a=-1.45+2.90*k/22
+            lock(a,.20+float(rng.random())*.28,.42,.010+float(rng.random())*.014,.0052,'fringe')
+        for k in range(17):
+            a=1.55+(2*math.pi-3.10)*k/16
+            lock(a,.40,.20,.010+float(rng.random())*.010,.0045,'nape')
     me=bpy.data.meshes.new('R53_MeasuredScalpHair');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
     shades=[(.14,.075,.035),(.18,.10,.048),(.23,.135,.066),(.16,.085,.04)] if female else [(.020,.014,.011),(.030,.022,.018),(.045,.032,.025),(.024,.018,.014)]
@@ -737,7 +800,8 @@ def fitted_scalp_hair():
     capCount=(rows+1)*n
     for loop in me.loops:
         vi=loop.vertex_index
-        if vi<capCount:
+        if vi in lockUV:u,v=lockUV[vi]
+        elif vi<capCount:
             j,k=divmod(vi,n);u=k/n;v=j/rows
         else:
             k,rem=divmod(vi-capCount,29*3);j,side=divmod(rem,3);u=(k+(side/2)*.95)/72;v=j/28
@@ -763,7 +827,7 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    diag={'vertices':len(V),'faces':len(F),'scalpSamples':len(distances),'strandTextureSize':[1024,512],'sweptFlow':True,'minRadialClearance_m':min(distances),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['scalp cap and tapered ribbon prototype; final hairstyle and back length require artist review','nearest-surface metric is not a complete collision guarantee']}
+    diag={'vertices':len(V),'faces':len(F),'scalpSamples':len(distances),'strandTextureSize':[1024,512],'sweptFlow':True,'freeLocks':lockGroups,'hairStyle':'side-parted layered long study' if female else 'short swept fringe study','minRadialClearance_m':min(distances),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['scalp cap and tapered ribbon prototype; final hairstyle and back length require artist review','nearest-surface metric is not a complete collision guarantee']}
     return ob,diag
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
