@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v7",
+    "id": "R54-new-head-v8",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "v7 neck and revised ears source committed, validation pending",
+    "status": "v8 source committed; generation pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -99,20 +99,22 @@
       "actual visual fit unverified"
     ],
     "previous": {
-      "run": 45828777891,
-      "artifact": 15121996326,
-      "sourceCommit": "85ac7062de70e436dda6c1707a9a2359c40a3e06",
+      "run": 45830049995,
+      "artifact": 15122900402,
+      "sourceCommit": "ee3fff48d1e11067711ba343702435db23151ef3",
       "visualApproved": false,
       "issues": [
-        "ears protrude too far in frontal view",
-        "ear root overlap not welded",
-        "face outline gate not passed",
-        "no neck"
+        "pointed crown",
+        "insufficient posterior cranial depth",
+        "flattened temple",
+        "jaw-neck seam",
+        "weak ear cartilage"
       ]
     },
-    "next": "review v7 actual head and neck front/side images, neck and ear contact audits; no automatic adoption",
+    "next": "inspect actual front/profile/ear/neck JPG and cranial audit; no automatic approval",
     "dimensionalContract": "data/r54-dimensional-constraints.json",
     "earDesign": "data/r54-ear-design.json",
-    "neckDesign": "data/r54-neck-design.json"
+    "neckDesign": "data/r54-neck-design.json",
+    "supplementalScaffold": "data/r54-bald-reference-scaffold.json"
   }
 }
