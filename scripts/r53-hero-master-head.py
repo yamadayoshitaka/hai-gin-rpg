@@ -52,11 +52,11 @@ for t in ad.nla_tracks:
     for st in t.strips:
         if st.action:acts[st.action.name]=st.action
     t.mute=True
-selected={}
+r53_clip_actions={}
 for n in clips:
     a=[v for k,v in acts.items() if n.lower() in k.lower()]
     if len(a)!=1:raise RuntimeError('clip '+n)
-    selected[n]=a[0];a[0].use_fake_user=True
+    r53_clip_actions[n]=a[0];a[0].use_fake_user=True
 ad.action=None
 for t in list(ad.nla_tracks):ad.nla_tracks.remove(t)
 def reset():
@@ -430,7 +430,7 @@ if female:
         return float(we+he+3*(max(0.,we-.12)+max(0.,he-.12))+er),{'widthError':float(we),'heightError':float(he),'widthRatio':float(ww),'heightRatio':float(hh),'curve':met}
     for side in ('L','R'):
         A0=bestQ.copy();baseScore,baseMetric=score_refinement(A0,side)
-        localBest=A0;localScore=baseScore;selected={'stretch':0.,'relief_m':0.,'metrics':baseMetric}
+        localBest=A0;localScore=baseScore;canthus_candidate={'stretch':0.,'relief_m':0.,'metrics':baseMetric}
         c=dstEye[side];dx=A0[:,0]-c[0];dz=A0[:,2]-c[2]
         weight=np.exp(-(dx/(gap*.31))**4-(dz/(gap*.18))**4)*np.clip((c[1]-A0[:,1]+gap*.045)/(gap*.16),0,1)
         corner=np.exp(-((np.abs(dx)-gap*.20)/(gap*.075))**2)
@@ -444,8 +444,8 @@ if female:
                     if metric.get('heightError',1.)>max(.12,baseMetric.get('heightError',1.))+1e-8:continue
                     if metric.get('widthError',1.)>baseMetric.get('widthError',1.)+1e-8:continue
                     if score<localScore-1e-8:
-                        localBest=C;localScore=score;selected={'stretch':stretch,'relief_m':relief,'metrics':metric}
-        bestQ=localBest;refinement.append({'side':side,'before':baseMetric,'selected':selected,'beforeScore':baseScore,'afterScore':localScore})
+                        localBest=C;localScore=score;canthus_candidate={'stretch':stretch,'relief_m':relief,'metrics':metric}
+        bestQ=localBest;refinement.append({'side':side,'before':baseMetric,'selected':canthus_candidate,'beforeScore':baseScore,'afterScore':localScore})
     Q=bestQ;eyeScaleFactors={k:bestFactor for k in ('L','R')}
     dreport['eyelidCurveFit']={'beforeError':beforeErr,'afterError':bestErr,'globeScale':bestFactor,'attempts':attempts,'canthusRefinement':refinement,'applied':bool(bestErr<beforeErr-1e-8),'initialEyes':{k:aperture_metric(originalA[k],k)[1] for k in originalA},'limitation':'synthetic projected target; topology and globe scale constrain fit'}
 if female:
@@ -1160,6 +1160,9 @@ def neck_assembly():
         morphBad[n]=int(np.sum((np.sum(N0*N1,axis=1)<=0)|(np.linalg.norm(N1,axis=1)<.03*np.linalg.norm(N0,axis=1))))
     return ob,{'status':'candidate','headRingVertices':len(ar),'bodyRingVertices':len(br),'bridgeTriangles':len(bridge),'seamBadEdges':seamBad,'minimumBridgeArea_m2':float(areas.min()),'morphBridgeDefects':morphBad,'cutPlanes_m':[za,zb],'previousAttempts':attempts,'visualApproved':False,'productionApproved':False}
 
+# Fail early before expensive rendering if the rig inventory was corrupted.
+if set(r53_clip_actions)!=set(clips) or not all(isinstance(a,bpy.types.Action) for a in r53_clip_actions.values()):
+    raise RuntimeError('animation inventory damaged before rendering')
 # Independent head-and-eye preview, with optional existing hair as a
 # diagnostic only. Hair is unchanged and is not approved for this head.
 new=[hd]+list(eyes.values())+lashes+brows+oral
@@ -1431,7 +1434,8 @@ bpy.context.view_layer.update()
 combos=[]
 for ns in [('smile','blink_L','blink_R'),('viseme_A','browRaise'),('laugh','blink_R')]:
     B=Q+sum((fixed[n] for n in ns),np.zeros_like(Q));combos.append({'names':list(ns),'newDefects':int(defects(B).sum())})
-for n,act in selected.items():
+for n,act in r53_clip_actions.items():
+    if not isinstance(act,bpy.types.Action):raise RuntimeError('invalid animation action '+n)
     tr=ad.nla_tracks.new();tr.name='R53_'+n;tr.strips.new('R53_'+n,1,act)
 bpy.ops.object.select_all(action='DESELECT')
 for o in new+[rig]:o.select_set(True)
@@ -1572,7 +1576,7 @@ try:
     # Sample actual skeletal clips for visual motion evidence. Restore rest
     # state before exporting; the existing NLA animation clips are preserved.
     motion=[]
-    for key,act in selected.items():
+    for key,act in r53_clip_actions.items():
         if not any(v in key.lower() for v in ('walk','run','attack','idle','sprint','dodge')):continue
         ad.action=act
         lo,hi=act.frame_range;frame=float(lo+(hi-lo)*.42)
@@ -1634,11 +1638,13 @@ try:
         partId=f'{idx:02d}_{name}';p=partDir/(partId+'.glb')
         try:
             bpy.ops.object.select_all(action='DESELECT');ob.select_set(True);rig.select_set(True);bpy.context.view_layer.objects.active=ob
-            bpy.ops.export_scene.gltf(**dict(opts,filepath=str(p)))
+            # Individual modules share the canonical rest rig; clips stay
+            # in the complete/core GLBs. Avoid duplicating every animation.
+            bpy.ops.export_scene.gltf(**dict(opts,filepath=str(p),export_animations=False))
             rr=p.read_bytes();gj=json.loads(rr[20:20+int.from_bytes(rr[12:16],'little')])
             if len(gj.get('meshes',[]))!=1 or len(gj.get('skins',[]))!=1:raise RuntimeError('independent mesh/rig inventory')
             A=pts(ob);lo=A.min(0);hi=A.max(0)
-            item={'id':partId,'name':ob.name,'category':part_class(ob),'file':p.name,'sha256':sha(p),'vertices':len(A),'faces':len(ob.data.polygons),'bounds_m':[lo.tolist(),hi.tolist()],'dimensions_m':(hi-lo).tolist(),'worldMatrix':vec_matrix(ob.matrix_world),'jointNames':list(g.name for g in ob.vertex_groups),'measurementKind':'actual rest mesh; not concept target','visualApproved':False,'productionApproved':False}
+            item={'id':partId,'name':ob.name,'category':part_class(ob),'file':p.name,'sha256':sha(p),'vertices':len(A),'faces':len(ob.data.polygons),'bounds_m':[lo.tolist(),hi.tolist()],'dimensions_m':(hi-lo).tolist(),'worldMatrix':vec_matrix(ob.matrix_world),'jointNames':list(g.name for g in ob.vertex_groups),'measurementKind':'actual rest mesh; not concept target','animationPolicy':'shared rig; clips in complete/core GLB','visualApproved':False,'productionApproved':False}
             manifest.append(item)
         except Exception as e:
             partFailures.append({'id':partId,'error':str(e)})
