@@ -1,0 +1,73 @@
+name: R53 named male plate and beard visual candidates
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-cast-male-visual.py'
+      - 'scripts/r53-cast-male-visual-audit.py'
+      - '.github/workflows/r53-cast-male-visual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, garan]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/free-knight
+            assets/characters/seven-head-equipment-candidates/LICENSE.upstream
+            docs/wig-production-standard-v1.md
+      - run: python3 -m py_compile scripts/r53-cast-male-visual.py scripts/r53-cast-male-visual-audit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-male-integrated-${{ matrix.id }}
+          run-id: 45725090109
+          github-token: ${{ github.token }}
+          path: /tmp/r53-cast
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Fit real armor and surface-rooted beard, preserve animation
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/visual
+          cp assets/characters/seven-head-equipment-candidates/LICENSE.upstream review/visual/ARMOR-LICENSE.txt
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-male-visual.py -- /tmp/r53-cast/assembly assets/characters/free-knight/knight_full_plate_armor.glb review/visual "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-visual-${{ matrix.id }}
+          path: review/visual/
+          if-no-files-found: warn
+  inventory:
+    needs: visual
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-visual-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-male-visual-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-visual-summary
+          path: review/summary/
+          if-no-files-found: error
