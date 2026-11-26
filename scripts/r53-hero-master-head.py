@@ -195,9 +195,39 @@ def defects(V):
     n=N(V);return ((np.sum(n*N0,axis=1)<0)|(np.linalg.norm(n,axis=1)<area*.03))&valid
 E=np.unique(np.sort(np.concatenate((w[ST[:,[0,1]]],w[ST[:,[1,2]]],w[ST[:,[2,0]]])),axis=1),axis=0);E=E[E[:,0]!=E[:,1]]
 e0=np.r_[E[:,0],E[:,1]];e1=np.r_[E[:,1],E[:,0]];degree=np.maximum(1,np.bincount(e0,minlength=len(cnt)))
+# Lower jaw rotation around an anatomical hinge, separated from lip
+# expression transfer. The original source contains folded oral surfaces.
+# Derive the hinge and lip region from eye spacing and measured head geometry.
+mouthZ=float(eye[2]-gap*1.15)
+mouthWidth=gap*.37
+hingeY=float(eye[1]+gap*.85)
+hingeZ=float(eye[2]-gap*.40)
+def smooth01(t):
+    t=np.clip(t,0.,1.);return t*t*(3-2*t)
+def jaw_motion(A,angle):
+    x=(A[:,0]-eye[0])/gap;y=(A[:,1]-eye[1])/gap;z=(A[:,2]-eye[2])/gap
+    # Lower lip and chin move with mandible, upper lip stays in place.
+    lipline=-1.15+.045*np.clip(np.abs(x)/.6,0,1)**2
+    low=smooth01((lipline-z+.015)/.27)
+    front=smooth01((.9-y)/1.1)
+    neck=smooth01((z+2.3)/.75)
+    side=1-.55*smooth01((np.abs(x)-.8)/.6)
+    weight=low*front*neck*side
+    yy=A[:,1]-hingeY;zz=A[:,2]-hingeZ
+    co=np.cos(angle);si=np.sin(angle)
+    out=np.zeros_like(A);out[:,1]=(yy*(co-1)-zz*si)*weight;out[:,2]=(yy*si+zz*(co-1))*weight
+    return out
+jawAngles={'jawOpen':.23,'viseme_A':.19,'viseme_O':.12,'viseme_E':.07,'viseme_I':.045,'viseme_U':.06,'laugh':.21,'smile':.025}
 hd.shape_key_add(name='Basis');fixed={};reports=[]
 for name in names:
-    D=weld(np.array(deltas[name]));alpha=np.ones(len(cnt))
+    D=np.array(deltas[name])
+    if name in jawAngles:
+        # Keep original lateral articulation, but replace the old collapsed
+        # lower-face vertical displacement with a rotation-based candidate.
+        region=smooth01((-(Q[:,2]-eye[2])/gap-.76)/.25)*smooth01((.8-(Q[:,1]-eye[1])/gap)/1.2)*smooth01(((Q[:,2]-eye[2])/gap+2.2)/.55)
+        D[:,1:]*=(1-.82*region[:,None])
+        D+=jaw_motion(Q,jawAngles[name])
+    D=weld(D);alpha=np.ones(len(cnt))
     for it in range(120):
         A=Q+D*alpha[w,None];bad=defects(A)
         if not bad.any():break
@@ -341,6 +371,80 @@ for side in ('L','R'):
         k=ob.shape_key_add(name=n);k.data.foreach_set('co',(np.array(V)+np.array(RD[n])).astype(np.float32).ravel())
     brows.append(ob);browReports.append({'side':side,'roots':len(roots),'vertices':len(V),'morphs':len(names),'visualApproved':False})
 
+
+# Independent dental and tongue candidates. Fit behind the actual lips;
+# preserve the original skin topology and record ray-based visibility
+# rather than declaring that the mouth is production-ready.
+oral=[];oralReports=[]
+def local_cavity_front():
+    # Find the source skin in the central mouth band; retain its measured depth.
+    mask=(np.abs(Q[:,0]-eye[0])<gap*.12)&(np.abs(Q[:,2]-mouthZ)<gap*.16)&(Q[:,1]<eye[1])
+    if int(mask.sum())<4:raise RuntimeError('oral landmarks unavailable')
+    return float(np.quantile(Q[mask,1],.15))
+lipY=local_cavity_front()
+# The source head's oral interior is closed by a folded inner skin.
+# Tooth crowns are distinct rounded solids, not a white mouth texture.
+def oral_piece(name,centers,radii,col,lower=False):
+    V=[];F=[]
+    for center,rad in zip(centers,radii):
+        cx,cy,cz=center;rx,ry,rz=rad;start=len(V);rings=9;seg=16
+        V.append((cx,cy,cz-rz));bottom=start
+        for j in range(1,rings):
+            th=math.pi*j/rings
+            for k in range(seg):
+                ph=2*math.pi*k/seg
+                V.append((cx+rx*math.sin(th)*math.cos(ph),cy+ry*math.sin(th)*math.sin(ph),cz-rz*math.cos(th)))
+        top=len(V);V.append((cx,cy,cz+rz))
+        for k in range(seg):
+            q=(k+1)%seg
+            F.append((bottom,start+1+q,start+1+k))
+            for j in range(rings-2):
+                at=start+1+j*seg;F.append((at+k,at+q,at+seg+q,at+seg+k))
+            at=start+1+(rings-2)*seg;F.append((at+k,at+q,top))
+    me=bpy.data.meshes.new(name);me.from_pydata(V,[],F);me.update()
+    ob=bpy.data.objects.new(name,me);bpy.context.collection.objects.link(ob)
+    mat=bpy.data.materials.new(name+'_PBR');mat.diffuse_color=(*col,1);mat.use_nodes=True
+    bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.37 if 'Teeth' in name else .48
+    me.materials.append(mat)
+    for p0 in me.polygons:p0.use_smooth=True
+    headName=next((b.name for b in rig.data.bones if b.name.lower()=='head'),None)
+    if headName is None:headName=next((b.name for b in rig.data.bones if b.name.lower().endswith('head')),None)
+    if headName is None:raise RuntimeError('oral head bone')
+    bind(ob,[{headName:1.} for _ in V])
+    A=np.array(V);ob.shape_key_add(name='Basis')
+    # Lower teeth and tongue follow the same rotation as the chin, without
+    # warping their crowns or being attached to upper-lip weights.
+    for n in names:
+        D=np.zeros_like(A)
+        if lower and n in jawAngles:
+            angle=jawAngles[n]*.84;yy=A[:,1]-hingeY;zz=A[:,2]-hingeZ
+            D[:,1]=yy*(math.cos(angle)-1)-zz*math.sin(angle)
+            D[:,2]=yy*math.sin(angle)+zz*(math.cos(angle)-1)
+        k=ob.shape_key_add(name=n);k.data.foreach_set('co',(A+D).astype(np.float32).ravel())
+    oral.append(ob);oralReports.append({'name':name,'components':len(centers),'vertices':len(V),'lowerJawFollow':lower,'morphs':len(names)})
+for lower in (False,True):
+    centers=[];radii=[]
+    for k in (-2.5,-1.5,-.5,.5,1.5,2.5):
+        x=eye[0]+k*gap*.087
+        y=lipY+gap*(.115+.024*abs(k)**1.55)
+        z=mouthZ+gap*((-.065 if lower else .065)-.009*abs(k))
+        centers.append((x,y,z));radii.append((gap*.040,gap*.037,gap*(.052 if lower else .065)))
+    oral_piece('R53_LowerTeeth' if lower else 'R53_UpperTeeth',centers,radii,(.83,.77,.64),lower)
+oral_piece('R53_Tongue',[(eye[0],lipY+gap*.40,mouthZ-gap*.17)],[(gap*.205,gap*.24,gap*.072)],(.39,.13,.11),True)
+# Evaluate the real frontmost surface recession through the lip region.
+# A successful morph topology check alone cannot prove an open mouth.
+def mouth_surface(V):
+    tr=BVHTree.FromPolygons([Vector(p) for p in V],[tuple(int(i) for i in t) for t in ST],all_triangles=True)
+    out=[]
+    for x in np.linspace(eye[0]-mouthWidth*.72,eye[0]+mouthWidth*.72,25):
+        for z in np.linspace(mouthZ-gap*.23,mouthZ+gap*.16,25):
+            hit,_,_,_=tr.ray_cast(Vector((x,lipY-gap*2,z)),Vector((0,1,0)),gap*5)
+            out.append(float(hit.y) if hit is not None else lipY+gap*2)
+    return np.array(out)
+neutralM=mouth_surface(Q);mouthMetrics={}
+for n in ('jawOpen','viseme_A','viseme_O','laugh'):
+    a=mouth_surface(Q+fixed[n]);mouthMetrics[n]={'recessedSamples':int(np.sum(a-neutralM>gap*.07)),'sampleCount':len(a),'maxRecession_m':float(np.max(a-neutralM)),'actualOpeningApproved':False}
+
 # Compare neck cross-sections at actual planes; record fit data for a
 # future continuous retopology seam. Do NOT hide the seam inside clothing
 # or call overlapping original and replacement heads a merged character.
@@ -364,7 +468,7 @@ for factor in (1.10,1.25,1.40,1.55,1.70):
     seams.append({'z_m':float(z),'targetSegments':len(a)//2,'masterSegments':len(b)//2,'targetWidthDepth_m':ea[:2].tolist(),'masterWidthDepth_m':eb[:2].tolist(),'centerError_m':float(np.linalg.norm(ca-cb)),'fitScore_m':err})
 # Independent head-and-eye preview, with optional existing hair as a
 # diagnostic only. Hair is unchanged and is not approved for this head.
-new=[hd]+list(eyes.values())+lashes+brows
+new=[hd]+list(eyes.values())+lashes+brows+oral
 scene=bpy.context.scene;scene.render.engine='BLENDER_WORKBENCH';scene.render.resolution_x=640;scene.render.resolution_y=720;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG'
 sh=scene.display.shading;sh.light='STUDIO';sh.color_type='TEXTURE';sh.show_cavity=True
 bpy.ops.object.camera_add();cam=bpy.context.object;cam.data.type='ORTHO';scene.camera=cam
@@ -456,9 +560,9 @@ for tag,d in views:
 fittedHair.hide_render=True
 
 for name in names:
-    for o in [hd]+lashes+brows:o.data.shape_keys.key_blocks[name].value=1
+    for o in [hd]+lashes+brows+oral:o.data.shape_keys.key_blocks[name].value=1
     bpy.context.view_layer.update();render('expression_'+name,(0,-1,0))
-    for o in [hd]+lashes+brows:o.data.shape_keys.key_blocks[name].value=0
+    for o in [hd]+lashes+brows+oral:o.data.shape_keys.key_blocks[name].value=0
 bpy.context.view_layer.update()
 combos=[]
 for ns in [('smile','blink_L','blink_R'),('viseme_A','browRaise'),('laugh','blink_R')]:
@@ -488,5 +592,5 @@ if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for
 count=len(new);bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(dest));bpy.context.view_layer.update()
 rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
-report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or oral cavity; eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
+report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)
