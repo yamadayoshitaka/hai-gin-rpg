@@ -1148,39 +1148,48 @@ lowerHalf=float(np.clip(neckSpec['frontCollarWidthIpd']*.40,.40,.55))
 upperHalf=lowerHalf*.90
 upperCenter=.49
 upperDepth=.46
-N=128;rows=45;NV=[];NF=[];topAudit=[]
-# sample underside at a conservative upper neck ellipse. Pull inward
-# until a ray meets the actual skull; never fabricate a successful hit.
+N=128;rows=57;NV=[];NF=[];topAudit=[]
+# v21: cache actual skull intersections, then start the exposed neck
+# with a tangent-controlled transition. Do not remesh the animated head.
+anchors=[]
+for i in range(N):
+    ang=2*math.pi*i/N;sn=math.sin(ang);cs=math.cos(ang)
+    ux=upperHalf*sn;uy=upperCenter-upperDepth*cs
+    hit=None
+    for scale in (1.,.94,.88,.80,.70,.60):
+        x=ux*scale;y=upperCenter+(uy-upperCenter)*scale
+        q,normal,_,_=headTree.ray_cast(Vector((x*UNIT,y*UNIT,-.25)),Vector((0,0,1)),.35)
+        if q is not None:
+            hit=(np.asarray(q)/UNIT,np.asarray(normal),scale);break
+    if hit is None:raise RuntimeError('neck underside ray missed at angle '+str(i))
+    anchors.append(hit)
 for j in range(rows):
     t=j/(rows-1);blend=float(sstep(t))
-    for i in range(N):
+    for i,(contact,normal,scale) in enumerate(anchors):
         ang=2*math.pi*i/N;sn=math.sin(ang);cs=math.cos(ang)
-        ux=upperHalf*sn;uy=upperCenter-upperDepth*cs
-        hit=None
-        for scale in (1.,.94,.88,.80,.70,.60):
-            x=ux*scale;y=upperCenter+(uy-upperCenter)*scale
-            q,_,_,_=headTree.ray_cast(Vector((x*UNIT,y*UNIT,-.25)),Vector((0,0,1)),.35)
-            if q is not None:hit=(x,y,float(q.z/UNIT));break
-        if hit is None:raise RuntimeError('neck underside ray missed at angle '+str(i))
-        tx,ty,tz=hit
-        # Short overlap is explicit, not a claim of a welded seam.
-        tz+=.11
+        tx,ty,tz=map(float,contact)
+        # Inset the hidden top ring in the actual surface normal direction.
+        # Fade the inset to zero before the visible contact transition.
+        overlap=.065*(1-float(sstep(t/.15)))
         lx=lowerHalf*sn;ly=(lowerBack+lowerFront)*.5-(lowerBack-lowerFront)*.5*cs
-        # The neck narrows slightly below the jaw, then broadens at base.
-        waist=1-.065*math.sin(math.pi*t)
-        x=((1-blend)*tx+blend*lx)*waist
-        y=(1-blend)*ty+blend*ly
+        # Cubic Hermite interpolation with small outward upper tangent;
+        # bounded radial tangent prevents a collar-like bulge.
+        radial=np.array([sn,-cs],float)
+        base=np.array([tx,ty]);bottom=np.array([lx,ly])
+        upperTangent=radial*.07+(bottom-base)*.14
+        xy=base+(bottom-base)*blend+upperTangent*(t*(1-t)**2)
+        waist=1-.045*math.sin(math.pi*t)**2
+        xy[0]*=waist
         z=(1-t)*tz+t*baseZ
-        # Soft paired sternocleidomastoid contour, with zero boundary
-        # displacement and no external disconnected muscle geometry.
-        ridge=.023*math.sin(math.pi*t)**2*math.exp(-((abs(sn)-.69)/.22)**2)
-        x+=math.copysign(ridge,x) if abs(x)>1e-9 else 0
-        y-=ridge*.4*max(0.,cs)
-        NV.append((x,y,z))
+        ridge=.017*math.sin(math.pi*t)**2*math.exp(-((abs(sn)-.69)/.25)**2)
+        xy[0]+=math.copysign(ridge,xy[0]) if abs(xy[0])>1e-9 else 0.
+        xy[1]-=ridge*.4*max(0.,cs)
+        p=np.array([xy[0],xy[1],z])-overlap*normal
+        NV.append(tuple(p))
         if j==0:
-            q0,n0,_,dd=headTree.find_nearest(Vector((x*UNIT,y*UNIT,z*UNIT)))
-            signed=float((Vector((x*UNIT,y*UNIT,z*UNIT))-q0).dot(n0)*1000) if q0 is not None else None
-            topAudit.append({'angleDeg':360*i/N,'headIntersectionIpd':[tx,ty,tz-.11],'neckTopIpd':[x,y,z],'signedDistanceMm':signed})
+            q0,n0,_,dd=headTree.find_nearest(Vector(p*UNIT))
+            signed=float((Vector(p*UNIT)-q0).dot(n0)*1000) if q0 is not None else None
+            topAudit.append({'angleDeg':360*i/N,'headIntersectionIpd':contact.tolist(),'neckTopIpd':p.tolist(),'rayScale':float(scale),'signedDistanceMm':signed})
 for j in range(rows-1):
     for i in range(N):
         a=j*N+i;b=j*N+(i+1)%N;NF.append((a,b,b+N,a+N))
@@ -1190,10 +1199,26 @@ for j in (0,rows-1):
     for i,k in enumerate(q):NF.append((ci,k,q[(i+1)%N]))
 neck=object_mesh('R54_AnatomicalNeck',NV,NF,[skin])
 attr=neck.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domain='POINT')
-rgba=np.tile(np.r_[linear([207,163,151]),1.],(len(neck.data.vertices),1))
+# Blend upper neck albedo from the nearest actual head vertex to the
+# neutral neck color. Reuse head skin data, not a post-render adjustment.
+headColors=head.data.color_attributes['R54_SkinTone']
+neckKD=KDTree(len(head.data.vertices))
+for i,v0 in enumerate(head.data.vertices):neckKD.insert(v0.co,i)
+neckKD.balance()
+baseColor=np.r_[linear([207,163,151]),1.]
+rgba=np.tile(baseColor,(len(neck.data.vertices),1))
+for i in range(min(N*rows,len(neck.data.vertices))):
+    j,k=divmod(i,N);contact=anchors[k][0]
+    _,idx,_=neckKD.find(Vector(contact*UNIT))
+    col=np.array(headColors.data[idx].color,float)
+    fade=1-float(sstep(j/max(1,rows-1)/.40))
+    rgba[i]=baseColor+(col-baseColor)*fade
 attr.data.foreach_set('color',rgba.astype(np.float32).ravel())
 neckBounds=np.array([tuple(v.co) for v in neck.data.vertices])
-neckReport={'referenceSHA256':neckSpec['referenceSHA256'],'designInputs':neckSpec,'actualBoundsMm':(np.ptp(neckBounds,axis=0)*1000).tolist(),'topAttachmentSamples':topAudit,'topOverlapSamples':sum(r['signedDistanceMm'] is not None and r['signedDistanceMm']<0 for r in topAudit),'sampleCount':len(topAudit),'bodySocket':{'origin_m':[0.,(lowerFront+lowerBack)*.5*UNIT,baseZ*UNIT],'ellipseHalfAxes_m':[lowerHalf*UNIT,(lowerBack-lowerFront)*.5*UNIT],'status':'design estimate; not fitted to body'},'seamWelded':False,'rigged':False,'visualApproved':False}
+# Actual top-ring distance plus sampled surface continuity diagnostics.
+attachDistances=[q['signedDistanceMm'] for q in topAudit if q['signedDistanceMm'] is not None]
+neckContinuity={'maxTopGapMm':float(max(0.,max(attachDistances))) if attachDistances else None,'maxInsetMm':float(max(0.,-min(attachDistances))) if attachDistances else None,'overlapAllSamples':len(attachDistances)==N and all(d0<0 for d0 in attachDistances),'surfaceRows':rows,'angleSamples':N,'tangentMethod':'bounded cubic radial transition','colorMethod':'nearest measured head vertex albedo blended into neck','welded':False}
+neckReport={'referenceSHA256':neckSpec['referenceSHA256'],'designInputs':neckSpec,'actualBoundsMm':(np.ptp(neckBounds,axis=0)*1000).tolist(),'topAttachmentSamples':topAudit,'topOverlapSamples':sum(r['signedDistanceMm'] is not None and r['signedDistanceMm']<0 for r in topAudit),'sampleCount':len(topAudit),'continuity':neckContinuity,'bodySocket':{'origin_m':[0.,(lowerFront+lowerBack)*.5*UNIT,baseZ*UNIT],'ellipseHalfAxes_m':[lowerHalf*UNIT,(lowerBack-lowerFront)*.5*UNIT],'status':'design estimate; not fitted to body'},'seamWelded':False,'rigged':False,'visualApproved':False}
 (out/'neck-audit.json').write_text(json.dumps(neckReport,indent=2,allow_nan=False))
 bpy.ops.object.select_all(action='DESELECT');neck.select_set(True);bpy.context.view_layer.objects.active=neck
 bpy.ops.export_scene.gltf(filepath=str(out/'R54_neck.glb'),export_format='GLB',use_selection=True)
@@ -1248,15 +1273,19 @@ set_eye_pose()
 for name in expressionSpecs:
     set_expression(name);render('expression_'+name,(0,-1,0))
 set_expression()
+focus=Vector((0,.045,-.102));cam.ortho_scale=.175
+for tag,axis in [('neck_front_detail',(0,-1,0)),('neck_side_detail',(1,0,0)),('neck_oblique_detail',(.65,-1,-.15)),('neck_rear_detail',(0,1,0))]:render(tag,axis)
+focus=oldFocus;cam.ortho_scale=oldScale
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v20','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw, blink/gaze and nine expression candidates experimental; combined pose and collision checks pending','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','expressionAudit':'expression-audit.json','reviewPage':'review.html','revisionNotes':['nine bounded facial expression morph candidates','shared jaw with oral meshes','actual expression review JPGs','offline review page and dimension status','retains v19 eye morphs'],'next':'verify expressions and neutral face against reference, then neck interface, collision corrections and body rig; no automatic adoption'}
+report={'id':'R54-new-head-v21','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'actual skull underside contact with normal inset and bounded tangent transition; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw, blink/gaze and nine expression candidates experimental; combined pose and collision checks pending','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','expressionAudit':'expression-audit.json','reviewPage':'review.html','revisionNotes':['cached actual skull contact rays','normal-directed inset and bounded neck tangent','skin color continuity from head vertex colors','four neck review JPGs','portable inline review gallery','retains v20 expression morphs'],'next':'verify neck seam, neutral face and expressions visually; correct collisions and prepare body rig; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 # Offline review page: all images are actual Blender renders. The exact
 # reference is not stored in this branch; select the original locally.
 from html import escape
-groups=[('基本形状',['front','left','right','threequarter','rear']),('顔パーツ',['eye_L_detail','eye_R_detail','eye_L_oblique','eye_R_oblique','nose_front_detail','nose_profile_detail','nose_oblique_detail','ear_left_detail','ear_right_detail','oral_neutral_detail','oral_open_detail','oral_open_oblique']),('瞬き・視線',['blink_closed','blink_half','gaze_left','gaze_right','gaze_up','gaze_down']),('表情・発音',['expression_'+k for k in expressionSpecs])]
-html=['<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R54 v20 review</title><style>body{font:16px system-ui,sans-serif;background:#15171c;color:#eee;margin:16px}a{color:#a9d3ff}h2{font-size:20px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}figure{margin:0;background:#242730;padding:8px;border-radius:8px}img{width:100%;height:auto;display:block}figcaption{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere}.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}button,select,input{max-width:100%;font:inherit}</style><h1>R54 v20 実モデル確認</h1><p>承認前候補。本番反映なし。見本とレンダリングを比較し、寸法検査と外観は別々に判定してください。</p>']
-html.append('<p>寸法許容範囲：'+('合格' if report['dimensionGatePassed'] else '未合格')+' ／ 開口分離：'+('合格' if report['oralSeparationPassed'] else '未合格')+' ／ 外観：未承認</p>')
+import base64
+groups=[('基本形状',['front','left','right','threequarter','rear']),('顔パーツ',['eye_L_detail','eye_R_detail','eye_L_oblique','eye_R_oblique','nose_front_detail','nose_profile_detail','nose_oblique_detail','ear_left_detail','ear_right_detail','oral_neutral_detail','oral_open_detail','oral_open_oblique']),('首・接合部',['neck_front_detail','neck_side_detail','neck_oblique_detail','neck_rear_detail']),('瞬き・視線',['blink_closed','blink_half','gaze_left','gaze_right','gaze_up','gaze_down']),('表情・発音',['expression_'+k for k in expressionSpecs])]
+html=['<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R54 v21 review</title><style>body{font:16px system-ui,sans-serif;background:#15171c;color:#eee;margin:16px}a{color:#a9d3ff}h2{font-size:20px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}figure{margin:0;background:#242730;padding:8px;border-radius:8px}img{width:100%;height:auto;display:block}figcaption{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere}.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}button,select,input{max-width:100%;font:inherit}</style><h1>R54 v21 実モデル確認</h1><p>承認前候補。本番反映なし。見本とレンダリングを比較し、寸法検査と外観は別々に判定してください。</p>']
+html.append('<p>寸法許容範囲：'+('合格' if report['dimensionGatePassed'] else '未合格')+' ／ 開口分離：'+('合格' if report['oralSeparationPassed'] else '未合格')+' ／ 首の全サンプル接合：'+('合格' if neckContinuity['overlapAllSamples'] else '未合格')+' ／ 外観：未承認</p>')
 html.append('<h2>見本との比較</h2><p>見本画像を端末から選択してください（画像は外部へ送信されません）。</p><input type="file" accept="image/*" id="referenceFile"><select id="view"><option value="front">正面</option><option value="left">左</option><option value="right">右</option><option value="threequarter">斜め</option><option value="rear">背面</option></select><div class="compare"><figure><img id="reference" alt="見本未選択"><figcaption>見本</figcaption></figure><figure><img id="actual" src="front.jpg" alt="実モデル"><figcaption>実モデル</figcaption></figure></div>')
 for title,names in groups:
     html.append('<h2>'+escape(title)+'</h2><section>')
@@ -1269,4 +1298,16 @@ for fn in ['report.json','dimension-audit.json','ocular-patch-audit.json','eye-m
     if (out/fn).is_file():html.append('<p><a href="'+fn+'">'+fn+'</a></p>')
 html.append('<script>let url;document.getElementById("referenceFile").onchange=e=>{if(url)URL.revokeObjectURL(url);if(e.target.files[0]){url=URL.createObjectURL(e.target.files[0]);document.getElementById("reference").src=url}};document.getElementById("view").onchange=e=>document.getElementById("actual").src=e.target.value+".jpg";</script></html>')
 (out/'review.html').write_text(''.join(html),encoding='utf-8')
+# Portable single-file gallery for phones. Embed the actual rendered JPGs,
+# while retaining the ordinary extracted archive page and source files.
+portable=''.join(html)
+imageMap={}
+for title,names in groups:
+    for name in names:
+        fn=name+'.jpg'
+        imageMap[name]='data:image/jpeg;base64,'+base64.b64encode((out/fn).read_bytes()).decode('ascii')
+        portable=portable.replace('src="'+fn+'"','src="'+imageMap[name]+'"').replace('href="'+fn+'"','href="'+imageMap[name]+'"')
+portable=portable.replace('document.getElementById("actual").src=e.target.value+".jpg"','document.getElementById("actual").src=embeddedViews[e.target.value]')
+portable=portable.replace('<script>let url;', '<script>const embeddedViews='+json.dumps({k:imageMap[k] for k in ('front','left','right','threequarter','rear')})+';let url;')
+(out/'review_portable.html').write_text(portable,encoding='utf-8')
 print('New head candidate generated',report['headVertices'],report['headFaces'])
