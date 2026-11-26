@@ -159,6 +159,18 @@ alar=ga(Z,-.75,.20)*ga(np.abs(X),.22,.18)*front
 philtrum=ga(Z,-.93,.17)*ga(X,0,.26)*front
 lip=ga(Z,-1.14,.13)*ga(X,0,.40)*front
 female=ident=='commander-female'
+# Pin the actual illustration and the visible-only 2D annotation.
+# Single oblique view cannot establish true metric depth.
+referencePath=Path('data/r53-female-portrait-landmarks.json')
+reference=json.loads(referencePath.read_text())
+referenceBytes=Path(reference['image']).read_bytes()
+if hashlib.sha1(('blob '+str(len(referenceBytes))+'\\0').encode()+referenceBytes).hexdigest()!=reference['gitBlob']:raise RuntimeError('portrait source drift')
+(out/'portrait-reference.webp').write_bytes(referenceBytes)
+rp2={k:np.array(v,dtype=float) for k,v in reference['points'].items()}
+eyePx=float(np.linalg.norm(rp2['eye_far_center']-rp2['eye_near_center']))
+def ratio(a,b):return float(np.linalg.norm(rp2[a]-rp2[b])/eyePx)
+portraitRatios={'nearEyeWidth':ratio('eye_near_outer','eye_near_inner'),'nearEyeHeight':ratio('eye_near_upper','eye_near_lower'),'browEyeGap':ratio('brow_near_mid','eye_near_center'),'lipWidth':ratio('lip_near_corner','lip_far_corner'),'lipHeight':ratio('lip_upper_peak_near','lip_lower_center'),'noseMouth':ratio('nose_base','lip_center'),'mouthChin':ratio('lip_center','chin'),'crownToChin':ratio('hair_crown','chin'),'hairVisibleLength':ratio('hair_crown','hair_left_lower_visible'),'braidLength':ratio('braid_start','braid_end')}
+referenceReport={'source':reference['image'],'gitBlob':reference['gitBlob'],'pixelLandmarks':len(rp2),'ratios':portraitRatios,'camera':reference['camera'],'unobserved':reference['unobserved'],'approximate':True,'orthographicFit':False}
 Dprofile=np.zeros_like(Q0)
 Dprofile[:,0]=(Q0[:,0]-eye[0])*((-.19 if female else .085)*jaw+(.045 if female else -.012)*cheek+(-.13 if female else .035)*bridge+(-.10 if female else .035)*alar)
 Dprofile[:,1]=gap*((.055 if female else -.035)*chin+(-.037 if female else .022)*cheek+(.035 if female else -.018)*noseTip+(.012 if female else -.010)*philtrum)
@@ -197,6 +209,46 @@ if female:
     for _ in range(4):correction=.58*correction+.42*np.bincount(ea,weights=correction[eb],minlength=len(Q0))/deg
     Dprofile[:,1]+=correction*(1-orbital)**3*neckLock
 
+# Calibrate a provisional weak-perspective camera from actual eye centers
+# and visible midline landmarks. Search yaw/pitch; the image is oblique,
+# so only screen-space residuals are fitted, not claimed as 3D measures.
+if female:
+    qbase=Q0+Dprofile
+    def vertex_at(mask,score):
+        ids=np.flatnonzero(mask)
+        if not len(ids):raise RuntimeError('portrait landmark region missing')
+        return int(ids[np.argmin(score[ids])])
+    noseI=vertex_at((np.abs(X)<.20)&(Z>-.92)&(Z<-.30),qbase[:,1])
+    chinI=vertex_at((np.abs(X)<.20)&(Z<-1.15)&(Z>-1.78)&(Y<-.10),qbase[:,2]+.25*qbase[:,1])
+    mouthI=vertex_at((np.abs(X)<.10)&(Z<-.84)&(Z>-1.28),qbase[:,1]+gap*.3*np.abs(Z+1.10))
+    eyes3=np.array(sorted(dstEye.values(),key=lambda v:v[0]))
+    obs=np.array([rp2[k] for k in ('eye_near_center','eye_far_center','nose_tip','lip_center','chin')])
+    anchors=np.vstack([eyes3,qbase[[noseI,mouthI,chinI]]])
+    best=None
+    for yaw0 in np.linspace(-.72,.72,25):
+        for pitch0 in np.linspace(-.40,.40,17):
+            right=np.array([math.cos(yaw0),math.sin(yaw0),0.])
+            fwd=np.array([math.sin(yaw0),-math.cos(yaw0),0.])
+            up=np.array([0.,0.,1.])*math.cos(pitch0)+fwd*math.sin(pitch0)
+            B=np.vstack([right,-up]);src2=(anchors-eye)@B.T
+            v=src2[1]-src2[0];u=obs[1]-obs[0];sv=np.linalg.norm(v)
+            if sv<1e-6:continue
+            theta=math.atan2(u[1],u[0])-math.atan2(v[1],v[0]);R=np.array([[math.cos(theta),-math.sin(theta)],[math.sin(theta),math.cos(theta)]])
+            M=R@B*(np.linalg.norm(u)/sv)
+            tr=obs[:2].mean(0)-(anchors[:2]-eye).mean(0)@M.T
+            err=float(np.mean(np.linalg.norm((anchors-eye)@M.T+tr-obs,axis=1)**2))
+            if best is None or err<best[0]:best=(err,M,tr,float(yaw0),float(pitch0))
+    err,M,tr,yaw0,pitch0=best
+    fitD=np.zeros_like(Q0)
+    for j,(idx,spread) in enumerate(((noseI,.22),(mouthI,.27),(chinI,.34))):
+        target=obs[j+2];cur=(qbase[idx]-eye)@M.T+tr
+        step=np.linalg.pinv(M)@(target-cur)
+        step*=min(1.,gap*.075/max(np.linalg.norm(step),1e-9))
+        dist0=np.linalg.norm((qbase-qbase[idx])/gap,axis=1)
+        mask=np.exp(-(dist0/spread)**2)*front*(1-orbital)**3*neckLock
+        fitD+=mask[:,None]*step*.65
+    Dprofile+=fitD
+    referenceReport.update({'cameraYaw_rad':yaw0,'cameraPitch_rad':pitch0,'preFitRms_px':float(math.sqrt(err)),'fittedFeatures':['nose_tip','lip_center','chin'],'maxPortraitDisplacement_m':float(np.linalg.norm(fitD,axis=1).max()),'landmarkIndices':[noseI,mouthI,chinI]})
 # Guard against inverted or collapsed faces against the unchanged source.
 def profile_norm(A):
     T=A[ST];return np.cross(T[:,1]-T[:,0],T[:,2]-T[:,0])
@@ -207,6 +259,11 @@ for _ in range(12):
     if not np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):break
     profile_factor*=.5
 else:raise RuntimeError('profile neutral topology')
+if female:
+    after=np.vstack([eyes3,Q[[noseI,mouthI,chinI]]])
+    referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@M.T+tr-obs,axis=1)**2)))
+    referenceReport['acceptedProfileScale']=profile_factor
+(out/'portrait-landmark-report.json').write_text(json.dumps(referenceReport,indent=2))
 profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True,'regions':['jaw','cheek','chin','nasalBridge','alar','philtrum','lip'],'neckLock':True,'femaleReferenceDepthFit':bool(female)}
 wr=[];deltas={n:[] for n in names};dist=[];matches=[]
 for p0 in Q:
@@ -605,7 +662,7 @@ for side in ('L','R'):
     for j in range(34):
         t=j/33
         x=cx+sgn*ew*(-.51+1.10*t)
-        z=float(hi[2])+ez*((.20 if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
+        z=float(hi[2])+ez*((float(np.clip(portraitRatios['browEyeGap']*.85,.14,.28)) if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
         thick=(.00165 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
         for row in (-1,0,1):
             zz=z+row*thick
@@ -639,7 +696,7 @@ for side in ('L','R'):
     if len(roots)<30:raise RuntimeError('insufficient brow roots '+side)
     me=bpy.data.meshes.new('R53_BrowFibres_'+side);me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_BrowFibres_'+side,me);bpy.context.collection.objects.link(ob)
-    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.042,.023,.016) if female else (.026,.018,.012)
+    mat=bpy.data.materials.new('R53_Brow_'+side);col=(.16,.095,.050) if female else (.026,.018,.012)
     mat.diffuse_color=(*col,1);mat.use_nodes=True
     bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.62
     me.materials.append(mat)
@@ -912,10 +969,11 @@ def fitted_scalp_hair():
             # back, without the former abrupt cos(a) threshold.
             side=(1-math.cos(a))/2
             mix=smooth01((side-.06)/.48)
-            hang=float(.008+.085*mix+.014*side+.012*math.sin(a)*mix+.0022*math.sin(19*a+.2)*mix+.0008*math.sin(47*a))
+            longLength=float(np.clip(portraitRatios['hairVisibleLength']*gap*.78,.20,.38))
+            hang=float(.006+longLength*mix+.021*side+.012*math.sin(a)*mix+.006*math.sin(19*a+.2)*mix+.001*math.sin(47*a))
             radial=Vector((math.sin(a),-math.cos(a),0))
-            target=p+Vector((-.006*mix*math.sin(a),0,-hang))+radial*(.004+.004*mix)
-            endtan=Vector((0,0,-hang*.8))-radial*.007*mix
+            target=p+Vector((.045*mix*math.sin(a),.045*mix,-hang))+radial*(.008+.016*mix)
+            endtan=Vector((0,0,-hang*.8))-radial*.016*mix
             t0=tan*.55
             q=(2*u**3-3*u*u+1)*p+(u**3-2*u*u+u)*t0+(-2*u**3+3*u*u)*target+(u**3-u*u)*endtan
             q+=radial*(.004*math.sin(math.pi*u)*mix)
@@ -931,9 +989,16 @@ def fitted_scalp_hair():
                 clearance=(q-h).dot(horizontal)
                 if clearance<.0025:q+=horizontal*(.0025-clearance)
         return q
+    # Outside-body envelope for hanging hair; hidden back depth is inferred.
+    clothingTree=tree([body]+cloth+plates)
+    def keepOutside(q,a):
+        hit,normal,_,d=clothingTree.find_nearest(q)
+        if hit is not None and d<.075 and (q-hit).dot(normal)<.005:
+            q=hit+normal*.005
+        return q
     # Smooth across the scalp/skirt junction and ear envelopes. Every
     # overlay samples this same final surface, preventing a second ridge.
-    grid=np.array([[tuple(sample(2*math.pi*k/n,1.95*j/rows)) for k in range(n)] for j in range(rows+1)])
+    grid=np.array([[tuple(keepOutside(sample(2*math.pi*k/n,1.95*j/rows),2*math.pi*k/n)) if j>rows*.52 else tuple(sample(2*math.pi*k/n,1.95*j/rows)) for k in range(n)] for j in range(rows+1)])
     originalGrid=grid.copy()
     for _ in range(14):
         avg=(np.roll(grid,1,axis=1)+np.roll(grid,-1,axis=1)+np.roll(grid,1,axis=0)+np.roll(grid,-1,axis=0))*.25
@@ -944,6 +1009,7 @@ def fitted_scalp_hair():
         for k in range(n):
             q=Vector(grid[j,k]);p0,n0,_,d0=skinTree.find_nearest(q)
             if p0 is not None and d0<.025 and (q-p0).dot(n0)<.0014:q=p0+n0*.0014
+            if j>rows*.52:q=keepOutside(q,2*math.pi*k/n)
             grid[j,k]=tuple(q);V.append(tuple(q));UV.append((k/n,j/rows))
     def smoothSample(a,t):
         x=(a%(2*math.pi))*n/(2*math.pi);y=np.clip(t/1.95*rows,0,rows-1e-6)
@@ -970,9 +1036,34 @@ def fitted_scalp_hair():
             for k0 in range(2):
                 a=start+j*3+k0;F.append((a,a+3,a+4,a+1))
         groups.append({'kind':'shallow_surface_layer','vertices':sections*3})
-    me=bpy.data.meshes.new('R53_ContinuousLayeredBob');me.from_pydata(V,[],F);me.update()
+    # A separate visible side braid derived from the three annotated
+    # braid points. Its 3D course is estimated on the fitted scalp.
+    braidCount=0
+    braidStart=len(V);braidSections=40;braidSides=6
+    braidRadius=float(np.clip(portraitRatios['braidLength']*gap*.055,.003,.007))
+    for strand0 in range(3):
+        start=len(V)
+        for j in range(braidSections):
+            t=j/(braidSections-1);a=-.30-1.25*t;v=.33+.73*t
+            p=smoothSample(a,v);p0=smoothSample(a-.015,v+.012)
+            tangent=(p0-p).normalized();radial=Vector((math.sin(a),-math.cos(a),.35)).normalized()
+            u=tangent.cross(radial)
+            if u.length<1e-6:u=Vector((1,0,0))
+            u.normalize();v0=tangent.cross(u).normalized()
+            phase=2*math.pi*(5*t+strand0/3)
+            center0=p+radial*.003+braidRadius*.65*(u*math.cos(phase)+v0*math.sin(phase))
+            for k in range(braidSides):
+                ph=2*math.pi*k/braidSides
+                q=center0+braidRadius*.48*(u*math.cos(ph)+v0*math.sin(ph))
+                V.append(tuple(q));UV.append((k/braidSides,t))
+        for j in range(braidSections-1):
+            for k in range(braidSides):
+                k1=(k+1)%braidSides;i=start+j*braidSides;F.append((i+k,i+k1,i+braidSides+k1,i+braidSides+k))
+        braidCount+=braidSections*braidSides
+    groups.append({'kind':'side_braid_inferred_depth','vertices':braidCount})
+    me=bpy.data.meshes.new('R53_PortraitLongLayeredHair');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
-    col=np.array([.105,.058,.033]);mat=bpy.data.materials.new('R53_ChestnutHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
+    col=np.array([.48,.30,.14]);mat=bpy.data.materials.new('R53_GoldenBlondeHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
     bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.69
     if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.11
     me.materials.append(mat);hu=me.uv_layers.new(name='R53_HairFlow')
@@ -990,7 +1081,7 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'smoothed continuous layered asymmetrical bob','surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
+    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'portrait-inspired golden long layers with side braid','referenceLengthRatio':portraitRatios['hairVisibleLength'],'rearDepthInferred':True,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
 # Render actual new scalp-fitted geometry in all five views, separately from old wig.
@@ -1106,7 +1197,7 @@ try:
                         node.inputs['Roughness'].default_value=.43
                         if not node.inputs['Base Color'].is_linked:
                             old=np.array(node.inputs['Base Color'].default_value[:3])
-                            node.inputs['Base Color'].default_value=(*(old*.25+np.array([.21,.25,.29])*.75),1)
+                            node.inputs['Base Color'].default_value=(*(old*.15+np.array([.52,.56,.62])*.85),1)
                 armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled','curvedPanelAccepted':rounded})
             except Exception as e:
                 for md0 in list(plate.modifiers):

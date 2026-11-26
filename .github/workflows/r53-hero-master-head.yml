@@ -24,6 +24,8 @@ jobs:
           sparse-checkout: |
             scripts
             assets/master-sources/blender
+            assets/story/characters/commander
+            data/r53-female-portrait-landmarks.json
       - run: python3 -m py_compile scripts/r53-hero-master-head.py scripts/r53-hero-master-head-audit.py
       - uses: actions/download-artifact@v4
         with:
@@ -54,7 +56,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          sparse-checkout: scripts
+          sparse-checkout: |
+            scripts
+            data/r53-female-portrait-landmarks.json
       - uses: actions/download-artifact@v4
         with:
           pattern: r53-hero-master-head-*

@@ -31,6 +31,19 @@ for i in ids:
     if i=='commander-female' and not any(x.get('status')=='beveled' for x in seam.get('armorStudy',[])):issues.append('armor refinement')
     for f in ('studio-review/studio_front.png','studio-review/studio_threequarter.png','continuous-neck-study/full_front.png','continuous-neck-study/full_side.png'):
         with Image.open(a/f) as im:im.verify()
+    # Visible original illustration and explicit annotated evidence.
+    ref=json.loads((a/'portrait-landmark-report.json').read_text())
+    if ref['pixelLandmarks']<50 or not ref['approximate'] or ref['orthographicFit']:issues.append('portrait provenance')
+    from PIL import ImageDraw
+    with Image.open(a/'portrait-reference.webp') as im:
+        annotated=im.convert('RGB');draw=ImageDraw.Draw(annotated)
+        points=json.loads(Path('data/r53-female-portrait-landmarks.json').read_text())['points']
+        for idx,(key,(x,y)) in enumerate(points.items(),1):
+            draw.ellipse((x-3,y-3,x+3,y+3),fill=(0,220,255),outline=(0,0,0))
+            draw.text((x+4,y-7),str(idx),fill=(255,255,255),stroke_width=1,stroke_fill=(0,0,0))
+        annotated.save(out/'portrait-annotated.png')
+        (out/'portrait-landmark-labels.json').write_text(json.dumps([{'n':idx,'name':k,'xy':v} for idx,(k,v) in enumerate(points.items(),1)],indent=2))
+    r['portraitFit']=ref
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)
 (out/'summary.json').write_text(json.dumps({'headCandidates':rows,'productionApproved':0,'allTechnicalCandidates':all(r['completionGate']['technicalCandidate'] for r in rows)},indent=2))

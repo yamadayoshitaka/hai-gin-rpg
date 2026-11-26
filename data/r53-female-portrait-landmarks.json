@@ -1,0 +1,268 @@
+{
+  "schema": "r53-portrait-landmarks-v1",
+  "id": "commander-female",
+  "image": "assets/story/characters/commander/female-master.webp",
+  "gitBlob": "c121413476ce285c646081e576931bf812a6cc01",
+  "size": [
+    640,
+    800
+  ],
+  "camera": "single nonorthographic upward three-quarter illustration",
+  "annotation": "manual visual pixel annotations, approximate; occluded landmarks excluded; not physical measurements",
+  "uncertaintyPx": 4,
+  "points": {
+    "eye_near_center": [
+      222,
+      240
+    ],
+    "eye_near_outer": [
+      196,
+      241
+    ],
+    "eye_near_inner": [
+      249,
+      242
+    ],
+    "eye_near_upper": [
+      221,
+      232
+    ],
+    "eye_near_lower": [
+      222,
+      249
+    ],
+    "eye_far_center": [
+      312,
+      253
+    ],
+    "eye_far_inner": [
+      292,
+      255
+    ],
+    "eye_far_outer": [
+      329,
+      249
+    ],
+    "eye_far_upper": [
+      311,
+      246
+    ],
+    "eye_far_lower": [
+      313,
+      262
+    ],
+    "brow_near_outer": [
+      194,
+      224
+    ],
+    "brow_near_mid": [
+      219,
+      219
+    ],
+    "brow_near_inner": [
+      248,
+      224
+    ],
+    "brow_far_inner": [
+      291,
+      236
+    ],
+    "brow_far_mid": [
+      310,
+      232
+    ],
+    "brow_far_outer": [
+      326,
+      239
+    ],
+    "nose_root": [
+      275,
+      244
+    ],
+    "nose_bridge": [
+      286,
+      266
+    ],
+    "nose_tip": [
+      308,
+      288
+    ],
+    "nose_ala_near": [
+      284,
+      289
+    ],
+    "nose_ala_far": [
+      309,
+      296
+    ],
+    "nose_base": [
+      293,
+      299
+    ],
+    "philtrum": [
+      285,
+      306
+    ],
+    "lip_near_corner": [
+      255,
+      317
+    ],
+    "lip_far_corner": [
+      303,
+      317
+    ],
+    "lip_upper_peak_near": [
+      278,
+      308
+    ],
+    "lip_upper_peak_far": [
+      288,
+      308
+    ],
+    "lip_center": [
+      283,
+      315
+    ],
+    "lip_lower_center": [
+      280,
+      323
+    ],
+    "chin": [
+      272,
+      369
+    ],
+    "jaw_near": [
+      162,
+      348
+    ],
+    "jaw_mid": [
+      214,
+      363
+    ],
+    "jaw_far": [
+      308,
+      348
+    ],
+    "cheek_near": [
+      180,
+      283
+    ],
+    "cheek_far": [
+      324,
+      294
+    ],
+    "ear_near_top": [
+      98,
+      287
+    ],
+    "ear_near_bottom": [
+      131,
+      344
+    ],
+    "hair_crown": [
+      216,
+      117
+    ],
+    "hair_part": [
+      226,
+      135
+    ],
+    "hair_bang_near_tip": [
+      178,
+      265
+    ],
+    "hair_bang_middle_tip": [
+      253,
+      221
+    ],
+    "hair_bang_far_tip": [
+      300,
+      235
+    ],
+    "hair_temple_near": [
+      151,
+      280
+    ],
+    "hair_temple_far": [
+      347,
+      282
+    ],
+    "hair_left_outer": [
+      34,
+      365
+    ],
+    "hair_right_outer": [
+      385,
+      365
+    ],
+    "hair_left_shoulder": [
+      53,
+      535
+    ],
+    "hair_right_shoulder": [
+      521,
+      481
+    ],
+    "hair_left_lower_visible": [
+      26,
+      586
+    ],
+    "hair_right_lower_visible": [
+      609,
+      586
+    ],
+    "braid_start": [
+      175,
+      151
+    ],
+    "braid_middle": [
+      123,
+      181
+    ],
+    "braid_end": [
+      88,
+      232
+    ],
+    "flower_center": [
+      65,
+      232
+    ],
+    "shoulder_near": [
+      138,
+      489
+    ],
+    "shoulder_far": [
+      422,
+      456
+    ],
+    "collar_center": [
+      235,
+      477
+    ],
+    "armor_chest_center": [
+      169,
+      676
+    ],
+    "armor_trim": [
+      231,
+      599
+    ],
+    "cape_visible": [
+      393,
+      647
+    ]
+  },
+  "observed": {
+    "hairColor": "warm golden blonde",
+    "hairStyle": "long layered side swept bangs, visible lateral braid and flower",
+    "iris": "blue",
+    "armor": "silver with gold trim, navy cloth"
+  },
+  "unobserved": [
+    "rear hair shape",
+    "exact frontal symmetry",
+    "metric facial depth",
+    "full body below crop"
+  ],
+  "approval": "provisional; dedicated orthographic turnaround still required"
+}
