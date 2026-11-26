@@ -50,14 +50,14 @@ def mat(name,rgb,rough=.5,sss=0):
     b.inputs['Base Color'].default_value=(*c,1);b.inputs['Roughness'].default_value=rough
     if 'Subsurface Weight' in b.inputs:b.inputs['Subsurface Weight'].default_value=sss
     return m
-skin=mat('Skin_reference_estimate',[217,181,168],.49,.075)
+skin=mat('Skin_reference_estimate',[207,163,151],.49,.075)
 upperlip=mat('Upper_vermilion',[164,96,87],.49,.045)
 lowerlip=mat('Lower_vermilion',[190,119,109],.43,.055)
 lining=mat('Oral_lining',[76,32,35],.58)
-lidUpper=mat('Upper_lid_margin',[119,77,69],.46)
+lidUpper=mat('Upper_lid_margin',[92,60,55],.49)
 lidLower=mat('Lower_lid_margin',[182,124,115],.49)
 lashmat=mat('Lash',[35,24,20],.57)
-browmat=mat('Brow',[62,41,30],.72)
+browmat=mat('Brow',[65,43,31],.72)
 sclera=mat('Sclera',[232,224,219],.25,.03)
 pupil=mat('Pupil',[15,20,27],.20)
 irisM=[mat('Iris_%02d'%i,c,.24) for i,c in enumerate(([48,61,81],[69,94,125],[100,126,153],[59,83,113],[116,137,151],[34,47,68]))]
@@ -136,18 +136,21 @@ def traced_half_width(z):
     return float(np.mean(vals))
 # All measured upper head stations, with regularization to suppress
 # pixel-scale noise. Blend from the original lower facial constraints.
-keep=WZ<-.20
+keep=WZ<-.44
 sz=np.unique(baldFront[:,1]);sz.sort()
-znew=np.r_[[-.20,-.10,0.,.08],sz,apexZ-.045,apexZ-.015,apexZ]
-znew=np.unique(znew);znew=znew[znew>=-.20]
+znew=np.r_[[-.44,-.36,-.28,-.20,-.12,-.04,.04,.12],sz,apexZ-.045,apexZ-.015,apexZ]
+znew=np.unique(znew);znew=znew[znew>=-.44]
 widths=[]
 for z in znew:
     if z>sz[-1]:
         # Radius of a rounded cap has sqrt(distance-to-pole) behavior.
         v=traced_half_width(sz[-1])*math.sqrt(max(.00003,(apexZ-z)/(apexZ-sz[-1])))
     else:
-        t=float(sstep((z+.20)/.37))
-        v=(1-t)*smooth_interp(z,WZ,WW)+t*traced_half_width(z)
+        # No fixed .89-IPD temple station: join the observed lower
+        # face directly to the observed scalp above the ear.
+        t=float(sstep((z+.44)/.54))
+        cheekWidth=(trace_width(left,z)+trace_width(right,z))*.5
+        v=(1-t)*cheekWidth+t*traced_half_width(z)
     widths.append(max(.009,v))
 WZ=np.r_[WZ[keep],znew];WW=np.r_[WW[keep],widths]
 # Chin cap closes into a small rounded pole, not a flat underside disk.
@@ -156,7 +159,7 @@ chinHalf=float(np.ptp(chinTrace[:,0])*.5)
 WW[0]=max(.075,chinHalf*.72);WW[1]=max(chinHalf,WW[1]);WW[2]=max(chinHalf+.045,WW[2])
 for k in range(3):
     avg=WW.copy();avg[1:-1]=.72*WW[1:-1]+.14*(WW[:-2]+WW[2:])
-    mask=(WZ>.16)&(WZ<sz[-1]-.04);WW[mask]=avg[mask]
+    mask=(WZ>-.55)&(WZ<sz[-1]-.04);WW[mask]=avg[mask]
 assert len(WZ)==len(WW)
 # Regularize the sampled continuous section curves before meshing.
 def regularized_table(X,Y,sigma):
@@ -171,7 +174,7 @@ def regularized_table(X,Y,sigma):
 widthTable=None
 def reset_width_table():
     global widthTable
-    widthTable=regularized_table(WZ,WW,.068)
+    widthTable=regularized_table(WZ,WW,.105)
     fitwidth.cache_clear()
 @lru_cache(maxsize=65536)
 def fitwidth(z,side):return float(np.interp(z,widthTable[0],widthTable[1]))
@@ -217,8 +220,8 @@ PY=np.r_[[-.43,-.24,.05,.46,.93,1.40],py]
 for _ in range(3):
     AY[13:-1]=.64*AY[13:-1]+.18*(AY[12:-2]+AY[14:])
     PY[7:-1]=.68*PY[7:-1]+.16*(PY[6:-2]+PY[8:])
-antTable=regularized_table(AZ,AY,.095)
-postTable=regularized_table(PZ,PY,.105)
+antTable=regularized_table(AZ,AY,.13)
+postTable=regularized_table(PZ,PY,.15)
 @lru_cache(maxsize=65536)
 def baseline_depth(z):return float(np.interp(z,antTable[0],antTable[1]))
 @lru_cache(maxsize=65536)
@@ -271,9 +274,9 @@ def surf(u,z,front=True):
         y+=.014*math.exp(-(ph/.043)**2-((z-philZ)/.085)**2)
         y-=.014*math.exp(-((abs(ph)-.053)/.035)**2-((z-philZ)/.096)**2)
         # Broad cheekbone relief, smooth lower orbital transition.
-        y-=.085*math.exp(-((abs(x)-.54)/.32)**2-((z+.36)/.35)**2)
-        y+=.018*math.exp(-((abs(x)-.70)/.20)**2-((z+.81)/.32)**2)
-        y+=.014*math.exp(-((abs(x)-.50)/.27)**2-((z-.04)/.21)**2)
+        y-=.045*math.exp(-((abs(x)-.54)/.36)**2-((z+.36)/.42)**2)
+        y+=.006*math.exp(-((abs(x)-.70)/.25)**2-((z+.81)/.38)**2)
+        y+=.025*math.exp(-((abs(x)-.50)/.31)**2-((z-.04)/.26)**2)
         # Upper lid fold above the measured contour, attenuated at canthi.
         for lab,P in eyeTrace.items():
             if P[0,0]<x<P[-1,0]:
@@ -320,7 +323,7 @@ current=projected_widths();initialWidth=current.copy();currentScore=score_width(
 for iteration in range(5):
     old=WW.copy();change=np.interp(WZ,fitRows,(fitTarget-current)*.5,left=0.,right=0.)
     change=np.clip(change,-.10,.10)
-    change[WZ<-1.55]=0.;change[WZ>-.26]=0.
+    change[WZ<-1.55]=0.;change*=sstep((-.24-WZ)/.30)
     best=(currentScore,old,current)
     for strength in (.35,.65,1.):
         WW[:]=np.clip(old+strength*change,.009,1.20);reset_width_table()
@@ -514,7 +517,7 @@ frontW=np.clip((.28-y)/.53,0,1)
 blush=np.exp(-((np.abs(x)-.53)/.26)**2-((z+.43)/.24)**2)*frontW
 under=np.exp(-((np.abs(x)-.50)/.23)**2-((z+.18)/.12)**2)*frontW
 noseTint=np.exp(-(x/.18)**2-((z+.63)/.15)**2)*frontW
-rgb=np.tile(np.array([217.,181.,168.]),(len(P),1))+blush[:,None]*[4.,-5.,-4.]+under[:,None]*[-5.,-8.,-7.]+noseTint[:,None]*[1.,-5.,-5.]
+rgb=np.tile(np.array([207.,163.,151.]),(len(P),1))+blush[:,None]*[4.,-5.,-4.]+under[:,None]*[-5.,-8.,-7.]+noseTint[:,None]*[1.,-5.,-5.]
 rgb=np.clip(rgb/255.,0.,1.);rgb=np.where(rgb<=.04045,rgb/12.92,((rgb+.055)/1.055)**2.4)
 attr=head.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domain='POINT')
 attr.data.foreach_set('color',np.column_stack([rgb,np.ones(len(P))]).astype(np.float32).ravel())
@@ -597,7 +600,7 @@ dimReport['ocularCoverageVertexAudit']=coverageReport
 dimReport['activeFaceTarget']='data/r54-bald-face-landmarks.json'
 dimReport['profileSource']='single observed side, other side mirrored inference'
 dimReport['originalCharacterTargetRetained']='data/r54-dimensional-constraints.json'
-dimReport['curveRegularization']={'widthSigmaIpd':.068,'anteriorSigmaIpd':.095,'posteriorSigmaIpd':.105,'widthMaxChangeDesignMm':float(np.max(np.abs(widthTable[1]-widthTable[2]))*UNIT*1000),'anteriorMaxChangeDesignMm':float(np.max(np.abs(antTable[1]-antTable[2]))*UNIT*1000),'posteriorMaxChangeDesignMm':float(np.max(np.abs(postTable[1]-postTable[2]))*UNIT*1000),'measuredChinHalfWidthIpd':chinHalf,'eyeGlobeRadiusIpd':eyeR.tolist(),'noseAnchorsIpd':{'axis':noseMid,'alarZ':alarZ,'nostrilZ':nostrilZ,'philtrumZ':philZ}}
+dimReport['curveRegularization']={'widthSigmaIpd':.105,'anteriorSigmaIpd':.13,'posteriorSigmaIpd':.15,'widthMaxChangeDesignMm':float(np.max(np.abs(widthTable[1]-widthTable[2]))*UNIT*1000),'anteriorMaxChangeDesignMm':float(np.max(np.abs(antTable[1]-antTable[2]))*UNIT*1000),'posteriorMaxChangeDesignMm':float(np.max(np.abs(postTable[1]-postTable[2]))*UNIT*1000),'measuredChinHalfWidthIpd':chinHalf,'eyeGlobeRadiusIpd':eyeR.tolist(),'noseAnchorsIpd':{'axis':noseMid,'alarZ':alarZ,'nostrilZ':nostrilZ,'philtrumZ':philZ}}
 dimReport['allMeasuredWithinTolerance']=dimReport['allMeasuredWithinTolerance'] and all(x['withinTolerance'] and not x['missing'] for x in cranial.values())
 (out/'dimension-audit.json').write_text(json.dumps(dimReport,indent=2,allow_nan=False))
 # Independent initial jaw shape key: hinge is an estimated external design
@@ -609,25 +612,73 @@ for i,k in enumerate(used):
     jaw.data[i].co=Vector((x,.58+dy*math.cos(ang)-dz*math.sin(ang),-.92+dy*math.sin(ang)+dz*math.cos(ang)))*UNIT
 jaw.value=0
 # Independent ocular meshes, visible iris on the curved scleral surface.
+# The full ellipsoid in v12 still protruded at oblique angles.
+# Build the visible corneoscleral surface using the measured opening,
+# retaining the full anatomical globe parameters for future rigging.
+# This neutral review patch is NOT a finished rotating/blinking eye.
+ocularPatchReport={}
 for label,c in eyeCent.items():
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=64,ring_count=32,location=Vector(c)*UNIT)
-    o=bpy.context.object;o.name='R54_Eyeball_'+label;o.scale=Vector(eyeR)*UNIT
-    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.data.materials.append(sclera)
-    for p in o.data.polygons:p.use_smooth=True
+    sp=next(q for q in spec if q.get('lab')==label)
+    up=np.asarray(sp['upper']);low=np.asarray(sp['lower'])
+    xmin=max(up[:,0].min(),low[:,0].min());xmax=min(up[:,0].max(),low[:,0].max())
+    def bounds(x):
+        a=smooth_interp(x,up[:,0],up[:,1]);b=smooth_interp(x,low[:,0],low[:,1])
+        return min(a,b),max(a,b)
+    # Use the actual final aperture ring for depth at the boundary,
+    # while maintaining the original eye ellipsoid curvature inside.
+    rim=np.asarray([V[k] for k in actualRings['eye'+label]],float)
+    def surface(x,z):
+        g=globe_surface(label,x,z)
+        if g is None:g=c[1]-.025
+        return g+.005
+    ev=[];ef=[];nx=85;nz=27
+    for i,x in enumerate(np.linspace(xmin+.0008,xmax-.0008,nx)):
+        zz0,zz1=bounds(x)
+        for t in np.linspace(0,1,nz):
+            zz=(1-t)*zz0+t*zz1
+            # slight overlap behind skin at lid margins, not in front.
+            ev.append((x,surface(x,zz),zz))
+    for i in range(nx-1):
+        for j in range(nz-1):
+            a=i*nz+j;ef.append((a,a+nz,a+nz+1,a+1))
+    eyeObj=object_mesh('R54_EyeballVisible_'+label,ev,ef,[sclera])
+    # Iris disk clipped to the same actual opening. No part of the
+    # independent iris may project beyond the measured lid curves.
     r=float(np.ptp(px(f['iris'+label])[:,0])/2)
-    iv=[(c[0],c[1]-eyeR[1]-.004,c[2])];iff=[];imi=[]
-    n=96
+    iv=[(c[0],surface(c[0],c[2])-.003,c[2])];iff=[];imi=[];n=96
+    caps=[]
+    for k in range(n):
+        a=2*math.pi*k/n;ca=math.cos(a);sa=math.sin(a)
+        allowed=0.
+        for rr in np.linspace(0,r,161):
+            x=c[0]+rr*ca;z=c[2]+rr*sa
+            if not xmin+.0008<=x<=xmax-.0008:break
+            a0,b0=bounds(x)
+            if not a0+.0008<=z<=b0-.0008:break
+            allowed=rr
+        caps.append(allowed)
     for j in range(1,17):
-        rr=r*j/16
         for k in range(n):
-            a=2*math.pi*k/n;x=c[0]+rr*math.cos(a);z=c[2]+rr*math.sin(a)
-            g=globe_surface(label,x,z);iv.append((x,g-.004 if g is not None else c[1]-.1,z))
+            a=2*math.pi*k/n;rr=min(r*j/16,caps[k]*j/16)
+            x=c[0]+rr*math.cos(a);z=c[2]+rr*math.sin(a)
+            iv.append((x,surface(x,z)-.003,z))
     for k in range(n):iff.append((0,1+k,1+(k+1)%n));imi.append(0)
     for j in range(15):
         for k in range(n):
             a=1+j*n+k;b=1+j*n+(k+1)%n;iff.append((a,b,b+n,a+n))
             imi.append(0 if j<5 else (6 if j>=13 else 1+(k*13+j*3)%5))
-    object_mesh('R54_Iris_'+label,iv,iff,[pupil]+irisM,imi)
+    irisObj=object_mesh('R54_Iris_'+label,iv,iff,[pupil]+irisM,imi)
+    # Check actual mesh vertex projection against opening.
+    def outside(obj):
+        bad=0;maxerr=0.
+        for v0 in obj.data.vertices:
+            x,y,z=np.asarray(v0.co)/UNIT
+            lo0,hi0=bounds(x)
+            err=max(xmin-x,x-xmax,lo0-z,z-hi0,0.)
+            bad+=int(err>.001);maxerr=max(maxerr,err)
+        return {'outsideVertices':bad,'maxOutsideDesignMm':maxerr*UNIT*1000}
+    ocularPatchReport[label]={'sclera':outside(eyeObj),'iris':outside(irisObj),'globeCenterIpd':c.tolist(),'globeRadiusIpd':eyeR.tolist(),'irisRadiusIpd':r,'method':'visible aperture patch and clipped iris; full eyeball rig required for dynamic use'}
+(out/'ocular-patch-audit.json').write_text(json.dumps(ocularPatchReport,indent=2,allow_nan=False))
 def tube(name,points,r0,material):
     V0=[];F0=[];n=6
     for j,p in enumerate(points):
@@ -783,7 +834,7 @@ for label,sgn in (('left',-1),('right',1)):
     # Skin's vertex-color node expects its named point attribute.
     C=np.array(VV);u=(C[:,1]-center[0])/(w*.5);v=(C[:,2]-center[1])/(h*.5)
     redden=np.exp(-((u+.10)/.80)**2-((v+.10)/.85)**2)
-    rgb=np.tile([217.,181.,168.],(len(C),1))+redden[:,None]*[4.,-9.,-8.]
+    rgb=np.tile([207.,163.,151.],(len(C),1))+redden[:,None]*[4.,-9.,-8.]
     rgba=np.column_stack([np.array([linear(q) for q in rgb]),np.ones(len(C))])
     ca=ear.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domain='POINT')
     ca.data.foreach_set('color',rgba.astype(np.float32).ravel())
@@ -818,7 +869,7 @@ nb=np.asarray(bald['side']['neckBackYZ_ipd']);nj=np.argsort(nb[:,1]);lowerBack=f
 if lowerBack-lowerFront<.55:lowerBack=lowerFront+.55
 lowerHalf=float(np.clip(neckSpec['frontCollarWidthIpd']*.40,.40,.55))
 upperHalf=lowerHalf*.90
-upperCenter=.53
+upperCenter=.49
 upperDepth=.46
 N=128;rows=45;NV=[];NF=[];topAudit=[]
 # sample underside at a conservative upper neck ellipse. Pull inward
@@ -836,7 +887,7 @@ for j in range(rows):
         if hit is None:raise RuntimeError('neck underside ray missed at angle '+str(i))
         tx,ty,tz=hit
         # Short overlap is explicit, not a claim of a welded seam.
-        tz+=.085
+        tz+=.11
         lx=lowerHalf*sn;ly=(lowerBack+lowerFront)*.5-(lowerBack-lowerFront)*.5*cs
         # The neck narrows slightly below the jaw, then broadens at base.
         waist=1-.065*math.sin(math.pi*t)
@@ -862,7 +913,7 @@ for j in (0,rows-1):
     for i,k in enumerate(q):NF.append((ci,k,q[(i+1)%N]))
 neck=object_mesh('R54_AnatomicalNeck',NV,NF,[skin])
 attr=neck.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domain='POINT')
-rgba=np.tile(np.r_[linear([217,181,168]),1.],(len(neck.data.vertices),1))
+rgba=np.tile(np.r_[linear([207,163,151]),1.],(len(neck.data.vertices),1))
 attr.data.foreach_set('color',rgba.astype(np.float32).ravel())
 neckBounds=np.array([tuple(v.co) for v in neck.data.vertices])
 neckReport={'referenceSHA256':neckSpec['referenceSHA256'],'designInputs':neckSpec,'actualBoundsMm':(np.ptp(neckBounds,axis=0)*1000).tolist(),'topAttachmentSamples':topAudit,'topOverlapSamples':sum(r['signedDistanceMm'] is not None and r['signedDistanceMm']<0 for r in topAudit),'sampleCount':len(topAudit),'bodySocket':{'origin_m':[0.,(lowerFront+lowerBack)*.5*UNIT,baseZ*UNIT],'ellipseHalfAxes_m':[lowerHalf*UNIT,(lowerBack-lowerFront)*.5*UNIT],'status':'design estimate; not fitted to body'},'seamWelded':False,'rigged':False,'visualApproved':False}
@@ -883,7 +934,7 @@ scene.world=bpy.data.worlds.new('NeutralStudio');scene.world.use_nodes=True
 scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.28,.28,.28,1)
 scene.world.node_tree.nodes['Background'].inputs[1].default_value=.48
 focus=Vector((0,.013,-.038))
-for name,p,power,sz in [('Key',(-.28,-.46,.36),14,.40),('Fill',(.31,-.39,.12),7,.38),('Rim',(.10,.29,.29),10,.34)]:
+for name,p,power,sz in [('Key',(-.28,-.46,.36),10,.40),('Fill',(.31,-.39,.12),5,.38),('Rim',(.10,.29,.29),8,.34)]:
     l=bpy.data.lights.new(name,'AREA');l.energy=power;l.shape='DISK';l.size=sz
     o=bpy.data.objects.new(name,l);scene.collection.objects.link(o);o.location=p;o.rotation_euler=(focus-o.location).to_track_quat('-Z','Y').to_euler()
 cam=bpy.data.cameras.new('ReviewCamera');cam.type='ORTHO';cam.ortho_scale=.33
@@ -904,6 +955,6 @@ for label,sgn in (('left',-1),('right',1)):
 focus=oldFocus;cam.ortho_scale=oldScale
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v12','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review of ear shape and face, then eye/lip deformations, ear seam, neck interface and skin weights; no automatic adoption'}
+report={'id':'R54-new-head-v13','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'static clipped visible globe, full anatomical rotation and blink rig pending','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review of ear shape and face, then eye/lip deformations, ear seam, neck interface and skin weights; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])
