@@ -26,7 +26,10 @@
       "eye centers",
       "hair bounds",
       "clothing/armor bounds"
-    ]
+    ],
+    "equipmentCatalog": "data/r53-equipment-reference-catalog.json",
+    "detailMeasurements": "Every body, hair, cloth, armor, weapon and accessory requires normalized multi-view visible landmarks, section contours, dimensions, angles, material and attachment evidence. Keep measured actual mesh, concept annotations and unresolved semantic targets separate.",
+    "illustrationReference": "Use character ID and equipment IDs with approved versioned images and measurements; do not treat draft shapes as approved."
   },
   "characters": [
     {
@@ -93,6 +96,12 @@
         "hairWidth": 31.72,
         "hairDepth": 28.68,
         "eyeCenterDistance": 5.9
+      },
+      "equipmentReference": {
+        "catalog": "data/r53-equipment-reference-catalog.json",
+        "set": "commander-female-review-v1",
+        "faceDetail": "data/r53-female-detail-landmarks.json",
+        "geometrySourceRun": 45786795304
       }
     },
     {

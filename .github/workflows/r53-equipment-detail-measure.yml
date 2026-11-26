@@ -1,0 +1,35 @@
+name: R53 detailed equipment and body measurement ledger review only
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-equipment-detail-measure.py'
+      - 'data/r53-equipment-reference-catalog.json'
+      - '.github/workflows/r53-equipment-detail-measure.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            data
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-female-modular-parts
+          run-id: 45786795304
+          github-token: ${{ github.token }}
+          path: /tmp/parts
+      - run: |
+          python3 -m pip install numpy pillow
+          OPENBLAS_NUM_THREADS=1 python3 scripts/r53-equipment-detail-measure.py /tmp/parts data/r53-equipment-reference-catalog.json review/equipment
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-equipment-detail-ledger
+          path: review/equipment/

@@ -1,0 +1,439 @@
+{
+  "schema": "r53-equipment-reference-v1",
+  "source": {
+    "runId": 45786795304,
+    "artifactId": 15101011338,
+    "character": "commander-female",
+    "status": "previous verified modular candidate, not latest face revision"
+  },
+  "measurementProtocol": {
+    "units": "GLB rest geometry in metres; report mm; projected design points in pixels only",
+    "views": [
+      "front",
+      "rear",
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "front_left_45",
+      "front_right_45",
+      "rear_left_45"
+    ],
+    "crossSectionsPerAxis": 21,
+    "contourDirections": 64,
+    "requiredSemanticMeasurements": {
+      "body": [
+        "全身各関節",
+        "頭身",
+        "胸郭・骨盤・首・肩・手指・足指",
+        "断面輪郭",
+        "関節角度",
+        "体表形状"
+      ],
+      "hair": [
+        "生え際",
+        "分け目",
+        "前・横・後頭部",
+        "毛束断面・先端・曲率",
+        "装着面"
+      ],
+      "clothing": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "armor": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "weapon": [
+        "刃先・刃元・刃幅・厚み",
+        "鍔・柄・柄頭",
+        "断面・重心候補",
+        "握り位置・角度"
+      ],
+      "accessory": [
+        "外周・表面",
+        "厚み・装飾",
+        "取付面・角度"
+      ]
+    },
+    "policy": "actual geometry measurements cannot substitute for missing concept landmarks, true material thickness, semantic part boundaries, or fitted grip and pose tests. Keep unobserved values null.",
+    "imagePolicy": "generate orthographic geometry evidence per part; independent 2D design required before final fit",
+    "approval": false
+  },
+  "sets": [
+    {
+      "id": "commander-female-review-v1",
+      "body": "body_core",
+      "items": [
+        "R53_MeasuredScalpHair",
+        "R53_Clothing_00",
+        "R53_Clothing_01",
+        "R53_Clothing_02",
+        "R53_Clothing_03",
+        "R53_Clothing_04",
+        "R53_Clothing_05",
+        "R53_Clothing_06",
+        "R53_Clothing_07",
+        "R53_Armor_00",
+        "R53_Armor_01",
+        "R53_Armor_02",
+        "R53_Armor_03",
+        "R53_Armor_04",
+        "R53_Armor_05",
+        "R53_Armor_06",
+        "Sword_Bronze",
+        "Shield_Wooden",
+        "R53_blue_gem_brooch"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "R53_MeasuredScalpHair",
+      "kind": "hair",
+      "name": "髪",
+      "file": "R53_MeasuredScalpHair.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_MeasuredScalpHair.json",
+      "orthographicReference": "images/R53_MeasuredScalpHair.png",
+      "semanticTargets": [
+        "生え際",
+        "分け目",
+        "前・横・後頭部",
+        "毛束断面・先端・曲率",
+        "装着面"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_00",
+      "kind": "clothing",
+      "name": "衣装 0",
+      "file": "R53_Clothing_00.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_00.json",
+      "orthographicReference": "images/R53_Clothing_00.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_01",
+      "kind": "clothing",
+      "name": "衣装 1",
+      "file": "R53_Clothing_01.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_01.json",
+      "orthographicReference": "images/R53_Clothing_01.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_02",
+      "kind": "clothing",
+      "name": "衣装 2",
+      "file": "R53_Clothing_02.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_02.json",
+      "orthographicReference": "images/R53_Clothing_02.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_03",
+      "kind": "clothing",
+      "name": "衣装 3",
+      "file": "R53_Clothing_03.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_03.json",
+      "orthographicReference": "images/R53_Clothing_03.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_04",
+      "kind": "clothing",
+      "name": "衣装 4",
+      "file": "R53_Clothing_04.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_04.json",
+      "orthographicReference": "images/R53_Clothing_04.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_05",
+      "kind": "clothing",
+      "name": "衣装 5",
+      "file": "R53_Clothing_05.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_05.json",
+      "orthographicReference": "images/R53_Clothing_05.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_06",
+      "kind": "clothing",
+      "name": "衣装 6",
+      "file": "R53_Clothing_06.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_06.json",
+      "orthographicReference": "images/R53_Clothing_06.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Clothing_07",
+      "kind": "clothing",
+      "name": "衣装 7",
+      "file": "R53_Clothing_07.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Clothing_07.json",
+      "orthographicReference": "images/R53_Clothing_07.png",
+      "semanticTargets": [
+        "襟・袖・裾",
+        "縫い目・折れ・厚み",
+        "接合部",
+        "体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_00",
+      "kind": "armor",
+      "name": "防具 0",
+      "file": "R53_Armor_00.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_00.json",
+      "orthographicReference": "images/R53_Armor_00.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_01",
+      "kind": "armor",
+      "name": "防具 1",
+      "file": "R53_Armor_01.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_01.json",
+      "orthographicReference": "images/R53_Armor_01.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_02",
+      "kind": "armor",
+      "name": "防具 2",
+      "file": "R53_Armor_02.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_02.json",
+      "orthographicReference": "images/R53_Armor_02.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_03",
+      "kind": "armor",
+      "name": "防具 3",
+      "file": "R53_Armor_03.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_03.json",
+      "orthographicReference": "images/R53_Armor_03.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_04",
+      "kind": "armor",
+      "name": "防具 4",
+      "file": "R53_Armor_04.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_04.json",
+      "orthographicReference": "images/R53_Armor_04.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_05",
+      "kind": "armor",
+      "name": "防具 5",
+      "file": "R53_Armor_05.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_05.json",
+      "orthographicReference": "images/R53_Armor_05.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_Armor_06",
+      "kind": "armor",
+      "name": "防具 6",
+      "file": "R53_Armor_06.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_Armor_06.json",
+      "orthographicReference": "images/R53_Armor_06.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "Sword_Bronze",
+      "kind": "weapon",
+      "name": "青銅の剣",
+      "file": "Sword_Bronze.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/Sword_Bronze.json",
+      "orthographicReference": "images/Sword_Bronze.png",
+      "semanticTargets": [
+        "刃先・刃元・刃幅・厚み",
+        "鍔・柄・柄頭",
+        "断面・重心候補",
+        "握り位置・角度"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "Shield_Wooden",
+      "kind": "armor",
+      "name": "木製盾",
+      "file": "Shield_Wooden.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/Shield_Wooden.json",
+      "orthographicReference": "images/Shield_Wooden.png",
+      "semanticTargets": [
+        "装甲面・縁・厚み",
+        "曲率・曲面角度",
+        "継ぎ目・装飾",
+        "固定位置・体表とのクリアランス"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    },
+    {
+      "id": "R53_blue_gem_brooch",
+      "kind": "accessory",
+      "name": "青宝石のブローチ",
+      "file": "R53_blue_gem_brooch.glb",
+      "sourceRun": 45786795304,
+      "measurementReport": "measurements/R53_blue_gem_brooch.json",
+      "orthographicReference": "images/R53_blue_gem_brooch.png",
+      "semanticTargets": [
+        "外周・表面",
+        "厚み・装飾",
+        "取付面・角度"
+      ],
+      "conceptReference": null,
+      "semanticFitApproved": false,
+      "productionApproved": false
+    }
+  ]
+}
