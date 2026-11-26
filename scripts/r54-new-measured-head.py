@@ -15,7 +15,9 @@ nine=json.loads(Path('data/r53-female-nine-view-design.json').read_text())
 f={k:np.array(v,float) for k,v in d['views']['front'].items()}
 mid=(f['irisL'][0]+f['irisR'][0])/2
 ipd=float(np.linalg.norm(f['irisR'][0]-f['irisL'][0]))
-UNIT=.063 # design interpupillary distance, not a physical measurement
+contract=json.loads(Path('data/r54-dimensional-constraints.json').read_text())
+assert contract['referenceSHA256']==d['sourceSHA256']
+UNIT=contract['unit']['designIPD_mm']/1000 # design scale, not measured physical size
 def px(P):return np.column_stack(((P[:,0]-mid[0])/ipd,(mid[1]-P[:,1])/ipd))
 def linear(rgb):
     a=np.asarray(rgb,float)/255
@@ -51,8 +53,8 @@ def sstep(t):
     t=np.clip(t,0,1);return t*t*(3-2*t)
 # Face width is a traced visible envelope, with separate inferred upper
 # cranium and neck support. Interpolate the left/right traces independently.
-left=px(np.vstack((f['cheekL'],f['jawL'])))
-right=px(np.vstack((f['cheekR'],f['jawR'])))
+left=np.vstack([contract['front'][k]['xz_ipd'] for k in ('cheekL','jawL')])
+right=np.vstack([contract['front'][k]['xz_ipd'] for k in ('cheekR','jawR')])
 # Shape-preserving C1 interpolation. No piecewise-linear ridges or
 # duplicate stations at the transition between neck and jaw.
 def smooth_interp(x,X,Y):
@@ -90,8 +92,9 @@ smoothW=np.linalg.solve(np.eye(len(traceZ))+18*(D2.T@D2),traceW)
 # closely spaced inconsistent extrema.
 # Head-only envelope. Do not make the chin into a neck cross section.
 # The true neck interface and rig will be constructed after face approval.
-WZ=np.array([-1.665,-1.63,-1.58,-1.51,-1.42,-1.34,-1.16,-.98,-.80,-.61,-.42,-.20,.10,.40,.70,.95,1.15,1.30,1.42,1.50,1.53])
-WW=np.array([.035,.095,.20,*[float(np.interp(z,traceZ,smoothW)) for z in (-1.51,-1.42,-1.34,-1.16,-.98,-.80,-.61,-.42)],.89,.92,.93,.91,.84,.74,.60,.42,.23,.065])
+chinZ=float(contract['unit']['frontChinZ_ipd'])
+WZ=np.array([chinZ-.025,chinZ+.020,chinZ+.070,-1.51,-1.42,-1.34,-1.16,-.98,-.80,-.61,-.42,-.20,.10,.40,.70,.95,1.15,1.30,1.42,1.50,1.53])
+WW=np.array([.095,.145,.225,*[float(np.interp(z,traceZ,smoothW)) for z in (-1.51,-1.42,-1.34,-1.16,-.98,-.80,-.61,-.42)],.89,.92,.93,.91,.84,.74,.60,.42,.23,.065])
 assert len(WZ)==len(WW)
 # Regularize the upper envelope without erasing the measured chin taper.
 for k in range(2):
@@ -99,11 +102,9 @@ for k in range(2):
 @lru_cache(maxsize=65536)
 def fitwidth(z,side):return smooth_interp(z,WZ,WW)
 profiles=[]
-for key,sgn in [('left',1),('right',-1)]:
-    a=d['views'][key];P=np.array(a['profile'],float)[:25];e=np.array(a['eye'][0],float)
-    sc=abs(np.mean(f['chin'][:,1])-mid[1])/ipd/max(abs(P[-1,1]-e[1]),1)
-    Z=-(P[:,1]-e[1])*sc;Y=-.30+(P[:,0]-e[0])*sc*sgn
-    profiles.append((Z,Y))
+for key in ('left','right'):
+    p=np.array(contract['side'][key]['groups']['profile']['yzRelativeEye_ipd'],float)[:25]
+    profiles.append((p[:,1],p[:,0]+contract['side'][key]['eyeAnteriorDesignYIpd']))
 BZ=[-1.665,-1.63,-1.57,-1.50,-1.30,-1.10,-.85,-.60,-.35,0,.25,.48,.75,1.0,1.25,1.44,1.53]
 BY=[-.43,-.47,-.51,-.52,-.49,-.50,-.51,-.52,-.53,-.54,-.57,-.54,-.45,-.33,-.16,.08,.25]
 @lru_cache(maxsize=65536)
@@ -116,7 +117,7 @@ def center_depth(z):
         t=float(sstep((z+1.65)/.16)*sstep((.42-z)/.17))
         # The reference nose and lip edges are not absolute depth; keep
         # projection close to measured profile without overlarge relief.
-        return base+(raw-base)*t*.86
+        return base+(raw-base)*t*.95
     return base
 @lru_cache(maxsize=65536)
 def back_depth(z):
@@ -172,7 +173,40 @@ def surf(u,z,front=True):
     return (x,y,z+lift)
 # New structured topology: front and rear grids, sharing side boundary.
 # Three deliberate openings for the actual eyelid and lip loop topology.
-U=np.linspace(-1,1,121);Z=np.linspace(-1.665,1.53,181)
+U=np.linspace(-1,1,121);Z=np.linspace(WZ[0],1.53,181)
+# Fit the actual provisional surface projection, not only the generator
+# parameters. Lower-jaw lifting changes the projected widths.
+fitRows=np.linspace(-1.50,-.32,25)
+fitTarget=np.array([trace_width(left,z)+trace_width(right,z) for z in fitRows])
+fitHistory=[]
+def projected_widths():
+    ZZ=np.linspace(WZ[0],-.18,120);UU=np.linspace(-1,1,41)
+    A=np.array([[surf(float(u),float(z),front) for z in ZZ] for front in (True,False) for u in UU])
+    p=A[:,:-1,:].reshape(-1,3);q=A[:,1:,:].reshape(-1,3)
+    widths=[]
+    for z in fitRows:
+        u=p[:,2]-z;v=q[:,2]-z;k=(u*v<0)
+        P=p[k]+(q[k]-p[k])*(u[k]/(u[k]-v[k]))[:,None]
+        widths.append(float(np.ptp(P[:,0])) if len(P) else np.nan)
+    return np.array(widths)
+def score_width(v):
+    return float(np.sqrt(np.mean((v-fitTarget)**2))) if np.isfinite(v).all() else 1e3
+current=projected_widths();initialWidth=current.copy();currentScore=score_width(current)
+for iteration in range(5):
+    old=WW.copy();change=np.interp(WZ,fitRows,(fitTarget-current)*.5,left=0.,right=0.)
+    change=np.clip(change,-.10,.10)
+    change[WZ<-1.55]=0.;change[WZ>-.26]=0.
+    best=(currentScore,old,current)
+    for strength in (.35,.65,1.):
+        WW[:]=np.clip(old+strength*change,.06,1.10);fitwidth.cache_clear()
+        actual=projected_widths();e=score_width(actual)
+        fitHistory.append({'iteration':iteration+1,'strength':strength,'rmsIpd':e})
+        if e<best[0]-1e-6:best=(e,WW.copy(),actual)
+    WW[:]=best[1];fitwidth.cache_clear()
+    if best[0]>=currentScore-1e-6:break
+    currentScore,current=best[0],best[2]
+    if currentScore<contract['policy']['projectedToleranceIpd']:break
+
 def closest(arr,x):return int(np.argmin(abs(arr-x)))
 spec=[]
 for lab in ('L','R'):
@@ -213,8 +247,8 @@ def rect(s):
 def curve_on(s,frac,top,key=None):
     arr=s[key] if key else s['upper' if top else 'lower']
     x=s['upper'][0,0]+frac*(s['upper'][-1,0]-s['upper'][0,0])
-    return x,float(np.interp(x,arr[:,0],arr[:,1]))
-mouthVertices={};eyeRims={};boundaryReport=[]
+    return x,smooth_interp(x,arr[:,0],arr[:,1])
+mouthVertices={};eyeRims={};boundaryReport=[];actualRings={}
 for s in spec:
     coords=rect(s);outer=[grid[True,i,j] for i,j in coords]
     a,b,c,e=(s[k] for k in ('x0','x1','z0','z1'))
@@ -244,13 +278,14 @@ for s in spec:
             ring.append(add(xz))
         ring_bridge(previous,ring);previous=ring
     if s['id']=='mouth':
-        lipOuter=previous;inner=[]
+        lipOuter=previous;actualRings['lipOuter']=list(lipOuter);inner=[]
         for frac,top in params:
             x,z=curve_on(s,frac,top,'seam')
             # minute neutral opening, with real oral depth.
             z+=(.006 if top else -.006)*max(.04,math.sin(math.pi*frac))
             y=surf(x/max(fitwidth(z,-1 if x<0 else 1),.1),z)[1]-.019*math.sin(math.pi*frac)
             inner.append(add((x,y,z)))
+        actualRings['lipSeam']=list(inner)
         for k,(_,top) in enumerate(params):mouthVertices[inner[k]]=top
         mids=[add(.48*np.array(V[i])+.52*np.array(V[j])+np.array([0,-.013*math.sin(math.pi*fr),0])) for i,j,(fr,_) in zip(lipOuter,inner,params)]
         m=[1 if top else 2 for _,top in params]
@@ -270,6 +305,7 @@ for s in spec:
             inner.append(add((x,yy,z)))
         ring_bridge(previous,inner,[4 if top else 5 for fr,top in params])
         eyeRims[s['lab']]=[V[k] for k in inner]
+        actualRings['eye'+s['lab']]=list(inner)
     boundaryReport.append({'id':s['id'],'boundaryVertices':len(outer),'targetXZ_ipd':[p[[0,2]].tolist() for p in target],'referenceUpper_ipd':s['upper'].tolist(),'referenceLower_ipd':s['lower'].tolist()})
 # Remove unused hole interior vertices before exporting.
 used=sorted(set(i for p in F for i in p));remap={k:i for i,k in enumerate(used)}
@@ -288,6 +324,63 @@ attr=head.data.color_attributes.new(name='R54_SkinTone',type='FLOAT_COLOR',domai
 attr.data.foreach_set('color',np.column_stack([rgb,np.ones(len(P))]).astype(np.float32).ravel())
 node=skin.node_tree.nodes.new('ShaderNodeVertexColor');node.layer_name=attr.name
 skin.node_tree.links.new(node.outputs['Color'],skin.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
+# Independent dimension audit of the generated mesh, before rendering.
+# Use actual mesh edges for silhouette, and actual ring vertices located
+# by 3D nearest-neighbor to their construction positions.
+from mathutils.kdtree import KDTree
+A=np.array([tuple(v.co) for v in head.data.vertices],float)/UNIT
+E=np.array([tuple(e.vertices) for e in head.data.edges],int)
+P=A[E[:,0]];Q=A[E[:,1]]
+def section(axis,value):
+    u=P[:,axis]-value;v=Q[:,axis]-value;k=u*v<0
+    return P[k]+(Q[k]-P[k])*(u[k]/(u[k]-v[k]))[:,None]
+tol=float(contract['policy']['projectedToleranceIpd'])
+def stats(errors):
+    a=np.asarray(errors,float)
+    return {'count':len(a),'rmsIpd':float(np.sqrt(np.mean(a*a))) if len(a) else None,'maxIpd':float(np.max(np.abs(a))) if len(a) else None,'rmsDesignMm':float(np.sqrt(np.mean(a*a))*UNIT*1000) if len(a) else None,'withinTolerance':bool(len(a) and np.max(np.abs(a))<=tol)}
+outline={}
+for name,sgn in (('left',-1),('right',1)):
+    trace=left if sgn<0 else right
+    rows=[]
+    for x,z in trace:
+        S=section(2,z)
+        if len(S):
+            val=float(S[:,0].min() if sgn<0 else S[:,0].max())
+            rows.append({'zIpd':float(z),'targetXIpd':float(x),'actualXIpd':val,'errorIpd':val-float(x)})
+    outline[name]={'points':rows,**stats([r['errorIpd'] for r in rows]),'missing':len(trace)-len(rows)}
+profile={}
+for name in ('left','right'):
+    g=contract['side'][name]['groups'];rows=[]
+    for label in ('noseRoot','noseTip','noseBase','upperLip','mouth','lowerLip','chin'):
+        y,z=g[label]['yzRelativeEye_ipd'][0];target=y+contract['side'][name]['eyeAnteriorDesignYIpd']
+        S=section(2,z)
+        if len(S):
+            val=float(S[:,1].min())
+            rows.append({'landmark':label,'zIpd':z,'targetYIpd':target,'actualAnteriorYIpd':val,'errorIpd':val-target})
+    profile[name]={'points':rows,**stats([r['errorIpd'] for r in rows]),'missing':7-len(rows),'limitation':'anterior silhouette proxy; not exact landmark identity'}
+kd=KDTree(len(A))
+for i,p0 in enumerate(A):kd.insert(Vector(p0),i)
+kd.balance()
+def ring_mesh(ids):
+    return np.array([tuple(kd.find(Vector(V[i]))[0]) for i in ids])
+def curve_errors(points,poly):
+    pp=np.asarray(points,float);q=np.roll(poly,-1,axis=0);delta=q-poly
+    errs=[]
+    for p in pp:
+        t=np.clip(np.sum((p-poly)*delta,axis=1)/np.maximum(np.sum(delta*delta,axis=1),1e-12),0,1)
+        errs.append(float(np.min(np.linalg.norm(poly+t[:,None]*delta-p,axis=1))))
+    return errs
+rings={}
+for key,groups in [('eyeL',('eyeLUpper','eyeLLower')),('eyeR',('eyeRUpper','eyeRLower')),('lipOuter',('lipTop','lipBottom')),('lipSeam',('lipSeam',))]:
+    poly=ring_mesh(actualRings[key])[:,[0,2]]
+    rows=[]
+    for group in groups:
+        tar=contract['front'][group]['xz_ipd'];e=curve_errors(tar,poly)
+        rows.append({'group':group,'referencePoints':tar,'distanceIpd':e,**stats(e)})
+    rings[key]={'actualCurveXZ_ipd':poly.tolist(),'groups':rows}
+dimReport={'schema':'R54-actual-mesh-dimension-audit-v1','referenceSHA256':contract['referenceSHA256'],'designScaleMm':UNIT*1000,'toleranceIpd':tol,'toleranceDesignMm':tol*UNIT*1000,'outline':outline,'sideProfile':profile,'actualRings':rings,'foundationFit':{'rowsZIpd':fitRows.tolist(),'targetWidthIpd':fitTarget.tolist(),'beforeWidthIpd':initialWidth.tolist(),'afterWidthIpd':current.tolist(),'beforeRmsIpd':score_width(initialWidth),'afterRmsIpd':currentScore,'attempts':fitHistory},'actualBoundsMm':(np.ptp(A,axis=0)*UNIT*1000).tolist(),'unverified':['ear and upper skull dimensions occluded','other 6 projected views','brow/lash depth and material reflectance','anatomical rig and actual motion'],'visualApproved':False}
+dimReport['allMeasuredWithinTolerance']=all(x['withinTolerance'] and not x['missing'] for x in list(outline.values())+list(profile.values())) and all(g['withinTolerance'] for r in rings.values() for g in r['groups'])
+(out/'dimension-audit.json').write_text(json.dumps(dimReport,indent=2,allow_nan=False))
 # Independent initial jaw shape key: hinge is an estimated external design
 # anchor. Not certified anatomical motion, no inherited morph transfer.
 head.shape_key_add(name='Basis');jaw=head.shape_key_add(name='jawOpen_candidate')
@@ -388,6 +481,6 @@ def render(name,axis):
 for tag,axis in [('front',(0,-1,0)),('left',(-1,0,0)),('right',(1,0,0)),('threequarter',(.66,-1,.03)),('rear',(0,1,0))]:render(tag,axis)
 jaw.value=1;render('jaw_open_experimental',(0,-1,0));jaw.value=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v4','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'head-only mandible silhouette with lifted posterior underside; explicit eyelid thickness; local nose/philtrum relief; tapered lip projection; regional skin vertex color','neckPolicy':'no neck mesh; later anatomical neck/body seam integration after visual approval','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ears not yet built','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','head-only; no neck mesh, body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review, then reconstruct ears, eye/lip deformations, neck interface and skin weights; no automatic adoption'}
+report={'id':'R54-new-head-v5','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'no neck mesh; later anatomical neck/body seam integration after visual approval','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ears not yet built','mouth cavity provisional; teeth/tongue missing','jaw motion experimental, no blink or full facial morphs','head-only; no neck mesh, body rig or neck seam integration yet','nine-view image is synthetic and not calibrated; fit not independently verified'],'next':'visual review, then reconstruct ears, eye/lip deformations, neck interface and skin weights; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
 print('New head candidate generated',report['headVertices'],report['headFaces'])

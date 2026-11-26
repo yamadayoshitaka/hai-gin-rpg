@@ -84,10 +84,10 @@
   "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved.",
   "pendingChange": "craniofacial foundation first: 16 anterior cross-section stations, coherent lateral facial shape and strain gate, then local jaw/eyelid/nose/lip and material fitting; external shape proxy, internal skull not measured",
   "independentNewHead": {
-    "id": "R54-new-head-v4",
+    "id": "R54-new-head-v5",
     "source": "scripts/r54-new-measured-head.py",
     "workflow": ".github/workflows/r54-new-measured-head.yml",
-    "status": "v4 source committed; actual generation pending",
+    "status": "v5 source committed; render pending",
     "reference": "same 350 point and 9-view ledger",
     "oldHeadPolicy": "preserved comparison; no automatic replacement",
     "approval": false,
@@ -99,18 +99,17 @@
       "actual visual fit unverified"
     ],
     "previous": {
-      "run": 45824823123,
-      "artifact": 15119452179,
-      "sourceCommit": "046563d600f2b324aa392d99533d0b3b55ee1008",
+      "run": 45825533197,
+      "artifact": 15120875388,
+      "sourceCommit": "7f0e88739fc49cd616c9dd83d4a7436ebb6eb336",
       "visualApproved": false,
       "issues": [
-        "temple steps substantially reduced",
-        "jaw continues into neck without clear chin",
-        "weak eyelid margins",
-        "doll-like features",
-        "nose/lips insufficiently natural"
+        "pointed chin",
+        "eye and nose depth mismatch",
+        "lip shape and cranial proportions unapproved"
       ]
     },
-    "next": "review isolated head jaw silhouette, eyelid margins and nose/lips in actual JPG before rig or hair integration"
+    "next": "review actual dimensional audit and reference comparison, no adoption until visual approval",
+    "dimensionalContract": "data/r54-dimensional-constraints.json"
   }
 }
