@@ -1,0 +1,47 @@
+name: R53 character reference catalog review only
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'data/r53-character-reference-catalog.json'
+      - 'scripts/r53-character-reference-catalog.py'
+      - '.github/workflows/r53-character-reference-catalog.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  catalog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            data
+            scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-all42-updated-offline-review
+          run-id: 45742373035
+          github-token: ${{ github.token }}
+          path: /tmp/catalog/site
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-all42-updated-evidence
+          run-id: 45742373035
+          github-token: ${{ github.token }}
+          path: /tmp/catalog/evidence
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-hero-master-head-commander-female
+          run-id: 45783613678
+          github-token: ${{ github.token }}
+          path: /tmp/catalog/hero
+      - run: |
+          python3 -m pip install numpy pillow
+          python3 scripts/r53-character-reference-catalog.py data/r53-character-reference-catalog.json /tmp/catalog/site /tmp/catalog/evidence /tmp/catalog/hero review/catalog
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-character-reference-catalog-42
+          path: review/catalog/
