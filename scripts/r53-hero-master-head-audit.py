@@ -44,6 +44,12 @@ for i in ids:
         annotated.save(out/'portrait-annotated.png')
         (out/'portrait-landmark-labels.json').write_text(json.dumps([{'n':idx,'name':k,'xy':v} for idx,(k,v) in enumerate(points.items(),1)],indent=2))
     r['portraitFit']=ref
+    nv=json.loads((a/'nine-view-fit-report.json').read_text())
+    if nv.get('pointCount',0)<100 or len(nv.get('views',[]))!=9:issues.append('nine-view reference inventory')
+    if nv.get('postFitMidlineRms_m',1)>nv.get('preFitMidlineRms_m',0):issues.append('nine-view midline fit regression')
+    for v in nv['views']:
+        with Image.open(a/'nine-view-review'/(v+'.png')) as im:im.verify()
+    r['nineViewFit']=nv
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)
 (out/'summary.json').write_text(json.dumps({'headCandidates':rows,'productionApproved':0,'allTechnicalCandidates':all(r['completionGate']['technicalCandidate'] for r in rows)},indent=2))

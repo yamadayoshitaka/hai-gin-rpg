@@ -1,0 +1,742 @@
+{
+  "schema": "r53-nine-view-design-v1",
+  "id": "commander-female",
+  "source": "a_highly_detailed_photorealistic_cg_character_ref.png",
+  "sha256": "580fae9d783e48fcc1c9051eea3fe0c2201f235d85f7c01494620beaf7046e80",
+  "actualSize": [
+    1191,
+    1321
+  ],
+  "annotationCanvas": [
+    1182,
+    1312
+  ],
+  "status": "synthetic concept, manually annotated approximate pixels, not calibrated photography",
+  "pointsCount": 157,
+  "views": {
+    "front": {
+      "rect": [
+        0,
+        44,
+        394,
+        431
+      ],
+      "p": {
+        "crown": [
+          194,
+          47
+        ],
+        "part": [
+          208,
+          93
+        ],
+        "hair_left": [
+          57,
+          250
+        ],
+        "hair_right": [
+          334,
+          250
+        ],
+        "hair_left_end": [
+          87,
+          398
+        ],
+        "hair_right_end": [
+          317,
+          407
+        ],
+        "eye_left": [
+          161,
+          200
+        ],
+        "eye_right": [
+          240,
+          200
+        ],
+        "eye_left_outer": [
+          139,
+          202
+        ],
+        "eye_left_inner": [
+          177,
+          202
+        ],
+        "eye_left_upper": [
+          160,
+          192
+        ],
+        "eye_left_lower": [
+          161,
+          208
+        ],
+        "eye_right_inner": [
+          221,
+          202
+        ],
+        "eye_right_outer": [
+          260,
+          201
+        ],
+        "eye_right_upper": [
+          240,
+          192
+        ],
+        "eye_right_lower": [
+          240,
+          208
+        ],
+        "brow_left_outer": [
+          141,
+          184
+        ],
+        "brow_left_mid": [
+          158,
+          179
+        ],
+        "brow_left_inner": [
+          180,
+          184
+        ],
+        "brow_right_inner": [
+          219,
+          184
+        ],
+        "brow_right_mid": [
+          241,
+          179
+        ],
+        "brow_right_outer": [
+          264,
+          185
+        ],
+        "nose_root": [
+          200,
+          207
+        ],
+        "nose_tip": [
+          202,
+          252
+        ],
+        "nose_left": [
+          188,
+          257
+        ],
+        "nose_right": [
+          216,
+          257
+        ],
+        "nose_base": [
+          202,
+          262
+        ],
+        "lip_left": [
+          174,
+          282
+        ],
+        "lip_right": [
+          229,
+          282
+        ],
+        "upper_lip": [
+          202,
+          277
+        ],
+        "lower_lip": [
+          202,
+          291
+        ],
+        "mouth": [
+          202,
+          282
+        ],
+        "chin": [
+          200,
+          329
+        ],
+        "jaw_left": [
+          138,
+          298
+        ],
+        "jaw_right": [
+          266,
+          295
+        ],
+        "cheek_left": [
+          126,
+          249
+        ],
+        "cheek_right": [
+          279,
+          249
+        ],
+        "ear_right_top": [
+          300,
+          193
+        ],
+        "ear_right_bottom": [
+          290,
+          248
+        ],
+        "collar_left": [
+          150,
+          342
+        ],
+        "collar_right": [
+          250,
+          341
+        ]
+      }
+    },
+    "rear": {
+      "rect": [
+        397,
+        44,
+        786,
+        431
+      ],
+      "p": {
+        "crown": [
+          590,
+          50
+        ],
+        "hair_left": [
+          468,
+          245
+        ],
+        "hair_right": [
+          714,
+          242
+        ],
+        "hair_left_end": [
+          487,
+          385
+        ],
+        "hair_mid_end": [
+          598,
+          416
+        ],
+        "hair_right_end": [
+          702,
+          390
+        ],
+        "part": [
+          583,
+          87
+        ],
+        "neck_left": [
+          537,
+          398
+        ],
+        "neck_right": [
+          653,
+          398
+        ],
+        "left_shoulder": [
+          435,
+          415
+        ],
+        "right_shoulder": [
+          751,
+          416
+        ]
+      }
+    },
+    "left": {
+      "rect": [
+        790,
+        44,
+        1181,
+        431
+      ],
+      "p": {
+        "crown": [
+          984,
+          49
+        ],
+        "hair_front": [
+          879,
+          144
+        ],
+        "hair_back": [
+          1149,
+          240
+        ],
+        "hair_end": [
+          1133,
+          414
+        ],
+        "brow": [
+          914,
+          173
+        ],
+        "eye": [
+          915,
+          195
+        ],
+        "eye_outer": [
+          932,
+          195
+        ],
+        "eye_inner": [
+          902,
+          196
+        ],
+        "nose_root": [
+          903,
+          196
+        ],
+        "nose_tip": [
+          870,
+          231
+        ],
+        "nose_base": [
+          893,
+          249
+        ],
+        "upper_lip": [
+          889,
+          263
+        ],
+        "mouth": [
+          892,
+          270
+        ],
+        "lower_lip": [
+          892,
+          277
+        ],
+        "chin": [
+          910,
+          320
+        ],
+        "jaw_angle": [
+          1004,
+          303
+        ],
+        "ear_top": [
+          1039,
+          187
+        ],
+        "ear_bottom": [
+          1029,
+          254
+        ],
+        "ear_center": [
+          1033,
+          222
+        ],
+        "neck_front": [
+          961,
+          347
+        ],
+        "neck_back": [
+          1054,
+          349
+        ]
+      }
+    },
+    "right": {
+      "rect": [
+        0,
+        478,
+        394,
+        860
+      ],
+      "p": {
+        "crown": [
+          180,
+          480
+        ],
+        "hair_front": [
+          289,
+          531
+        ],
+        "hair_back": [
+          31,
+          670
+        ],
+        "hair_end": [
+          59,
+          842
+        ],
+        "brow": [
+          275,
+          605
+        ],
+        "eye": [
+          277,
+          627
+        ],
+        "eye_inner": [
+          287,
+          627
+        ],
+        "eye_outer": [
+          265,
+          627
+        ],
+        "nose_root": [
+          286,
+          629
+        ],
+        "nose_tip": [
+          320,
+          665
+        ],
+        "nose_base": [
+          300,
+          681
+        ],
+        "upper_lip": [
+          303,
+          694
+        ],
+        "mouth": [
+          302,
+          702
+        ],
+        "lower_lip": [
+          300,
+          709
+        ],
+        "chin": [
+          279,
+          752
+        ],
+        "jaw_angle": [
+          194,
+          733
+        ],
+        "ear_top": [
+          161,
+          617
+        ],
+        "ear_bottom": [
+          162,
+          689
+        ],
+        "ear_center": [
+          160,
+          652
+        ],
+        "neck_front": [
+          232,
+          776
+        ],
+        "neck_back": [
+          128,
+          776
+        ]
+      }
+    },
+    "top": {
+      "rect": [
+        397,
+        478,
+        786,
+        860
+      ],
+      "p": {
+        "crown": [
+          599,
+          491
+        ],
+        "part_front": [
+          619,
+          657
+        ],
+        "part_back": [
+          594,
+          542
+        ],
+        "hair_left": [
+          463,
+          670
+        ],
+        "hair_right": [
+          734,
+          655
+        ],
+        "hair_front_left": [
+          512,
+          719
+        ],
+        "hair_front_right": [
+          688,
+          710
+        ],
+        "nose_tip": [
+          604,
+          796
+        ],
+        "chin": [
+          603,
+          811
+        ],
+        "ear_left": [
+          480,
+          715
+        ],
+        "ear_right": [
+          714,
+          712
+        ]
+      }
+    },
+    "bottom": {
+      "rect": [
+        790,
+        478,
+        1181,
+        860
+      ],
+      "p": {
+        "crown": [
+          976,
+          486
+        ],
+        "hair_left": [
+          820,
+          708
+        ],
+        "hair_right": [
+          1141,
+          704
+        ],
+        "hair_left_end": [
+          847,
+          847
+        ],
+        "hair_right_end": [
+          1118,
+          848
+        ],
+        "eye_left": [
+          946,
+          577
+        ],
+        "eye_right": [
+          1030,
+          575
+        ],
+        "nose_tip": [
+          988,
+          587
+        ],
+        "nose_left": [
+          978,
+          597
+        ],
+        "nose_right": [
+          1000,
+          597
+        ],
+        "mouth": [
+          991,
+          625
+        ],
+        "chin": [
+          992,
+          687
+        ],
+        "neck_left": [
+          921,
+          759
+        ],
+        "neck_right": [
+          1065,
+          760
+        ]
+      }
+    },
+    "front_left_45": {
+      "rect": [
+        0,
+        907,
+        394,
+        1307
+      ],
+      "p": {
+        "crown": [
+          189,
+          911
+        ],
+        "hair_left": [
+          54,
+          1103
+        ],
+        "hair_right": [
+          338,
+          1120
+        ],
+        "hair_end_left": [
+          87,
+          1283
+        ],
+        "hair_end_right": [
+          313,
+          1287
+        ],
+        "eye_near": [
+          180,
+          1070
+        ],
+        "eye_far": [
+          107,
+          1070
+        ],
+        "brow_near": [
+          179,
+          1049
+        ],
+        "brow_far": [
+          105,
+          1049
+        ],
+        "nose_tip": [
+          124,
+          1125
+        ],
+        "mouth": [
+          148,
+          1157
+        ],
+        "chin": [
+          153,
+          1204
+        ],
+        "ear_center": [
+          272,
+          1094
+        ],
+        "jaw_angle": [
+          236,
+          1165
+        ]
+      }
+    },
+    "front_right_45": {
+      "rect": [
+        397,
+        907,
+        786,
+        1307
+      ],
+      "p": {
+        "crown": [
+          602,
+          910
+        ],
+        "hair_left": [
+          435,
+          1092
+        ],
+        "hair_right": [
+          762,
+          1123
+        ],
+        "hair_end_left": [
+          469,
+          1278
+        ],
+        "hair_end_right": [
+          729,
+          1283
+        ],
+        "eye_near": [
+          619,
+          1070
+        ],
+        "eye_far": [
+          695,
+          1066
+        ],
+        "brow_near": [
+          621,
+          1049
+        ],
+        "brow_far": [
+          694,
+          1047
+        ],
+        "nose_tip": [
+          693,
+          1123
+        ],
+        "mouth": [
+          666,
+          1155
+        ],
+        "chin": [
+          651,
+          1202
+        ],
+        "ear_center": [
+          507,
+          1091
+        ],
+        "jaw_angle": [
+          553,
+          1167
+        ]
+      }
+    },
+    "rear_left_45": {
+      "rect": [
+        790,
+        907,
+        1181,
+        1307
+      ],
+      "p": {
+        "crown": [
+          979,
+          913
+        ],
+        "hair_left": [
+          845,
+          1060
+        ],
+        "hair_right": [
+          1133,
+          1115
+        ],
+        "hair_left_end": [
+          888,
+          1272
+        ],
+        "hair_right_end": [
+          1097,
+          1291
+        ],
+        "hair_mid_end": [
+          1011,
+          1298
+        ],
+        "part": [
+          971,
+          956
+        ],
+        "ear_center": [
+          910,
+          1095
+        ],
+        "neck_front": [
+          933,
+          1202
+        ],
+        "neck_back": [
+          1024,
+          1226
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "view scales differ slightly; normalized separately",
+    "perspective and inter-view inconsistencies possible",
+    "full-body design absent",
+    "not yet user approved"
+  ]
+}

@@ -209,6 +209,23 @@ if female:
     for _ in range(4):correction=.58*correction+.42*np.bincount(ea,weights=correction[eb],minlength=len(Q0))/deg
     Dprofile[:,1]+=correction*(1-orbital)**3*neckLock
 
+# Independent synthetic nine-view concept. Coordinates are normalized by
+# eye separation in front and eye-to-chin height in each side view.
+# The old portrait is preserved as provenance, not the new design target.
+nine=json.loads(Path('data/r53-female-nine-view-design.json').read_text())
+nv=nine['views'];fp={k:np.array(v,float) for k,v in nv['front']['p'].items()}
+ipd=float(np.linalg.norm(fp['eye_right']-fp['eye_left']))
+fc2=(fp['eye_left']+fp['eye_right'])/2
+def frontHeight(k):return float((fc2[1]-fp[k][1])/ipd)
+def frontWidth(a,b):return float(abs(fp[a][0]-fp[b][0])/ipd)
+def sideDepth(k):
+    ds=[]
+    for v,sgn in (('left',-1),('right',1)):
+        p=nv[v]['p'];h=abs(p['chin'][1]-p['eye'][1])
+        ds.append(sgn*(p[k][0]-p['eye'][0])/h*abs(frontHeight('chin')))
+    return float(np.mean(ds))
+designMetrics={'eyeWidth':frontWidth('eye_left_outer','eye_left_inner'),'browGap':float((fp['eye_left'][1]-fp['brow_left_mid'][1])/ipd),'noseWidth':frontWidth('nose_left','nose_right'),'lipWidth':frontWidth('lip_left','lip_right'),'lipHeight':float((fp['lower_lip'][1]-fp['upper_lip'][1])/ipd),'jawWidth':frontWidth('jaw_left','jaw_right'),'cheekWidth':frontWidth('cheek_left','cheek_right'),'noseHeight':frontHeight('nose_tip'),'mouthHeight':frontHeight('mouth'),'chinHeight':frontHeight('chin'),'noseProjection':sideDepth('nose_tip'),'mouthProjection':sideDepth('mouth'),'chinProjection':sideDepth('chin'),'hairDrop':float((fp['hair_right_end'][1]-fp['chin'][1])/ipd),'hairWidth':frontWidth('hair_left','hair_right')}
+nineReport={'sourceSHA256':nine['sha256'],'pointCount':nine['pointsCount'],'views':list(nv),'metrics':designMetrics,'synthetic':True,'calibratedOrthographic':False,'fitViews':['front','left','right'],'reviewOnlyViews':['rear','top','bottom','front_left_45','front_right_45','rear_left_45'],'fullBodyReference':False}
 # Calibrate a provisional weak-perspective camera from actual eye centers
 # and visible midline landmarks. Search yaw/pitch; the image is oblique,
 # so only screen-space residuals are fitted, not claimed as 3D measures.
@@ -247,7 +264,21 @@ if female:
         dist0=np.linalg.norm((qbase-qbase[idx])/gap,axis=1)
         mask=np.exp(-(dist0/spread)**2)*front*(1-orbital)**3*neckLock
         fitD+=mask[:,None]*step*.65
+    # Replace single portrait correction with front and side constraints
+    # from the new design. Existing source anatomy stays intact.
+    fitD=np.zeros_like(Q0);baseAnchors=qbase[[noseI,mouthI,chinI]]
+    targets=np.array([[eye[0],eye[1]-gap*designMetrics['noseProjection'],eye[2]+gap*designMetrics['noseHeight']],[eye[0],eye[1]-gap*designMetrics['mouthProjection'],eye[2]+gap*designMetrics['mouthHeight']],[eye[0],eye[1]-gap*designMetrics['chinProjection'],eye[2]+gap*designMetrics['chinHeight']]])
+    for idx,target,spread in zip((noseI,mouthI,chinI),targets,(.22,.29,.39)):
+        step=target-qbase[idx];step*=min(1.,gap*.16/max(np.linalg.norm(step),1e-9))
+        ds=np.linalg.norm((qbase-qbase[idx])/gap,axis=1)
+        fitD+=np.exp(-(ds/spread)**2)[:,None]*step*.80*(front*(1-orbital)**3*neckLock)[:,None]
+    # Projected jaw width vs current actual horizontal cross section.
+    jmask=(Z<-1.0)&(Z>-1.46)&(Y<.0)
+    measured=float(np.ptp(qbase[jmask,0])/gap) if jmask.any() else designMetrics['jawWidth']
+    k0=float(np.clip(designMetrics['jawWidth']/max(measured,.01)-1,-.16,.12))
+    fitD[:,0]+=k0*(Q0[:,0]-eye[0])*jaw
     Dprofile+=fitD
+    nineReport.update({'preFitMidlineRms_m':float(np.sqrt(np.mean(np.sum((baseAnchors-targets)**2,axis=1)))),'targetMidline_m':targets.tolist(),'appliedJawWidthFactor':k0,'appliedFeatures':['nose','mouth','chin','jaw'],'sourceJawWidthRatio':measured})
     referenceReport.update({'cameraYaw_rad':yaw0,'cameraPitch_rad':pitch0,'preFitRms_px':float(math.sqrt(err)),'fittedFeatures':['nose_tip','lip_center','chin'],'maxPortraitDisplacement_m':float(np.linalg.norm(fitD,axis=1).max()),'landmarkIndices':[noseI,mouthI,chinI]})
 # Guard against inverted or collapsed faces against the unchanged source.
 def profile_norm(A):
@@ -263,6 +294,9 @@ if female:
     after=np.vstack([eyes3,Q[[noseI,mouthI,chinI]]])
     referenceReport['postFitRms_px']=float(np.sqrt(np.mean(np.linalg.norm((after-eye)@M.T+tr-obs,axis=1)**2)))
     referenceReport['acceptedProfileScale']=profile_factor
+    nineReport['postFitMidlineRms_m']=float(np.sqrt(np.mean(np.sum((Q[[noseI,mouthI,chinI]]-targets)**2,axis=1))))
+    nineReport['profileScale']=profile_factor
+(out/'nine-view-fit-report.json').write_text(json.dumps(nineReport,indent=2))
 (out/'portrait-landmark-report.json').write_text(json.dumps(referenceReport,indent=2))
 profile_report={'profile':'female' if female else 'male','scaleFactor':profile_factor,'peak_m':float(np.linalg.norm(Q-Q0,axis=1).max()),'newDefects':0,'eyeCentersUnchanged':True,'regions':['jaw','cheek','chin','nasalBridge','alar','philtrum','lip'],'neckLock':True,'femaleReferenceDepthFit':bool(female)}
 wr=[];deltas={n:[] for n in names};dist=[];matches=[]
@@ -662,7 +696,7 @@ for side in ('L','R'):
     for j in range(52):
         t=j/51
         x=cx+sgn*ew*(-.51+1.10*t)
-        z=float(hi[2])+ez*((float(np.clip(portraitRatios['browEyeGap']*1.65,.30,.46)) if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
+        z=float(hi[2])+ez*((float(np.clip(designMetrics['browGap']*1.65,.30,.46)) if female else .13)+(.17 if female else .09)*math.sin(math.pi*t)-.10*t)
         thick=(.0020 if female else .0020)*(.37+.63*math.sin(math.pi*t)**.6)
         for row in (-1,-.5,0,.5,1):
             zz=z+row*thick
@@ -969,7 +1003,7 @@ def fitted_scalp_hair():
             # back, without the former abrupt cos(a) threshold.
             side=(1-math.cos(a))/2
             mix=smooth01((side-.06)/.48)
-            longLength=float(np.clip(portraitRatios['hairVisibleLength']*gap*.78,.20,.38))
+            longLength=float(np.clip(gap*(designMetrics['hairDrop']+1.8),.14,.25))
             hang=float(.006+longLength*mix+.021*side+.012*math.sin(a)*mix+.006*math.sin(19*a+.2)*mix+.001*math.sin(47*a))
             radial=Vector((math.sin(a),-math.cos(a),0))
             target=p+Vector((.045*mix*math.sin(a),.045*mix,-hang))+radial*(.008+.016*mix)
@@ -1041,13 +1075,13 @@ def fitted_scalp_hair():
     # The missing depth is reconstructed on the actual scalp surface.
     bangCount=0
     if female:
-        tips=[rp2['hair_bang_near_tip'],rp2['hair_bang_middle_tip'],rp2['hair_bang_far_tip']]
+        tips=[np.array([fp['hair_left'][0],fp['brow_left_outer'][1]+32]),np.array([fp['part'][0],fp['brow_left_mid'][1]-30]),np.array([fp['hair_right'][0],fp['brow_right_outer'][1]+17])]
         frontSpecs=[(-.85,-.22,0),(-.70,-.12,0),(-.55,-.05,0),(-.40,.12,1),(-.22,.32,1),(-.04,.48,1),(.14,.65,2),(.30,.83,2),(.45,1.00,2)]
         for strand0,(a0,a1,tipI) in enumerate(frontSpecs):
             start=len(V);sections=30;cross=7
             # Convert image vertical offset to a bounded anatomical target;
             # it is projected, not claimed as a measured physical length.
-            dz=float(np.clip((rp2['brow_near_mid'][1]-tips[tipI][1])/eyePx,-.48,.12))*gap
+            dz=float(np.clip((fp['brow_left_mid'][1]-tips[tipI][1])/ipd,-.48,.12))*gap
             endZ=float(eye[2]+gap*.22+dz)
             root=smoothSample(a0,.28)
             for j in range(sections):
@@ -1078,7 +1112,7 @@ def fitted_scalp_hair():
     braidCount=0
     braidStart=len(V);braidSections=40;braidSides=6
     braidRadius=float(np.clip(portraitRatios['braidLength']*gap*.055,.003,.007))
-    for strand0 in range(3):
+    for strand0 in range(0):
         start=len(V)
         for j in range(braidSections):
             t=j/(braidSections-1);a=-.30-1.25*t;v=.33+.73*t
@@ -1097,10 +1131,10 @@ def fitted_scalp_hair():
             for k in range(braidSides):
                 k1=(k+1)%braidSides;i=start+j*braidSides;F.append((i+k,i+k1,i+braidSides+k1,i+braidSides+k))
         braidCount+=braidSections*braidSides
-    groups.append({'kind':'side_braid_inferred_depth','vertices':braidCount})
+    if braidCount:groups.append({'kind':'side_braid_inferred_depth','vertices':braidCount})
     me=bpy.data.meshes.new('R53_PortraitLongLayeredHair');me.from_pydata(V,[],F);me.update()
     ob=bpy.data.objects.new('R53_MeasuredScalpHair',me);bpy.context.collection.objects.link(ob)
-    col=np.array([.48,.30,.14]);mat=bpy.data.materials.new('R53_GoldenBlondeHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
+    col=np.array([.31,.22,.145]);mat=bpy.data.materials.new('R53_GoldenBlondeHair');mat.diffuse_color=(*col,1);mat.use_nodes=True
     bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Base Color'].default_value=(*col,1);bs.inputs['Roughness'].default_value=.69
     if 'Specular IOR Level' in bs.inputs:bs.inputs['Specular IOR Level'].default_value=.11
     me.materials.append(mat);hu=me.uv_layers.new(name='R53_HairFlow')
@@ -1118,7 +1152,7 @@ def fitted_scalp_hair():
     if headName is None:raise RuntimeError('head bone missing')
     bind(ob,[{headName:1.} for _ in V])
     values=signed(np.array(V),skinTree)
-    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'portrait-inspired golden long layers with side braid','referenceLengthRatio':portraitRatios['hairVisibleLength'],'rearDepthInferred':True,'frontBangVertices':bangCount,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
+    return ob,{'vertices':len(V),'faces':len(F),'scalpSamples':(rows+1)*n,'strandTextureSize':[2048,1024],'sweptFlow':True,'freeLocks':groups,'hairStyle':'nine-view concept ash blonde shoulder layers','referenceLengthRatio':designMetrics['hairDrop'],'rearDepthInferred':True,'frontBangVertices':bangCount,'surfaceSmoothingPasses':14,'minRadialClearance_m':float(np.min(values)),'penetrationProxy':float(np.mean(values<-.001)),'deepPenetrationProxy':float(np.mean(values<-.003)),'visualApproved':False,'productionApproved':False,'limitations':['continuous shell study, hairline and outer silhouette require visual approval','nearest-surface metric not a complete collision guarantee']}
 fittedHair,hairDiag=fitted_scalp_hair()
 candidate=out/'fitted-hair-study';candidate.mkdir(exist_ok=True)
 # Render actual new scalp-fitted geometry in all five views, separately from old wig.
@@ -1288,6 +1322,17 @@ try:
     finally:
         for ob0 in fullLights:bpy.data.objects.remove(ob0,do_unlink=True)
         scene.world=oldWorld;scene.render.engine=oldEngine
+    # Separate nine-view renders for the next image-based iteration.
+    reviewDir=out/'nine-view-review';reviewDir.mkdir(exist_ok=True)
+    fittedHair.hide_render=False
+    for o0 in assembleParts:o0.hide_render=False
+    focus=Vector((eye[0],eye[1],eye[2]-hh*.45))
+    angles=[('front',(0,-1,0)),('rear',(0,1,0)),('left',(-1,0,0)),('right',(1,0,0)),('top',(0,0,1)),('bottom',(0,0,-1)),('front_left_45',(-1,-1,0)),('front_right_45',(1,-1,0)),('rear_left_45',(-1,1,0))]
+    for tag,d in angles:
+        cam.data.ortho_scale=hh*5.2;cam.location=focus+Vector(d).normalized()*H*3
+        cam.rotation_euler=(focus-cam.location).to_track_quat('-Z','Y' if abs(d[2])<.95 else 'X').to_euler()
+        scene.render.filepath=str(reviewDir/(tag+'.png'));bpy.ops.render.render(write_still=True)
+    assemblyReport['nineViewReview']={'views':[x[0] for x in angles],'source':'actual assembled model','visualApproved':False}
     # Sample actual skeletal clips for visual motion evidence. Restore rest
     # state before exporting; the existing NLA animation clips are preserved.
     motion=[]
