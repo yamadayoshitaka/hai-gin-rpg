@@ -61,6 +61,13 @@ for i in ids:
     if len(de.get('actualLashGeometry',{}))!=2:issues.append('missing lash evidence')
     for view in ('face_front','eyes_front','eye_left','eye_right'):
         with Image.open(a/'face-detail-review'/(view+'.png')) as im:im.verify()
+    lo=de.get('lowerOutlineFit',{})
+    if not lo.get('applied') or lo.get('afterRmsRatio',1)>=lo.get('beforeRmsRatio',0):issues.append('lower face outline did not improve')
+    if any(x>4 for x in lo.get('afterRmsMm',[100])):issues.append('lower face outline exceeds provisional 4 mm review tolerance')
+    core=seam.get('independentCore',{})
+    if not core.get('verifiedNoLegacyEquipment'):issues.append('independent core equipment inventory')
+    for view in ('core_neutral_front','core_neutral_side','core_neutral_rear','core_neutral_threequarter'):
+        with Image.open(a/'continuous-neck-study'/(view+'.png')) as im:im.verify()
     r['detailFaceFit']=de
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)

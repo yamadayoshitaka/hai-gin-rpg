@@ -333,6 +333,101 @@ for _ in range(12):
     if not np.any(pv&((np.sum(pn*nn,axis=1)<=0)|(np.linalg.norm(nn,axis=1)<.15*pa))):break
     profile_factor*=.5
 else:raise RuntimeError('profile neutral topology')
+# Fit the actual projected cheek/jaw outline using the detailed traced
+# front and bilateral profiles. Keep projection targets separate from
+# unobservable anatomical bone angle and cheek depth.
+def fit_lower_outline(A):
+    ed=np.unique(np.sort(np.concatenate((ST[:,[0,1]],ST[:,[1,2]],ST[:,[2,0]])),axis=1),axis=0)
+    p0=A[ed[:,0]];p1=A[ed[:,1]]
+    def slice_points(V,axis,pos):
+        a=V[ed[:,0]];b=V[ed[:,1]];u=a[:,axis]-pos;v=b[:,axis]-pos
+        k=(u*v<0)
+        return a[k]+(b[k]-a[k])*(u[k]/(u[k]-v[k]))[:,None]
+    origin2=(df['irisL'][0]+df['irisR'][0])*.5
+    lf=np.vstack((df['cheekL'],df['jawL']));rf=np.vstack((df['cheekR'],df['jawR']))
+    # The lower tip is intentionally left to the sagittal silhouette fit.
+    # Trace widths at 13 rows, relative to inter-pupil distance.
+    ys=np.linspace(max(lf[0,1],rf[0,1])+2,min(lf[-1,1],rf[-1,1])-5,13)
+    zRows=eye[2]-(ys-origin2[1])*gap/detailIPD
+    targetL=eye[0]+(np.interp(ys,lf[:,1],lf[:,0])-origin2[0])*gap/detailIPD
+    targetR=eye[0]+(np.interp(ys,rf[:,1],rf[:,0])-origin2[0])*gap/detailIPD
+    # Side-view eye point is the visible eye, not its skeletal centre.
+    # Use original globe anterior surface as an approximate origin.
+    eyeFront=float(np.mean([mapP(pts(eyes[('sclera',k)]))[:,1].min() for k in ('L','R')]))
+    sideCurves=[]
+    for label,sign0 in (('left',1.),('right',-1.)):
+        d=detail['views'][label];p=np.asarray(d['jaw'],float);e=np.asarray(d['eye'][0],float)
+        # Independent vertical calibration from front eye-to-lowest-chin.
+        scl=abs(float(np.mean(df['chin'][:,1])-origin2[1]))*gap/detailIPD/max(abs(p[0,1]-e[1]),1.)
+        q=np.column_stack([eyeFront+(p[:,0]-e[0])*sign0*scl,eye[2]-(p[:,1]-e[1])*scl])
+        q=q[np.argsort(q[:,0])];sideCurves.append(q)
+    # Use the anterior under-jaw segment only. Posterior jaw line in a
+    # drawing is not necessarily the visible silhouette or bone.
+    yLo=max(q[0,0] for q in sideCurves);yHi=min(q[-1,0] for q in sideCurves)
+    if yHi<=yLo:raise RuntimeError('invalid side jaw calibration')
+    yRows=np.linspace(yLo+.07*(yHi-yLo),yLo+.50*(yHi-yLo),9)
+    tz=np.mean([np.interp(yRows,q[:,0],q[:,1]) for q in sideCurves],axis=0)
+    def measure(V):
+        left=[];right=[];low=[]
+        for z in zRows:
+            q=slice_points(V,2,z);q=q[q[:,1]<eye[1]+gap*.60]
+            left.append(float(q[:,0].min()) if len(q) else float('nan'))
+            right.append(float(q[:,0].max()) if len(q) else float('nan'))
+        for y in yRows:
+            q=slice_points(V,1,y);q=q[(q[:,2]>eye[2]-gap*1.95)&(q[:,2]<eye[2]-gap*.90)]
+            low.append(float(q[:,2].min()) if len(q) else float('nan'))
+        return np.asarray(left),np.asarray(right),np.asarray(low)
+    base=measure(A)
+    masks=[np.isfinite(v) for v in base]
+    if min(m.sum() for m in masks)<5:raise RuntimeError('insufficient actual jaw contour samples')
+    targets=(targetL,targetR,tz)
+    def error(vals):
+        e=[]
+        for v,t,k in zip(vals,targets,masks):
+            if not np.isfinite(v[k]).all():return 1e3
+            e.extend((v[k]-t[k])/gap)
+        return float(np.sqrt(np.mean(np.square(e))))
+    def inter(x,v,d,k):
+        return np.interp(x,v[k][::-1] if v[0]>v[-1] else v[k],d[k][::-1] if v[0]>v[-1] else d[k])
+    x0=(A[:,0]-eye[0])/gap;y0=(A[:,1]-eye[1])/gap;z0=(A[:,2]-eye[2])/gap
+    # Attenuate near the nose/eye/ear and lower neck cut.
+    depth=np.clip((.65-y0)/.60,0.,1.)
+    vertical=np.clip((-z0-.23)/.30,0.,1.)*np.clip((z0+1.98)/.23,0.,1.)
+    widthD=np.zeros_like(A)
+    for side0,target,actual,k in ((-1,targetL,base[0],masks[0]),(1,targetR,base[1],masks[1])):
+        dx=inter(A[:,2],zRows,target-actual,k)
+        sideMask=np.clip((side0*x0-.22)/.52,0.,1.)
+        widthD[:,0]+=np.clip(dx,-gap*.20,gap*.20)*sideMask*depth*vertical
+    dz=inter(A[:,1],yRows,tz-base[2],masks[2])
+    # Lower-jaw support moves under the chin, not the lips, eyes or neck.
+    old=inter(A[:,1],yRows,base[2],masks[2])
+    under=np.exp(-((A[:,2]-old)/(gap*.18))**2)
+    yfade=np.clip((yHi-A[:,1])/(gap*.35),0.,1.)*np.clip((A[:,1]-yLo+gap*.20)/(gap*.20),0.,1.)
+    jawD=np.zeros_like(A);jawD[:,2]=np.clip(dz,-gap*.14,gap*.14)*under*yfade*vertical
+    # Test different amounts of each independent correction. Reject folds
+    # against the untouched master topology, not just the modified baseline.
+    best=A.copy();bestVal=base;bestErr=error(base);initial=bestErr;tries=[]
+    for w0 in (0.,.35,.65,1.):
+        for j0 in (0.,.35,.65,1.):
+            if w0==j0==0:continue
+            C=A+w0*widthD+j0*jawD
+            N=profile_norm(C)
+            if np.any(pv&((np.sum(pn*N,axis=1)<=0)|(np.linalg.norm(N,axis=1)<.15*pa))):continue
+            cur=measure(C);e=error(cur);tries.append({'widthStrength':w0,'underJawStrength':j0,'rmsRatio':e})
+            if e<bestErr:best=C;bestVal=cur;bestErr=e
+    def finite_list(v):return [float(x) if np.isfinite(x) else None for x in v]
+    def per(v,t,k):return float(np.sqrt(np.mean(np.square(v[k]-t[k])))*1000)
+    rep={'method':'triangle edge cross-section, projected front cheek/jaw and bilateral anterior under-jaw traces',
+         'beforeRmsRatio':initial,'afterRmsRatio':bestErr,'applied':bestErr<initial-1e-8,
+         'frontZ_m':zRows.tolist(),'sideY_m':yRows.tolist(),'curveLabels':['front_left','front_right','side_underjaw'],
+         'target_m':[finite_list(x) for x in targets],'before_m':[finite_list(x) for x in base],'after_m':[finite_list(x) for x in bestVal],
+         'beforeRmsMm':[per(v,t,k) for v,t,k in zip(base,targets,masks)],'afterRmsMm':[per(v,t,k) for v,t,k in zip(bestVal,targets,masks)],
+         'maxDisplacementMm':float(np.linalg.norm(best-A,axis=1).max()*1000),'attempts':tries,
+         'unresolved':['true cheek depth absent from synthetic image','skeletal mandibular angle not determined by skin trace','posterior jaw and neck shape require independent reference'],
+         'visualApproved':False}
+    return best,rep
+if female:
+    Q,dreport['lowerOutlineFit']=fit_lower_outline(Q)
 # Fit the measured visible eyelid curves, rather than preserving an
 # arbitrarily small aperture. Globes remain centered on the eye bones.
 # A bounded candidate search uses actual front-ray visibility and rejects
@@ -954,7 +1049,8 @@ for side in ('L','R'):
 
 
 dreport['applied']+=['projected per-region upper/lower lash vector and length','brow centerline and thickness','bounded ray-tested eyelid curve fit']
-dreport['unresolved']=['remaining eyelid projection residual','individual lash depth/curl inferred','cheek depth target','mandibular angle geometry fit','true lip border texture tracing']
+dreport['unresolved']=['remaining eyelid projection residual','individual lash depth/curl inferred','true cheek depth target','skeletal mandibular angle geometry fit','true lip border texture tracing','posterior mandibular contour']
+if female and dreport.get('lowerOutlineFit',{}).get('applied'):dreport['applied'].append('projected front cheek/jaw and anterior under-jaw curve fit')
 (out/'detail-face-report.json').write_text(json.dumps(dreport,indent=2))
 # Independent dental and tongue candidates. Fit behind the actual lips;
 # preserve the original skin topology and record ray-based visibility
@@ -1595,14 +1691,35 @@ try:
     bpy.context.view_layer.objects.active=assembly
     coreDest=coreDir/(ident+'_core_body.glb')
     bpy.ops.export_scene.gltf(**dict(opts,filepath=str(coreDest)))
-    # Neutral non-armored review uses existing clothing for coverage;
-    # the independent GLB above has no clothing or armor meshes.
-    innerReview=coreParts+cloth
-    for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in innerReview
-    for tag,d in [('core_clothed_front',(0,-1,0)),('core_clothed_side',(1,0,0)),('core_clothed_rear',(0,1,0))]:
-        full_render(tag,d,center,H*1.13)
+    # Review the actual independent core, not a legacy outfit. Use a
+    # temporary neutral material on the below-neck surface for a clothed
+    # mannequin-style diagnostic; do not bake this into the core GLB.
+    oldPose=rig.data.pose_position;oldColor=sh.color_type
+    oldIndices=[p.material_index for p in assembly.data.polygons]
+    originalSlots=len(assembly.data.materials)
+    previewMat=bpy.data.materials.new('R53_CORE_PREVIEW_ONLY')
+    previewMat.diffuse_color=(.16,.20,.27,1)
+    assembly.data.materials.append(previewMat)
+    try:
+        rig.data.pose_position='REST';reset()
+        for poly in assembly.data.polygons:
+            z0=float((assembly.matrix_world@poly.center).z)
+            if z0<eye[2]-gap*1.97:poly.material_index=originalSlots
+        sh.color_type='MATERIAL'
+        for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in coreParts
+        bpy.context.view_layer.update()
+        for tag,d in [('core_neutral_front',(0,-1,0)),('core_neutral_side',(1,0,0)),('core_neutral_rear',(0,1,0)),('core_neutral_threequarter',(.66,-1,.03))]:
+            full_render(tag,d,center,H*1.13)
+    finally:
+        for poly,idx0 in zip(assembly.data.polygons,oldIndices):poly.material_index=idx0
+        assembly.data.materials.pop(index=originalSlots)
+        sh.color_type=oldColor;rig.data.pose_position=oldPose;reset()
     for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
-    assemblyReport['independentCore']={'file':str(coreDest.relative_to(out)),'sha256':sha(coreDest),'objects':[o.name for o in coreParts],'armorIncluded':False,'hairIncluded':False,'clothingIncluded':False,'approval':False}
+    assemblyReport['independentCore']={'file':str(coreDest.relative_to(out)),'sha256':sha(coreDest),'objects':[o.name for o in coreParts],'armorIncluded':False,'hairIncluded':False,'clothingIncluded':False,'approval':False,'reviewViews':['core_neutral_front','core_neutral_side','core_neutral_rear','core_neutral_threequarter'],'reviewMaterial':'temporary neutral body preview, no legacy clothing meshes, rest pose'}
+    coreRaw=coreDest.read_bytes();coreJson=json.loads(coreRaw[20:20+int.from_bytes(coreRaw[12:16],'little')])
+    if any(any(k in n.get('name','').lower() for k in ('armor','clothing','hair','legplate')) for n in coreJson['nodes'] if 'mesh' in n):raise RuntimeError('core contains legacy equipment')
+    if not all(any(n.lower() in a.get('name','').lower() for a in coreJson.get('animations',[])) for n in clips):raise RuntimeError('core clips missing')
+    assemblyReport['independentCore']['verifiedNoLegacyEquipment']=True
     for tr0 in ad.nla_tracks:tr0.mute=False
     bpy.ops.object.select_all(action='DESELECT')
     for o in assembleParts+[rig]:o.select_set(True)
