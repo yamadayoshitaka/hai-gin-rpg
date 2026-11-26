@@ -6,6 +6,7 @@ on:
       - 'scripts/r53-modular-parts.py'
       - 'scripts/r53-modular-rigid-items.py'
       - 'review-tools/r53-modular/**'
+      - 'scripts/r53-modular-part-jpg.py'
       - '.github/workflows/r53-modular-parts.yml'
   workflow_dispatch:
 permissions:
@@ -14,7 +15,7 @@ permissions:
 jobs:
   parts:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
         with:
@@ -25,7 +26,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: r53-hero-master-head-commander-female
-          run-id: 45783613678
+          run-id: 45800729706
           github-token: ${{ github.token }}
           path: /tmp/hero
       - run: |
@@ -38,3 +39,19 @@ jobs:
         with:
           name: r53-female-modular-parts
           path: review/parts/
+      - name: Install Blender review renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Render independent actual models to JPG
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-modular-part-jpg.py -- review/parts review/jpg
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-female-modular-part-jpg
+          path: review/jpg/
+          if-no-files-found: warn
