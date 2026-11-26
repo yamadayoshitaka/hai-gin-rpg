@@ -235,6 +235,13 @@ ev=(eye[2]-lowZ)/height;mv=(eye[2]-gap*1.15-lowZ)/height
 cheeks=field(.42,ev-.11,.047,.09)+field(.58,ev-.11,.047,.09)
 C+=cheeks[:,:,None]*np.array([.025,-.018,-.014])
 C+=field(.5,mv,.045,.026)[:,:,None]*np.array([.015,-.035,-.025])
+if female:
+    # Vermilion and eyelid colour gradients follow the existing anatomical UV.
+    # This is subtle material colour, not a substitute for geometric lips.
+    lipMask=np.clip(field(.5,mv+.014,.060,.018)+.85*field(.5,mv-.009,.056,.017),0,1)
+    C=C*(1-.45*lipMask[:,:,None])+np.array([.59,.29,.25])*.45*lipMask[:,:,None]
+    socket=field(.403,ev+.005,.042,.023)+field(.597,ev+.005,.042,.023)
+    C-=socket[:,:,None]*np.array([.027,.039,.034])
 im=rgba_image(ident+'_SkinAlbedo',C)
 texlink(skin,bs,im,uv.name,'Base Color')
 rough=np.clip(.54+.035*noise+.03*field(.5,mv,.06,.045)-.06*field(.5,ev-.03,.055,.16),.40,.70)
@@ -264,8 +271,27 @@ e0=np.r_[E[:,0],E[:,1]];e1=np.r_[E[:,1],E[:,0]];degree=np.maximum(1,np.bincount(
 # Lower jaw rotation around an anatomical hinge, separated from lip
 # expression transfer. The original source contains folded oral surfaces.
 # Derive the hinge and lip region from eye spacing and measured head geometry.
-mouthZ=float(eye[2]-gap*1.15)
+# Locate the actual central lip crease between the upper and lower
+# vermilion profiles using measured front-surface rays, rather than a
+# fixed eye-spacing ratio alone.
+mouthProbe=BVHTree.FromPolygons([Vector(p) for p in Q],[tuple(int(i) for i in t) for t in ST],all_triangles=True)
+zs=np.linspace(eye[2]-gap*1.30,eye[2]-gap*.94,81)
+mouthRows=[]
+for dx0 in (-.10,-.05,0,.05,.10):
+    depths=[]
+    for z0 in zs:
+        q0,_,_,_=mouthProbe.ray_cast(Vector((eye[0]+dx0*gap,float(Q[:,1].min()-.04),z0)),Vector((0,1,0)),gap*8)
+        depths.append(float(q0.y) if q0 is not None else np.nan)
+    d=np.asarray(depths)
+    peaks=[j for j in range(7,len(zs)-7) if np.isfinite(d[j-7:j+8]).all() and d[j]>=d[j-1] and d[j]>=d[j+1]]
+    if peaks:
+        j=max(peaks,key=lambda k:min(d[k]-np.min(d[k-7:k]),d[k]-np.min(d[k+1:k+8])))
+        contrast=float(min(d[j]-np.min(d[j-7:j]),d[j]-np.min(d[j+1:j+8])))
+        if contrast>.00012:mouthRows.append((float(zs[j]),contrast))
+mouthZ=float(np.median([x[0] for x in mouthRows])) if len(mouthRows)>=3 else float(eye[2]-gap*1.12)
 mouthWidth=gap*.37
+mouthLandmarks={'creaseZ_m':mouthZ,'sampledCreases':len(mouthRows),'fallback':len(mouthRows)<3,'eyeGap_m':gap}
+
 hingeY=float(eye[1]+gap*.85)
 hingeZ=float(eye[2]-gap*.40)
 def smooth01(t):
@@ -273,8 +299,8 @@ def smooth01(t):
 def jaw_motion(A,angle):
     x=(A[:,0]-eye[0])/gap;y=(A[:,1]-eye[1])/gap;z=(A[:,2]-eye[2])/gap
     # Lower lip and chin move with mandible, upper lip stays in place.
-    lipline=-1.15+.045*np.clip(np.abs(x)/.6,0,1)**2
-    low=smooth01((lipline-z+.015)/.27)
+    lipline=(mouthZ-eye[2])/gap+.045*np.clip(np.abs(x)/.6,0,1)**2
+    low=smooth01((lipline-z+.015)/(.105 if female else .20))
     front=smooth01((.9-y)/1.1)
     neck=smooth01((z+2.3)/.75)
     side=1-.55*smooth01((np.abs(x)-.8)/.6)
@@ -283,7 +309,7 @@ def jaw_motion(A,angle):
     co=np.cos(angle);si=np.sin(angle)
     out=np.zeros_like(A);out[:,1]=(yy*(co-1)-zz*si)*weight;out[:,2]=(yy*si+zz*(co-1))*weight
     return out
-jawAngles={'jawOpen':.23,'viseme_A':.19,'viseme_O':.12,'viseme_E':.07,'viseme_I':.045,'viseme_U':.06,'laugh':.21,'smile':.025}
+jawAngles={'jawOpen':.31,'viseme_A':.27,'viseme_O':.17,'viseme_E':.10,'viseme_I':.055,'viseme_U':.085,'laugh':.28,'smile':.025} if female else {'jawOpen':.23,'viseme_A':.19,'viseme_O':.12,'viseme_E':.07,'viseme_I':.045,'viseme_U':.06,'laugh':.21,'smile':.025}
 hd.shape_key_add(name='Basis');fixed={};reports=[]
 for name in names:
     D=np.array(deltas[name])
@@ -293,6 +319,12 @@ for name in names:
         region=smooth01((-(Q[:,2]-eye[2])/gap-.76)/.25)*smooth01((.8-(Q[:,1]-eye[1])/gap)/1.2)*smooth01(((Q[:,2]-eye[2])/gap+2.2)/.55)
         D[:,1:]*=(1-.82*region[:,None])
         D+=jaw_motion(Q,jawAngles[name])
+        if female and name in ('jawOpen','viseme_A','viseme_O','laugh'):
+            # Separate the upper lip gently from the lower jaw. Localize to
+            # the measured crease and preserve nose, corners and neck.
+            x0=(Q[:,0]-eye[0])/gap;z0=(Q[:,2]-mouthZ)/gap;y0=(Q[:,1]-eye[1])/gap
+            upper=smooth01((z0+.018)/.060)*np.exp(-((z0-.075)/.12)**2)*np.exp(-(x0/.31)**4)*smooth01((-.08-y0)/.24)
+            D[:,2]+=gap*.065*(jawAngles[name]/.31)*upper
     D=weld(D);alpha=np.ones(len(cnt))
     for it in range(120):
         A=Q+D*alpha[w,None];bad=defects(A)
@@ -755,10 +787,11 @@ def fitted_scalp_hair():
             if kind=='fringe':
                 p+=Vector((math.sin(a)*length*.16,-length*.15,-length*.72))*ext
             else:
-                p+=Vector((math.sin(a)*length*.20,-math.cos(a)*length*.13,-length))*ext
+                p+=Vector((math.sin(a)*length*.25,-math.cos(a)*length*.22,-length))*ext
+                if female:p+=Vector((-.010*math.sin(a)*math.sin(math.pi*ext),.008*math.sin(math.pi*ext),.006*math.sin(math.pi*ext)))
             if j==0:p=p0
             lateral=Vector((math.cos(a),math.sin(a),0)).normalized()
-            taper=(.32+.68*math.sin(math.pi*min(.99,t*.88+.08))**.6)*(1-.93*t**3)
+            taper=(.50+.50*math.sin(math.pi*min(.99,t*.88+.08))**.6)*(1-(.67 if female else .93)*t**5)
             for k in range(cross):
                 q=k/(cross-1)*2-1
                 v=p+lateral*(q*width*taper)+rad*((1-q*q)*width*.36*taper)
@@ -774,13 +807,13 @@ def fitted_scalp_hair():
         lockGroups.append({'kind':kind,'vertices':sections*cross,'length_m':length})
     if female:
         # Rear and side tresses, longer at the nape; keep central face clear.
-        for k in range(42):
-            a=.92+(2*math.pi-1.84)*k/41
-            length=float(.045+.090*max(0.,-math.cos(a))+.012*rng.random())
-            lock(a,.25+float(rng.random())*.19,.08*math.sin(a),length,.0075,'side_nape')
-        for k in range(12):
-            a=-.83+1.66*k/11
-            lock(a,.30,.40 if k<8 else -.26,.022+float(rng.random())*.014,.005,'fringe')
+        for k in range(38):
+            a=.84+(2*math.pi-1.68)*k/37
+            length=float(.055+.062*max(0.,-math.cos(a))+.009*rng.random())
+            lock(a,.26+float(rng.random())*.14,.16*math.sin(a),length,.011,'side_nape')
+        for k in range(15):
+            a=-.82+1.64*k/14
+            lock(a,.30,.70 if k<10 else -.50,.012+float(rng.random())*.009,.009,'fringe')
     else:
         for k in range(23):
             a=-1.45+2.90*k/22
@@ -816,8 +849,8 @@ def fitted_scalp_hair():
     for mat,col in zip(me.materials,shades):
         b=mat.node_tree.nodes.get('Principled BSDF')
         texlink(mat,b,rgba_image(mat.name+'_strand',stripe[:,:,None]*np.array(col)[None,None,:]),hu.name,'Base Color')
-        b.inputs['Roughness'].default_value=.49
-        if 'Specular IOR Level' in b.inputs:b.inputs['Specular IOR Level'].default_value=.24
+        b.inputs['Roughness'].default_value=.57 if female else .49
+        if 'Specular IOR Level' in b.inputs:b.inputs['Specular IOR Level'].default_value=.18 if female else .24
         if 'Anisotropic IOR Level' in b.inputs:b.inputs['Anisotropic IOR Level'].default_value=.28
     for poly,mi in zip(me.polygons,M):poly.material_index=mi;poly.use_smooth=True
     # Anchor rigidly to the same head bone; no weight on facial morphs.
@@ -890,6 +923,32 @@ assemblyDir=out/'continuous-neck-study';assemblyDir.mkdir(exist_ok=True)
 assemblyReport={'status':'not-run','productionApproved':False}
 try:
     assembly,assemblyReport=neck_assembly()
+    armorStudy=[]
+    # Round the harsh hard edges on the licensed original armor pieces.
+    # Work on copies only; transfer vertex groups with Blender's bevel.
+    if female:
+        for plate in plates:
+            n0=len(plate.data.vertices);originalData=plate.data;backup=originalData.copy()
+            try:
+                if plate.data.shape_keys:raise RuntimeError('plate has morphs')
+                bpy.ops.object.select_all(action='DESELECT');plate.select_set(True);bpy.context.view_layer.objects.active=plate
+                bevel=plate.modifiers.new('R53 edge bevel','BEVEL');bevel.width=.0016;bevel.segments=3;bevel.limit_method='ANGLE';bevel.angle_limit=.35
+                if hasattr(bevel,'harden_normals'):bevel.harden_normals=True
+                bpy.ops.object.modifier_apply(modifier=bevel.name)
+                if any(not v.groups for v in plate.data.vertices):raise RuntimeError('bevel lost skin weights')
+                for pol in plate.data.polygons:pol.use_smooth=True
+                for mat in plate.data.materials:
+                    if not mat or not mat.use_nodes:continue
+                    node=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
+                    if node:
+                        node.inputs['Metallic'].default_value=.72
+                        node.inputs['Roughness'].default_value=.39
+                armorStudy.append({'name':plate.name,'before':n0,'after':len(plate.data.vertices),'status':'beveled'})
+            except Exception as e:
+                for md0 in list(plate.modifiers):
+                    if md0.name.startswith('R53 edge bevel'):plate.modifiers.remove(md0)
+                plate.data=backup;armorStudy.append({'name':plate.name,'before':n0,'status':'retained-original','error':str(e)})
+    assemblyReport['armorStudy']=armorStudy
     assembleParts=[assembly]+[o for o in new if o!=hd]+[fittedHair]+[o for o in parts if o!=body and o not in hair]
     for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
     def full_render(tag,d,target,scale):
@@ -923,5 +982,5 @@ if not any(all(n in m.get('extras',{}).get('targetNames',[]) for n in names) for
 count=len(new);bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(dest));bpy.context.view_layer.update()
 rt=[o for o in bpy.context.scene.objects if o.type=='MESH' and rigof(o)]
 if len(rt)!=count or len({rigof(o) for o in rt})!=1:raise RuntimeError('roundtrip inventory')
-report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'irisSurfaceFit':eyeFit,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'studioReview':studioReport,'continuousNeckStudy':assemblyReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
+report={'id':ident,'sourceSHA256':rec['sha256'],'masterSourceSHA256':sha(master),'sha256':sha(dest),'masterSkinVertices':len(Q),'masterSkinTriangles':len(ST),'eyeMeshes':4,'irisSurfaceFit':eyeFit,'exposure':exposureReport,'sourceEyeCenters_m':{k:v.tolist() for k,v in srcEye.items()},'targetEyeCenters_m':{k:v.tolist() for k,v in dstEye.items()},'scaleXYZ':scale.tolist(),'transferDistanceP95_m':float(np.quantile(dist,.95)),'neckSectionCandidates':seams,'morphs':reports,'combinedMorphs':combos,'clips':clips,'lashMeshes':len(lashes),'browMeshes':len(brows),'brows':browReports,'facialProfile':profile_report,'pbrMaterialStudy':pbrReport,'studioReview':studioReport,'continuousNeckStudy':assemblyReport,'roundTrip':True,'continuousNeckIntegrated':False,'oralCavityIntegrated':False,'oralCandidates':oralReports,'mouthLandmarks':mouthLandmarks,'mouthSurfaceDiagnostics':mouthMetrics,'jawRotationAngles_rad':jawAngles,'hairFitApproved':False,'visualApproved':False,'productionApproved':False,'protectedR6Used':False,'limitations':['independent master head study; source head has bounded sex-specific jaw and cheek profile, not final likeness','original body not modified or included','no validated continuous neck seam or true oral opening; dental and tongue candidates and eyebrow fibres require visual approval','original hair comparison only, no fit change','morph transfer and eyelid exposure diagnostic, not closure approval']}
 (out/'master-head-report.json').write_text(json.dumps(report,indent=2));print('R53 MASTER HEAD',ident,'verts',len(Q),'eyes',4,'lash meshes',len(lashes),'visible',[x['visibleSamples'] for x in exposureReport],'seam candidates',len(seams),flush=True)

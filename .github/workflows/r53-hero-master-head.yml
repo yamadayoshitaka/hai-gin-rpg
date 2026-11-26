@@ -1,4 +1,4 @@
-name: R53 independent master anatomy head reconstruction two heroes
+name: R53 female protagonist focused completion review
 on:
   push:
     branches: [r53-fixed-face-review]
@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: [commander-male, commander-female]
+        id: [commander-female]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -61,7 +61,7 @@ jobs:
           path: review/shards
       - run: |
           python3 -m pip install pillow
-          python3 scripts/r53-hero-master-head-audit.py review/shards review/summary
+          python3 scripts/r53-hero-master-head-audit.py review/shards review/summary commander-female
       - uses: actions/upload-artifact@v4
         with:
           name: r53-hero-master-head-summary
