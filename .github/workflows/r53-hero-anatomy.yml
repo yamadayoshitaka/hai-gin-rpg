@@ -1,0 +1,102 @@
+name: R53 hero anatomy opening audit and female full outfit candidates
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-hero-anatomy.py'
+      - 'scripts/r53-hero-female-outfit.py'
+      - 'scripts/r53-hero-anatomy-audit.py'
+      - '.github/workflows/r53-hero-anatomy.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  anatomy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, commander-female]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/master-sources/makehuman
+            assets/master-sources/blender
+      - run: python3 -m py_compile scripts/r53-hero-anatomy.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-hero-pbr-${{ matrix.id }}
+          run-id: 45745032413
+          github-token: ${{ github.token }}
+          path: /tmp/hero
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/anatomy
+      - name: Inspect open anatomical rims and fit original eyes where supported
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-hero-anatomy.py -- /tmp/hero review/anatomy "$ID" assets/master-sources
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-hero-anatomy-${{ matrix.id }}
+          path: review/anatomy/
+          if-no-files-found: warn
+  female-outfit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts
+            assets/characters/free-knight
+      - run: python3 -m py_compile scripts/r53-hero-female-outfit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-hero-pbr-commander-female
+          run-id: 45745032413
+          github-token: ${{ github.token }}
+          path: /tmp/hero
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          mkdir -p review/outfit
+      - name: Fit silver lower plates and blue cape
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+        run: xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-hero-female-outfit.py -- /tmp/hero assets/characters/free-knight/knight_full_plate_armor.glb review/outfit commander-female
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-hero-female-outfit
+          path: review/outfit/
+          if-no-files-found: warn
+  inventory:
+    needs: [anatomy, female-outfit]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-hero-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-hero-anatomy-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-hero-anatomy-summary
+          path: review/summary/
