@@ -1,0 +1,68 @@
+name: R53 cast terminal armor and localized age skin review
+on:
+  push:
+    branches: [r53-fixed-face-review]
+    paths:
+      - 'scripts/r53-cast-fifth.py'
+      - 'scripts/r53-cast-fifth-audit.py'
+      - '.github/workflows/r53-cast-fifth.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  fifth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [commander-male, garan]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - run: python3 -m py_compile scripts/r53-cast-fifth.py scripts/r53-cast-fifth-audit.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: r53-cast-outfit-${{ matrix.id }}
+          run-id: 45729766128
+          github-token: ${{ github.token }}
+          path: /tmp/cast-outfit
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Fit terminal armor, compare sampled poses and bake local age shading
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          LP_NUM_THREADS: '2'
+          MESA_GLTHREAD: 'false'
+          ID: ${{ matrix.id }}
+        run: |
+          mkdir -p review/fifth
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python scripts/r53-cast-fifth.py -- /tmp/cast-outfit review/fifth "$ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r53-cast-fifth-${{ matrix.id }}
+          path: review/fifth/
+          if-no-files-found: warn
+  inventory:
+    needs: fifth
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r53-cast-fifth-*
+          path: review/shards
+      - run: |
+          python3 -m pip install pillow
+          python3 scripts/r53-cast-fifth-audit.py review/shards review/summary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r53-cast-fifth-summary
+          path: review/summary/
+          if-no-files-found: error
