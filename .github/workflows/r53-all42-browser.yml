@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [baseline, updated]
+        mode: [updated]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -29,7 +29,17 @@ jobs:
         if: matrix.mode == 'updated'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh run watch 45738398068 --exit-status --repo "${{ github.repository }}" --interval 60
+        id: recover
+        run: |
+          run_id=""
+          for attempt in $(seq 1 30); do
+            run_id=$(gh api "repos/${{ github.repository }}/actions/runs?head_sha=ace63249ca178e19d4090043dfb08b24e2dde42b" --jq '.workflow_runs[] | select(.name == "R53 cast LOD recovery six and full inventory") | .id' | head -1)
+            if [ -n "$run_id" ]; then break; fi
+            sleep 10
+          done
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          gh run watch "$run_id" --exit-status --repo "${{ github.repository }}" --interval 60
       - uses: actions/download-artifact@v4
         if: matrix.mode == 'updated'
         with:
@@ -41,7 +51,7 @@ jobs:
         if: matrix.mode == 'updated'
         with:
           pattern: r53-cast-lod-*
-          run-id: 45738398068
+          run-id: ${{ steps.recover.outputs.run_id }}
           github-token: ${{ github.token }}
           path: /tmp/all42/castlod
       - uses: actions/download-artifact@v4
