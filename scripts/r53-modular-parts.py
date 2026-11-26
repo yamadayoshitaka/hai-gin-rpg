@@ -21,10 +21,18 @@ world={}
 def W(i):
     if i not in world:world[i]=(W(parents[i]) if i in parents else np.eye(4))@local(nodes[i])
     return world[i]
-def accessor(k):
-    a=g['accessors'][k];v=g['bufferViews'][a['bufferView']];dtype={5121:'u1',5123:'<u2',5125:'<u4',5126:'<f4'}[a['componentType']];width={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4,'MAT4':16}[a['type']]
-    dt=np.dtype(dtype)
-    return np.ndarray((a['count'],width),dtype=dt,buffer=B,offset=v.get('byteOffset',0)+a.get('byteOffset',0),strides=(v.get('byteStride',dt.itemsize*width),dt.itemsize))
+def decode_accessor(doc,blob,k):
+    a=doc['accessors'][k];dtype={5120:'i1',5121:'u1',5122:'<i2',5123:'<u2',5125:'<u4',5126:'<f4'}[a['componentType']];width={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4,'MAT4':16}[a['type']];dt=np.dtype(dtype)
+    def read(v,count,w,t,offset=0):
+        v=doc['bufferViews'][v];t=np.dtype(t)
+        return np.ndarray((count,w),dtype=t,buffer=blob,offset=v.get('byteOffset',0)+offset,strides=(v.get('byteStride',t.itemsize*w),t.itemsize))
+    A=read(a['bufferView'],a['count'],width,dt,a.get('byteOffset',0)).copy() if 'bufferView' in a else np.zeros((a['count'],width),dtype=dt)
+    if 'sparse' in a:
+        sp=a['sparse'];ix=sp['indices'];va=sp['values'];it={5121:'u1',5123:'<u2',5125:'<u4'}[ix['componentType']]
+        ids=read(ix['bufferView'],sp['count'],1,it,ix.get('byteOffset',0)).ravel()
+        A[ids]=read(va['bufferView'],sp['count'],width,dt,va.get('byteOffset',0))
+    return A
+def accessor(k):return decode_accessor(g,B,k)
 rigSignature=sha(canonical([(nodes[i].get('name'),nodes[i].get('translation'),nodes[i].get('rotation'),nodes[i].get('scale'),nodes[i].get('matrix'),nodes[parents[i]].get('name') if i in parents else None) for i in joints])+accessor(skin['inverseBindMatrices']).tobytes())
 def slots(i):
     n=nodes[i]['name'];k=n.lower()
@@ -96,13 +104,16 @@ def compact(selected,withMotion=False):
         if 'sampler' in t:t['sampler']=sm[t['sampler']]
     views=set()
     for a in d['accessors']:
-        if a.get('sparse'):raise ValueError('sparse accessor unsupported')
         if 'bufferView' in a:views.add(a['bufferView'])
+        if 'sparse' in a:
+            views.update(a['sparse'][k]['bufferView'] for k in ('indices','values'))
     for x in d['images']:
         if 'bufferView' in x:views.add(x['bufferView'])
     d['bufferViews'],vm=remap(d['bufferViews'],views)
     for a in d['accessors']+d['images']:
         if 'bufferView' in a:a['bufferView']=vm[a['bufferView']]
+        if 'sparse' in a:
+            for k in ('indices','values'):a['sparse'][k]['bufferView']=vm[a['sparse'][k]['bufferView']]
     b=bytearray()
     for v in d['bufferViews']:
         assert v.get('buffer',0)==0
@@ -119,9 +130,7 @@ def check(path,ids):
     assert d['asset']['extras']['rigSignature']==rigSignature
     # Exact geometry attributes and inverse bind bytes, not merely names.
     b=raw2[28+n:]
-    def read2(k):
-        a=d['accessors'][k];v=d['bufferViews'][a['bufferView']];dt=np.dtype({5121:'u1',5123:'<u2',5125:'<u4',5126:'<f4'}[a['componentType']]);w={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4,'MAT4':16}[a['type']]
-        return np.ndarray((a['count'],w),dtype=dt,buffer=b,offset=v.get('byteOffset',0)+a.get('byteOffset',0),strides=(v.get('byteStride',dt.itemsize*w),dt.itemsize))
+    def read2(k):return decode_accessor(d,b,k)
     assert np.array_equal(read2(d['skins'][0]['inverseBindMatrices']),accessor(skin['inverseBindMatrices']))
     for i in ids:
         p0=g['meshes'][nodes[i]['mesh']]['primitives'];p1=d['meshes'][d['nodes'][i]['mesh']]['primitives']
