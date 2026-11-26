@@ -981,6 +981,42 @@ def set_eye_pose(name=None,value=0.):
         for key in keys:key.value=value if n==name or (name=='blinkBoth' and n.startswith('blink_')) else 0.
     bpy.context.view_layer.update()
 (out/'eye-motion-audit.json').write_text(json.dumps(eyeMotionAudit,indent=2,allow_nan=False))
+# v20: bounded candidate facial expression morphs on the existing mesh.
+# Jaw opening is shared with the oral parts; lip and cheek motion remains
+# inferred because no calibrated expression reference was supplied.
+expressionSpecs={
+ 'smile':(.16,.035,.065,.018,.018),
+ 'anger':(.12,-.025,-.028,0.,-.014),
+ 'sad':(.08,-.035,-.055,0.,.014),
+ 'surprise':(.78,-.075,.008,.028,0.),
+ 'a':(.83,.015,0.,.025,0.),
+ 'i':(.20,.095,.022,.005,0.),
+ 'u':(.23,-.11,0.,.041,0.),
+ 'e':(.38,.065,.012,.012,0.),
+ 'o':(.62,-.095,0.,.035,0.)}
+expressionKeys={};expressionAudit={}
+for name,(jawAmt,width,cornerLift,pucker,cheekLift) in expressionSpecs.items():
+    key=head.shape_key_add(name='expression_'+name+'_candidate')
+    for idx,v0 in enumerate(head.data.vertices):
+        x,y,z=np.asarray(v0.co)/UNIT
+        # Restrict motion to anterior mouth/cheek; leave eye and skull
+        # geometry untouched rather than detach their independent parts.
+        mouthW=math.exp(-((x-cx)/(hw*1.28))**4-((z-cz)/.30)**4)*float(sstep((.20-y)/.45))
+        cornerW=math.exp(-((abs(x-cx)-hw*.80)/max(.05,hw*.42))**2-((z-cz)/.20)**2)*float(sstep((.16-y)/.40))
+        cheekW=math.exp(-((abs(x-cx)-.52)/.23)**2-((z+.57)/.19)**2)*float(sstep((.12-y)/.40))*float(sstep((-.23-z)/.16))
+        dx=width*(x-cx)/max(hw,.01)*mouthW
+        dy=-pucker*mouthW-.012*max(0.,cornerLift)/.065*cornerW
+        dz=cornerLift*cornerW+cheekLift*cheekW
+        key.data[idx].co=Vector((x+dx,y+dy,z+dz))*UNIT
+    key.value=0.;expressionKeys[name]=key
+    disp=np.array([float((key.data[i].co-v.co).length*1000) for i,v in enumerate(head.data.vertices)])
+    expressionAudit[name]={'jawWeight':jawAmt,'maxExpressionTravelMm':float(disp.max()),'movedVertices':int(np.count_nonzero(disp>.05)),'visualApproved':False,'collisionChecked':False}
+def set_expression(name=None):
+    for tag,key in expressionKeys.items():key.value=1. if name==tag else 0.
+    set_oral_open(expressionSpecs[name][0] if name in expressionSpecs else 0.)
+    set_eye_pose('blinkBoth',.20 if name=='smile' else .12 if name=='anger' else 0.)
+    bpy.context.view_layer.update()
+(out/'expression-audit.json').write_text(json.dumps(expressionAudit,indent=2,allow_nan=False))
 # R54 v6: independently modeled auricles. Side-view outline points are
 # direct projected constraints, unlike the inferred front root and cartilage.
 from mathutils.bvhtree import BVHTree
@@ -1209,7 +1245,28 @@ focus=oldFocus;cam.ortho_scale=oldScale
 for tag,pose,value in [('blink_closed','blinkBoth',1.),('blink_half','blinkBoth',.5),('gaze_left','lookLeft_candidate',1.),('gaze_right','lookRight_candidate',1.),('gaze_up','lookUp_candidate',1.),('gaze_down','lookDown_candidate',1.)]:
     set_eye_pose(pose,value);render(tag,(0,-1,0))
 set_eye_pose()
+for name in expressionSpecs:
+    set_expression(name);render('expression_'+name,(0,-1,0))
+set_expression()
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'R54_new_head.blend'))
-report={'id':'R54-new-head-v19','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw and blink/gaze morphs experimental; simultaneous gaze/blink and full facial expressions unverified','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','revisionNotes':['left and right blink morphs on actual eyelid margins','synchronized upper/lower lashes and visible ocular patch morphs','four aperture-constrained gaze targets','six actual eye pose review JPGs','retains v18 oral geometry'],'next':'verify blink/gaze and oral poses visually, then neck interface and facial expression candidates; no automatic adoption'}
+report={'id':'R54-new-head-v20','method':'independently constructed front/back grids and explicit eye/lip boundary rings; zero imported head vertices','referenceSHA256':d['sourceSHA256'],'inputPoints':d['pointCount'],'nineViewPoints':nine['pointsCount'],'foundationRevision':'measured front width constraints and bilateral side profile, iterative projected silhouette fitting; rounded chin and smooth feature curves','dimensionAudit':'dimension-audit.json','ocularPatchAudit':'ocular-patch-audit.json','ocularMotionStatus':'candidate eyelid, iris, sclera and lash morphs; clipped ocular patch, not true globe rotation','eyeMotionAudit':'eye-motion-audit.json','orbitalFairing':fairReport,'ocularCoverageVertexAudit':coverageReport,'activeFaceTarget':'data/r54-bald-face-landmarks.json','globalSurfaceFairing':globalFairReport,'earAudit':'ear-audit.json','earParts':['R54_ear_left.glb','R54_ear_right.glb'],'dimensionGatePassed':dimReport['allMeasuredWithinTolerance'],'neckPolicy':'independent neck mesh fitted to head underside; not welded or body-rigged','neckAudit':'neck-audit.json','supplementalCranialReference':bald['referenceSHA256'],'supplementalScaffold':'data/r54-bald-reference-scaffold.json','pixelSilhouette':'data/r54-bald-pixel-silhouette.json','neckPart':'R54_neck.glb','skinColorMethod':'estimated regional vertex albedo, no image correction','visibleWidthFitRms_ipd':float(np.sqrt(np.mean((np.array([fitwidth(z,1) for z in traceZ])-traceW)**2))),'widthStationZ_ipd':WZ.tolist(),'widthStationHalf_ipd':WW.tolist(),'actualUsed':['front cheek/jaw traces','bilateral sagittal profile','front eyelid contours','iris diameter','lip top/seam/bottom','brow contours','lash vectors'],'designIPD_m':UNIT,'headVertices':len(head.data.vertices),'headFaces':len(head.data.polygons),'parts':[ob.name for ob in objects],'boundaries':boundaryReport,'materialStatus':'reference-inspired estimates, not verified albedo','newTopology':True,'priorHeadUsed':False,'visualApproved':False,'productionApproved':False,'limitations':['upper cranium and posterior head inferred from occluded reference','ear inner cartilage and thickness inferred; frontal taper revised; seam/rig integration unapproved','oral lining, 20 tooth crowns, gingiva and tongue are inferred candidates; collision testing and full dentition pending','jaw, blink/gaze and nine expression candidates experimental; combined pose and collision checks pending','neck overlap is preliminary; welded seam, body fit and rig integration pending','nine-view image is synthetic and not calibrated; fit not independently verified'],'oralMotionAudit':'oral-motion-audit.json','oralSeparationPassed':oralAudit['separationPassed'],'noseAudit':'nose-audit.json','expressionAudit':'expression-audit.json','reviewPage':'review.html','revisionNotes':['nine bounded facial expression morph candidates','shared jaw with oral meshes','actual expression review JPGs','offline review page and dimension status','retains v19 eye morphs'],'next':'verify expressions and neutral face against reference, then neck interface, collision corrections and body rig; no automatic adoption'}
 (out/'report.json').write_text(json.dumps(report,indent=2))
+# Offline review page: all images are actual Blender renders. The exact
+# reference is not stored in this branch; select the original locally.
+from html import escape
+groups=[('基本形状',['front','left','right','threequarter','rear']),('顔パーツ',['eye_L_detail','eye_R_detail','eye_L_oblique','eye_R_oblique','nose_front_detail','nose_profile_detail','nose_oblique_detail','ear_left_detail','ear_right_detail','oral_neutral_detail','oral_open_detail','oral_open_oblique']),('瞬き・視線',['blink_closed','blink_half','gaze_left','gaze_right','gaze_up','gaze_down']),('表情・発音',['expression_'+k for k in expressionSpecs])]
+html=['<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R54 v20 review</title><style>body{font:16px system-ui,sans-serif;background:#15171c;color:#eee;margin:16px}a{color:#a9d3ff}h2{font-size:20px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}figure{margin:0;background:#242730;padding:8px;border-radius:8px}img{width:100%;height:auto;display:block}figcaption{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere}.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}button,select,input{max-width:100%;font:inherit}</style><h1>R54 v20 実モデル確認</h1><p>承認前候補。本番反映なし。見本とレンダリングを比較し、寸法検査と外観は別々に判定してください。</p>']
+html.append('<p>寸法許容範囲：'+('合格' if report['dimensionGatePassed'] else '未合格')+' ／ 開口分離：'+('合格' if report['oralSeparationPassed'] else '未合格')+' ／ 外観：未承認</p>')
+html.append('<h2>見本との比較</h2><p>見本画像を端末から選択してください（画像は外部へ送信されません）。</p><input type="file" accept="image/*" id="referenceFile"><select id="view"><option value="front">正面</option><option value="left">左</option><option value="right">右</option><option value="threequarter">斜め</option><option value="rear">背面</option></select><div class="compare"><figure><img id="reference" alt="見本未選択"><figcaption>見本</figcaption></figure><figure><img id="actual" src="front.jpg" alt="実モデル"><figcaption>実モデル</figcaption></figure></div>')
+for title,names in groups:
+    html.append('<h2>'+escape(title)+'</h2><section>')
+    for name in names:
+        if not (out/(name+'.jpg')).is_file():raise RuntimeError('missing review render '+name)
+        html.append('<figure><a href="'+name+'.jpg"><img loading="lazy" src="'+name+'.jpg" alt="'+name+'"></a><figcaption>'+escape(name)+'</figcaption></figure>')
+    html.append('</section>')
+html.append('<h2>検査データ・資産</h2><p>JSONは生成メッシュの計測結果。未合格や未確認を省略しません。</p>')
+for fn in ['report.json','dimension-audit.json','ocular-patch-audit.json','eye-motion-audit.json','oral-motion-audit.json','nose-audit.json','ear-audit.json','neck-audit.json','expression-audit.json','R54_new_head.glb','R54_new_head.blend']:
+    if (out/fn).is_file():html.append('<p><a href="'+fn+'">'+fn+'</a></p>')
+html.append('<script>let url;document.getElementById("referenceFile").onchange=e=>{if(url)URL.revokeObjectURL(url);if(e.target.files[0]){url=URL.createObjectURL(e.target.files[0]);document.getElementById("reference").src=url}};document.getElementById("view").onchange=e=>document.getElementById("actual").src=e.target.value+".jpg";</script></html>')
+(out/'review.html').write_text(''.join(html),encoding='utf-8')
 print('New head candidate generated',report['headVertices'],report['headFaces'])
