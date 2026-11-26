@@ -1,0 +1,83 @@
+{
+  "schema": "r53-hero-handover-index-v2",
+  "id": "commander-female",
+  "sourceCommit": "174c216756dba9a23961998b9a6a33ff9cfc208c",
+  "latestVerifiedCandidate": {
+    "run": 45814845599,
+    "artifact": 15115142005,
+    "summaryArtifact": 15115162071,
+    "visualApproved": false,
+    "productionApproved": false,
+    "independentCore": "core-body-study/commander-female_core_body.glb",
+    "editableBlend": "continuous-neck-study/commander-female_review.blend",
+    "modularManifest": "current-modular-parts/manifest.json",
+    "partCount": 28,
+    "referenceFit": {
+      "lowerOutlineBeforeMm": [
+        17.028667509737613,
+        11.910086359845943,
+        18.064716922313533
+      ],
+      "lowerOutlineAfterMm": [
+        15.402123787787755,
+        10.514693817976688,
+        14.557115456703468
+      ],
+      "toleranceMm": 4,
+      "eyeWidthTargetTolerance": 0.12
+    },
+    "blockers": [
+      "lower face outline outside tolerance",
+      "armor refinement",
+      "hair silhouette and surface not approved",
+      "new equipment not built"
+    ]
+  },
+  "references": {
+    "face": {
+      "image": "a_highly_detailed_photorealistic_cg_character_ref.png",
+      "sha256": "580fae9d783e48fcc1c9051eea3fe0c2201f235d85f7c01494620beaf7046e80",
+      "landmarks": "data/r53-female-detail-landmarks.json",
+      "points": 350,
+      "nineView": "data/r53-female-nine-view-design.json",
+      "nineViewPoints": 157,
+      "priority": "formal user-selected face reference; portrait is secondary"
+    },
+    "equipment": {
+      "points": "data/r53-equipment-concept-v2.json",
+      "count": 515,
+      "ledger": "data/r53-equipment-reference-catalog.json",
+      "legacyMeasurementArtifact": 15106912863,
+      "status": "new sword/shield generation failed run 45800729983; legacy GLBs not new design; other armor detailed design pending"
+    },
+    "body": {
+      "design": "data/r53-action-model-design.json",
+      "status": "existing rig/10 clips and independent body export; anatomy and action quality not approved"
+    }
+  },
+  "rules": {
+    "manualReview": true,
+    "autoBatch": false,
+    "deploy": false,
+    "keepPriorVersions": true,
+    "onlyActual3DJpg": true,
+    "measurements": "2D pixel projection vs actual GLB measurements vs design estimate must be distinct",
+    "equip": "independent parts; no legacy armor baked into core"
+  },
+  "next": [
+    "review new iterative jaw candidate and compare actual JPG to target",
+    "refine individual eyes/lips/skin/hair shape and reference fit",
+    "review isolated core motion and rig joint deformation",
+    "build high-quality independent new armor/weapon/accessory models from concept measurements",
+    "visual approval before adoption"
+  ],
+  "libraryFilesPlanned": [
+    "R53_HERO_START_HERE.json",
+    "R53_HERO_DESIGN_MEASUREMENTS.zip",
+    "R53_HERO_CORE_MODELS.zip",
+    "R53_HERO_EDITABLE_BLEND.zip",
+    "R53_HERO_MODULAR_PARTS.zip",
+    "R53_HERO_REVIEW_JPG.zip"
+  ],
+  "note": "GitHub Actions artifacts expire; preserve actual bytes in Library; latest pending review is not approved."
+}

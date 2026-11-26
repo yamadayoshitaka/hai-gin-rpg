@@ -68,6 +68,9 @@ for i in ids:
     if not core.get('verifiedNoLegacyEquipment'):issues.append('independent core equipment inventory')
     for view in ('core_neutral_front','core_neutral_side','core_neutral_rear','core_neutral_threequarter'):
         with Image.open(a/'continuous-neck-study'/(view+'.png')) as im:im.verify()
+    if len(core.get('motionReview',[]))<3:issues.append('core motion preview insufficient')
+    for m0 in core.get('motionReview',[]):
+        with Image.open(a/'continuous-neck-study'/m0['image']) as im:im.verify()
     r['detailFaceFit']=de
     r['completionGate']={'technicalCandidate':not issues,'blockers':issues,'visualApproved':False,'readyForUserAcceptance':False}
     rows.append(r)

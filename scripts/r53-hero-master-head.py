@@ -389,35 +389,64 @@ def fit_lower_outline(A):
         return float(np.sqrt(np.mean(np.square(e))))
     def inter(x,v,d,k):
         return np.interp(x,v[k][::-1] if v[0]>v[-1] else v[k],d[k][::-1] if v[0]>v[-1] else d[k])
-    x0=(A[:,0]-eye[0])/gap;y0=(A[:,1]-eye[1])/gap;z0=(A[:,2]-eye[2])/gap
-    # Attenuate near the nose/eye/ear and lower neck cut.
-    depth=np.clip((.65-y0)/.60,0.,1.)
-    vertical=np.clip((-z0-.23)/.30,0.,1.)*np.clip((z0+1.98)/.23,0.,1.)
-    widthD=np.zeros_like(A)
-    for side0,target,actual,k in ((-1,targetL,base[0],masks[0]),(1,targetR,base[1],masks[1])):
-        dx=inter(A[:,2],zRows,target-actual,k)
-        sideMask=np.clip((side0*x0-.22)/.52,0.,1.)
-        widthD[:,0]+=np.clip(dx,-gap*.20,gap*.20)*sideMask*depth*vertical
-    dz=inter(A[:,1],yRows,tz-base[2],masks[2])
-    # Lower-jaw support moves under the chin, not the lips, eyes or neck.
-    old=inter(A[:,1],yRows,base[2],masks[2])
-    under=np.exp(-((A[:,2]-old)/(gap*.18))**2)
-    yfade=np.clip((yHi-A[:,1])/(gap*.35),0.,1.)*np.clip((A[:,1]-yLo+gap*.20)/(gap*.20),0.,1.)
-    jawD=np.zeros_like(A);jawD[:,2]=np.clip(dz,-gap*.14,gap*.14)*under*yfade*vertical
-    # Test different amounts of each independent correction. Reject folds
-    # against the untouched master topology, not just the modified baseline.
+    # Iterative constrained cross-section fit. A one-shot small Gaussian
+    # correction left >10 mm of visible contour error. Re-measure on each
+    # accepted mesh; use continuous section width scaling, not a guessed
+    # global face-width slider. Preserve orbital margins, ear roots, neck.
     best=A.copy();bestVal=base;bestErr=error(base);initial=bestErr;tries=[]
-    for w0 in (0.,.35,.65,1.):
-        for j0 in (0.,.35,.65,1.):
-            if w0==j0==0:continue
-            C=A+w0*widthD+j0*jawD
+    for iteration in range(10):
+        V=best.copy();cur=bestVal
+        x0=(V[:,0]-eye[0])/gap;y0=(V[:,1]-eye[1])/gap;z0=(V[:,2]-eye[2])/gap
+        def smooth(t):
+            t=np.clip(t,0.,1.);return t*t*(3-2*t)
+        # Full-strength on the anterior cheek and lateral mandible, with
+        # gradual fade behind the jaw and along the preserved neck seam.
+        depth=smooth((.82-y0)/.75)
+        vertical=smooth((-z0-.18)/.40)*smooth((z0+2.04)/.28)
+        orbitalKeep=1-np.maximum(ga(x0,.5,.33),ga(x0,-.5,.33))*ga(z0,0,.29)
+        widthD=np.zeros_like(V)
+        for side0,target,actual,k in ((-1,targetL,cur[0],masks[0]),(1,targetR,cur[1],masks[1])):
+            dx=inter(V[:,2],zRows,target-actual,k)
+            extent=np.maximum(np.abs(inter(V[:,2],zRows,actual-eye[0],k)),gap*.18)
+            normalized=np.clip(side0*(V[:,0]-eye[0])/extent,0.,1.)
+            # Scale the lateral contour continuously, retaining central
+            # nose/lips and allowing the sides to move more than the center.
+            sideMask=smooth(normalized)**1.25
+            widthD[:,0]+=np.clip(dx,-gap*.35,gap*.35)*sideMask*depth*vertical*orbitalKeep
+        dz=inter(V[:,1],yRows,tz-cur[2],masks[2])
+        old=inter(V[:,1],yRows,cur[2],masks[2])
+        under=np.exp(-((V[:,2]-old)/(gap*.23))**2)
+        yfade=smooth((yHi-V[:,1])/(gap*.27))*smooth((V[:,1]-yLo+gap*.22)/(gap*.22))
+        jawD=np.zeros_like(V);jawD[:,2]=np.clip(dz,-gap*.24,gap*.24)*under*yfade*vertical
+        # Smooth across actual topological adjacency, with no deformation
+        # leakage at the neck/eye anchors. Cap cumulative displacement.
+        ea=np.r_[ed[:,0],ed[:,1]];eb=np.r_[ed[:,1],ed[:,0]]
+        degree=np.maximum(1,np.bincount(ea,minlength=len(V)))
+        def relax(D):
+            for _ in range(3):
+                avg=np.column_stack([np.bincount(ea,weights=D[eb,k],minlength=len(V))/degree for k in range(3)])
+                D=.82*D+.18*avg
+            D*=((vertical>.0001)*orbitalKeep)[:,None]
+            return D
+        widthD=relax(widthD);jawD=relax(jawD)
+        nextErr=bestErr;nextV=V;nextVal=cur
+        for w0,j0 in ((1.,1.),(.8,.8),(.5,.5),(.25,.25),(1.,0.),(0.,1.),(.5,0.),(0.,.5),(.12,.12)):
+            C=V+w0*widthD+j0*jawD
+            delta=C-A;norm=np.linalg.norm(delta,axis=1)
+            C=A+delta*np.minimum(1.,gap*.48/np.maximum(norm,1e-12))[:,None]
             N=profile_norm(C)
             if np.any(pv&((np.sum(pn*N,axis=1)<=0)|(np.linalg.norm(N,axis=1)<.15*pa))):continue
-            cur=measure(C);e=error(cur);tries.append({'widthStrength':w0,'underJawStrength':j0,'rmsRatio':e})
-            if e<bestErr:best=C;bestVal=cur;bestErr=e
+            val=measure(C);e=error(val)
+            # No side may become materially worse than the baseline.
+            if any(np.sqrt(np.mean((v[k]-t[k])**2))>np.sqrt(np.mean((oldv[k]-t[k])**2))+.0004 for v,t,k,oldv in zip(val,targets,masks,cur)):continue
+            tries.append({'iteration':iteration+1,'widthStrength':w0,'underJawStrength':j0,'rmsRatio':e})
+            if e<nextErr:nextV=C;nextVal=val;nextErr=e
+        if nextErr>=bestErr-1e-5:break
+        best=nextV;bestVal=nextVal;bestErr=nextErr
+        if bestErr<.055:break
     def finite_list(v):return [float(x) if np.isfinite(x) else None for x in v]
     def per(v,t,k):return float(np.sqrt(np.mean(np.square(v[k]-t[k])))*1000)
-    rep={'method':'triangle edge cross-section, projected front cheek/jaw and bilateral anterior under-jaw traces',
+    rep={'method':'iterative topology-constrained triangle edge cross-section, projected front cheek/jaw and bilateral anterior under-jaw traces',
          'beforeRmsRatio':initial,'afterRmsRatio':bestErr,'applied':bestErr<initial-1e-8,
          'frontZ_m':zRows.tolist(),'sideY_m':yRows.tolist(),'curveLabels':['front_left','front_right','side_underjaw'],
          'target_m':[finite_list(x) for x in targets],'before_m':[finite_list(x) for x in base],'after_m':[finite_list(x) for x in bestVal],
@@ -1716,6 +1745,32 @@ try:
         sh.color_type=oldColor;rig.data.pose_position=oldPose;reset()
     for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
     assemblyReport['independentCore']={'file':str(coreDest.relative_to(out)),'sha256':sha(coreDest),'objects':[o.name for o in coreParts],'armorIncluded':False,'hairIncluded':False,'clothingIncluded':False,'approval':False,'reviewViews':['core_neutral_front','core_neutral_side','core_neutral_rear','core_neutral_threequarter'],'reviewMaterial':'temporary neutral body preview, no legacy clothing meshes, rest pose'}
+    # Render motion on the same equipment-free core, using a temporary
+    # neutral body material. Retain the independently exported core GLB.
+    coreMotion=[]
+    oldIndices=[p.material_index for p in assembly.data.polygons]
+    originalSlots=len(assembly.data.materials)
+    previewMat=bpy.data.materials.get('R53_CORE_PREVIEW_ONLY')
+    assembly.data.materials.append(previewMat)
+    oldColor=sh.color_type
+    try:
+        sh.color_type='MATERIAL'
+        for poly in assembly.data.polygons:
+            if float((assembly.matrix_world@poly.center).z)<eye[2]-gap*1.97:poly.material_index=originalSlots
+        for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in coreParts
+        for key,act in r53_clip_actions.items():
+            if not any(v in key.lower() for v in ('walk','sprint','attack','idle')):continue
+            ad.action=act;lo,hi=act.frame_range;frame=float(lo+(hi-lo)*.42)
+            scene.frame_set(int(frame),subframe=frame-int(frame));bpy.context.view_layer.update()
+            tag='core_motion_'+key.replace('/','_')
+            full_render(tag,(.66,-1,.03),center,H*1.23);coreMotion.append({'clip':key,'frame':frame,'image':tag+'.png'})
+            ad.action=None;reset()
+    finally:
+        for poly,idx0 in zip(assembly.data.polygons,oldIndices):poly.material_index=idx0
+        assembly.data.materials.pop(index=originalSlots);sh.color_type=oldColor
+        scene.frame_set(1);reset()
+        for o in new+parts+[fittedHair,assembly]:o.hide_render=o not in assembleParts
+    assemblyReport['independentCore']['motionReview']=coreMotion
     coreRaw=coreDest.read_bytes();coreJson=json.loads(coreRaw[20:20+int.from_bytes(coreRaw[12:16],'little')])
     if any(any(k in n.get('name','').lower() for k in ('armor','clothing','hair','legplate')) for n in coreJson['nodes'] if 'mesh' in n):raise RuntimeError('core contains legacy equipment')
     if not all(any(n.lower() in a.get('name','').lower() for a in coreJson.get('animations',[])) for n in clips):raise RuntimeError('core clips missing')
