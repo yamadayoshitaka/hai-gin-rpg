@@ -1,0 +1,65 @@
+{
+  "schema": "R20-auto-handover-v1",
+  "date": "2026-11-27",
+  "project": "灰銀のレゾナンス",
+  "archive": {
+    "filename": "R20_AUTO_HANDOVER_20261127.zip",
+    "libraryFileId": "libfile_ce063423e03c8191bf2914636d32bdaa",
+    "fileId": "file_0000000096b8821181a2a90f44cc63ec",
+    "sizeBytes": 19752433,
+    "sha256": "fce316a46796b86a28b2f38d69fd4e822300e13dbe3bbbf1e4e548c5304e1e51",
+    "contents": "37 source/data/asset files plus README_HANDOVER.md, manifest.json, requirements.txt; complete L35 baseline and adopted current GLB, state, scripts, reference image and audits"
+  },
+  "checkpoint": {
+    "cursor": 9,
+    "stop": "step_budget",
+    "bestModel": "R54_local/R20_auto_best.glb",
+    "bestSha256": "ecab16bf72a86b8fc886d187bedfeccf74a0b17d79568c307c84d6a3ca866b21",
+    "baselineModel": "R54_local/R20_L35.glb",
+    "baselineSha256": "60846792cbfa5a6a2ab6642a44184384d7de35a5fedf8fe5575c331bcebb6d8f",
+    "state": "R54_local/auto_regress_state.json",
+    "engine": "R54_local/auto_regress.py",
+    "attempts": 9,
+    "accepted": 1,
+    "goalReached": false,
+    "rmsDesignMm": {
+      "cheek_L": 1.398,
+      "cheek_R": 1.124,
+      "jaw_envelope_proxy": 12.531,
+      "underjaw": 0.264,
+      "nose": 2.792,
+      "mouth": 2.096,
+      "neck_width": 1.259,
+      "neck_depth": 0.898,
+      "neck_center": 5.69,
+      "ear_L": 1.576,
+      "ear_R": 1.576
+    }
+  },
+  "resume": {
+    "instructions": "Find the named ZIP in personal Library, materialize raw bytes, verify archive SHA-256, extract preserving directories. Use README_HANDOVER.md. Never restart from R54 or L35 when the checkpoint is valid.",
+    "commands": [
+      "cd R54_local",
+      "python auto_regress.py --steps 0",
+      "python auto_regress.py --steps 7 --stage-timeout 120"
+    ],
+    "verified": "Fresh extraction and --steps 0 completed successfully; model hash and state validated. No background run."
+  },
+  "policy": {
+    "targetRmsMm": 0.1,
+    "targetMaxMm": 0.1,
+    "missingAllowed": 0,
+    "protect": "R20 eyes, lips and textures",
+    "commitPolicy": "At handover or milestone only",
+    "productionApproved": false,
+    "deploy": false
+  },
+  "limitations": [
+    "Approximate four-view reference; exact original nine-view image unavailable",
+    "Jaw envelope is a proxy",
+    "Eyes/forehead, ear cartilage, visual pose quality and collisions remain unverified",
+    "Automatic partial remeshing and genuinely new optimization method generation not implemented",
+    "Three stages timed out; timeout is not evidence of quality failure",
+    "Archive binary and source are saved in Library, not in Git repository; this commit is the handover manifest only"
+  ]
+}
