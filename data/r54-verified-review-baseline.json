@@ -1,0 +1,80 @@
+{
+  "schema": "R54-verified-review-baseline-v1",
+  "version": "v33",
+  "commit": "a6c3be01cb17f1f79b119909016ee9abf2695857",
+  "runId": 45902272111,
+  "artifactId": 15158115412,
+  "referenceSHA256": "1424525067d49234682e105caac45a2bf59da24217670f6c760988533736f162",
+  "reference": "data/r54-bald-face-landmarks.json",
+  "unit": "design millimeters, normalized to IPD 63 mm; not calibrated physical scan",
+  "verifiedFrom": [
+    "dimension-audit.json",
+    "quality-gate.json",
+    "neck-audit.json",
+    "front.jpg",
+    "right.jpg"
+  ],
+  "buildSuccess": true,
+  "numericGate": {
+    "passed": 27,
+    "total": 27,
+    "allMeasuredWithinTolerance": true,
+    "outlineLeftRmsMm": 0.8732416113374677,
+    "outlineRightRmsMm": 0.775161154855776,
+    "profileLeftRmsMm": 0.5915535790140014,
+    "profileRightRmsMm": 0.5915535790140014,
+    "crownTinyFaces": 0,
+    "headNonManifoldEdges": 0,
+    "irisOutsideVertices": 0,
+    "tongueTeethSurfaceIntersectionsAcrossSevenTestPoses": 0,
+    "neckTopOverlapSamples": 128,
+    "neckTopSampleCount": 128,
+    "neckMaxGapMm": 0,
+    "neckMaxInsetMm": 4.09503146165946,
+    "neckBackMaxAbsoluteErrorDesignMm": 26.72607326138727,
+    "neckFrontMaxAbsoluteErrorDesignMm": 9.003381663260463
+  },
+  "visualApproved": false,
+  "productionApproved": false,
+  "reviewFindings": [
+    {
+      "priority": 1,
+      "part": "chin and submental",
+      "observation": "pointed chin tip, sharp planar lower-jaw transition; v34 candidate rounding pending"
+    },
+    {
+      "priority": 2,
+      "part": "neck",
+      "observation": "posterior profile too shallow; independent overlapping geometry, not welded or body-fitted; v34 candidate pending"
+    },
+    {
+      "priority": 3,
+      "part": "eyes and brows",
+      "observation": "large exposed white sclera, pale flat iris and weak upper lid definition, sparse visible eyebrow texture; preserve traced apertures and evaluate actual lid margin in oblique views"
+    },
+    {
+      "priority": 4,
+      "part": "mouth",
+      "observation": "diagonal creases at lip corners and unnatural lip relief; inspect actual normals and patch transitions, preserve measured lip border"
+    },
+    {
+      "priority": 5,
+      "part": "ear",
+      "observation": "front projection is broad, internal cartilage detail is soft; depth and opposite side are inferred"
+    }
+  ],
+  "candidate": {
+    "version": "v34",
+    "geometryCommit": "2e0550c72cb33ba6690a4294fd86640fefbf38b7",
+    "ciRepairCommit": "2379b5e97ca0215f575279f3f4718df48745b222",
+    "runId": 45924881781,
+    "statusAtReview": "in_progress; Ubuntu dependency installation succeeded; Blender build not yet confirmed"
+  },
+  "rules": [
+    "Do not replace verified baseline with an unverified candidate.",
+    "Use actual Blender JPGs with reference; no generated illustration as evidence.",
+    "Compare projection errors, missing stations, topology and pose collisions, plus visual review.",
+    "Use v33 as rollback point; candidate v34 not approved.",
+    "Do not deploy to production before explicit visual approval."
+  ]
+}
