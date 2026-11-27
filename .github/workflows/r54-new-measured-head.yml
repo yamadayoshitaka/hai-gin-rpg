@@ -20,9 +20,17 @@ jobs:
             data
           sparse-checkout-cone-mode: false
       - run: python3 -m py_compile scripts/r54-new-measured-head.py
-      - run: |
-          sudo apt-get update
-          sudo apt-get install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+      - name: Install Blender from Ubuntu package repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The review build needs Ubuntu packages only. Limit APT to the
+          # runner's Ubuntu sources; an unrelated Microsoft feed returned 403.
+          test -f /etc/apt/sources.list.d/ubuntu.sources
+          apt_options=(-o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=- -o Acquire::Retries=3)
+          sudo apt-get "${apt_options[@]}" update
+          sudo apt-get "${apt_options[@]}" install -y blender python3-numpy xvfb libgl1-mesa-dri xauth
+          blender --version
       - name: Build new geometry and render actual JPGs
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
