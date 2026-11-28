@@ -290,6 +290,25 @@ jobs:
         run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
+
+      - name: Stamp GLB viewer and stage a version-specific cache-bypass route
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re
+          from pathlib import Path
+          source=Path('glb-viewer.html').read_text(encoding='utf-8')
+          target=Path('pages-dist/glb-viewer.html')
+          html=target.read_text(encoding='utf-8')
+          version=re.search(r'GLB専用モデルビューア (v[0-9.]+)',source).group(1)
+          assert 'GLB専用モデルビューア '+version in html
+          assert '<head>' in html
+          html=html.replace('<head>','<head><meta name="hai-gin-pages-sha" content="'+os.environ['GITHUB_SHA']+'">',1)
+          target.write_text(html,encoding='utf-8')
+          (target.parent/('glb-viewer-'+version+'.html')).write_bytes(target.read_bytes())
+          print('GLB viewer staged:',version,os.environ['GITHUB_SHA'])
+          PY
       - name: Retrieve R53 review-only male candidate artifact
         id: r53_review_download
         continue-on-error: true
@@ -924,4 +943,26 @@ jobs:
             sleep 5
           done
           echo '::error::R53 preview not verified on public CDN'
+          exit 1
+
+      - name: Verify public GLB viewer exact bytes and versioned fallback
+        if: steps.latest.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://yamadayoshitaka.github.io/hai-gin-rpg"
+          version=$(grep -oE 'GLB専用モデルビューア v[0-9.]+' glb-viewer.html | head -1 | awk '{print $NF}')
+          test -n "$version"
+          for attempt in $(seq 1 18); do
+            if curl -fsSL --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' "$root/glb-viewer.html?verify=$GITHUB_SHA-$attempt" -o /tmp/glb-viewer-live.html &&
+               curl -fsSL --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' "$root/glb-viewer-$version.html?verify=$GITHUB_SHA-$attempt" -o /tmp/glb-viewer-versioned-live.html &&
+               cmp -s /tmp/glb-viewer-live.html pages-dist/glb-viewer.html &&
+               cmp -s /tmp/glb-viewer-versioned-live.html pages-dist/glb-viewer.html; then
+              echo "PASS public GLB viewer $version matches packaged HTML: $GITHUB_SHA"
+              exit 0
+            fi
+            echo "::notice::GLB viewer public bytes not current (attempt $attempt/18)"
+            sleep 5
+          done
+          echo '::error::Public GLB viewer is not byte-identical to the tested release'
           exit 1
