@@ -4,11 +4,11 @@ function faceFixture(){const pos=[],idx=[];for(const [y,r] of [[-.11,.058],[-.06
 
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});try{
  const page=await browser.newPage({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE ERROR:',e.message)});page.on('console',m=>{if(m.type()==='error')console.error('BROWSER:',m.text())});page.on('requestfailed',r=>console.error('REQUEST FAILED:',r.url(),r.failure()));
  await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',async route=>{const suffix=new URL(route.request().url()).pathname.split('/npm/three@0.160.1/')[1];await route.fulfill({path:path.resolve('node_modules/three',suffix),contentType:'application/javascript',headers:{'access-control-allow-origin':'*'}})});
  await page.goto('http://127.0.0.1:8791/body-action-studio.html',{waitUntil:'domcontentloaded'});
  const audit=()=>page.evaluate(()=>window.__bodyActionAudit?.());
- await page.waitForFunction(()=>window.__bodyActionAudit?.().ready,{},{timeout:60000});
+ await page.waitForFunction(()=>window.__bodyActionAudit?.().ready||window.__bodyActionLoadError,{},{timeout:60000}).catch(async e=>{throw Error('Initial body load timed out: '+await page.locator('#status').textContent()+' / JS: '+errors.join('; '),{cause:e})});assert.equal(await page.evaluate(()=>window.__bodyActionLoadError),null);
  for(const sex of ['female','male']){
   await page.selectOption('#sex',sex);await page.waitForFunction(s=>window.__bodyActionAudit?.().ready&&window.__bodyActionAudit().sex===s,sex,{timeout:60000});
   assert.equal((await audit()).bones,163);assert.ok((await audit()).skins>0);
