@@ -288,6 +288,17 @@ jobs:
           rm -f qa/baselines/face-v121-v20.glb qa/baselines/face-v121-v22.glb qa/baselines/face-v121-v23.glb qa/baselines/face-v121-v24.glb qa/baselines/face-v121-v25.glb qa/baselines/face-v121-v26.glb qa/baselines/face-v121-v27.glb
       - name: Verify approved chapter-one art relay and preserve v121 local GLB
         run: python3 qa/pages-approved-story-image-relay.test.py
+      - name: Smoke test full-body joints, demographics and grasp in Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
+          npx playwright install chromium
+          python3 -m http.server 8791 --bind 127.0.0.1 >/tmp/body-action-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          sleep 2
+          node qa/body-action-studio-smoke.cjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
 
