@@ -27,6 +27,28 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
+      - name: Early Python syntax and deployment-scope validation
+        run: |
+          python3 -m py_compile scripts/prepare-pages-site.py qa/pages-approved-story-image-relay.test.py scripts/pages-studio-scope.py
+          python3 scripts/pages-studio-scope.py --self-test
+      - name: Detect studio-only changes since last successful Pages release
+        id: scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          fast=false
+          previous=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/publish-pages.yml/runs?status=success&branch=main&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
+          if [[ "$previous" =~ ^[0-9a-f]{40}$ && "$previous" != "$GITHUB_SHA" ]]; then
+            relation=$(gh api "repos/$GITHUB_REPOSITORY/compare/$previous...$GITHUB_SHA" --jq '.status' || true)
+            if [[ "$relation" == ahead ]] && git fetch --no-tags --depth=1 origin "$previous"; then
+              git diff --name-only --no-renames "$previous" "$GITHUB_SHA" > /tmp/pages-changed-paths
+              fast=$(python3 scripts/pages-studio-scope.py < /tmp/pages-changed-paths)
+            fi
+          fi
+          echo "studio=$fast" >> "$GITHUB_OUTPUT"
+          echo "Studio-only scope: $fast (unknown or shared changes require full QA)"
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
       - name: Smoke test full-body joints, demographics and grasp in Chromium
@@ -47,25 +69,31 @@ jobs:
       - name: Confirm face-release validation matches face editor version
         run: node --test qa/pages-face-release-contract.test.mjs
       - name: Verify mobile squad commands, training formations, forge, hires and critical ally deaths
+        if: steps.scope.outputs.studio != 'true'
         run: |
           node --test qa/mobile-formation-command-items.test.mjs qa/inn-roster-first-formation.test.mjs
           node --test qa/training-ground-forge-critical-roster.test.mjs
           node --test qa/training-gear-owner-purchase.test.mjs qa/town-facility-squad-gear.test.mjs
       - name: Verify chained battle orders, no-wander formations, corpse collision and basic commands
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/battle-command-followup.test.mjs qa/battle-signature-command-regression.test.mjs qa/battle-corpse-cell-pingpong.test.mjs qa/battle-ai-wandering-regression.test.mjs
       - name: Verify bridge direction lock for both teams, all lanes and congested far-bank landing
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/battle-bridge-oneway-traffic.test.mjs
       - name: Verify published batch PR preview and checkpoint contract
+        if: steps.scope.outputs.studio != 'true'
         id: qa_0
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
         run: node --test qa/batch-work-progress.test.mjs
       - name: Verify 108 original high-poly master and three level-of-detail contracts
+        if: steps.scope.outputs.studio != 'true'
         id: qa_1
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
         run: node --test qa/creature-master-studio.test.mjs
       - name: Verify 108-creature reconstruction scope, anatomy and non-destructive model assignments
+        if: steps.scope.outputs.studio != 'true'
         id: qa_2
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
@@ -73,11 +101,13 @@ jobs:
           node --test qa/creature-reconstruction-plan.test.mjs
           node --test qa/creature-web-mesh-catalog.test.mjs
       - name: Verify opt-in monster mesh adoption, nonhuman scope and rollback
+        if: steps.scope.outputs.studio != 'true'
         id: qa_3
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
         run: node --test qa/creature-mesh-adoption.test.mjs
       - name: Verify 50 monster and summon reference prompts plus evidence-based 100-point KPI
+        if: steps.scope.outputs.studio != 'true'
         id: qa_4
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
@@ -85,11 +115,13 @@ jobs:
           node --test qa/monster-quality-kpi.test.mjs
           node scripts/monster-quality-status.mjs
       - name: Verify 20 chapters, story progression and recorded AI voice contract
+        if: steps.scope.outputs.studio != 'true'
         id: qa_5
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
         run: node qa/story-chronicle.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
+        if: steps.scope.outputs.studio != 'true'
         id: qa_6
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
@@ -97,6 +129,7 @@ jobs:
           node --experimental-vm-modules qa/game-core-contract.test.mjs
           node qa/army-groups.test.mjs
       - name: Verify continents, gacha, NPC models and fences/flowers
+        if: steps.scope.outputs.studio != 'true'
         id: qa_7
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
@@ -104,11 +137,13 @@ jobs:
           node qa/continent-town-gacha-regression.test.mjs
           node qa/town-tavern-gacha.test.mjs
       - name: Verify registered Chapter 1 character-art references and 3D viewer linkage
+        if: steps.scope.outputs.studio != 'true'
         id: qa_8
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
         run: node qa/chapter-one-character-art-bridge.test.mjs
       - name: Verify independent male/female source-derived face meshes
+        if: steps.scope.outputs.studio != 'true'
         id: qa_9
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
@@ -116,43 +151,56 @@ jobs:
           npm install --no-save --package-lock=false three@0.160.1
           node --test qa/independent-face-masters.test.mjs qa/grey-wolf-runtime.test.mjs
       - name: Block v117 publication unless donor-indexed facial redesign, eye rigs and normal first frame pass
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/face-v111-initial-cheek-regression.test.mjs qa/face-v112-opaque-skin-contract.test.mjs qa/face-v113-native-first-contract.test.mjs qa/face-v114-natural-eye.test.mjs qa/face-v114-eye-migration.test.mjs qa/face-v115-liner-lash-geometry.test.mjs qa/face-v116-gesture-contract.test.mjs qa/face-v117-reference-portrait.test.mjs
       - name: Verify m019 Android limb visibility / colour / toe continuity in low and high LOD
+        if: steps.scope.outputs.studio != 'true'
         # Failures remain visible in the workflow; publishing may proceed.
         id: qa_m019
         continue-on-error: true
         run: node --test qa/m019-salamander-sculpt.test.mjs qa/m019-volcanic-pbr.test.mjs
       - name: Verify m016/m017 physical four-leg remesh and wet/steel reptile PBR across LODs
+        if: steps.scope.outputs.studio != 'true'
         id: qa_salamander_lineage
         # Preserve existing Pages policy but expose failure in Actions.
         continue-on-error: true
         run: node --test qa/salamander-lineage-remesh.test.mjs qa/salamander-lineage-surface.test.mjs
       - name: Verify m018 existing-body three-dragon hydra anatomy and animated heads
+        if: steps.scope.outputs.studio != 'true'
         id: qa_m018_three_heads
         # Keep established Pages publication policy; expose QA outcome.
         continue-on-error: true
         run: node --test qa/m018-hydra-dragon-heads.test.mjs qa/m050-coral-beast.test.mjs qa/reptile-detail-sculpt.test.mjs
       - name: Verify 8 concept-matched spiders, slime and octopuses in high and low LOD
+        if: steps.scope.outputs.studio != 'true'
         # Fail Pages publication if any reference-matched 3D creature regresses.
         run: node --test qa/monster-concept-trio.test.mjs
       - name: Verify 16 humanoid monster 2D-reference sculpt and 4 LODs
+        if: steps.scope.outputs.studio != 'true'
         # Never publish a broken humanoid costume or non-bone-attached overlay.
         run: node --test qa/monster-humanoid-concept-finish.test.mjs
       - name: Verify all 5 golems fully replace exposed human skin and clothing
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/monster-golem-full-shell.test.mjs qa/monster-16-cosplay-pigment-regression.test.mjs
       - name: Verify seven fully armoured monsters, joint-tracking arms and gargoyle/knight isolation
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/monster-humanoid-armor-articulation.test.mjs
       - name: Verify gargoyle m042 dedicated chiseled mesh, stone PBR, wings, talons and LOD
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/monster-gargoyle-species.test.mjs
       - name: Verify all 50 species themes, original rigs, monster materials and new battle action routing
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/monster-all-50-theme-actions.test.mjs
       - name: Verify Kraken and beetle reference-quality geometry, PBR and every family
+        if: steps.scope.outputs.studio != 'true'
         run: node --test qa/monster-kraken-reference-parity.test.mjs
       - name: Verify 4 beetle species actual 3D anatomy, PBR and donor preservation
+        if: steps.scope.outputs.studio != 'true'
         id: qa_m024_concept
         # Block Pages publication if any 3D beetle cannot be constructed.
         run: node --test qa/m024-poison-scarab-sculpt.test.mjs qa/scarab-beetle-lineage.test.mjs qa/beetle-four-reference.test.mjs
       - name: Verify illustrated dialogue, original opening and scene music
+        if: steps.scope.outputs.studio != 'true'
         id: qa_10
         # Owner permits deployment despite QA failure; leave the outcome visible.
         continue-on-error: true
@@ -190,7 +238,10 @@ jobs:
         run: python3 scripts/build-neutral-face-v120.py --out assets/generated/neutral-face-v120.glb
       - name: Bake v121 UV globe eyes and 2048px embedded PBR skin
         run: python3 scripts/build-neutral-face-v121.py --out assets/generated/neutral-face-v121.glb
+      - name: Verify approved chapter-one art relay and preserve v121 local GLB
+        run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Rebuild immutable v22 GLB baseline and retain source SHA
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin 6f5c061d33e0e9825b0982daf434e4274b1df128
@@ -203,6 +254,7 @@ jobs:
           cp /tmp/v121-v22-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v22.glb
           git worktree remove --force /tmp/v121-v22-release
       - name: Rebuild immutable v23 GLB baseline
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin ba9f4f68bcbff8d113add88220111981d0b9131a
@@ -215,6 +267,7 @@ jobs:
           cp /tmp/v121-v23-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v23.glb
           git worktree remove --force /tmp/v121-v23-release
       - name: Rebuild immutable v24 GLB baseline
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin 5fbf21f731f7fa1f0579cab56aa5bf28bf3c3c4a
@@ -227,6 +280,7 @@ jobs:
           cp /tmp/v121-v24-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v24.glb
           git worktree remove --force /tmp/v121-v24-release
       - name: Rebuild immutable published v25 GLB baseline
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin e204c9baf49ad568ae0c91413f78121e2508d969
@@ -239,6 +293,7 @@ jobs:
           cp /tmp/v121-v25-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v25.glb
           git worktree remove --force /tmp/v121-v25-release
       - name: Rebuild immutable published v26 GLB baseline
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin 89c96436fb3a117dd588a7b3e2e2fc8abedf92ee
@@ -251,6 +306,7 @@ jobs:
           cp /tmp/v121-v26-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v26.glb
           git worktree remove --force /tmp/v121-v26-release
       - name: Rebuild immutable published v27 GLB baseline
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin d4bfe46d0407788910f53ee433113053eee94e43
@@ -263,6 +319,7 @@ jobs:
           cp /tmp/v121-v27-release/assets/generated/neutral-face-v121.glb qa/baselines/face-v121-v27.glb
           git worktree remove --force /tmp/v121-v27-release
       - name: Block publication on actual v121 v28 geometry regressions
+        if: steps.scope.outputs.studio != 'true'
         run: |
           mkdir -p qa/baselines
           git fetch --no-tags --depth=1 origin 7fa3ed27adac344c46a2076f813a1f723693075b
@@ -283,6 +340,7 @@ jobs:
           node --test qa/face-v121-makeup-contour.test.mjs qa/face-v121-wig-selection.test.mjs
           git worktree remove --force /tmp/v121-v20-release
       - name: Render actual v28 and v27 GLBs in 11 matched views
+        if: steps.scope.outputs.studio != 'true'
         run: |
           npm install --no-save --package-lock=false playwright@1.58.0 three@0.160.1
           npx playwright install --with-deps chromium
@@ -301,8 +359,6 @@ jobs:
       - name: Clean face regression baseline GLBs before assembly
         run: |
           rm -f qa/baselines/face-v121-v20.glb qa/baselines/face-v121-v22.glb qa/baselines/face-v121-v23.glb qa/baselines/face-v121-v24.glb qa/baselines/face-v121-v25.glb qa/baselines/face-v121-v26.glb qa/baselines/face-v121-v27.glb
-      - name: Verify approved chapter-one art relay and preserve v121 local GLB
-        run: python3 qa/pages-approved-story-image-relay.test.py
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
 
