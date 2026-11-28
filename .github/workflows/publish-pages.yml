@@ -42,6 +42,7 @@ jobs:
           node qa/original-body-motion-v2.test.mjs
           node qa/body-motion-refinement-v4.test.mjs
           node qa/body-bone-name-compat.test.mjs
+          node qa/equipment-studio.test.mjs
           node qa/body-action-studio-smoke.cjs
       - name: Confirm face-release validation matches face editor version
         run: node --test qa/pages-face-release-contract.test.mjs
@@ -321,7 +322,7 @@ jobs:
           html=html.replace('<head>','<head><meta name="hai-gin-pages-sha" content="'+os.environ['GITHUB_SHA']+'">',1)
           target.write_text(html,encoding='utf-8')
           (target.parent/('glb-viewer-'+version+'.html')).write_bytes(target.read_bytes())
-          for alias in ('v1.9','v2.0','v2.1','v2.2','v2.3'):
+          for alias in ('v1.9','v2.0','v2.1','v2.2','v2.3','v2.4'):
               if alias != version:
                   (target.parent/('glb-viewer-'+alias+'.html')).write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=glb-viewer.html?returnFace=1"><a href="glb-viewer.html?returnFace=1">顔ビューアー</a>',encoding='utf-8')
           print('GLB viewer staged:',version,os.environ['GITHUB_SHA'])
@@ -993,7 +994,11 @@ jobs:
           for attempt in $(seq 1 18); do
             if curl -fsSL --max-time 20 "$root/body-action-studio.html?verify=$GITHUB_SHA-$attempt" -o /tmp/body-action-public.html &&
                cmp -s /tmp/body-action-public.html pages-dist/body-action-studio.html &&
-               grep -Fq 'body-action-studio.html' pages-dist/glb-viewer.html; then
+               grep -Fq 'body-action-studio.html' pages-dist/glb-viewer.html &&
+               curl -fsSL --max-time 20 "$root/equipment-studio.html?verify=$GITHUB_SHA-$attempt" -o /tmp/equipment-studio-public.html &&
+               cmp -s /tmp/equipment-studio-public.html pages-dist/equipment-studio.html &&
+               curl -fsSL --max-time 20 "$root/assets/equipment-studio/steel_sword.glb?verify=$GITHUB_SHA-$attempt" -o /tmp/equipment-sword-public.glb &&
+               cmp -s /tmp/equipment-sword-public.glb pages-dist/assets/equipment-studio/steel_sword.glb; then
               echo 'PASS public full-body action studio and viewer navigation'
               exit 0
             fi
