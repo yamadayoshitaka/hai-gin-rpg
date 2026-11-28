@@ -44,7 +44,7 @@ class TestPagesApprovedStoryRelay(unittest.TestCase):
         self.assertGreaterEqual(savings, 3 * 1024 * 1024)
 
     def test_new_swordsman_parts_remain_local(self):
-        for part in ('steel_sword', 'training_sword', 'chest', 'waist', 'shoulder', 'bracer', 'thigh', 'greave', 'boot'):
+        for part in ('steel_sword', 'training_sword', 'chest', 'waist', 'shoulder', 'bracer', 'thigh', 'greave', 'boot', 'scabbard', 'gauntlet'):
             rel = pathlib.Path('assets/equipment-studio') / (part + '.glb')
             src = ROOT / rel
             self.assertTrue(src.is_file())

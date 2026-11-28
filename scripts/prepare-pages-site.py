@@ -393,7 +393,7 @@ def main() -> None:
     for file in REQUIRED:
         if not (out / file).is_file():
             raise RuntimeError("Missing required runtime asset: " + file)
-    for part in ("steel_sword", "training_sword", "chest", "waist", "shoulder", "bracer", "thigh", "greave", "boot"):
+    for part in ("steel_sword", "training_sword", "chest", "waist", "shoulder", "bracer", "thigh", "greave", "boot", "scabbard", "gauntlet"):
         rel = Path("assets/equipment-studio") / (part + ".glb")
         if not (out / rel).is_file() or (out / rel).read_bytes() != (SOURCE / rel).read_bytes():
             raise RuntimeError("Required local equipment GLB missing or changed: " + rel.as_posix())

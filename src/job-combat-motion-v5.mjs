@@ -2,14 +2,24 @@
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),mix=(a,b,t)=>a+(b-a)*t,R=Math.PI/180;
 const P=(hip,chest,shift,drop,lean,hand,off,blade=[0,1,.15],grip=.9)=>({hip,chest,shift,drop,lean,hand,off,blade,grip});
 const G=P(-9,-7,[0,-.01],.025,7,[-.13,.73,.19],[.13,.76,.15]);
+const S=P(-13,-8,[0,-.015],.018,4,[-.14,.66,.20],[.14,.59,.12],[.32,.78,.43],.94);
 const C=P(0,0,[0,-.025],.06,12,[-.10,.87,.13],[.10,.87,.13],[0,1,0],.8);
-const A=(label,prep,hit,{duration=1.45,kind='attack',sword=false,chant='',reading='',hold=false}={})=>({label,kind,duration,sword,chant,reading,keys:[{t:0,...G},{t:.23,...prep},{t:.54,...hit},{t:.76,...(hold?hit:G)},{t:1,...G}]});
+const A=(label,prep,hit,{duration=1.45,kind='attack',sword=false,chant='',reading='',hold=false}={})=>({label,kind,duration,sword,chant,reading,keys:[{t:0,...(sword?S:G)},{t:.23,...prep},{t:.54,...hit},{t:.76,...(hold?hit:sword?S:G)},{t:1,...(sword?(label==='剣の構え'||label==='勝利の構え'?hit:S):G)}]});
 const D=(label,prep,hit,opts={})=>A(label,prep,hit,{...opts,kind:'defense',hold:true,duration:1.7});
 const M=(label,prep,hit,chant,reading,kind='attack')=>({label,kind,duration:2.8,chant,reading,keys:[{t:0,...G},{t:.18,...prep},{t:.49,...prep},{t:.72,...hit},{t:.86,...hit},{t:1,...G}]});
 const gather=P(0,0,[0,-.01],.025,4,[-.095,.76,.20],[.095,.76,.20],[0,1,0],.14);
 const raise=P(0,0,[0,0],.015,-4,[-.16,.94,.12],[.16,.94,.12],[0,1,0],.13);
 const guard=P(-15,-8,[0,-.025],.045,9,[-.09,.80,.19],[.09,.81,.16],[0,1,.1],.95);
 export const COMBAT=Object.freeze({
+ double_slash:{label:'二連斬り',kind:'attack',duration:2.15,sword:true,keys:[{t:0,...S},{t:.15,...P(-31,-18,[-.03,-.02],.025,4,[-.23,.91,.05],[.15,.63,.12],[-.52,.85,-.25])},{t:.34,...P(28,18,[.025,.06],.035,10,[.15,.57,.31],[.15,.61,.12],[.78,-.45,.35])},{t:.49,...P(24,14,[.025,.02],.04,6,[.21,.63,.11],[.12,.64,.18],[.9,.10,-.15])},{t:.70,...P(-30,-21,[-.025,.07],.035,12,[-.20,.72,.32],[.12,.65,.14],[-.85,.1,.45])},{t:1,...S}]},
+ rising_cut:A('斬り上げ',P(-29,-20,[-.035,-.04],.055,14,[-.25,.46,.04],[.14,.64,.13],[-.7,-.65,.1]),P(23,18,[.03,.06],.012,2,[.04,.92,.31],[.15,.65,.13],[.28,.88,.3]),{sword:true,duration:1.52}),
+ step_slash:A('踏み込み斬り',P(-25,-18,[-.02,-.055],.035,7,[-.18,.88,.02],[.12,.65,.16],[-.22,.91,-.25]),P(25,17,[.025,.10],.055,17,[-.06,.59,.39],[.15,.65,.12],[.17,-.65,.72]),{sword:true,duration:1.62}),
+ low_cut:A('下段斬り',P(-35,-18,[-.03,-.035],.07,19,[-.24,.52,.04],[.13,.66,.16],[-.9,-.15,.2]),P(29,16,[.03,.06],.06,18,[.18,.49,.32],[.12,.69,.14],[.82,-.18,.3]),{sword:true}),
+ riposte:{label:'受け流しから反撃',kind:'attack',duration:2.1,sword:true,keys:[{t:0,...S},{t:.18,...P(-12,-8,[0,-.025],.035,5,[-.06,.80,.24],[.12,.64,.16],[.68,.68,.2])},{t:.34,...P(17,12,[.02,-.015],.032,7,[.13,.75,.25],[.11,.63,.15],[.83,.45,.1])},{t:.51,...P(-18,-12,[-.015,-.02],.035,8,[-.17,.66,.06],[.13,.64,.14],[.1,.14,1])},{t:.69,...P(24,15,[.02,.075],.03,11,[-.07,.72,.41],[.13,.63,.14],[.04,.02,1])},{t:1,...S}]},
+ high_guard:D('上段の剣防御',S,P(-10,-8,[0,-.035],.045,6,[-.08,.93,.18],[.13,.66,.13],[.93,.16,.25]),{sword:true}),
+ retreat_guard:D('後退しながら防御',S,P(-18,-12,[0,-.08],.035,8,[-.10,.76,.22],[.14,.63,.13],[.53,.74,.38]),{sword:true}),
+ sword_salute:A('剣士の敬礼',S,P(0,0,[0,0],.005,1,[-.045,.79,.19],[.16,.56,.08],[0,1,.05]),{sword:true,duration:2.5,hold:true}),
+
  ready_sword:D('剣の構え',G,P(-16,-10,[0,-.02],.035,6,[-.13,.76,.23],[.12,.75,.15],[.20,.85,.45]),{sword:true}),
  hit_react:D('被弾・立て直し',G,P(-26,-19,[0,-.065],.06,-8,[-.19,.65,.13],[.17,.79,.15],[.25,.6,.4]),{sword:true}),
  victory:A('勝利の構え',G,P(0,0,[0,0],.005,-3,[-.13,.98,.08],[.15,.67,.12],[.12,.95,.05]),{sword:true,duration:2.2,hold:true}),
@@ -49,5 +59,5 @@ export const COMBAT=Object.freeze({
  ward:M('加護の祈り',gather,raise,'光の加護よ、我らを包め。','ひかりのかごよ、われらをつつめ。','defense'),
  summon_guard:M('守護精霊の召喚',raise,P(0,0,[0,-.025],.04,5,[-.22,.75,.25],[.22,.75,.25],[0,1,0],.1),'守護の精霊よ、我らを守れ。','しゅごのせいれいよ、われらをまもれ。','defense')
 });
-export const JOB_COMBAT=Object.freeze({swordsman:['ready_sword','slash_down','slash_diag','slash_horizontal','thrust','sword_guard','parry','hit_react','victory'],knight:['slash_down','reverse_cut','thrust','sword_guard','parry'],shield:['shield_bash','slash_down','thrust','shield_guard','shield_high'],monk:['straight','hook','uppercut','palm','fist_guard','forearm_block','dodge'],thief:['dagger','quick_slash','thrust','dodge','backstep'],ninja:['quick_slash','reverse_cut','throw_star','dodge','forearm_block'],archer:['bow_shot','bow_high','bow_quick','bow_evade','backstep'],mage:['fire','ice','lightning','barrier','backstep'],priest:['heal','holy','palm','ward','barrier'],summoner:['summon','summon_order','holy','summon_guard','barrier']});
+export const JOB_COMBAT=Object.freeze({swordsman:['ready_sword','slash_down','slash_diag','slash_horizontal','thrust','double_slash','rising_cut','step_slash','low_cut','riposte','sword_guard','parry','high_guard','retreat_guard','hit_react','victory','sword_salute'],knight:['slash_down','reverse_cut','thrust','sword_guard','parry'],shield:['shield_bash','slash_down','thrust','shield_guard','shield_high'],monk:['straight','hook','uppercut','palm','fist_guard','forearm_block','dodge'],thief:['dagger','quick_slash','thrust','dodge','backstep'],ninja:['quick_slash','reverse_cut','throw_star','dodge','forearm_block'],archer:['bow_shot','bow_high','bow_quick','bow_evade','backstep'],mage:['fire','ice','lightning','barrier','backstep'],priest:['heal','holy','palm','ward','barrier'],summoner:['summon','summon_order','holy','summon_guard','barrier']});
 export function sampleCombat(id,time,{ageTempo=1,amp=1,hand='r',build='normal'}={}){const c=COMBAT[id];if(!c)return null;const u=clamp(time*ageTempo*(build==='fat'?.88:1)/c.duration,0,1);let a=c.keys[0],b=c.keys.at(-1);for(let i=1;i<c.keys.length;i++)if(u<=c.keys[i].t){a=c.keys[i-1];b=c.keys[i];break}const f=clamp((u-a.t)/(b.t-a.t),0,1),s=f*f*(3-2*f),p={u,kind:c.kind,sword:!!c.sword,chant:c.chant||''};for(const k of ['hip','chest','drop','lean','grip'])p[k]=mix(a[k],b[k],s);for(const k of ['shift','hand','off','blade'])p[k]=a[k].map((x,i)=>mix(x,b[k][i],s));const mirror=hand==='l'?-1:1;p.hip*=mirror*amp*R;p.chest*=mirror*amp*R;p.lean*=R;p.shift[0]*=mirror*amp;p.shift[1]*=amp;p.hand[0]*=mirror;p.off[0]*=mirror;p.blade[0]*=mirror;p.drop*=amp;p.handSide=hand;p.offSide=hand==='l'?'r':'l';return p}
