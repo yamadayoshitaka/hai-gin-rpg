@@ -379,7 +379,7 @@ jobs:
           html=html.replace('<head>','<head><meta name="hai-gin-pages-sha" content="'+os.environ['GITHUB_SHA']+'">',1)
           target.write_text(html,encoding='utf-8')
           (target.parent/('glb-viewer-'+version+'.html')).write_bytes(target.read_bytes())
-          for alias in ('v1.9','v2.0','v2.1','v2.2','v2.3','v2.4','v2.5'):
+          for alias in ('v1.9','v2.0','v2.1','v2.2','v2.3','v2.4','v2.5','v2.6'):
               if alias != version:
                   (target.parent/('glb-viewer-'+alias+'.html')).write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=glb-viewer.html?returnFace=1"><a href="glb-viewer.html?returnFace=1">顔ビューアー</a>',encoding='utf-8')
           print('GLB viewer staged:',version,os.environ['GITHUB_SHA'])
