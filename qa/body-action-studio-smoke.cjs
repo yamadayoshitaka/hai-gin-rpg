@@ -22,7 +22,7 @@ function faceFixture(){const pos=[],idx=[];for(const [y,r] of [[-.11,.058],[-.06
   await page.click('#release');assert.equal((await audit()).held,false);
   await page.click('[data-action=walk]');const hand=(await audit()).hand;await page.waitForTimeout(650);assert.notDeepEqual((await audit()).hand,hand);
   await page.click('[data-action=pickup]');await page.waitForFunction(()=>window.__bodyActionAudit().held);await page.click('#release');await page.waitForTimeout(300);assert.equal((await audit()).held,false);
-  assert.ok((await audit()).finite);
+  await page.selectOption('#style','tired');await page.click('[data-action=run]');await page.waitForFunction(()=>window.__bodyActionAudit().gait!==null);assert.equal((await audit()).expression.emotion,'sad');await page.selectOption('#expression','anger');assert.equal((await audit()).expression.emotion,'anger');await page.selectOption('#expression','auto');await page.selectOption('#style','natural');assert.ok((await audit()).finite);
  }
  await page.goto('http://127.0.0.1:8791/glb-viewer.html',{waitUntil:'domcontentloaded'});
  await page.locator('#files').setInputFiles({name:'QA_FACE.glb',mimeType:'model/gltf-binary',buffer:faceFixture()});
