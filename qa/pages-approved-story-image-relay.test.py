@@ -29,6 +29,28 @@ class TestPagesApprovedStoryRelay(unittest.TestCase):
             pathlib.Path('assets/generated/neutral-face-v120.glb'),
             ROOT/'assets/generated/neutral-face-v120.glb'))
 
+    def test_optional_models_offloaded_with_headroom(self):
+        savings = 0
+        for directory in ('assets/characters/hair-fitted-v1', 'assets/characters/seven-head-equipment-candidates'):
+            for src in (ROOT / directory).glob('*.glb'):
+                rel = src.relative_to(ROOT)
+                if 64000 < src.stat().st_size <= 128000 and (
+                    'seven-head-equipment-candidates' in directory
+                    or src.stem.endswith(('_lod1', '_lod2'))
+                ):
+                    self.assertTrue(module.include(rel))
+                    self.assertTrue(module.is_large_runtime_binary(rel, src))
+                    savings += src.stat().st_size
+        self.assertGreaterEqual(savings, 3 * 1024 * 1024)
+
+    def test_new_swordsman_parts_remain_local(self):
+        for part in ('steel_sword', 'training_sword', 'chest', 'waist', 'shoulder', 'bracer', 'thigh', 'greave', 'boot'):
+            rel = pathlib.Path('assets/equipment-studio') / (part + '.glb')
+            src = ROOT / rel
+            self.assertTrue(src.is_file())
+            self.assertTrue(module.include(rel))
+            self.assertFalse(module.is_large_runtime_binary(rel, src))
+
     def test_staging_material_is_not_published(self):
         rejected=pathlib.Path('assets/story/chapter-drafts/c01/unapproved-native-candidates/test.webp')
         self.assertFalse(module.include(rejected))
