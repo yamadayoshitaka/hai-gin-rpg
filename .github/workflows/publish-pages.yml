@@ -298,6 +298,7 @@ jobs:
           server=$!
           trap 'kill "$server" || true' EXIT
           sleep 2
+          node qa/original-body-motion-v2.test.mjs
           node qa/body-action-studio-smoke.cjs
       - name: Assemble compact game website without master asset archives
         run: python scripts/prepare-pages-site.py --out pages-dist
