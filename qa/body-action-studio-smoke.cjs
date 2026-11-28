@@ -1,4 +1,7 @@
 const {chromium}=require('playwright');const assert=require('node:assert/strict');const path=require('node:path');
+
+function faceFixture(){const pos=[],idx=[];for(const [y,r] of [[-.11,.058],[-.062,.048],[0,.065],[.075,.071],[.14,.055],[.18,.022]]){for(let j=0;j<16;j++){const a=j*2*Math.PI/16;pos.push(r*Math.cos(a),y,.025+r*Math.sin(a))}}for(let i=0;i<5;i++)for(let j=0;j<16;j++){const a=i*16+j,b=i*16+(j+1)%16;idx.push(a,b,a+16,b,b+16,a+16)}const pb=Buffer.from(new Float32Array(pos).buffer),ib=Buffer.from(new Uint16Array(idx).buffer),bin=Buffer.concat([pb,ib]);const gltf={asset:{version:'2.0'},scene:0,scenes:[{nodes:[0]}],nodes:[{name:'R8_SKIN',mesh:0}],meshes:[{primitives:[{attributes:{POSITION:0},indices:1}]}],buffers:[{byteLength:bin.length}],bufferViews:[{buffer:0,byteOffset:0,byteLength:pb.length,target:34962},{buffer:0,byteOffset:pb.length,byteLength:ib.length,target:34963}],accessors:[{bufferView:0,componentType:5126,count:pos.length/3,type:'VEC3',min:[-.071,-.11,-.046],max:[.071,.18,.096]},{bufferView:1,componentType:5123,count:idx.length,type:'SCALAR'}]};let j=Buffer.from(JSON.stringify(gltf));j=Buffer.concat([j,Buffer.alloc((4-j.length%4)%4,32)]);const head=Buffer.alloc(12);head.write('glTF');head.writeUInt32LE(2,4);head.writeUInt32LE(12+8+j.length+8+bin.length,8);const h1=Buffer.alloc(8),h2=Buffer.alloc(8);h1.writeUInt32LE(j.length);h1.write('JSON',4);h2.writeUInt32LE(bin.length);h2.writeUInt32LE(0x004e4942,4);return Buffer.concat([head,h1,j,h2,bin])}
+
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});try{
  const page=await browser.newPage({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -21,5 +24,15 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.click('[data-action=pickup]');await page.waitForFunction(()=>window.__bodyActionAudit().held);await page.click('#release');await page.waitForTimeout(300);assert.equal((await audit()).held,false);
   assert.ok((await audit()).finite);
  }
+ await page.goto('http://127.0.0.1:8791/glb-viewer.html',{waitUntil:'domcontentloaded'});
+ await page.locator('#files').setInputFiles({name:'QA_FACE.glb',mimeType:'model/gltf-binary',buffer:faceFixture()});
+ await page.waitForFunction(()=>document.querySelector('#stats')?.textContent.includes('QA_FACE.glb'),{},{timeout:60000});
+ await page.locator('#bodyActionLink').click();await page.waitForURL('**/body-action-studio.html?**');
+ await page.waitForFunction(()=>window.__bodyActionAudit?.().ready&&window.__bodyActionAudit().faceAttached,{},{timeout:60000});
+ assert.equal((await audit()).face,'QA_FACE.glb');const original=(await audit()).faceShape;
+ await page.selectOption('#build','fat');assert.notDeepEqual((await audit()).faceShape,original);
+ await page.selectOption('#build','normal');assert.deepEqual((await audit()).faceShape,original);
+ await page.selectOption('#age','eightyPlus');await page.waitForFunction(()=>window.__bodyActionAudit?.().ready&&window.__bodyActionAudit().donor.includes('senior')&&window.__bodyActionAudit().faceAttached,{},{timeout:60000});
+ assert.equal((await audit()).face,'QA_FACE.glb');await page.click('[data-action=walk]');const a=(await audit()).hand;await page.waitForTimeout(650);assert.notDeepEqual((await audit()).hand,a);
  assert.deepEqual(errors,[]);console.log('PASS both genders, 163 bones, grip, props, action and demographics');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

@@ -14,7 +14,7 @@ for(const [name,at] of attrs){if(name==='skinIndex'){data[name].push(...joints);
 for(let i=0;i<idx.count;i+=3){const ids=[idx.getX(i),idx.getX(i+1),idx.getX(i+2)],poly=[];for(let k=0;k<3;k++){const a=ids[k],b=ids[(k+1)%3],inside=p.getY(a)<=cut,next=p.getY(b)<=cut;if(inside)poly.push(a);if(inside!==next)poly.push(intersect(a,b))}for(let k=1;k+1<poly.length;k++)out.push(poly[0],poly[k],poly[k+1])}
 const result=new T.BufferGeometry();for(const [name,a] of attrs)result.setAttribute(name,new T.BufferAttribute(new a.array.constructor(data[name]),a.itemSize,a.normalized));result.setIndex(out);result.computeBoundingBox();result.computeBoundingSphere();return result}
 export function deformBody(source,height,age,build,skinTone){const g=source.clone(),p=g.attributes.position;const color=new Float32Array(p.count*3);const cloth=new T.Color(0x405568),skin=skinTone||new T.Color(0xc9a08a);const fullness={ultraThin:-.15,thin:-.08,normal:0,fat:.28}[build]||0;const sag=age.sag||0;
-for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i),n=y/height;const torso=gauss(n,.59,.18)*(1-smooth(.16,.31,Math.abs(x))),head=smooth(.84,.90,n),cheek=gauss(n,.91,.035);x*=1+fullness*(torso+head*.48*cheek);z+=fullness*height*.13*gauss(n,.59,.105)*(1-smooth(.16,.28,Math.abs(x)))*smooth(-.02,.15,z);y-=sag*height*.006*cheek*smooth(.025,.065,Math.abs(x));p.setXYZ(i,x,y,z);
+for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i),n=y/height;const torso=gauss(n,.59,.18)*(1-smooth(.16,.31,Math.abs(x))),head=smooth(.84,.90,n),cheek=gauss(n,.91,.035);const leg=(1-smooth(.43,.51,n))*smooth(.045,.12,n),sign=Math.sign(x),legCenter=sign*height*.067;const arm=smooth(height*.15,height*.24,Math.abs(x))*gauss(n,.65,.16)*(1-smooth(height*.27,height*.33,Math.abs(x)));x*=1+fullness*(torso+head*.48*cheek);x+=(x-legCenter)*fullness*.38*leg;z+=(z-height*.045)*fullness*(leg*.32+arm*.24);z+=fullness*height*.13*gauss(n,.59,.105)*(1-smooth(.16,.28,Math.abs(x)))*smooth(-.02,.15,z);y-=sag*height*.006*cheek*smooth(.025,.065,Math.abs(x));p.setXYZ(i,x,y,z);
 const visibleSkin=n>.82||Math.abs(x)>height*.25;const c=visibleSkin?skin:cloth;color.set([c.r,c.g,c.b],i*3)}
 g.setAttribute('color',new T.BufferAttribute(color,3));p.needsUpdate=true;g.computeVertexNormals();g.computeBoundingBox();g.computeBoundingSphere();return g}
 const orig=new WeakMap();
@@ -24,8 +24,18 @@ out[0]=x*(1+full*(.75*cheek+.85*jaw+.35*neck)+male*.09*jaw+young*.035*cheek);
 out[1]=y-.009*sag*cheek*front-.005*sag*jaw*front+.006*young*jaw;
 out[2]=z+(.008*full*cheek+.007*male*jaw-.004*sag*cheek)*front;
 return out}
-export function deformFace(root,age,build,sex){const a=[0,0,0],b=[0,0,0];root.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,p=g.attributes.position;if(!p)return;let r=orig.get(g);if(!r){r={p:Float32Array.from(p.array),m:(g.morphAttributes.position||[]).map(x=>Float32Array.from(x.array)),n:g.attributes.normal?Float32Array.from(g.attributes.normal.array):null};orig.set(g,r)}
-for(let i=0;i<p.count;i++){const k=i*3;deformPoint(r.p[k],r.p[k+1],r.p[k+2],age,build,sex,a);p.setXYZ(i,...a)}
-p.needsUpdate=true;for(let j=0;j<r.m.length;j++){const m=g.morphAttributes.position[j],src=r.m[j];for(let k=0;k<src.length;k+=3){if(g.morphTargetsRelative){deformPoint(r.p[k],r.p[k+1],r.p[k+2],age,build,sex,a);deformPoint(r.p[k]+src[k],r.p[k+1]+src[k+1],r.p[k+2]+src[k+2],age,build,sex,b);m.setXYZ(k/3,b[0]-a[0],b[1]-a[1],b[2]-a[2])}else{deformPoint(src[k],src[k+1],src[k+2],age,build,sex,a);m.setXYZ(k/3,...a)}}m.needsUpdate=true}
-g.computeVertexNormals();g.computeBoundingBox();g.computeBoundingSphere()})}
+export function deformFace(root,age,build,sex){const a=[0,0,0],b=[0,0,0],eps=.00005;const neutral=age.id==='twenties'&&build==='normal'&&sex==='female';root.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,p=g.attributes.position,n=g.attributes.normal;if(!p)return;let r=orig.get(g);if(!r){r={p:Float32Array.from(p.array),m:(g.morphAttributes.position||[]).map(x=>Float32Array.from(x.array)),n:n?Float32Array.from(n.array):null,mn:(g.morphAttributes.normal||[]).map(x=>Float32Array.from(x.array))};orig.set(g,r)}
+const mm=g.morphAttributes.position||[],nn=g.morphAttributes.normal||[];
+if(neutral){p.array.set(r.p);if(n&&r.n)n.array.set(r.n);mm.forEach((x,i)=>x.array.set(r.m[i]));nn.forEach((x,i)=>x.array.set(r.mn[i]))}
+else for(let i=0;i<p.count;i++){const k=i*3,x=r.p[k],y=r.p[k+1],z=r.p[k+2];deformPoint(x,y,z,age,build,sex,a);p.setXYZ(i,...a);
+deformPoint(x+eps,y,z,age,build,sex,b);const j00=(b[0]-a[0])/eps,j10=(b[1]-a[1])/eps,j20=(b[2]-a[2])/eps;
+deformPoint(x,y+eps,z,age,build,sex,b);const j01=(b[0]-a[0])/eps,j11=(b[1]-a[1])/eps,j21=(b[2]-a[2])/eps;
+deformPoint(x,y,z+eps,age,build,sex,b);const j02=(b[0]-a[0])/eps,j12=(b[1]-a[1])/eps,j22=(b[2]-a[2])/eps;
+const c00=j11*j22-j12*j21,c01=j12*j20-j10*j22,c02=j10*j21-j11*j20,c10=j02*j21-j01*j22,c11=j00*j22-j02*j20,c12=j01*j20-j00*j21,c20=j01*j12-j02*j11,c21=j02*j10-j00*j12,c22=j00*j11-j01*j10;
+function normal(x,y,z){const u=c00*x+c01*y+c02*z,v=c10*x+c11*y+c12*z,w=c20*x+c21*y+c22*z,L=Math.hypot(u,v,w)||1;return [u/L,v/L,w/L]}
+const base=n&&r.n?normal(r.n[k],r.n[k+1],r.n[k+2]):null;if(base)n.setXYZ(i,...base);
+for(let j=0;j<mm.length;j++){const src=r.m[j],dx=src[k],dy=src[k+1],dz=src[k+2];if(g.morphTargetsRelative)mm[j].setXYZ(i,j00*dx+j01*dy+j02*dz,j10*dx+j11*dy+j12*dz,j20*dx+j21*dy+j22*dz);else mm[j].setXYZ(i,...deformPoint(dx,dy,dz,age,build,sex,b))}
+if(base)for(let j=0;j<nn.length;j++){const src=r.mn[j];const q=g.morphTargetsRelative?normal(r.n[k]+src[k],r.n[k+1]+src[k+1],r.n[k+2]+src[k+2]):normal(src[k],src[k+1],src[k+2]);nn[j].setXYZ(i,...(g.morphTargetsRelative?q.map((x,l)=>x-base[l]):q))}
+}
+p.needsUpdate=true;if(n)n.needsUpdate=true;for(const a of [...mm,...nn])a.needsUpdate=true;g.computeBoundingBox();g.computeBoundingSphere()})}
 export function neckTone(skin){const p=skin.geometry.attributes.position,c=skin.geometry.attributes.color;let n=0,r=0,g=0,b=0;if(c)for(let i=0;i<p.count;i++)if(Math.abs(p.getY(i)-FACE_CUT)<.007){r+=c.getX(i);g+=c.getY(i);b+=c.getZ(i);n++}return n?new T.Color(r/n,g/n,b/n):new T.Color(0xc9a08a)}
